@@ -1,0 +1,242 @@
+import { Router } from 'express';
+import { rolesController } from './roles.controller';
+import { authenticate, authorize } from '@/middleware/auth';
+import { validate, validateQuery } from '@/middleware/error';
+import { 
+  getRolesQuerySchema,
+  assignRoleSchema, 
+  switchRoleSchema,
+  setPrimaryRoleSchema 
+} from './roles.schema';
+import { UserRole } from '@prisma/client';
+
+const router = Router();
+
+/**
+ * @openapi
+ * /api/roles:
+ *   get:
+ *     tags: [Roles]
+ *     summary: Get all roles
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: realm
+ *         schema:
+ *           type: string
+ *           enum: [GLOBAL, YAYASAN, PAUD, SD_IT, SMP_IT, SMA_ALQURAN]
+ *     responses:
+ *       200:
+ *         description: List of roles
+ */
+router.get(
+  '/',
+  authenticate,
+  validateQuery(getRolesQuerySchema),
+  rolesController.getAllRoles.bind(rolesController)
+);
+
+/**
+ * @openapi
+ * /api/roles/my-roles:
+ *   get:
+ *     tags: [Roles]
+ *     summary: Get current user's role assignments
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User's role assignments
+ */
+router.get(
+  '/my-roles',
+  authenticate,
+  rolesController.getMyRoles.bind(rolesController)
+);
+
+/**
+ * @openapi
+ * /api/roles/switch:
+ *   post:
+ *     tags: [Roles]
+ *     summary: Switch active role
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - roleAssignmentId
+ *             properties:
+ *               roleAssignmentId:
+ *                 type: string
+ *                 format: uuid
+ *     responses:
+ *       200:
+ *         description: Role switched, new tokens returned
+ */
+router.post(
+  '/switch',
+  authenticate,
+  validate(switchRoleSchema ),
+  rolesController.switchRole.bind(rolesController)
+);
+
+/**
+ * @openapi
+ * /api/roles/{id}:
+ *   get:
+ *     tags: [Roles]
+ *     summary: Get role by ID
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Role details
+ */
+router.get(
+  '/:id',
+  authenticate,
+  rolesController.getRoleById.bind(rolesController)
+);
+
+/**
+ * @openapi
+ * /api/roles/users/{userId}:
+ *   get:
+ *     tags: [Roles]
+ *     summary: Get user's role assignments (admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User's role assignments
+ */
+router.get(
+  '/users/:userId',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  rolesController.getUserRoles.bind(rolesController)
+);
+
+/**
+ * @openapi
+ * /api/roles/assign:
+ *   post:
+ *     tags: [Roles]
+ *     summary: Assign role to user (admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - roleId
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 format: uuid
+ *               roleId:
+ *                 type: string
+ *                 format: uuid
+ *               unitId:
+ *                 type: string
+ *                 format: uuid
+ *               isPrimary:
+ *                 type: boolean
+ *     responses:
+ *       201:
+ *         description: Role assigned
+ */
+router.post(
+  '/assign',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validate(assignRoleSchema ),
+  rolesController.assignRole.bind(rolesController)
+);
+
+/**
+ * @openapi
+ * /api/roles/users/{userId}/primary:
+ *   patch:
+ *     tags: [Roles]
+ *     summary: Set primary role for user (admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - roleAssignmentId
+ *             properties:
+ *               roleAssignmentId:
+ *                 type: string
+ *                 format: uuid
+ *     responses:
+ *       200:
+ *         description: Primary role updated
+ */
+router.patch(
+  '/users/:userId/primary',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validate(setPrimaryRoleSchema ),
+  rolesController.setPrimaryRole.bind(rolesController)
+);
+
+/**
+ * @openapi
+ * /api/roles/assignments/{id}:
+ *   delete:
+ *     tags: [Roles]
+ *     summary: Remove role assignment (admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       204:
+ *         description: Role assignment removed
+ */
+router.delete(
+  '/assignments/:id',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  rolesController.removeRoleAssignment.bind(rolesController)
+);
+
+export default router;

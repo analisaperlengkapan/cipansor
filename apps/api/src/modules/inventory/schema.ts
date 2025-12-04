@@ -1,0 +1,96 @@
+import { z } from "zod";
+import { AssetStatus, AssetCondition } from "@prisma/client";
+
+// ==================== ASSET CATEGORY ====================
+
+export const createInventoryCategorySchema = z.object({
+  name: z.string().min(1).max(100),
+  code: z.string().min(1).max(20),
+  description: z.string().optional(),
+});
+
+export const updateInventoryCategorySchema = createInventoryCategorySchema.partial();
+
+export type CreateInventoryCategoryInput = z.infer<typeof createInventoryCategorySchema>;
+export type UpdateInventoryCategoryInput = z.infer<typeof updateInventoryCategorySchema>;
+
+// ==================== ASSET (INVENTORY ITEM) ====================
+
+// Match Prisma enums: ACTIVE, MAINTENANCE, DAMAGED, DISPOSED
+const AssetStatusEnum = z.nativeEnum(AssetStatus);
+// Match Prisma enums: EXCELLENT, GOOD, FAIR, POOR, BROKEN
+const AssetConditionEnum = z.nativeEnum(AssetCondition);
+
+export const createInventoryItemSchema = z.object({
+  categoryId: z.string().uuid(),
+  unitId: z.string().uuid(),
+  code: z.string().min(1).max(50),
+  name: z.string().min(1).max(255),
+  brand: z.string().max(100).optional(),
+  model: z.string().max(100).optional(),
+  serialNumber: z.string().max(100).optional(),
+  location: z.string().max(255).optional(),
+  status: AssetStatusEnum.default(AssetStatus.ACTIVE),
+  condition: AssetConditionEnum.default(AssetCondition.GOOD),
+  purchaseDate: z.coerce.date().optional(),
+  purchasePrice: z.number().min(0).optional(),
+  supplier: z.string().max(255).optional(),
+  warrantyExpiry: z.coerce.date().optional(),
+  notes: z.string().optional(),
+  photoUrl: z.string().url().optional(),
+});
+
+export const updateInventoryItemSchema = createInventoryItemSchema.partial().omit({ categoryId: true, unitId: true });
+
+export const queryInventoryItemSchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  unitId: z.string().uuid().optional(),
+  categoryId: z.string().uuid().optional(),
+  search: z.string().optional(),
+  status: AssetStatusEnum.optional(),
+  condition: AssetConditionEnum.optional(),
+  location: z.string().optional(),
+});
+
+export type CreateInventoryItemInput = z.infer<typeof createInventoryItemSchema>;
+export type UpdateInventoryItemInput = z.infer<typeof updateInventoryItemSchema>;
+export type QueryInventoryItemInput = z.infer<typeof queryInventoryItemSchema>;
+
+// ==================== ASSET MAINTENANCE ====================
+
+export const createMaintenanceSchema = z.object({
+  itemId: z.string().uuid(),
+  type: z.string().min(1).max(100), // perbaikan, servis, penggantian, dll
+  description: z.string().min(1),
+  maintenanceDate: z.coerce.date(),
+  cost: z.number().min(0).optional(),
+  vendor: z.string().max(255).optional(),
+  performedBy: z.string().min(1).max(255), // Name of the person
+  nextSchedule: z.coerce.date().optional(),
+  notes: z.string().optional(),
+});
+
+export const updateMaintenanceSchema = z.object({
+  type: z.string().min(1).max(100).optional(),
+  description: z.string().min(1).optional(),
+  maintenanceDate: z.coerce.date().optional(),
+  cost: z.number().min(0).optional(),
+  vendor: z.string().max(255).optional(),
+  performedBy: z.string().min(1).max(255).optional(),
+  nextSchedule: z.coerce.date().optional(),
+  notes: z.string().optional(),
+});
+
+export const queryMaintenanceSchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  itemId: z.string().uuid().optional(),
+  type: z.string().optional(),
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
+});
+
+export type CreateMaintenanceInput = z.infer<typeof createMaintenanceSchema>;
+export type UpdateMaintenanceInput = z.infer<typeof updateMaintenanceSchema>;
+export type QueryMaintenanceInput = z.infer<typeof queryMaintenanceSchema>;

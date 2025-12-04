@@ -1,0 +1,350 @@
+import { Request, Response, NextFunction } from 'express';
+import { halaqohService, enrollmentService, sanadService, progressService } from './takhosus.service';
+import { ApiResponse } from '@/utils/response';
+
+// =====================================
+// HALAQOH CONTROLLER
+// =====================================
+
+export const halaqohController = {
+  /**
+   * GET /api/takhosus/halaqoh
+   */
+  async list(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { page = 1, limit = 10, unitId, teacherId, isActive, level } = req.query;
+      
+      const result = await halaqohService.findAll({
+        page: Number(page),
+        limit: Number(limit),
+        unitId: unitId as string,
+        teacherId: teacherId as string,
+        isActive: isActive !== undefined ? isActive === 'true' : undefined,
+        level: level ? Number(level) : undefined,
+      });
+
+      res.json(ApiResponse.success(result.data, 'Halaqoh retrieved successfully', result.pagination));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * GET /api/takhosus/halaqoh/:id
+   */
+  async getById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const halaqoh = await halaqohService.findById(req.params.id);
+      
+      if (!halaqoh) {
+        return res.status(404).json(ApiResponse.error('Halaqoh not found'));
+      }
+
+      res.json(ApiResponse.success(halaqoh));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * POST /api/takhosus/halaqoh
+   */
+  async create(req: Request, res: Response, next: NextFunction) {
+    try {
+      const halaqoh = await halaqohService.create(req.body);
+      res.status(201).json(ApiResponse.success(halaqoh, 'Halaqoh created successfully'));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * PUT /api/takhosus/halaqoh/:id
+   */
+  async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const halaqoh = await halaqohService.update(req.params.id, req.body);
+      res.json(ApiResponse.success(halaqoh, 'Halaqoh updated successfully'));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * DELETE /api/takhosus/halaqoh/:id
+   */
+  async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      await halaqohService.delete(req.params.id);
+      res.json(ApiResponse.success(null, 'Halaqoh deleted successfully'));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * GET /api/takhosus/halaqoh/:id/progress
+   */
+  async getProgress(req: Request, res: Response, next: NextFunction) {
+    try {
+      const progress = await progressService.getHalaqohProgress(req.params.id);
+      
+      if (!progress) {
+        return res.status(404).json(ApiResponse.error('Halaqoh not found'));
+      }
+
+      res.json(ApiResponse.success(progress));
+    } catch (error) {
+      next(error);
+    }
+  },
+};
+
+// =====================================
+// ENROLLMENT CONTROLLER
+// =====================================
+
+export const enrollmentController = {
+  /**
+   * GET /api/takhosus/enrollment
+   */
+  async list(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { page = 1, limit = 10, halaqohId, status, studentId } = req.query;
+      
+      const result = await enrollmentService.findAll({
+        page: Number(page),
+        limit: Number(limit),
+        halaqohId: halaqohId as string,
+        status: status as string,
+        studentId: studentId as string,
+      });
+
+      res.json(ApiResponse.success(result.data, 'Enrollments retrieved successfully', result.pagination));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * GET /api/takhosus/enrollment/:id
+   */
+  async getById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const enrollment = await enrollmentService.findById(req.params.id);
+      
+      if (!enrollment) {
+        return res.status(404).json(ApiResponse.error('Enrollment not found'));
+      }
+
+      res.json(ApiResponse.success(enrollment));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * GET /api/takhosus/enrollment/student/:studentId
+   */
+  async getByStudentId(req: Request, res: Response, next: NextFunction) {
+    try {
+      const enrollment = await enrollmentService.findByStudentId(req.params.studentId);
+      
+      if (!enrollment) {
+        return res.status(404).json(ApiResponse.error('Student not enrolled in Takhosus program'));
+      }
+
+      res.json(ApiResponse.success(enrollment));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * POST /api/takhosus/enrollment
+   */
+  async create(req: Request, res: Response, next: NextFunction) {
+    try {
+      const enrollment = await enrollmentService.create(req.body);
+      res.status(201).json(ApiResponse.success(enrollment, 'Student enrolled successfully'));
+    } catch (error: any) {
+      if (error.message === 'Student is already enrolled in Takhosus program') {
+        return res.status(400).json(ApiResponse.error(error.message));
+      }
+      next(error);
+    }
+  },
+
+  /**
+   * PUT /api/takhosus/enrollment/:id
+   */
+  async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const enrollment = await enrollmentService.update(req.params.id, req.body);
+      res.json(ApiResponse.success(enrollment, 'Enrollment updated successfully'));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * DELETE /api/takhosus/enrollment/:id
+   */
+  async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      await enrollmentService.delete(req.params.id);
+      res.json(ApiResponse.success(null, 'Enrollment deleted successfully'));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * GET /api/takhosus/enrollment/stats
+   */
+  async getStats(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { unitId } = req.query;
+      const stats = await enrollmentService.getStats(unitId as string);
+      res.json(ApiResponse.success(stats));
+    } catch (error) {
+      next(error);
+    }
+  },
+};
+
+// =====================================
+// SANAD CONTROLLER
+// =====================================
+
+export const sanadController = {
+  /**
+   * GET /api/takhosus/sanad
+   */
+  async list(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { page = 1, limit = 10, enrollmentId, teacherId } = req.query;
+      
+      const result = await sanadService.findAll({
+        page: Number(page),
+        limit: Number(limit),
+        enrollmentId: enrollmentId as string,
+        teacherId: teacherId as string,
+      });
+
+      res.json(ApiResponse.success(result.data, 'Sanad records retrieved successfully', result.pagination));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * GET /api/takhosus/sanad/:id
+   */
+  async getById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const sanad = await sanadService.findById(req.params.id);
+      
+      if (!sanad) {
+        return res.status(404).json(ApiResponse.error('Sanad record not found'));
+      }
+
+      res.json(ApiResponse.success(sanad));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * POST /api/takhosus/sanad
+   */
+  async create(req: Request, res: Response, next: NextFunction) {
+    try {
+      const sanad = await sanadService.create(req.body);
+      res.status(201).json(ApiResponse.success(sanad, 'Sanad record created successfully'));
+    } catch (error: any) {
+      if (error.message?.includes('Sanad for Juz')) {
+        return res.status(400).json(ApiResponse.error(error.message));
+      }
+      next(error);
+    }
+  },
+
+  /**
+   * PUT /api/takhosus/sanad/:id
+   */
+  async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const sanad = await sanadService.update(req.params.id, req.body);
+      res.json(ApiResponse.success(sanad, 'Sanad record updated successfully'));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * DELETE /api/takhosus/sanad/:id
+   */
+  async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      await sanadService.delete(req.params.id);
+      res.json(ApiResponse.success(null, 'Sanad record deleted successfully'));
+    } catch (error) {
+      next(error);
+    }
+  },
+};
+
+// =====================================
+// PROGRESS CONTROLLER
+// =====================================
+
+export const progressController = {
+  /**
+   * GET /api/takhosus/progress/student/:studentId
+   */
+  async getStudentProgress(req: Request, res: Response, next: NextFunction) {
+    try {
+      const progress = await progressService.getStudentProgress(req.params.studentId);
+      
+      if (!progress) {
+        return res.status(404).json(ApiResponse.error('Student not enrolled in Takhosus program'));
+      }
+
+      res.json(ApiResponse.success(progress));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * GET /api/takhosus/progress/me
+   * For authenticated student to get their own progress
+   */
+  async getMyProgress(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = (req as any).user;
+      
+      if (!user.studentId) {
+        return res.status(400).json(ApiResponse.error('User is not a student'));
+      }
+
+      const progress = await progressService.getStudentProgress(user.studentId);
+      
+      if (!progress) {
+        return res.status(404).json(ApiResponse.error('You are not enrolled in Takhosus program'));
+      }
+
+      res.json(ApiResponse.success(progress));
+    } catch (error) {
+      next(error);
+    }
+  },
+};
+
+export default {
+  halaqoh: halaqohController,
+  enrollment: enrollmentController,
+  sanad: sanadController,
+  progress: progressController,
+};

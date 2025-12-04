@@ -1,0 +1,480 @@
+import { Router } from "express";
+import { UserRole } from "@prisma/client";
+import * as controller from "./controller";
+import { authenticate, authorize } from "../../middleware/auth";
+import { validateQuery } from "../../middleware/error";
+import { queryStaffAttendanceSchema, queryLeaveSchema, queryStaffSchema } from "./schema";
+
+const router = Router();
+
+router.use(authenticate);
+
+// ==================== STAFF ====================
+
+/**
+ * @swagger
+ * /api/hr/staff:
+ *   get:
+ *     summary: List staff members
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: unitId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: List of staff members
+ */
+router.get("/staff", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), validateQuery(queryStaffSchema), controller.getStaffList);
+
+/**
+ * @swagger
+ * /api/hr/staff/{id}:
+ *   get:
+ *     summary: Get staff member by ID
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Staff member details
+ */
+router.get("/staff/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.getStaffById);
+
+// ==================== STAFF ATTENDANCE ====================
+
+/**
+ * @swagger
+ * /api/hr/attendance:
+ *   get:
+ *     summary: List staff attendance
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: staffId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: List of staff attendance records
+ */
+router.get("/attendance", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), validateQuery(queryStaffAttendanceSchema), controller.getStaffAttendance);
+
+/**
+ * @swagger
+ * /api/hr/attendance:
+ *   post:
+ *     summary: Record staff attendance
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - staffId
+ *               - date
+ *               - status
+ *             properties:
+ *               staffId:
+ *                 type: string
+ *               date:
+ *                 type: string
+ *                 format: date
+ *               status:
+ *                 type: string
+ *                 enum: [PRESENT, ABSENT, LATE, LEAVE, SICK]
+ *               checkIn:
+ *                 type: string
+ *                 format: date-time
+ *               checkOut:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       201:
+ *         description: Attendance recorded
+ */
+router.post("/attendance", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.createStaffAttendance);
+
+/**
+ * @swagger
+ * /api/hr/attendance/bulk:
+ *   post:
+ *     summary: Record bulk staff attendance
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - date
+ *               - records
+ *             properties:
+ *               date:
+ *                 type: string
+ *                 format: date
+ *               records:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     staffId:
+ *                       type: string
+ *                     status:
+ *                       type: string
+ *     responses:
+ *       201:
+ *         description: Bulk attendance recorded
+ */
+router.post("/attendance/bulk", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.recordBulkAttendance);
+
+/**
+ * @swagger
+ * /api/hr/attendance/{id}:
+ *   get:
+ *     summary: Get attendance record by ID
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Attendance record details
+ */
+router.get("/attendance/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.getStaffAttendanceById);
+
+/**
+ * @swagger
+ * /api/hr/attendance/{id}:
+ *   put:
+ *     summary: Update attendance record
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Attendance updated
+ */
+router.put("/attendance/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.updateStaffAttendance);
+
+/**
+ * @swagger
+ * /api/hr/attendance/{id}:
+ *   delete:
+ *     summary: Delete attendance record
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       204:
+ *         description: Attendance deleted
+ */
+router.delete("/attendance/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteStaffAttendance);
+
+/**
+ * @swagger
+ * /api/hr/staff/{staffId}/attendance/summary:
+ *   get:
+ *     summary: Get staff attendance summary
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: staffId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: month
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Staff attendance summary (present, absent, late counts)
+ */
+router.get("/staff/:staffId/attendance/summary", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.getStaffAttendanceSummary);
+
+// ==================== LEAVES ====================
+
+/**
+ * @swagger
+ * /api/hr/leaves:
+ *   get:
+ *     summary: List leave requests
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: staffId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [PENDING, APPROVED, REJECTED, CANCELLED]
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [ANNUAL, SICK, PERSONAL, MATERNITY, PATERNITY]
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: List of leave requests
+ */
+router.get("/leaves", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), validateQuery(queryLeaveSchema), controller.getLeaves);
+
+/**
+ * @swagger
+ * /api/hr/leaves:
+ *   post:
+ *     summary: Create leave request
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - staffId
+ *               - type
+ *               - startDate
+ *               - endDate
+ *               - reason
+ *             properties:
+ *               staffId:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *                 enum: [ANNUAL, SICK, PERSONAL, MATERNITY, PATERNITY]
+ *               startDate:
+ *                 type: string
+ *                 format: date
+ *               endDate:
+ *                 type: string
+ *                 format: date
+ *               reason:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Leave request created
+ */
+router.post("/leaves", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.createLeave);
+
+/**
+ * @swagger
+ * /api/hr/leaves/{id}:
+ *   get:
+ *     summary: Get leave request by ID
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Leave request details
+ */
+router.get("/leaves/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.getLeaveById);
+
+/**
+ * @swagger
+ * /api/hr/leaves/{id}:
+ *   put:
+ *     summary: Update leave request
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Leave request updated
+ */
+router.put("/leaves/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.updateLeave);
+
+/**
+ * @swagger
+ * /api/hr/leaves/{id}/approve:
+ *   patch:
+ *     summary: Approve or reject leave request
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [APPROVED, REJECTED]
+ *               notes:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Leave request approved/rejected
+ */
+router.patch("/leaves/:id/approve", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.approveLeave);
+
+/**
+ * @swagger
+ * /api/hr/leaves/{id}/cancel:
+ *   patch:
+ *     summary: Cancel leave request
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Leave request cancelled
+ */
+router.patch("/leaves/:id/cancel", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.cancelLeave);
+
+/**
+ * @swagger
+ * /api/hr/leaves/{id}:
+ *   delete:
+ *     summary: Delete leave request
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       204:
+ *         description: Leave request deleted
+ */
+router.delete("/leaves/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteLeave);
+
+/**
+ * @swagger
+ * /api/hr/staff/{staffId}/leave-balance:
+ *   get:
+ *     summary: Get staff leave balance
+ *     tags: [HR]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: staffId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Staff leave balance by type
+ */
+router.get("/staff/:staffId/leave-balance", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.getLeaveBalance);
+
+export default router;

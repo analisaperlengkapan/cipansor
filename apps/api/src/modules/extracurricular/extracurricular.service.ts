@@ -1,0 +1,775 @@
+import { prisma } from '@/lib/prisma';
+import { Errors } from '@/middleware/error';
+import { UserRole, Prisma, AttendanceStatus as PrismaAttendanceStatus } from '@prisma/client';
+import type {
+  ListExtracurricularsQuery,
+  CreateExtracurricularInput,
+  UpdateExtracurricularInput,
+  EnrollStudentInput,
+  BulkEnrollInput,
+  UpdateEnrollmentInput,
+  RecordAttendanceInput,
+  CreateAchievementInput,
+  ListEnrollmentsQuery,
+  ListAttendanceQuery,
+  ListAchievementsQuery,
+} from './extracurricular.schema';
+
+export class ExtracurricularService {
+  /**
+   * Get all extracurriculars with pagination
+   */
+  async findAll(query: ListExtracurricularsQuery, currentUser: { role: UserRole; unitId: string | null }) {
+    const { page, limit, search, unitId, category, status, academicYearId, isCompulsory } = query;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.ExtracurricularWhereInput = {
+      deletedAt: null,
+    };
+
+    // Filter by unit based on role
+    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+      where.unitId = currentUser.unitId || 'none';
+    } else if (unitId) {
+      where.unitId = unitId;
+    }
+
+    if (category) {
+      where.category = category;
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (academicYearId) {
+      where.academicYearId = academicYearId;
+    }
+
+    if (isCompulsory !== undefined) {
+      where.isCompulsory = isCompulsory;
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { code: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [extracurriculars, total] = await Promise.all([
+      prisma.extracurricular.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          unit: {
+            select: { id: true, name: true, type: true },
+          },
+          coach: {
+            include: {
+              user: {
+                select: { id: true, name: true, email: true },
+              },
+            },
+          },
+          assistantCoach: {
+            include: {
+              user: {
+                select: { id: true, name: true, email: true },
+              },
+            },
+          },
+          academicYear: {
+            select: { id: true, name: true, isActive: true },
+          },
+          _count: {
+            select: {
+              enrollments: { where: { status: 'ACTIVE' } },
+              achievements: true,
+            },
+          },
+        },
+      }),
+      prisma.extracurricular.count({ where }),
+    ]);
+
+    return {
+      data: extracurriculars,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Get extracurricular by ID
+   */
+  async findById(id: string, currentUser: { role: UserRole; unitId: string | null }) {
+    const extracurricular = await prisma.extracurricular.findUnique({
+      where: { id, deletedAt: null },
+      include: {
+        unit: true,
+        coach: {
+          include: {
+            user: { select: { id: true, name: true, email: true, phone: true } },
+          },
+        },
+        assistantCoach: {
+          include: {
+            user: { select: { id: true, name: true, email: true, phone: true } },
+          },
+        },
+        academicYear: true,
+        enrollments: {
+          where: { status: 'ACTIVE' },
+          include: {
+            student: {
+              include: {
+                user: { select: { id: true, name: true } },
+                enrollments: {
+                  where: { status: 'active' },
+                  include: { class: { select: { id: true, name: true } } },
+                  take: 1,
+                },
+              },
+            },
+          },
+          orderBy: { enrolledAt: 'desc' },
+        },
+        achievements: {
+          orderBy: { eventDate: 'desc' },
+          take: 10,
+        },
+        _count: {
+          select: { enrollments: true, attendances: true, achievements: true },
+        },
+      },
+    });
+
+    if (!extracurricular) {
+      throw Errors.notFound('Extracurricular not found');
+    }
+
+    // Check access
+    if (currentUser.role !== UserRole.SUPER_ADMIN && extracurricular.unitId !== currentUser.unitId) {
+      throw Errors.forbidden('Access denied');
+    }
+
+    return extracurricular;
+  }
+
+  /**
+   * Create new extracurricular
+   */
+  async create(input: CreateExtracurricularInput, currentUser: { role: UserRole; unitId: string | null }) {
+    // Validate unit access
+    if (currentUser.role !== UserRole.SUPER_ADMIN && input.unitId !== currentUser.unitId) {
+      throw Errors.forbidden('Cannot create extracurricular for another unit');
+    }
+
+    // Check for duplicate code in same unit
+    if (input.code) {
+      const existing = await prisma.extracurricular.findFirst({
+        where: {
+          unitId: input.unitId,
+          code: input.code,
+          deletedAt: null,
+        },
+      });
+
+      if (existing) {
+        throw Errors.conflict('Extracurricular code already exists in this unit');
+      }
+    }
+
+    const extracurricular = await prisma.extracurricular.create({
+      data: {
+        ...input,
+        status: 'ACTIVE',
+      },
+      include: {
+        unit: { select: { id: true, name: true } },
+        coach: { include: { user: { select: { id: true, name: true } } } },
+        academicYear: { select: { id: true, name: true } },
+      },
+    });
+
+    return extracurricular;
+  }
+
+  /**
+   * Update extracurricular
+   */
+  async update(id: string, input: UpdateExtracurricularInput, currentUser: { role: UserRole; unitId: string | null }) {
+    const extracurricular = await this.findById(id, currentUser);
+
+    // Check for duplicate code
+    if (input.code && input.code !== extracurricular.code) {
+      const existing = await prisma.extracurricular.findFirst({
+        where: {
+          unitId: extracurricular.unitId,
+          code: input.code,
+          id: { not: id },
+          deletedAt: null,
+        },
+      });
+
+      if (existing) {
+        throw Errors.conflict('Extracurricular code already exists');
+      }
+    }
+
+    const updated = await prisma.extracurricular.update({
+      where: { id },
+      data: input,
+      include: {
+        unit: { select: { id: true, name: true } },
+        coach: { include: { user: { select: { id: true, name: true } } } },
+        academicYear: { select: { id: true, name: true } },
+      },
+    });
+
+    return updated;
+  }
+
+  /**
+   * Soft delete extracurricular
+   */
+  async delete(id: string, currentUser: { role: UserRole; unitId: string | null }) {
+    await this.findById(id, currentUser);
+
+    await prisma.extracurricular.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
+    return { success: true };
+  }
+
+  // ==================
+  // ENROLLMENT METHODS
+  // ==================
+
+  /**
+   * Enroll student to extracurricular
+   */
+  async enrollStudent(input: EnrollStudentInput, currentUser: { role: UserRole; unitId: string | null }) {
+    const { extracurricularId, studentId, notes } = input;
+
+    // Check extracurricular exists
+    const extracurricular = await this.findById(extracurricularId, currentUser);
+
+    // Check student exists and is from same unit
+    const student = await prisma.student.findUnique({
+      where: { id: studentId, deletedAt: null },
+    });
+
+    if (!student) {
+      throw Errors.notFound('Student not found');
+    }
+
+    if (student.unitId !== extracurricular.unitId) {
+      throw Errors.badRequest('Student is not from the same unit');
+    }
+
+    // Check if already enrolled
+    const existingEnrollment = await prisma.extracurricularEnrollment.findUnique({
+      where: {
+        extracurricularId_studentId: {
+          extracurricularId,
+          studentId,
+        },
+      },
+    });
+
+    if (existingEnrollment) {
+      if (existingEnrollment.status === 'ACTIVE') {
+        throw Errors.conflict('Student is already enrolled in this extracurricular');
+      }
+      // Reactivate if previously withdrawn
+      const updated = await prisma.extracurricularEnrollment.update({
+        where: { id: existingEnrollment.id },
+        data: { status: 'ACTIVE', notes },
+        include: {
+          student: { include: { user: { select: { name: true } } } },
+          extracurricular: { select: { name: true } },
+        },
+      });
+      return updated;
+    }
+
+    // Check capacity
+    if (extracurricular.maxParticipants) {
+      const currentCount = await prisma.extracurricularEnrollment.count({
+        where: { extracurricularId, status: 'ACTIVE' },
+      });
+
+      if (currentCount >= extracurricular.maxParticipants) {
+        throw Errors.badRequest('Extracurricular has reached maximum capacity');
+      }
+    }
+
+    const enrollment = await prisma.extracurricularEnrollment.create({
+      data: {
+        extracurricularId,
+        studentId,
+        notes,
+        status: 'ACTIVE',
+      },
+      include: {
+        student: { include: { user: { select: { name: true } } } },
+        extracurricular: { select: { name: true } },
+      },
+    });
+
+    return enrollment;
+  }
+
+  /**
+   * Bulk enroll students
+   */
+  async bulkEnroll(input: BulkEnrollInput, currentUser: { role: UserRole; unitId: string | null }) {
+    const { extracurricularId, studentIds } = input;
+
+    const results = {
+      success: 0,
+      failed: 0,
+      errors: [] as string[],
+    };
+
+    for (const studentId of studentIds) {
+      try {
+        await this.enrollStudent({ extracurricularId, studentId }, currentUser);
+        results.success++;
+      } catch (error) {
+        results.failed++;
+        results.errors.push(`Student ${studentId}: ${error instanceof Error ? error.message : 'Failed to enroll'}`);
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Update enrollment
+   */
+  async updateEnrollment(id: string, input: UpdateEnrollmentInput, currentUser: { role: UserRole; unitId: string | null }) {
+    const enrollment = await prisma.extracurricularEnrollment.findUnique({
+      where: { id },
+      include: {
+        extracurricular: { select: { unitId: true } },
+      },
+    });
+
+    if (!enrollment) {
+      throw Errors.notFound('Enrollment not found');
+    }
+
+    // Check access
+    if (currentUser.role !== UserRole.SUPER_ADMIN && enrollment.extracurricular.unitId !== currentUser.unitId) {
+      throw Errors.forbidden('Access denied');
+    }
+
+    const updated = await prisma.extracurricularEnrollment.update({
+      where: { id },
+      data: {
+        ...input,
+        graduatedAt: input.status === 'GRADUATED' ? new Date() : undefined,
+      },
+    });
+
+    return updated;
+  }
+
+  /**
+   * List enrollments
+   */
+  async listEnrollments(query: ListEnrollmentsQuery, currentUser: { role: UserRole; unitId: string | null }) {
+    const { page, limit, extracurricularId, studentId, status } = query;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.ExtracurricularEnrollmentWhereInput = {};
+
+    if (extracurricularId) {
+      where.extracurricularId = extracurricularId;
+    }
+
+    if (studentId) {
+      where.studentId = studentId;
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    // Filter by unit
+    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+      where.extracurricular = { unitId: currentUser.unitId || 'none' };
+    }
+
+    const [enrollments, total] = await Promise.all([
+      prisma.extracurricularEnrollment.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { enrolledAt: 'desc' },
+        include: {
+          student: {
+            include: {
+              user: { select: { id: true, name: true } },
+              enrollments: {
+                where: { status: 'active' },
+                include: { class: { select: { name: true } } },
+                take: 1,
+              },
+            },
+          },
+          extracurricular: { select: { id: true, name: true, category: true } },
+        },
+      }),
+      prisma.extracurricularEnrollment.count({ where }),
+    ]);
+
+    return {
+      data: enrollments,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  // ==================
+  // ATTENDANCE METHODS
+  // ==================
+
+  /**
+   * Record attendance for an extracurricular session
+   */
+  async recordAttendance(input: RecordAttendanceInput, currentUser: { sub: string; role: UserRole; unitId: string | null }) {
+    const { extracurricularId, date, attendances } = input;
+
+    // Verify extracurricular
+    const extracurricular = await this.findById(extracurricularId, currentUser);
+
+    const recordDate = new Date(date);
+
+    // Create or update attendance records
+    const results = await Promise.all(
+      attendances.map(async (att) => {
+        // Verify student is enrolled
+        const enrollment = await prisma.extracurricularEnrollment.findUnique({
+          where: {
+            extracurricularId_studentId: {
+              extracurricularId,
+              studentId: att.studentId,
+            },
+          },
+        });
+
+        if (!enrollment || enrollment.status !== 'ACTIVE') {
+          throw Errors.badRequest(`Student ${att.studentId} is not enrolled in this extracurricular`);
+        }
+
+        return prisma.extracurricularAttendance.upsert({
+          where: {
+            extracurricularId_studentId_date: {
+              extracurricularId,
+              studentId: att.studentId,
+              date: recordDate,
+            },
+          },
+          update: {
+            status: att.status as PrismaAttendanceStatus,
+            notes: att.notes,
+            recordedById: currentUser.sub,
+          },
+          create: {
+            extracurricularId,
+            studentId: att.studentId,
+            date: recordDate,
+            status: att.status as PrismaAttendanceStatus,
+            notes: att.notes,
+            recordedById: currentUser.sub,
+          },
+        });
+      })
+    );
+
+    return {
+      recorded: results.length,
+      date: recordDate,
+      extracurricularId,
+    };
+  }
+
+  /**
+   * List attendance records
+   */
+  async listAttendance(query: ListAttendanceQuery, currentUser: { role: UserRole; unitId: string | null }) {
+    const { page, limit, extracurricularId, studentId, startDate, endDate } = query;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.ExtracurricularAttendanceWhereInput = {};
+
+    if (extracurricularId) {
+      where.extracurricularId = extracurricularId;
+    }
+
+    if (studentId) {
+      where.studentId = studentId;
+    }
+
+    if (startDate || endDate) {
+      where.date = {};
+      if (startDate) where.date.gte = new Date(startDate);
+      if (endDate) where.date.lte = new Date(endDate);
+    }
+
+    // Filter by unit
+    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+      where.extracurricular = { unitId: currentUser.unitId || 'none' };
+    }
+
+    const [attendances, total] = await Promise.all([
+      prisma.extracurricularAttendance.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+        include: {
+          student: {
+            include: { user: { select: { id: true, name: true } } },
+          },
+          extracurricular: { select: { id: true, name: true } },
+          recordedBy: { select: { id: true, name: true } },
+        },
+      }),
+      prisma.extracurricularAttendance.count({ where }),
+    ]);
+
+    return {
+      data: attendances,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  /**
+   * Get attendance summary for an extracurricular
+   */
+  async getAttendanceSummary(extracurricularId: string, currentUser: { role: UserRole; unitId: string | null }) {
+    await this.findById(extracurricularId, currentUser);
+
+    const summary = await prisma.extracurricularAttendance.groupBy({
+      by: ['status'],
+      where: { extracurricularId },
+      _count: { status: true },
+    });
+
+    const byStudent = await prisma.extracurricularAttendance.groupBy({
+      by: ['studentId', 'status'],
+      where: { extracurricularId },
+      _count: { status: true },
+    });
+
+    return {
+      overall: summary,
+      byStudent,
+    };
+  }
+
+  // ====================
+  // ACHIEVEMENT METHODS
+  // ====================
+
+  /**
+   * Create achievement
+   */
+  async createAchievement(input: CreateAchievementInput, currentUser: { role: UserRole; unitId: string | null }) {
+    // Verify extracurricular
+    await this.findById(input.extracurricularId, currentUser);
+
+    const achievement = await prisma.extracurricularAchievement.create({
+      data: {
+        ...input,
+        eventDate: new Date(input.eventDate),
+      },
+      include: {
+        extracurricular: { select: { id: true, name: true } },
+        student: { include: { user: { select: { name: true } } } },
+      },
+    });
+
+    return achievement;
+  }
+
+  /**
+   * List achievements
+   */
+  async listAchievements(query: ListAchievementsQuery, currentUser: { role: UserRole; unitId: string | null }) {
+    const { page, limit, extracurricularId, studentId, level } = query;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.ExtracurricularAchievementWhereInput = {};
+
+    if (extracurricularId) {
+      where.extracurricularId = extracurricularId;
+    }
+
+    if (studentId) {
+      where.studentId = studentId;
+    }
+
+    if (level) {
+      where.level = level;
+    }
+
+    // Filter by unit
+    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+      where.extracurricular = { unitId: currentUser.unitId || 'none' };
+    }
+
+    const [achievements, total] = await Promise.all([
+      prisma.extracurricularAchievement.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { eventDate: 'desc' },
+        include: {
+          extracurricular: { select: { id: true, name: true, category: true } },
+          student: { include: { user: { select: { name: true } } } },
+        },
+      }),
+      prisma.extracurricularAchievement.count({ where }),
+    ]);
+
+    return {
+      data: achievements,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  /**
+   * Delete achievement
+   */
+  async deleteAchievement(id: string, currentUser: { role: UserRole; unitId: string | null }) {
+    const achievement = await prisma.extracurricularAchievement.findUnique({
+      where: { id },
+      include: { extracurricular: { select: { unitId: true } } },
+    });
+
+    if (!achievement) {
+      throw Errors.notFound('Achievement not found');
+    }
+
+    if (currentUser.role !== UserRole.SUPER_ADMIN && achievement.extracurricular.unitId !== currentUser.unitId) {
+      throw Errors.forbidden('Access denied');
+    }
+
+    await prisma.extracurricularAchievement.delete({ where: { id } });
+
+    return { success: true };
+  }
+
+  // =================
+  // HELPER METHODS
+  // =================
+
+  /**
+   * Get student's extracurricular activities
+   */
+  async getStudentExtracurriculars(studentId: string, currentUser: { role: UserRole; unitId: string | null }) {
+    const student = await prisma.student.findUnique({
+      where: { id: studentId, deletedAt: null },
+    });
+
+    if (!student) {
+      throw Errors.notFound('Student not found');
+    }
+
+    if (currentUser.role !== UserRole.SUPER_ADMIN && student.unitId !== currentUser.unitId) {
+      throw Errors.forbidden('Access denied');
+    }
+
+    const enrollments = await prisma.extracurricularEnrollment.findMany({
+      where: { studentId },
+      include: {
+        extracurricular: {
+          include: {
+            coach: { include: { user: { select: { name: true } } } },
+            academicYear: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { enrolledAt: 'desc' },
+    });
+
+    const achievements = await prisma.extracurricularAchievement.findMany({
+      where: { studentId },
+      include: {
+        extracurricular: { select: { name: true } },
+      },
+      orderBy: { eventDate: 'desc' },
+    });
+
+    return {
+      enrollments,
+      achievements,
+    };
+  }
+
+  /**
+   * Get extracurricular statistics for a unit
+   */
+  async getStatistics(unitId: string, academicYearId?: string) {
+    const where: Prisma.ExtracurricularWhereInput = {
+      unitId,
+      deletedAt: null,
+    };
+
+    if (academicYearId) {
+      where.academicYearId = academicYearId;
+    }
+
+    const [
+      totalExtracurriculars,
+      totalEnrollments,
+      categoryStats,
+      recentAchievements,
+    ] = await Promise.all([
+      prisma.extracurricular.count({ where }),
+      prisma.extracurricularEnrollment.count({
+        where: {
+          extracurricular: where,
+          status: 'ACTIVE',
+        },
+      }),
+      prisma.extracurricular.groupBy({
+        by: ['category'],
+        where,
+        _count: { category: true },
+      }),
+      prisma.extracurricularAchievement.findMany({
+        where: { extracurricular: where },
+        orderBy: { eventDate: 'desc' },
+        take: 5,
+        include: {
+          extracurricular: { select: { name: true } },
+          student: { include: { user: { select: { name: true } } } },
+        },
+      }),
+    ]);
+
+    return {
+      totalExtracurriculars,
+      totalEnrollments,
+      categoryStats,
+      recentAchievements,
+    };
+  }
+}
+
+export const extracurricularService = new ExtracurricularService();

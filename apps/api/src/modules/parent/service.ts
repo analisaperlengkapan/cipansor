@@ -1,0 +1,819 @@
+import { prisma } from '../../lib/prisma';
+import { ApiError, ErrorCode } from '../../middleware/error';
+import { AttendanceStatus, Invoice, StudentParent } from '@prisma/client';
+
+type StudentParentWithStudent = Awaited<ReturnType<typeof prisma.studentParent.findMany>>[0];
+type GradeWithRelations = Awaited<ReturnType<typeof prisma.grade.findMany>>[0];
+
+export class ParentService {
+  /**
+   * Get all children linked to a parent
+   */
+  async getChildren(parentId: string) {
+    const children = await prisma.studentParent.findMany({
+      where: { parentId },
+      include: {
+        student: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                isActive: true,
+              },
+            },
+            unit: {
+              select: {
+                id: true,
+                name: true,
+                type: true,
+              },
+            },
+            enrollments: {
+              where: { status: 'active' },
+              include: {
+                class: {
+                  select: {
+                    id: true,
+                    name: true,
+                    level: true,
+                    academicYear: {
+                      select: {
+                        id: true,
+                        name: true,
+                        isActive: true,
+                      },
+                    },
+                  },
+                },
+              },
+              take: 1,
+              orderBy: { enrolledAt: 'desc' },
+            },
+          },
+        },
+      },
+    });
+
+    return children.map((sp: typeof children[0]) => ({
+      id: sp.student.id,
+      name: sp.student.user.name,
+      nis: sp.student.nis,
+      gender: sp.student.gender,
+      photoUrl: sp.student.photoUrl,
+      status: sp.student.status,
+      relation: sp.relation,
+      isPrimary: sp.isPrimary,
+      unit: sp.student.unit,
+      currentClass: sp.student.enrollments[0]?.class || null,
+    }));
+  }
+
+  /**
+   * Verify parent has access to student
+   */
+  async verifyParentAccess(parentId: string, studentId: string) {
+    const link = await prisma.studentParent.findUnique({
+      where: {
+        studentId_parentId: { studentId, parentId },
+      },
+    });
+
+    if (!link) {
+      throw new ApiError(ErrorCode.FORBIDDEN, 'Anda tidak memiliki akses ke data anak ini');
+    }
+
+    return link;
+  }
+
+  /**
+   * Get child profile with full details
+   */
+  async getChildProfile(parentId: string, studentId: string) {
+    await this.verifyParentAccess(parentId, studentId);
+
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            isActive: true,
+          },
+        },
+        unit: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            address: true,
+            phone: true,
+          },
+        },
+        enrollments: {
+          where: { status: 'active' },
+          include: {
+            class: {
+              include: {
+                academicYear: true,
+                homeroomTeacher: {
+                  include: {
+                    user: {
+                      select: {
+                        name: true,
+                        phone: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { enrolledAt: 'desc' },
+        },
+        roomAssignments: {
+          where: { isActive: true },
+          include: {
+            room: {
+              include: {
+                dormitory: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+          take: 1,
+        },
+      },
+    });
+
+    if (!student) {
+      throw new ApiError(ErrorCode.NOT_FOUND, 'Data anak tidak ditemukan');
+    }
+
+    return {
+      ...student,
+      currentClass: student.enrollments[0]?.class || null,
+      currentRoom: student.roomAssignments[0]?.room || null,
+    };
+  }
+
+  /**
+   * Get child attendance summary
+   */
+  async getChildAttendance(
+    parentId: string,
+    studentId: string,
+    query: {
+      startDate?: string;
+      endDate?: string;
+      academicYearId?: string;
+    }
+  ) {
+    await this.verifyParentAccess(parentId, studentId);
+
+    const where: any = { studentId };
+
+    if (query.startDate) {
+      where.date = { ...where.date, gte: new Date(query.startDate) };
+    }
+    if (query.endDate) {
+      where.date = { ...where.date, lte: new Date(query.endDate) };
+    }
+
+    const attendances = await prisma.attendance.findMany({
+      where,
+      include: {
+        class: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: { date: 'desc' },
+      take: 30,
+    });
+
+    // Calculate summary
+    const summary = await prisma.attendance.groupBy({
+      by: ['status'],
+      where,
+      _count: { id: true },
+    });
+
+    type SummaryMap = { present: number; absent: number; late: number; sick: number; excused: number };
+    const summaryMap = summary.reduce<SummaryMap>(
+      (acc, item) => ({
+        ...acc,
+        [item.status.toLowerCase()]: item._count.id,
+      }),
+      { present: 0, absent: 0, late: 0, sick: 0, excused: 0 }
+    );
+
+    return {
+      records: attendances,
+      summary: summaryMap,
+      total: Object.values(summaryMap).reduce((a, b) => a + b, 0),
+    };
+  }
+
+  /**
+   * Get child tahfidz progress
+   */
+  async getChildTahfidz(
+    parentId: string,
+    studentId: string,
+    query: {
+      activityType?: string;
+      page?: number;
+      limit?: number;
+    }
+  ) {
+    await this.verifyParentAccess(parentId, studentId);
+
+    const page = query.page || 1;
+    const limit = query.limit || 20;
+
+    const where: any = { studentId };
+    if (query.activityType) {
+      where.activityType = query.activityType;
+    }
+
+    const [records, total] = await Promise.all([
+      prisma.tahfidzRecord.findMany({
+        where,
+        include: {
+          recordedBy: {
+            select: {
+              name: true,
+            },
+          },
+        },
+        orderBy: { recordedAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.tahfidzRecord.count({ where }),
+    ]);
+
+    // Get summary
+    const summaryByType = await prisma.tahfidzRecord.groupBy({
+      by: ['activityType'],
+      where: { studentId },
+      _count: { id: true },
+      _sum: { totalAyah: true },
+    });
+
+    // Calculate total juz memorized
+    const ziyadahRecords = await prisma.tahfidzRecord.findMany({
+      where: {
+        studentId,
+        activityType: 'ZIYADAH',
+      },
+      select: { juz: true },
+      distinct: ['juz'],
+    });
+
+    return {
+      records,
+      summary: {
+        byType: summaryByType,
+        totalJuzMemorized: ziyadahRecords.length,
+      },
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Get child grades
+   */
+  async getChildGrades(
+    parentId: string,
+    studentId: string,
+    query: {
+      academicYearId?: string;
+      subjectId?: string;
+    }
+  ) {
+    await this.verifyParentAccess(parentId, studentId);
+
+    const where: any = { studentId };
+    if (query.academicYearId) {
+      where.academicYearId = query.academicYearId;
+    }
+    if (query.subjectId) {
+      where.subjectId = query.subjectId;
+    }
+
+    const grades = await prisma.grade.findMany({
+      where,
+      include: {
+        subject: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            type: true,
+          },
+        },
+        exam: {
+          select: {
+            id: true,
+            title: true,
+            type: true,
+            scheduledAt: true,
+          },
+        },
+        academicYear: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: { gradedAt: 'desc' },
+    });
+
+    type SubjectGrades = {
+      subject: typeof grades[0]['subject'];
+      grades: typeof grades;
+      averageScore: number;
+    };
+
+    // Group by subject
+    const bySubject = grades.reduce<Record<string, SubjectGrades>>((acc, grade) => {
+      const subjectId = grade.subject.id;
+      if (!acc[subjectId]) {
+        acc[subjectId] = {
+          subject: grade.subject,
+          grades: [],
+          averageScore: 0,
+        };
+      }
+      acc[subjectId].grades.push(grade);
+      return acc;
+    }, {});
+
+    // Calculate averages
+    Object.values(bySubject).forEach((subjectGrades) => {
+      const scores = subjectGrades.grades.map((g) =>
+        Number(g.percentage || (Number(g.score) / Number(g.maxScore)) * 100)
+      );
+      subjectGrades.averageScore =
+        scores.reduce((a, b) => a + b, 0) / scores.length;
+    });
+
+    return {
+      grades,
+      bySubject: Object.values(bySubject),
+    };
+  }
+
+  /**
+   * Get child report cards
+   */
+  async getChildReportCards(parentId: string, studentId: string) {
+    await this.verifyParentAccess(parentId, studentId);
+
+    const reportCards = await prisma.reportCard.findMany({
+      where: {
+        studentId,
+        isPublished: true, // Only show published report cards to parents
+      },
+      include: {
+        class: {
+          select: {
+            id: true,
+            name: true,
+            level: true,
+          },
+        },
+        academicYear: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        details: {
+          orderBy: { subjectName: 'asc' },
+        },
+      },
+      orderBy: [{ academicYear: { name: 'desc' } }, { semester: 'desc' }],
+    });
+
+    return reportCards;
+  }
+
+  /**
+   * Get child financial summary
+   */
+  async getChildFinance(parentId: string, studentId: string) {
+    await this.verifyParentAccess(parentId, studentId);
+
+    const invoices = await prisma.invoice.findMany({
+      where: { studentId },
+      include: {
+        paymentType: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
+        payments: {
+          orderBy: { paidAt: 'desc' },
+        },
+      },
+      orderBy: { dueDate: 'desc' },
+    });
+
+    const summary = {
+      totalInvoices: invoices.length,
+      totalAmount: invoices.reduce((sum, inv) => sum + Number(inv.amount), 0),
+      totalPaid: invoices.reduce((sum, inv) => sum + Number(inv.paidAmount), 0),
+      totalOutstanding: 0,
+      pendingCount: 0,
+      overdueCount: 0,
+    };
+
+    summary.totalOutstanding = summary.totalAmount - summary.totalPaid;
+    summary.pendingCount = invoices.filter(
+      (inv) => inv.status === 'PENDING' || inv.status === 'PARTIAL'
+    ).length;
+    summary.overdueCount = invoices.filter(
+      (inv) => inv.status === 'OVERDUE'
+    ).length;
+
+    return {
+      invoices,
+      summary,
+    };
+  }
+
+  /**
+   * Get child violations
+   */
+  async getChildViolations(parentId: string, studentId: string) {
+    await this.verifyParentAccess(parentId, studentId);
+
+    const violations = await prisma.violation.findMany({
+      where: { studentId },
+      orderBy: { occurredAt: 'desc' },
+      take: 50,
+    });
+
+    const summary = await prisma.violation.aggregate({
+      where: { studentId },
+      _sum: { points: true },
+      _count: { id: true },
+    });
+
+    const byType = await prisma.violation.groupBy({
+      by: ['type'],
+      where: { studentId },
+      _count: { id: true },
+      _sum: { points: true },
+    });
+
+    return {
+      violations,
+      summary: {
+        totalViolations: summary._count.id,
+        totalPoints: summary._sum.points || 0,
+        byType,
+      },
+    };
+  }
+
+  /**
+   * Get child rewards
+   */
+  async getChildRewards(parentId: string, studentId: string) {
+    await this.verifyParentAccess(parentId, studentId);
+
+    const rewards = await prisma.reward.findMany({
+      where: { studentId },
+      orderBy: { givenAt: 'desc' },
+      take: 50,
+    });
+
+    const summary = await prisma.reward.aggregate({
+      where: { studentId },
+      _sum: { points: true },
+      _count: { id: true },
+    });
+
+    const byCategory = await prisma.reward.groupBy({
+      by: ['category'],
+      where: { studentId },
+      _count: { id: true },
+      _sum: { points: true },
+    });
+
+    return {
+      rewards,
+      summary: {
+        totalRewards: summary._count.id,
+        totalPoints: summary._sum.points || 0,
+        byCategory,
+      },
+    };
+  }
+
+  /**
+   * Get child health records
+   */
+  async getChildHealth(parentId: string, studentId: string) {
+    await this.verifyParentAccess(parentId, studentId);
+
+    const records = await prisma.medicalRecord.findMany({
+      where: { studentId },
+      include: {
+        recordedBy: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: { visitDate: 'desc' },
+      take: 20,
+    });
+
+    const summary = await prisma.medicalRecord.groupBy({
+      by: ['type'],
+      where: { studentId },
+      _count: { id: true },
+    });
+
+    return {
+      records,
+      summary,
+    };
+  }
+
+  /**
+   * Get child permits
+   */
+  async getChildPermits(parentId: string, studentId: string) {
+    await this.verifyParentAccess(parentId, studentId);
+
+    const permits = await prisma.permit.findMany({
+      where: { studentId },
+      include: {
+        approvedBy: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
+    return permits;
+  }
+
+  /**
+   * Create permit request for child
+   */
+  async createPermitRequest(
+    parentId: string,
+    studentId: string,
+    data: {
+      type: string;
+      reason: string;
+      destination?: string;
+      startDate: string;
+      endDate: string;
+    }
+  ) {
+    await this.verifyParentAccess(parentId, studentId);
+
+    const permit = await prisma.permit.create({
+      data: {
+        studentId,
+        type: data.type as any,
+        reason: data.reason,
+        destination: data.destination,
+        startDate: new Date(data.startDate),
+        endDate: new Date(data.endDate),
+        status: 'PENDING',
+      },
+    });
+
+    return permit;
+  }
+
+  /**
+   * Get announcements for parent
+   */
+  async getAnnouncements(parentId: string) {
+    // Get parent's children units
+    const children = await prisma.studentParent.findMany({
+      where: { parentId },
+      include: {
+        student: {
+          select: { unitId: true },
+        },
+      },
+    });
+
+    const unitIds = [...new Set(children.map((c) => c.student.unitId))];
+
+    const now = new Date();
+    const announcements = await prisma.announcement.findMany({
+      where: {
+        AND: [
+          {
+            OR: [
+              { unitId: null }, // Global announcements
+              { unitId: { in: unitIds } }, // Unit-specific
+            ],
+          },
+          { targetRoles: { has: 'PARENT' } },
+          {
+            OR: [
+              { publishedAt: { lte: now } },
+              { publishedAt: null },
+            ],
+          },
+          {
+            OR: [
+              { expiresAt: { gte: now } },
+              { expiresAt: null },
+            ],
+          },
+        ],
+      },
+      include: {
+        unit: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        createdBy: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: [{ priority: 'desc' }, { publishedAt: 'desc' }],
+      take: 20,
+    });
+
+    return announcements;
+  }
+
+  /**
+   * Get notifications for parent
+   */
+  async getNotifications(
+    parentId: string,
+    query: { status?: string; page?: number; limit?: number }
+  ) {
+    const page = query.page || 1;
+    const limit = query.limit || 20;
+
+    const where: any = { userId: parentId };
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    const [notifications, total, unreadCount] = await Promise.all([
+      prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.notification.count({ where }),
+      prisma.notification.count({
+        where: { userId: parentId, status: 'UNREAD' },
+      }),
+    ]);
+
+    return {
+      notifications,
+      unreadCount,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Mark notification as read
+   */
+  async markNotificationRead(parentId: string, notificationId: string) {
+    const notification = await prisma.notification.findFirst({
+      where: { id: notificationId, userId: parentId },
+    });
+
+    if (!notification) {
+      throw new ApiError(ErrorCode.NOT_FOUND, 'Notifikasi tidak ditemukan');
+    }
+
+    return prisma.notification.update({
+      where: { id: notificationId },
+      data: {
+        status: 'READ',
+        readAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * Get parent dashboard summary
+   */
+  async getDashboardSummary(parentId: string) {
+    const children = await this.getChildren(parentId);
+
+    const summary = await Promise.all(
+      children.map(async (child) => {
+        // Get recent attendance
+        const recentAttendance = await prisma.attendance.findMany({
+          where: { studentId: child.id },
+          orderBy: { date: 'desc' },
+          take: 7,
+        });
+
+        // Get pending invoices
+        const pendingInvoices = await prisma.invoice.count({
+          where: {
+            studentId: child.id,
+            status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] },
+          },
+        });
+
+        // Get active permits
+        const activePermits = await prisma.permit.count({
+          where: {
+            studentId: child.id,
+            status: { in: ['PENDING', 'APPROVED'] },
+            endDate: { gte: new Date() },
+          },
+        });
+
+        // Get recent tahfidz
+        const lastTahfidz = await prisma.tahfidzRecord.findFirst({
+          where: { studentId: child.id },
+          orderBy: { recordedAt: 'desc' },
+        });
+
+        return {
+          child,
+          recentAttendance,
+          pendingInvoices,
+          activePermits,
+          lastTahfidz,
+        };
+      })
+    );
+
+    // Get unread notifications
+    const unreadNotifications = await prisma.notification.count({
+      where: { userId: parentId, status: 'UNREAD' },
+    });
+
+    // Get recent announcements
+    const children2 = await prisma.studentParent.findMany({
+      where: { parentId },
+      include: { student: { select: { unitId: true } } },
+    });
+    const unitIds = [...new Set(children2.map((c) => c.student.unitId))];
+
+    const recentAnnouncements = await prisma.announcement.findMany({
+      where: {
+        OR: [{ unitId: null }, { unitId: { in: unitIds } }],
+        targetRoles: { has: 'PARENT' },
+      },
+      orderBy: { publishedAt: 'desc' },
+      take: 5,
+    });
+
+    return {
+      children: summary,
+      unreadNotifications,
+      recentAnnouncements,
+    };
+  }
+}
+
+export const parentService = new ParentService();

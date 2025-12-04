@@ -1,0 +1,248 @@
+import { Request, Response, NextFunction } from 'express';
+import { parentService } from './service';
+
+export class ParentController {
+  /**
+   * Get parent dashboard summary
+   */
+  async getDashboard(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const data = await parentService.getDashboardSummary(parentId);
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get all children
+   */
+  async getChildren(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const data = await parentService.getChildren(parentId);
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get child profile
+   */
+  async getChildProfile(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const { studentId } = req.params;
+      const data = await parentService.getChildProfile(parentId, studentId);
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get child attendance
+   */
+  async getChildAttendance(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const { studentId } = req.params;
+      const data = await parentService.getChildAttendance(
+        parentId,
+        studentId,
+        req.query as any
+      );
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get child tahfidz
+   */
+  async getChildTahfidz(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const { studentId } = req.params;
+      const data = await parentService.getChildTahfidz(
+        parentId,
+        studentId,
+        req.query as any
+      );
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get child grades
+   */
+  async getChildGrades(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const { studentId } = req.params;
+      const data = await parentService.getChildGrades(
+        parentId,
+        studentId,
+        req.query as any
+      );
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get child report cards
+   */
+  async getChildReportCards(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const { studentId } = req.params;
+      const data = await parentService.getChildReportCards(parentId, studentId);
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get child finance
+   */
+  async getChildFinance(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const { studentId } = req.params;
+      const data = await parentService.getChildFinance(parentId, studentId);
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get child violations
+   */
+  async getChildViolations(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const { studentId } = req.params;
+      const data = await parentService.getChildViolations(parentId, studentId);
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get child rewards
+   */
+  async getChildRewards(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const { studentId } = req.params;
+      const data = await parentService.getChildRewards(parentId, studentId);
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get child health records
+   */
+  async getChildHealth(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const { studentId } = req.params;
+      const data = await parentService.getChildHealth(parentId, studentId);
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get child permits
+   */
+  async getChildPermits(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const { studentId } = req.params;
+      const data = await parentService.getChildPermits(parentId, studentId);
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Create permit request
+   */
+  async createPermitRequest(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const { studentId } = req.params;
+      const data = await parentService.createPermitRequest(
+        parentId,
+        studentId,
+        req.body
+      );
+      res.status(201).json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get announcements
+   */
+  async getAnnouncements(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const data = await parentService.getAnnouncements(parentId);
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get notifications
+   */
+  async getNotifications(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const data = await parentService.getNotifications(
+        parentId,
+        req.query as any
+      );
+      res.json({ success: true, ...data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Mark notification as read
+   */
+  async markNotificationRead(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parentId = req.user!.sub;
+      const { notificationId } = req.params;
+      const data = await parentService.markNotificationRead(
+        parentId,
+        notificationId
+      );
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+}
+
+export const parentController = new ParentController();

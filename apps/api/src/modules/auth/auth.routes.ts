@@ -1,0 +1,191 @@
+import { Router } from 'express';
+import { authenticate, isAdmin } from '@/middleware/auth';
+import { validate } from '@/middleware/error';
+import * as controller from './auth.controller';
+import { loginSchema, registerSchema, refreshTokenSchema, changePasswordSchema } from './auth.schema';
+
+const router = Router();
+
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: User login
+ *     description: Authenticate user with email and password
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       401:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/login', validate(loginSchema), controller.login);
+
+/**
+ * @swagger
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     description: Get new access token using refresh token
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [refreshToken]
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 description: Refresh token from login
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *       401:
+ *         description: Invalid or expired refresh token
+ */
+router.post('/refresh', validate(refreshTokenSchema), controller.refreshToken);
+
+// Protected routes
+router.use(authenticate);
+
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current user
+ *     description: Get authenticated user's profile
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+router.get('/me', controller.getCurrentUser);
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout
+ *     description: Invalidate current user's tokens
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logged out successfully
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+router.post('/logout', controller.logout);
+
+/**
+ * @swagger
+ * /api/auth/password:
+ *   put:
+ *     summary: Change password
+ *     description: Change current user's password
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [currentPassword, newPassword]
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 format: password
+ *               newPassword:
+ *                 type: string
+ *                 format: password
+ *                 minLength: 8
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       400:
+ *         description: Current password incorrect
+ */
+router.put('/password', validate(changePasswordSchema), controller.changePassword);
+
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Register new user (Admin only)
+ *     description: Create new user account - requires admin privileges
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email, password, role]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: John Doe
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 minLength: 8
+ *               role:
+ *                 type: string
+ *                 enum: [SUPER_ADMIN, UNIT_ADMIN, TEACHER, STAFF, STUDENT, PARENT]
+ *               unitId:
+ *                 type: string
+ *                 format: uuid
+ *               phone:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ */
+router.post('/register', isAdmin, validate(registerSchema), controller.register);
+
+export default router;

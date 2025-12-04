@@ -1,0 +1,3298 @@
+// Prisma Schema for Cipansor
+// Yayasan Pesantren Cipansor - Islamic Education Institution Management System
+// Supports: TK, SD IT, SMP IT, SMA Al-Qur'an with Tahfidz & Integrated Pesantren Curriculum
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================
+// ENUMS
+// =====================================
+
+// Legacy UserRole - kept for backward compatibility during migration
+enum UserRole {
+  SUPER_ADMIN // Yayasan level admin
+  UNIT_ADMIN // School/Unit level admin
+  TEACHER // Guru/Ustadz
+  STAFF // Non-teaching staff
+  STUDENT // Santri/Siswa
+  PARENT // Wali santri
+}
+
+// Realm - Domain/area of the system
+enum Realm {
+  GLOBAL      // Super Admin - akses ke seluruh sistem
+  YAYASAN     // Yayasan/Foundation level
+  PAUD        // PAUD
+  SD_IT       // SD IT
+  SMP_IT      // SMP IT
+  SMA_ALQURAN // SMA Al-Qur'an
+}
+
+// RoleCode - All possible role codes in the system
+enum RoleCode {
+  // Global
+  SUPER_ADMIN
+  
+  // Yayasan roles
+  YAYASAN_ADMIN
+  YAYASAN_PEMBINA
+  YAYASAN_KETUA
+  YAYASAN_SEKRETARIS
+  YAYASAN_BENDAHARA
+  YAYASAN_ANGGOTA
+  YAYASAN_PENGAWAS
+  
+  // PAUD roles
+  PAUD_ADMIN
+  PAUD_KEPALA_SEKOLAH
+  PAUD_GURU
+  PAUD_TATA_USAHA
+  PAUD_ORANG_TUA
+  PAUD_SISWA
+  
+  // SD IT roles
+  SDIT_ADMIN
+  SDIT_KEPALA_SEKOLAH
+  SDIT_GURU
+  SDIT_TATA_USAHA
+  SDIT_ORANG_TUA
+  SDIT_SISWA
+  
+  // SMP IT roles
+  SMPIT_ADMIN
+  SMPIT_KEPALA_SEKOLAH
+  SMPIT_GURU
+  SMPIT_TATA_USAHA
+  SMPIT_ORANG_TUA
+  SMPIT_SISWA
+  
+  // SMA Al-Qur'an roles
+  SMAQ_ADMIN
+  SMAQ_KEPALA_SEKOLAH
+  SMAQ_GURU
+  SMAQ_TATA_USAHA
+  SMAQ_ORANG_TUA
+  SMAQ_SISWA
+}
+
+enum UnitType {
+  PESANTREN
+  PAUD
+  TK
+  SD_IT
+  SMP_IT
+  SMA_QURAN
+  OTHER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum AttendanceStatus {
+  PRESENT // Hadir
+  ABSENT // Tidak hadir tanpa keterangan
+  LATE // Terlambat
+  SICK // Sakit
+  EXCUSED // Izin
+}
+
+enum TahfidzActivityType {
+  ZIYADAH // Hafalan baru
+  MUROJAAH // Mengulang hafalan
+  TASMI // Setoran hafalan
+  ASSESSMENT // Ujian/penilaian
+}
+
+enum PermitType {
+  PULANG // Izin pulang ke rumah
+  KELUAR // Izin keluar pesantren sementara
+  SAKIT // Izin karena sakit
+  KELUARGA // Keperluan keluarga
+  OTHER // Lainnya
+}
+
+enum PermitStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+enum ViolationType {
+  MINOR // Ringan
+  MODERATE // Sedang
+  MAJOR // Berat
+}
+
+enum PaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  VIRTUAL_ACCOUNT
+  EWALLET
+  OTHER
+}
+
+// =====================================
+// CORE MODELS
+// =====================================
+
+/// Foundation/Yayasan - Parent organization
+model Foundation {
+  id           String    @id @default(uuid())
+  name         String // Yayasan Pesantren Cipansor
+  legalName    String    @map("legal_name") // Nama legal sesuai akta
+  foundingDate DateTime? @map("founding_date")
+  taxId        String?   @map("tax_id") // NPWP
+  address      String
+  phone        String?
+  email        String?
+  website      String?
+  logoUrl      String?   @map("logo_url")
+  vision       String?   @db.Text
+  mission      String?   @db.Text
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  units        Unit[]
+  boardMembers BoardMember[]
+  documents    FoundationDocument[]
+
+  @@map("foundations")
+}
+
+/// User - All user types in the system
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  phone        String?
+  role         UserRole  // Legacy role - kept for backward compatibility
+  unitId       String?   @map("unit_id")
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  // Relations
+  unit               Unit?           @relation(fields: [unitId], references: [id])
+  userRoles          UserRoleAssignment[] // NEW: Multi-role assignments
+  student            Student?
+  teacher            Teacher?
+  staff              Staff?
+  parentOf           StudentParent[]
+  recordedTahfidz    TahfidzRecord[] @relation("TahfidzRecorder")
+  recordedAttendance Attendance[]    @relation("AttendanceRecorder")
+  approvedPermits    Permit[]        @relation("PermitApprover")
+  reportedViolations Violation[]     @relation("ViolationReporter")
+  givenRewards       Reward[]        @relation("RewardGiver")
+  approvedLeaves     Leave[]         @relation("LeaveApprover")
+  refreshTokens      RefreshToken[]
+  auditLogs          AuditLog[]
+  processedBorrowings Borrowing[]    @relation("BorrowingProcessor")
+  recordedMedical    MedicalRecord[] @relation("MedicalRecorder")
+  givenMedications   MedicationUsageLog[] @relation("MedicationGiver")
+  createdAnnouncements Announcement[] @relation("AnnouncementCreator")
+  notifications      Notification[]
+  recordedGrades     Grade[]         @relation("GradeRecorder")
+  // New relations for Phase 8
+  halaqohTeaching    Halaqoh[]       @relation("HalaqohTeacher")
+  sanadCertified     SanadRecord[]   @relation("SanadTeacher")
+  createdCampaigns   DonationCampaign[] @relation("CampaignCreator")
+  verifiedDonations  Donation[]      @relation("DonationVerifier")
+  // New relations for Phase 12
+  extracurricularAttendanceRecorded ExtracurricularAttendance[] @relation("ExtracurricularAttendanceRecorder")
+  counselingNotesCreated            CounselingNote[]    @relation("CounselingNoteCreator")
+  counselingReferralsCreated        CounselingReferral[] @relation("CounselingReferralCreator")
+  dutyRostersVerified               DutyRoster[]        @relation("DutyVerifier")
+  mealMenusCreated                  MealMenu[]          @relation("MealMenuCreator")
+  mealAttendanceRecorded            MealAttendance[]    @relation("MealAttendanceRecorder")
+  specialDietsApproved              SpecialDiet[]       @relation("DietApprover")
+  calendarEventsCreated             CalendarEvent[]     @relation("EventCreator")
+  studentDocumentsVerified          StudentDocument[]   @relation("DocumentVerifier")
+  studentDocumentsUploaded          StudentDocument[]   @relation("DocumentUploader")
+  digitalCertificatesCreated        DigitalCertificate[] @relation("CertificateCreator")
+  // Phase 12 extended relations
+  studentNotesCreated               StudentNote[]       @relation("NoteCreator")
+  behaviorRecordsWitnessed          BehaviorRecord[]    @relation("BehaviorWitness")
+  behaviorRecordsRecorded           BehaviorRecord[]    @relation("BehaviorRecorder")
+  kitabProgressRecorded             KitabProgressRecord[] @relation("KitabRecorder")
+
+  @@index([email])
+  @@index([role])
+  @@index([unitId])
+  @@map("users")
+}
+
+/// RefreshToken - JWT refresh tokens
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+/// Unit - Pesantren, Sekolah, or other educational institutions
+model Unit {
+  id            String    @id @default(uuid())
+  foundationId  String?   @map("foundation_id")
+  name          String
+  type          UnitType
+  address       String
+  phone         String?
+  email         String?
+  logoUrl       String?   @map("logo_url")
+  npsn          String?   @unique // Nomor Pokok Sekolah Nasional
+  accreditation String? // A, B, C, or Belum Terakreditasi
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  // Relations
+  foundation       Foundation?       @relation(fields: [foundationId], references: [id])
+  users            User[]
+  userRoleAssignments UserRoleAssignment[] // NEW: Role assignments for this unit
+  students         Student[]
+  teachers         Teacher[]
+  staff            Staff[]
+  classes          Class[]
+  dormitories      Dormitory[]
+  paymentTypes     PaymentType[]
+  admissionPeriods AdmissionPeriod[]
+  bookCategories   BookCategory[]
+  books            Book[]
+  medications      Medication[]
+  announcements    Announcement[]
+  assets           Asset[]
+  subjects         Subject[]
+  schedules        Schedule[]
+  exams            Exam[]
+  alumni           Alumni[]
+  alumniDonations  AlumniDonation[]
+  alumniEvents     AlumniEvent[]
+  // New relations for Phase 8
+  halaqoh          Halaqoh[]
+  donationCampaigns DonationCampaign[]
+  donations        Donation[]
+  // New relations for Phase 12
+  extracurriculars   Extracurricular[]
+  counselingSessions CounselingSession[]
+  dutyTypes          DutyType[]
+  mealMenus          MealMenu[]
+  calendarEvents     CalendarEvent[]
+  muhadhoroh         Muhadhoroh[]
+  muhadatsah         Muhadatsah[]
+  // Phase 12 extended relations
+  kitab              Kitab[]
+
+  @@index([type])
+  @@index([foundationId])
+  @@map("units")
+}
+
+/// Teacher - Teacher profile (Guru/Ustadz)
+model Teacher {
+  id             String    @id @default(uuid())
+  userId         String    @unique @map("user_id")
+  unitId         String    @map("unit_id")
+  nip            String?   @unique // Nomor Induk Pegawai
+  nuptk          String?   @unique // Nomor Unik Pendidik dan Tenaga Kependidikan
+  specialization String? // Bidang keahlian
+  joinDate       DateTime? @map("join_date")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  // Relations
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unit            Unit    @relation(fields: [unitId], references: [id])
+  homeroomClasses Class[] @relation("HomeroomTeacher")
+  teacherSubjects TeacherSubject[]
+  lessonPlans     LessonPlan[]
+  schedules       Schedule[]
+  exams           Exam[]
+  // New relations for Phase 12
+  extracurricularCoach     Extracurricular[] @relation("ExtracurricularCoach")
+  extracurricularAssistant Extracurricular[] @relation("ExtracurricularAssistant")
+  counselingSessions       CounselingSession[] @relation("CounselorSessions")
+  kitabProgress            KitabProgress[]
+  muhadhorohEvaluator      Muhadhoroh[] @relation("MuhadhorohEvaluator")
+  muhadatsahEvaluator      Muhadatsah[] @relation("MuhadatsahEvaluator")
+  // Phase 12 extended relations
+  kitabAssignments         KitabAssignment[]
+
+  @@index([unitId])
+  @@map("teachers")
+}
+
+/// Staff - Non-teaching staff
+model Staff {
+  id         String    @id @default(uuid())
+  userId     String    @unique @map("user_id")
+  unitId     String    @map("unit_id")
+  nip        String?   @unique
+  position   String // Jabatan
+  department String? // Bagian
+  joinDate   DateTime? @map("join_date")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  // Relations
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unit       Unit            @relation(fields: [unitId], references: [id])
+  attendance StaffAttendance[]
+  leaves     Leave[]
+
+  @@index([unitId])
+  @@map("staff")
+}
+
+/// AcademicYear - Tahun Ajaran (global, not per unit)
+model AcademicYear {
+  id        String    @id @default(uuid())
+  name      String    @unique // e.g., "2024/2025"
+  isActive  Boolean   @default(false) @map("is_active")
+  startDate DateTime  @map("start_date")
+  endDate   DateTime  @map("end_date")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Relations
+  classes          Class[]
+  tahfidzTargets   TahfidzTarget[]
+  admissionPeriods AdmissionPeriod[]
+  schedules        Schedule[]
+  exams            Exam[]
+  grades           Grade[]
+  reportCards      ReportCard[]
+  // New relations for Phase 12
+  extracurriculars Extracurricular[]
+  kitabProgress    KitabProgress[]
+  studentNotes     StudentNote[]
+  behaviorRecords  BehaviorRecord[]
+  kitabAssignments KitabAssignment[]
+
+  @@index([isActive])
+  @@map("academic_years")
+}
+
+/// Class - Kelas
+model Class {
+  id                String    @id @default(uuid())
+  unitId            String    @map("unit_id")
+  academicYearId    String    @map("academic_year_id")
+  name              String // e.g., "7A", "10 IPA 1"
+  level             String // e.g., "7", "10", "Kelas 1"
+  capacity          Int       @default(30)
+  homeroomTeacherId String?   @map("homeroom_teacher_id")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  // Relations
+  unit            Unit              @relation(fields: [unitId], references: [id])
+  academicYear    AcademicYear      @relation(fields: [academicYearId], references: [id])
+  homeroomTeacher Teacher?          @relation("HomeroomTeacher", fields: [homeroomTeacherId], references: [id])
+  enrollments     ClassEnrollment[]
+  attendances     Attendance[]
+  teacherSubjects TeacherSubject[]
+  lessonPlans     LessonPlan[]
+  schedules       Schedule[]
+  exams           Exam[]
+  reportCards     ReportCard[]
+  // New relations for Phase 12
+  calendarEvents  CalendarEvent[]
+  studentNotes    StudentNote[]
+  behaviorRecords BehaviorRecord[]
+  kitabAssignments KitabAssignment[]
+
+  @@unique([unitId, academicYearId, name])
+  @@index([level])
+  @@map("classes")
+}
+
+/// Student - Santri/Siswa
+model Student {
+  id           String    @id @default(uuid())
+  userId       String    @unique @map("user_id")
+  unitId       String    @map("unit_id")
+  nis          String    @unique // Nomor Induk Siswa
+  nisn         String? // Nomor Induk Siswa Nasional
+  gender       Gender
+  birthPlace   String    @map("birth_place")
+  birthDate    DateTime  @map("birth_date")
+  address      String
+  parentName   String    @map("parent_name")
+  parentPhone  String    @map("parent_phone")
+  parentEmail  String?   @map("parent_email")
+  photoUrl     String?   @map("photo_url")
+  status       String    @default("active") // active, alumni, dropped, transferred
+  entryYear    Int?      @map("entry_year")
+  graduateYear Int?      @map("graduate_year")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  // Relations
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unit            Unit              @relation(fields: [unitId], references: [id])
+  parents         StudentParent[]
+  enrollments     ClassEnrollment[]
+  attendances     Attendance[]
+  tahfidzRecords  TahfidzRecord[]
+  tahfidzTargets  TahfidzTarget[]
+  roomAssignments RoomAssignment[]
+  permits         Permit[]
+  violations      Violation[]
+  rewards         Reward[]
+  invoices        Invoice[]
+  registrant      Registrant?       // Link dari pendaftaran PSB
+  medicalRecords  MedicalRecord[]
+  medicationUsage MedicationUsageLog[]
+  grades          Grade[]
+  reportCards     ReportCard[]
+  alumniRecord    Alumni?           // Link ke data alumni jika sudah lulus
+  // New relations for Phase 8
+  takhosusEnrollment TakhosusEnrollment?
+  dailyMuhasabah     DailyMuhasabah[]
+  // New relations for Phase 12
+  extracurricularEnrollments ExtracurricularEnrollment[]
+  extracurricularAttendances ExtracurricularAttendance[]
+  extracurricularAchievements ExtracurricularAchievement[]
+  counselingSessions         CounselingSession[]
+  dutyRostersAssigned        DutyRoster[] @relation("StudentDuty")
+  dutyRostersSubstitute      DutyRoster[] @relation("DutySubstitute")
+  mealAttendances            MealAttendance[]
+  specialDiets               SpecialDiet[]
+  kitabProgress              KitabProgress[]
+  muhadhoroh                 Muhadhoroh[]
+  muhadatsahStudent          Muhadatsah[] @relation("MuhadatsahStudent")
+  muhadatsahPartner          Muhadatsah[] @relation("MuhadatsahPartner")
+  studentDocuments           StudentDocument[]
+  digitalCertificates        DigitalCertificate[]
+  // Phase 12 extended relations
+  studentNotes               StudentNote[]
+  behaviorRecords            BehaviorRecord[]
+  kitabStudentProgress       KitabStudentProgress[]
+  kitabProgressRecords       KitabProgressRecord[]
+
+  @@index([nis])
+  @@index([unitId])
+  @@index([status])
+  @@map("students")
+}
+
+/// StudentParent - Link between students and parent users
+model StudentParent {
+  id        String   @id @default(uuid())
+  studentId String   @map("student_id")
+  parentId  String   @map("parent_id")
+  relation  String // father, mother, guardian
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  parent  User    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, parentId])
+  @@index([parentId])
+  @@map("student_parents")
+}
+
+/// ClassEnrollment - Student enrollment in classes
+model ClassEnrollment {
+  id         String   @id @default(uuid())
+  studentId  String   @map("student_id")
+  classId    String   @map("class_id")
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+  status     String   @default("active") // active, completed, transferred, dropped
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class   Class   @relation(fields: [classId], references: [id])
+
+  @@unique([studentId, classId])
+  @@index([status])
+  @@map("class_enrollments")
+}
+
+/// Attendance - Daily attendance records
+model Attendance {
+  id           String           @id @default(uuid())
+  studentId    String           @map("student_id")
+  classId      String           @map("class_id")
+  date         DateTime         @db.Date
+  status       AttendanceStatus
+  notes        String?
+  recordedById String           @map("recorded_by_id")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class      Class   @relation(fields: [classId], references: [id])
+  recordedBy User    @relation("AttendanceRecorder", fields: [recordedById], references: [id])
+
+  @@unique([studentId, classId, date])
+  @@index([date])
+  @@index([status])
+  @@map("attendances")
+}
+
+/// TahfidzRecord - Quran memorization records
+model TahfidzRecord {
+  id           String              @id @default(uuid())
+  studentId    String              @map("student_id")
+  activityType TahfidzActivityType @map("activity_type")
+  surahNumber  Int                 @map("surah_number")
+  surahName    String              @map("surah_name")
+  ayahStart    Int                 @map("ayah_start")
+  ayahEnd      Int                 @map("ayah_end")
+  juz          Int
+  totalAyah    Int                 @map("total_ayah")
+  score        Float? // For assessment type
+  notes        String?
+  recordedAt   DateTime            @default(now()) @map("recorded_at")
+  recordedById String              @map("recorded_by_id")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  recordedBy User    @relation("TahfidzRecorder", fields: [recordedById], references: [id])
+
+  @@index([studentId])
+  @@index([activityType])
+  @@index([surahNumber])
+  @@index([juz])
+  @@map("tahfidz_records")
+}
+
+/// TahfidzTarget - Target hafalan per santri per tahun ajaran
+model TahfidzTarget {
+  id             String   @id @default(uuid())
+  studentId      String   @map("student_id")
+  academicYearId String   @map("academic_year_id")
+  targetJuz      Int      @map("target_juz") // Target juz yang harus dihafal
+  targetAyah     Int?     @map("target_ayah") // Target ayat tambahan
+  notes          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  @@unique([studentId, academicYearId])
+  @@map("tahfidz_targets")
+}
+
+// =====================================
+// PESANTREN MODELS (Dormitory Management)
+// =====================================
+
+/// Dormitory - Asrama
+model Dormitory {
+  id          String    @id @default(uuid())
+  unitId      String    @map("unit_id")
+  name        String // e.g., "Asrama Putra Al-Fatih", "Asrama Putri Khadijah"
+  code        String    @unique // e.g., "AP-01"
+  gender      Gender // Male or Female dormitory
+  capacity    Int
+  address     String?
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  unit  Unit   @relation(fields: [unitId], references: [id])
+  rooms Room[]
+
+  @@index([unitId])
+  @@index([gender])
+  @@map("dormitories")
+}
+
+/// Room - Kamar di asrama
+model Room {
+  id          String   @id @default(uuid())
+  dormitoryId String   @map("dormitory_id")
+  name        String // e.g., "Kamar 101"
+  floor       Int      @default(1)
+  capacity    Int
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  dormitory   Dormitory        @relation(fields: [dormitoryId], references: [id])
+  assignments RoomAssignment[]
+
+  @@unique([dormitoryId, name])
+  @@index([isActive])
+  @@map("rooms")
+}
+
+/// RoomAssignment - Penempatan santri di kamar
+model RoomAssignment {
+  id         String    @id @default(uuid())
+  studentId  String    @map("student_id")
+  roomId     String    @map("room_id")
+  assignedAt DateTime  @default(now()) @map("assigned_at")
+  endedAt    DateTime? @map("ended_at")
+  isActive   Boolean   @default(true) @map("is_active")
+  notes      String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  room    Room    @relation(fields: [roomId], references: [id])
+
+  @@index([studentId])
+  @@index([roomId])
+  @@index([isActive])
+  @@map("room_assignments")
+}
+
+/// Permit - Perizinan santri
+model Permit {
+  id            String       @id @default(uuid())
+  studentId     String       @map("student_id")
+  type          PermitType
+  reason        String       @db.Text
+  destination   String? // Tujuan
+  startDate     DateTime     @map("start_date")
+  endDate       DateTime     @map("end_date")
+  status        PermitStatus @default(PENDING)
+  approvedById  String?      @map("approved_by_id")
+  approvedAt    DateTime?    @map("approved_at")
+  rejectionNote String?      @map("rejection_note")
+  returnedAt    DateTime?    @map("returned_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  approvedBy User?   @relation("PermitApprover", fields: [approvedById], references: [id])
+
+  @@index([studentId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("permits")
+}
+
+/// Violation - Pelanggaran santri
+model Violation {
+  id           String        @id @default(uuid())
+  studentId    String        @map("student_id")
+  type         ViolationType
+  category     String // Kategori: ibadah, akhlak, kebersihan, ketertiban, dll
+  description  String        @db.Text
+  occurredAt   DateTime      @map("occurred_at")
+  points       Int           @default(0) // Point deduction
+  action       String? // Tindakan yang diberikan
+  reportedById String        @map("reported_by_id")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  reportedBy User    @relation("ViolationReporter", fields: [reportedById], references: [id])
+
+  @@index([studentId])
+  @@index([type])
+  @@index([occurredAt])
+  @@map("violations")
+}
+
+/// Reward - Penghargaan santri
+model Reward {
+  id          String   @id @default(uuid())
+  studentId   String   @map("student_id")
+  category    String // Kategori: tahfidz, akademik, akhlak, kebersihan, dll
+  description String   @db.Text
+  points      Int      @default(0) // Point addition
+  givenAt     DateTime @default(now()) @map("given_at")
+  givenById   String   @map("given_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  givenBy User    @relation("RewardGiver", fields: [givenById], references: [id])
+
+  @@index([studentId])
+  @@index([category])
+  @@index([givenAt])
+  @@map("rewards")
+}
+
+// =====================================
+// FINANCE MODELS (Keuangan)
+// =====================================
+
+/// PaymentType - Jenis pembayaran
+model PaymentType {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id")
+  name        String // e.g., "SPP", "Uang Gedung", "Seragam"
+  code        String // e.g., "SPP", "UG", "SRG"
+  description String?
+  amount      Decimal  @db.Decimal(15, 2) // Default amount
+  isRecurring Boolean  @default(false) @map("is_recurring")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit     Unit      @relation(fields: [unitId], references: [id])
+  invoices Invoice[]
+
+  @@unique([unitId, code])
+  @@index([isActive])
+  @@map("payment_types")
+}
+
+/// Invoice - Tagihan pembayaran
+model Invoice {
+  id            String        @id @default(uuid())
+  studentId     String        @map("student_id")
+  paymentTypeId String        @map("payment_type_id")
+  invoiceNumber String        @unique @map("invoice_number") // e.g., "INV-2024-0001"
+  amount        Decimal       @db.Decimal(15, 2)
+  dueDate       DateTime      @map("due_date")
+  status        PaymentStatus @default(PENDING)
+  paidAmount    Decimal       @default(0) @map("paid_amount") @db.Decimal(15, 2)
+  period        String? // e.g., "Januari 2024" for monthly payments
+  notes         String?
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  student     Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  paymentType PaymentType @relation(fields: [paymentTypeId], references: [id])
+  payments    Payment[]
+
+  @@index([studentId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("invoices")
+}
+
+/// Payment - Pembayaran
+model Payment {
+  id          String        @id @default(uuid())
+  invoiceId   String        @map("invoice_id")
+  amount      Decimal       @db.Decimal(15, 2)
+  method      PaymentMethod
+  referenceNo String?       @map("reference_no") // Nomor referensi bank/transfer
+  paidAt      DateTime      @default(now()) @map("paid_at")
+  notes       String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([paidAt])
+  @@map("payments")
+}
+
+// =====================================
+// PHASE 3: FOUNDATION & HR MODELS
+// =====================================
+
+/// BoardMember - Pengurus Yayasan
+model BoardMember {
+  id           String    @id @default(uuid())
+  foundationId String    @map("foundation_id")
+  name         String
+  position     String // Ketua, Sekretaris, Bendahara, Anggota
+  phone        String?
+  email        String?
+  photoUrl     String?   @map("photo_url")
+  startDate    DateTime  @map("start_date")
+  endDate      DateTime? @map("end_date")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  foundation Foundation @relation(fields: [foundationId], references: [id])
+
+  @@index([foundationId])
+  @@index([isActive])
+  @@map("board_members")
+}
+
+/// FoundationDocument - Dokumen Yayasan
+model FoundationDocument {
+  id           String   @id @default(uuid())
+  foundationId String   @map("foundation_id")
+  name         String // e.g., "Akta Pendirian", "SK Kemenkumham"
+  type         String // akta, sk, sertifikat, perizinan, lainnya
+  documentNo   String?  @map("document_no")
+  issueDate    DateTime @map("issue_date")
+  expiryDate   DateTime? @map("expiry_date")
+  fileUrl      String?  @map("file_url")
+  notes        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  foundation Foundation @relation(fields: [foundationId], references: [id])
+
+  @@index([foundationId])
+  @@index([type])
+  @@map("foundation_documents")
+}
+
+// =====================================
+// PHASE 3: PSB (Penerimaan Santri Baru)
+// =====================================
+
+enum AdmissionStatus {
+  REGISTERED     // Mendaftar
+  DOCUMENT_CHECK // Verifikasi Dokumen
+  TEST_SCHEDULED // Dijadwalkan Tes
+  TEST_COMPLETED // Selesai Tes
+  ACCEPTED       // Diterima
+  REJECTED       // Ditolak
+  ENROLLED       // Sudah Daftar Ulang
+  CANCELLED      // Dibatalkan
+}
+
+/// AdmissionPeriod - Periode Penerimaan Santri Baru
+model AdmissionPeriod {
+  id                 String    @id @default(uuid())
+  unitId             String    @map("unit_id")
+  academicYearId     String    @map("academic_year_id")
+  name               String // e.g., "PSB 2024/2025 Gelombang 1"
+  startDate          DateTime  @map("start_date")
+  endDate            DateTime  @map("end_date")
+  quota              Int       @default(0)
+  registrationFee    Decimal   @default(0) @map("registration_fee") @db.Decimal(15, 2)
+  isActive           Boolean   @default(true) @map("is_active")
+  requirements       String?   @db.Text // JSON atau teks persyaratan
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  unit         Unit           @relation(fields: [unitId], references: [id])
+  academicYear AcademicYear   @relation(fields: [academicYearId], references: [id])
+  registrants  Registrant[]
+  waves        AdmissionWave[] // NEW: Gelombang pendaftaran
+
+  @@index([unitId])
+  @@index([academicYearId])
+  @@index([isActive])
+  @@map("admission_periods")
+}
+
+/// Registrant - Calon Santri / Pendaftar
+model Registrant {
+  id                String          @id @default(uuid())
+  admissionPeriodId String          @map("admission_period_id")
+  waveId            String?         @map("wave_id") // NEW: Gelombang pendaftaran
+  registrationNo    String          @unique @map("registration_no") // Nomor pendaftaran
+  // Personal data fields
+  fullName          String          @map("full_name") @default("")
+  name              String          @default("") // Keep for backward compatibility
+  gender            Gender
+  birthPlace        String          @map("birth_place")
+  birthDate         DateTime        @map("birth_date")
+  address           String          @db.Text
+  phone             String?
+  email             String?
+  previousSchool    String?         @map("previous_school")
+  // Kemampuan Al-Quran (NEW)
+  quranAbility      String?         @map("quran_ability") // BELUM_BISA, IQRA, LANCAR, TARTIL, TAHFIDZ
+  memorizedJuz      Int?            @map("memorized_juz") // Jumlah juz yang sudah dihafal
+  // Parent info
+  parentName        String          @map("parent_name")
+  parentPhone       String          @map("parent_phone")
+  parentEmail       String?         @map("parent_email")
+  parentOccupation  String?         @map("parent_occupation")
+  // Selection process
+  status            AdmissionStatus @default(REGISTERED)
+  testScore         Decimal?        @map("test_score") @db.Decimal(5, 2)
+  interviewScore    Decimal?        @map("interview_score") @db.Decimal(5, 2)
+  tahfidzScore      Decimal?        @map("tahfidz_score") @db.Decimal(5, 2)
+  notes             String?         @db.Text
+  acceptedAt        DateTime?       @map("accepted_at")
+  enrolledAt        DateTime?       @map("enrolled_at")
+  studentId         String?         @unique @map("student_id") // Link ke student jika sudah enrolled
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  admissionPeriod AdmissionPeriod      @relation(fields: [admissionPeriodId], references: [id])
+  wave            AdmissionWave?       @relation("WaveRegistrants", fields: [waveId], references: [id])
+  student         Student?             @relation(fields: [studentId], references: [id])
+  documents       RegistrantDocument[]
+
+  @@index([admissionPeriodId])
+  @@index([waveId])
+  @@index([status])
+  @@index([registrationNo])
+  @@map("registrants")
+}
+
+/// RegistrantDocument - Dokumen Pendaftar
+model RegistrantDocument {
+  id           String   @id @default(uuid())
+  registrantId String   @map("registrant_id")
+  name         String // e.g., "Akta Kelahiran", "Ijazah", "Foto"
+  type         String // akta, ijazah, kk, foto, rapor, lainnya
+  fileUrl      String?  @map("file_url")
+  isVerified   Boolean  @default(false) @map("is_verified")
+  verifiedAt   DateTime? @map("verified_at")
+  notes        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  registrant Registrant @relation(fields: [registrantId], references: [id], onDelete: Cascade)
+
+  @@index([registrantId])
+  @@index([type])
+  @@map("registrant_documents")
+}
+
+// =====================================
+// PHASE 3: HR (Human Resources)
+// =====================================
+
+enum LeaveType {
+  ANNUAL      // Cuti Tahunan
+  SICK        // Sakit
+  MATERNITY   // Melahirkan
+  PATERNITY   // Cuti Ayah
+  MARRIAGE    // Menikah
+  BEREAVEMENT // Kematian
+  UNPAID      // Cuti Tanpa Gaji
+  OTHER       // Lainnya
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum StaffAttendanceStatus {
+  PRESENT     // Hadir
+  ABSENT      // Tidak Hadir
+  LATE        // Terlambat
+  SICK        // Sakit
+  LEAVE       // Cuti
+  REMOTE      // WFH
+  DUTY        // Dinas Luar
+}
+
+/// StaffAttendance - Absensi Pegawai
+model StaffAttendance {
+  id         String                @id @default(uuid())
+  staffId    String                @map("staff_id")
+  date       DateTime              @db.Date
+  status     StaffAttendanceStatus @default(PRESENT)
+  checkIn    DateTime?             @map("check_in")
+  checkOut   DateTime?             @map("check_out")
+  notes      String?
+  createdAt  DateTime              @default(now()) @map("created_at")
+  updatedAt  DateTime              @updatedAt @map("updated_at")
+
+  // Relations
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, date])
+  @@index([staffId])
+  @@index([date])
+  @@index([status])
+  @@map("staff_attendance")
+}
+
+/// Leave - Pengajuan Cuti
+model Leave {
+  id           String      @id @default(uuid())
+  staffId      String      @map("staff_id")
+  type         LeaveType
+  startDate    DateTime    @map("start_date")
+  endDate      DateTime    @map("end_date")
+  totalDays    Int         @map("total_days")
+  reason       String      @db.Text
+  status       LeaveStatus @default(PENDING)
+  approvedById String?     @map("approved_by_id")
+  approvedAt   DateTime?   @map("approved_at")
+  rejectedNote String?     @map("rejected_note")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  staff      Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  approvedBy User? @relation("LeaveApprover", fields: [approvedById], references: [id])
+
+  @@index([staffId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("leaves")
+}
+
+// =====================================
+// SYSTEM MODELS
+// =====================================
+
+/// Role - Role definitions in the system (multi-realm)
+model Role {
+  id          String   @id @default(uuid())
+  code        RoleCode @unique
+  name        String   // Display name
+  description String?  @db.Text
+  realm       Realm    // Which realm this role belongs to
+  permissions Json?    // JSON array of permission codes
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  userRoles UserRoleAssignment[]
+
+  @@index([realm])
+  @@index([isActive])
+  @@map("roles")
+}
+
+/// UserRoleAssignment - Many-to-many between User and Role
+model UserRoleAssignment {
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  roleId     String    @map("role_id")
+  unitId     String?   @map("unit_id") // Optional: specific unit for this role
+  isPrimary  Boolean   @default(false) @map("is_primary") // Primary/default role
+  isActive   Boolean   @default(true) @map("is_active")
+  assignedAt DateTime  @default(now()) @map("assigned_at")
+  assignedBy String?   @map("assigned_by") // User ID who assigned this role
+  expiresAt  DateTime? @map("expires_at") // Optional role expiration
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id])
+  unit Unit? @relation(fields: [unitId], references: [id])
+
+  @@unique([userId, roleId, unitId])
+  @@index([userId])
+  @@index([roleId])
+  @@index([unitId])
+  @@index([isPrimary])
+  @@index([isActive])
+  @@map("user_role_assignments")
+}
+
+/// AuditLog - System audit trail
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  action    String // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
+  entity    String // Table/entity name
+  entityId  String?  @map("entity_id")
+  oldValues Json?    @map("old_values")
+  newValues Json?    @map("new_values")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// =====================================
+// PHASE 4: PERPUSTAKAAN (LIBRARY)
+// =====================================
+
+enum BookStatus {
+  AVAILABLE    // Tersedia
+  BORROWED     // Dipinjam
+  RESERVED     // Dipesan
+  MAINTENANCE  // Perbaikan
+  LOST         // Hilang
+}
+
+enum BorrowingStatus {
+  ACTIVE       // Sedang dipinjam
+  RETURNED     // Sudah dikembalikan
+  OVERDUE      // Terlambat
+  LOST         // Hilang
+}
+
+/// BookCategory - Kategori Buku
+model BookCategory {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id")
+  name        String   // e.g., "Fiqih", "Hadits", "Umum", "Fiksi"
+  code        String   // e.g., "FIQ", "HAD", "UMM"
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit  Unit   @relation(fields: [unitId], references: [id])
+  books Book[]
+
+  @@unique([unitId, code])
+  @@index([unitId])
+  @@map("book_categories")
+}
+
+/// Book - Buku Perpustakaan
+model Book {
+  id            String     @id @default(uuid())
+  unitId        String     @map("unit_id")
+  categoryId    String     @map("category_id")
+  isbn          String?
+  title         String
+  author        String
+  publisher     String?
+  publishYear   Int?       @map("publish_year")
+  language      String     @default("Indonesia")
+  pageCount     Int?       @map("page_count")
+  shelfLocation String?    @map("shelf_location") // e.g., "A-01-02"
+  quantity      Int        @default(1)
+  available     Int        @default(1)
+  coverUrl      String?    @map("cover_url")
+  description   String?    @db.Text
+  status        BookStatus @default(AVAILABLE)
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  deletedAt     DateTime?  @map("deleted_at")
+
+  // Relations
+  unit       Unit         @relation(fields: [unitId], references: [id])
+  category   BookCategory @relation(fields: [categoryId], references: [id])
+  borrowings Borrowing[]
+
+  @@index([unitId])
+  @@index([categoryId])
+  @@index([isbn])
+  @@index([title])
+  @@index([author])
+  @@map("books")
+}
+
+/// Borrowing - Peminjaman Buku
+model Borrowing {
+  id           String          @id @default(uuid())
+  bookId       String          @map("book_id")
+  borrowerId   String          @map("borrower_id") // Can be student or staff
+  borrowerType String          @map("borrower_type") // STUDENT, STAFF, TEACHER
+  borrowedAt   DateTime        @default(now()) @map("borrowed_at")
+  dueDate      DateTime        @map("due_date")
+  returnedAt   DateTime?       @map("returned_at")
+  status       BorrowingStatus @default(ACTIVE)
+  lateFee      Decimal?        @map("late_fee") @db.Decimal(10, 2)
+  notes        String?
+  processedBy  String          @map("processed_by")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  book        Book @relation(fields: [bookId], references: [id])
+  processedByUser User @relation("BorrowingProcessor", fields: [processedBy], references: [id])
+
+  @@index([bookId])
+  @@index([borrowerId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("borrowings")
+}
+
+// =====================================
+// PHASE 4: UKS (HEALTH / KESEHATAN)
+// =====================================
+
+enum MedicalRecordType {
+  CHECKUP      // Pemeriksaan rutin
+  ILLNESS      // Sakit
+  INJURY       // Cedera
+  FIRST_AID    // Pertolongan pertama
+  REFERRAL     // Rujukan
+}
+
+/// MedicalRecord - Rekam Medis
+model MedicalRecord {
+  id           String            @id @default(uuid())
+  studentId    String            @map("student_id")
+  type         MedicalRecordType
+  visitDate    DateTime          @map("visit_date")
+  complaint    String            @db.Text // Keluhan
+  diagnosis    String?           @db.Text // Diagnosis
+  treatment    String?           @db.Text // Tindakan/Penanganan
+  prescription String?           @db.Text // Resep obat
+  notes        String?           @db.Text
+  referredTo   String?           @map("referred_to") // Rumah sakit/klinik rujukan
+  recordedById String            @map("recorded_by_id")
+  followUpDate DateTime?         @map("follow_up_date")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  student    Student @relation(fields: [studentId], references: [id])
+  recordedBy User    @relation("MedicalRecorder", fields: [recordedById], references: [id])
+
+  @@index([studentId])
+  @@index([visitDate])
+  @@index([type])
+  @@map("medical_records")
+}
+
+/// Medication - Stok Obat
+model Medication {
+  id           String    @id @default(uuid())
+  unitId       String    @map("unit_id")
+  name         String
+  genericName  String?   @map("generic_name")
+  type         String    // tablet, sirup, salep, dll
+  dosageForm   String    @map("dosage_form") // 500mg, 60ml, dll
+  quantity     Int       @default(0)
+  minStock     Int       @default(10) @map("min_stock")
+  expiryDate   DateTime? @map("expiry_date")
+  supplier     String?
+  notes        String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  unit        Unit                @relation(fields: [unitId], references: [id])
+  usageLogs   MedicationUsageLog[]
+
+  @@index([unitId])
+  @@index([name])
+  @@index([expiryDate])
+  @@map("medications")
+}
+
+/// MedicationUsageLog - Log Penggunaan Obat
+model MedicationUsageLog {
+  id           String   @id @default(uuid())
+  medicationId String   @map("medication_id")
+  studentId    String?  @map("student_id")
+  quantity     Int
+  reason       String   // Alasan penggunaan
+  givenById    String   @map("given_by_id")
+  givenAt      DateTime @default(now()) @map("given_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  medication Medication @relation(fields: [medicationId], references: [id])
+  student    Student?   @relation(fields: [studentId], references: [id])
+  givenBy    User       @relation("MedicationGiver", fields: [givenById], references: [id])
+
+  @@index([medicationId])
+  @@index([studentId])
+  @@index([givenAt])
+  @@map("medication_usage_logs")
+}
+
+// =====================================
+// PHASE 4: KOMUNIKASI (NOTIFICATIONS)
+// =====================================
+
+enum NotificationType {
+  INFO         // Informasi umum
+  ANNOUNCEMENT // Pengumuman
+  REMINDER     // Pengingat
+  ALERT        // Peringatan
+  PAYMENT      // Pembayaran
+  ACADEMIC     // Akademik
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+/// Announcement - Pengumuman
+model Announcement {
+  id          String           @id @default(uuid())
+  unitId      String?          @map("unit_id") // null = all units
+  title       String
+  content     String           @db.Text
+  type        NotificationType @default(ANNOUNCEMENT)
+  priority    Int              @default(0) // 0=normal, 1=important, 2=urgent
+  attachmentUrl String?        @map("attachment_url")
+  publishedAt DateTime?        @map("published_at")
+  expiresAt   DateTime?        @map("expires_at")
+  targetRoles String[]         @map("target_roles") // ["STUDENT", "PARENT"]
+  createdById String           @map("created_by_id")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  unit      Unit? @relation(fields: [unitId], references: [id])
+  createdBy User  @relation("AnnouncementCreator", fields: [createdById], references: [id])
+
+  @@index([unitId])
+  @@index([publishedAt])
+  @@index([type])
+  @@map("announcements")
+}
+
+/// Notification - Notifikasi Personal
+model Notification {
+  id        String             @id @default(uuid())
+  userId    String             @map("user_id")
+  type      NotificationType
+  title     String
+  message   String             @db.Text
+  link      String?            // Deep link ke halaman terkait
+  status    NotificationStatus @default(UNREAD)
+  readAt    DateTime?          @map("read_at")
+  createdAt DateTime           @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// =====================================
+// PHASE 4: INVENTARIS (INVENTORY)
+// =====================================
+
+enum AssetStatus {
+  ACTIVE       // Aktif/baik
+  MAINTENANCE  // Dalam perbaikan
+  DAMAGED      // Rusak
+  DISPOSED     // Dihapuskan
+}
+
+enum AssetCondition {
+  EXCELLENT    // Sangat baik
+  GOOD         // Baik
+  FAIR         // Cukup
+  POOR         // Kurang
+  BROKEN       // Rusak
+}
+
+/// AssetCategory - Kategori Aset
+model AssetCategory {
+  id          String   @id @default(uuid())
+  name        String   // e.g., "Mebel", "Elektronik", "Kendaraan"
+  code        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  assets Asset[]
+
+  @@map("asset_categories")
+}
+
+/// Asset - Aset/Inventaris
+model Asset {
+  id              String         @id @default(uuid())
+  unitId          String         @map("unit_id")
+  categoryId      String         @map("category_id")
+  code            String         @unique // Kode inventaris
+  name            String
+  brand           String?
+  model           String?
+  serialNumber    String?        @map("serial_number")
+  purchaseDate    DateTime?      @map("purchase_date")
+  purchasePrice   Decimal?       @map("purchase_price") @db.Decimal(15, 2)
+  supplier        String?
+  location        String?        // Lokasi penempatan
+  condition       AssetCondition @default(GOOD)
+  status          AssetStatus    @default(ACTIVE)
+  warrantyExpiry  DateTime?      @map("warranty_expiry")
+  notes           String?        @db.Text
+  photoUrl        String?        @map("photo_url")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  deletedAt       DateTime?      @map("deleted_at")
+
+  // Relations
+  unit              Unit               @relation(fields: [unitId], references: [id])
+  category          AssetCategory      @relation(fields: [categoryId], references: [id])
+  maintenanceLogs   AssetMaintenance[]
+
+  @@index([unitId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([condition])
+  @@map("assets")
+}
+
+/// AssetMaintenance - Log Pemeliharaan Aset
+model AssetMaintenance {
+  id            String    @id @default(uuid())
+  assetId       String    @map("asset_id")
+  maintenanceDate DateTime @map("maintenance_date")
+  type          String    // perbaikan, servis, penggantian, dll
+  description   String    @db.Text
+  cost          Decimal?  @db.Decimal(15, 2)
+  vendor        String?
+  performedBy   String    @map("performed_by")
+  nextSchedule  DateTime? @map("next_schedule")
+  notes         String?   @db.Text
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  asset Asset @relation(fields: [assetId], references: [id])
+
+  @@index([assetId])
+  @@index([maintenanceDate])
+  @@map("asset_maintenance")
+}
+
+// =====================================
+// PHASE 5: KURIKULUM (CURRICULUM)
+// =====================================
+
+enum SubjectType {
+  ACADEMIC     // Pelajaran akademik umum
+  RELIGIOUS    // Pelajaran agama/pesantren
+  TAHFIDZ      // Pelajaran tahfidz khusus
+  EXTRACURRICULAR // Ekstrakurikuler
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+/// Subject - Mata Pelajaran
+model Subject {
+  id          String      @id @default(uuid())
+  unitId      String      @map("unit_id")
+  code        String      // e.g., "MTK", "FIQ", "THF"
+  name        String      // e.g., "Matematika", "Fiqih", "Tahfidz Al-Quran"
+  type        SubjectType
+  description String?     @db.Text
+  credits     Int         @default(2) // SKS/Jam pelajaran per minggu
+  level       String?     // Level kelas yang diajarkan (7,8,9 atau 1,2,3,4,5,6)
+  isActive    Boolean     @default(true) @map("is_active")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  deletedAt   DateTime?   @map("deleted_at")
+
+  // Relations
+  unit           Unit              @relation(fields: [unitId], references: [id])
+  lessonPlans    LessonPlan[]
+  schedules      Schedule[]
+  exams          Exam[]
+  grades         Grade[]
+  teacherSubjects TeacherSubject[]
+
+  @@unique([unitId, code])
+  @@index([unitId])
+  @@index([type])
+  @@map("subjects")
+}
+
+/// TeacherSubject - Guru pengampu mata pelajaran
+model TeacherSubject {
+  id         String   @id @default(uuid())
+  teacherId  String   @map("teacher_id")
+  subjectId  String   @map("subject_id")
+  classId    String?  @map("class_id") // null = semua kelas
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  teacher Teacher @relation(fields: [teacherId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
+  class   Class?  @relation(fields: [classId], references: [id])
+
+  @@unique([teacherId, subjectId, classId])
+  @@index([teacherId])
+  @@index([subjectId])
+  @@map("teacher_subjects")
+}
+
+/// LessonPlan - Rencana Pelaksanaan Pembelajaran (RPP)
+model LessonPlan {
+  id              String    @id @default(uuid())
+  subjectId       String    @map("subject_id")
+  teacherId       String    @map("teacher_id")
+  classId         String?   @map("class_id")
+  title           String
+  topic           String
+  objectives      String    @db.Text // Tujuan pembelajaran
+  materials       String?   @db.Text // Materi pembelajaran
+  activities      String?   @db.Text // Kegiatan pembelajaran
+  assessment      String?   @db.Text // Penilaian
+  resources       String?   @db.Text // Sumber/media
+  duration        Int       @default(45) // Durasi dalam menit
+  plannedDate     DateTime? @map("planned_date")
+  completedDate   DateTime? @map("completed_date")
+  notes           String?   @db.Text
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  subject Subject @relation(fields: [subjectId], references: [id])
+  teacher Teacher @relation(fields: [teacherId], references: [id])
+  class   Class?  @relation(fields: [classId], references: [id])
+
+  @@index([subjectId])
+  @@index([teacherId])
+  @@index([classId])
+  @@index([plannedDate])
+  @@map("lesson_plans")
+}
+
+/// Schedule - Jadwal Pelajaran
+model Schedule {
+  id             String    @id @default(uuid())
+  unitId         String    @map("unit_id")
+  academicYearId String    @map("academic_year_id")
+  classId        String    @map("class_id")
+  subjectId      String    @map("subject_id")
+  teacherId      String    @map("teacher_id")
+  dayOfWeek      DayOfWeek @map("day_of_week")
+  startTime      String    @map("start_time") // "07:30"
+  endTime        String    @map("end_time")   // "08:15"
+  room           String?   // Ruangan
+  isActive       Boolean   @default(true) @map("is_active")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  unit         Unit         @relation(fields: [unitId], references: [id])
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  class        Class        @relation(fields: [classId], references: [id])
+  subject      Subject      @relation(fields: [subjectId], references: [id])
+  teacher      Teacher      @relation(fields: [teacherId], references: [id])
+
+  @@index([unitId])
+  @@index([classId])
+  @@index([teacherId])
+  @@index([dayOfWeek])
+  @@map("schedules")
+}
+
+// =====================================
+// PHASE 5: PENILAIAN (ASSESSMENT)
+// =====================================
+
+enum ExamType {
+  DAILY_TEST     // Ulangan Harian
+  QUIZ           // Kuis
+  MIDTERM        // UTS
+  FINAL          // UAS
+  PRACTICAL      // Praktik
+  PROJECT        // Proyek
+  TAHFIDZ_TEST   // Ujian Tahfidz
+}
+
+enum ExamStatus {
+  DRAFT          // Belum dipublikasi
+  SCHEDULED      // Dijadwalkan
+  ONGOING        // Sedang berlangsung
+  COMPLETED      // Selesai
+  GRADED         // Sudah dinilai
+}
+
+enum GradeType {
+  EXAM           // Nilai ujian
+  ASSIGNMENT     // Tugas
+  PARTICIPATION  // Keaktifan
+  ATTENDANCE     // Kehadiran
+  PROJECT        // Proyek
+  TAHFIDZ        // Nilai tahfidz
+}
+
+/// Exam - Ujian/Ulangan
+model Exam {
+  id              String     @id @default(uuid())
+  unitId          String     @map("unit_id")
+  academicYearId  String     @map("academic_year_id")
+  subjectId       String     @map("subject_id")
+  classId         String     @map("class_id")
+  teacherId       String     @map("teacher_id")
+  type            ExamType
+  title           String
+  description     String?    @db.Text
+  scheduledAt     DateTime   @map("scheduled_at")
+  duration        Int        @default(60) // Durasi dalam menit
+  maxScore        Decimal    @default(100) @map("max_score") @db.Decimal(5, 2)
+  passingScore    Decimal    @default(70) @map("passing_score") @db.Decimal(5, 2)
+  weight          Decimal    @default(1) @db.Decimal(3, 2) // Bobot nilai
+  status          ExamStatus @default(DRAFT)
+  instructions    String?    @db.Text
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  unit         Unit         @relation(fields: [unitId], references: [id])
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  subject      Subject      @relation(fields: [subjectId], references: [id])
+  class        Class        @relation(fields: [classId], references: [id])
+  teacher      Teacher      @relation(fields: [teacherId], references: [id])
+  grades       Grade[]
+
+  @@index([unitId])
+  @@index([subjectId])
+  @@index([classId])
+  @@index([scheduledAt])
+  @@index([status])
+  @@map("exams")
+}
+
+/// Grade - Nilai
+model Grade {
+  id             String    @id @default(uuid())
+  studentId      String    @map("student_id")
+  subjectId      String    @map("subject_id")
+  examId         String?   @map("exam_id") // null untuk nilai non-ujian
+  academicYearId String    @map("academic_year_id")
+  type           GradeType
+  score          Decimal   @db.Decimal(5, 2)
+  maxScore       Decimal   @default(100) @map("max_score") @db.Decimal(5, 2)
+  percentage     Decimal?  @db.Decimal(5, 2) // Persentase otomatis
+  letterGrade    String?   @map("letter_grade") // A, B, C, D, E
+  notes          String?   @db.Text
+  gradedById     String    @map("graded_by_id")
+  gradedAt       DateTime  @default(now()) @map("graded_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  student      Student      @relation(fields: [studentId], references: [id])
+  subject      Subject      @relation(fields: [subjectId], references: [id])
+  exam         Exam?        @relation(fields: [examId], references: [id])
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  gradedBy     User         @relation("GradeRecorder", fields: [gradedById], references: [id])
+
+  @@index([studentId])
+  @@index([subjectId])
+  @@index([examId])
+  @@index([academicYearId])
+  @@index([type])
+  @@map("grades")
+}
+
+/// ReportCard - Raport
+model ReportCard {
+  id             String   @id @default(uuid())
+  studentId      String   @map("student_id")
+  classId        String   @map("class_id")
+  academicYearId String   @map("academic_year_id")
+  semester       Int      // 1 atau 2
+  totalScore     Decimal? @map("total_score") @db.Decimal(5, 2)
+  averageScore   Decimal? @map("average_score") @db.Decimal(5, 2)
+  rank           Int?     // Peringkat di kelas
+  totalStudents  Int?     @map("total_students") // Jumlah siswa di kelas
+  attendance     Json?    // { present, absent, sick, excused }
+  tahfidzSummary Json?    @map("tahfidz_summary") // { totalJuz, totalAyah, lastSurah }
+  teacherNotes   String?  @map("teacher_notes") @db.Text
+  principalNotes String?  @map("principal_notes") @db.Text
+  isPublished    Boolean  @default(false) @map("is_published")
+  publishedAt    DateTime? @map("published_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  student      Student      @relation(fields: [studentId], references: [id])
+  class        Class        @relation(fields: [classId], references: [id])
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  details      ReportCardDetail[]
+
+  @@unique([studentId, classId, academicYearId, semester])
+  @@index([studentId])
+  @@index([classId])
+  @@index([academicYearId])
+  @@map("report_cards")
+}
+
+/// ReportCardDetail - Detail Nilai per Mapel di Raport
+model ReportCardDetail {
+  id            String   @id @default(uuid())
+  reportCardId  String   @map("report_card_id")
+  subjectName   String   @map("subject_name")
+  dailyScore    Decimal? @map("daily_score") @db.Decimal(5, 2)
+  midtermScore  Decimal? @map("midterm_score") @db.Decimal(5, 2)
+  finalScore    Decimal? @map("final_score") @db.Decimal(5, 2)
+  averageScore  Decimal? @map("average_score") @db.Decimal(5, 2)
+  letterGrade   String?  @map("letter_grade")
+  description   String?  @db.Text // Deskripsi capaian
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  reportCard ReportCard @relation(fields: [reportCardId], references: [id], onDelete: Cascade)
+
+  @@index([reportCardId])
+  @@map("report_card_details")
+}
+
+// =====================================
+// PHASE 6: ALUMNI MODULE
+// =====================================
+
+enum AlumniStatus {
+  ACTIVE      // Alumni aktif terlacak
+  INACTIVE    // Tidak aktif/tidak terlacak
+  DECEASED    // Almarhum/almarhumah
+}
+
+enum DonationType {
+  MONETARY    // Uang tunai
+  GOODS       // Barang
+  SERVICE     // Jasa/tenaga
+  SCHOLARSHIP // Beasiswa untuk santri
+  OTHER       // Lainnya
+}
+
+enum AlumniEventType {
+  REUNION     // Reuni
+  SEMINAR     // Seminar
+  WORKSHOP    // Workshop
+  GATHERING   // Silaturahmi
+  CHARITY     // Kegiatan amal
+  OTHER       // Lainnya
+}
+
+/// Alumni - Data Alumni/Lulusan
+model Alumni {
+  id               String       @id @default(uuid())
+  studentId        String?      @unique @map("student_id") // Link ke data santri
+  unitId           String       @map("unit_id")
+  registrationNo   String       @unique @map("registration_no") // Nomor alumni
+  name             String       // Nama lengkap
+  gender           Gender
+  birthPlace       String?      @map("birth_place")
+  birthDate        DateTime?    @map("birth_date")
+  graduationYear   Int          @map("graduation_year")
+  graduationDate   DateTime?    @map("graduation_date")
+  lastClass        String?      @map("last_class") // Kelas terakhir
+  tahfidzLevel     String?      @map("tahfidz_level") // Capaian tahfidz (e.g. "30 Juz")
+  email            String?
+  phone            String?
+  address          String?      @db.Text
+  city             String?
+  province         String?
+  country          String?      @default("Indonesia")
+  photo            String?      // URL foto
+  status           AlumniStatus @default(ACTIVE)
+  notes            String?      @db.Text
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+  deletedAt        DateTime?    @map("deleted_at")
+
+  // Relations
+  student    Student?          @relation(fields: [studentId], references: [id])
+  unit       Unit              @relation(fields: [unitId], references: [id])
+  careers    AlumniCareer[]
+  educations AlumniEducation[]
+  donations  AlumniDonation[]
+  eventAttendances AlumniEventAttendee[]
+
+  @@index([unitId])
+  @@index([graduationYear])
+  @@index([status])
+  @@map("alumni")
+}
+
+/// AlumniCareer - Riwayat Karir Alumni
+model AlumniCareer {
+  id           String    @id @default(uuid())
+  alumniId     String    @map("alumni_id")
+  company      String    // Nama perusahaan/instansi
+  position     String    // Jabatan
+  industry     String?   // Bidang industri
+  location     String?   // Lokasi kerja
+  startDate    DateTime  @map("start_date")
+  endDate      DateTime? @map("end_date")
+  isCurrent    Boolean   @default(false) @map("is_current")
+  description  String?   @db.Text
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  alumni Alumni @relation(fields: [alumniId], references: [id], onDelete: Cascade)
+
+  @@index([alumniId])
+  @@map("alumni_careers")
+}
+
+/// AlumniEducation - Riwayat Pendidikan Lanjutan Alumni
+model AlumniEducation {
+  id           String    @id @default(uuid())
+  alumniId     String    @map("alumni_id")
+  institution  String    // Nama institusi pendidikan
+  degree       String    // Gelar (S1, S2, S3, dll)
+  field        String    // Bidang studi
+  location     String?   // Lokasi
+  startYear    Int       @map("start_year")
+  endYear      Int?      @map("end_year")
+  isCompleted  Boolean   @default(false) @map("is_completed")
+  achievements String?   @db.Text // Prestasi
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  alumni Alumni @relation(fields: [alumniId], references: [id], onDelete: Cascade)
+
+  @@index([alumniId])
+  @@map("alumni_educations")
+}
+
+/// AlumniDonation - Donasi dari Alumni
+model AlumniDonation {
+  id          String       @id @default(uuid())
+  alumniId    String       @map("alumni_id")
+  unitId      String?      @map("unit_id") // Unit penerima donasi
+  type        DonationType
+  amount      Decimal?     @db.Decimal(15, 2) // Untuk donasi uang
+  description String       @db.Text // Deskripsi donasi
+  purpose     String?      // Tujuan donasi (pembangunan, beasiswa, dll)
+  donatedAt   DateTime     @map("donated_at")
+  receiptNo   String?      @map("receipt_no") // Nomor kwitansi
+  isAnonymous Boolean      @default(false) @map("is_anonymous")
+  notes       String?      @db.Text
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  alumni Alumni @relation(fields: [alumniId], references: [id], onDelete: Cascade)
+  unit   Unit?  @relation(fields: [unitId], references: [id])
+
+  @@index([alumniId])
+  @@index([unitId])
+  @@index([type])
+  @@index([donatedAt])
+  @@map("alumni_donations")
+}
+
+/// AlumniEvent - Kegiatan Alumni
+model AlumniEvent {
+  id          String         @id @default(uuid())
+  unitId      String?        @map("unit_id")
+  type        AlumniEventType
+  name        String         // Nama kegiatan
+  description String?        @db.Text
+  location    String?
+  eventDate   DateTime       @map("event_date")
+  endDate     DateTime?      @map("end_date")
+  capacity    Int?           // Kapasitas peserta
+  fee         Decimal?       @db.Decimal(12, 2) // Biaya partisipasi
+  isPublic    Boolean        @default(true) @map("is_public")
+  status      String         @default("upcoming") // upcoming, ongoing, completed, cancelled
+  organizer   String?        // Penyelenggara
+  contact     String?        // Kontak panitia
+  notes       String?        @db.Text
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  deletedAt   DateTime?      @map("deleted_at")
+
+  // Relations
+  unit      Unit?                 @relation(fields: [unitId], references: [id])
+  attendees AlumniEventAttendee[]
+
+  @@index([unitId])
+  @@index([eventDate])
+  @@index([type])
+  @@index([status])
+  @@map("alumni_events")
+}
+
+/// AlumniEventAttendee - Peserta Kegiatan Alumni
+model AlumniEventAttendee {
+  id           String    @id @default(uuid())
+  eventId      String    @map("event_id")
+  alumniId     String    @map("alumni_id")
+  status       String    @default("registered") // registered, confirmed, attended, cancelled
+  registeredAt DateTime  @default(now()) @map("registered_at")
+  confirmedAt  DateTime? @map("confirmed_at")
+  attendedAt   DateTime? @map("attended_at")
+  notes        String?   @db.Text
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  event  AlumniEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  alumni Alumni      @relation(fields: [alumniId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, alumniId])
+  @@index([eventId])
+  @@index([alumniId])
+  @@index([status])
+  @@map("alumni_event_attendees")
+}
+
+// =====================================
+// TAKHOSUS MODELS (Intensive Tahfidz Program)
+// =====================================
+
+enum TakhosusStatus {
+  ACTIVE      // Aktif mengikuti program
+  COMPLETED   // Selesai/Khatam
+  DROPPED     // Keluar dari program
+  SUSPENDED   // Ditangguhkan sementara
+}
+
+enum HalaqohDay {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+/// Halaqoh - Kelompok belajar tahfidz
+model Halaqoh {
+  id           String        @id @default(uuid())
+  unitId       String        @map("unit_id")
+  name         String        // e.g., "Halaqoh Al-Fatih 1"
+  code         String        @unique // e.g., "HLQ-001"
+  teacherId    String        @map("teacher_id") // Ustadz/Ustadzah pengampu
+  level        Int           @default(1) // Level halaqoh (1=pemula, 2=menengah, 3=lanjutan)
+  capacity     Int           @default(15)
+  scheduleDay  HalaqohDay[]  @map("schedule_day")
+  scheduleTime String?       @map("schedule_time") // e.g., "05:00-06:30"
+  location     String?       // Tempat halaqoh
+  description  String?
+  isActive     Boolean       @default(true) @map("is_active")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  deletedAt    DateTime?     @map("deleted_at")
+
+  // Relations
+  unit        Unit                  @relation(fields: [unitId], references: [id])
+  teacher     User                  @relation("HalaqohTeacher", fields: [teacherId], references: [id])
+  enrollments TakhosusEnrollment[]
+
+  @@index([unitId])
+  @@index([teacherId])
+  @@index([isActive])
+  @@map("halaqoh")
+}
+
+/// TakhosusEnrollment - Pendaftaran program takhosus
+model TakhosusEnrollment {
+  id                   String         @id @default(uuid())
+  studentId            String         @map("student_id")
+  halaqohId            String?        @map("halaqoh_id")
+  enrolledAt           DateTime       @default(now()) @map("enrolled_at")
+  status               TakhosusStatus @default(ACTIVE)
+  targetJuz            Int            @default(30) @map("target_juz") // Target hafalan (default 30 juz)
+  targetCompletionDate DateTime?      @map("target_completion_date")
+  completedAt          DateTime?      @map("completed_at")
+  completedJuz         Int            @default(0) @map("completed_juz")
+  currentJuz           Int            @default(1) @map("current_juz")
+  notes                String?
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  student     Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  halaqoh     Halaqoh?      @relation(fields: [halaqohId], references: [id])
+  sanadRecords SanadRecord[]
+
+  @@unique([studentId]) // Satu santri hanya bisa satu enrollment aktif
+  @@index([halaqohId])
+  @@index([status])
+  @@map("takhosus_enrollments")
+}
+
+/// SanadRecord - Catatan sanad hafalan
+model SanadRecord {
+  id           String   @id @default(uuid())
+  enrollmentId String   @map("enrollment_id")
+  teacherId    String   @map("teacher_id")
+  juz          Int      // Juz yang disahkan
+  surahStart   Int?     @map("surah_start")
+  surahEnd     Int?     @map("surah_end")
+  certifiedAt  DateTime @map("certified_at") // Tanggal pengesahan
+  grade        String?  // Nilai (Mumtaz, Jayyid Jiddan, Jayyid, Maqbul)
+  notes        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  enrollment TakhosusEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  teacher    User               @relation("SanadTeacher", fields: [teacherId], references: [id])
+
+  @@unique([enrollmentId, juz])
+  @@index([teacherId])
+  @@index([juz])
+  @@map("sanad_records")
+}
+
+// =====================================
+// MUHASABAH MODELS (Self-Reflection)
+// =====================================
+
+enum MuhasabahMood {
+  EXCELLENT  // Sangat baik
+  GOOD       // Baik
+  NEUTRAL    // Biasa
+  LOW        // Kurang
+  STRUGGLING // Sangat kurang
+}
+
+/// DailyMuhasabah - Evaluasi diri harian santri
+model DailyMuhasabah {
+  id               String         @id @default(uuid())
+  studentId        String         @map("student_id")
+  date             DateTime       @db.Date
+  // Ibadah Wajib
+  sholatSubuh      Boolean        @default(false) @map("sholat_subuh")
+  sholatDzuhur     Boolean        @default(false) @map("sholat_dzuhur")
+  sholatAshar      Boolean        @default(false) @map("sholat_ashar")
+  sholatMaghrib    Boolean        @default(false) @map("sholat_maghrib")
+  sholatIsya       Boolean        @default(false) @map("sholat_isya")
+  // Ibadah Sunnah
+  sholatTahajud    Boolean        @default(false) @map("sholat_tahajud")
+  sholatDhuha      Boolean        @default(false) @map("sholat_dhuha")
+  sholatRawatib    Int            @default(0) @map("sholat_rawatib") // Jumlah rakaat
+  puasaSunnah      Boolean        @default(false) @map("puasa_sunnah")
+  // Tilawah & Dzikir
+  tilawahPages     Int            @default(0) @map("tilawah_pages") // Halaman tilawah
+  tilawahJuz       Int?           @map("tilawah_juz")
+  dzikirPagi       Boolean        @default(false) @map("dzikir_pagi")
+  dzikirSore       Boolean        @default(false) @map("dzikir_sore")
+  istighfar        Int            @default(0) // Jumlah istighfar
+  shalawat         Int            @default(0) // Jumlah shalawat
+  // Hafalan
+  murojaahJuz      Int?           @map("murojaah_juz")
+  murojaahPages    Int            @default(0) @map("murojaah_pages")
+  ziyadahAyat      Int            @default(0) @map("ziyadah_ayat") // Ayat baru dihafal
+  // Kebaikan
+  sedekah          Boolean        @default(false)
+  membantOrangTua  Boolean        @default(false) @map("membantu_orang_tua")
+  berbaikKeTeman   Boolean        @default(false) @map("berbaik_ke_teman")
+  // Refleksi
+  mood             MuhasabahMood  @default(NEUTRAL)
+  gratitude        String?        @db.Text // Hal yang disyukuri
+  improvement      String?        @db.Text // Hal yang perlu diperbaiki
+  notes            String?        @db.Text
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, date])
+  @@index([date])
+  @@index([mood])
+  @@map("daily_muhasabah")
+}
+
+// =====================================
+// DONATION MODELS (Infak & Wakaf)
+// =====================================
+
+enum PublicDonationType {
+  INFAK           // Infak umum
+  INFAK_BULANAN   // Infak rutin bulanan
+  ZAKAT_MAAL      // Zakat harta
+  ZAKAT_FITRAH    // Zakat fitrah
+  WAKAF           // Wakaf
+  SEDEKAH_JARIYAH // Sedekah jariyah
+  PEMBANGUNAN     // Donasi pembangunan
+  BEASISWA        // Donasi beasiswa
+  OTHERS          // Lainnya
+}
+
+enum DonationPaymentMethod {
+  CASH            // Tunai
+  BANK_TRANSFER   // Transfer bank
+  QRIS            // QRIS
+  EWALLET         // E-wallet
+  OTHERS          // Lainnya
+}
+
+enum DonationStatus {
+  PENDING         // Menunggu verifikasi
+  VERIFIED        // Terverifikasi
+  CANCELLED       // Dibatalkan
+}
+
+enum CampaignStatus {
+  DRAFT           // Draft
+  ACTIVE          // Aktif
+  COMPLETED       // Selesai/tercapai
+  CLOSED          // Ditutup
+}
+
+/// DonationCampaign - Kampanye donasi
+model DonationCampaign {
+  id            String          @id @default(uuid())
+  unitId        String?         @map("unit_id")
+  title         String          // Judul kampanye
+  slug          String          @unique // URL slug
+  description   String          @db.Text
+  targetAmount  Decimal         @map("target_amount") @db.Decimal(15, 2)
+  collectedAmount Decimal       @default(0) @map("collected_amount") @db.Decimal(15, 2)
+  donorCount    Int             @default(0) @map("donor_count")
+  startDate     DateTime        @map("start_date")
+  endDate       DateTime?       @map("end_date")
+  status        CampaignStatus  @default(DRAFT)
+  imageUrl      String?         @map("image_url")
+  createdById   String          @map("created_by_id")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  deletedAt     DateTime?       @map("deleted_at")
+
+  // Relations
+  unit      Unit?      @relation(fields: [unitId], references: [id])
+  createdBy User       @relation("CampaignCreator", fields: [createdById], references: [id])
+  donations Donation[]
+
+  @@index([unitId])
+  @@index([status])
+  @@index([startDate])
+  @@map("donation_campaigns")
+}
+
+/// Donation - Catatan donasi/infak
+model Donation {
+  id              String                @id @default(uuid())
+  campaignId      String?               @map("campaign_id")
+  unitId          String?               @map("unit_id")
+  // Donor info
+  donorName       String                @map("donor_name")
+  donorPhone      String?               @map("donor_phone")
+  donorEmail      String?               @map("donor_email")
+  donorAddress    String?               @map("donor_address")
+  isAnonymous     Boolean               @default(false) @map("is_anonymous")
+  // Donation details
+  type            PublicDonationType
+  amount          Decimal               @db.Decimal(15, 2)
+  paymentMethod   DonationPaymentMethod @map("payment_method")
+  paymentProof    String?               @map("payment_proof") // URL bukti transfer
+  receiptNumber   String?               @unique @map("receipt_number")
+  status          DonationStatus        @default(PENDING)
+  // Additional
+  message         String?               @db.Text // Pesan dari donatur
+  purpose         String?               // Tujuan khusus (beasiswa, pembangunan, dll)
+  verifiedById    String?               @map("verified_by_id")
+  verifiedAt      DateTime?             @map("verified_at")
+  notes           String?               @db.Text
+  donatedAt       DateTime              @default(now()) @map("donated_at")
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+
+  // Relations
+  campaign   DonationCampaign? @relation(fields: [campaignId], references: [id])
+  unit       Unit?             @relation(fields: [unitId], references: [id])
+  verifiedBy User?             @relation("DonationVerifier", fields: [verifiedById], references: [id])
+
+  @@index([campaignId])
+  @@index([unitId])
+  @@index([type])
+  @@index([status])
+  @@index([donatedAt])
+  @@map("donations")
+}
+
+// =====================================
+// PPDB ENHANCEMENT - Admission Waves
+// =====================================
+
+enum WaveStatus {
+  UPCOMING    // Belum dibuka
+  OPEN        // Sedang dibuka
+  CLOSED      // Sudah ditutup
+  FULL        // Kuota penuh
+}
+
+/// AdmissionWave - Gelombang pendaftaran
+model AdmissionWave {
+  id              String      @id @default(uuid())
+  periodId        String      @map("period_id")
+  waveNumber      Int         @map("wave_number") // Gelombang ke-1, 2, 3, dst
+  name            String      // e.g., "Gelombang 1 2024-2025"
+  startDate       DateTime    @map("start_date")
+  endDate         DateTime    @map("end_date")
+  quota           Int         // Kuota pendaftar
+  registeredCount Int         @default(0) @map("registered_count")
+  acceptedCount   Int         @default(0) @map("accepted_count")
+  status          WaveStatus  @default(UPCOMING)
+  registrationFee Decimal?    @map("registration_fee") @db.Decimal(12, 2)
+  notes           String?
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  period      AdmissionPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  registrants Registrant[]    @relation("WaveRegistrants")
+
+  @@unique([periodId, waveNumber])
+  @@index([status])
+  @@index([startDate])
+  @@map("admission_waves")
+}
+
+// =====================================
+// PHASE 12: EXTRACURRICULAR
+// Kegiatan Ekstrakurikuler
+// =====================================
+
+enum ExtracurricularCategory {
+  SPORTS        // Olahraga
+  ARTS          // Seni & Budaya
+  ACADEMIC      // Akademik (Olympiade, dll)
+  RELIGIOUS     // Keagamaan (Hadroh, Qiroah, dll)
+  SCOUTING      // Pramuka
+  LEADERSHIP    // Kepemimpinan (OSIS, IPM)
+  LANGUAGE      // Bahasa (English Club, Arabic Club)
+  TECHNOLOGY    // Teknologi (Robotik, Coding)
+  OTHER         // Lainnya
+}
+
+enum ExtracurricularStatus {
+  ACTIVE        // Aktif
+  INACTIVE      // Tidak aktif
+  SUSPENDED     // Ditangguhkan
+}
+
+enum EnrollmentStatus {
+  ACTIVE        // Aktif
+  GRADUATED     // Lulus/Selesai
+  WITHDRAWN     // Mengundurkan diri
+  DISMISSED     // Dikeluarkan
+}
+
+/// Extracurricular - Kegiatan Ekstrakurikuler
+model Extracurricular {
+  id              String                   @id @default(uuid())
+  unitId          String                   @map("unit_id")
+  name            String                   // Nama kegiatan
+  code            String?                  // Kode singkat
+  category        ExtracurricularCategory
+  description     String?                  @db.Text
+  // Schedule info
+  scheduleDay     DayOfWeek[]              @map("schedule_day")
+  scheduleTime    String?                  @map("schedule_time") // e.g., "15:00-17:00"
+  venue           String?                  // Tempat kegiatan
+  // Capacity
+  maxParticipants Int?                     @map("max_participants")
+  minParticipants Int?                     @map("min_participants")
+  // Coaching
+  coachId         String?                  @map("coach_id")
+  assistantCoachId String?                 @map("assistant_coach_id")
+  // Status
+  status          ExtracurricularStatus    @default(ACTIVE)
+  isCompulsory    Boolean                  @default(false) @map("is_compulsory") // Wajib/pilihan
+  academicYearId  String                   @map("academic_year_id")
+  imageUrl        String?                  @map("image_url")
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+  deletedAt       DateTime?                @map("deleted_at")
+
+  // Relations
+  unit           Unit                       @relation(fields: [unitId], references: [id])
+  coach          Teacher?                   @relation("ExtracurricularCoach", fields: [coachId], references: [id])
+  assistantCoach Teacher?                   @relation("ExtracurricularAssistant", fields: [assistantCoachId], references: [id])
+  academicYear   AcademicYear               @relation(fields: [academicYearId], references: [id])
+  enrollments    ExtracurricularEnrollment[]
+  attendances    ExtracurricularAttendance[]
+  achievements   ExtracurricularAchievement[]
+
+  @@unique([unitId, code])
+  @@index([unitId])
+  @@index([category])
+  @@index([status])
+  @@map("extracurriculars")
+}
+
+/// ExtracurricularEnrollment - Pendaftaran Siswa ke Ekskul
+model ExtracurricularEnrollment {
+  id                String            @id @default(uuid())
+  extracurricularId String            @map("extracurricular_id")
+  studentId         String            @map("student_id")
+  enrolledAt        DateTime          @default(now()) @map("enrolled_at")
+  status            EnrollmentStatus  @default(ACTIVE)
+  grade             String?           // Nilai akhir (A, B, C, D, E)
+  notes             String?           @db.Text
+  graduatedAt       DateTime?         @map("graduated_at")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  extracurricular Extracurricular @relation(fields: [extracurricularId], references: [id], onDelete: Cascade)
+  student         Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([extracurricularId, studentId])
+  @@index([extracurricularId])
+  @@index([studentId])
+  @@index([status])
+  @@map("extracurricular_enrollments")
+}
+
+/// ExtracurricularAttendance - Kehadiran Ekskul
+model ExtracurricularAttendance {
+  id                String           @id @default(uuid())
+  extracurricularId String           @map("extracurricular_id")
+  studentId         String           @map("student_id")
+  date              DateTime         @db.Date
+  status            AttendanceStatus @default(PRESENT)
+  notes             String?
+  recordedById      String           @map("recorded_by_id")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  extracurricular Extracurricular @relation(fields: [extracurricularId], references: [id], onDelete: Cascade)
+  student         Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  recordedBy      User            @relation("ExtracurricularAttendanceRecorder", fields: [recordedById], references: [id])
+
+  @@unique([extracurricularId, studentId, date])
+  @@index([extracurricularId])
+  @@index([studentId])
+  @@index([date])
+  @@map("extracurricular_attendances")
+}
+
+/// ExtracurricularAchievement - Prestasi Ekskul
+model ExtracurricularAchievement {
+  id                String   @id @default(uuid())
+  extracurricularId String   @map("extracurricular_id")
+  studentId         String?  @map("student_id") // null = prestasi tim
+  title             String   // Judul prestasi
+  description       String?  @db.Text
+  level             String   // Tingkat: Sekolah, Kecamatan, Kabupaten, Provinsi, Nasional, Internasional
+  rank              String?  // Peringkat: Juara 1, 2, 3, Harapan, Peserta
+  organizer         String?  // Penyelenggara
+  eventDate         DateTime @map("event_date")
+  certificateUrl    String?  @map("certificate_url")
+  photoUrl          String?  @map("photo_url")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  extracurricular Extracurricular @relation(fields: [extracurricularId], references: [id], onDelete: Cascade)
+  student         Student?        @relation(fields: [studentId], references: [id])
+
+  @@index([extracurricularId])
+  @@index([studentId])
+  @@index([eventDate])
+  @@map("extracurricular_achievements")
+}
+
+// =====================================
+// PHASE 12: COUNSELING (BIMBINGAN KONSELING)
+// =====================================
+
+enum CounselingCategory {
+  ACADEMIC        // Akademik (prestasi, motivasi belajar)
+  CAREER          // Karir (penjurusan, universitas)
+  PERSONAL        // Pribadi (emosional, mental health)
+  SOCIAL          // Sosial (hubungan teman, bullying)
+  FAMILY          // Keluarga
+  SPIRITUAL       // Spiritual/keagamaan
+  OTHER           // Lainnya
+}
+
+enum CounselingStatus {
+  SCHEDULED       // Terjadwal
+  IN_PROGRESS     // Sedang berlangsung
+  COMPLETED       // Selesai
+  CANCELLED       // Dibatalkan
+  NO_SHOW         // Tidak hadir
+}
+
+enum CounselingPriority {
+  LOW             // Rendah
+  MEDIUM          // Sedang
+  HIGH            // Tinggi
+  URGENT          // Mendesak
+}
+
+enum ReferralType {
+  INTERNAL        // Ke guru/pembimbing lain
+  EXTERNAL        // Ke psikolog/profesional
+  PARENT          // Ke orang tua
+  MEDICAL         // Ke tenaga medis
+}
+
+/// CounselingSession - Sesi Bimbingan Konseling
+model CounselingSession {
+  id              String              @id @default(uuid())
+  unitId          String              @map("unit_id")
+  studentId       String              @map("student_id")
+  counselorId     String              @map("counselor_id")
+  // Session details
+  category        CounselingCategory
+  priority        CounselingPriority  @default(MEDIUM)
+  title           String              // Topik/judul sesi
+  description     String?             @db.Text // Deskripsi masalah
+  // Scheduling
+  scheduledAt     DateTime            @map("scheduled_at")
+  duration        Int?                // Durasi dalam menit
+  location        String?             // Ruang BK, Online, dll
+  // Status & outcome
+  status          CounselingStatus    @default(SCHEDULED)
+  startedAt       DateTime?           @map("started_at")
+  endedAt         DateTime?           @map("ended_at")
+  summary         String?             @db.Text // Ringkasan sesi
+  recommendations String?             @db.Text // Rekomendasi
+  followUpDate    DateTime?           @map("follow_up_date")
+  // Privacy
+  isConfidential  Boolean             @default(true) @map("is_confidential")
+  parentNotified  Boolean             @default(false) @map("parent_notified")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  unit       Unit                 @relation(fields: [unitId], references: [id])
+  student    Student              @relation(fields: [studentId], references: [id])
+  counselor  Teacher              @relation("CounselorSessions", fields: [counselorId], references: [id])
+  notes      CounselingNote[]
+  referrals  CounselingReferral[]
+
+  @@index([unitId])
+  @@index([studentId])
+  @@index([counselorId])
+  @@index([category])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("counseling_sessions")
+}
+
+/// CounselingNote - Catatan Konseling
+model CounselingNote {
+  id        String   @id @default(uuid())
+  sessionId String   @map("session_id")
+  content   String   @db.Text
+  noteType  String   @default("general") @map("note_type") // general, observation, assessment
+  createdById String @map("created_by_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  session   CounselingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdBy User              @relation("CounselingNoteCreator", fields: [createdById], references: [id])
+
+  @@index([sessionId])
+  @@map("counseling_notes")
+}
+
+/// CounselingReferral - Rujukan Konseling
+model CounselingReferral {
+  id              String       @id @default(uuid())
+  sessionId       String       @map("session_id")
+  type            ReferralType
+  referredTo      String       @map("referred_to") // Nama pihak yang dirujuk
+  institution     String?      // Institusi/lembaga
+  reason          String       @db.Text
+  contactInfo     String?      @map("contact_info")
+  referredAt      DateTime     @default(now()) @map("referred_at")
+  followUpDate    DateTime?    @map("follow_up_date")
+  outcome         String?      @db.Text
+  createdById     String       @map("created_by_id")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  session   CounselingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdBy User              @relation("CounselingReferralCreator", fields: [createdById], references: [id])
+
+  @@index([sessionId])
+  @@index([type])
+  @@map("counseling_referrals")
+}
+
+// =====================================
+// PHASE 12: DUTY ROSTER (PIKET SANTRI)
+// =====================================
+
+enum DutyCategory {
+  CLEANING        // Kebersihan
+  SECURITY        // Keamanan/Pengamanan
+  WORSHIP         // Ibadah (adzan, imam, dll)
+  KITCHEN         // Dapur/Konsumsi
+  LIBRARY         // Perpustakaan
+  DORMITORY       // Asrama
+  GARDEN          // Kebun/Taman
+  OTHER           // Lainnya
+}
+
+enum DutyStatus {
+  PENDING         // Belum dilaksanakan
+  COMPLETED       // Selesai dilaksanakan
+  ABSENT          // Tidak hadir
+  SUBSTITUTED     // Digantikan orang lain
+}
+
+/// DutyType - Jenis Piket
+model DutyType {
+  id          String       @id @default(uuid())
+  unitId      String       @map("unit_id")
+  name        String       // e.g., "Piket Kebersihan Masjid"
+  code        String?      // Kode singkat
+  category    DutyCategory
+  description String?      @db.Text
+  location    String?      // Lokasi tugas
+  startTime   String?      @map("start_time") // e.g., "05:00"
+  endTime     String?      @map("end_time")   // e.g., "06:00"
+  isActive    Boolean      @default(true) @map("is_active")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  unit     Unit         @relation(fields: [unitId], references: [id])
+  rosters  DutyRoster[]
+
+  @@unique([unitId, code])
+  @@index([unitId])
+  @@index([category])
+  @@map("duty_types")
+}
+
+/// DutyRoster - Jadwal Piket
+model DutyRoster {
+  id            String     @id @default(uuid())
+  dutyTypeId    String     @map("duty_type_id")
+  studentId     String     @map("student_id")
+  date          DateTime   @db.Date
+  dayOfWeek     DayOfWeek  @map("day_of_week")
+  status        DutyStatus @default(PENDING)
+  substituteId  String?    @map("substitute_id") // Jika digantikan
+  notes         String?
+  completedAt   DateTime?  @map("completed_at")
+  verifiedById  String?    @map("verified_by_id")
+  verifiedAt    DateTime?  @map("verified_at")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  dutyType   DutyType @relation(fields: [dutyTypeId], references: [id])
+  student    Student  @relation("StudentDuty", fields: [studentId], references: [id])
+  substitute Student? @relation("DutySubstitute", fields: [substituteId], references: [id])
+  verifiedBy User?    @relation("DutyVerifier", fields: [verifiedById], references: [id])
+
+  @@unique([dutyTypeId, studentId, date])
+  @@index([dutyTypeId])
+  @@index([studentId])
+  @@index([date])
+  @@index([status])
+  @@map("duty_rosters")
+}
+
+// =====================================
+// PHASE 12: MEAL MANAGEMENT (KONSUMSI)
+// =====================================
+
+enum MealType {
+  BREAKFAST       // Sarapan
+  LUNCH           // Makan Siang
+  DINNER          // Makan Malam
+  SNACK           // Snack/Kudapan
+}
+
+enum MealAttendanceStatus {
+  PRESENT         // Hadir makan
+  ABSENT          // Tidak makan
+  SICK            // Sakit (makanan diantar)
+  PERMIT          // Izin keluar
+}
+
+/// MealMenu - Menu Makan
+model MealMenu {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id")
+  date        DateTime @db.Date
+  mealType    MealType @map("meal_type")
+  mainDish    String   @map("main_dish")    // Menu utama
+  sideDish    String?  @map("side_dish")    // Lauk
+  vegetable   String?                        // Sayuran
+  soup        String?                        // Sup
+  dessert     String?                        // Penutup
+  drink       String?                        // Minuman
+  notes       String?
+  calories    Int?                           // Estimasi kalori
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit        Unit               @relation(fields: [unitId], references: [id])
+  createdBy   User               @relation("MealMenuCreator", fields: [createdById], references: [id])
+  attendances MealAttendance[]
+
+  @@unique([unitId, date, mealType])
+  @@index([unitId])
+  @@index([date])
+  @@index([mealType])
+  @@map("meal_menus")
+}
+
+/// MealAttendance - Kehadiran Makan
+model MealAttendance {
+  id           String               @id @default(uuid())
+  menuId       String               @map("menu_id")
+  studentId    String               @map("student_id")
+  status       MealAttendanceStatus @default(PRESENT)
+  portions     Int                  @default(1) // Jumlah porsi
+  notes        String?
+  recordedById String               @map("recorded_by_id")
+  recordedAt   DateTime             @default(now()) @map("recorded_at")
+
+  // Relations
+  menu       MealMenu @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  recordedBy User     @relation("MealAttendanceRecorder", fields: [recordedById], references: [id])
+
+  @@unique([menuId, studentId])
+  @@index([menuId])
+  @@index([studentId])
+  @@map("meal_attendances")
+}
+
+/// SpecialDiet - Diet Khusus Santri
+model SpecialDiet {
+  id           String    @id @default(uuid())
+  studentId    String    @map("student_id")
+  dietType     String    @map("diet_type") // vegetarian, halal-only, no-seafood, dll
+  allergies    String[]  // Daftar alergi
+  medicalNotes String?   @map("medical_notes") @db.Text
+  startDate    DateTime  @map("start_date")
+  endDate      DateTime? @map("end_date")
+  isActive     Boolean   @default(true) @map("is_active")
+  approvedById String?   @map("approved_by_id")
+  approvedAt   DateTime? @map("approved_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  approvedBy User?   @relation("DietApprover", fields: [approvedById], references: [id])
+
+  @@index([studentId])
+  @@index([isActive])
+  @@map("special_diets")
+}
+
+// =====================================
+// PHASE 12: CALENDAR & EVENTS
+// =====================================
+
+enum EventType {
+  ACADEMIC        // Akademik (ujian, libur, dll)
+  RELIGIOUS       // Keagamaan (Maulid, Isra Miraj, dll)
+  EXTRACURRICULAR // Kegiatan ekskul
+  MEETING         // Rapat
+  CEREMONY        // Upacara
+  HOLIDAY         // Libur
+  OTHER           // Lainnya
+}
+
+enum EventScope {
+  ALL_UNITS       // Semua unit
+  SPECIFIC_UNIT   // Unit tertentu
+  SPECIFIC_CLASS  // Kelas tertentu
+}
+
+/// CalendarEvent - Kegiatan Kalender
+model CalendarEvent {
+  id          String     @id @default(uuid())
+  unitId      String?    @map("unit_id") // null = semua unit
+  classId     String?    @map("class_id") // null = semua kelas
+  title       String
+  description String?    @db.Text
+  eventType   EventType  @map("event_type")
+  scope       EventScope @default(ALL_UNITS)
+  // Timing
+  startDate   DateTime   @map("start_date")
+  endDate     DateTime?  @map("end_date")
+  isAllDay    Boolean    @default(false) @map("is_all_day")
+  startTime   String?    @map("start_time")
+  endTime     String?    @map("end_time")
+  // Location
+  location    String?
+  isOnline    Boolean    @default(false) @map("is_online")
+  onlineUrl   String?    @map("online_url")
+  // Recurrence
+  isRecurring Boolean    @default(false) @map("is_recurring")
+  recurrenceRule String? @map("recurrence_rule") // iCal RRULE format
+  // Visibility
+  isPublic    Boolean    @default(true) @map("is_public")
+  color       String?    // Hex color for display
+  // Meta
+  createdById String     @map("created_by_id")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  deletedAt   DateTime?  @map("deleted_at")
+
+  // Relations
+  unit      Unit?  @relation(fields: [unitId], references: [id])
+  class     Class? @relation(fields: [classId], references: [id])
+  createdBy User   @relation("EventCreator", fields: [createdById], references: [id])
+
+  @@index([unitId])
+  @@index([classId])
+  @@index([eventType])
+  @@index([startDate])
+  @@map("calendar_events")
+}
+
+// =====================================
+// PHASE 12: PESANTREN-SPECIFIC FEATURES
+// =====================================
+
+enum KitabLevel {
+  PEMULA          // Pemula
+  DASAR           // Dasar
+  MENENGAH        // Menengah
+  LANJUT          // Lanjut
+  MAHIR           // Mahir
+}
+
+enum KitabCategory {
+  TAUHID          // Aqidah/Tauhid
+  FIQH            // Fiqih
+  AKHLAQ          // Akhlaq/Tasawuf
+  NAHWU           // Nahwu
+  SHOROF          // Shorof
+  TAFSIR          // Tafsir Al-Quran
+  HADITS          // Hadits
+  TARIKH          // Sejarah Islam
+  BALAGHAH        // Balaghah
+  MANTIQ          // Mantiq/Logika
+  OTHER           // Lainnya
+}
+
+/// KitabKuning - Daftar Kitab Kuning
+model KitabKuning {
+  id          String        @id @default(uuid())
+  title       String        // Judul kitab
+  author      String        // Pengarang
+  category    KitabCategory
+  level       KitabLevel
+  totalPages  Int?          @map("total_pages")
+  totalBab    Int?          @map("total_bab") // Jumlah bab/fashl
+  description String?       @db.Text
+  coverUrl    String?       @map("cover_url")
+  isActive    Boolean       @default(true) @map("is_active")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  progressRecords KitabProgress[]
+
+  @@index([category])
+  @@index([level])
+  @@map("kitab_kuning")
+}
+
+/// KitabProgress - Progress Belajar Kitab
+model KitabProgress {
+  id            String    @id @default(uuid())
+  kitabId       String    @map("kitab_id")
+  studentId     String    @map("student_id")
+  teacherId     String    @map("teacher_id")
+  // Progress
+  currentPage   Int       @default(0) @map("current_page")
+  currentBab    Int       @default(0) @map("current_bab")
+  completedAt   DateTime? @map("completed_at")
+  // Assessment
+  grade         String?   // Mumtaz, Jayyid Jiddan, Jayyid, Maqbul, Rasib
+  notes         String?   @db.Text
+  academicYearId String   @map("academic_year_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  kitab        KitabKuning  @relation(fields: [kitabId], references: [id])
+  student      Student      @relation(fields: [studentId], references: [id])
+  teacher      Teacher      @relation(fields: [teacherId], references: [id])
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  @@unique([kitabId, studentId, academicYearId])
+  @@index([kitabId])
+  @@index([studentId])
+  @@index([teacherId])
+  @@map("kitab_progress")
+}
+
+/// Muhadhoroh - Latihan Pidato/Ceramah
+model Muhadhoroh {
+  id            String   @id @default(uuid())
+  unitId        String   @map("unit_id")
+  studentId     String   @map("student_id")
+  scheduledAt   DateTime @map("scheduled_at")
+  // Performance details
+  topic         String   // Tema/judul pidato
+  language      String   @default("Indonesian") // Bahasa: Indonesian, Arabic, English
+  duration      Int?     // Durasi dalam menit
+  // Assessment
+  contentScore  Int?     @map("content_score")    // Nilai isi/konten (0-100)
+  deliveryScore Int?     @map("delivery_score")   // Nilai penyampaian (0-100)
+  languageScore Int?     @map("language_score")   // Nilai bahasa (0-100)
+  totalScore    Int?     @map("total_score")      // Nilai total
+  grade         String?  // Predikat
+  // Feedback
+  feedback      String?  @db.Text
+  evaluatorId   String?  @map("evaluator_id")
+  evaluatedAt   DateTime? @map("evaluated_at")
+  // Status
+  status        String   @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED
+  videoUrl      String?  @map("video_url")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit      Unit     @relation(fields: [unitId], references: [id])
+  student   Student  @relation(fields: [studentId], references: [id])
+  evaluator Teacher? @relation("MuhadhorohEvaluator", fields: [evaluatorId], references: [id])
+
+  @@index([unitId])
+  @@index([studentId])
+  @@index([scheduledAt])
+  @@map("muhadhoroh")
+}
+
+/// Muhadatsah - Latihan Percakapan Bahasa
+model Muhadatsah {
+  id            String   @id @default(uuid())
+  unitId        String   @map("unit_id")
+  studentId     String   @map("student_id")
+  scheduledAt   DateTime @map("scheduled_at")
+  // Session details
+  language      String   // Arabic, English
+  partnerId     String?  @map("partner_id") // Partner percakapan
+  topic         String?  // Tema percakapan
+  duration      Int?     // Durasi dalam menit
+  // Assessment
+  fluencyScore      Int? @map("fluency_score")       // Kelancaran (0-100)
+  grammarScore      Int? @map("grammar_score")       // Tata bahasa (0-100)
+  vocabularyScore   Int? @map("vocabulary_score")    // Kosakata (0-100)
+  pronunciationScore Int? @map("pronunciation_score") // Pengucapan (0-100)
+  totalScore        Int? @map("total_score")
+  grade             String?
+  // Feedback
+  feedback      String?   @db.Text
+  evaluatorId   String?   @map("evaluator_id")
+  evaluatedAt   DateTime? @map("evaluated_at")
+  // Status
+  status        String    @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED
+  recordingUrl  String?   @map("recording_url")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  unit      Unit     @relation(fields: [unitId], references: [id])
+  student   Student  @relation("MuhadatsahStudent", fields: [studentId], references: [id])
+  partner   Student? @relation("MuhadatsahPartner", fields: [partnerId], references: [id])
+  evaluator Teacher? @relation("MuhadatsahEvaluator", fields: [evaluatorId], references: [id])
+
+  @@index([unitId])
+  @@index([studentId])
+  @@index([scheduledAt])
+  @@index([language])
+  @@map("muhadatsah")
+}
+
+// =====================================
+// PHASE 12: DOCUMENT MANAGEMENT
+// =====================================
+
+enum DocumentType {
+  BIRTH_CERTIFICATE     // Akta kelahiran
+  FAMILY_CARD           // Kartu Keluarga
+  ID_CARD               // KTP (orang tua)
+  STUDENT_CARD          // Kartu pelajar
+  REPORT_CARD           // Rapor
+  DIPLOMA               // Ijazah
+  CERTIFICATE           // Sertifikat/piagam
+  MEDICAL_RECORD        // Rekam medis
+  PHOTO                 // Pas foto
+  RECOMMENDATION        // Surat rekomendasi
+  OTHER                 // Lainnya
+}
+
+enum DocumentStatus {
+  PENDING     // Menunggu verifikasi
+  VERIFIED    // Terverifikasi
+  REJECTED    // Ditolak
+  EXPIRED     // Kedaluwarsa
+}
+
+/// StudentDocument - Dokumen Siswa
+model StudentDocument {
+  id            String         @id @default(uuid())
+  studentId     String         @map("student_id")
+  documentType  DocumentType   @map("document_type")
+  title         String         // Nama dokumen
+  description   String?
+  fileUrl       String         @map("file_url")
+  fileSize      Int?           @map("file_size") // Ukuran file dalam bytes
+  mimeType      String?        @map("mime_type")
+  // Validity
+  issueDate     DateTime?      @map("issue_date")
+  expiryDate    DateTime?      @map("expiry_date")
+  documentNumber String?       @map("document_number") // Nomor dokumen
+  // Verification
+  status        DocumentStatus @default(PENDING)
+  verifiedById  String?        @map("verified_by_id")
+  verifiedAt    DateTime?      @map("verified_at")
+  rejectionReason String?      @map("rejection_reason")
+  // Upload info
+  uploadedById  String         @map("uploaded_by_id")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  deletedAt     DateTime?      @map("deleted_at")
+
+  // Relations
+  student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  verifiedBy User?   @relation("DocumentVerifier", fields: [verifiedById], references: [id])
+  uploadedBy User    @relation("DocumentUploader", fields: [uploadedById], references: [id])
+
+  @@index([studentId])
+  @@index([documentType])
+  @@index([status])
+  @@map("student_documents")
+}
+
+/// DigitalCertificate - Sertifikat Digital
+model DigitalCertificate {
+  id              String   @id @default(uuid())
+  studentId       String   @map("student_id")
+  // Certificate details
+  certificateType String   @map("certificate_type") // IJAZAH, STTB, TAHFIDZ, ACHIEVEMENT, etc
+  title           String
+  description     String?  @db.Text
+  // Numbers & codes
+  certificateNumber String @unique @map("certificate_number")
+  qrCode          String   @unique @map("qr_code") // QR untuk verifikasi
+  verificationUrl String   @map("verification_url")
+  // Content
+  grade           String?  // Nilai/predikat
+  rank            Int?     // Peringkat
+  issueDate       DateTime @map("issue_date")
+  // Signatures
+  signatoryName   String   @map("signatory_name")   // Nama penandatangan
+  signatoryTitle  String   @map("signatory_title")  // Jabatan penandatangan
+  signatureUrl    String?  @map("signature_url")    // URL tanda tangan digital
+  // File
+  pdfUrl          String?  @map("pdf_url")
+  thumbnailUrl    String?  @map("thumbnail_url")
+  // Meta
+  isPublic        Boolean  @default(false) @map("is_public")
+  downloadCount   Int      @default(0) @map("download_count")
+  createdById     String   @map("created_by_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  student   Student @relation(fields: [studentId], references: [id])
+  createdBy User    @relation("CertificateCreator", fields: [createdById], references: [id])
+
+  @@index([studentId])
+  @@index([certificateType])
+  @@index([issueDate])
+  @@map("digital_certificates")
+}
+
+// =====================================
+// PHASE 12: HOMEROOM & STUDENT NOTES
+// =====================================
+
+enum NoteCategory {
+  ACADEMIC            // Catatan akademik
+  BEHAVIOR            // Catatan perilaku
+  ATTENDANCE          // Catatan kehadiran
+  ACHIEVEMENT         // Pencapaian/prestasi
+  CONCERN             // Kekhawatiran/masalah
+  HEALTH              // Kesehatan
+  SOCIAL              // Sosial/pergaulan
+  SPIRITUAL           // Keagamaan (pesantren)
+  PARENT_COMMUNICATION // Komunikasi dengan wali
+  GENERAL             // Umum
+}
+
+enum NotePriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum NoteVisibility {
+  HOMEROOM_ONLY       // Hanya wali kelas
+  TEACHERS            // Semua guru
+  STAFF               // Staff sekolah
+  PARENTS             // Bisa dilihat wali murid
+}
+
+/// StudentNote - Catatan Wali Kelas untuk Siswa
+model StudentNote {
+  id              String         @id @default(uuid())
+  studentId       String         @map("student_id")
+  classId         String         @map("class_id")
+  academicYearId  String         @map("academic_year_id")
+  category        NoteCategory
+  title           String
+  content         String         @db.Text
+  priority        NotePriority   @default(MEDIUM)
+  visibility      NoteVisibility @default(HOMEROOM_ONLY)
+  requiresFollowUp Boolean       @default(false) @map("requires_follow_up")
+  followUpDate    DateTime?      @map("follow_up_date")
+  attachments     String[]       @default([])
+  tags            String[]       @default([])
+  createdById     String         @map("created_by_id")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  student       Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class         Class        @relation(fields: [classId], references: [id])
+  academicYear  AcademicYear @relation(fields: [academicYearId], references: [id])
+  createdByUser User         @relation("NoteCreator", fields: [createdById], references: [id])
+
+  @@index([studentId])
+  @@index([classId])
+  @@index([category])
+  @@index([priority])
+  @@index([createdById])
+  @@map("student_notes")
+}
+
+enum BehaviorType {
+  POSITIVE
+  NEGATIVE
+  NEUTRAL
+}
+
+enum BehaviorCategory {
+  DISCIPLINE
+  RESPECT
+  RESPONSIBILITY
+  COOPERATION
+  CLEANLINESS
+  PUNCTUALITY
+  RELIGIOUS
+  OTHER
+}
+
+/// BehaviorRecord - Catatan Perilaku Siswa
+model BehaviorRecord {
+  id              String          @id @default(uuid())
+  studentId       String          @map("student_id")
+  classId         String          @map("class_id")
+  academicYearId  String          @map("academic_year_id")
+  date            DateTime
+  behaviorType    BehaviorType    @map("behavior_type")
+  category        BehaviorCategory
+  description     String          @db.Text
+  points          Int?            // Positive or negative points
+  actionTaken     String?         @map("action_taken") @db.Text
+  witnessedById   String?         @map("witnessed_by_id")
+  recordedById    String          @map("recorded_by_id")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  student        Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class          Class        @relation(fields: [classId], references: [id])
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  witnessedByUser User?       @relation("BehaviorWitness", fields: [witnessedById], references: [id])
+  recordedByUser User         @relation("BehaviorRecorder", fields: [recordedById], references: [id])
+
+  @@index([studentId])
+  @@index([classId])
+  @@index([date])
+  @@index([behaviorType])
+  @@map("behavior_records")
+}
+
+// =====================================
+// PHASE 12: KITAB MANAGEMENT EXTENDED
+// =====================================
+
+enum KitabAssessmentType {
+  SOROGAN       // Setoran individu
+  BANDONGAN     // Pembelajaran klasikal
+  MUSYAWARAH    // Diskusi/debat
+  WRITTEN       // Ujian tertulis
+  ORAL          // Ujian lisan
+  HAFALAN       // Hafalan
+}
+
+enum KitabProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  ON_HOLD
+}
+
+/// Kitab - Master Data Kitab (Extended version)
+model Kitab {
+  id            String     @id @default(uuid())
+  unitId        String     @map("unit_id")
+  name          String
+  author        String?
+  category      KitabCategory
+  level         KitabLevel
+  description   String?    @db.Text
+  totalBab      Int?       @map("total_bab")
+  totalHalaman  Int?       @map("total_halaman")
+  totalFashl    Int?       @map("total_fashl")
+  targetDuration String?   @map("target_duration")
+  prerequisites String[]   @default([]) // Array of prerequisite kitab IDs
+  isActive      Boolean    @default(true) @map("is_active")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  unit        Unit              @relation(fields: [unitId], references: [id])
+  assignments KitabAssignment[]
+  progressRecords KitabProgressRecord[]
+
+  @@index([unitId])
+  @@index([category])
+  @@index([level])
+  @@map("kitab")
+}
+
+/// KitabAssignment - Penugasan Kitab ke Kelas
+model KitabAssignment {
+  id              String   @id @default(uuid())
+  kitabId         String   @map("kitab_id")
+  classId         String   @map("class_id")
+  academicYearId  String   @map("academic_year_id")
+  teacherId       String   @map("teacher_id")
+  semester        String   // GANJIL, GENAP
+  schedule        Json?    // Schedule array
+  targetBab       Int?     @map("target_bab")
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  kitab           Kitab       @relation(fields: [kitabId], references: [id])
+  class           Class       @relation(fields: [classId], references: [id])
+  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
+  teacher         Teacher     @relation(fields: [teacherId], references: [id])
+  studentProgress KitabStudentProgress[]
+  progressRecords KitabProgressRecord[]
+
+  @@unique([kitabId, classId, academicYearId, semester])
+  @@index([kitabId])
+  @@index([classId])
+  @@index([teacherId])
+  @@map("kitab_assignments")
+}
+
+/// KitabStudentProgress - Progress Siswa per Kitab Assignment
+model KitabStudentProgress {
+  id                String              @id @default(uuid())
+  studentId         String              @map("student_id")
+  kitabAssignmentId String              @map("kitab_assignment_id")
+  currentBab        Int                 @default(0) @map("current_bab")
+  currentHalaman    Int?                @map("current_halaman")
+  currentFashl      Int?                @map("current_fashl")
+  status            KitabProgressStatus @default(NOT_STARTED)
+  notes             String?             @db.Text
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  student         Student         @relation(fields: [studentId], references: [id])
+  kitabAssignment KitabAssignment @relation(fields: [kitabAssignmentId], references: [id])
+
+  @@unique([studentId, kitabAssignmentId])
+  @@index([studentId])
+  @@index([kitabAssignmentId])
+  @@index([status])
+  @@map("kitab_student_progress")
+}
+
+/// KitabProgressRecord - Catatan Setoran/Penilaian Kitab
+model KitabProgressRecord {
+  id                String              @id @default(uuid())
+  studentId         String              @map("student_id")
+  kitabAssignmentId String              @map("kitab_assignment_id")
+  kitabId           String?             @map("kitab_id")
+  date              DateTime
+  assessmentType    KitabAssessmentType @map("assessment_type")
+  babNumber         Int?                @map("bab_number")
+  halamanStart      Int?                @map("halaman_start")
+  halamanEnd        Int?                @map("halaman_end")
+  fashlNumber       Int?                @map("fashl_number")
+  topic             String?
+  score             Float?
+  predicate         String?
+  isPassed          Boolean             @default(true) @map("is_passed")
+  notes             String?             @db.Text
+  teacherFeedback   String?             @map("teacher_feedback") @db.Text
+  recordedById      String              @map("recorded_by_id")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  student         Student         @relation(fields: [studentId], references: [id])
+  kitabAssignment KitabAssignment @relation(fields: [kitabAssignmentId], references: [id])
+  kitab           Kitab?          @relation(fields: [kitabId], references: [id])
+  recordedByUser  User            @relation("KitabRecorder", fields: [recordedById], references: [id])
+
+  @@index([studentId])
+  @@index([kitabAssignmentId])
+  @@index([date])
+  @@index([assessmentType])
+  @@map("kitab_progress_records")
+}

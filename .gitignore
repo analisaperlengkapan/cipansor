@@ -1,3 +1,7 @@
+# ================================================
+# CIPANSOR - Sistem Informasi Manajemen Pendidikan
+# ================================================
+
 # Dependencies
 node_modules/
 .pnpm-store/
@@ -8,40 +12,109 @@ dist/
 out/
 build/
 
-# Environment
+# Environment variables (JANGAN commit file .env!)
 .env
 .env.local
 .env.*.local
+.env.development
+.env.production
 
-# IDE
+# IDE & Editor
 .vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
 .idea/
 *.swp
 *.swo
+*.sublime-workspace
+*.sublime-project
 
-# OS
+# OS files
 .DS_Store
+.DS_Store?
+._*
 Thumbs.db
+ehthumbs.db
 
 # Logs
 logs/
 *.log
 npm-debug.log*
 pnpm-debug.log*
+yarn-debug.log*
+lerna-debug.log*
 
-# Testing
+# Testing & Coverage
 coverage/
+.nyc_output/
+test-results/
+playwright-report/
 
-# Turbo
+# Turbo cache
 .turbo/
 
-# Prisma
-prisma/migrations/
+# Prisma - KEEP migrations in version control
+# prisma/migrations/
 
-# Misc
+# Temporary files
 *.bak
 *.tmp
+*.temp
 .cache/
+.parcel-cache/
 
 # Type generation
 *.generated.ts
+*.generated.d.ts
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Package lock (using pnpm)
+package-lock.json
+yarn.lock
+
+# ESLint cache
+.eslintcache
+
+# Optional npm cache
+.npm
+
+# Generated exports & documents
+exports/
+generated/
+*.xlsx.tmp
+*.pdf.tmp
+
+# Uploaded files (production uses cloud storage)
+uploads/
+public/uploads/
+
+# Security files (NEVER commit!)
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials/
+
+# Local database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Sentry
+.sentryclirc
+
+# PWA generated files
+**/public/sw.js
+**/public/sw.js.map
+**/public/workbox-*.js
+**/public/workbox-*.js.map
+
+# Storybook
+storybook-static/
+
+# Vercel
+.vercel/

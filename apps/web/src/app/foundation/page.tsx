@@ -1,0 +1,561 @@
+'use client';
+
+import { useState } from 'react';
+import { MainLayout } from '@/components/layout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
+  useFoundation,
+  useUpdateFoundation,
+  useFoundationDocuments,
+  useDeleteFoundationDocument,
+  useFoundationBoardMembers,
+  useDeleteFoundationBoardMember,
+  DOCUMENT_TYPE_LABELS,
+  type DocumentType,
+} from '@/hooks';
+import {
+  Building2,
+  FileText,
+  Users,
+  Edit,
+  Trash2,
+  Plus,
+  Download,
+  Calendar,
+  Phone,
+  Mail,
+  Globe,
+  MapPin,
+  Loader2,
+  Save,
+  Eye,
+  AlertTriangle,
+} from 'lucide-react';
+import { format, isPast, isBefore, addMonths } from 'date-fns';
+import { id } from 'date-fns/locale';
+import Link from 'next/link';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+
+export default function FoundationPage() {
+  const [activeTab, setActiveTab] = useState('info');
+  const [isEditing, setIsEditing] = useState(false);
+
+  const { data: foundation, isLoading } = useFoundation();
+  const { data: documents } = useFoundationDocuments();
+  const { data: boardMembers } = useFoundationBoardMembers();
+  const updateFoundation = useUpdateFoundation();
+  const deleteDocument = useDeleteFoundationDocument();
+  const deleteBoardMember = useDeleteFoundationBoardMember();
+
+  const { register, handleSubmit, reset } = useForm({
+    defaultValues: foundation || {},
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onSubmit = async (data: any) => {
+    try {
+      await updateFoundation.mutateAsync(data);
+      toast.success('Data yayasan berhasil diperbarui');
+      setIsEditing(false);
+    } catch {
+      toast.error('Gagal memperbarui data yayasan');
+    }
+  };
+
+  const handleDeleteDocument = async (id: string) => {
+    try {
+      await deleteDocument.mutateAsync(id);
+      toast.success('Dokumen berhasil dihapus');
+    } catch {
+      toast.error('Gagal menghapus dokumen');
+    }
+  };
+
+  const handleDeleteBoardMember = async (id: string) => {
+    try {
+      await deleteBoardMember.mutateAsync(id);
+      toast.success('Anggota pengurus berhasil dihapus');
+    } catch {
+      toast.error('Gagal menghapus anggota pengurus');
+    }
+  };
+
+  const getDocumentStatus = (expiryDate?: string) => {
+    if (!expiryDate) return null;
+    const expiry = new Date(expiryDate);
+    if (isPast(expiry)) {
+      return { status: 'expired', label: 'Kadaluarsa', variant: 'destructive' as const };
+    }
+    if (isBefore(expiry, addMonths(new Date(), 3))) {
+      return { status: 'expiring', label: 'Segera Habis', variant: 'secondary' as const };
+    }
+    return { status: 'valid', label: 'Aktif', variant: 'default' as const };
+  };
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-96">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  return (
+    <MainLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Yayasan</h1>
+            <p className="text-muted-foreground">
+              Kelola informasi dan dokumen yayasan
+            </p>
+          </div>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="info" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Informasi
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Dokumen
+            </TabsTrigger>
+            <TabsTrigger value="board" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Pengurus
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Foundation Info Tab */}
+          <TabsContent value="info" className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Profil Yayasan</CardTitle>
+                  <CardDescription>Informasi dasar yayasan</CardDescription>
+                </div>
+                <Button
+                  variant={isEditing ? 'outline' : 'default'}
+                  onClick={() => {
+                    if (isEditing) {
+                      reset(foundation || {});
+                    }
+                    setIsEditing(!isEditing);
+                  }}
+                >
+                  {isEditing ? 'Batal' : <><Edit className="mr-2 h-4 w-4" /> Edit</>}
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {isEditing ? (
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Nama Yayasan</Label>
+                        <Input id="name" {...register('name')} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="legalName">Nama Badan Hukum</Label>
+                        <Input id="legalName" {...register('legalName')} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="registrationNumber">Nomor Akta</Label>
+                        <Input id="registrationNumber" {...register('registrationNumber')} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="taxId">NPWP</Label>
+                        <Input id="taxId" {...register('taxId')} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Telepon</Label>
+                        <Input id="phone" {...register('phone')} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input id="email" type="email" {...register('email')} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="website">Website</Label>
+                        <Input id="website" {...register('website')} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="foundedDate">Tanggal Berdiri</Label>
+                        <Input id="foundedDate" type="date" {...register('foundedDate')} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="address">Alamat</Label>
+                      <Textarea id="address" {...register('address')} />
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="city">Kota</Label>
+                        <Input id="city" {...register('city')} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="province">Provinsi</Label>
+                        <Input id="province" {...register('province')} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="postalCode">Kode Pos</Label>
+                        <Input id="postalCode" {...register('postalCode')} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="vision">Visi</Label>
+                      <Textarea id="vision" {...register('vision')} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="mission">Misi</Label>
+                      <Textarea id="mission" {...register('mission')} rows={4} />
+                    </div>
+                    <div className="flex justify-end">
+                      <Button type="submit" disabled={updateFoundation.isPending}>
+                        {updateFoundation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Save className="mr-2 h-4 w-4" />
+                        Simpan
+                      </Button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Logo and Basic Info */}
+                    <div className="flex items-start gap-6">
+                      <div className="h-24 w-24 rounded-lg bg-muted flex items-center justify-center">
+                        <Building2 className="h-12 w-12 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1">
+                        <h2 className="text-2xl font-bold">{foundation?.name || '-'}</h2>
+                        <p className="text-muted-foreground">{foundation?.legalName || '-'}</p>
+                        <div className="mt-2 flex flex-wrap gap-4 text-sm">
+                          <span className="flex items-center gap-1">
+                            <FileText className="h-4 w-4" />
+                            {foundation?.registrationNumber || '-'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            {foundation?.foundedDate
+                              ? format(new Date(foundation.foundedDate), 'd MMMM yyyy', { locale: id })
+                              : '-'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Contact Info */}
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-3">
+                        <h3 className="font-semibold">Kontak</h3>
+                        <div className="space-y-2 text-sm">
+                          <p className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            {foundation?.phone || '-'}
+                          </p>
+                          <p className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            {foundation?.email || '-'}
+                          </p>
+                          {foundation?.website && (
+                            <p className="flex items-center gap-2">
+                              <Globe className="h-4 w-4 text-muted-foreground" />
+                              <a href={foundation.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                {foundation.website}
+                              </a>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <h3 className="font-semibold">Alamat</h3>
+                        <p className="flex items-start gap-2 text-sm">
+                          <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                          <span>
+                            {foundation?.address || '-'}
+                            <br />
+                            {foundation?.city}, {foundation?.province} {foundation?.postalCode}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Vision & Mission */}
+                    {(foundation?.vision || foundation?.mission) && (
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {foundation?.vision && (
+                          <div className="space-y-2">
+                            <h3 className="font-semibold">Visi</h3>
+                            <p className="text-sm text-muted-foreground">{foundation.vision}</p>
+                          </div>
+                        )}
+                        {foundation?.mission && (
+                          <div className="space-y-2">
+                            <h3 className="font-semibold">Misi</h3>
+                            <p className="text-sm text-muted-foreground whitespace-pre-line">{foundation.mission}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Documents Tab */}
+          <TabsContent value="documents" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-semibold">Dokumen Yayasan</h2>
+                <p className="text-sm text-muted-foreground">
+                  Kelola dokumen legalitas dan perizinan
+                </p>
+              </div>
+              <Button asChild>
+                <Link href="/foundation/documents/new">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Tambah Dokumen
+                </Link>
+              </Button>
+            </div>
+
+            {/* Expiring Documents Alert */}
+            {documents?.filter(d => {
+              const status = getDocumentStatus(d.expiryDate);
+              return status?.status === 'expired' || status?.status === 'expiring';
+            }).length ? (
+              <Card className="border-yellow-500">
+                <CardContent className="py-4">
+                  <div className="flex items-center gap-2 text-yellow-600">
+                    <AlertTriangle className="h-5 w-5" />
+                    <span className="font-medium">
+                      Terdapat dokumen yang kadaluarsa atau akan segera habis masa berlakunya
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nama Dokumen</TableHead>
+                    <TableHead>Jenis</TableHead>
+                    <TableHead>Tanggal Kadaluarsa</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {documents?.length ? (
+                    documents.map((doc) => {
+                      const status = getDocumentStatus(doc.expiryDate);
+                      return (
+                        <TableRow key={doc.id}>
+                          <TableCell className="font-medium">{doc.name}</TableCell>
+                          <TableCell>{DOCUMENT_TYPE_LABELS[doc.type as DocumentType]}</TableCell>
+                          <TableCell>
+                            {doc.expiryDate
+                              ? format(new Date(doc.expiryDate), 'd MMM yyyy', { locale: id })
+                              : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {status ? (
+                              <Badge variant={status.variant}>{status.label}</Badge>
+                            ) : (
+                              <Badge variant="secondary">Permanen</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="icon" asChild>
+                                <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
+                                  <Eye className="h-4 w-4" />
+                                </a>
+                              </Button>
+                              <Button variant="ghost" size="icon" asChild>
+                                <a href={doc.fileUrl} download>
+                                  <Download className="h-4 w-4" />
+                                </a>
+                              </Button>
+                              <Button variant="ghost" size="icon" asChild>
+                                <Link href={`/foundation/documents/${doc.id}/edit`}>
+                                  <Edit className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Hapus Dokumen?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Tindakan ini tidak dapat dibatalkan. Dokumen akan dihapus secara permanen.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteDocument(doc.id)}>
+                                      Hapus
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        Belum ada dokumen
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </Card>
+          </TabsContent>
+
+          {/* Board Members Tab */}
+          <TabsContent value="board" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-semibold">Pengurus Yayasan</h2>
+                <p className="text-sm text-muted-foreground">
+                  Daftar pengurus aktif yayasan
+                </p>
+              </div>
+              <Button asChild>
+                <Link href="/foundation/board/new">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Tambah Pengurus
+                </Link>
+              </Button>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {boardMembers?.length ? (
+                boardMembers.map((member) => (
+                  <Card key={member.id}>
+                    <CardContent className="pt-6">
+                      <div className="flex items-start gap-4">
+                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                          <Users className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold">{member.name}</h3>
+                          <p className="text-sm text-muted-foreground">{member.position}</p>
+                          <div className="mt-2 space-y-1 text-sm">
+                            {member.phone && (
+                              <p className="flex items-center gap-1 text-muted-foreground">
+                                <Phone className="h-3 w-3" />
+                                {member.phone}
+                              </p>
+                            )}
+                            {member.email && (
+                              <p className="flex items-center gap-1 text-muted-foreground">
+                                <Mail className="h-3 w-3" />
+                                {member.email}
+                              </p>
+                            )}
+                          </div>
+                          <div className="mt-2 flex items-center gap-2">
+                            <Badge variant={member.isActive ? 'default' : 'secondary'}>
+                              {member.isActive ? 'Aktif' : 'Non-Aktif'}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              Sejak {format(new Date(member.startDate), 'MMM yyyy', { locale: id })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex justify-end gap-2">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link href={`/foundation/board/${member.id}/edit`}>
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Hapus Pengurus?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tindakan ini tidak dapat dibatalkan.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Batal</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteBoardMember(member.id)}>
+                                Hapus
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <Card className="col-span-full">
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    Belum ada data pengurus
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </MainLayout>
+  );
+}

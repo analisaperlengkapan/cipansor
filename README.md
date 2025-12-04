@@ -4,8 +4,9 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
-[![Prisma](https://img.shields.io/badge/Prisma-5-blueviolet.svg)](https://www.prisma.io/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-5.22-blueviolet.svg)](https://www.prisma.io/)
+[![Express](https://img.shields.io/badge/Express-5-green.svg)](https://expressjs.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
@@ -68,6 +69,14 @@
 | 14 | **Alumni** | ✅ Phase 6 | Data alumni, karir, donasi, event |
 | 15 | **Analytics** | ✅ Phase 6 | Dashboard, statistik, laporan |
 | 16 | **System & Security** | ✅ MVP | Auth, RBAC, audit log |
+| 17 | **EMIS Kemenag** | ✅ Phase 7 | Integrasi data EMIS Kemenag |
+| 18 | **BOS/BOP Reporting** | ✅ Phase 7 | Laporan keuangan BOS/BOP |
+| 19 | **WhatsApp Integration** | ✅ Phase 7 | Broadcast & notifikasi WA |
+| 20 | **Scheduled Notifications** | ✅ Phase 7 | Auto reminder & summary |
+| 21 | **Raport Merdeka** | ✅ Phase 7 | Raport Kurikulum Merdeka |
+| 22 | **Accreditation** | ✅ Phase 7 | Self-assessment akreditasi |
+| 23 | **Parent Portal** | ✅ Phase 7 | Portal monitoring orang tua |
+| 24 | **Document Generator** | ✅ Phase 7 | Kartu siswa, surat keterangan |
 
 ### Development Phases
 
@@ -160,11 +169,56 @@ Phase 6 ✅ - COMPLETED
 │   └── PSB Analytics
 └── Enhanced Seed Data
 
-Phase 7 🔜 - FUTURE
+Phase 7 ✅ - COMPLETED (Indonesia Compliance)
+├── EMIS Kemenag Integration
+│   ├── Student Data Export (Format Kemenag)
+│   ├── Teacher Data Export (Format Kemenag)
+│   ├── Institution Profile Export
+│   └── Dapodik Format Support
+├── BOS/BOP Financial Reporting
+│   ├── BOS Period Management
+│   ├── Budget Allocation
+│   ├── Realization Tracking
+│   ├── 8 Standar BOS Reporting
+│   └── Export to Excel/PDF
+├── WhatsApp Integration
+│   ├── Broadcast Messages
+│   ├── Payment Reminders
+│   ├── Attendance Notifications
+│   └── Academic Updates
+├── Scheduled Notifications
+│   ├── Payment Due Reminders
+│   ├── Daily Attendance Summary
+│   ├── Weekly Tahfidz Progress
+│   ├── Event Reminders
+│   └── Monthly Reports
 ├── Parent Portal
+│   ├── Child Progress Dashboard
+│   ├── Payment History
+│   ├── Attendance Tracking
+│   ├── Tahfidz Progress
+│   └── Teacher Communication
+├── Raport Merdeka
+│   ├── Kurikulum Merdeka Format
+│   ├── Capaian Pembelajaran
+│   ├── Profil Pelajar Pancasila
+│   └── PDF Export
+├── Accreditation Module
+│   ├── Self-Assessment Forms
+│   ├── Document Checklist
+│   ├── Progress Tracking
+│   └── Report Generation
+└── Document Generator
+    ├── Student ID Cards
+    ├── Certificates
+    └── Official Letters
+
+Phase 8 🔜 - FUTURE
 ├── Mobile App (React Native)
-├── Email/SMS Notifications
-└── Advanced Reporting
+├── Email Integration (SMTP/SendGrid)
+├── SMS Gateway Integration
+├── Advanced Analytics & BI
+└── Multi-tenant Architecture
 ```
 
 ---
@@ -263,10 +317,17 @@ Phase 7 🔜 - FUTURE
 - [x] Assessment Module ✅
 - [x] Alumni Module ✅
 - [x] Analytics Dashboard ✅
-- [ ] Parent Portal
+- [x] EMIS Kemenag Integration ✅
+- [x] BOS/BOP Financial Reporting ✅
+- [x] WhatsApp Integration ✅
+- [x] Scheduled Notifications ✅
+- [x] Parent Portal ✅
+- [x] Raport Merdeka ✅
+- [x] Accreditation Module ✅
+- [x] Document Generator ✅
 - [ ] Mobile App (React Native)
-- [ ] Email/SMS Notifications
-- [ ] Advanced Reporting
+- [ ] Email/SMS Gateway
+- [ ] Advanced Analytics & BI
 
 ### Phase 4 - Library, Health, Inventory, Communication ✅
 
@@ -332,32 +393,95 @@ Phase 7 🔜 - FUTURE
   - Library analytics (borrowings, popular books)
   - PSB analytics (admission statistics)
 
+### Phase 7 - Indonesia Compliance & Integration ✅
+
+- **EMIS Kemenag Integration**
+  - Student data export (format resmi Kemenag)
+  - Teacher data export (format resmi Kemenag)
+  - Institution profile export
+  - Dapodik format support
+  - Automatic field mapping
+
+- **BOS/BOP Financial Reporting**
+  - BOS period management per semester
+  - Budget allocation by 8 standar BOS
+  - Realization tracking with receipts
+  - Compliance percentage calculation
+  - Export to Excel/PDF format
+
+- **WhatsApp Integration**
+  - Broadcast messages to parents/teachers
+  - Automatic payment reminders
+  - Attendance notifications
+  - Academic update broadcasts
+  - Template message management
+
+- **Scheduled Notifications**
+  - Payment due reminders (3 days before)
+  - Daily attendance summary reports
+  - Weekly tahfidz progress to parents
+  - Upcoming event reminders
+  - Monthly report generation
+
+- **Parent Portal**
+  - Child progress dashboard
+  - Payment history & outstanding
+  - Attendance tracking with calendar
+  - Tahfidz progress monitoring
+  - Direct teacher communication
+
+- **Raport Merdeka**
+  - Kurikulum Merdeka format
+  - Capaian Pembelajaran (CP) tracking
+  - Profil Pelajar Pancasila assessment
+  - Intrakurikuler & Projek P5
+  - PDF export with official format
+
+- **Accreditation Module**
+  - Self-assessment forms (8 Standar)
+  - Document checklist management
+  - Progress tracking per standar
+  - Automatic score calculation
+  - Report generation for BAN-S/M
+
+- **Document Generator**
+  - Student ID cards with photo
+  - Graduation certificates
+  - Enrollment letters
+  - Active student letters
+  - Custom templates
+
 ---
 
 ## 🛠 Tech Stack
 
 ### Backend (`apps/api`)
 
-| Technology | Purpose |
-|------------|---------|
-| **Express.js 5** | HTTP framework |
-| **Prisma 5** | ORM & database toolkit |
-| **PostgreSQL** | Primary database |
-| **Zod** | Schema validation |
-| **JWT** | Authentication |
-| **Winston** | Logging |
-| **Vitest** | Testing |
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| **Express.js** | 5.x | HTTP framework |
+| **Prisma** | 5.22.0 | ORM & database toolkit |
+| **PostgreSQL** | 14+ | Primary database |
+| **Zod** | 3.x | Schema validation |
+| **JWT** | - | Authentication |
+| **Winston** | 3.x | Logging |
+| **ExcelJS** | 4.x | Excel export |
+| **PDFKit** | 0.15.x | PDF generation |
+| **Vitest** | 3.x | Testing |
 
 ### Frontend (`apps/web`)
 
-| Technology | Purpose |
-|------------|---------|
-| **Next.js 15** | React framework |
-| **React 19** | UI library |
-| **Tailwind CSS 4** | Styling |
-| **React Query** | Data fetching |
-| **Zustand** | State management |
-| **React Hook Form** | Form handling |
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| **Next.js** | 16.0.6 | React framework |
+| **React** | 19.x | UI library |
+| **Tailwind CSS** | 4.x | Styling |
+| **React Query** | 5.x | Data fetching |
+| **Zustand** | 5.x | State management |
+| **React Hook Form** | 7.x | Form handling |
+| **shadcn/ui** | - | Component library |
+| **Recharts** | 2.x | Charts & graphs |
+| **Lucide React** | - | Icons |
 
 ### Tooling
 
@@ -800,6 +924,48 @@ Authorization: Bearer <token>
 | GET | `/api/analytics/academic` | Get academic analytics | Yes (Admin) |
 | GET | `/api/analytics/library` | Get library analytics | Yes (Admin) |
 | GET | `/api/analytics/psb` | Get PSB analytics | Yes (Admin) |
+| **EMIS Kemenag** |
+| GET | `/api/emis/export/students` | Export students (Kemenag format) | Yes (Admin) |
+| GET | `/api/emis/export/teachers` | Export teachers (Kemenag format) | Yes (Admin) |
+| GET | `/api/emis/export/institution/:unitId` | Export institution profile | Yes (Admin) |
+| GET | `/api/emis/dapodik/students` | Export students (Dapodik format) | Yes (Admin) |
+| **BOS/BOP Reporting** |
+| GET | `/api/foundation/bos/periods` | List BOS periods | Yes (Admin) |
+| POST | `/api/foundation/bos/periods` | Create BOS period | Yes (Admin) |
+| GET | `/api/foundation/bos/allocations` | List allocations | Yes (Admin) |
+| POST | `/api/foundation/bos/allocations` | Create allocation | Yes (Admin) |
+| GET | `/api/foundation/bos/realizations` | List realizations | Yes (Admin) |
+| POST | `/api/foundation/bos/realizations` | Create realization | Yes (Admin) |
+| GET | `/api/foundation/bos/summary/:periodId` | Get period summary | Yes (Admin) |
+| GET | `/api/foundation/bos/export/:periodId` | Export BOS report | Yes (Admin) |
+| **WhatsApp Integration** |
+| POST | `/api/notifications/whatsapp/broadcast` | Send broadcast message | Yes (Admin) |
+| POST | `/api/notifications/whatsapp/payment-reminder` | Send payment reminders | Yes (Admin) |
+| POST | `/api/notifications/whatsapp/attendance` | Send attendance report | Yes (Admin) |
+| GET | `/api/notifications/whatsapp/templates` | Get message templates | Yes (Admin) |
+| **Scheduler** |
+| GET | `/api/notifications/scheduler/status` | Get scheduler status | Yes (Admin) |
+| POST | `/api/notifications/scheduler/run/:taskName` | Run task manually | Yes (Admin) |
+| **Parent Portal** |
+| GET | `/api/parent/children` | List linked children | Yes (Parent) |
+| GET | `/api/parent/children/:id/dashboard` | Get child dashboard | Yes (Parent) |
+| GET | `/api/parent/children/:id/attendance` | Get attendance history | Yes (Parent) |
+| GET | `/api/parent/children/:id/tahfidz` | Get tahfidz progress | Yes (Parent) |
+| GET | `/api/parent/children/:id/payments` | Get payment history | Yes (Parent) |
+| **Raport Merdeka** |
+| GET | `/api/reporting/raport-merdeka/students` | List students | Yes (Admin) |
+| GET | `/api/reporting/raport-merdeka/:studentId` | Get raport data | Yes (Admin) |
+| POST | `/api/reporting/raport-merdeka/generate` | Generate raport PDF | Yes (Admin) |
+| **Accreditation** |
+| GET | `/api/reporting/accreditation/standards` | List 8 standards | Yes (Admin) |
+| GET | `/api/reporting/accreditation/assessments` | List assessments | Yes (Admin) |
+| POST | `/api/reporting/accreditation/assessments` | Create assessment | Yes (Admin) |
+| PUT | `/api/reporting/accreditation/assessments/:id` | Update assessment | Yes (Admin) |
+| GET | `/api/reporting/accreditation/summary` | Get accreditation summary | Yes (Admin) |
+| **Document Generator** |
+| GET | `/api/students/:id/documents/id-card` | Generate ID card | Yes (Admin) |
+| GET | `/api/students/:id/documents/certificate` | Generate certificate | Yes (Admin) |
+| POST | `/api/students/:id/documents/letter` | Generate official letter | Yes (Admin) |
 
 ---
 
@@ -1020,11 +1186,26 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
+- [Kementerian Agama RI](https://kemenag.go.id/) - Format EMIS
+- [Kementerian Pendidikan RI](https://kemdikbud.go.id/) - Kurikulum Merdeka
+- [BAN-S/M](https://bansm.kemdikbud.go.id/) - Standar Akreditasi
 - [5 Pilar Manajemen Pesantren](https://epesantren.co.id/)
 - [Express.js](https://expressjs.com/)
 - [Prisma](https://www.prisma.io/)
 - [Next.js](https://nextjs.org/)
+- [shadcn/ui](https://ui.shadcn.com/)
 
 ---
 
-**Made with ❤️ for Islamic Education Institutions**
+## 📞 Support
+
+Untuk pertanyaan dan dukungan:
+- 📧 Email: support@cipansor.id
+- 📱 WhatsApp: +62 xxx-xxxx-xxxx
+- 🌐 Website: https://cipansor.id
+
+---
+
+**Made with ❤️ for Islamic Education Institutions in Indonesia**
+
+*Sistem ini dikembangkan sesuai dengan standar dan regulasi pendidikan Indonesia termasuk format EMIS Kemenag, Kurikulum Merdeka, dan standar BOS/BOP.*

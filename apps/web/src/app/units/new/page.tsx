@@ -1,0 +1,204 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { toast } from 'sonner';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
+
+import { MainLayout } from '@/components/layout/main-layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { useCreateUnit, UNIT_TYPES } from '@/hooks/use-units';
+
+const unitSchema = z.object({
+  name: z.string().min(1, 'Nama unit wajib diisi'),
+  type: z.enum(['PESANTREN', 'SD_IT', 'SMP_IT', 'SMA_IT', 'MA'], {
+    required_error: 'Tipe unit wajib dipilih',
+  }),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email('Email tidak valid').optional().or(z.literal('')),
+  headName: z.string().optional(),
+});
+
+type UnitFormData = z.infer<typeof unitSchema>;
+
+export default function NewUnitPage() {
+  const router = useRouter();
+  const createUnit = useCreateUnit();
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<UnitFormData>({
+    resolver: zodResolver(unitSchema),
+  });
+
+  const onSubmit = async (data: UnitFormData) => {
+    try {
+      await createUnit.mutateAsync({
+        ...data,
+        address: data.address || undefined,
+        phone: data.phone || undefined,
+        email: data.email || undefined,
+        headName: data.headName || undefined,
+      });
+      toast.success('Unit berhasil dibuat');
+      router.push('/units');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Gagal membuat unit';
+      toast.error(errorMessage);
+    }
+  };
+
+  return (
+    <MainLayout>
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/units">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Tambah Unit Baru</h1>
+            <p className="text-muted-foreground">Buat unit pendidikan baru</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Informasi Dasar</CardTitle>
+                <CardDescription>Data utama unit pendidikan</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nama Unit *</Label>
+                  <Input
+                    id="name"
+                    placeholder="Contoh: SMP IT Al-Hikmah"
+                    {...register('name')}
+                  />
+                  {errors.name && (
+                    <p className="text-sm text-destructive">{errors.name.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="type">Tipe Unit *</Label>
+                  <Select
+                    onValueChange={(value) => setValue('type', value as UnitFormData['type'])}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih tipe unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {UNIT_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.type && (
+                    <p className="text-sm text-destructive">{errors.type.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="headName">Kepala Unit</Label>
+                  <Input
+                    id="headName"
+                    placeholder="Nama kepala sekolah/pimpinan"
+                    {...register('headName')}
+                  />
+                  {errors.headName && (
+                    <p className="text-sm text-destructive">{errors.headName.message}</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Kontak & Lokasi</CardTitle>
+                <CardDescription>Informasi kontak unit</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="address">Alamat</Label>
+                  <Textarea
+                    id="address"
+                    placeholder="Alamat lengkap unit"
+                    rows={3}
+                    {...register('address')}
+                  />
+                  {errors.address && (
+                    <p className="text-sm text-destructive">{errors.address.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Telepon</Label>
+                  <Input
+                    id="phone"
+                    placeholder="021-12345678"
+                    {...register('phone')}
+                  />
+                  {errors.phone && (
+                    <p className="text-sm text-destructive">{errors.phone.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="unit@pesantren.sch.id"
+                    {...register('email')}
+                  />
+                  {errors.email && (
+                    <p className="text-sm text-destructive">{errors.email.message}</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="flex justify-end gap-4 mt-6">
+            <Button type="button" variant="outline" asChild>
+              <Link href="/units">Batal</Link>
+            </Button>
+            <Button type="submit" disabled={isSubmitting || createUnit.isPending}>
+              {isSubmitting || createUnit.isPending ? 'Menyimpan...' : 'Simpan Unit'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </MainLayout>
+  );
+}

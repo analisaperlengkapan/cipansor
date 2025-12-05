@@ -373,7 +373,7 @@ export default function FinancePage() {
                           <TableHead>Jenis Tagihan</TableHead>
                           <TableHead>Metode</TableHead>
                           <TableHead className="text-right">Nominal</TableHead>
-                          <TableHead className="w-[80px]">Aksi</TableHead>
+                          <TableHead className="w-20">Aksi</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>

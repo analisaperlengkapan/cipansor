@@ -207,7 +207,7 @@ export default function RewardsPage() {
               ) : (
                 <div className="space-y-4">
                   {rewards.map((reward) => (
-                    <Card key={reward.id} className="bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200">
+                    <Card key={reward.id} className="bg-linear-to-r from-yellow-50 to-orange-50 border-yellow-200">
                       <CardContent className="p-4">
                         <div className="flex items-start gap-4">
                           <div className="p-2 rounded-full bg-yellow-100">

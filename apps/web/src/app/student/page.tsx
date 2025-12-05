@@ -89,7 +89,7 @@ export default function StudentDashboard() {
       </div>
 
       {/* Progress Card */}
-      <Card className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
+      <Card className="bg-linear-to-r from-green-500 to-emerald-600 text-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
@@ -254,10 +254,10 @@ export default function StudentDashboard() {
       </div>
 
       {/* Motivational Card */}
-      <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
+      <Card className="bg-linear-to-r from-amber-50 to-orange-50 border-amber-200">
         <CardContent className="pt-6">
           <div className="text-center">
-            <p className="text-lg font-arabic text-xl mb-2">
+            <p className="font-arabic text-xl mb-2">
               خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ
             </p>
             <p className="text-sm text-muted-foreground italic">

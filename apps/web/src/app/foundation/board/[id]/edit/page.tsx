@@ -272,7 +272,7 @@ export default function EditBoardMemberPage({ params }: PageProps) {
                           onCheckedChange={field.onChange}
                         />
                       </FormControl>
-                      <FormLabel className="!mt-0">Status Aktif</FormLabel>
+                      <FormLabel className="mt-0!">Status Aktif</FormLabel>
                       <FormMessage />
                     </FormItem>
                   )}

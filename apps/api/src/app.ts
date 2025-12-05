@@ -41,6 +41,12 @@ import { takhosusRoutes } from '@/modules/takhosus';
 import { muhasabahRoutes } from '@/modules/muhasabah';
 import { donationRoutes } from '@/modules/donation';
 import { ppdbWaveRoutes } from '@/modules/ppdb-wave';
+import { wilayahRoutes } from '@/modules/wilayah';
+import { kurikulumMerdekaRoutes } from '@/modules/kurikulum-merdeka';
+import { facilitiesRoutes } from '@/modules/facilities';
+import { studentComplianceRoutes } from '@/modules/student-compliance';
+import { teacherComplianceRoutes } from '@/modules/teacher-compliance';
+import { financeEnhancementRoutes } from '@/modules/finance-enhancement';
 
 // Phase 12 routes
 import extracurricularRoutes from '@/modules/extracurricular/extracurricular.routes';
@@ -139,6 +145,12 @@ apiRouter.use('/takhosus', takhosusRoutes);
 apiRouter.use('/muhasabah', muhasabahRoutes);
 apiRouter.use('/donation', donationRoutes);
 apiRouter.use('/ppdb-wave', ppdbWaveRoutes);
+apiRouter.use('/wilayah', wilayahRoutes);
+apiRouter.use('/kurikulum-merdeka', kurikulumMerdekaRoutes);
+apiRouter.use('/facilities', facilitiesRoutes);
+apiRouter.use('/student-compliance', studentComplianceRoutes);
+apiRouter.use('/teacher-compliance', teacherComplianceRoutes);
+apiRouter.use('/finance-enhancement', financeEnhancementRoutes);
 
 // Phase 12 routes
 apiRouter.use('/extracurricular', extracurricularRoutes);
@@ -201,6 +213,12 @@ apiRouter.get('/', (_req, res) => {
       muhadhoroh: '/api/muhadhoroh',
       muhadatsah: '/api/muhadatsah',
       emis: '/api/emis',
+      wilayah: '/api/wilayah',
+      kurikulumMerdeka: '/api/kurikulum-merdeka',
+      facilities: '/api/facilities',
+      studentCompliance: '/api/student-compliance',
+      teacherCompliance: '/api/teacher-compliance',
+      financeEnhancement: '/api/finance-enhancement',
     },
   });
 });

@@ -1,10 +1,18 @@
 import { PrismaClient, UserRole, UnitType, Gender, AttendanceStatus, TahfidzActivityType, PermitType, PermitStatus, ViolationType, PaymentStatus, PaymentMethod, AdmissionStatus, LeaveType, LeaveStatus, StaffAttendanceStatus, BookStatus, BorrowingStatus, MedicalRecordType, NotificationType, NotificationStatus, AssetStatus, AssetCondition, SubjectType, DayOfWeek, ExamType, ExamStatus, GradeType, AlumniStatus, DonationType, AlumniEventType, Prisma, Realm, RoleCode } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { seedWilayahIndonesia } from './seeds/wilayah-indonesia';
+import { seedKurikulumMerdeka, seedAccountCodes } from './seeds/kurikulum-merdeka';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Seeding database...');
+
+  // ============================================
+  // PHASE 8: Wilayah Indonesia & Kurikulum Merdeka
+  // ============================================
+  await seedWilayahIndonesia();
+  await seedAccountCodes();
 
   // Clean up existing data (in reverse order of dependencies)
   // Phase 6 cleanup
@@ -1548,6 +1556,9 @@ async function main() {
   }
 
   console.log('✅ Subjects created');
+
+  // Seed Kurikulum Merdeka Learning Outcomes (sekarang subjects sudah ada)
+  await seedKurikulumMerdeka(pesantren.id, academicYear.id);
 
   // Assign teacher to subjects
   for (let i = 0; i < 4; i++) {

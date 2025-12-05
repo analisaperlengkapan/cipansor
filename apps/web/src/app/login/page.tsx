@@ -154,7 +154,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-green-50 to-green-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="flex min-h-screen bg-linear-to-br from-green-50 to-green-100 dark:from-gray-900 dark:to-gray-800">
       {/* Left side - Demo Credentials */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center p-8 xl:p-12">
         <div className="max-w-md mx-auto">

@@ -39,7 +39,7 @@ export default function Error({
           {process.env.NODE_ENV === 'development' && (
             <div className="rounded-md bg-muted p-4 text-sm">
               <p className="font-medium text-destructive">{error.name}</p>
-              <p className="mt-1 text-muted-foreground break-words">{error.message}</p>
+              <p className="mt-1 text-muted-foreground wrap-break-word">{error.message}</p>
               {error.digest && (
                 <p className="mt-2 text-xs text-muted-foreground">
                   Error ID: {error.digest}

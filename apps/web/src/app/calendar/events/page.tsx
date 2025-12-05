@@ -186,7 +186,7 @@ export default function EventsListPage() {
                     <TableHead>Tanggal</TableHead>
                     <TableHead>Waktu</TableHead>
                     <TableHead>Lokasi</TableHead>
-                    <TableHead className="w-[80px]">Aksi</TableHead>
+                    <TableHead className="w-20">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

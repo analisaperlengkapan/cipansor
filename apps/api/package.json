@@ -16,6 +16,9 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "dependencies": {
     "@cipansor/shared": "workspace:*",
     "@prisma/client": "^5.7.0",

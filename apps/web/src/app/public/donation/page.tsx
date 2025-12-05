@@ -137,7 +137,7 @@ export default function PublicDonationPage() {
   const quickAmounts = [50000, 100000, 250000, 500000, 1000000, 2500000];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white">
+    <div className="min-h-screen bg-linear-to-b from-emerald-50 to-white">
       {/* Header */}
       <header className="bg-emerald-600 text-white">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
@@ -546,7 +546,7 @@ function CampaignCard({
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="h-40 bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+      <div className="h-40 bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
         <Heart className="h-16 w-16 text-white/50" />
       </div>
       <CardHeader className="pb-2">

@@ -632,4 +632,4 @@ export class SchedulerService {
 }
 
 // Export singleton
-export const schedulerService = SchedulerService;
+export const notificationScheduler = SchedulerService;

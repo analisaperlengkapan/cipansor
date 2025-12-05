@@ -551,7 +551,7 @@ export default function NewMuhadatsahPage() {
                     id="topic"
                     placeholder="Contoh: Di pasar, membeli sayuran dan buah-buahan..."
                     {...register('topic')}
-                    className="min-h-[80px]"
+                    className="min-h-20"
                   />
                 </div>
 

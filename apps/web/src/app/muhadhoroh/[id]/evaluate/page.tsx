@@ -417,7 +417,7 @@ export default function EvaluateMuhadhorohPage({ params }: PageProps) {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Total Score Display */}
-                <div className="text-center p-6 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
+                <div className="text-center p-6 bg-linear-to-br from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
                   <p className="text-sm text-muted-foreground mb-2">Nilai Total</p>
                   <div className="text-5xl font-bold text-yellow-600 mb-2">
                     {totalScore}

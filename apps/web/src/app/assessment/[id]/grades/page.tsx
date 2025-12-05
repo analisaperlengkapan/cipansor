@@ -363,7 +363,7 @@ export default function AssessmentGradesPage() {
         </Card>
 
         {/* Bottom Actions */}
-        <div className="flex justify-end gap-4 sticky bottom-4 p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg">
+        <div className="flex justify-end gap-4 sticky bottom-4 p-4 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 border rounded-lg">
           <Button variant="outline" onClick={() => router.back()}>
             Kembali
           </Button>

@@ -134,9 +134,11 @@ const sendWhatsAppSchema = z.object({
 
 const broadcastSchema = z.object({
   title: z.string().min(1),
-  content: z.string().min(1),
-  priority: z.enum(['LOW', 'NORMAL', 'HIGH']).default('NORMAL'),
-  unitId: z.string().uuid().optional(),
+  message: z.string().min(1),
+  type: z.enum(['INFO', 'PAYMENT', 'ACADEMIC', 'ATTENDANCE', 'HEALTH', 'COUNSELING', 'ANNOUNCEMENT']).default('ANNOUNCEMENT'),
+  targetType: z.enum(['ALL', 'STUDENTS', 'TEACHERS', 'UNIT', 'CLASS']).default('ALL'),
+  targetId: z.string().uuid().optional(),
+  useWhatsApp: z.boolean().default(false),
 });
 
 export async function sendWhatsApp(req: Request, res: Response, next: NextFunction) {
@@ -156,7 +158,14 @@ export async function sendWhatsApp(req: Request, res: Response, next: NextFuncti
 export async function broadcastWhatsApp(req: Request, res: Response, next: NextFunction) {
   try {
     const data = broadcastSchema.parse(req.body);
-    const result = await notificationScheduler.broadcastAnnouncement(data);
+    const result = await notificationScheduler.broadcastNotification({
+      title: data.title,
+      message: data.message,
+      type: data.type as any,
+      targetType: data.targetType,
+      targetId: data.targetId,
+      useWhatsApp: data.useWhatsApp,
+    });
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -176,12 +185,11 @@ export async function getWhatsAppStatus(req: Request, res: Response, next: NextF
 
 const triggerScheduleSchema = z.object({
   task: z.enum([
-    'payment_reminder',
-    'attendance_alert',
-    'daily_summary',
-    'tahfidz_report',
-    'event_reminder',
-    'overdue_payment',
+    'payment-reminder',
+    'attendance-summary',
+    'tahfidz-progress',
+    'event-reminder',
+    'monthly-report',
   ]),
 });
 
@@ -189,26 +197,7 @@ export async function triggerScheduledTask(req: Request, res: Response, next: Ne
   try {
     const { task } = triggerScheduleSchema.parse(req.body);
     
-    switch (task) {
-      case 'payment_reminder':
-        await notificationScheduler.sendPaymentReminders();
-        break;
-      case 'attendance_alert':
-        await notificationScheduler.sendAttendanceAlerts();
-        break;
-      case 'daily_summary':
-        await notificationScheduler.sendDailySummary();
-        break;
-      case 'tahfidz_report':
-        await notificationScheduler.sendTahfidzWeeklyReport();
-        break;
-      case 'event_reminder':
-        await notificationScheduler.sendEventReminders();
-        break;
-      case 'overdue_payment':
-        await notificationScheduler.sendOverduePaymentAlerts();
-        break;
-    }
+    await notificationScheduler.runTask(task);
     
     res.json({ success: true, message: `Task ${task} executed` });
   } catch (error) {

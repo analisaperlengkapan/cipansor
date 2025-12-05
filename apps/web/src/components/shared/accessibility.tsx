@@ -55,7 +55,7 @@ export function SkipLink({
       onClick={handleClick}
       className={cn(
         // Position
-        'fixed left-4 top-4 z-[100]',
+        'fixed left-4 top-4 z-100',
         // By default, visually hidden but keyboard-accessible
         'sr-only focus:not-sr-only',
         // Styles when focused

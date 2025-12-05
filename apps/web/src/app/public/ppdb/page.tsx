@@ -219,7 +219,7 @@ export default function PublicPPDBPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-linear-to-b from-blue-50 to-white">
       {/* Header */}
       <header className="bg-blue-600 text-white">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">

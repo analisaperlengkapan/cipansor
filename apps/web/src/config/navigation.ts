@@ -441,9 +441,24 @@ const yayasanNavigation: NavGroup[] = [
         icon: Wallet,
       },
       {
+        title: 'BOS/BOP',
+        href: '/finance/bos',
+        icon: Wallet,
+      },
+      {
         title: 'Donasi Alumni',
         href: '/alumni/donations',
         icon: Receipt,
+      },
+      {
+        title: 'Donation/ZIS',
+        href: '/donation',
+        icon: HeartHandshake,
+      },
+      {
+        title: 'Public Portal',
+        href: '/donation/public',
+        icon: HeartHandshake,
       },
     ],
   },
@@ -694,6 +709,21 @@ const adminNavigation: NavGroup[] = [
         icon: Wallet,
       },
       {
+        title: 'Accounting',
+        href: '/finance/accounting',
+        icon: Receipt,
+      },
+      {
+        title: 'Scholarships',
+        href: '/finance/scholarships',
+        icon: Award,
+      },
+      {
+        title: 'Donation/ZIS',
+        href: '/donation',
+        icon: HeartHandshake,
+      },
+      {
         title: 'Admissions (PSB)',
         href: '/psb',
         icon: UserPlus,
@@ -724,6 +754,11 @@ const adminNavigation: NavGroup[] = [
         icon: Package,
       },
       {
+        title: 'Facilities',
+        href: '/facilities',
+        icon: Building2,
+      },
+      {
         title: 'Meals',
         href: '/meals',
         icon: UtensilsCrossed,
@@ -737,6 +772,37 @@ const adminNavigation: NavGroup[] = [
         title: 'Quick Send',
         href: '/notifications/quick-send',
         icon: Send,
+      },
+    ],
+  },
+  {
+    title: 'Reference Data',
+    items: [
+      {
+        title: 'Wilayah',
+        href: '/wilayah',
+        icon: Building2,
+        roleCodes: ['SUPER_ADMIN', 'YAYASAN_ADMIN'],
+      },
+      {
+        title: 'Kurikulum Merdeka',
+        href: '/kurikulum-merdeka',
+        icon: BookMarked,
+      },
+    ],
+  },
+  {
+    title: 'Compliance',
+    items: [
+      {
+        title: 'Student Compliance',
+        href: '/compliance/students',
+        icon: Shield,
+      },
+      {
+        title: 'Teacher Compliance',
+        href: '/compliance/teachers',
+        icon: Shield,
       },
     ],
   },

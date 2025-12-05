@@ -38,7 +38,7 @@ export function Breadcrumb({ items, className, showHome = true }: BreadcrumbProp
           return (
             <li key={index} className="flex items-center gap-1">
               {index > 0 && (
-                <ChevronRight className="h-4 w-4 flex-shrink-0" />
+                <ChevronRight className="h-4 w-4 shrink-0" />
               )}
               {isLast ? (
                 <span className="font-medium text-foreground" aria-current="page">

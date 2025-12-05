@@ -128,7 +128,7 @@ export default function SchedulePage() {
 
       {/* Current Activity Card */}
       {currentActivity && (
-        <Card className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
+        <Card className="bg-linear-to-r from-green-500 to-emerald-600 text-white">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-full bg-white/20">

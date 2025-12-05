@@ -429,7 +429,7 @@ export default function NewMuhadhorohPage() {
                     id="topic"
                     placeholder="Masukkan topik pidato..."
                     {...register('topic')}
-                    className="min-h-[80px]"
+                    className="min-h-20"
                   />
                   {errors.topic && (
                     <p className="text-sm text-destructive">{errors.topic.message}</p>

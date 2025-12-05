@@ -327,7 +327,7 @@ export default function NewNotificationPage() {
                                     }}
                                   />
                                 </FormControl>
-                                <FormLabel className="!mt-0 font-normal">
+                                <FormLabel className="mt-0! font-normal">
                                   {channel === 'IN_APP' && 'Notifikasi Aplikasi'}
                                   {channel === 'EMAIL' && 'Email'}
                                   {channel === 'WHATSAPP' && 'WhatsApp'}

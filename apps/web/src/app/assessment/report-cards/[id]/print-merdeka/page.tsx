@@ -659,7 +659,7 @@ export default function PrintReportCardMerdekaPage() {
               <h3 className="font-bold text-xs bg-green-700 text-white p-1 mb-1">
                 H. TANGGAPAN ORANG TUA / WALI
               </h3>
-              <div className="border border-gray-400 p-2 min-h-[40px] text-xs">
+              <div className="border border-gray-400 p-2 min-h-10 text-xs">
                 {/* Kosong untuk diisi orang tua */}
               </div>
             </div>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 
 interface UseUnsavedChangesOptions {
   /**
@@ -79,7 +78,6 @@ export function useUnsavedChanges(
 
   const [hasChanges, setHasChanges] = useState(false);
   const allowNavigationRef = useRef(false);
-  const router = useRouter();
 
   // Handle browser beforeunload event
   useEffect(() => {
@@ -102,42 +100,39 @@ export function useUnsavedChanges(
   }, [enabled, hasChanges, message]);
 
   // Handle Next.js route changes
+  // Note: In Next.js App Router, we primarily rely on beforeunload for navigation warnings
+  // Client-side navigation interception is limited in App Router
   useEffect(() => {
     if (!enabled || !hasChanges) return;
 
-    const handleRouteChange = () => {
+    // Store the callback for potential use
+    const handleRouteChangeStart = () => {
       if (allowNavigationRef.current) {
         allowNavigationRef.current = false;
-        return true;
+        return;
       }
-
       onNavigationAttempt?.();
+    };
 
+    // We can use popstate for back/forward navigation
+    const handlePopState = (e: PopStateEvent) => {
+      if (!hasChanges || allowNavigationRef.current) return;
+      
+      onNavigationAttempt?.();
       const confirmed = window.confirm(message);
       if (!confirmed) {
-        // Cancel navigation by throwing
-        throw new Error('Navigation cancelled by user');
+        // Push the current state back
+        window.history.pushState(null, '', window.location.href);
+        e.preventDefault();
       }
-      return true;
     };
 
-    // For App Router, we need to use a different approach
-    // We can patch the router.push method
-    const originalPush = router.push;
-    router.push = (...args) => {
-      try {
-        handleRouteChange();
-        return originalPush.apply(router, args);
-      } catch {
-        // Navigation was cancelled
-        return Promise.resolve(false as unknown as boolean);
-      }
-    };
+    window.addEventListener('popstate', handlePopState);
 
     return () => {
-      router.push = originalPush;
+      window.removeEventListener('popstate', handlePopState);
     };
-  }, [enabled, hasChanges, message, onNavigationAttempt, router]);
+  }, [enabled, hasChanges, message, onNavigationAttempt]);
 
   // Track value changes
   const trackValue = useCallback(<T>(current: T, initial: T) => {

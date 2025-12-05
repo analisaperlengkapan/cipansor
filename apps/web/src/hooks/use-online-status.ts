@@ -78,9 +78,11 @@ export function useOnlineStatus(
   const onOnlineRef = useRef(onOnline);
   const onOfflineRef = useRef(onOffline);
 
-  // Update refs
-  onOnlineRef.current = onOnline;
-  onOfflineRef.current = onOffline;
+  // Update refs in useEffect to avoid updating during render
+  useEffect(() => {
+    onOnlineRef.current = onOnline;
+    onOfflineRef.current = onOffline;
+  }, [onOnline, onOffline]);
 
   // Check API reachability
   const checkConnection = useCallback(async (): Promise<boolean> => {

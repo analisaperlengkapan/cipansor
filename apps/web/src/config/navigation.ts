@@ -40,6 +40,12 @@ import {
   MessageSquare,
   Languages,
   Sparkles,
+  WashingMachine,
+  ShoppingCart,
+  CreditCard,
+  ClipboardPenLine,
+  FolderOpen,
+  FileBarChart,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -124,6 +130,11 @@ const teacherNavigation: NavGroup[] = [
         href: '/attendance',
         icon: ClipboardCheck,
       },
+      {
+        title: 'Portfolio Siswa',
+        href: '/portfolio',
+        icon: FolderOpen,
+      },
     ],
   },
   {
@@ -155,6 +166,11 @@ const teacherNavigation: NavGroup[] = [
     title: 'Pesantren',
     items: [
       {
+        title: 'Jurnal Ibadah',
+        href: '/ibadah',
+        icon: Sparkles,
+      },
+      {
         title: 'Muhadhoroh',
         href: '/muhadhoroh',
         icon: MessageSquare,
@@ -168,6 +184,16 @@ const teacherNavigation: NavGroup[] = [
         title: 'Kitab Kuning',
         href: '/kitab-progress',
         icon: BookOpen,
+      },
+    ],
+  },
+  {
+    title: 'PKG',
+    items: [
+      {
+        title: 'Penilaian Kinerja',
+        href: '/pkg',
+        icon: ClipboardPenLine,
       },
     ],
   },
@@ -270,8 +296,23 @@ const studentNavigation: NavGroup[] = [
     ],
   },
   {
+    title: 'Akademik',
+    items: [
+      {
+        title: 'Portfolio Saya',
+        href: '/portfolio',
+        icon: FolderOpen,
+      },
+    ],
+  },
+  {
     title: 'Pesantren',
     items: [
+      {
+        title: 'Jurnal Ibadah',
+        href: '/ibadah',
+        icon: Sparkles,
+      },
       {
         title: 'Muhadhoroh',
         href: '/muhadhoroh',
@@ -335,6 +376,11 @@ const parentNavigation: NavGroup[] = [
         title: 'Raport',
         href: '/parent/report-cards',
         icon: FileSpreadsheet,
+      },
+      {
+        title: 'Portfolio Anak',
+        href: '/parent/portfolio',
+        icon: FolderOpen,
       },
       {
         title: 'Kesehatan',
@@ -564,6 +610,11 @@ const adminNavigation: NavGroup[] = [
         icon: ScrollText,
       },
       {
+        title: 'Portfolio Siswa',
+        href: '/portfolio',
+        icon: FolderOpen,
+      },
+      {
         title: 'Classes',
         href: '/classes',
         icon: BookOpen,
@@ -643,6 +694,11 @@ const adminNavigation: NavGroup[] = [
   {
     title: 'Pesantren',
     items: [
+      {
+        title: 'Jurnal Ibadah',
+        href: '/ibadah',
+        icon: Sparkles,
+      },
       {
         title: 'Muhadhoroh',
         href: '/muhadhoroh',
@@ -733,6 +789,11 @@ const adminNavigation: NavGroup[] = [
         href: '/hr',
         icon: Clock,
       },
+      {
+        title: 'PKG Guru',
+        href: '/pkg',
+        icon: ClipboardPenLine,
+      },
     ],
   },
   {
@@ -762,6 +823,21 @@ const adminNavigation: NavGroup[] = [
         title: 'Meals',
         href: '/meals',
         icon: UtensilsCrossed,
+      },
+      {
+        title: 'Canteen/Koperasi',
+        href: '/canteen',
+        icon: ShoppingCart,
+      },
+      {
+        title: 'Laundry',
+        href: '/laundry',
+        icon: WashingMachine,
+      },
+      {
+        title: 'Dompet Santri',
+        href: '/finance/wallet',
+        icon: CreditCard,
       },
       {
         title: 'Notifications',
@@ -863,6 +939,11 @@ const kepalaSekolahNavigation: NavGroup[] = [
         href: '/hr/teachers',
         icon: Users,
       },
+      {
+        title: 'PKG Guru',
+        href: '/pkg',
+        icon: ClipboardPenLine,
+      },
     ],
   },
   {
@@ -872,6 +953,11 @@ const kepalaSekolahNavigation: NavGroup[] = [
         title: 'Students',
         href: '/students',
         icon: GraduationCap,
+      },
+      {
+        title: 'Portfolio Siswa',
+        href: '/portfolio',
+        icon: FolderOpen,
       },
       {
         title: 'Classes',

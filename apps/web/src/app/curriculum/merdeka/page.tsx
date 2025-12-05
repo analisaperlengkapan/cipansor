@@ -56,6 +56,7 @@ import {
   useLearningPhases,
   useLearningOutcomes,
   useP5Projects,
+  useP5Themes,
   useCreateLearningPhase,
   useCreateLearningOutcome,
   useCreateP5Project,
@@ -65,9 +66,16 @@ import {
   LearningPhase,
   LearningOutcome,
   P5Project,
-  P5_THEMES,
-  P5Theme,
+  P5ThemeData,
+  LEARNING_PHASE_CODES,
+  LearningPhaseCode,
+  P5_DIMENSIONS,
+  P5DimensionCode,
+  ProjectStatus,
+  PROJECT_STATUSES,
 } from '@/hooks/use-kurikulum-merdeka';
+import { useSubjects } from '@/hooks/use-curriculum';
+import { useEmployees } from '@/hooks/use-hr';
 
 export default function KurikulumMerdekaPage() {
   const router = useRouter();
@@ -85,44 +93,50 @@ export default function KurikulumMerdekaPage() {
   
   // Form states
   const [phaseForm, setPhaseForm] = useState({
-    code: '',
+    code: '' as LearningPhaseCode | '',
     name: '',
     description: '',
-    startGrade: 1,
-    endGrade: 2,
+    gradeRange: '',
   });
   
   const [outcomeForm, setOutcomeForm] = useState({
     phaseId: '',
+    subjectId: '',
     code: '',
-    subject: '',
-    domain: '',
     description: '',
   });
   
   const [projectForm, setProjectForm] = useState({
     academicYearId: '',
     unitId: '',
-    theme: '' as P5Theme | '',
+    themeId: '',
     title: '',
     description: '',
-    duration: 4,
+    dimensions: [] as P5DimensionCode[],
     startDate: '',
     endDate: '',
+    supervisorId: '',
   });
   
   // Data hooks
   const { data: units } = useUnits();
   const { data: academicYears } = useAcademicYears();
+  const { data: subjects } = useSubjects();
+  const { data: employeesData } = useEmployees({ status: 'ACTIVE' });
   const { data: phases, isLoading: loadingPhases } = useLearningPhases();
-  const { data: outcomes, isLoading: loadingOutcomes } = useLearningOutcomes({
+  const { data: p5Themes } = useP5Themes();
+  const { data: outcomesData, isLoading: loadingOutcomes } = useLearningOutcomes({
     phaseId: selectedPhase || undefined,
-    search: searchQuery,
+    search: searchQuery || undefined,
   });
-  const { data: projects, isLoading: loadingProjects } = useP5Projects({
+  const { data: projectsData, isLoading: loadingProjects } = useP5Projects({
     unitId: selectedUnit || undefined,
-    theme: selectedTheme as P5Theme || undefined,
+    themeId: selectedTheme || undefined,
   });
+  
+  // Extract arrays from paginated responses
+  const outcomes = outcomesData?.data || [];
+  const projects = projectsData?.data || [];
   
   // Mutations
   const createPhase = useCreateLearningPhase();
@@ -153,7 +167,7 @@ export default function KurikulumMerdekaPage() {
       header: 'Jenjang Kelas',
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          Kelas {row.original.startGrade} - {row.original.endGrade}
+          {row.original.gradeRange || '-'}
         </span>
       ),
     },
@@ -173,15 +187,6 @@ export default function KurikulumMerdekaPage() {
         <span className="text-muted-foreground">
           {row.original._count?.learningOutcomes || 0} CP
         </span>
-      ),
-    },
-    {
-      accessorKey: 'isActive',
-      header: 'Status',
-      cell: ({ row }) => (
-        <Badge variant={row.getValue('isActive') ? 'default' : 'secondary'}>
-          {row.getValue('isActive') ? 'Aktif' : 'Nonaktif'}
-        </Badge>
       ),
     },
     {
@@ -222,17 +227,10 @@ export default function KurikulumMerdekaPage() {
       ),
     },
     {
-      accessorKey: 'subject',
+      id: 'subject',
       header: 'Mata Pelajaran',
       cell: ({ row }) => (
-        <div className="font-medium">{row.getValue('subject')}</div>
-      ),
-    },
-    {
-      accessorKey: 'domain',
-      header: 'Domain',
-      cell: ({ row }) => (
-        <Badge variant="secondary">{row.getValue('domain')}</Badge>
+        <div className="font-medium">{row.original.subject?.name || '-'}</div>
       ),
     },
     {
@@ -249,6 +247,15 @@ export default function KurikulumMerdekaPage() {
       header: 'Fase',
       cell: ({ row }) => (
         <Badge variant="outline">{row.original.phase?.name || '-'}</Badge>
+      ),
+    },
+    {
+      accessorKey: 'isActive',
+      header: 'Status',
+      cell: ({ row }) => (
+        <Badge variant={row.getValue('isActive') ? 'default' : 'secondary'}>
+          {row.getValue('isActive') ? 'Aktif' : 'Nonaktif'}
+        </Badge>
       ),
     },
     {
@@ -277,12 +284,11 @@ export default function KurikulumMerdekaPage() {
       ),
     },
     {
-      accessorKey: 'theme',
+      id: 'theme',
       header: 'Tema',
       cell: ({ row }) => {
-        const theme = row.getValue('theme') as P5Theme;
-        const themeLabel = P5_THEMES.find(t => t.value === theme)?.label || theme;
-        return <Badge variant="secondary">{themeLabel}</Badge>;
+        const themeName = row.original.theme?.name || '-';
+        return <Badge variant="secondary">{themeName}</Badge>;
       },
     },
     {
@@ -297,10 +303,35 @@ export default function KurikulumMerdekaPage() {
     {
       id: 'period',
       header: 'Periode',
+      cell: ({ row }) => {
+        const start = row.original.startDate ? new Date(row.original.startDate).toLocaleDateString('id-ID') : '';
+        const end = row.original.endDate ? new Date(row.original.endDate).toLocaleDateString('id-ID') : '';
+        return (
+          <span className="text-muted-foreground">
+            {start && end ? `${start} - ${end}` : '-'}
+          </span>
+        );
+      },
+    },
+    {
+      id: 'dimensions',
+      header: 'Dimensi',
       cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {row.original.duration ? `${row.original.duration} minggu` : '-'}
-        </span>
+        <div className="flex flex-wrap gap-1">
+          {row.original.dimensions?.slice(0, 2).map((dim) => {
+            const dimData = P5_DIMENSIONS.find(d => d.value === dim);
+            return (
+              <Badge key={dim} variant="outline" className="text-xs">
+                {dimData?.value || dim}
+              </Badge>
+            );
+          })}
+          {(row.original.dimensions?.length || 0) > 2 && (
+            <Badge variant="outline" className="text-xs">
+              +{(row.original.dimensions?.length || 0) - 2}
+            </Badge>
+          )}
+        </div>
       ),
     },
     {
@@ -313,13 +344,17 @@ export default function KurikulumMerdekaPage() {
       ),
     },
     {
-      accessorKey: 'isActive',
+      accessorKey: 'status',
       header: 'Status',
-      cell: ({ row }) => (
-        <Badge variant={row.getValue('isActive') ? 'default' : 'secondary'}>
-          {row.getValue('isActive') ? 'Aktif' : 'Selesai'}
-        </Badge>
-      ),
+      cell: ({ row }) => {
+        const status = row.getValue('status') as ProjectStatus;
+        const statusData = PROJECT_STATUSES.find(s => s.value === status);
+        return (
+          <Badge className={statusData?.color || ''}>
+            {statusData?.label || status}
+          </Badge>
+        );
+      },
     },
     {
       id: 'actions',
@@ -349,46 +384,58 @@ export default function KurikulumMerdekaPage() {
   const handleAdd = async () => {
     try {
       if (activeTab === 'phases') {
+        if (!phaseForm.code) {
+          toast.error('Pilih kode fase');
+          return;
+        }
+        const phaseData = LEARNING_PHASE_CODES.find(p => p.value === phaseForm.code);
         await createPhase.mutateAsync({
-          code: phaseForm.code,
-          name: phaseForm.name,
+          code: phaseForm.code as LearningPhaseCode,
+          name: phaseForm.name || phaseData?.label || '',
           description: phaseForm.description || undefined,
-          startGrade: phaseForm.startGrade,
-          endGrade: phaseForm.endGrade,
+          gradeRange: phaseForm.gradeRange || `Kelas ${phaseData?.startGrade} - ${phaseData?.endGrade}`,
         });
         toast.success('Fase berhasil ditambahkan');
-        setPhaseForm({ code: '', name: '', description: '', startGrade: 1, endGrade: 2 });
+        setPhaseForm({ code: '', name: '', description: '', gradeRange: '' });
       } else if (activeTab === 'outcomes') {
-        if (!outcomeForm.phaseId) {
-          toast.error('Pilih fase terlebih dahulu');
+        if (!outcomeForm.phaseId || !outcomeForm.subjectId) {
+          toast.error('Pilih fase dan mata pelajaran');
           return;
         }
         await createOutcome.mutateAsync({
           phaseId: outcomeForm.phaseId,
+          subjectId: outcomeForm.subjectId,
           code: outcomeForm.code,
-          subject: outcomeForm.subject,
-          domain: outcomeForm.domain,
           description: outcomeForm.description,
         });
         toast.success('Capaian Pembelajaran berhasil ditambahkan');
-        setOutcomeForm({ phaseId: '', code: '', subject: '', domain: '', description: '' });
+        setOutcomeForm({ phaseId: '', subjectId: '', code: '', description: '' });
       } else if (activeTab === 'p5') {
-        if (!projectForm.academicYearId || !projectForm.unitId || !projectForm.theme) {
+        if (!projectForm.academicYearId || !projectForm.unitId || !projectForm.themeId || !projectForm.supervisorId) {
           toast.error('Lengkapi semua field yang diperlukan');
+          return;
+        }
+        if (!projectForm.startDate || !projectForm.endDate) {
+          toast.error('Tentukan tanggal mulai dan selesai');
+          return;
+        }
+        if (projectForm.dimensions.length === 0) {
+          toast.error('Pilih minimal satu dimensi P5');
           return;
         }
         await createProject.mutateAsync({
           academicYearId: projectForm.academicYearId,
           unitId: projectForm.unitId,
-          theme: projectForm.theme as P5Theme,
+          themeId: projectForm.themeId,
           title: projectForm.title,
-          description: projectForm.description || undefined,
-          duration: projectForm.duration || undefined,
-          startDate: projectForm.startDate || undefined,
-          endDate: projectForm.endDate || undefined,
+          description: projectForm.description,
+          dimensions: projectForm.dimensions,
+          startDate: projectForm.startDate,
+          endDate: projectForm.endDate,
+          supervisorId: projectForm.supervisorId,
         });
         toast.success('Proyek P5 berhasil ditambahkan');
-        setProjectForm({ academicYearId: '', unitId: '', theme: '', title: '', description: '', duration: 4, startDate: '', endDate: '' });
+        setProjectForm({ academicYearId: '', unitId: '', themeId: '', title: '', description: '', dimensions: [], startDate: '', endDate: '', supervisorId: '' });
       }
       setIsAddDialogOpen(false);
     } catch (error: unknown) {
@@ -437,21 +484,21 @@ export default function KurikulumMerdekaPage() {
     },
     {
       title: 'Capaian Pembelajaran',
-      value: outcomes?.length || 0,
+      value: outcomesData?.meta?.total || outcomes.length,
       icon: Target,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
     },
     {
       title: 'Proyek P5',
-      value: projects?.length || 0,
+      value: projectsData?.meta?.total || projects.length,
       icon: Leaf,
       color: 'text-orange-600',
       bgColor: 'bg-orange-100',
     },
     {
       title: 'Proyek Aktif',
-      value: projects?.filter(p => p.isActive).length || 0,
+      value: projects.filter(p => p.status === 'ACTIVE').length,
       icon: BookOpen,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100',
@@ -527,13 +574,30 @@ export default function KurikulumMerdekaPage() {
                   {activeTab === 'phases' && (
                     <div className="grid gap-4 py-4">
                       <div className="grid gap-2">
-                        <Label htmlFor="phase-code">Kode Fase *</Label>
-                        <Input
-                          id="phase-code"
-                          placeholder="FASE_A"
-                          value={phaseForm.code}
-                          onChange={(e) => setPhaseForm({ ...phaseForm, code: e.target.value })}
-                        />
+                        <Label>Kode Fase *</Label>
+                        <Select 
+                          value={phaseForm.code} 
+                          onValueChange={(val: LearningPhaseCode) => {
+                            const phaseData = LEARNING_PHASE_CODES.find(p => p.value === val);
+                            setPhaseForm({ 
+                              ...phaseForm, 
+                              code: val,
+                              name: phaseData?.label || '',
+                              gradeRange: `Kelas ${phaseData?.startGrade} - ${phaseData?.endGrade}`,
+                            });
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih fase" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {LEARNING_PHASE_CODES.map((phase) => (
+                              <SelectItem key={phase.value} value={phase.value}>
+                                {phase.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="phase-name">Nama Fase *</Label>
@@ -544,29 +608,14 @@ export default function KurikulumMerdekaPage() {
                           onChange={(e) => setPhaseForm({ ...phaseForm, name: e.target.value })}
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="phase-start">Kelas Awal</Label>
-                          <Input
-                            id="phase-start"
-                            type="number"
-                            min="1"
-                            max="12"
-                            value={phaseForm.startGrade}
-                            onChange={(e) => setPhaseForm({ ...phaseForm, startGrade: Number(e.target.value) })}
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="phase-end">Kelas Akhir</Label>
-                          <Input
-                            id="phase-end"
-                            type="number"
-                            min="1"
-                            max="12"
-                            value={phaseForm.endGrade}
-                            onChange={(e) => setPhaseForm({ ...phaseForm, endGrade: Number(e.target.value) })}
-                          />
-                        </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="phase-range">Jenjang Kelas</Label>
+                        <Input
+                          id="phase-range"
+                          placeholder="Kelas 1 - 2"
+                          value={phaseForm.gradeRange}
+                          onChange={(e) => setPhaseForm({ ...phaseForm, gradeRange: e.target.value })}
+                        />
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="phase-desc">Deskripsi</Label>
@@ -598,30 +647,27 @@ export default function KurikulumMerdekaPage() {
                         </Select>
                       </div>
                       <div className="grid gap-2">
+                        <Label>Mata Pelajaran *</Label>
+                        <Select value={outcomeForm.subjectId} onValueChange={(val) => setOutcomeForm({ ...outcomeForm, subjectId: val })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih mata pelajaran" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {subjects?.map((subject) => (
+                              <SelectItem key={subject.id} value={subject.id}>
+                                {subject.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
                         <Label htmlFor="outcome-code">Kode CP *</Label>
                         <Input
                           id="outcome-code"
                           placeholder="IND.A.1"
                           value={outcomeForm.code}
                           onChange={(e) => setOutcomeForm({ ...outcomeForm, code: e.target.value })}
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="outcome-subject">Mata Pelajaran *</Label>
-                        <Input
-                          id="outcome-subject"
-                          placeholder="Bahasa Indonesia"
-                          value={outcomeForm.subject}
-                          onChange={(e) => setOutcomeForm({ ...outcomeForm, subject: e.target.value })}
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="outcome-domain">Domain/Elemen *</Label>
-                        <Input
-                          id="outcome-domain"
-                          placeholder="Menyimak"
-                          value={outcomeForm.domain}
-                          onChange={(e) => setOutcomeForm({ ...outcomeForm, domain: e.target.value })}
                         />
                       </div>
                       <div className="grid gap-2">
@@ -670,14 +716,29 @@ export default function KurikulumMerdekaPage() {
                       </div>
                       <div className="grid gap-2">
                         <Label>Tema P5 *</Label>
-                        <Select value={projectForm.theme} onValueChange={(val: P5Theme) => setProjectForm({ ...projectForm, theme: val })}>
+                        <Select value={projectForm.themeId} onValueChange={(val) => setProjectForm({ ...projectForm, themeId: val })}>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih tema" />
                           </SelectTrigger>
                           <SelectContent>
-                            {P5_THEMES.map((theme) => (
-                              <SelectItem key={theme.value} value={theme.value}>
-                                {theme.label}
+                            {p5Themes?.map((theme: P5ThemeData) => (
+                              <SelectItem key={theme.id} value={theme.id}>
+                                {theme.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Pembimbing/Supervisor *</Label>
+                        <Select value={projectForm.supervisorId} onValueChange={(val) => setProjectForm({ ...projectForm, supervisorId: val })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih pembimbing" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {employeesData?.data?.map((emp) => (
+                              <SelectItem key={emp.id} value={emp.id}>
+                                {emp.user?.name || emp.fullName || emp.nip}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -693,7 +754,7 @@ export default function KurikulumMerdekaPage() {
                         />
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="project-desc">Deskripsi</Label>
+                        <Label htmlFor="project-desc">Deskripsi *</Label>
                         <Textarea
                           id="project-desc"
                           placeholder="Deskripsi proyek"
@@ -702,18 +763,30 @@ export default function KurikulumMerdekaPage() {
                         />
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="project-duration">Durasi (minggu)</Label>
-                        <Input
-                          id="project-duration"
-                          type="number"
-                          min="1"
-                          value={projectForm.duration}
-                          onChange={(e) => setProjectForm({ ...projectForm, duration: Number(e.target.value) })}
-                        />
+                        <Label>Dimensi P5 *</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {P5_DIMENSIONS.map((dim) => (
+                            <label key={dim.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={projectForm.dimensions.includes(dim.value)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setProjectForm({ ...projectForm, dimensions: [...projectForm.dimensions, dim.value] });
+                                  } else {
+                                    setProjectForm({ ...projectForm, dimensions: projectForm.dimensions.filter(d => d !== dim.value) });
+                                  }
+                                }}
+                                className="rounded"
+                              />
+                              <span className="line-clamp-1">{dim.label}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
-                          <Label htmlFor="project-start">Tanggal Mulai</Label>
+                          <Label htmlFor="project-start">Tanggal Mulai *</Label>
                           <Input
                             id="project-start"
                             type="date"
@@ -722,7 +795,7 @@ export default function KurikulumMerdekaPage() {
                           />
                         </div>
                         <div className="grid gap-2">
-                          <Label htmlFor="project-end">Tanggal Selesai</Label>
+                          <Label htmlFor="project-end">Tanggal Selesai *</Label>
                           <Input
                             id="project-end"
                             type="date"
@@ -812,9 +885,9 @@ export default function KurikulumMerdekaPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Semua Tema</SelectItem>
-                    {P5_THEMES.map((theme) => (
-                      <SelectItem key={theme.value} value={theme.value}>
-                        {theme.label}
+                    {p5Themes?.map((theme: P5ThemeData) => (
+                      <SelectItem key={theme.id} value={theme.id}>
+                        {theme.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -122,6 +122,8 @@ export default function PayrollPage() {
     const colors: Record<PayrollStatus, string> = {
       DRAFT: 'bg-gray-100 text-gray-800',
       PENDING: 'bg-yellow-100 text-yellow-800',
+      CALCULATED: 'bg-blue-100 text-blue-800',
+      APPROVED: 'bg-indigo-100 text-indigo-800',
       PROCESSED: 'bg-blue-100 text-blue-800',
       PAID: 'bg-green-100 text-green-800',
       CANCELLED: 'bg-red-100 text-red-800',
@@ -314,6 +316,28 @@ export default function PayrollPage() {
               </p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/hr/payroll/periods">
+              <Calendar className="mr-2 h-4 w-4" />
+              Periode Penggajian
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/hr/payroll/components">
+              <FileText className="mr-2 h-4 w-4" />
+              Komponen Gaji
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/hr/payroll/staff-salary">
+              <Users className="mr-2 h-4 w-4" />
+              Konfigurasi Gaji Karyawan
+            </Link>
+          </Button>
         </div>
 
         {/* Filters */}

@@ -13,6 +13,9 @@ import {
   Filter,
   Settings,
   Star,
+  Trophy,
+  Medal,
+  Crown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,7 +60,7 @@ function getCategoryBadge(category: RewardCategory) {
 }
 
 export default function RewardsPage() {
-  const [activeTab, setActiveTab] = useState<'rewards' | 'types'>('rewards');
+  const [activeTab, setActiveTab] = useState<'rewards' | 'types' | 'leaderboard'>('rewards');
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -150,9 +153,13 @@ export default function RewardsPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'rewards' | 'types')}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'rewards' | 'types' | 'leaderboard')}>
         <TabsList>
           <TabsTrigger value="rewards">Data Penghargaan</TabsTrigger>
+          <TabsTrigger value="leaderboard" className="flex items-center gap-2">
+            <Trophy className="h-4 w-4" />
+            Leaderboard
+          </TabsTrigger>
           <TabsTrigger value="types">Jenis Penghargaan</TabsTrigger>
         </TabsList>
 
@@ -264,6 +271,111 @@ export default function RewardsPage() {
               onPageChange={setPage}
             />
           )}
+        </TabsContent>
+
+        {/* Leaderboard Tab */}
+        <TabsContent value="leaderboard" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-yellow-500" />
+                Top Santri Berprestasi
+              </CardTitle>
+              <CardDescription>
+                Peringkat santri dengan poin penghargaan tertinggi
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {summaryData?.topStudents && summaryData.topStudents.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Top 3 Podium */}
+                  <div className="grid grid-cols-3 gap-4 mb-8">
+                    {/* 2nd Place */}
+                    <div className="flex flex-col items-center order-1">
+                      {summaryData.topStudents[1] && (
+                        <div className="text-center">
+                          <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-2">
+                            <Medal className="h-10 w-10 text-gray-400" />
+                          </div>
+                          <div className="bg-gray-100 rounded-lg p-4 mt-4">
+                            <p className="font-medium truncate">{summaryData.topStudents[1].name}</p>
+                            <p className="text-lg font-bold text-gray-600">{summaryData.topStudents[1].points} poin</p>
+                            <Badge variant="secondary">{summaryData.topStudents[1].count} penghargaan</Badge>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {/* 1st Place */}
+                    <div className="flex flex-col items-center order-0 -mt-4">
+                      {summaryData.topStudents[0] && (
+                        <div className="text-center">
+                          <div className="relative">
+                            <Crown className="h-8 w-8 text-yellow-500 absolute -top-6 left-1/2 -translate-x-1/2" />
+                            <div className="w-24 h-24 mx-auto bg-yellow-100 rounded-full flex items-center justify-center mb-2 ring-4 ring-yellow-400">
+                              <Trophy className="h-12 w-12 text-yellow-500" />
+                            </div>
+                          </div>
+                          <div className="bg-yellow-50 rounded-lg p-4 mt-4 border border-yellow-200">
+                            <p className="font-medium truncate">{summaryData.topStudents[0].name}</p>
+                            <p className="text-xl font-bold text-yellow-600">{summaryData.topStudents[0].points} poin</p>
+                            <Badge className="bg-yellow-500">{summaryData.topStudents[0].count} penghargaan</Badge>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {/* 3rd Place */}
+                    <div className="flex flex-col items-center order-2">
+                      {summaryData.topStudents[2] && (
+                        <div className="text-center">
+                          <div className="w-20 h-20 mx-auto bg-orange-50 rounded-full flex items-center justify-center mb-2">
+                            <Medal className="h-10 w-10 text-orange-400" />
+                          </div>
+                          <div className="bg-orange-50 rounded-lg p-4 mt-4">
+                            <p className="font-medium truncate">{summaryData.topStudents[2].name}</p>
+                            <p className="text-lg font-bold text-orange-600">{summaryData.topStudents[2].points} poin</p>
+                            <Badge variant="secondary">{summaryData.topStudents[2].count} penghargaan</Badge>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Rest of Leaderboard */}
+                  {summaryData.topStudents.length > 3 && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-16">Rank</TableHead>
+                          <TableHead>Nama Santri</TableHead>
+                          <TableHead className="text-center">Jumlah Penghargaan</TableHead>
+                          <TableHead className="text-right">Total Poin</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {summaryData.topStudents.slice(3).map((student, idx) => (
+                          <TableRow key={student.studentId}>
+                            <TableCell className="font-bold text-muted-foreground">
+                              #{idx + 4}
+                            </TableCell>
+                            <TableCell className="font-medium">{student.name}</TableCell>
+                            <TableCell className="text-center">{student.count}</TableCell>
+                            <TableCell className="text-right text-green-600 font-bold">
+                              {student.points} poin
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Trophy className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">Belum ada data leaderboard</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Types Tab */}

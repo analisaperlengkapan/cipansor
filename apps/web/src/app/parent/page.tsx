@@ -18,6 +18,7 @@ import {
   BookOpen,
   TrendingUp,
   Bell,
+  Wallet,
 } from 'lucide-react';
 
 interface Child {
@@ -68,6 +69,14 @@ interface ChildSummary {
     total: number;
   };
   unreadRewards: number;
+  wallet?: {
+    balance: number;
+    lastTransaction?: {
+      type: string;
+      amount: number;
+      date: string;
+    };
+  };
 }
 
 interface DashboardData {
@@ -253,6 +262,27 @@ export default function ParentDashboardPage() {
                     <p className="text-sm text-yellow-600 mt-1">
                       Total: {formatCurrency(summary.pendingPayments.total)}
                     </p>
+                  </div>
+                )}
+
+                {/* Wallet Balance */}
+                {summary?.wallet && (
+                  <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-blue-700">
+                        <Wallet className="h-4 w-4" />
+                        <span className="font-medium">Saldo Dompet</span>
+                      </div>
+                      <span className="font-bold text-blue-800">
+                        {formatCurrency(summary.wallet.balance)}
+                      </span>
+                    </div>
+                    {summary.wallet.lastTransaction && (
+                      <p className="text-xs text-blue-600 mt-1">
+                        Transaksi terakhir: {summary.wallet.lastTransaction.type === 'TOP_UP' ? '+' : '-'}
+                        {formatCurrency(summary.wallet.lastTransaction.amount)}
+                      </p>
+                    )}
                   </div>
                 )}
 

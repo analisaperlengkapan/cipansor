@@ -18,8 +18,10 @@ export * from './use-library';
 export * from './use-dashboard';
 export * from './use-foundation';
 export * from './use-psb';
+export * from './use-ppdb-wave';
 export * from './use-hr';
 export * from './use-curriculum';
+export * from './use-kurikulum-merdeka';
 export * from './use-assessment';
 export * from './use-notifications';
 export * from './use-alumni';
@@ -33,6 +35,13 @@ export * from './use-counseling';
 export * from './use-homeroom';
 export * from './use-report-card';
 export * from './use-duty-roster';
+export * from './use-meals';
+export * from './use-wilayah';
+export * from './use-student-compliance';
+export * from './use-teacher-compliance';
+export * from './use-takhosus';
+export * from './use-kitab-progress';
+export * from './use-ibadah';
 
 // Utility hooks
 export * from './use-url-filters';
@@ -40,3 +49,14 @@ export * from './use-debounce';
 export * from './use-unsaved-changes';
 export * from './use-keyboard-shortcuts';
 export * from './use-online-status';
+export * from './use-settings';
+
+// Note: The following hooks are intentionally not re-exported from index
+// due to naming conflicts with other hooks. Import them directly:
+// - use-facilities (conflicts with use-dormitory: useRooms, CreateRoomData, etc.)
+// - use-finance-enhancement (conflicts with use-finance: PAYMENT_METHODS, PaymentMethod)
+// - use-muhadhoroh (conflicts with use-report-card: getGradeColor)
+// - use-muhadatsah
+// - use-muhasabah
+// - use-donation (conflicts with use-finance: PAYMENT_METHODS, PaymentMethod)
+// - use-wallet (conflicts with use-finance: PAYMENT_METHODS, PaymentMethod)

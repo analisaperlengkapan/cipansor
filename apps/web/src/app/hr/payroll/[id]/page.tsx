@@ -79,6 +79,8 @@ export default function PayrollDetailPage({ params }: PageProps) {
     const colors: Record<PayrollStatus, string> = {
       DRAFT: 'bg-gray-100 text-gray-800',
       PENDING: 'bg-yellow-100 text-yellow-800',
+      CALCULATED: 'bg-blue-100 text-blue-800',
+      APPROVED: 'bg-indigo-100 text-indigo-800',
       PROCESSED: 'bg-blue-100 text-blue-800',
       PAID: 'bg-green-100 text-green-800',
       CANCELLED: 'bg-red-100 text-red-800',

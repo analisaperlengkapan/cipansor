@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
+import api, { ApiResponse } from '@/lib/api';
 
 // ==================== TYPES ====================
 
@@ -255,28 +255,36 @@ export function useCreateVillage() {
 // ==================== CASCADING SELECTORS ====================
 
 /**
- * Hook for cascading wilayah selection (Province -> Regency -> District -> Village)
- * Use this for address selection in forms
+ * Hook for wilayah selection with all levels
+ * Use individual hooks (useRegencies, useDistricts, useVillages) with proper params
+ * instead of this helper for cascading selection
+ * 
+ * @example
+ * ```tsx
+ * const [provinceId, setProvinceId] = useState<string>('');
+ * const [regencyId, setRegencyId] = useState<string>('');
+ * const [districtId, setDistrictId] = useState<string>('');
+ * 
+ * const { data: provinces } = useProvinces();
+ * const { data: regencies } = useRegencies({ provinceId: provinceId || undefined });
+ * const { data: districts } = useDistricts({ regencyId: regencyId || undefined });
+ * const { data: villages } = useVillages({ districtId: districtId || undefined });
+ * ```
  */
-export function useWilayahCascade() {
+export function useWilayahCascadeState(initialValues?: {
+  provinceId?: string;
+  regencyId?: string;
+  districtId?: string;
+  villageId?: string;
+}) {
   const provinces = useProvinces();
-  
-  const getRegencies = (provinceId: string | undefined) => {
-    return useRegencies({ provinceId });
-  };
-  
-  const getDistricts = (regencyId: string | undefined) => {
-    return useDistricts({ regencyId });
-  };
-  
-  const getVillages = (districtId: string | undefined) => {
-    return useVillages({ districtId });
-  };
   
   return {
     provinces,
-    getRegencies,
-    getDistricts,
-    getVillages,
+    // Consumers should use useRegencies/useDistricts/useVillages directly with their selected IDs
+    initialProvinceId: initialValues?.provinceId,
+    initialRegencyId: initialValues?.regencyId,
+    initialDistrictId: initialValues?.districtId,
+    initialVillageId: initialValues?.villageId,
   };
 }

@@ -412,6 +412,7 @@ interface UseLearningOutcomesParams {
   phaseId?: string;
   subjectId?: string;
   isActive?: boolean;
+  search?: string;
   page?: number;
   limit?: number;
 }

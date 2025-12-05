@@ -47,6 +47,14 @@ import { facilitiesRoutes } from '@/modules/facilities';
 import { studentComplianceRoutes } from '@/modules/student-compliance';
 import { teacherComplianceRoutes } from '@/modules/teacher-compliance';
 import { financeEnhancementRoutes } from '@/modules/finance-enhancement';
+import { walletRoutes } from '@/modules/wallet';
+import { canteenRoutes } from '@/modules/canteen';
+import { laundryRoutes } from '@/modules/laundry';
+import { payrollRoutes } from '@/modules/payroll';
+import pkgRoutes from '@/modules/pkg/routes';
+import portfolioRoutes from '@/modules/portfolio/routes';
+import ibadahRoutes from '@/modules/ibadah/routes';
+import raporPesantrenRoutes from '@/modules/rapor-pesantren/routes';
 
 // Phase 12 routes
 import extracurricularRoutes from '@/modules/extracurricular/extracurricular.routes';
@@ -151,6 +159,14 @@ apiRouter.use('/facilities', facilitiesRoutes);
 apiRouter.use('/student-compliance', studentComplianceRoutes);
 apiRouter.use('/teacher-compliance', teacherComplianceRoutes);
 apiRouter.use('/finance-enhancement', financeEnhancementRoutes);
+apiRouter.use('/wallet', walletRoutes);
+apiRouter.use('/canteen', canteenRoutes);
+apiRouter.use('/laundry', laundryRoutes);
+apiRouter.use('/payroll', payrollRoutes);
+apiRouter.use('/pkg', pkgRoutes);
+apiRouter.use('/portfolio', portfolioRoutes);
+apiRouter.use('/ibadah', ibadahRoutes);
+apiRouter.use('/rapor-pesantren', raporPesantrenRoutes);
 
 // Phase 12 routes
 apiRouter.use('/extracurricular', extracurricularRoutes);
@@ -219,6 +235,13 @@ apiRouter.get('/', (_req, res) => {
       studentCompliance: '/api/student-compliance',
       teacherCompliance: '/api/teacher-compliance',
       financeEnhancement: '/api/finance-enhancement',
+      wallet: '/api/wallet',
+      canteen: '/api/canteen',
+      laundry: '/api/laundry',
+      pkg: '/api/pkg',
+      portfolio: '/api/portfolio',
+      ibadah: '/api/ibadah',
+      raporPesantren: '/api/rapor-pesantren',
     },
   });
 });

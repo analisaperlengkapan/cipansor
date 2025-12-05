@@ -28,6 +28,10 @@ import {
   Printer,
   History,
   FileText,
+  Wallet,
+  ArrowUpRight,
+  ArrowDownRight,
+  RefreshCw,
 } from 'lucide-react';
 
 interface Child {
@@ -71,6 +75,20 @@ interface FinanceSummary {
   overdueCount: number;
 }
 
+interface WalletData {
+  id: string;
+  balance: number;
+  transactions: Array<{
+    id: string;
+    type: 'TOP_UP' | 'DEDUCT' | 'TRANSFER' | 'REFUND';
+    amount: number;
+    balanceAfter: number;
+    referenceType?: string;
+    description?: string;
+    createdAt: string;
+  }>;
+}
+
 export default function FinancePage() {
   const searchParams = useSearchParams();
   const selectedStudentId = searchParams.get('studentId');
@@ -80,6 +98,8 @@ export default function FinancePage() {
   const [selectedChild, setSelectedChild] = useState<string>('');
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
+  const [wallet, setWallet] = useState<WalletData | null>(null);
+  const [walletLoading, setWalletLoading] = useState(false);
 
   useEffect(() => {
     const fetchChildren = async () => {
@@ -118,7 +138,28 @@ export default function FinancePage() {
       }
     };
 
+    const fetchWallet = async () => {
+      setWalletLoading(true);
+      try {
+        const res = await api.get(`/wallet/student/${selectedChild}`);
+        if (res.data.data) {
+          const txRes = await api.get(`/wallet/${res.data.data.id}/transactions?limit=10`);
+          setWallet({
+            id: res.data.data.id,
+            balance: res.data.data.balance,
+            transactions: txRes.data.data || [],
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch wallet:', err);
+        setWallet(null);
+      } finally {
+        setWalletLoading(false);
+      }
+    };
+
     fetchFinance();
+    fetchWallet();
   }, [selectedChild]);
 
   const formatCurrency = (amount: number) => {
@@ -182,7 +223,7 @@ export default function FinancePage() {
         <>
           {/* Summary Cards */}
           {summary && (
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-5">
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
@@ -235,6 +276,21 @@ export default function FinancePage() {
                   </div>
                 </CardContent>
               </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-indigo-100 rounded-lg">
+                      <Wallet className="h-6 w-6 text-indigo-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Saldo Dompet</p>
+                      <p className="text-xl font-bold text-indigo-600">
+                        {wallet ? formatCurrency(wallet.balance) : '-'}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
 
@@ -244,6 +300,10 @@ export default function FinancePage() {
               <TabsTrigger value="invoices" className="gap-2">
                 <FileText className="h-4 w-4" />
                 Daftar Tagihan
+              </TabsTrigger>
+              <TabsTrigger value="wallet" className="gap-2">
+                <Wallet className="h-4 w-4" />
+                Dompet Santri
               </TabsTrigger>
               <TabsTrigger value="history" className="gap-2">
                 <History className="h-4 w-4" />
@@ -342,6 +402,116 @@ export default function FinancePage() {
                           </CardContent>
                         </Card>
                       ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="wallet">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Wallet className="h-5 w-5" />
+                    Dompet Santri
+                  </CardTitle>
+                  <CardDescription>
+                    Saldo dan riwayat transaksi dompet digital santri
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {walletLoading ? (
+                    <div className="flex justify-center py-8">
+                      <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : !wallet ? (
+                    <div className="text-center py-8">
+                      <Wallet className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-muted-foreground">
+                        Dompet belum diaktifkan untuk santri ini
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Hubungi admin untuk mengaktifkan dompet digital
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Balance Card */}
+                      <div className="p-6 rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+                        <p className="text-blue-100 text-sm">Saldo Tersedia</p>
+                        <p className="text-3xl font-bold mt-1">
+                          {formatCurrency(wallet.balance)}
+                        </p>
+                        <p className="text-blue-200 text-xs mt-2">
+                          Dapat digunakan untuk pembayaran di kantin, laundry, dll
+                        </p>
+                      </div>
+
+                      {/* Transactions */}
+                      <div>
+                        <h4 className="font-medium mb-4">Riwayat Transaksi</h4>
+                        {wallet.transactions.length === 0 ? (
+                          <p className="text-center text-muted-foreground py-4">
+                            Belum ada transaksi
+                          </p>
+                        ) : (
+                          <div className="space-y-3">
+                            {wallet.transactions.map((tx) => (
+                              <div
+                                key={tx.id}
+                                className="flex items-center justify-between p-3 rounded-lg border"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className={`p-2 rounded-full ${
+                                    tx.type === 'TOP_UP' || tx.type === 'REFUND'
+                                      ? 'bg-green-100 text-green-600'
+                                      : 'bg-red-100 text-red-600'
+                                  }`}>
+                                    {tx.type === 'TOP_UP' || tx.type === 'REFUND' ? (
+                                      <ArrowDownRight className="h-4 w-4" />
+                                    ) : (
+                                      <ArrowUpRight className="h-4 w-4" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-sm">
+                                      {tx.type === 'TOP_UP' && 'Top Up'}
+                                      {tx.type === 'DEDUCT' && 'Pembayaran'}
+                                      {tx.type === 'TRANSFER' && 'Transfer'}
+                                      {tx.type === 'REFUND' && 'Pengembalian'}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {tx.description || tx.referenceType || '-'}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {new Date(tx.createdAt).toLocaleDateString('id-ID', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className={`font-bold ${
+                                    tx.type === 'TOP_UP' || tx.type === 'REFUND'
+                                      ? 'text-green-600'
+                                      : 'text-red-600'
+                                  }`}>
+                                    {tx.type === 'TOP_UP' || tx.type === 'REFUND' ? '+' : '-'}
+                                    {formatCurrency(tx.amount)}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Saldo: {formatCurrency(tx.balanceAfter)}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </CardContent>

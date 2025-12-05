@@ -243,6 +243,21 @@ model User {
   merdekaGrades                     MerdekaAssessmentResult[]   @relation("MerdekaGrader")
   journalEntries                    JournalEntry[]              @relation("JournalCreator")
   walletTransactions                WalletTransaction[]         @relation("WalletTransactor")
+  // Canteen relations
+  canteenTransactions               CanteenTransaction[]        @relation("CanteenCashier")
+  canteenStockMovements             CanteenStockMovement[]      @relation("CanteenStockCreator")
+  // Laundry relations
+  laundryReceived                   LaundryTransaction[]        @relation("LaundryReceiver")
+  laundryDelivered                  LaundryTransaction[]        @relation("LaundryDeliverer")
+  laundryStatusLogs                 LaundryStatusLog[]          @relation("LaundryStatusChanger")
+  // Payroll relations
+  payrollPeriodsCreated             PayrollPeriod[]             @relation("PayrollPeriodCreator")
+  payrollPeriodsApproved            PayrollPeriod[]             @relation("PayrollPeriodApprover")
+  // PKG & Portfolio relations
+  pkgAssessed                       PKGEvaluation[]             @relation("PKGAssessor")
+  portfoliosReviewed                Portfolio[]                 @relation("PortfolioReviewer")
+  portfolioComments                 PortfolioComment[]
+  ibadahVerified                    DailyIbadahRecord[]         @relation("IbadahVerifier")
 
   @@index([email])
   @@index([role])
@@ -329,6 +344,23 @@ model Unit {
   p5Projects             P5Project[]
   merdekaAssessments     MerdekaAssessment[]
   journalEntries         JournalEntry[]
+  // Canteen relations
+  canteenCategories      CanteenCategory[]
+  canteenItems           CanteenItem[]
+  canteenTransactions    CanteenTransaction[]
+  // Laundry relations
+  laundryPricings        LaundryPricing[]
+  laundryTransactions    LaundryTransaction[]
+  // Payroll relations
+  payrollPeriods         PayrollPeriod[]
+  // PKG, Portfolio & Islamic relations
+  pkgPeriods             PKGPeriod[]
+  islamicEvents          IslamicEvent[]
+  dailyIbadahTargets     DailyIbadahTarget[]
+  ibadahLeaderboards     IbadahLeaderboard[]
+  // Settings and Rapor Pesantren
+  settings               Setting[]
+  raporPesantren         RaporPesantren[]       @relation("RaporPesantrenUnit")
 
   @@index([type])
   @@index([foundationId])
@@ -426,6 +458,8 @@ model Teacher {
   p5Assessments            P5Assessment[]      @relation("P5Assessor")
   merdekaAssessments       MerdekaAssessment[]
   musyrifs                 Musyrif[]
+  // PKG relations
+  pkgEvaluations           PKGEvaluation[]
 
   @@index([unitId])
   @@index([provinceId])
@@ -448,11 +482,13 @@ model Staff {
   deletedAt  DateTime? @map("deleted_at")
 
   // Relations
-  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  unit       Unit              @relation(fields: [unitId], references: [id])
-  attendance StaffAttendance[]
-  leaves     Leave[]
-  musyrifs   Musyrif[]
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unit           Unit              @relation(fields: [unitId], references: [id])
+  attendance     StaffAttendance[]
+  leaves         Leave[]
+  musyrifs       Musyrif[]
+  employeeSalary EmployeeSalary?
+  payrolls       Payroll[]
 
   @@index([unitId])
   @@map("staff")
@@ -487,6 +523,11 @@ model AcademicYear {
   p5Projects            P5Project[]
   scholarshipRecipients ScholarshipRecipient[]
   merdekaAssessments    MerdekaAssessment[]
+  // PKG & Portfolio relations
+  pkgPeriods            PKGPeriod[]
+  portfolios            Portfolio[]
+  // Rapor Pesantren relations
+  raporPesantren        RaporPesantren[]
 
   @@index([isActive])
   @@map("academic_years")
@@ -673,6 +714,15 @@ model Student {
   behaviorRecords             BehaviorRecord[]
   kitabStudentProgress        KitabStudentProgress[]
   kitabProgressRecords        KitabProgressRecord[]
+  // Canteen & Laundry relations
+  canteenTransactions         CanteenTransaction[]
+  laundryTransactions         LaundryTransaction[]
+  // Portfolio & Ibadah relations
+  portfolios                  Portfolio[]
+  dailyIbadahRecords          DailyIbadahRecord[]
+  ibadahLeaderboards          IbadahLeaderboard[]
+  // Rapor Pesantren relations
+  raporPesantren              RaporPesantren[]
 
   @@index([nis])
   @@index([unitId])
@@ -4287,3 +4337,833 @@ model WalletTransaction {
   @@index([createdAt])
   @@map("wallet_transactions")
 }
+
+// ============================================
+// CANTEEN / KOPERASI (Kantin Pesantren)
+// ============================================
+
+/// CanteenCategory - Kategori Menu Kantin
+model CanteenCategory {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id")
+  name        String // Makanan, Minuman, Snack, Alat Tulis, dll
+  description String?
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit  Unit          @relation(fields: [unitId], references: [id])
+  items CanteenItem[]
+
+  @@unique([unitId, name])
+  @@index([unitId])
+  @@map("canteen_categories")
+}
+
+/// CanteenItem - Item Menu Kantin
+model CanteenItem {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id")
+  categoryId  String   @map("category_id")
+  code        String? // Kode produk
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(15, 2)
+  costPrice   Decimal? @map("cost_price") @db.Decimal(15, 2) // Harga pokok
+  stock       Int      @default(0) // Stok saat ini
+  minStock    Int      @default(5) @map("min_stock") // Stok minimum untuk alert
+  unit        String   @default("pcs") // pcs, porsi, botol, dll
+  imageUrl    String?  @map("image_url")
+  isAvailable Boolean  @default(true) @map("is_available")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unitRel          Unit                     @relation(fields: [unitId], references: [id])
+  category         CanteenCategory          @relation(fields: [categoryId], references: [id])
+  transactionItems CanteenTransactionItem[]
+  stockMovements   CanteenStockMovement[]
+
+  @@unique([unitId, code])
+  @@index([unitId])
+  @@index([categoryId])
+  @@index([isAvailable])
+  @@map("canteen_items")
+}
+
+/// CanteenTransaction - Transaksi Kantin
+model CanteenTransaction {
+  id            String   @id @default(uuid())
+  unitId        String   @map("unit_id")
+  transactionNo String   @unique @map("transaction_no") // Format: CNT-YYYYMMDD-XXXX
+  studentId     String?  @map("student_id") // Null jika non-santri
+  walletId      String?  @map("wallet_id")
+  customerName  String?  @map("customer_name") // Nama jika non-santri
+  subtotal      Decimal  @db.Decimal(15, 2)
+  discount      Decimal  @default(0) @db.Decimal(15, 2)
+  total         Decimal  @db.Decimal(15, 2)
+  paymentMethod String   @map("payment_method") // WALLET, CASH
+  status        String   @default("COMPLETED") // PENDING, COMPLETED, CANCELLED, REFUNDED
+  notes         String?
+  cashierId     String   @map("cashier_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unitRel Unit                     @relation(fields: [unitId], references: [id])
+  student Student?                 @relation(fields: [studentId], references: [id])
+  cashier User                     @relation("CanteenCashier", fields: [cashierId], references: [id])
+  items   CanteenTransactionItem[]
+
+  @@index([unitId])
+  @@index([studentId])
+  @@index([transactionNo])
+  @@index([createdAt])
+  @@index([status])
+  @@map("canteen_transactions")
+}
+
+/// CanteenTransactionItem - Item dalam Transaksi Kantin
+model CanteenTransactionItem {
+  id            String  @id @default(uuid())
+  transactionId String  @map("transaction_id")
+  itemId        String  @map("item_id")
+  itemName      String  @map("item_name") // Snapshot nama saat transaksi
+  quantity      Int
+  unitPrice     Decimal @map("unit_price") @db.Decimal(15, 2) // Harga satuan saat transaksi
+  subtotal      Decimal @db.Decimal(15, 2)
+  discount      Decimal @default(0) @db.Decimal(15, 2)
+  total         Decimal @db.Decimal(15, 2)
+  notes         String?
+
+  // Relations
+  transaction CanteenTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  item        CanteenItem        @relation(fields: [itemId], references: [id])
+
+  @@index([transactionId])
+  @@index([itemId])
+  @@map("canteen_transaction_items")
+}
+
+/// CanteenStockMovement - Pergerakan Stok Kantin
+model CanteenStockMovement {
+  id          String   @id @default(uuid())
+  itemId      String   @map("item_id")
+  type        String // IN (masuk), OUT (keluar), ADJUSTMENT, EXPIRED
+  quantity    Int
+  stockBefore Int      @map("stock_before")
+  stockAfter  Int      @map("stock_after")
+  reference   String? // ID transaksi/dokumen terkait
+  notes       String?
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  item      CanteenItem @relation(fields: [itemId], references: [id])
+  createdBy User        @relation("CanteenStockCreator", fields: [createdById], references: [id])
+
+  @@index([itemId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("canteen_stock_movements")
+}
+
+// ============================================
+// LAUNDRY (Layanan Laundry Pesantren)
+// ============================================
+
+/// LaundryPricing - Harga Layanan Laundry
+model LaundryPricing {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id")
+  name        String // Reguler, Express, Setrika Only, dll
+  description String?
+  pricePerKg  Decimal  @map("price_per_kg") @db.Decimal(15, 2)
+  minWeight   Decimal  @default(1) @map("min_weight") @db.Decimal(5, 2) // Minimal berat (kg)
+  processDays Int      @default(2) @map("process_days") // Lama proses (hari)
+  isExpress   Boolean  @default(false) @map("is_express")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit         Unit                 @relation(fields: [unitId], references: [id])
+  transactions LaundryTransaction[]
+
+  @@unique([unitId, name])
+  @@index([unitId])
+  @@map("laundry_pricings")
+}
+
+/// LaundryTransaction - Transaksi Laundry
+model LaundryTransaction {
+  id            String    @id @default(uuid())
+  unitId        String    @map("unit_id")
+  transactionNo String    @unique @map("transaction_no") // Format: LDR-YYYYMMDD-XXXX
+  studentId     String    @map("student_id")
+  walletId      String?   @map("wallet_id")
+  pricingId     String    @map("pricing_id")
+  weight        Decimal   @db.Decimal(5, 2) // Berat dalam kg
+  pricePerKg    Decimal   @map("price_per_kg") @db.Decimal(15, 2) // Snapshot harga
+  subtotal      Decimal   @db.Decimal(15, 2)
+  discount      Decimal   @default(0) @db.Decimal(15, 2)
+  total         Decimal   @db.Decimal(15, 2)
+  paymentMethod String    @map("payment_method") // WALLET, CASH, PENDING
+  paymentStatus String    @default("UNPAID") @map("payment_status") // UNPAID, PAID, REFUNDED
+  status        String    @default("RECEIVED") // RECEIVED, WASHING, DRYING, IRONING, READY, DELIVERED, CANCELLED
+  receivedAt    DateTime  @default(now()) @map("received_at")
+  estimatedAt   DateTime  @map("estimated_at") // Estimasi selesai
+  readyAt       DateTime? @map("ready_at") // Waktu selesai aktual
+  deliveredAt   DateTime? @map("delivered_at") // Waktu diambil
+  notes         String?
+  receivedById  String    @map("received_by_id")
+  deliveredById String?   @map("delivered_by_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  unitRel     Unit               @relation(fields: [unitId], references: [id])
+  student     Student            @relation(fields: [studentId], references: [id])
+  pricing     LaundryPricing     @relation(fields: [pricingId], references: [id])
+  receivedBy  User               @relation("LaundryReceiver", fields: [receivedById], references: [id])
+  deliveredBy User?              @relation("LaundryDeliverer", fields: [deliveredById], references: [id])
+  items       LaundryItem[]
+  statusLogs  LaundryStatusLog[]
+
+  @@index([unitId])
+  @@index([studentId])
+  @@index([transactionNo])
+  @@index([status])
+  @@index([createdAt])
+  @@map("laundry_transactions")
+}
+
+/// LaundryItem - Detail Item Laundry
+model LaundryItem {
+  id            String  @id @default(uuid())
+  transactionId String  @map("transaction_id")
+  itemType      String  @map("item_type") // Baju, Celana, Sarung, Handuk, Sprei, dll
+  quantity      Int
+  notes         String? // Kondisi khusus (noda, sobek, dll)
+
+  // Relations
+  transaction LaundryTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+  @@map("laundry_items")
+}
+
+/// LaundryStatusLog - Log Perubahan Status Laundry
+model LaundryStatusLog {
+  id            String   @id @default(uuid())
+  transactionId String   @map("transaction_id")
+  fromStatus    String?  @map("from_status")
+  toStatus      String   @map("to_status")
+  notes         String?
+  createdById   String   @map("created_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  transaction LaundryTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  createdBy   User               @relation("LaundryStatusChanger", fields: [createdById], references: [id])
+
+  @@index([transactionId])
+  @@index([createdAt])
+  @@map("laundry_status_logs")
+}
+
+// ============================================
+// PAYROLL (Penggajian Karyawan)
+// ============================================
+
+/// SalaryComponentType - Jenis Komponen Gaji
+enum SalaryComponentType {
+  EARNING // Pendapatan (tunjangan)
+  DEDUCTION // Potongan
+}
+
+/// PayrollStatus - Status Payroll
+enum PayrollStatus {
+  DRAFT // Draft, masih bisa diedit
+  APPROVED // Disetujui, siap dibayar
+  PAID // Sudah dibayar
+  CANCELLED // Dibatalkan
+}
+
+/// SalaryComponent - Master Komponen Gaji
+model SalaryComponent {
+  id            String              @id @default(uuid())
+  code          String              @unique // GAJI_POKOK, TUNJ_JABATAN, PPH21, BPJS_KES, dll
+  name          String // Gaji Pokok, Tunjangan Jabatan, dll
+  type          SalaryComponentType // EARNING atau DEDUCTION
+  description   String?
+  isFixed       Boolean             @default(true) @map("is_fixed") // Fixed atau variable
+  isPercentage  Boolean             @default(false) @map("is_percentage") // Persentase atau nominal
+  percentageOf  String?             @map("percentage_of") // Jika persentase, dari komponen mana
+  defaultAmount Decimal?            @map("default_amount") @db.Decimal(15, 2) // Default nominal
+  defaultRate   Decimal?            @map("default_rate") @db.Decimal(5, 4) // Default persentase (misal 0.02 = 2%)
+  isTaxable     Boolean             @default(true) @map("is_taxable") // Kena pajak atau tidak
+  isActive      Boolean             @default(true) @map("is_active")
+  sortOrder     Int                 @default(0) @map("sort_order") // Urutan tampil
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  employeeSalaries EmployeeSalaryItem[]
+  payrollItems     PayrollItem[]
+
+  @@index([type])
+  @@index([code])
+  @@map("salary_components")
+}
+
+/// EmployeeSalary - Pengaturan Gaji per Karyawan
+model EmployeeSalary {
+  id          String   @id @default(uuid())
+  staffId     String   @unique @map("staff_id")
+  baseSalary  Decimal  @map("base_salary") @db.Decimal(15, 2) // Gaji Pokok
+  bankName    String?  @map("bank_name")
+  bankAccount String?  @map("bank_account")
+  bankHolder  String?  @map("bank_holder")
+  taxStatus   String   @default("TK/0") @map("tax_status") // Status pajak: TK/0, K/0, K/1, K/2, K/3
+  npwp        String? // Nomor NPWP
+  effectiveAt DateTime @map("effective_at") // Berlaku mulai tanggal
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  staff Staff                @relation(fields: [staffId], references: [id])
+  items EmployeeSalaryItem[]
+
+  @@index([staffId])
+  @@map("employee_salaries")
+}
+
+/// EmployeeSalaryItem - Detail Komponen Gaji per Karyawan
+model EmployeeSalaryItem {
+  id           String   @id @default(uuid())
+  salaryId     String   @map("salary_id")
+  componentId  String   @map("component_id")
+  amount       Decimal  @db.Decimal(15, 2) // Nominal untuk karyawan ini
+  isPercentage Boolean  @default(false) @map("is_percentage")
+  rate         Decimal? @db.Decimal(5, 4) // Persentase jika applicable
+  notes        String?
+
+  // Relations
+  salary    EmployeeSalary  @relation(fields: [salaryId], references: [id], onDelete: Cascade)
+  component SalaryComponent @relation(fields: [componentId], references: [id])
+
+  @@unique([salaryId, componentId])
+  @@index([salaryId])
+  @@map("employee_salary_items")
+}
+
+/// PayrollPeriod - Periode Penggajian
+model PayrollPeriod {
+  id            String        @id @default(uuid())
+  unitId        String        @map("unit_id")
+  name          String // "Gaji Januari 2025"
+  month         Int // 1-12
+  year          Int
+  startDate     DateTime      @map("start_date")
+  endDate       DateTime      @map("end_date")
+  payDate       DateTime?     @map("pay_date") // Tanggal pembayaran
+  status        PayrollStatus @default(DRAFT)
+  totalAmount   Decimal       @default(0) @map("total_amount") @db.Decimal(15, 2)
+  employeeCount Int           @default(0) @map("employee_count")
+  notes         String?
+  createdById   String        @map("created_by_id")
+  approvedById  String?       @map("approved_by_id")
+  approvedAt    DateTime?     @map("approved_at")
+  paidAt        DateTime?     @map("paid_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  unit       Unit      @relation(fields: [unitId], references: [id])
+  createdBy  User      @relation("PayrollPeriodCreator", fields: [createdById], references: [id])
+  approvedBy User?     @relation("PayrollPeriodApprover", fields: [approvedById], references: [id])
+  payrolls   Payroll[]
+
+  @@unique([unitId, month, year])
+  @@index([unitId])
+  @@index([status])
+  @@map("payroll_periods")
+}
+
+/// Payroll - Slip Gaji per Karyawan per Periode
+model Payroll {
+  id              String        @id @default(uuid())
+  periodId        String        @map("period_id")
+  staffId         String        @map("staff_id")
+  employeeNo      String        @map("employee_no") // NIP/NIK snapshot
+  employeeName    String        @map("employee_name") // Nama snapshot
+  department      String?
+  position        String?
+  baseSalary      Decimal       @map("base_salary") @db.Decimal(15, 2)
+  totalEarnings   Decimal       @default(0) @map("total_earnings") @db.Decimal(15, 2)
+  totalDeductions Decimal       @default(0) @map("total_deductions") @db.Decimal(15, 2)
+  netSalary       Decimal       @map("net_salary") @db.Decimal(15, 2)
+  taxableIncome   Decimal       @default(0) @map("taxable_income") @db.Decimal(15, 2)
+  taxAmount       Decimal       @default(0) @map("tax_amount") @db.Decimal(15, 2) // PPh21
+  taxStatus       String?       @map("tax_status") // Status pajak saat itu
+  bankName        String?       @map("bank_name")
+  bankAccount     String?       @map("bank_account")
+  bankHolder      String?       @map("bank_holder")
+  workDays        Int           @default(0) @map("work_days") // Hari kerja
+  presentDays     Int           @default(0) @map("present_days") // Hari hadir
+  absentDays      Int           @default(0) @map("absent_days") // Hari tidak hadir
+  lateDays        Int           @default(0) @map("late_days") // Hari terlambat
+  overtimeHours   Decimal       @default(0) @map("overtime_hours") @db.Decimal(5, 2)
+  status          PayrollStatus @default(DRAFT)
+  notes           String?
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  period PayrollPeriod @relation(fields: [periodId], references: [id])
+  staff  Staff         @relation(fields: [staffId], references: [id])
+  items  PayrollItem[]
+
+  @@unique([periodId, staffId])
+  @@index([periodId])
+  @@index([staffId])
+  @@map("payrolls")
+}
+
+/// PayrollItem - Detail Komponen di Slip Gaji
+model PayrollItem {
+  id            String              @id @default(uuid())
+  payrollId     String              @map("payroll_id")
+  componentId   String              @map("component_id")
+  componentCode String              @map("component_code") // Snapshot code
+  componentName String              @map("component_name") // Snapshot name
+  type          SalaryComponentType
+  amount        Decimal             @db.Decimal(15, 2)
+  isPercentage  Boolean             @default(false) @map("is_percentage")
+  rate          Decimal?            @db.Decimal(5, 4)
+  baseAmount    Decimal?            @map("base_amount") @db.Decimal(15, 2) // Basis perhitungan jika persentase
+  notes         String?
+
+  // Relations
+  payroll   Payroll         @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+  component SalaryComponent @relation(fields: [componentId], references: [id])
+
+  @@index([payrollId])
+  @@map("payroll_items")
+}
+
+// =====================================
+// PKG - PENILAIAN KINERJA GURU
+// =====================================
+
+/// PKGPeriod - Periode Penilaian Kinerja Guru (tahunan)
+model PKGPeriod {
+  id             String   @id @default(uuid())
+  unitId         String   @map("unit_id")
+  academicYearId String   @map("academic_year_id")
+  name           String // e.g., "PKG Semester 1 2024/2025"
+  startDate      DateTime @map("start_date")
+  endDate        DateTime @map("end_date")
+  status         String   @default("DRAFT") // DRAFT, ACTIVE, COMPLETED, ARCHIVED
+  description    String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit         Unit            @relation(fields: [unitId], references: [id])
+  academicYear AcademicYear    @relation(fields: [academicYearId], references: [id])
+  evaluations  PKGEvaluation[]
+
+  @@index([unitId])
+  @@index([academicYearId])
+  @@map("pkg_periods")
+}
+
+/// PKGEvaluation - Hasil Evaluasi PKG per Guru
+model PKGEvaluation {
+  id         String  @id @default(uuid())
+  periodId   String  @map("period_id")
+  teacherId  String  @map("teacher_id")
+  assessorId String? @map("assessor_id") // Penilai (Kepala Sekolah)
+
+  // 4 Kompetensi Utama (Nilai 1-4)
+  pedagogikScore   Decimal? @map("pedagogik_score") @db.Decimal(3, 2)
+  kepribadianScore Decimal? @map("kepribadian_score") @db.Decimal(3, 2)
+  sosialScore      Decimal? @map("sosial_score") @db.Decimal(3, 2)
+  profesionalScore Decimal? @map("profesional_score") @db.Decimal(3, 2)
+
+  // Total score and grade
+  totalScore     Decimal? @map("total_score") @db.Decimal(5, 2) // Nilai akhir (0-100)
+  grade          String? // A (Amat Baik), B (Baik), C (Cukup), D (Kurang)
+  creditPoints   Decimal? @map("credit_points") @db.Decimal(5, 2) // Angka Kredit
+  recommendation String? // Rekomendasi (LANJUT, PEMBINAAN, PKB)
+
+  // Status & Timeline
+  status           String    @default("DRAFT") // DRAFT, SELF_ASSESSMENT, OBSERVATION, REVIEW, APPROVED
+  selfAssessmentAt DateTime? @map("self_assessment_at")
+  observedAt       DateTime? @map("observed_at")
+  approvedAt       DateTime? @map("approved_at")
+
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  period    PKGPeriod     @relation(fields: [periodId], references: [id])
+  teacher   Teacher       @relation(fields: [teacherId], references: [id])
+  assessor  User?         @relation("PKGAssessor", fields: [assessorId], references: [id])
+  details   PKGDetail[]
+  documents PKGDocument[]
+
+  @@unique([periodId, teacherId])
+  @@index([periodId])
+  @@index([teacherId])
+  @@map("pkg_evaluations")
+}
+
+/// PKGDetail - Detail Penilaian per Kompetensi
+model PKGDetail {
+  id            String @id @default(uuid())
+  evaluationId  String @map("evaluation_id")
+  competency    String // PEDAGOGIK, KEPRIBADIAN, SOSIAL, PROFESIONAL
+  indicator     String // Kode indikator (P1, P2, K1, S1, PR1, dst)
+  indicatorName String @map("indicator_name") // Nama indikator lengkap
+
+  // Penilaian
+  selfScore     Int?    @map("self_score") // Nilai dari guru (1-4)
+  assessorScore Int?    @map("assessor_score") // Nilai dari penilai (1-4)
+  finalScore    Int?    @map("final_score") // Nilai akhir
+  evidence      String? // Bukti/catatan
+  notes         String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  evaluation PKGEvaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+
+  @@index([evaluationId])
+  @@map("pkg_details")
+}
+
+/// PKGDocument - Dokumen Pendukung PKG
+model PKGDocument {
+  id           String @id @default(uuid())
+  evaluationId String @map("evaluation_id")
+  name         String
+  type         String // RPP, SILABUS, NILAI, SERTIFIKAT, KEHADIRAN, LAINNYA
+  fileUrl      String @map("file_url")
+  fileSize     Int?   @map("file_size")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  evaluation PKGEvaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+
+  @@index([evaluationId])
+  @@map("pkg_documents")
+}
+
+// =====================================
+// STUDENT PORTFOLIO
+// =====================================
+
+/// Portfolio - Portofolio Digital Siswa
+model Portfolio {
+  id        String  @id @default(uuid())
+  studentId String  @map("student_id")
+  title     String
+  type      String // ACADEMIC, P5_PROJECT, EXTRACURRICULAR, ACHIEVEMENT, ARTWORK, OTHER
+  category  String? // Sub-kategori berdasarkan type
+
+  description String? @db.Text
+  reflection  String? @db.Text // Refleksi siswa
+
+  // Metadata
+  academicYearId String? @map("academic_year_id")
+  subjectId      String? @map("subject_id")
+  classId        String? @map("class_id")
+
+  // Visibility
+  isPublic   Boolean @default(false) @map("is_public")
+  isShowcase Boolean @default(false) @map("is_showcase") // Ditampilkan di profile
+
+  // Score (optional)
+  score      Decimal?  @db.Decimal(5, 2)
+  feedback   String? // Feedback dari guru
+  reviewedBy String?   @map("reviewed_by")
+  reviewedAt DateTime? @map("reviewed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  student      Student            @relation(fields: [studentId], references: [id])
+  academicYear AcademicYear?      @relation(fields: [academicYearId], references: [id])
+  reviewer     User?              @relation("PortfolioReviewer", fields: [reviewedBy], references: [id])
+  files        PortfolioFile[]
+  comments     PortfolioComment[]
+
+  @@index([studentId])
+  @@index([type])
+  @@index([academicYearId])
+  @@map("portfolios")
+}
+
+/// PortfolioFile - File dalam Portfolio
+model PortfolioFile {
+  id          String  @id @default(uuid())
+  portfolioId String  @map("portfolio_id")
+  fileName    String  @map("file_name")
+  fileUrl     String  @map("file_url")
+  fileType    String  @map("file_type") // image, document, video, audio
+  fileSize    Int?    @map("file_size")
+  isCover     Boolean @default(false) @map("is_cover") // Gambar cover
+  sortOrder   Int     @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  @@index([portfolioId])
+  @@map("portfolio_files")
+}
+
+/// PortfolioComment - Komentar pada Portfolio
+model PortfolioComment {
+  id          String @id @default(uuid())
+  portfolioId String @map("portfolio_id")
+  userId      String @map("user_id")
+  content     String @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([portfolioId])
+  @@map("portfolio_comments")
+}
+
+// =====================================
+// ISLAMIC CALENDAR - HIJRI EVENTS
+// =====================================
+
+/// IslamicEvent - Hari Besar Islam & Kegiatan Keagamaan
+model IslamicEvent {
+  id         String  @id @default(uuid())
+  unitId     String? @map("unit_id") // null = berlaku untuk semua unit
+  name       String
+  nameArabic String? @map("name_arabic")
+  type       String // HARI_BESAR, PUASA_SUNNAH, KAJIAN_RUTIN, RAMADAN, DZULHIJJAH, OTHER
+
+  // Tanggal Hijriyah (tetap setiap tahun)
+  hijriMonth Int @map("hijri_month") // 1-12
+  hijriDay   Int @map("hijri_day") // 1-30
+
+  // Tanggal Masehi (berubah tiap tahun, optional)
+  gregorianDate DateTime? @map("gregorian_date")
+  gregorianYear Int?      @map("gregorian_year") // Tahun masehi untuk mapping
+
+  description String? @db.Text
+  activities  String? @db.Text // Kegiatan yang dilakukan
+  isHoliday   Boolean @default(false) @map("is_holiday") // Libur sekolah
+  isRecurring Boolean @default(true) @map("is_recurring") // Berulang tiap tahun
+
+  // Penyesuaian jadwal (untuk Ramadan)
+  scheduleAdjustment Json? @map("schedule_adjustment") // JSON untuk perubahan jadwal
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit Unit? @relation(fields: [unitId], references: [id])
+
+  @@index([unitId])
+  @@index([hijriMonth, hijriDay])
+  @@map("islamic_events")
+}
+
+// =====================================
+// ENHANCED DAILY ACTIVITY TRACKER
+// =====================================
+
+/// DailyIbadahTarget - Target Ibadah Harian Santri
+model DailyIbadahTarget {
+  id          String  @id @default(uuid())
+  unitId      String  @map("unit_id")
+  name        String // e.g., "Sholat Dhuha", "Tilawah 1 Juz", "Dzikir Pagi"
+  category    String // SHOLAT, TILAWAH, DZIKIR, PUASA, SEDEKAH, OTHER
+  description String?
+
+  // Point system
+  points      Int @default(10) // Poin jika tercapai
+  bonusPoints Int @default(0) @map("bonus_points") // Bonus poin untuk konsistensi
+
+  // Target
+  targetType  String  @map("target_type") // DAILY, WEEKLY, MONTHLY
+  targetCount Int     @default(1) @map("target_count") // Jumlah target (e.g., 1x sholat, 30 menit tilawah)
+  targetUnit  String? @map("target_unit") // TIMES, MINUTES, PAGES, JUZ
+
+  isActive   Boolean @default(true) @map("is_active")
+  isOptional Boolean @default(false) @map("is_optional")
+  sortOrder  Int     @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit    Unit                @relation(fields: [unitId], references: [id])
+  records DailyIbadahRecord[]
+
+  @@index([unitId])
+  @@index([category])
+  @@map("daily_ibadah_targets")
+}
+
+/// DailyIbadahRecord - Catatan Pencapaian Ibadah Harian
+model DailyIbadahRecord {
+  id        String   @id @default(uuid())
+  targetId  String   @map("target_id")
+  studentId String   @map("student_id")
+  date      DateTime @db.Date
+
+  // Pencapaian
+  isCompleted   Boolean @default(false) @map("is_completed")
+  actualCount   Int?    @map("actual_count") // Jumlah yang dicapai
+  actualMinutes Int?    @map("actual_minutes") // Durasi (untuk tilawah/dzikir)
+
+  // Poin
+  pointsEarned Int @default(0) @map("points_earned")
+  bonusEarned  Int @default(0) @map("bonus_earned")
+
+  notes      String?
+  verifiedBy String?   @map("verified_by") // User ID yang memverifikasi
+  verifiedAt DateTime? @map("verified_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  target   DailyIbadahTarget @relation(fields: [targetId], references: [id])
+  student  Student           @relation(fields: [studentId], references: [id])
+  verifier User?             @relation("IbadahVerifier", fields: [verifiedBy], references: [id])
+
+  @@unique([targetId, studentId, date])
+  @@index([targetId])
+  @@index([studentId])
+  @@index([date])
+  @@map("daily_ibadah_records")
+}
+
+/// IbadahLeaderboard - Papan Peringkat Ibadah
+model IbadahLeaderboard {
+  id        String @id @default(uuid())
+  unitId    String @map("unit_id")
+  studentId String @map("student_id")
+
+  // Period
+  periodType  String   @map("period_type") // DAILY, WEEKLY, MONTHLY, SEMESTER, YEARLY
+  periodStart DateTime @map("period_start")
+  periodEnd   DateTime @map("period_end")
+
+  // Scores
+  totalPoints    Int     @default(0) @map("total_points")
+  bonusPoints    Int     @default(0) @map("bonus_points")
+  streakDays     Int     @default(0) @map("streak_days") // Hari berturut-turut konsisten
+  completionRate Decimal @default(0) @map("completion_rate") @db.Decimal(5, 2) // Persentase pencapaian
+
+  rank Int? // Peringkat dalam periode
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit    Unit    @relation(fields: [unitId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@unique([unitId, studentId, periodType, periodStart])
+  @@index([unitId])
+  @@index([studentId])
+  @@index([rank])
+  @@map("ibadah_leaderboards")
+}
+
+// =====================================
+// RAPOR PESANTREN TERINTEGRASI
+// =====================================
+
+/// Setting - Application Settings per Unit
+model Setting {
+  id        String   @id @default(uuid())
+  unitId    String   @map("unit_id")
+  key       String
+  value     Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  @@unique([unitId, key])
+  @@map("settings")
+}
+
+/// RaporPesantren - Rapor Pesantren Terintegrasi
+model RaporPesantren {
+  id             String @id @default(uuid())
+  studentId      String @map("student_id")
+  unitId         String @map("unit_id")
+  academicYearId String @map("academic_year_id")
+  semester       Int // 1 or 2
+
+  // Status
+  status String @default("DRAFT") // DRAFT, FINAL, PUBLISHED
+
+  // Component Data (stored as JSON)
+  tahfidzData      Json? @map("tahfidz_data")
+  ibadahData       Json? @map("ibadah_data")
+  muhadhorohData   Json? @map("muhadhoroh_data")
+  muhadatsahData   Json? @map("muhadatsah_data")
+  kitabProgressData Json? @map("kitab_progress_data")
+  akhlakData       Json? @map("akhlak_data")
+  attendanceData   Json? @map("attendance_data")
+
+  // Overall Scores
+  overallScore Float?  @map("overall_score")
+  overallGrade String? @map("overall_grade")
+
+  // Notes
+  notes            String? @db.Text
+  headTeacherNotes String? @map("head_teacher_notes") @db.Text
+  musyrifNotes     String? @map("musyrif_notes") @db.Text
+  principalNotes   String? @map("principal_notes") @db.Text
+
+  // Metadata
+  generatedAt DateTime  @default(now()) @map("generated_at")
+  publishedAt DateTime? @map("published_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  unit         Unit         @relation("RaporPesantrenUnit", fields: [unitId], references: [id])
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  @@unique([studentId, academicYearId, semester])
+  @@index([studentId])
+  @@index([unitId])
+  @@index([academicYearId])
+  @@index([status])
+  @@map("rapor_pesantren")
+}
+

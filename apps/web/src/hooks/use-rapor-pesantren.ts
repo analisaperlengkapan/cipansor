@@ -1,0 +1,421 @@
+'use client';
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+
+// =====================
+// TYPES
+// =====================
+
+export interface RaporPesantren {
+  id: string;
+  studentId: string;
+  unitId: string;
+  academicYearId: string;
+  semester: number;
+  status: 'DRAFT' | 'FINAL' | 'PUBLISHED';
+  student: {
+    id: string;
+    name: string;
+    nis: string;
+    nisn?: string;
+    gender: string;
+    birthDate?: string;
+    photo?: string;
+    class: { id: string; name: string };
+    dormRoom?: { id: string; name: string };
+  };
+  academicYear: {
+    id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+  };
+  tahfidz: TahfidzSummary;
+  ibadah: IbadahSummary;
+  muhadhoroh: MuhadhorohSummary;
+  muhadatsah: MuhadatsahSummary;
+  kitabProgress: KitabProgressSummary;
+  akhlak: AkhlakSummary;
+  attendance: AttendanceSummary;
+  overallScore: number;
+  overallGrade: string;
+  notes?: string;
+  headTeacherNotes?: string;
+  musyrifNotes?: string;
+  principalNotes?: string;
+  generatedAt: string;
+  publishedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TahfidzSummary {
+  totalSurah: number;
+  totalJuz: number;
+  totalAyah: number;
+  setoranCount: number;
+  murajaahCount: number;
+  tasmiCount: number;
+  averageGrade: string;
+  latestSurah: string;
+  latestJuz: number;
+  progressPercentage: number;
+  grade: string;
+  score: number;
+  records: Array<{
+    date: string;
+    surah: string;
+    juz: number;
+    type: string;
+    grade: string;
+  }>;
+}
+
+export interface IbadahSummary {
+  totalPoints: number;
+  bonusPoints: number;
+  currentStreak: number;
+  longestStreak: number;
+  completionRate: number;
+  categoryBreakdown: Array<{
+    category: string;
+    points: number;
+    completionRate: number;
+  }>;
+  grade: string;
+  score: number;
+}
+
+export interface MuhadhorohSummary {
+  totalSessions: number;
+  attendedSessions: number;
+  performanceCount: number;
+  averageScore: number;
+  themes: string[];
+  grade: string;
+  score: number;
+  performances: Array<{
+    date: string;
+    theme: string;
+    score: number;
+    feedback?: string;
+  }>;
+}
+
+export interface MuhadatsahSummary {
+  totalSessions: number;
+  attendedSessions: number;
+  practiceCount: number;
+  averageScore: number;
+  languages: string[];
+  grade: string;
+  score: number;
+  practices: Array<{
+    date: string;
+    language: string;
+    topic: string;
+    score: number;
+    feedback?: string;
+  }>;
+}
+
+export interface KitabProgressSummary {
+  totalKitab: number;
+  completedKitab: number;
+  inProgressKitab: number;
+  totalPages: number;
+  readPages: number;
+  progressPercentage: number;
+  grade: string;
+  score: number;
+  kitabList: Array<{
+    name: string;
+    category: string;
+    totalPages: number;
+    completedPages: number;
+    status: string;
+  }>;
+}
+
+export interface AkhlakSummary {
+  totalViolations: number;
+  totalRewards: number;
+  violationPoints: number;
+  rewardPoints: number;
+  netPoints: number;
+  behaviorGrade: string;
+  grade: string;
+  score: number;
+  violations: Array<{
+    date: string;
+    category: string;
+    description: string;
+    points: number;
+  }>;
+  rewards: Array<{
+    date: string;
+    category: string;
+    description: string;
+    points: number;
+  }>;
+}
+
+export interface AttendanceSummary {
+  totalDays: number;
+  presentDays: number;
+  absentDays: number;
+  sickDays: number;
+  permitDays: number;
+  lateDays: number;
+  attendanceRate: number;
+  grade: string;
+}
+
+export interface RaporListItem {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentNis: string;
+  className?: string;
+  academicYearName: string;
+  semester: number;
+  status: string;
+  overallScore: number | null;
+  overallGrade: string | null;
+  generatedAt: string;
+  publishedAt?: string;
+}
+
+export interface RaporConfig {
+  unitId: string;
+  componentWeights: {
+    tahfidz: number;
+    ibadah: number;
+    muhadhoroh: number;
+    muhadatsah: number;
+    kitabProgress: number;
+    akhlak: number;
+  };
+  gradeThresholds: {
+    mumtaz: number;
+    jayyidJiddan: number;
+    jayyid: number;
+    maqbul: number;
+  };
+  includeAttendance: boolean;
+  includeViolations: boolean;
+  includeRewards: boolean;
+}
+
+// =====================
+// QUERY KEYS
+// =====================
+
+export const raporPesantrenKeys = {
+  all: ['rapor-pesantren'] as const,
+  lists: () => [...raporPesantrenKeys.all, 'list'] as const,
+  list: (filters: Record<string, unknown>) => [...raporPesantrenKeys.lists(), filters] as const,
+  details: () => [...raporPesantrenKeys.all, 'detail'] as const,
+  detail: (id: string) => [...raporPesantrenKeys.details(), id] as const,
+  config: (unitId: string) => [...raporPesantrenKeys.all, 'config', unitId] as const,
+};
+
+// =====================
+// API FUNCTIONS
+// =====================
+
+interface ListRaporParams {
+  unitId?: string;
+  classId?: string;
+  academicYearId?: string;
+  semester?: number;
+  status?: string;
+  page?: number;
+  limit?: number;
+}
+
+async function listRapor(params: ListRaporParams) {
+  const { data } = await api.get('/rapor-pesantren', { params });
+  return data;
+}
+
+async function getRaporById(id: string) {
+  const { data } = await api.get(`/rapor-pesantren/${id}`);
+  return data.data as RaporPesantren;
+}
+
+interface GenerateRaporParams {
+  studentId: string;
+  academicYearId: string;
+  semester: number;
+  unitId?: string;
+}
+
+async function generateRapor(params: GenerateRaporParams) {
+  const { data } = await api.post('/rapor-pesantren/generate', params);
+  return data.data as RaporPesantren;
+}
+
+interface GenerateBatchParams {
+  unitId: string;
+  classId?: string;
+  academicYearId: string;
+  semester: number;
+  studentIds?: string[];
+}
+
+async function generateBatchRapor(params: GenerateBatchParams) {
+  const { data } = await api.post('/rapor-pesantren/generate-batch', params);
+  return data.data as { total: number; success: number; failed: number };
+}
+
+interface UpdateRaporParams {
+  id: string;
+  data: {
+    status?: string;
+    notes?: string;
+    headTeacherNotes?: string;
+    musyrifNotes?: string;
+    principalNotes?: string;
+  };
+}
+
+async function updateRapor({ id, data }: UpdateRaporParams) {
+  const response = await api.put(`/rapor-pesantren/${id}`, data);
+  return response.data;
+}
+
+async function deleteRapor(id: string) {
+  const { data } = await api.delete(`/rapor-pesantren/${id}`);
+  return data;
+}
+
+async function getRaporConfig(unitId: string) {
+  const { data } = await api.get(`/rapor-pesantren/config/${unitId}`);
+  return data.data as RaporConfig;
+}
+
+async function saveRaporConfig(config: RaporConfig) {
+  const { data } = await api.put(`/rapor-pesantren/config/${config.unitId}`, config);
+  return data.data as RaporConfig;
+}
+
+// =====================
+// HOOKS
+// =====================
+
+export function useRaporList(params: ListRaporParams = {}) {
+  return useQuery({
+    queryKey: raporPesantrenKeys.list(params),
+    queryFn: () => listRapor(params),
+  });
+}
+
+export function useRaporDetail(id: string) {
+  return useQuery({
+    queryKey: raporPesantrenKeys.detail(id),
+    queryFn: () => getRaporById(id),
+    enabled: !!id,
+  });
+}
+
+export function useRaporConfig(unitId: string) {
+  return useQuery({
+    queryKey: raporPesantrenKeys.config(unitId),
+    queryFn: () => getRaporConfig(unitId),
+    enabled: !!unitId,
+  });
+}
+
+export function useGenerateRapor() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: generateRapor,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: raporPesantrenKeys.lists() });
+    },
+  });
+}
+
+export function useGenerateBatchRapor() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: generateBatchRapor,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: raporPesantrenKeys.lists() });
+    },
+  });
+}
+
+export function useUpdateRapor() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateRapor,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: raporPesantrenKeys.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: raporPesantrenKeys.lists() });
+    },
+  });
+}
+
+export function useDeleteRapor() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteRapor,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: raporPesantrenKeys.lists() });
+    },
+  });
+}
+
+export function useSaveRaporConfig() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: saveRaporConfig,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: raporPesantrenKeys.config(variables.unitId) });
+    },
+  });
+}
+
+// =====================
+// CONSTANTS
+// =====================
+
+export const RAPOR_STATUS = {
+  DRAFT: { label: 'Draft', color: 'gray' },
+  FINAL: { label: 'Final', color: 'blue' },
+  PUBLISHED: { label: 'Terpublikasi', color: 'green' },
+} as const;
+
+export const GRADE_COLORS = {
+  MUMTAZ: 'green',
+  JAYYID_JIDDAN: 'blue',
+  JAYYID: 'cyan',
+  MAQBUL: 'yellow',
+  RASIB: 'red',
+} as const;
+
+export const COMPONENT_LABELS = {
+  tahfidz: 'Tahfidz Al-Quran',
+  ibadah: 'Ibadah Harian',
+  muhadhoroh: 'Muhadhoroh (Pidato)',
+  muhadatsah: 'Muhadatsah (Percakapan)',
+  kitabProgress: 'Kitab Kuning',
+  akhlak: 'Akhlak & Perilaku',
+} as const;
+
+export const DEFAULT_WEIGHTS = {
+  tahfidz: 25,
+  ibadah: 20,
+  muhadhoroh: 15,
+  muhadatsah: 15,
+  kitabProgress: 15,
+  akhlak: 10,
+} as const;

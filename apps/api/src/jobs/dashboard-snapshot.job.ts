@@ -1,0 +1,298 @@
+import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
+import { dashboardService } from '@/modules/dashboard-enhancement/dashboard.service';
+import { Prisma } from '@prisma/client';
+
+/**
+ * Dashboard Snapshot Job
+ * Creates daily metric snapshots for each unit
+ */
+
+// Type for metric types
+type MetricType =
+  | 'STUDENT_COUNT'
+  | 'ATTENDANCE_RATE'
+  | 'TAHFIDZ_PROGRESS'
+  | 'MUROJAAH_PROGRESS'
+  | 'SIMAAN_RESULT'
+  | 'TEACHER_COUNT'
+  | 'CLASS_COUNT'
+  | 'CUSTOM';
+
+/**
+ * Create daily metric snapshots for all units
+ */
+export async function createDailySnapshots(): Promise<void> {
+  const jobName = 'createDailySnapshots';
+  logger.info(`[${jobName}] Starting daily metric snapshot job`);
+
+  try {
+    // Get all units (no isActive field in schema, use deletedAt)
+    const units = await prisma.unit.findMany({
+      where: { deletedAt: null },
+      select: { id: true, name: true },
+    });
+
+    // Get current academic year (field is isActive, not isCurrent)
+    const academicYear = await prisma.academicYear.findFirst({
+      where: { isActive: true, deletedAt: null },
+      select: { id: true },
+    });
+
+    if (!academicYear) {
+      logger.warn(`[${jobName}] No active academic year found, skipping snapshot`);
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const unit of units) {
+      try {
+        // Get overview data for this unit
+        const overview = await dashboardService.getOverview({ unitId: unit.id });
+
+        // Create snapshots for different metrics
+        const metricsToSnapshot: Array<{
+          type: MetricType;
+          value: number;
+          data: Record<string, unknown>;
+        }> = [
+          {
+            type: 'STUDENT_COUNT',
+            value: overview.students.total,
+            data: {
+              active: overview.students.active,
+              inactive: overview.students.inactive,
+            },
+          },
+          {
+            type: 'ATTENDANCE_RATE',
+            value: overview.attendance.rate,
+            data: {
+              total: overview.attendance.total,
+              present: overview.attendance.present,
+            },
+          },
+          {
+            type: 'TAHFIDZ_PROGRESS',
+            value: overview.tahfidz.avgScore,
+            data: {
+              totalRecords: overview.tahfidz.totalRecords,
+              totalAyah: overview.tahfidz.totalAyah,
+            },
+          },
+          {
+            type: 'MUROJAAH_PROGRESS',
+            value: overview.murojaah.avgQuality,
+            data: {
+              totalRecords: overview.murojaah.totalRecords,
+              totalPages: overview.murojaah.totalPages,
+            },
+          },
+          {
+            type: 'SIMAAN_RESULT',
+            value: overview.simaan.passRate,
+            data: {
+              totalExams: overview.simaan.totalExams,
+              passedExams: overview.simaan.passedExams,
+            },
+          },
+          {
+            type: 'TEACHER_COUNT',
+            value: overview.teachers.total,
+            data: {},
+          },
+          {
+            type: 'CLASS_COUNT',
+            value: overview.classes.total,
+            data: {},
+          },
+        ];
+
+        // Create snapshots using upsert to avoid duplicates
+        for (const metric of metricsToSnapshot) {
+          await prisma.dashboardMetricSnapshot.upsert({
+            where: {
+              unitId_metricType_periodType_periodDate: {
+                unitId: unit.id,
+                metricType: metric.type,
+                periodDate: today,
+                periodType: 'DAILY',
+              },
+            },
+            update: {
+              metricValue: metric.value,
+              metricData: metric.data as Prisma.JsonObject,
+            },
+            create: {
+              unitId: unit.id,
+              academicYearId: academicYear.id,
+              metricType: metric.type,
+              metricValue: metric.value,
+              metricData: metric.data as Prisma.JsonObject,
+              periodType: 'DAILY',
+              periodDate: today,
+            },
+          });
+        }
+
+        successCount++;
+        logger.debug(`[${jobName}] Created snapshots for unit: ${unit.name}`);
+      } catch (unitError) {
+        errorCount++;
+        logger.error(`[${jobName}] Error creating snapshots for unit ${unit.name}:`, unitError);
+      }
+    }
+
+    logger.info(
+      `[${jobName}] Daily snapshot job completed: ${successCount} success, ${errorCount} errors`
+    );
+  } catch (error) {
+    logger.error(`[${jobName}] Fatal error in daily snapshot job:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Create weekly summary snapshots (aggregates from daily snapshots)
+ */
+export async function createWeeklySummary(): Promise<void> {
+  const jobName = 'createWeeklySummary';
+  logger.info(`[${jobName}] Starting weekly summary job`);
+
+  try {
+    const units = await prisma.unit.findMany({
+      where: { deletedAt: null },
+      select: { id: true, name: true },
+    });
+
+    const academicYear = await prisma.academicYear.findFirst({
+      where: { isActive: true, deletedAt: null },
+      select: { id: true },
+    });
+
+    if (!academicYear) {
+      logger.warn(`[${jobName}] No active academic year found`);
+      return;
+    }
+
+    // Calculate week start (Monday)
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    const weekStart = new Date(today.setDate(diff));
+    weekStart.setHours(0, 0, 0, 0);
+
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+
+    for (const unit of units) {
+      try {
+        // Get daily snapshots for this week
+        const dailySnapshots = await prisma.dashboardMetricSnapshot.findMany({
+          where: {
+            unitId: unit.id,
+            academicYearId: academicYear.id,
+            periodType: 'DAILY',
+            periodDate: {
+              gte: weekStart,
+              lte: weekEnd,
+            },
+          },
+        });
+
+        // Group by metric type and calculate averages (metricValue is Float, not Decimal)
+        const metricGroups = dailySnapshots.reduce(
+          (acc, snapshot) => {
+            const type = snapshot.metricType;
+            if (!acc[type]) {
+              acc[type] = [];
+            }
+            acc[type].push(snapshot.metricValue);
+            return acc;
+          },
+          {} as Record<string, number[]>
+        );
+
+        // Create weekly summaries
+        for (const [metricType, values] of Object.entries(metricGroups)) {
+          const avgValue = values.reduce((sum, v) => sum + v, 0) / values.length;
+
+          await prisma.dashboardMetricSnapshot.upsert({
+            where: {
+              unitId_metricType_periodType_periodDate: {
+                unitId: unit.id,
+                metricType,
+                periodDate: weekStart,
+                periodType: 'WEEKLY',
+              },
+            },
+            update: {
+              metricValue: avgValue,
+              metricData: {
+                dataPoints: values.length,
+                min: Math.min(...values),
+                max: Math.max(...values),
+                values,
+              },
+            },
+            create: {
+              unitId: unit.id,
+              academicYearId: academicYear.id,
+              metricType,
+              metricValue: avgValue,
+              metricData: {
+                dataPoints: values.length,
+                min: Math.min(...values),
+                max: Math.max(...values),
+                values,
+              },
+              periodType: 'WEEKLY',
+              periodDate: weekStart,
+            },
+          });
+        }
+
+        logger.debug(`[${jobName}] Created weekly summary for unit: ${unit.name}`);
+      } catch (unitError) {
+        logger.error(`[${jobName}] Error creating weekly summary for unit ${unit.name}:`, unitError);
+      }
+    }
+
+    logger.info(`[${jobName}] Weekly summary job completed`);
+  } catch (error) {
+    logger.error(`[${jobName}] Fatal error in weekly summary job:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Clean up old snapshots (keep last 365 days)
+ */
+export async function cleanupOldSnapshots(): Promise<void> {
+  const jobName = 'cleanupOldSnapshots';
+  logger.info(`[${jobName}] Starting cleanup job`);
+
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - 365);
+
+    const result = await prisma.dashboardMetricSnapshot.deleteMany({
+      where: {
+        periodDate: {
+          lt: cutoffDate,
+        },
+      },
+    });
+
+    logger.info(`[${jobName}] Deleted ${result.count} old snapshots`);
+  } catch (error) {
+    logger.error(`[${jobName}] Error cleaning up old snapshots:`, error);
+    throw error;
+  }
+}

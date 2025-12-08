@@ -31,7 +31,7 @@ import { useCreateUnit, UNIT_TYPES } from '@/hooks/use-units';
 
 const unitSchema = z.object({
   name: z.string().min(1, 'Nama unit wajib diisi'),
-  type: z.enum(['PESANTREN', 'SD_IT', 'SMP_IT', 'SMA_IT', 'MA'], {
+  type: z.enum(['PESANTREN', 'TK_QURAN', 'SD_IT', 'SMP_IT', 'SMA_QURAN'], {
     required_error: 'Tipe unit wajib dipilih',
   }),
   address: z.string().optional(),

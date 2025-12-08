@@ -272,8 +272,7 @@ export class EmisService {
     // Map unit type to jenjang
     const jenjangMap: Record<UnitType, string> = {
       PESANTREN: 'Pesantren',
-      PAUD: 'PAUD',
-      TK: 'TK',
+      TK_QURAN: 'TK',
       SD_IT: 'SD',
       SMP_IT: 'SMP',
       SMA_QURAN: 'SMA',

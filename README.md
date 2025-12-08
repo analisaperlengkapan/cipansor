@@ -31,10 +31,10 @@
 
 **Cipansor** adalah sistem manajemen terintegrasi untuk **Yayasan Pesantren Cipansor** yang mengelola:
 
-- 🏫 **TK (Taman Kanak-kanak)**
+- 🏫 **TK Qur'an** - Taman Kanak-kanak berbasis Al-Qur'an
 - 📚 **SD IT (Sekolah Dasar Islam Terpadu)**
 - 📖 **SMP IT (Sekolah Menengah Pertama Islam Terpadu)**
-- 🕌 **SMA Al-Qur'an** dengan fokus tahfidz
+- 🕌 **SMA Qur'an** dengan fokus tahfidz 30 Juz + Sanad
 
 ### Fitur Utama
 

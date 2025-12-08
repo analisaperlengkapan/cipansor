@@ -128,20 +128,22 @@ export function useSwitchRole() {
 export const realmDisplayNames: Record<string, string> = {
   GLOBAL: 'Global',
   YAYASAN: 'Yayasan',
-  PAUD: 'PAUD',
+  TK_QURAN: 'TK Qur\'an',
   SD_IT: 'SD IT',
   SMP_IT: 'SMP IT',
-  SMA_ALQURAN: 'SMA Al-Qur\'an',
+  SMA_QURAN: 'SMA Qur\'an',
+  PESANTREN: 'Pesantren',
 };
 
 // Role realm colors
 export const realmColors: Record<string, string> = {
   GLOBAL: 'bg-purple-500 hover:bg-purple-600',
   YAYASAN: 'bg-amber-500 hover:bg-amber-600',
-  PAUD: 'bg-pink-500 hover:bg-pink-600',
+  TK_QURAN: 'bg-pink-500 hover:bg-pink-600',
   SD_IT: 'bg-green-500 hover:bg-green-600',
   SMP_IT: 'bg-blue-500 hover:bg-blue-600',
-  SMA_ALQURAN: 'bg-emerald-500 hover:bg-emerald-600',
+  SMA_QURAN: 'bg-emerald-500 hover:bg-emerald-600',
+  PESANTREN: 'bg-orange-500 hover:bg-orange-600',
 };
 
 // Group roles by realm

@@ -1,6 +1,6 @@
 // Prisma Schema for Cipansor
 // Yayasan Pesantren Cipansor - Islamic Education Institution Management System
-// Supports: TK, SD IT, SMP IT, SMA Al-Qur'an with Tahfidz & Integrated Pesantren Curriculum
+// Supports: TK Qur'an, SD IT (Islam Terpadu), SMP IT (Islam Terpadu), SMA Qur'an with Tahfidz 30 Juz + Sanad
 
 generator client {
   provider = "prisma-client-js"
@@ -29,10 +29,11 @@ enum UserRole {
 enum Realm {
   GLOBAL // Super Admin - akses ke seluruh sistem
   YAYASAN // Yayasan/Foundation level
-  PAUD // PAUD
-  SD_IT // SD IT
-  SMP_IT // SMP IT
-  SMA_ALQURAN // SMA Al-Qur'an
+  TK_QURAN // TK Qur'an
+  SD_IT // SD IT (Islam Terpadu)
+  SMP_IT // SMP IT (Islam Terpadu)
+  SMA_QURAN // SMA Qur'an
+  PESANTREN // Pesantren (cross-unit)
 }
 
 // RoleCode - All possible role codes in the system
@@ -49,15 +50,15 @@ enum RoleCode {
   YAYASAN_ANGGOTA
   YAYASAN_PENGAWAS
 
-  // PAUD roles
-  PAUD_ADMIN
-  PAUD_KEPALA_SEKOLAH
-  PAUD_GURU
-  PAUD_TATA_USAHA
-  PAUD_ORANG_TUA
-  PAUD_SISWA
+  // TK Qur'an roles
+  TKQ_ADMIN
+  TKQ_KEPALA_SEKOLAH
+  TKQ_GURU
+  TKQ_TATA_USAHA
+  TKQ_ORANG_TUA
+  TKQ_SISWA
 
-  // SD IT roles
+  // SD IT (Islam Terpadu) roles
   SDIT_ADMIN
   SDIT_KEPALA_SEKOLAH
   SDIT_GURU
@@ -65,7 +66,7 @@ enum RoleCode {
   SDIT_ORANG_TUA
   SDIT_SISWA
 
-  // SMP IT roles
+  // SMP IT (Islam Terpadu) roles
   SMPIT_ADMIN
   SMPIT_KEPALA_SEKOLAH
   SMPIT_GURU
@@ -73,22 +74,27 @@ enum RoleCode {
   SMPIT_ORANG_TUA
   SMPIT_SISWA
 
-  // SMA Al-Qur'an roles
+  // SMA Qur'an roles
   SMAQ_ADMIN
   SMAQ_KEPALA_SEKOLAH
   SMAQ_GURU
   SMAQ_TATA_USAHA
   SMAQ_ORANG_TUA
   SMAQ_SISWA
+
+  // Pesantren roles (cross-unit)
+  MUSYRIF // Pembina asrama
+  MUHAFIDZ // Pengampu tahfidz
+  MURABBI // Pembina akhlaq
+  WALI_KAMAR // Penanggung jawab kamar
 }
 
 enum UnitType {
   PESANTREN
-  PAUD
-  TK
-  SD_IT
-  SMP_IT
-  SMA_QURAN
+  TK_QURAN // TK Qur'an
+  SD_IT // SD Islam Terpadu
+  SMP_IT // SMP Islam Terpadu  
+  SMA_QURAN // SMA Qur'an
   OTHER
 }
 
@@ -148,6 +154,88 @@ enum PaymentMethod {
   VIRTUAL_ACCOUNT
   EWALLET
   OTHER
+}
+
+// =====================================
+// PAUD ENHANCEMENT ENUMS
+// =====================================
+
+/// 6 Aspek Perkembangan Anak (Permendikbud 137/2014)
+enum PAUDAspect {
+  NAM // Nilai Agama & Moral
+  FM  // Fisik Motorik
+  KOG // Kognitif
+  BHS // Bahasa
+  SE  // Sosial Emosional
+  SNI // Seni
+}
+
+/// Capaian Perkembangan PAUD
+enum PAUDAchievementLevel {
+  BB  // Belum Berkembang
+  MB  // Mulai Berkembang
+  BSH // Berkembang Sesuai Harapan
+  BSB // Berkembang Sangat Baik
+}
+
+/// Periode laporan PAUD
+enum PAUDReportPeriod {
+  HARIAN   // Daily
+  MINGGUAN // Weekly
+  BULANAN  // Monthly
+  SEMESTER // Semester (Raport)
+}
+
+// =====================================
+// DAILY REPORT ENUMS
+// =====================================
+
+/// Mood indicator for daily report
+enum DailyMood {
+  HAPPY    // 😊 Senang
+  NEUTRAL  // 😐 Biasa
+  SAD      // 😢 Sedih
+  TIRED    // 😴 Lelah
+  EXCITED  // 🤩 Antusias
+  SICK     // 🤒 Sakit
+}
+
+/// Status konsumsi makan/snack
+enum MealConsumption {
+  HABIS     // Dimakan habis
+  SETENGAH  // Dimakan setengah
+  SEDIKIT   // Dimakan sedikit
+  TIDAK_MAU // Tidak mau makan
+}
+
+// =====================================
+// TAHFIDZ ENHANCEMENT ENUMS
+// =====================================
+
+/// Jenis murojaah hafalan
+enum MurojaahType {
+  YAUMIYAH  // Harian - 1-3 juz terakhir
+  USBUIYAH  // Mingguan - 5 juz terakhir
+  SYAHRIYAH // Bulanan - Seluruh hafalan
+  TASMI     // Random testing
+}
+
+/// Jenis kesalahan dalam hafalan
+enum TahfidzMistakeType {
+  LAHIN_JALI  // Kesalahan jelas (salah huruf/harakat)
+  LAHIN_KHAFI // Kesalahan tersembunyi (mad, ghunnah)
+  TAJWID      // Kesalahan tajwid
+  LUPA        // Lupa ayat
+  URUTAN      // Salah urutan ayat
+}
+
+/// Jenis simaan/ujian hafalan
+enum SimaanType {
+  BIN_NAZHR // Dengan melihat mushaf
+  BIL_GHAIB // Tanpa melihat (hafalan)
+  TAHDIR    // Persiapan (juz dipilih)
+  TASMI     // Random testing
+  KHATAM    // Ujian khatam 30 juz
 }
 
 // =====================================
@@ -258,6 +346,15 @@ model User {
   portfoliosReviewed                Portfolio[]                 @relation("PortfolioReviewer")
   portfolioComments                 PortfolioComment[]
   ibadahVerified                    DailyIbadahRecord[]         @relation("IbadahVerifier")
+  // PAUD & Enhancement relations
+  paudAssessments                   PAUDDevelopmentAssessment[] @relation("PAUDAssessor")
+  paudNarrativeReports              PAUDNarrativeReport[]       @relation("PAUDReportCreator")
+  dailyStudentReports               DailyStudentReport[]        @relation("DailyReportCreator")
+  murojaahRecords                   MurojaahRecord[]            @relation("MurojaahRecorder")
+  simaanExaminer                    SimaanExaminer[]
+  dashboardSnapshots                DashboardMetricSnapshot[]   @relation("SnapshotCreator")
+  growthRecordsCreated              GrowthRecord[]              @relation("GrowthRecorder")
+  immunizationRecordsCreated        ImmunizationRecord[]        @relation("ImmunizationRecorder")
 
   @@index([email])
   @@index([role])
@@ -361,6 +458,15 @@ model Unit {
   // Settings and Rapor Pesantren
   settings               Setting[]
   raporPesantren         RaporPesantren[]       @relation("RaporPesantrenUnit")
+  // PAUD & Enhancement relations
+  paudIndicators         PAUDDevelopmentIndicator[]
+  paudAssessments        PAUDDevelopmentAssessment[]
+  paudNarrativeReports   PAUDNarrativeReport[]
+  dailyStudentReports    DailyStudentReport[]
+  dashboardSnapshots     DashboardMetricSnapshot[]
+  unitComparisonReports  UnitComparisonReport[]
+  growthRecords          GrowthRecord[]
+  immunizationRecords    ImmunizationRecord[]
 
   @@index([type])
   @@index([foundationId])
@@ -528,6 +634,12 @@ model AcademicYear {
   portfolios            Portfolio[]
   // Rapor Pesantren relations
   raporPesantren        RaporPesantren[]
+  // PAUD & Enhancement relations
+  paudAssessments       PAUDDevelopmentAssessment[]
+  paudNarrativeReports  PAUDNarrativeReport[]
+  dailyStudentReports   DailyStudentReport[]
+  dashboardSnapshots    DashboardMetricSnapshot[]
+  unitComparisonReports UnitComparisonReport[]
 
   @@index([isActive])
   @@map("academic_years")
@@ -723,6 +835,17 @@ model Student {
   ibadahLeaderboards          IbadahLeaderboard[]
   // Rapor Pesantren relations
   raporPesantren              RaporPesantren[]
+  // PAUD Enhancement relations
+  paudAssessments             PAUDDevelopmentAssessment[]
+  paudNarrativeReports        PAUDNarrativeReport[]
+  // Daily Report relations
+  dailyStudentReports         DailyStudentReport[]
+  // Tahfidz Enhancement relations
+  murojaahRecords             MurojaahRecord[]
+  simaanExams                 SimaanExam[]
+  // Health & Growth relations
+  growthRecords               GrowthRecord[]
+  immunizationRecords         ImmunizationRecord[]
 
   @@index([nis])
   @@index([unitId])
@@ -2244,9 +2367,12 @@ model Halaqoh {
   deletedAt    DateTime?    @map("deleted_at")
 
   // Relations
-  unit        Unit                 @relation(fields: [unitId], references: [id])
-  teacher     User                 @relation("HalaqohTeacher", fields: [teacherId], references: [id])
-  enrollments TakhosusEnrollment[]
+  unit            Unit                 @relation(fields: [unitId], references: [id])
+  teacher         User                 @relation("HalaqohTeacher", fields: [teacherId], references: [id])
+  enrollments     TakhosusEnrollment[]
+  // Tahfidz Enhancement relations
+  murojaahRecords MurojaahRecord[]
+  simaanExams     SimaanExam[]
 
   @@index([unitId])
   @@index([teacherId])
@@ -2271,9 +2397,12 @@ model TakhosusEnrollment {
   updatedAt            DateTime       @updatedAt @map("updated_at")
 
   // Relations
-  student      Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  halaqoh      Halaqoh?      @relation(fields: [halaqohId], references: [id])
-  sanadRecords SanadRecord[]
+  student        Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  halaqoh        Halaqoh?        @relation(fields: [halaqohId], references: [id])
+  sanadRecords   SanadRecord[]
+  // Tahfidz Enhancement relations
+  murojaahRecords MurojaahRecord[]
+  simaanExams    SimaanExam[]
 
   @@unique([studentId]) // Satu santri hanya bisa satu enrollment aktif
   @@index([halaqohId])
@@ -5167,3 +5296,451 @@ model RaporPesantren {
   @@map("rapor_pesantren")
 }
 
+// =====================================
+// PAUD ENHANCEMENT MODELS
+// =====================================
+
+/// PAUDDevelopmentIndicator - Master data indikator perkembangan PAUD per aspek
+model PAUDDevelopmentIndicator {
+  id          String     @id @default(uuid())
+  unitId      String?    @map("unit_id") // null = global indicator
+  aspect      PAUDAspect
+  code        String     @unique // e.g., "NAM-01", "FM-02"
+  name        String
+  description String?    @db.Text
+  ageGroupMin Int        @map("age_group_min") // Usia minimal (bulan)
+  ageGroupMax Int        @map("age_group_max") // Usia maksimal (bulan)
+  orderNumber Int        @map("order_number")
+  isActive    Boolean    @default(true) @map("is_active")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  unit        Unit?                       @relation(fields: [unitId], references: [id])
+  assessments PAUDDevelopmentAssessment[]
+
+  @@index([aspect])
+  @@index([unitId])
+  @@index([ageGroupMin, ageGroupMax])
+  @@map("paud_development_indicators")
+}
+
+/// PAUDDevelopmentAssessment - Catatan perkembangan anak PAUD per aspek per periode
+model PAUDDevelopmentAssessment {
+  id               String               @id @default(uuid())
+  studentId        String               @map("student_id")
+  unitId           String               @map("unit_id")
+  academicYearId   String               @map("academic_year_id")
+  semester         String?              // GANJIL, GENAP
+  periodType       PAUDReportPeriod     @map("period_type")
+  periodDate       DateTime             @map("period_date") @db.Date
+  aspect           PAUDAspect
+  indicatorId      String?              @map("indicator_id")
+  achievementLevel PAUDAchievementLevel @map("achievement_level")
+  narrativeText    String?              @map("narrative_text") @db.Text
+  teacherNotes     String?              @map("teacher_notes") @db.Text
+  recommendations  String?              @db.Text
+  assessedById     String               @map("assessed_by_id")
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+
+  // Relations
+  student      Student                   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  unit         Unit                      @relation(fields: [unitId], references: [id])
+  academicYear AcademicYear              @relation(fields: [academicYearId], references: [id])
+  indicator    PAUDDevelopmentIndicator? @relation(fields: [indicatorId], references: [id])
+  assessedBy   User                      @relation("PAUDAssessor", fields: [assessedById], references: [id])
+  evidences    PAUDAssessmentEvidence[]
+
+  @@index([studentId])
+  @@index([unitId])
+  @@index([academicYearId])
+  @@index([aspect])
+  @@index([periodDate])
+  @@map("paud_development_assessments")
+}
+
+/// PAUDAssessmentEvidence - Bukti/evidence perkembangan (foto, video, dokumen)
+model PAUDAssessmentEvidence {
+  id           String   @id @default(uuid())
+  assessmentId String   @map("assessment_id")
+  fileUrl      String   @map("file_url")
+  fileType     String   @map("file_type") // image, video, document
+  fileName     String?  @map("file_name")
+  caption      String?
+  uploadedAt   DateTime @default(now()) @map("uploaded_at")
+
+  // Relations
+  assessment PAUDDevelopmentAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
+  @@map("paud_assessment_evidences")
+}
+
+/// PAUDNarrativeReport - Raport narasi PAUD (format deskriptif per semester)
+model PAUDNarrativeReport {
+  id                    String    @id @default(uuid())
+  studentId             String    @map("student_id")
+  unitId                String    @map("unit_id")
+  academicYearId        String    @map("academic_year_id")
+  semester              String    // GANJIL, GENAP
+  narrativeNAM          String?   @map("narrative_nam") @db.Text
+  narrativeFM           String?   @map("narrative_fm") @db.Text
+  narrativeKOG          String?   @map("narrative_kog") @db.Text
+  narrativeBHS          String?   @map("narrative_bhs") @db.Text
+  narrativeSE           String?   @map("narrative_se") @db.Text
+  narrativeSNI          String?   @map("narrative_sni") @db.Text
+  overallStrengths      String?   @map("overall_strengths") @db.Text
+  areasForDevelopment   String?   @map("areas_for_development") @db.Text
+  parentRecommendations String?   @map("parent_recommendations") @db.Text
+  teacherSignature      String?   @map("teacher_signature")
+  principalSignature    String?   @map("principal_signature")
+  status                String    @default("DRAFT") // DRAFT, FINALIZED, PRINTED
+  finalizedAt           DateTime? @map("finalized_at")
+  printedAt             DateTime? @map("printed_at")
+  totalDays             Int       @default(0) @map("total_days")
+  presentDays           Int       @default(0) @map("present_days")
+  sickDays              Int       @default(0) @map("sick_days")
+  excusedDays           Int       @default(0) @map("excused_days")
+  createdById           String    @map("created_by_id")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  student      Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  unit         Unit              @relation(fields: [unitId], references: [id])
+  academicYear AcademicYear      @relation(fields: [academicYearId], references: [id])
+  createdBy    User              @relation("PAUDReportCreator", fields: [createdById], references: [id])
+  photos       PAUDReportPhoto[]
+
+  @@unique([studentId, academicYearId, semester])
+  @@index([studentId])
+  @@index([unitId])
+  @@index([academicYearId])
+  @@map("paud_narrative_reports")
+}
+
+/// PAUDReportPhoto - Foto dokumentasi untuk raport PAUD
+model PAUDReportPhoto {
+  id          String   @id @default(uuid())
+  reportId    String   @map("report_id")
+  photoUrl    String   @map("photo_url")
+  caption     String?
+  orderNumber Int      @default(0) @map("order_number")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  report PAUDNarrativeReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@map("paud_report_photos")
+}
+
+// =====================================
+// DAILY REPORT MODELS
+// =====================================
+
+/// DailyStudentReport - Laporan harian siswa untuk orang tua
+model DailyStudentReport {
+  id                String           @id @default(uuid())
+  studentId         String           @map("student_id")
+  unitId            String           @map("unit_id")
+  academicYearId    String?          @map("academic_year_id")
+  reportDate        DateTime         @map("report_date") @db.Date
+  unitType          UnitType         @map("unit_type")
+  arrivalTime       DateTime?        @map("arrival_time")
+  mood              DailyMood?
+  healthStatus      String?          @map("health_status")
+  temperature       Float?
+  hadBreakfast      Boolean?         @map("had_breakfast")
+  mealStatus        MealConsumption? @map("meal_status")
+  snackStatus       MealConsumption? @map("snack_status")
+  napDuration       Int?             @map("nap_duration")
+  toiletNotes       String?          @map("toilet_notes") @db.Text
+  sholatDhuha       Boolean?         @map("sholat_dhuha")
+  tahfidzActivity   String?          @map("tahfidz_activity")
+  activitiesSummary String?          @map("activities_summary") @db.Text
+  achievements      String?          @db.Text
+  behaviorNotes     String?          @map("behavior_notes") @db.Text
+  teacherNotes      String?          @map("teacher_notes") @db.Text
+  homeActivity      String?          @map("home_activity") @db.Text
+  departureTime     DateTime?        @map("departure_time")
+  pickedUpBy        String?          @map("picked_up_by")
+  notifiedAt        DateTime?        @map("notified_at")
+  notifiedVia       String?          @map("notified_via")
+  parentReadAt      DateTime?        @map("parent_read_at")
+  createdById       String           @map("created_by_id")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  student      Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  unit         Unit              @relation(fields: [unitId], references: [id])
+  academicYear AcademicYear?     @relation(fields: [academicYearId], references: [id])
+  createdBy    User              @relation("DailyReportCreator", fields: [createdById], references: [id])
+  photos       DailyReportPhoto[]
+  homework     DailyHomework[]
+
+  @@unique([studentId, reportDate])
+  @@index([studentId])
+  @@index([unitId])
+  @@index([reportDate])
+  @@index([unitType])
+  @@map("daily_student_reports")
+}
+
+/// DailyReportPhoto - Foto kegiatan harian untuk daily report
+model DailyReportPhoto {
+  id        String   @id @default(uuid())
+  reportId  String   @map("report_id")
+  photoUrl  String   @map("photo_url")
+  caption   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  report DailyStudentReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@map("daily_report_photos")
+}
+
+/// DailyHomework - PR/tugas yang diberikan hari ini (untuk SD IT)
+model DailyHomework {
+  id          String    @id @default(uuid())
+  reportId    String    @map("report_id")
+  subjectName String    @map("subject_name")
+  description String    @db.Text
+  dueDate     DateTime? @map("due_date") @db.Date
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  report DailyStudentReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@map("daily_homework")
+}
+
+// =====================================
+// TAHFIDZ ENHANCEMENT MODELS
+// =====================================
+
+/// MurojaahRecord - Detail tracking murojaah hafalan
+model MurojaahRecord {
+  id              String       @id @default(uuid())
+  studentId       String       @map("student_id")
+  enrollmentId    String?      @map("enrollment_id")
+  halaqohId       String?      @map("halaqoh_id")
+  recordedById    String       @map("recorded_by_id")
+  murojaahType    MurojaahType @map("murojaah_type")
+  murojaahDate    DateTime     @map("murojaah_date") @db.Date
+  juzStart        Int          @map("juz_start")
+  juzEnd          Int          @map("juz_end")
+  pagesReviewed   Int          @map("pages_reviewed")
+  durationMinutes Int          @map("duration_minutes")
+  qualityScore    Int          @map("quality_score")
+  mistakeCount    Int          @default(0) @map("mistake_count")
+  fluencyLevel    Int          @default(0) @map("fluency_level")
+  tajwidScore     Int?         @map("tajwid_score")
+  notes           String?      @db.Text
+  improvementAreas String?     @map("improvement_areas") @db.Text
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  student    Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  enrollment TakhosusEnrollment? @relation(fields: [enrollmentId], references: [id])
+  halaqoh    Halaqoh?            @relation(fields: [halaqohId], references: [id])
+  recordedBy User                @relation("MurojaahRecorder", fields: [recordedById], references: [id])
+  mistakes   MurojaahMistake[]
+
+  @@index([studentId])
+  @@index([murojaahDate])
+  @@index([murojaahType])
+  @@map("murojaah_records")
+}
+
+/// MurojaahMistake - Detail kesalahan saat murojaah
+model MurojaahMistake {
+  id          String             @id @default(uuid())
+  murojaahId  String             @map("murojaah_id")
+  mistakeType TahfidzMistakeType @map("mistake_type")
+  juz         Int
+  surahNumber Int                @map("surah_number")
+  ayahNumber  Int?               @map("ayah_number")
+  description String?            @db.Text
+  createdAt   DateTime           @default(now()) @map("created_at")
+
+  // Relations
+  murojaah MurojaahRecord @relation(fields: [murojaahId], references: [id], onDelete: Cascade)
+
+  @@index([murojaahId])
+  @@map("murojaah_mistakes")
+}
+
+/// SimaanExam - Simaan/Ujian hafalan komprehensif
+model SimaanExam {
+  id              String     @id @default(uuid())
+  studentId       String     @map("student_id")
+  enrollmentId    String?    @map("enrollment_id")
+  halaqohId       String?    @map("halaqoh_id")
+  simaanType      SimaanType @map("simaan_type")
+  examDate        DateTime   @map("exam_date")
+  sessionNumber   Int        @default(1) @map("session_number")
+  totalSessions   Int        @default(1) @map("total_sessions")
+  juzStart        Int        @map("juz_start")
+  juzEnd          Int        @map("juz_end")
+  overallScore    Float?     @map("overall_score")
+  tajwidScore     Float?     @map("tajwid_score")
+  fashohaScore    Float?     @map("fashoha_score")
+  tartilScore     Float?     @map("tartil_score")
+  grade           String?
+  passed          Boolean    @default(false)
+  notes           String?    @db.Text
+  recommendations String?    @db.Text
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  student    Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  enrollment TakhosusEnrollment? @relation(fields: [enrollmentId], references: [id])
+  halaqoh    Halaqoh?            @relation(fields: [halaqohId], references: [id])
+  examiners  SimaanExaminer[]
+
+  @@index([studentId])
+  @@index([examDate])
+  @@index([simaanType])
+  @@map("simaan_exams")
+}
+
+/// SimaanExaminer - Penguji/examiner untuk simaan
+model SimaanExaminer {
+  id         String   @id @default(uuid())
+  simaanId   String   @map("simaan_id")
+  examinerId String   @map("examiner_id")
+  score      Float?
+  notes      String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  simaan   SimaanExam @relation(fields: [simaanId], references: [id], onDelete: Cascade)
+  examiner User       @relation(fields: [examinerId], references: [id])
+
+  @@index([simaanId])
+  @@index([examinerId])
+  @@map("simaan_examiners")
+}
+
+// =====================================
+// DASHBOARD & ANALYTICS MODELS
+// =====================================
+
+/// DashboardMetricSnapshot - Snapshot metrik dashboard untuk caching
+model DashboardMetricSnapshot {
+  id             String       @id @default(uuid())
+  unitId         String?      @map("unit_id")
+  academicYearId String?      @map("academic_year_id")
+  metricType     String       @map("metric_type")
+  metricValue    Float        @map("metric_value")
+  metricData     Json?        @map("metric_data")
+  periodType     String       @map("period_type")
+  periodDate     DateTime     @map("period_date") @db.Date
+  calculatedAt   DateTime     @default(now()) @map("calculated_at")
+  createdById    String?      @map("created_by_id")
+
+  // Relations
+  unit         Unit?         @relation(fields: [unitId], references: [id])
+  academicYear AcademicYear? @relation(fields: [academicYearId], references: [id])
+  createdBy    User?         @relation("SnapshotCreator", fields: [createdById], references: [id])
+
+  @@unique([unitId, metricType, periodType, periodDate])
+  @@index([unitId])
+  @@index([metricType])
+  @@index([periodDate])
+  @@map("dashboard_metric_snapshots")
+}
+
+/// UnitComparisonReport - Perbandingan performa antar unit
+model UnitComparisonReport {
+  id             String       @id @default(uuid())
+  unitId         String?      @map("unit_id")
+  academicYearId String?      @map("academic_year_id")
+  reportType     String       @map("report_type")
+  periodType     String       @map("period_type")
+  periodStart    DateTime     @map("period_start") @db.Date
+  periodEnd      DateTime     @map("period_end") @db.Date
+  reportData     Json         @map("report_data")
+  generatedAt    DateTime     @default(now()) @map("generated_at")
+  generatedById  String?      @map("generated_by_id")
+
+  // Relations
+  unit         Unit?         @relation(fields: [unitId], references: [id])
+  academicYear AcademicYear? @relation(fields: [academicYearId], references: [id])
+
+  @@index([reportType])
+  @@index([periodStart, periodEnd])
+  @@map("unit_comparison_reports")
+}
+
+// =====================================
+// HEALTH & GROWTH TRACKING MODELS
+// =====================================
+
+/// GrowthRecord - Catatan tumbuh kembang siswa (terutama PAUD)
+model GrowthRecord {
+  id                String   @id @default(uuid())
+  studentId         String   @map("student_id")
+  unitId            String   @map("unit_id")
+  recordDate        DateTime @map("record_date") @db.Date
+  weight            Float?
+  height            Float?
+  headCircumference Float?   @map("head_circumference")
+  ageMonths         Int      @map("age_months")
+  weightZScore      Float?   @map("weight_z_score")
+  heightZScore      Float?   @map("height_z_score")
+  bmiZScore         Float?   @map("bmi_z_score")
+  nutritionStatus   String?  @map("nutrition_status")
+  notes             String?  @db.Text
+  recordedById      String   @map("recorded_by_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  unit       Unit    @relation(fields: [unitId], references: [id])
+  recordedBy User    @relation("GrowthRecorder", fields: [recordedById], references: [id])
+
+  @@index([studentId])
+  @@index([unitId])
+  @@index([recordDate])
+  @@map("growth_records")
+}
+
+/// ImmunizationRecord - Catatan imunisasi siswa
+model ImmunizationRecord {
+  id               String    @id @default(uuid())
+  studentId        String    @map("student_id")
+  unitId           String    @map("unit_id")
+  vaccineName      String    @map("vaccine_name")
+  vaccineCode      String?   @map("vaccine_code")
+  doseNumber       Int       @map("dose_number")
+  scheduledDate    DateTime? @map("scheduled_date") @db.Date
+  administeredDate DateTime? @map("administered_date") @db.Date
+  administeredAt   String?   @map("administered_at")
+  batchNumber      String?   @map("batch_number")
+  notes            String?   @db.Text
+  status           String    @default("PENDING")
+  recordedById     String?   @map("recorded_by_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  unit       Unit    @relation(fields: [unitId], references: [id])
+  recordedBy User?   @relation("ImmunizationRecorder", fields: [recordedById], references: [id])
+
+  @@unique([studentId, vaccineName, doseNumber])
+  @@index([studentId])
+  @@index([unitId])
+  @@index([status])
+  @@map("immunization_records")
+}

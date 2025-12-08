@@ -106,8 +106,9 @@ const realmLabels: Record<string, string> = {
   YAYASAN: 'Yayasan',
   SMP_IT: 'SMP IT',
   SD_IT: 'SD IT',
-  PAUD: 'PAUD',
-  SMA_ALQURAN: 'SMA Al-Qur\'an',
+  TK_QURAN: 'TK Qur\'an',
+  SMA_QURAN: 'SMA Qur\'an',
+  PESANTREN: 'Pesantren',
 };
 
 export default function LoginPage() {

@@ -4,7 +4,7 @@ import api, { ApiResponse } from '@/lib/api';
 export interface Unit {
   id: string;
   name: string;
-  type: 'PESANTREN' | 'SD_IT' | 'SMP_IT' | 'SMA_IT' | 'MA';
+  type: 'PESANTREN' | 'TK_QURAN' | 'SD_IT' | 'SMP_IT' | 'SMA_QURAN';
   address?: string;
   phone?: string;
   email?: string;
@@ -17,10 +17,10 @@ export type UnitType = Unit['type'];
 
 export const UNIT_TYPES: { value: UnitType; label: string }[] = [
   { value: 'PESANTREN', label: 'Pesantren' },
-  { value: 'SD_IT', label: 'SD IT' },
-  { value: 'SMP_IT', label: 'SMP IT' },
-  { value: 'SMA_IT', label: 'SMA IT' },
-  { value: 'MA', label: 'MA (Madrasah Aliyah)' },
+  { value: 'TK_QURAN', label: 'TK Qur\'an' },
+  { value: 'SD_IT', label: 'SD Islam Terpadu' },
+  { value: 'SMP_IT', label: 'SMP Islam Terpadu' },
+  { value: 'SMA_QURAN', label: 'SMA Qur\'an' },
 ];
 
 interface UseUnitsParams {

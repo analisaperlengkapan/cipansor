@@ -5,13 +5,13 @@ export const listUnitsQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(10),
   search: z.string().optional(),
-  type: z.enum(['PESANTREN', 'PAUD', 'SD_IT', 'SMP_IT', 'SMA_QURAN', 'OTHER']).optional(),
+  type: z.enum(['PESANTREN', 'TK_QURAN', 'SD_IT', 'SMP_IT', 'SMA_QURAN', 'OTHER']).optional(),
 });
 
 // Create unit
 export const createUnitSchema = z.object({
   name: z.string().min(3, 'Name must be at least 3 characters'),
-  type: z.enum(['PESANTREN', 'PAUD', 'SD_IT', 'SMP_IT', 'SMA_QURAN', 'OTHER']),
+  type: z.enum(['PESANTREN', 'TK_QURAN', 'SD_IT', 'SMP_IT', 'SMA_QURAN', 'OTHER']),
   address: z.string().min(5, 'Address must be at least 5 characters'),
   phone: z.string().optional(),
   email: z.string().email().optional(),
@@ -21,7 +21,7 @@ export const createUnitSchema = z.object({
 // Update unit
 export const updateUnitSchema = z.object({
   name: z.string().min(3).optional(),
-  type: z.enum(['PESANTREN', 'PAUD', 'SD_IT', 'SMP_IT', 'SMA_QURAN', 'OTHER']).optional(),
+  type: z.enum(['PESANTREN', 'TK_QURAN', 'SD_IT', 'SMP_IT', 'SMA_QURAN', 'OTHER']).optional(),
   address: z.string().min(5).optional(),
   phone: z.string().optional().nullable(),
   email: z.string().email().optional().nullable(),

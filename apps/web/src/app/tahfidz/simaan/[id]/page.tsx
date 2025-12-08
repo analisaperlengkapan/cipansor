@@ -1,0 +1,505 @@
+'use client';
+
+import { use } from 'react';
+import { useRouter } from 'next/navigation';
+import { MainLayout } from '@/components/layout';
+import { PageHeader } from '@/components/common';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { useSimaanExam, useDeleteSimaanExam, useFinalizeSimaanExam } from '@/hooks/use-simaan';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+import {
+  ArrowLeft,
+  Calendar,
+  User,
+  Users,
+  BookOpen,
+  Star,
+  Edit,
+  Trash2,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  Award,
+  FileText,
+  Play,
+  MapPin,
+} from 'lucide-react';
+
+type ExamType = 'JUZ_30' | 'JUZ_PILIHAN' | 'FULL_QURAN' | 'CUSTOM';
+type ExamStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+
+const examTypeLabels: Record<ExamType, string> = {
+  JUZ_30: "Juz 30 (Juz 'Amma)",
+  JUZ_PILIHAN: 'Juz Pilihan',
+  FULL_QURAN: '30 Juz (Full Quran)',
+  CUSTOM: 'Custom',
+};
+
+const examTypeBadgeVariant: Record<ExamType, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  JUZ_30: 'secondary',
+  JUZ_PILIHAN: 'default',
+  FULL_QURAN: 'destructive',
+  CUSTOM: 'outline',
+};
+
+const statusLabels: Record<ExamStatus, string> = {
+  SCHEDULED: 'Terjadwal',
+  IN_PROGRESS: 'Sedang Berlangsung',
+  COMPLETED: 'Selesai',
+  CANCELLED: 'Dibatalkan',
+};
+
+const StatusBadge = ({ status }: { status: ExamStatus }) => {
+  const variants: Record<ExamStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+    SCHEDULED: 'outline',
+    IN_PROGRESS: 'secondary',
+    COMPLETED: 'default',
+    CANCELLED: 'destructive',
+  };
+  
+  const icons: Record<ExamStatus, React.ReactNode> = {
+    SCHEDULED: <Clock className="h-3 w-3 mr-1" />,
+    IN_PROGRESS: <Play className="h-3 w-3 mr-1" />,
+    COMPLETED: <CheckCircle className="h-3 w-3 mr-1" />,
+    CANCELLED: <AlertTriangle className="h-3 w-3 mr-1" />,
+  };
+
+  return (
+    <Badge variant={variants[status]} className="flex items-center w-fit">
+      {icons[status]}
+      {statusLabels[status]}
+    </Badge>
+  );
+};
+
+export default function SimaanDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const { data: exam, isLoading, error } = useSimaanExam(resolvedParams.id);
+  const deleteMutation = useDeleteSimaanExam();
+  const finalizeMutation = useFinalizeSimaanExam();
+
+  const handleDelete = async () => {
+    try {
+      await deleteMutation.mutateAsync(resolvedParams.id);
+      toast({
+        title: 'Berhasil',
+        description: 'Data ujian simaan berhasil dihapus',
+      });
+      router.push('/tahfidz/simaan');
+    } catch {
+      toast({
+        title: 'Gagal',
+        description: 'Gagal menghapus data ujian simaan',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleFinalize = async () => {
+    try {
+      await finalizeMutation.mutateAsync(resolvedParams.id);
+      toast({
+        title: 'Berhasil',
+        description: 'Ujian simaan berhasil diselesaikan',
+      });
+    } catch {
+      toast({
+        title: 'Gagal',
+        description: 'Gagal menyelesaikan ujian simaan',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="space-y-6">
+          <Skeleton className="h-10 w-48" />
+          <div className="grid gap-6 md:grid-cols-2">
+            <Skeleton className="h-64" />
+            <Skeleton className="h-64" />
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (error || !exam) {
+    return (
+      <MainLayout>
+        <div className="text-center py-12">
+          <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
+          <h2 className="mt-4 text-lg font-semibold">Data Tidak Ditemukan</h2>
+          <p className="text-muted-foreground">Data ujian simaan tidak ditemukan</p>
+          <Button className="mt-4" onClick={() => router.push('/tahfidz/simaan')}>
+            Kembali ke Daftar
+          </Button>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  const canEdit = exam.status === 'SCHEDULED' || exam.status === 'IN_PROGRESS';
+  const canFinalize = exam.status === 'IN_PROGRESS';
+  const canDelete = exam.status === 'SCHEDULED';
+
+  return (
+    <MainLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => router.push('/tahfidz/simaan')}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <PageHeader
+              title="Detail Ujian Simaan"
+              description={`ID: ${exam.id.substring(0, 8)}...`}
+              icon={BookOpen}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            {canEdit && (
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/tahfidz/simaan/${resolvedParams.id}/edit`)}
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
+            )}
+            {canFinalize && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="default">
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Selesaikan
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Selesaikan Ujian Simaan?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tindakan ini akan menyelesaikan ujian simaan dan tidak dapat dibatalkan.
+                      Pastikan semua penguji telah memberikan nilai.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleFinalize}>
+                      Ya, Selesaikan
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            {canDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Hapus
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Hapus Ujian Simaan?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tindakan ini tidak dapat dibatalkan. Data ujian simaan akan dihapus permanen.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Ya, Hapus
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Student & Exam Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Informasi Santri & Ujian
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Student Info */}
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={exam.student?.photoUrl} />
+                  <AvatarFallback className="text-lg">
+                    {exam.student?.name?.substring(0, 2).toUpperCase() || 'ST'}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-lg font-semibold">{exam.student?.name || 'N/A'}</h3>
+                  <p className="text-sm text-muted-foreground">{exam.student?.nis || '-'}</p>
+                  <p className="text-sm text-muted-foreground">{exam.student?.class?.name || '-'}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Exam Details */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Status</span>
+                  <StatusBadge status={exam.status as ExamStatus} />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Tipe Ujian</span>
+                  <Badge variant={examTypeBadgeVariant[exam.examType as ExamType]}>
+                    {examTypeLabels[exam.examType as ExamType] || exam.examType}
+                  </Badge>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Calendar className="h-4 w-4" /> Tanggal
+                  </span>
+                  <span className="font-medium">
+                    {format(new Date(exam.examDate), 'EEEE, dd MMMM yyyy', { locale: id })}
+                  </span>
+                </div>
+
+                {exam.location && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <MapPin className="h-4 w-4" /> Lokasi
+                    </span>
+                    <span className="font-medium">{exam.location}</span>
+                  </div>
+                )}
+
+                {exam.startSurah && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Surah Mulai</span>
+                    <span className="font-medium">{exam.startSurah} : {exam.startAyat || 1}</span>
+                  </div>
+                )}
+
+                {exam.endSurah && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Surah Akhir</span>
+                    <span className="font-medium">{exam.endSurah} : {exam.endAyat || 'Terakhir'}</span>
+                  </div>
+                )}
+
+                {exam.totalJuz && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Total Juz</span>
+                    <span className="font-medium">{exam.totalJuz} Juz</span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Results Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Award className="h-5 w-5 text-yellow-500" />
+                Hasil Ujian
+              </CardTitle>
+              <CardDescription>Nilai dan predikat dari penguji</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {exam.status === 'COMPLETED' && exam.finalScore !== undefined ? (
+                <>
+                  {/* Final Score */}
+                  <div className="text-center py-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-lg">
+                    <div className="text-5xl font-bold text-green-600 dark:text-green-400">
+                      {exam.finalScore.toFixed(1)}
+                    </div>
+                    <div className="text-muted-foreground mt-1">Nilai Akhir</div>
+                    {exam.predicate && (
+                      <Badge className="mt-3" variant="default">
+                        {exam.predicate}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <Separator />
+
+                  {/* Component Scores */}
+                  <div className="space-y-3">
+                    {exam.tajwidScore !== undefined && (
+                      <ScoreBar label="Tajwid" score={exam.tajwidScore} />
+                    )}
+                    {exam.fashahahScore !== undefined && (
+                      <ScoreBar label="Fashahah" score={exam.fashahahScore} />
+                    )}
+                    {exam.tartilScore !== undefined && (
+                      <ScoreBar label="Tartil" score={exam.tartilScore} />
+                    )}
+                    {exam.adabScore !== undefined && (
+                      <ScoreBar label="Adab" score={exam.adabScore} />
+                    )}
+                  </div>
+
+                  {/* Pass/Fail Status */}
+                  {exam.isPassed !== undefined && (
+                    <div className="flex items-center justify-center pt-4">
+                      <Badge
+                        variant={exam.isPassed ? 'default' : 'destructive'}
+                        className="text-lg py-2 px-4"
+                      >
+                        {exam.isPassed ? '✓ LULUS' : '✗ TIDAK LULUS'}
+                      </Badge>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-12">
+                  <Clock className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <p className="mt-4 text-muted-foreground">
+                    {exam.status === 'SCHEDULED'
+                      ? 'Ujian belum dimulai'
+                      : exam.status === 'IN_PROGRESS'
+                      ? 'Ujian sedang berlangsung'
+                      : 'Ujian dibatalkan'}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Examiners Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Dewan Penguji ({exam.examiners?.length || 0})
+            </CardTitle>
+            <CardDescription>Daftar penguji dan nilai yang diberikan</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {exam.examiners && exam.examiners.length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {exam.examiners.map((examiner: any, index: number) => (
+                  <Card key={examiner.id} className="bg-muted/30">
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Avatar>
+                          <AvatarFallback>
+                            {examiner.teacher?.name?.substring(0, 2).toUpperCase() || `P${index + 1}`}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{examiner.teacher?.name || `Penguji ${index + 1}`}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {examiner.isChairman ? 'Ketua Penguji' : 'Anggota Penguji'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {examiner.score !== undefined ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Nilai</span>
+                            <Badge variant="default">{examiner.score}</Badge>
+                          </div>
+                          {examiner.notes && (
+                            <p className="text-sm text-muted-foreground italic">
+                              "{examiner.notes}"
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Belum memberikan nilai</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Users className="mx-auto h-12 w-12 text-muted-foreground" />
+                <p className="mt-4 text-muted-foreground">Belum ada penguji yang ditambahkan</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Notes Section */}
+        {exam.notes && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Catatan
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground whitespace-pre-wrap">{exam.notes}</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </MainLayout>
+  );
+}
+
+// Score Bar Component
+function ScoreBar({ label, score }: { label: string; score: number }) {
+  const percentage = Math.min(100, Math.max(0, score));
+  const colorClass =
+    percentage >= 85
+      ? 'bg-green-500'
+      : percentage >= 70
+      ? 'bg-blue-500'
+      : percentage >= 55
+      ? 'bg-yellow-500'
+      : 'bg-red-500';
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-medium">{score}</span>
+      </div>
+      <div className="h-2 bg-muted rounded-full overflow-hidden">
+        <div
+          className={`h-full ${colorClass} transition-all duration-300`}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
+  );
+}

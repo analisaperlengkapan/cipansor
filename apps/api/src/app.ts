@@ -68,6 +68,15 @@ import muhadhorohRoutes from '@/modules/muhadhoroh/muhadhoroh.routes';
 import muhadatsahRoutes from '@/modules/muhadatsah/muhadatsah.routes';
 import emisRoutes from '@/modules/emis/emis.routes';
 
+// Enhancement module routes
+import { paudAssessmentRoutes } from '@/modules/paud-assessment';
+import { paudReportRouter } from '@/modules/paud-report';
+import { dailyReportRoutes } from '@/modules/daily-report';
+import { murojaahRoutes } from '@/modules/murojaah';
+import { simaanRoutes } from '@/modules/simaan';
+import { dashboardEnhancementRoutes } from '@/modules/dashboard-enhancement';
+import { sanadCertificateRouter } from '@/modules/sanad-certificate';
+
 // Create Express app
 const app = express();
 
@@ -179,6 +188,15 @@ apiRouter.use('/kitab-progress', kitabProgressRoutes);
 apiRouter.use('/muhadhoroh', muhadhorohRoutes);
 apiRouter.use('/muhadatsah', muhadatsahRoutes);
 apiRouter.use('/emis', emisRoutes);
+
+// Enhancement modules
+apiRouter.use('/paud-assessment', paudAssessmentRoutes);
+apiRouter.use('/paud-report', paudReportRouter);
+apiRouter.use('/daily-report', dailyReportRoutes);
+apiRouter.use('/murojaah', murojaahRoutes);
+apiRouter.use('/simaan', simaanRoutes);
+apiRouter.use('/dashboard-enhancement', dashboardEnhancementRoutes);
+apiRouter.use('/sanad', sanadCertificateRouter);
 
 // API info
 apiRouter.get('/', (_req, res) => {

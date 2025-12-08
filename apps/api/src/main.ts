@@ -2,6 +2,7 @@ import { app } from './app';
 import { config } from '@/config';
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
+import { initializeScheduler, stopScheduler } from '@/jobs';
 
 const PORT = config.port;
 
@@ -20,9 +21,17 @@ async function bootstrap() {
       logger.info(`❤️  Health: http://localhost:${PORT}/health`);
     });
 
+    // Initialize scheduled jobs
+    if (config.env !== 'test') {
+      initializeScheduler();
+    }
+
     // Graceful shutdown
     const shutdown = async (signal: string) => {
       logger.info(`${signal} received. Shutting down gracefully...`);
+      
+      // Stop scheduled jobs
+      stopScheduler();
       
       server.close(async () => {
         logger.info('HTTP server closed');

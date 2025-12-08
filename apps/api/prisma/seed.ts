@@ -2,6 +2,8 @@ import { PrismaClient, UserRole, UnitType, Gender, AttendanceStatus, TahfidzActi
 import bcrypt from 'bcryptjs';
 import { seedWilayahIndonesia } from './seeds/wilayah-indonesia';
 import { seedKurikulumMerdeka, seedAccountCodes } from './seeds/kurikulum-merdeka';
+import { seedPAUDIndicators } from './seeds/paud-indicators';
+import { seedImmunizationReference } from './seeds/immunization-reference';
 
 const prisma = new PrismaClient();
 
@@ -144,25 +146,25 @@ async function main() {
     },
   });
 
-  const paud = await prisma.unit.create({
+  const tkQuran = await prisma.unit.create({
     data: {
       foundationId: foundation.id,
-      name: 'PAUD Ar-Rahman',
-      type: UnitType.PAUD,
-      address: 'Jl. PAUD No. 5, Kota Sukabumi',
+      name: 'TK Qur\'an Cipansor',
+      type: UnitType.TK_QURAN,
+      address: 'Jl. TK Qur\'an No. 5, Kota Sukabumi',
       phone: '0266345678',
-      email: 'info@paud.sch.id',
+      email: 'info@tkquran.sch.id',
     },
   });
 
-  const smaAlquran = await prisma.unit.create({
+  const smaQuran = await prisma.unit.create({
     data: {
       foundationId: foundation.id,
-      name: 'SMA Al-Qur\'an',
+      name: 'SMA Qur\'an Cipansor',
       type: UnitType.SMA_QURAN,
       address: 'Jl. Al-Qur\'an No. 1, Kota Sukabumi',
       phone: '0266456789',
-      email: 'info@smaq.sch.id',
+      email: 'info@smaquran.sch.id',
     },
   });
 
@@ -185,15 +187,15 @@ async function main() {
     { code: RoleCode.YAYASAN_ANGGOTA, name: 'Anggota Pengurus', realm: Realm.YAYASAN, description: 'Anggota pengurus yayasan' },
     { code: RoleCode.YAYASAN_PENGAWAS, name: 'Pengawas', realm: Realm.YAYASAN, description: 'Pengawas yayasan' },
     
-    // PAUD roles
-    { code: RoleCode.PAUD_ADMIN, name: 'Admin PAUD', realm: Realm.PAUD, description: 'Administrator PAUD' },
-    { code: RoleCode.PAUD_KEPALA_SEKOLAH, name: 'Kepala PAUD', realm: Realm.PAUD, description: 'Kepala sekolah PAUD' },
-    { code: RoleCode.PAUD_GURU, name: 'Guru PAUD', realm: Realm.PAUD, description: 'Guru PAUD' },
-    { code: RoleCode.PAUD_TATA_USAHA, name: 'Tata Usaha PAUD', realm: Realm.PAUD, description: 'Tata usaha PAUD' },
-    { code: RoleCode.PAUD_ORANG_TUA, name: 'Orang Tua PAUD', realm: Realm.PAUD, description: 'Orang tua siswa PAUD' },
-    { code: RoleCode.PAUD_SISWA, name: 'Siswa PAUD', realm: Realm.PAUD, description: 'Siswa PAUD' },
+    // TK Qur'an roles
+    { code: RoleCode.TKQ_ADMIN, name: 'Admin TK Qur\'an', realm: Realm.TK_QURAN, description: 'Administrator TK Qur\'an' },
+    { code: RoleCode.TKQ_KEPALA_SEKOLAH, name: 'Kepala TK Qur\'an', realm: Realm.TK_QURAN, description: 'Kepala sekolah TK Qur\'an' },
+    { code: RoleCode.TKQ_GURU, name: 'Guru TK Qur\'an', realm: Realm.TK_QURAN, description: 'Guru TK Qur\'an' },
+    { code: RoleCode.TKQ_TATA_USAHA, name: 'Tata Usaha TK Qur\'an', realm: Realm.TK_QURAN, description: 'Tata usaha TK Qur\'an' },
+    { code: RoleCode.TKQ_ORANG_TUA, name: 'Orang Tua TK Qur\'an', realm: Realm.TK_QURAN, description: 'Orang tua siswa TK Qur\'an' },
+    { code: RoleCode.TKQ_SISWA, name: 'Siswa TK Qur\'an', realm: Realm.TK_QURAN, description: 'Siswa TK Qur\'an' },
     
-    // SD IT roles
+    // SD IT (Islam Terpadu) roles
     { code: RoleCode.SDIT_ADMIN, name: 'Admin SD IT', realm: Realm.SD_IT, description: 'Administrator SD IT' },
     { code: RoleCode.SDIT_KEPALA_SEKOLAH, name: 'Kepala SD IT', realm: Realm.SD_IT, description: 'Kepala sekolah SD IT' },
     { code: RoleCode.SDIT_GURU, name: 'Guru SD IT', realm: Realm.SD_IT, description: 'Guru SD IT' },
@@ -201,7 +203,7 @@ async function main() {
     { code: RoleCode.SDIT_ORANG_TUA, name: 'Orang Tua SD IT', realm: Realm.SD_IT, description: 'Orang tua siswa SD IT' },
     { code: RoleCode.SDIT_SISWA, name: 'Siswa SD IT', realm: Realm.SD_IT, description: 'Siswa SD IT' },
     
-    // SMP IT roles
+    // SMP IT (Islam Terpadu) roles
     { code: RoleCode.SMPIT_ADMIN, name: 'Admin SMP IT', realm: Realm.SMP_IT, description: 'Administrator SMP IT' },
     { code: RoleCode.SMPIT_KEPALA_SEKOLAH, name: 'Kepala SMP IT', realm: Realm.SMP_IT, description: 'Kepala sekolah SMP IT' },
     { code: RoleCode.SMPIT_GURU, name: 'Guru SMP IT', realm: Realm.SMP_IT, description: 'Guru SMP IT' },
@@ -209,13 +211,19 @@ async function main() {
     { code: RoleCode.SMPIT_ORANG_TUA, name: 'Orang Tua SMP IT', realm: Realm.SMP_IT, description: 'Orang tua siswa SMP IT' },
     { code: RoleCode.SMPIT_SISWA, name: 'Siswa SMP IT', realm: Realm.SMP_IT, description: 'Siswa SMP IT' },
     
-    // SMA Al-Qur'an roles
-    { code: RoleCode.SMAQ_ADMIN, name: 'Admin SMA Al-Quran', realm: Realm.SMA_ALQURAN, description: 'Administrator SMA Al-Quran' },
-    { code: RoleCode.SMAQ_KEPALA_SEKOLAH, name: 'Kepala SMA Al-Quran', realm: Realm.SMA_ALQURAN, description: 'Kepala sekolah SMA Al-Quran' },
-    { code: RoleCode.SMAQ_GURU, name: 'Guru SMA Al-Quran', realm: Realm.SMA_ALQURAN, description: 'Guru SMA Al-Quran' },
-    { code: RoleCode.SMAQ_TATA_USAHA, name: 'Tata Usaha SMA Al-Quran', realm: Realm.SMA_ALQURAN, description: 'Tata usaha SMA Al-Quran' },
-    { code: RoleCode.SMAQ_ORANG_TUA, name: 'Orang Tua SMA Al-Quran', realm: Realm.SMA_ALQURAN, description: 'Orang tua siswa SMA Al-Quran' },
-    { code: RoleCode.SMAQ_SISWA, name: 'Siswa SMA Al-Quran', realm: Realm.SMA_ALQURAN, description: 'Siswa SMA Al-Quran' },
+    // SMA Qur'an roles
+    { code: RoleCode.SMAQ_ADMIN, name: 'Admin SMA Qur\'an', realm: Realm.SMA_QURAN, description: 'Administrator SMA Qur\'an' },
+    { code: RoleCode.SMAQ_KEPALA_SEKOLAH, name: 'Kepala SMA Qur\'an', realm: Realm.SMA_QURAN, description: 'Kepala sekolah SMA Qur\'an' },
+    { code: RoleCode.SMAQ_GURU, name: 'Guru SMA Qur\'an', realm: Realm.SMA_QURAN, description: 'Guru SMA Qur\'an' },
+    { code: RoleCode.SMAQ_TATA_USAHA, name: 'Tata Usaha SMA Qur\'an', realm: Realm.SMA_QURAN, description: 'Tata usaha SMA Qur\'an' },
+    { code: RoleCode.SMAQ_ORANG_TUA, name: 'Orang Tua SMA Qur\'an', realm: Realm.SMA_QURAN, description: 'Orang tua siswa SMA Qur\'an' },
+    { code: RoleCode.SMAQ_SISWA, name: 'Siswa SMA Qur\'an', realm: Realm.SMA_QURAN, description: 'Siswa SMA Qur\'an' },
+    
+    // Pesantren roles (cross-unit)
+    { code: RoleCode.MUSYRIF, name: 'Musyrif', realm: Realm.PESANTREN, description: 'Pembina asrama' },
+    { code: RoleCode.MUHAFIDZ, name: 'Muhafidz', realm: Realm.PESANTREN, description: 'Pengampu tahfidz' },
+    { code: RoleCode.MURABBI, name: 'Murabbi', realm: Realm.PESANTREN, description: 'Pembina akhlaq' },
+    { code: RoleCode.WALI_KAMAR, name: 'Wali Kamar', realm: Realm.PESANTREN, description: 'Penanggung jawab kamar' },
   ];
 
   const roles: Record<string, any> = {};
@@ -554,8 +562,8 @@ async function main() {
     { name: 'Muhammad Rizky', gender: Gender.MALE, email: 'student1@smpit.sch.id', unitId: pesantren.id, roleCode: RoleCode.SMPIT_SISWA },
     { name: 'Ahmad Fauzan', gender: Gender.MALE, email: 'student2@smpit.sch.id', unitId: pesantren.id, roleCode: RoleCode.SMPIT_SISWA },
     { name: 'Siti Aisyah', gender: Gender.FEMALE, email: 'student3@sdit.sch.id', unitId: sdIt.id, roleCode: RoleCode.SDIT_SISWA },
-    { name: 'Fatimah Zahra', gender: Gender.FEMALE, email: 'student4@paud.sch.id', unitId: paud.id, roleCode: RoleCode.PAUD_SISWA },
-    { name: 'Abdullah Rahman', gender: Gender.MALE, email: 'student5@smaq.sch.id', unitId: smaAlquran.id, roleCode: RoleCode.SMAQ_SISWA },
+    { name: 'Fatimah Zahra', gender: Gender.FEMALE, email: 'student4@tkq.sch.id', unitId: tkQuran.id, roleCode: RoleCode.TKQ_SISWA },
+    { name: 'Abdullah Rahman', gender: Gender.MALE, email: 'student5@smaq.sch.id', unitId: smaQuran.id, roleCode: RoleCode.SMAQ_SISWA },
   ];
 
   for (let i = 0; i < studentConfigs.length; i++) {
@@ -2023,6 +2031,12 @@ async function main() {
   console.log('\n   === SMA AL-QUR\'AN ===');
   console.log('   Admin SMA Al-Qur\'an: admin@smaq.sch.id / Admin123!');
   console.log('   Siswa SMA Al-Qur\'an: student5@smaq.sch.id / Student123!');
+
+  // ============================================
+  // PHASE 9: PAUD Enhancement Seeds
+  // ============================================
+  await seedPAUDIndicators();
+  await seedImmunizationReference();
 
   console.log('\n✅ Database seeded successfully!');
 }

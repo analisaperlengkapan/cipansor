@@ -1,0 +1,347 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { MainLayout } from '@/components/layout';
+import { PageHeader } from '@/components/common';
+import { DataTable } from '@/components/ui/data-table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useCertificates, DigitalCertificate } from '@/hooks/use-certificate';
+import { ColumnDef } from '@tanstack/react-table';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+import {
+  Award,
+  Plus,
+  Search,
+  MoreHorizontal,
+  Eye,
+  Download,
+  FileCheck,
+  ExternalLink,
+  QrCode,
+  GraduationCap,
+  BookOpen,
+  Trophy,
+} from 'lucide-react';
+
+const certificateTypeLabels: Record<string, string> = {
+  IJAZAH: 'Ijazah',
+  STTB: 'STTB',
+  TAHFIDZ: 'Sertifikat Tahfidz',
+  SANAD: 'Sanad Hafidz',
+  ACHIEVEMENT: 'Piagam Prestasi',
+  GRADUATION: 'Kelulusan',
+  PARTICIPATION: 'Partisipasi',
+  OTHER: 'Lainnya',
+};
+
+const certificateTypeBadgeVariant: Record<
+  string,
+  'default' | 'secondary' | 'destructive' | 'outline'
+> = {
+  IJAZAH: 'default',
+  STTB: 'default',
+  TAHFIDZ: 'secondary',
+  SANAD: 'secondary',
+  ACHIEVEMENT: 'outline',
+  GRADUATION: 'default',
+  PARTICIPATION: 'outline',
+  OTHER: 'outline',
+};
+
+const CertificateTypeIcon = ({ type }: { type: string }) => {
+  const icons: Record<string, React.ReactNode> = {
+    IJAZAH: <GraduationCap className="h-4 w-4" />,
+    STTB: <FileCheck className="h-4 w-4" />,
+    TAHFIDZ: <BookOpen className="h-4 w-4" />,
+    SANAD: <BookOpen className="h-4 w-4" />,
+    ACHIEVEMENT: <Trophy className="h-4 w-4" />,
+    GRADUATION: <GraduationCap className="h-4 w-4" />,
+  };
+  return icons[type] || <Award className="h-4 w-4" />;
+};
+
+export default function CertificatesPage() {
+  const router = useRouter();
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('');
+  const [page, setPage] = useState(1);
+
+  const { data, isLoading } = useCertificates({
+    page,
+    limit: 20,
+    certificateType: typeFilter || undefined,
+  });
+
+  const columns: ColumnDef<DigitalCertificate>[] = [
+    {
+      accessorKey: 'certificateNumber',
+      header: 'No. Sertifikat',
+      cell: ({ row }) => (
+        <div className="font-mono text-sm">{row.original.certificateNumber}</div>
+      ),
+    },
+    {
+      accessorKey: 'student',
+      header: 'Santri',
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium">{row.original.student?.name || '-'}</div>
+          <div className="text-sm text-muted-foreground">
+            {row.original.student?.nis || '-'}
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'certificateType',
+      header: 'Tipe',
+      cell: ({ row }) => (
+        <Badge
+          variant={certificateTypeBadgeVariant[row.original.certificateType] || 'outline'}
+          className="flex items-center gap-1 w-fit"
+        >
+          <CertificateTypeIcon type={row.original.certificateType} />
+          {certificateTypeLabels[row.original.certificateType] || row.original.certificateType}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: 'title',
+      header: 'Judul',
+      cell: ({ row }) => (
+        <div className="max-w-[200px] truncate">{row.original.title}</div>
+      ),
+    },
+    {
+      accessorKey: 'grade',
+      header: 'Predikat',
+      cell: ({ row }) =>
+        row.original.grade ? (
+          <Badge variant="secondary">{row.original.grade}</Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        ),
+    },
+    {
+      accessorKey: 'issueDate',
+      header: 'Tanggal Terbit',
+      cell: ({ row }) =>
+        format(new Date(row.original.issueDate), 'dd MMM yyyy', { locale: id }),
+    },
+    {
+      accessorKey: 'isPublic',
+      header: 'Status',
+      cell: ({ row }) => (
+        <Badge variant={row.original.isPublic ? 'default' : 'secondary'}>
+          {row.original.isPublic ? 'Publik' : 'Privat'}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: 'downloadCount',
+      header: 'Download',
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">{row.original.downloadCount}x</span>
+      ),
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => router.push(`/certificates/${row.original.id}`)}
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              Lihat Detail
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => window.open(row.original.verificationUrl, '_blank')}
+            >
+              <QrCode className="mr-2 h-4 w-4" />
+              Verifikasi
+            </DropdownMenuItem>
+            {row.original.pdfUrl && (
+              <DropdownMenuItem
+                onClick={() => window.open(row.original.pdfUrl!, '_blank')}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download PDF
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem
+              onClick={() =>
+                navigator.clipboard.writeText(row.original.verificationUrl)
+              }
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Salin Link
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
+  const filteredData =
+    data?.data?.filter((cert) =>
+      cert.student?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      cert.certificateNumber.toLowerCase().includes(search.toLowerCase()) ||
+      cert.title.toLowerCase().includes(search.toLowerCase())
+    ) || [];
+
+  return (
+    <MainLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <PageHeader
+            title="Sertifikat Digital"
+            description="Kelola sertifikat dan piagam digital santri"
+            icon={Award}
+          />
+          <Button onClick={() => router.push('/certificates/new')}>
+            <Plus className="mr-2 h-4 w-4" />
+            Buat Sertifikat
+          </Button>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-4">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Cari santri, nomor, atau judul..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Semua tipe" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Semua tipe</SelectItem>
+              <SelectItem value="IJAZAH">Ijazah</SelectItem>
+              <SelectItem value="STTB">STTB</SelectItem>
+              <SelectItem value="TAHFIDZ">Sertifikat Tahfidz</SelectItem>
+              <SelectItem value="SANAD">Sanad Hafidz</SelectItem>
+              <SelectItem value="ACHIEVEMENT">Piagam Prestasi</SelectItem>
+              <SelectItem value="GRADUATION">Kelulusan</SelectItem>
+              <SelectItem value="PARTICIPATION">Partisipasi</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-4">
+          <StatCard
+            title="Total Sertifikat"
+            value={data?.meta?.total || 0}
+            icon={<Award className="h-5 w-5 text-blue-500" />}
+          />
+          <StatCard
+            title="Sertifikat Tahfidz"
+            value={
+              data?.data?.filter((c) => c.certificateType === 'TAHFIDZ').length || 0
+            }
+            icon={<BookOpen className="h-5 w-5 text-green-500" />}
+          />
+          <StatCard
+            title="Ijazah/STTB"
+            value={
+              data?.data?.filter(
+                (c) => c.certificateType === 'IJAZAH' || c.certificateType === 'STTB'
+              ).length || 0
+            }
+            icon={<GraduationCap className="h-5 w-5 text-purple-500" />}
+          />
+          <StatCard
+            title="Piagam Prestasi"
+            value={
+              data?.data?.filter((c) => c.certificateType === 'ACHIEVEMENT').length ||
+              0
+            }
+            icon={<Trophy className="h-5 w-5 text-yellow-500" />}
+          />
+        </div>
+
+        {/* Data Table */}
+        <DataTable
+          columns={columns}
+          data={filteredData}
+          isLoading={isLoading}
+        />
+
+        {/* Pagination */}
+        {data?.meta && data.meta.totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              Sebelumnya
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Halaman {page} dari {data.meta.totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(data.meta.totalPages, p + 1))}
+              disabled={page === data.meta.totalPages}
+            >
+              Selanjutnya
+            </Button>
+          </div>
+        )}
+      </div>
+    </MainLayout>
+  );
+}
+
+function StatCard({
+  title,
+  value,
+  icon,
+}: {
+  title: string;
+  value: number;
+  icon: React.ReactNode;
+}) {
+  return (
+    <div className="bg-card border rounded-lg p-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-muted-foreground">{title}</p>
+          <p className="text-2xl font-bold">{value}</p>
+        </div>
+        {icon}
+      </div>
+    </div>
+  );
+}

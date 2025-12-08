@@ -41,20 +41,22 @@ const realmOptions = [
   { value: '', label: 'All Realms' },
   { value: 'GLOBAL', label: 'Global' },
   { value: 'YAYASAN', label: 'Yayasan' },
-  { value: 'PAUD', label: 'PAUD' },
+  { value: 'TK_QURAN', label: 'TK Qur\'an' },
   { value: 'SD_IT', label: 'SD IT' },
   { value: 'SMP_IT', label: 'SMP IT' },
-  { value: 'SMA_ALQURAN', label: 'SMA Al-Qur\'an' },
+  { value: 'SMA_QURAN', label: 'SMA Qur\'an' },
+  { value: 'PESANTREN', label: 'Pesantren' },
 ];
 
 // Role badge colors
 const roleBadgeColors: Record<string, string> = {
   GLOBAL: 'bg-purple-100 text-purple-800 border-purple-200',
   YAYASAN: 'bg-amber-100 text-amber-800 border-amber-200',
-  PAUD: 'bg-pink-100 text-pink-800 border-pink-200',
+  TK_QURAN: 'bg-pink-100 text-pink-800 border-pink-200',
   SD_IT: 'bg-green-100 text-green-800 border-green-200',
   SMP_IT: 'bg-blue-100 text-blue-800 border-blue-200',
-  SMA_ALQURAN: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  SMA_QURAN: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  PESANTREN: 'bg-orange-100 text-orange-800 border-orange-200',
 };
 
 // UserRoles display component

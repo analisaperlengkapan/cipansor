@@ -14,6 +14,7 @@
 ## 📋 Daftar Isi
 
 - [Overview](#-overview)
+- [Screenshots](#-screenshots)
 - [Features](#-features)
 - [Module Roadmap](#-module-roadmap)
 - [Tech Stack](#-tech-stack)
@@ -44,6 +45,181 @@
 - ✅ **Pesantren management** - Asrama, perizinan, pelanggaran, reward points
 - ✅ **Financial management** - Pembayaran SPP, tagihan, laporan keuangan
 - ✅ **Academic tracking** - Kurikulum, absensi, nilai, raport
+
+---
+
+## 📸 Screenshots
+
+### Halaman Utama (Main Page)
+
+#### Login & Landing Page
+![Login Page](docs/screenshots/main/login-page.png)
+*Login interface dengan autentikasi multi-role untuk Super Admin, Unit Admin, Teacher, Staff, Student, dan Parent*
+
+![Landing Page](docs/screenshots/main/landing-page.png)
+*Halaman utama aplikasi CIPANSOR - Sistem Manajemen Yayasan Pesantren*
+
+### Dashboard
+
+#### Dashboard Super Admin
+![Super Admin Dashboard](docs/screenshots/dashboard/super-admin-dashboard.png)
+*Dashboard Super Admin dengan overview semua unit pendidikan, statistik siswa, keuangan, dan aktivitas tahfidz*
+
+#### Dashboard Unit Admin
+![Unit Admin Dashboard](docs/screenshots/dashboard/unit-admin-dashboard.png)
+*Dashboard Unit Admin untuk mengelola unit pendidikan tertentu (SD IT, SMP IT, atau SMA Quran)*
+
+#### Dashboard Teacher
+![Teacher Dashboard](docs/screenshots/dashboard/teacher-dashboard.png)
+*Dashboard Guru dengan akses ke kelas, absensi, nilai, dan tahfidz tracking*
+
+#### Dashboard Student & Parent
+![Student Dashboard](docs/screenshots/dashboard/student-dashboard.png)
+*Dashboard Siswa dengan informasi akademik, tahfidz progress, dan pembayaran*
+
+![Parent Portal](docs/screenshots/dashboard/parent-dashboard.png)
+*Portal Orang Tua untuk monitoring progress anak, pembayaran, dan komunikasi dengan guru*
+
+### Unit Pendidikan (Education Units)
+
+#### SD IT (Islamic Elementary School)
+![SD IT Overview](docs/screenshots/units/sd-it-overview.png)
+*Sekolah Dasar Islam Terpadu - Manajemen siswa, kelas, kurikulum, dan tahfidz*
+
+#### SMP IT (Islamic Junior High School)
+![SMP IT Overview](docs/screenshots/units/smp-it-overview.png)
+*Sekolah Menengah Pertama Islam Terpadu - Akademik dan tahfidz terintegrasi*
+
+#### SMA Quran (Islamic Senior High School)
+![SMA Quran Overview](docs/screenshots/units/sma-quran-overview.png)
+*SMA Al-Qur'an dengan fokus tahfidz 30 Juz dan Sanad - Program intensif hafalan Quran*
+
+#### TK Quran (Islamic Kindergarten)
+![TK Quran Overview](docs/screenshots/units/tk-quran-overview.png)
+*Taman Kanak-kanak berbasis Al-Qur'an - Pendidikan usia dini dengan pengenalan Quran*
+
+#### Unit Management
+![Unit Management](docs/screenshots/units/unit-management.png)
+*Manajemen multi-unit pendidikan dari dashboard yayasan*
+
+### Yayasan (Foundation Management)
+
+#### Yayasan Overview
+![Yayasan Overview](docs/screenshots/modules/yayasan-overview.png)
+*Dashboard Yayasan Pesantren Cipansor - Kelola semua unit pendidikan dari satu tempat*
+
+#### Board Members Management
+![Board Members](docs/screenshots/modules/yayasan-board-members.png)
+*Manajemen pengurus yayasan, board members, dan struktur organisasi*
+
+#### Foundation Documents
+![Foundation Documents](docs/screenshots/modules/yayasan-documents.png)
+*Pengelolaan dokumen legal, akta, dan dokumen penting yayasan*
+
+### Fitur Unggulan (Featured Modules)
+
+#### Tahfidz Tracking System
+![Tahfidz Tracking](docs/screenshots/modules/tahfidz-tracking.png)
+*Sistem tracking hafalan Quran - Ziyadah (hafalan baru), Murojaah (mengulang), dan Tasmi (setoran)*
+
+![Tahfidz Assessment](docs/screenshots/modules/tahfidz-assessment.png)
+*Penilaian tahfidz dengan tracking per-surah dan per-juz, termasuk kualitas bacaan*
+
+#### Finance Management
+![Finance Overview](docs/screenshots/modules/finance-overview.png)
+*Manajemen keuangan terintegrasi - SPP, uang gedung, seragam, dan pembayaran lainnya*
+
+![Payment Processing](docs/screenshots/modules/finance-payments.png)
+*Sistem pembayaran dengan invoice generation, payment tracking, dan laporan keuangan*
+
+#### Academic Management
+![Academic Management](docs/screenshots/modules/academic-management.png)
+*Manajemen akademik - Tahun ajaran, kelas, mata pelajaran, dan kurikulum*
+
+![Student Management](docs/screenshots/modules/student-management.png)
+*Manajemen data siswa lengkap dengan NIS, NISN, dan informasi orang tua*
+
+#### Attendance System
+![Attendance System](docs/screenshots/modules/attendance-system.png)
+*Sistem absensi harian dengan multiple status: Hadir, Izin, Sakit, Alpa, Terlambat*
+
+#### Class & Schedule Management
+![Class Management](docs/screenshots/modules/class-management.png)
+*Manajemen kelas dengan wali kelas, jadwal pelajaran, dan student enrollment*
+
+### Pesantren Features
+
+#### Dormitory Management (Asrama)
+![Dormitory Management](docs/screenshots/features/dormitory-management.png)
+*Manajemen asrama putra dan putri - Kamar, penempatan santri, dan statistik occupancy*
+
+#### Student Permit System (Perizinan)
+![Permit System](docs/screenshots/features/permit-system.png)
+*Sistem perizinan santri - Pulang, keluar, sakit, dengan approval workflow*
+
+#### Violations & Rewards
+![Violations & Rewards](docs/screenshots/features/violations-rewards.png)
+*Sistem pelanggaran dan penghargaan dengan point system untuk tracking behavior santri*
+
+### Additional Features
+
+#### PSB (Penerimaan Santri Baru)
+![PSB Registration](docs/screenshots/features/psb-registration.png)
+*Sistem penerimaan santri baru - Pendaftaran, verifikasi dokumen, test, dan enrollment*
+
+#### Library Management
+![Library System](docs/screenshots/features/library-system.png)
+*Sistem perpustakaan - Katalog buku, peminjaman, pengembalian, dan denda*
+
+#### Health/UKS Management
+![Health UKS](docs/screenshots/features/health-uks.png)
+*Unit Kesehatan Sekolah - Rekam medis, inventori obat, dan rujukan*
+
+#### Curriculum Management
+![Curriculum Management](docs/screenshots/features/curriculum-management.png)
+*Manajemen kurikulum - Mata pelajaran, silabus, RPP, dan lesson plans*
+
+#### Assessment & Report Cards
+![Assessment Reports](docs/screenshots/features/assessment-reports.png)
+*Sistem penilaian dan rapor - Ujian, nilai, rapor digital dengan Kurikulum Merdeka*
+
+#### Analytics Dashboard
+![Analytics Dashboard](docs/screenshots/features/analytics-dashboard.png)
+*Dashboard analytics dan statistik - Student trends, finance reports, tahfidz progress*
+
+#### Alumni Management
+![Alumni Management](docs/screenshots/features/alumni-management.png)
+*Manajemen alumni - Data alumni, career tracking, donations, dan alumni events*
+
+#### HR & Staff Management
+![HR Management](docs/screenshots/features/hr-management.png)
+*Manajemen SDM - Staff attendance, leave requests, dan payroll*
+
+#### Inventory & Assets
+![Inventory Management](docs/screenshots/features/inventory-management.png)
+*Manajemen inventaris dan aset - Tracking, maintenance, dan depreciation*
+
+#### Communication & Notifications
+![Communication System](docs/screenshots/features/communication-system.png)
+*Sistem komunikasi - Announcements, notifications, dan WhatsApp integration*
+
+#### BOS/BOP Reporting
+![BOS Reporting](docs/screenshots/features/bos-reporting.png)
+*Laporan BOS/BOP sesuai standar Kemenag - 8 standar BOS dengan export Excel/PDF*
+
+#### EMIS Kemenag Integration
+![EMIS Integration](docs/screenshots/features/emis-integration.png)
+*Integrasi EMIS Kemenag - Export data siswa, guru, dan institusi sesuai format resmi*
+
+#### Document Generator
+![Document Generator](docs/screenshots/features/document-generator.png)
+*Generator dokumen otomatis - Kartu siswa, sertifikat, surat keterangan*
+
+#### Accreditation Module
+![Accreditation](docs/screenshots/features/accreditation.png)
+*Modul akreditasi - Self-assessment, document checklist, dan report generation*
+
+> **📝 Note**: Screenshots akan ditambahkan secara bertahap saat aplikasi berjalan. Untuk melihat aplikasi secara langsung, ikuti [Getting Started Guide](#-getting-started).
 
 ---
 

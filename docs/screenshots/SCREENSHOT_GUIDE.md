@@ -11,15 +11,7 @@ This guide provides step-by-step instructions for capturing all required screens
    - API should be running on http://localhost:3001
    - Web should be running on http://localhost:3000
 
-2. **Test Credentials**: After running `pnpm db:seed`, use these credentials:
-
-   | Role | Email | Password |
-   |------|-------|----------|
-   | Super Admin | superadmin@cipansor.id | SuperAdmin123! |
-   | Unit Admin | admin@alhikmah.sch.id | Admin123! |
-   | Teacher | ahmad@alhikmah.sch.id | Teacher123! |
-   | Staff | bambang@cipansor.id | Staff123! |
-   | Student | student1@alhikmah.sch.id | Student123! |
+2. **Test Credentials**: After running `pnpm db:seed`, you can find the test credentials in the main README.md file under the "Getting Started" section. Use these demo accounts to access different role-specific interfaces for capturing screenshots.
 
 3. **Browser DevTools**: Use Chrome/Firefox DevTools for consistent screenshots
 4. **Screenshot Tool**: Use browser's built-in screenshot or a tool like:
@@ -484,4 +476,4 @@ If you need help:
 
 ---
 
-**Last Updated**: 2025-12-08
+**Last Updated**: 2024-12-08

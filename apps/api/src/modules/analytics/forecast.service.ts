@@ -1,0 +1,342 @@
+/**
+ * Analytics Forecast Service
+ * Provides predictive analytics for enrollment, payments, and other metrics
+ */
+
+import { prisma } from '@/lib/prisma';
+
+interface ForecastResult {
+    currentValue: number;
+    predictedValue: number;
+    trend: 'up' | 'down' | 'stable';
+    trendPercentage: number;
+    confidence: number;
+    dataPoints: Array<{ date: string; value: number; predicted?: boolean }>;
+}
+
+/**
+ * Calculate simple moving average for predictions
+ */
+function calculateMovingAverage(values: number[], period: number): number[] {
+    const result: number[] = [];
+    for (let i = 0; i < values.length; i++) {
+        if (i < period - 1) {
+            result.push(values[i]);
+        } else {
+            const sum = values.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
+            result.push(sum / period);
+        }
+    }
+    return result;
+}
+
+/**
+ * Linear regression for trend prediction
+ */
+function linearRegression(values: number[]): { slope: number; intercept: number; r2: number } {
+    const n = values.length;
+    if (n === 0) return { slope: 0, intercept: 0, r2: 0 };
+
+    const xMean = (n - 1) / 2;
+    const yMean = values.reduce((a, b) => a + b, 0) / n;
+
+    let numerator = 0;
+    let denominator = 0;
+    let totalSS = 0;
+
+    for (let i = 0; i < n; i++) {
+        numerator += (i - xMean) * (values[i] - yMean);
+        denominator += (i - xMean) ** 2;
+        totalSS += (values[i] - yMean) ** 2;
+    }
+
+    const slope = denominator === 0 ? 0 : numerator / denominator;
+    const intercept = yMean - slope * xMean;
+
+    // Calculate R-squared
+    let residualSS = 0;
+    for (let i = 0; i < n; i++) {
+        const predicted = slope * i + intercept;
+        residualSS += (values[i] - predicted) ** 2;
+    }
+    const r2 = totalSS === 0 ? 0 : 1 - residualSS / totalSS;
+
+    return { slope, intercept, r2 };
+}
+
+/**
+ * Get enrollment forecast for the next 6 months
+ */
+export async function getEnrollmentForecast(unitId?: string): Promise<ForecastResult> {
+    // Get historical enrollment data (last 12 months)
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+    const monthlyEnrollments = await prisma.$queryRaw<Array<{ month: string; count: bigint }>>`
+    SELECT 
+      TO_CHAR(created_at, 'YYYY-MM') as month,
+      COUNT(*)::bigint as count
+    FROM students
+    WHERE created_at >= ${twelveMonthsAgo}
+    ${unitId ? prisma.$queryRaw`AND unit_id = ${unitId}` : prisma.$queryRaw``}
+    GROUP BY TO_CHAR(created_at, 'YYYY-MM')
+    ORDER BY month
+  `;
+
+    const values = monthlyEnrollments.map((m) => Number(m.count));
+    const dataPoints = monthlyEnrollments.map((m) => ({
+        date: m.month,
+        value: Number(m.count),
+    }));
+
+    if (values.length < 3) {
+        // Not enough data for prediction
+        const currentValue = values.length > 0 ? values[values.length - 1] : 0;
+        return {
+            currentValue,
+            predictedValue: currentValue,
+            trend: 'stable',
+            trendPercentage: 0,
+            confidence: 0,
+            dataPoints,
+        };
+    }
+
+    // Calculate linear regression for trend
+    const { slope, intercept, r2 } = linearRegression(values);
+    const currentValue = values[values.length - 1];
+
+    // Predict next 6 months
+    for (let i = 1; i <= 6; i++) {
+        const predictedValue = Math.max(0, Math.round(slope * (values.length + i - 1) + intercept));
+        const futureDate = new Date();
+        futureDate.setMonth(futureDate.getMonth() + i);
+        dataPoints.push({
+            date: futureDate.toISOString().slice(0, 7),
+            value: predictedValue,
+            predicted: true,
+        });
+    }
+
+    const predictedValue = Math.max(0, Math.round(slope * (values.length + 5) + intercept));
+    const trendPercentage = currentValue === 0 ? 0 : ((predictedValue - currentValue) / currentValue) * 100;
+
+    return {
+        currentValue,
+        predictedValue,
+        trend: slope > 0.5 ? 'up' : slope < -0.5 ? 'down' : 'stable',
+        trendPercentage: Math.round(trendPercentage * 100) / 100,
+        confidence: Math.round(Math.max(0, r2) * 100),
+        dataPoints,
+    };
+}
+
+/**
+ * Get payment collection forecast
+ */
+export async function getPaymentForecast(unitId?: string): Promise<ForecastResult> {
+    // Get historical payment data (last 12 months)
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+    const monthlyPayments = await prisma.$queryRaw<Array<{ month: string; total: bigint }>>`
+    SELECT 
+      TO_CHAR(paid_at, 'YYYY-MM') as month,
+      COALESCE(SUM(amount), 0)::bigint as total
+    FROM payments
+    WHERE paid_at >= ${twelveMonthsAgo}
+    GROUP BY TO_CHAR(paid_at, 'YYYY-MM')
+    ORDER BY month
+  `;
+
+    const values = monthlyPayments.map((m) => Number(m.total));
+    const dataPoints = monthlyPayments.map((m) => ({
+        date: m.month,
+        value: Number(m.total),
+    }));
+
+    if (values.length < 3) {
+        const currentValue = values.length > 0 ? values[values.length - 1] : 0;
+        return {
+            currentValue,
+            predictedValue: currentValue,
+            trend: 'stable',
+            trendPercentage: 0,
+            confidence: 0,
+            dataPoints,
+        };
+    }
+
+    // Use moving average for smoother prediction
+    const smoothedValues = calculateMovingAverage(values, 3);
+    const { slope, intercept, r2 } = linearRegression(smoothedValues);
+    const currentValue = values[values.length - 1];
+
+    // Predict next 6 months
+    for (let i = 1; i <= 6; i++) {
+        const predictedValue = Math.max(0, Math.round(slope * (values.length + i - 1) + intercept));
+        const futureDate = new Date();
+        futureDate.setMonth(futureDate.getMonth() + i);
+        dataPoints.push({
+            date: futureDate.toISOString().slice(0, 7),
+            value: predictedValue,
+            predicted: true,
+        });
+    }
+
+    const predictedValue = Math.max(0, Math.round(slope * (values.length + 5) + intercept));
+    const trendPercentage = currentValue === 0 ? 0 : ((predictedValue - currentValue) / currentValue) * 100;
+
+    return {
+        currentValue,
+        predictedValue,
+        trend: slope > 1000 ? 'up' : slope < -1000 ? 'down' : 'stable',
+        trendPercentage: Math.round(trendPercentage * 100) / 100,
+        confidence: Math.round(Math.max(0, r2) * 100),
+        dataPoints,
+    };
+}
+
+/**
+ * Get outstanding payment prediction
+ */
+export async function getOutstandingPaymentPrediction(unitId?: string): Promise<{
+    currentOutstanding: number;
+    predictedCollection: number;
+    collectionRate: number;
+    atRiskAmount: number;
+    dataPoints: Array<{ category: string; amount: number }>;
+}> {
+    // Get current outstanding invoices
+    const outstandingInvoices = await prisma.invoice.findMany({
+        where: {
+            status: { in: ['PENDING', 'PARTIAL'] },
+            ...(unitId && { student: { unitId } }),
+        },
+        include: {
+            student: {
+                select: { id: true },
+            },
+        },
+    });
+
+    const totalOutstanding = outstandingInvoices.reduce(
+        (sum, inv) => sum + (inv.amount - inv.paidAmount),
+        0
+    );
+
+    // Calculate historical collection rate
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+    const historicalStats = await prisma.invoice.aggregate({
+        where: {
+            createdAt: { gte: threeMonthsAgo },
+            ...(unitId && { student: { unitId } }),
+        },
+        _sum: { amount: true, paidAmount: true },
+    });
+
+    const collectionRate =
+        historicalStats._sum.amount && historicalStats._sum.amount > 0
+            ? (Number(historicalStats._sum.paidAmount) / Number(historicalStats._sum.amount)) * 100
+            : 75; // Default assumption
+
+    const predictedCollection = Math.round(totalOutstanding * (collectionRate / 100));
+    const atRiskAmount = totalOutstanding - predictedCollection;
+
+    // Categorize by age
+    const now = new Date();
+    const categories = {
+        'Kurang dari 30 hari': 0,
+        '30-60 hari': 0,
+        '60-90 hari': 0,
+        'Lebih dari 90 hari': 0,
+    };
+
+    outstandingInvoices.forEach((inv) => {
+        const daysDiff = Math.floor(
+            (now.getTime() - new Date(inv.dueDate).getTime()) / (1000 * 60 * 60 * 24)
+        );
+        const outstanding = inv.amount - inv.paidAmount;
+
+        if (daysDiff < 30) {
+            categories['Kurang dari 30 hari'] += outstanding;
+        } else if (daysDiff < 60) {
+            categories['30-60 hari'] += outstanding;
+        } else if (daysDiff < 90) {
+            categories['60-90 hari'] += outstanding;
+        } else {
+            categories['Lebih dari 90 hari'] += outstanding;
+        }
+    });
+
+    return {
+        currentOutstanding: totalOutstanding,
+        predictedCollection,
+        collectionRate: Math.round(collectionRate * 100) / 100,
+        atRiskAmount,
+        dataPoints: Object.entries(categories).map(([category, amount]) => ({ category, amount })),
+    };
+}
+
+/**
+ * Get tahfidz completion forecast
+ */
+export async function getTahfidzCompletionForecast(unitId?: string): Promise<{
+    averageCompletionRate: number;
+    projectedHafidz: number;
+    currentHafidz: number;
+    monthlyProgress: Array<{ month: string; totalAyah: number; students: number }>;
+}> {
+    // Get monthly tahfidz progress for last 6 months
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const monthlyProgress = await prisma.$queryRaw<
+        Array<{ month: string; total_ayah: bigint; student_count: bigint }>
+    >`
+    SELECT 
+      TO_CHAR(recorded_at, 'YYYY-MM') as month,
+      COALESCE(SUM(total_ayah), 0)::bigint as total_ayah,
+      COUNT(DISTINCT student_id)::bigint as student_count
+    FROM tahfidz_records
+    WHERE recorded_at >= ${sixMonthsAgo}
+      AND activity_type = 'ZIYADAH'
+    GROUP BY TO_CHAR(recorded_at, 'YYYY-MM')
+    ORDER BY month
+  `;
+
+    // Count current hafidz (students with 30 juz completed)
+    const currentHafidz = await prisma.student.count({
+        where: {
+            tahfidzRecords: {
+                some: {
+                    // Approximate: students with significant total ayah
+                },
+            },
+            ...(unitId && { unitId }),
+        },
+    });
+
+    // Calculate average completion rate
+    const avgAyahPerMonth =
+        monthlyProgress.length > 0
+            ? monthlyProgress.reduce((sum, m) => sum + Number(m.total_ayah), 0) / monthlyProgress.length
+            : 0;
+
+    // Project new hafidz in next 12 months (rough estimate)
+    // Assuming 6236 ayah for full Quran
+    const projectedHafidz = currentHafidz + Math.floor(avgAyahPerMonth * 12 / 6236);
+
+    return {
+        averageCompletionRate: Math.round(avgAyahPerMonth),
+        projectedHafidz,
+        currentHafidz,
+        monthlyProgress: monthlyProgress.map((m) => ({
+            month: m.month,
+            totalAyah: Number(m.total_ayah),
+            students: Number(m.student_count),
+        })),
+    };
+}

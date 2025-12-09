@@ -157,6 +157,12 @@ export default function AnalyticsPage() {
               ))}
             </SelectContent>
           </Select>
+          <Button variant="outline" asChild>
+            <a href="/analytics/forecast">📈 Forecast</a>
+          </Button>
+          <Button variant="outline" asChild>
+            <a href="/analytics/export">📊 Export</a>
+          </Button>
           <Select onValueChange={(v) => handleExport('all', v as ExportReportFormat)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Export Laporan" />
@@ -204,11 +210,11 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <Badge variant={
-                  (attendanceStats?.data?.presentRate || 0) >= 90 ? 'default' : 
-                  (attendanceStats?.data?.presentRate || 0) >= 80 ? 'secondary' : 'destructive'
+                  (attendanceStats?.data?.presentRate || 0) >= 90 ? 'default' :
+                    (attendanceStats?.data?.presentRate || 0) >= 80 ? 'secondary' : 'destructive'
                 }>
-                  {(attendanceStats?.data?.presentRate || 0) >= 90 ? 'Baik' : 
-                   (attendanceStats?.data?.presentRate || 0) >= 80 ? 'Cukup' : 'Perlu Perhatian'}
+                  {(attendanceStats?.data?.presentRate || 0) >= 90 ? 'Baik' :
+                    (attendanceStats?.data?.presentRate || 0) >= 80 ? 'Cukup' : 'Perlu Perhatian'}
                 </Badge>
               </CardContent>
             </Card>
@@ -446,10 +452,10 @@ export default function AnalyticsPage() {
                       <TableCell className="text-right">{item.count}</TableCell>
                     </TableRow>
                   )) || (
-                    <TableRow>
-                      <TableCell colSpan={2} className="text-center">Tidak ada data</TableCell>
-                    </TableRow>
-                  )}
+                      <TableRow>
+                        <TableCell colSpan={2} className="text-center">Tidak ada data</TableCell>
+                      </TableRow>
+                    )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -581,10 +587,10 @@ export default function AnalyticsPage() {
                       </TableCell>
                     </TableRow>
                   )) || (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center">Tidak ada data</TableCell>
-                    </TableRow>
-                  )}
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center">Tidak ada data</TableCell>
+                      </TableRow>
+                    )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -774,14 +780,14 @@ export default function AnalyticsPage() {
                       <Tooltip />
                       <Bar dataKey="count" fill="#8884d8" name="Jumlah Santri">
                         {(academicStats?.data?.gradeDistribution || []).map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
+                          <Cell
+                            key={`cell-${index}`}
                             fill={
                               entry.grade === 'A' ? '#00C49F' :
-                              entry.grade === 'B' ? '#0088FE' :
-                              entry.grade === 'C' ? '#FFBB28' :
-                              entry.grade === 'D' ? '#FF8042' : '#FF4444'
-                            } 
+                                entry.grade === 'B' ? '#0088FE' :
+                                  entry.grade === 'C' ? '#FFBB28' :
+                                    entry.grade === 'D' ? '#FF8042' : '#FF4444'
+                            }
                           />
                         ))}
                       </Bar>
@@ -844,10 +850,10 @@ export default function AnalyticsPage() {
                         </TableCell>
                       </TableRow>
                     )) || (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center">Tidak ada data</TableCell>
-                      </TableRow>
-                    )}
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center">Tidak ada data</TableCell>
+                        </TableRow>
+                      )}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -876,10 +882,10 @@ export default function AnalyticsPage() {
                         </TableCell>
                       </TableRow>
                     )) || (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center">Tidak ada data</TableCell>
-                      </TableRow>
-                    )}
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center">Tidak ada data</TableCell>
+                        </TableRow>
+                      )}
                   </TableBody>
                 </Table>
               </CardContent>

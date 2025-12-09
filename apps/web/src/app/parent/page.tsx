@@ -19,6 +19,7 @@ import {
   TrendingUp,
   Bell,
   Wallet,
+  MessageSquare,
 } from 'lucide-react';
 
 interface Child {
@@ -388,6 +389,12 @@ export default function ParentDashboardPage() {
               <Button variant="outline" className="w-full h-20 flex-col gap-2">
                 <Bell className="h-6 w-6" />
                 <span>Pengumuman</span>
+              </Button>
+            </Link>
+            <Link href="/parent/messages">
+              <Button variant="outline" className="w-full h-20 flex-col gap-2">
+                <MessageSquare className="h-6 w-6" />
+                <span>Pesan Guru</span>
               </Button>
             </Link>
           </div>

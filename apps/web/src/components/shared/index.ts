@@ -26,3 +26,10 @@ export {
   ProfileSkeleton,
   PageSkeleton,
 } from './skeleton';
+export {
+  ErrorBoundary,
+  ErrorMessage,
+  LoadingSpinner,
+  LoadingPage,
+} from './error-boundary';
+

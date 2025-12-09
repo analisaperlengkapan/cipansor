@@ -1,5 +1,7 @@
 import { Router } from "express";
 import * as controller from "./controller";
+import * as forecastController from "./forecast.controller";
+import * as exportController from "./export.controller";
 import { authenticate } from "@/middleware/auth";
 
 const router = Router();
@@ -184,4 +186,259 @@ router.get("/library", controller.getLibraryStats);
  */
 router.get("/psb", controller.getPSBStats);
 
+// ============================================
+// FORECAST ENDPOINTS (Predictive Analytics)
+// ============================================
+
+/**
+ * @swagger
+ * /api/analytics/forecast:
+ *   get:
+ *     summary: Get all forecasts summary
+ *     tags: [Analytics - Forecast]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: unitId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Combined forecasts for enrollment, payment, outstanding, and tahfidz
+ */
+router.get("/forecast", forecastController.getAllForecasts);
+
+/**
+ * @swagger
+ * /api/analytics/forecast/enrollment:
+ *   get:
+ *     summary: Get enrollment forecast
+ *     tags: [Analytics - Forecast]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Enrollment prediction for next 6 months
+ */
+router.get("/forecast/enrollment", forecastController.getEnrollmentForecast);
+
+/**
+ * @swagger
+ * /api/analytics/forecast/payment:
+ *   get:
+ *     summary: Get payment forecast
+ *     tags: [Analytics - Forecast]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Payment prediction for next 6 months
+ */
+router.get("/forecast/payment", forecastController.getPaymentForecast);
+
+/**
+ * @swagger
+ * /api/analytics/forecast/outstanding:
+ *   get:
+ *     summary: Get outstanding payment prediction
+ *     tags: [Analytics - Forecast]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Outstanding payment risk analysis
+ */
+router.get("/forecast/outstanding", forecastController.getOutstandingPrediction);
+
+/**
+ * @swagger
+ * /api/analytics/forecast/tahfidz:
+ *   get:
+ *     summary: Get tahfidz completion forecast
+ *     tags: [Analytics - Forecast]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Tahfidz completion projection
+ */
+router.get("/forecast/tahfidz", forecastController.getTahfidzForecast);
+
+// ============================================
+// EXPORT ENDPOINTS
+// ============================================
+
+/**
+ * @swagger
+ * /api/analytics/export/all:
+ *   get:
+ *     summary: Export comprehensive data
+ *     tags: [Analytics - Export]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: unitId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *     responses:
+ *       200:
+ *         description: Complete export of students, attendance, finance, tahfidz
+ */
+router.get("/export/all", exportController.exportAll);
+
+/**
+ * @swagger
+ * /api/analytics/export/students:
+ *   get:
+ *     summary: Export students data
+ *     tags: [Analytics - Export]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: format
+ *         schema:
+ *           type: string
+ *           enum: [json, csv]
+ *     responses:
+ *       200:
+ *         description: Students data export
+ */
+router.get("/export/students", exportController.exportStudents);
+
+/**
+ * @swagger
+ * /api/analytics/export/attendance:
+ *   get:
+ *     summary: Export attendance data
+ *     tags: [Analytics - Export]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: format
+ *         schema:
+ *           type: string
+ *           enum: [json, csv]
+ *     responses:
+ *       200:
+ *         description: Attendance data export
+ */
+router.get("/export/attendance", exportController.exportAttendance);
+
+/**
+ * @swagger
+ * /api/analytics/export/finance:
+ *   get:
+ *     summary: Export finance data
+ *     tags: [Analytics - Export]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: format
+ *         schema:
+ *           type: string
+ *           enum: [json, csv]
+ *     responses:
+ *       200:
+ *         description: Finance data export
+ */
+router.get("/export/finance", exportController.exportFinance);
+
+/**
+ * @swagger
+ * /api/analytics/export/tahfidz:
+ *   get:
+ *     summary: Export tahfidz data
+ *     tags: [Analytics - Export]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: format
+ *         schema:
+ *           type: string
+ *           enum: [json, csv]
+ *     responses:
+ *       200:
+ *         description: Tahfidz data export
+ */
+router.get("/export/tahfidz", exportController.exportTahfidz);
+
+// ============================================
+// BENCHMARK ENDPOINTS (Comparative Analytics)
+// ============================================
+
+import * as benchmarkController from "./benchmark.controller";
+
+/**
+ * @swagger
+ * /api/analytics/benchmark:
+ *   get:
+ *     summary: Get benchmark summary
+ *     tags: [Analytics - Benchmark]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Top performers and overall averages
+ */
+router.get("/benchmark", benchmarkController.getBenchmarkSummary);
+
+/**
+ * @swagger
+ * /api/analytics/benchmark/compare:
+ *   get:
+ *     summary: Compare performance across units
+ *     tags: [Analytics - Benchmark]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Unit comparison data
+ */
+router.get("/benchmark/compare", benchmarkController.compareUnits);
+
+/**
+ * @swagger
+ * /api/analytics/benchmark/rankings:
+ *   get:
+ *     summary: Get unit rankings
+ *     tags: [Analytics - Benchmark]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Rankings by metric
+ */
+router.get("/benchmark/rankings", benchmarkController.getUnitRankings);
+
+/**
+ * @swagger
+ * /api/analytics/benchmark/yoy/{unitId}:
+ *   get:
+ *     summary: Year-over-year comparison
+ *     tags: [Analytics - Benchmark]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: YoY comparison for unit
+ */
+router.get("/benchmark/yoy/:unitId", benchmarkController.getYearOverYear);
+
 export default router;
+

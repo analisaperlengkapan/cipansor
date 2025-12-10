@@ -96,7 +96,7 @@ export const halaqohService = {
       data: {
         ...input,
         scheduleDay: input.scheduleDay as HalaqohDay[],
-      },
+      } as any,
       include: {
         unit: { select: { id: true, name: true } },
         teacher: { select: { id: true, name: true } },
@@ -265,7 +265,7 @@ export const enrollmentService = {
       data: {
         ...input,
         targetCompletionDate: input.targetCompletionDate ? new Date(input.targetCompletionDate) : undefined,
-      },
+      } as any,
       include: {
         student: {
           include: {
@@ -443,7 +443,7 @@ export const sanadService = {
       data: {
         ...input,
         certifiedAt: input.certifiedAt ? new Date(input.certifiedAt) : new Date(),
-      },
+      } as any,
       include: {
         enrollment: true,
         teacher: { select: { id: true, name: true } },

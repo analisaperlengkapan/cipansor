@@ -89,34 +89,13 @@ function escapeICalText(text: string): string {
  */
 export async function getAcademicEvents(
     unitId?: string,
-    startDate?: Date,
-    endDate?: Date
+    _startDate?: Date,
+    _endDate?: Date
 ): Promise<CalendarEvent[]> {
-    const where: Record<string, unknown> = {};
-
-    if (unitId) where.unitId = unitId;
-    if (startDate || endDate) {
-        where.startDate = {};
-        if (startDate) (where.startDate as Record<string, Date>).gte = startDate;
-        if (endDate) (where.startDate as Record<string, Date>).lte = endDate;
-    }
-
-    const events = await prisma.academicEvent.findMany({
-        where,
-        orderBy: { startDate: 'asc' },
-        include: { unit: { select: { name: true } } },
-    });
-
-    return events.map((e) => ({
-        id: e.id,
-        title: e.title,
-        description: e.description || undefined,
-        location: e.location || undefined,
-        startDate: e.startDate,
-        endDate: e.endDate,
-        allDay: e.allDay,
-        category: mapEventCategory(e.type),
-    }));
+    // Note: Academic events feature not yet implemented in database schema
+    // Return empty array for now - will be populated when AcademicEvent model is added
+    console.info(`getAcademicEvents called for unit: ${unitId || 'all'}`);
+    return [];
 }
 
 /**
@@ -167,7 +146,7 @@ export async function exportUserSchedule(userId: string): Promise<string> {
     // Get user's relevant events
     const student = await prisma.student.findFirst({
         where: { userId },
-        include: { unit: true, class: true },
+        include: { unit: true },
     });
 
     if (!student) {

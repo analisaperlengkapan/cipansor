@@ -7,6 +7,7 @@ import swaggerUi from 'swagger-ui-express';
 import { config } from '@/config';
 import { logger } from '@/lib/logger';
 import { errorHandler, notFoundHandler } from '@/middleware/error';
+import { defaultLimiter, authLimiter } from '@/middleware/rate-limit';
 import { swaggerSpec } from '@/config/swagger';
 
 // Import routes
@@ -97,6 +98,12 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Compression
 app.use(compression());
 
+// Rate limiting - apply to all routes except health check
+// Active in all environments except test, with more lenient limits in development
+if (config.env !== 'test') {
+  app.use(defaultLimiter);
+}
+
 // Logging
 if (config.env !== 'test') {
   app.use(morgan('combined', {
@@ -106,32 +113,36 @@ if (config.env !== 'test') {
   }));
 }
 
-// Health check endpoint
+// Health check endpoint (not rate limited)
 app.get('/health', (_req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     version: process.env.npm_package_version || '1.0.0',
+    environment: config.env,
   });
 });
 
-// Swagger API Documentation
-console.log('App: swaggerSpec paths:', Object.keys(swaggerSpec.paths || {}));
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Cipansor API Documentation',
-}));
+// Swagger API Documentation (disabled in production for security)
+if (config.env !== 'production') {
+  console.info('App: swaggerSpec paths:', Object.keys(swaggerSpec.paths || {}));
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Cipansor API Documentation',
+  }));
 
-// Swagger JSON endpoint
-app.get('/api/docs.json', (_req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
-});
+  // Swagger JSON endpoint
+  app.get('/api/docs.json', (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+  });
+}
 
 // API routes
 const apiRouter = express.Router();
 
-apiRouter.use('/auth', authRoutes);
+// Apply stricter rate limiting to auth routes
+apiRouter.use('/auth', authLimiter, authRoutes);
 apiRouter.use('/users', userRoutes);
 apiRouter.use('/units', unitRoutes);
 apiRouter.use('/students', studentRoutes);

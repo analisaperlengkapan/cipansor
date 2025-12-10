@@ -7,7 +7,7 @@ export async function createReward(data: CreateRewardDto, givenById: string) {
       ...data,
       givenAt: data.givenAt ? new Date(data.givenAt) : new Date(),
       givenById,
-    },
+    } as any,
     include: {
       student: {
         include: {

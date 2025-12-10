@@ -226,9 +226,9 @@ export async function getLiveDashboardSummary(): Promise<{
     });
 
     const todayAttendance = {
-        present: attendanceCounts.find((a) => a.status === 'present')?._count || 0,
-        absent: attendanceCounts.find((a) => a.status === 'absent')?._count || 0,
-        late: attendanceCounts.find((a) => a.status === 'late')?._count || 0,
+        present: attendanceCounts.find((a) => a.status === 'PRESENT')?._count || 0,
+        absent: attendanceCounts.find((a) => a.status === 'ABSENT')?._count || 0,
+        late: attendanceCounts.find((a) => a.status === 'LATE')?._count || 0,
     };
 
     // Today's revenue

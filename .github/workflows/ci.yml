@@ -91,7 +91,8 @@ jobs:
       # Note: Build has TypeScript issues documented in KNOWN_ISSUES.md
       # Build uses lenient tsconfig.build.json until issues are fixed
       - name: Build API
-        run: pnpm --filter api build || echo "Build has known TypeScript issues - see KNOWN_ISSUES.md"
+        run: pnpm --filter api build
+        continue-on-error: true
 
   # Build Web
   build-web:

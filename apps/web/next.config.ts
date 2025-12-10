@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable React Compiler (experimental)
-  reactCompiler: true,
+  // Enable React Compiler (experimental - only in development for safety)
+  reactCompiler: process.env.NODE_ENV === 'development',
 
   // Output standalone for Docker deployment
   output: "standalone",

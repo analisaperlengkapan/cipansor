@@ -99,7 +99,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(compression());
 
 // Rate limiting - apply to all routes except health check
-if (config.env === 'production') {
+// Active in all environments except test, with more lenient limits in development
+if (config.env !== 'test') {
   app.use(defaultLimiter);
 }
 

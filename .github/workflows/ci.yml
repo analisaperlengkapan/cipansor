@@ -122,7 +122,8 @@ jobs:
       # Note: Web build has missing hook exports documented in KNOWN_ISSUES.md
       # These will be fixed incrementally
       - name: Build Web
-        run: pnpm --filter web build || echo "Web build has known issues - see KNOWN_ISSUES.md"
+        run: pnpm --filter web build
+        continue-on-error: true
         env:
           NEXT_PUBLIC_API_URL: 'http://localhost:3001/api'
 

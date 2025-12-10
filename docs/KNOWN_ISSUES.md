@@ -2,7 +2,42 @@
 
 This document tracks known issues and technical debt in the Cipansor project.
 
-## TypeScript Strict Mode Issues
+## Web Build Issues (Next.js)
+
+The following web pages have missing hook exports that cause build failures:
+
+### High Priority (Missing Exports)
+
+1. **PAUD Reports Page** (`apps/web/src/app/paud/reports/[id]/page.tsx`)
+   - Missing: `useReportPhotos`, `useFinalizePAUDReport`, `ReportStatus`
+   - Should import from: `@/hooks/use-paud-report`
+   - Suggested fix: Use `useAddReportPhoto` instead of `useReportPhotos`
+
+2. **Simaan Edit Page** (`apps/web/src/app/tahfidz/simaan/[id]/edit/page.tsx`)
+   - Missing: `useUpdateSimaanExam`
+   - Should import from: `@/hooks/use-simaan`
+   - Suggested fix: Use `useUpdateSimaan` instead
+
+3. **Certificate Pages** (`apps/web/src/app/certificates/*.tsx`)
+   - Multiple missing hook exports
+
+4. **Daily Reports Pages** (`apps/web/src/app/paud/daily-reports/*.tsx`)
+   - Missing hook exports for class and parent views
+
+5. **Rapor Pesantren** (`apps/web/src/app/rapor-pesantren/*.tsx`)
+   - Multiple missing exports
+
+6. **Tahfidz Module** (`apps/web/src/app/tahfidz/sanad/*.tsx`, `simaan/*.tsx`, `murojaah/*.tsx`)
+   - Multiple missing hook exports
+
+### How to Fix Web Build Issues
+
+1. Check the existing hooks in `apps/web/src/hooks/`
+2. Either add the missing exports to the hook files
+3. Or update the page components to use existing exports
+4. Run `pnpm --filter web build` to verify fixes
+
+## TypeScript Strict Mode Issues (API)
 
 The following modules have TypeScript type errors that need to be fixed for full strict mode compliance:
 

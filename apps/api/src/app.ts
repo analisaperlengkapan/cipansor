@@ -77,6 +77,7 @@ import { murojaahRoutes } from '@/modules/murojaah';
 import { simaanRoutes } from '@/modules/simaan';
 import { dashboardEnhancementRoutes } from '@/modules/dashboard-enhancement';
 import { sanadCertificateRouter } from '@/modules/sanad-certificate';
+import dashboardRoutes from '@/modules/dashboard/dashboard.routes';
 
 // Create Express app
 const app = express();
@@ -208,6 +209,7 @@ apiRouter.use('/murojaah', murojaahRoutes);
 apiRouter.use('/simaan', simaanRoutes);
 apiRouter.use('/dashboard-enhancement', dashboardEnhancementRoutes);
 apiRouter.use('/sanad', sanadCertificateRouter);
+apiRouter.use('/dashboard', dashboardRoutes);
 
 // API info
 apiRouter.get('/', (_req, res) => {

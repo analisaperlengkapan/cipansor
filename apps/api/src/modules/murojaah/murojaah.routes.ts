@@ -261,4 +261,110 @@ router.get(
   controller.getHalaqohRecords
 );
 
+// ============================================
+// Analytics Routes
+// ============================================
+
+/**
+ * @openapi
+ * /api/murojaah/analytics/quality-distribution:
+ *   get:
+ *     tags:
+ *       - Murojaah Analytics
+ *     summary: Get quality distribution analytics
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: dateFrom
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: dateTo
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: halaqohId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: query
+ *         name: murojaahType
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Quality distribution data
+ */
+router.get(
+  '/analytics/quality-distribution',
+  authenticate,
+  controller.getQualityDistribution
+);
+
+/**
+ * @openapi
+ * /api/murojaah/analytics/mistake-patterns:
+ *   get:
+ *     tags:
+ *       - Murojaah Analytics
+ *     summary: Get mistake patterns analytics
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Mistake patterns data
+ */
+router.get(
+  '/analytics/mistake-patterns',
+  authenticate,
+  controller.getMistakePatterns
+);
+
+/**
+ * @openapi
+ * /api/murojaah/analytics/consistency-score:
+ *   get:
+ *     tags:
+ *       - Murojaah Analytics
+ *     summary: Get consistency score analytics
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Consistency score data
+ */
+router.get(
+  '/analytics/consistency-score',
+  authenticate,
+  controller.getConsistencyScore
+);
+
+/**
+ * @openapi
+ * /api/murojaah/analytics/top-performers:
+ *   get:
+ *     tags:
+ *       - Murojaah Analytics
+ *     summary: Get top performers
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *     responses:
+ *       200:
+ *         description: Top performers list
+ */
+router.get(
+  '/analytics/top-performers',
+  authenticate,
+  controller.getTopPerformers
+);
+
 export default router;

@@ -163,3 +163,59 @@ export const getMurojaahSchedule = async (req: Request, res: Response, next: Nex
     next(error);
   }
 };
+
+// ============================================
+// Analytics Controllers
+// ============================================
+
+/**
+ * Get quality distribution analytics
+ */
+export const getQualityDistribution = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const query = req.query as any;
+    const result = await murojaahService.getQualityDistribution(query);
+    res.json(ApiResponse.success(result));
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get mistake patterns analytics
+ */
+export const getMistakePatterns = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const query = req.query as any;
+    const result = await murojaahService.getMistakePatterns(query);
+    res.json(ApiResponse.success(result));
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get consistency score analytics
+ */
+export const getConsistencyScore = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const query = req.query as any;
+    const result = await murojaahService.getConsistencyScore(query);
+    res.json(ApiResponse.success(result));
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get top performers
+ */
+export const getTopPerformers = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const query = req.query as any;
+    const result = await murojaahService.getTopPerformers(query);
+    res.json(ApiResponse.success(result));
+  } catch (error) {
+    next(error);
+  }
+};

@@ -5,6 +5,7 @@ import {
   createWeeklySummary,
   cleanupOldSnapshots,
 } from './dashboard-snapshot.job';
+import { aggregateDashboardMetrics } from './dashboard-metrics.job';
 
 /**
  * Scheduler Module
@@ -19,6 +20,24 @@ const scheduledTasks: ScheduledTask[] = [];
  */
 export function initializeScheduler(): void {
   logger.info('[Scheduler] Initializing scheduled jobs...');
+
+  // Real-time dashboard metrics - Run every minute
+  const metricsTask = cron.schedule(
+    '* * * * *',
+    async () => {
+      logger.debug('[Scheduler] Running dashboard metrics job');
+      try {
+        await aggregateDashboardMetrics();
+      } catch (error) {
+        logger.error('[Scheduler] Dashboard metrics job failed:', error);
+      }
+    },
+    {
+      timezone: 'Asia/Jakarta',
+    }
+  );
+  scheduledTasks.push(metricsTask);
+  logger.info('[Scheduler] Dashboard metrics job scheduled (every minute)');
 
   // Daily metric snapshots - Run at 1:00 AM every day
   // Cron: minute hour day month dayOfWeek
@@ -90,10 +109,13 @@ export function stopScheduler(): void {
 /**
  * Run a specific job manually (for testing or manual trigger)
  */
-export async function runJob(jobName: 'daily-snapshot' | 'weekly-summary' | 'cleanup'): Promise<void> {
+export async function runJob(jobName: 'dashboard-metrics' | 'daily-snapshot' | 'weekly-summary' | 'cleanup'): Promise<void> {
   logger.info(`[Scheduler] Manually running job: ${jobName}`);
 
   switch (jobName) {
+    case 'dashboard-metrics':
+      await aggregateDashboardMetrics();
+      break;
     case 'daily-snapshot':
       await createDailySnapshots();
       break;

@@ -3,6 +3,8 @@ import { config } from '@/config';
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import { initializeScheduler, stopScheduler } from '@/jobs';
+import { initializeSocketIO, closeRealtimeConnections } from '@/lib/realtime';
+import { createServer } from 'http';
 
 const PORT = config.port;
 
@@ -13,12 +15,20 @@ async function bootstrap() {
     await prisma.$connect();
     logger.info('Database connected successfully');
 
+    // Create HTTP server
+    const httpServer = createServer(app);
+
+    // Initialize Socket.IO
+    initializeSocketIO(httpServer);
+    logger.info('Real-time server initialized');
+
     // Start server
-    const server = app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
       logger.info(`🚀 Cipansor API running on port ${PORT}`);
       logger.info(`📚 Environment: ${config.env}`);
       logger.info(`🔗 API URL: http://localhost:${PORT}/api`);
       logger.info(`❤️  Health: http://localhost:${PORT}/health`);
+      logger.info(`🔌 WebSocket: ws://localhost:${PORT}`);
     });
 
     // Initialize scheduled jobs
@@ -32,8 +42,11 @@ async function bootstrap() {
       
       // Stop scheduled jobs
       stopScheduler();
+
+      // Close real-time connections
+      await closeRealtimeConnections();
       
-      server.close(async () => {
+      httpServer.close(async () => {
         logger.info('HTTP server closed');
         
         await prisma.$disconnect();

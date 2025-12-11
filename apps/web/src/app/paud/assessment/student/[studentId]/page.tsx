@@ -40,6 +40,7 @@ import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { PAUDRadarChart } from '@/components/paud';
 
 const ASPECT_ORDER: PAUDAspect[] = ['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI'];
 
@@ -177,6 +178,24 @@ export default function StudentProgressDashboardPage() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
+            {/* Radar Chart Visualization */}
+            {summary?.aspects && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Visualisasi Perkembangan 6 Aspek</CardTitle>
+                  <CardDescription>
+                    Grafik radar menampilkan capaian perkembangan siswa di semua aspek
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PAUDRadarChart 
+                    data={summary.aspects} 
+                    studentName={student?.name}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
             {/* Aspect Progress Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {ASPECT_ORDER.map((aspect) => {

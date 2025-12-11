@@ -498,4 +498,248 @@ export const murojaahService = {
       recommendedSchedule: schedule,
     };
   },
+
+  // ============================================
+  // ANALYTICS
+  // ============================================
+
+  /**
+   * Get quality distribution analytics
+   */
+  async getQualityDistribution(query: {
+    dateFrom?: string;
+    dateTo?: string;
+    halaqohId?: string;
+    murojaahType?: string;
+  }) {
+    const where: Prisma.MurojaahRecordWhereInput = {};
+
+    if (query.dateFrom || query.dateTo) {
+      where.murojaahDate = {};
+      if (query.dateFrom) where.murojaahDate.gte = new Date(query.dateFrom);
+      if (query.dateTo) where.murojaahDate.lte = new Date(query.dateTo);
+    }
+
+    if (query.halaqohId) where.halaqohId = query.halaqohId;
+    if (query.murojaahType) where.murojaahType = query.murojaahType as MurojaahType;
+
+    // Get all records with quality scores
+    const records = await prisma.murojaahRecord.findMany({
+      where,
+      select: { qualityScore: true },
+    });
+
+    // Categorize by quality ranges
+    const distribution = {
+      excellent: records.filter(r => r.qualityScore >= 90).length,
+      good: records.filter(r => r.qualityScore >= 75 && r.qualityScore < 90).length,
+      fair: records.filter(r => r.qualityScore >= 60 && r.qualityScore < 75).length,
+      poor: records.filter(r => r.qualityScore < 60).length,
+    };
+
+    const total = records.length;
+
+    return {
+      distribution: {
+        excellent: { count: distribution.excellent, percentage: total > 0 ? (distribution.excellent / total) * 100 : 0 },
+        good: { count: distribution.good, percentage: total > 0 ? (distribution.good / total) * 100 : 0 },
+        fair: { count: distribution.fair, percentage: total > 0 ? (distribution.fair / total) * 100 : 0 },
+        poor: { count: distribution.poor, percentage: total > 0 ? (distribution.poor / total) * 100 : 0 },
+      },
+      total,
+      averageQuality: total > 0 ? records.reduce((sum, r) => sum + r.qualityScore, 0) / total : 0,
+    };
+  },
+
+  /**
+   * Get mistake patterns analytics
+   */
+  async getMistakePatterns(query: {
+    dateFrom?: string;
+    dateTo?: string;
+    halaqohId?: string;
+  }) {
+    const where: Prisma.MurojaahRecordWhereInput = {};
+
+    if (query.dateFrom || query.dateTo) {
+      where.murojaahDate = {};
+      if (query.dateFrom) where.murojaahDate.gte = new Date(query.dateFrom);
+      if (query.dateTo) where.murojaahDate.lte = new Date(query.dateTo);
+    }
+
+    if (query.halaqohId) where.halaqohId = query.halaqohId;
+
+    // Get mistakes grouped by type
+    const mistakes = await prisma.murojaahMistake.findMany({
+      where: {
+        murojaah: where,
+      },
+      select: {
+        mistakeType: true,
+        murojaah: {
+          select: {
+            murojaahDate: true,
+          },
+        },
+      },
+    });
+
+    // Group by mistake type
+    const mistakesByType: Record<string, { count: number; trend: number }> = {};
+    const mistakeTypes = ['LAHIN_JALI', 'LAHIN_KHAFI', 'TAJWID', 'MAKHROJ', 'OTHERS'];
+
+    for (const type of mistakeTypes) {
+      const typedMistakes = mistakes.filter(m => m.mistakeType === type);
+      mistakesByType[type] = {
+        count: typedMistakes.length,
+        trend: 0, // Calculate trend if needed
+      };
+    }
+
+    return {
+      patterns: mistakesByType,
+      totalMistakes: mistakes.length,
+    };
+  },
+
+  /**
+   * Get consistency score analytics
+   */
+  async getConsistencyScore(query: {
+    dateFrom?: string;
+    dateTo?: string;
+    halaqohId?: string;
+  }) {
+    const dateFrom = query.dateFrom ? new Date(query.dateFrom) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const dateTo = query.dateTo ? new Date(query.dateTo) : new Date();
+
+    const where: Prisma.MurojaahRecordWhereInput = {
+      murojaahDate: { gte: dateFrom, lte: dateTo },
+    };
+
+    if (query.halaqohId) where.halaqohId = query.halaqohId;
+
+    // Get daily counts
+    const records = await prisma.murojaahRecord.findMany({
+      where,
+      select: {
+        murojaahDate: true,
+        qualityScore: true,
+      },
+      orderBy: { murojaahDate: 'asc' },
+    });
+
+    // Group by date
+    const dailyData: Record<string, { count: number; avgQuality: number }> = {};
+    
+    for (const record of records) {
+      const dateKey = record.murojaahDate.toISOString().split('T')[0];
+      if (!dailyData[dateKey]) {
+        dailyData[dateKey] = { count: 0, avgQuality: 0 };
+      }
+      dailyData[dateKey].count++;
+      dailyData[dateKey].avgQuality += record.qualityScore;
+    }
+
+    // Calculate averages
+    const dailyRecords = Object.entries(dailyData).map(([date, data]) => ({
+      date,
+      count: data.count,
+      avgQuality: data.avgQuality / data.count,
+    }));
+
+    // Calculate overall consistency percentage
+    const totalDays = Math.ceil((dateTo.getTime() - dateFrom.getTime()) / (24 * 60 * 60 * 1000));
+    const activeDays = dailyRecords.length;
+    const consistencyPercentage = totalDays > 0 ? (activeDays / totalDays) * 100 : 0;
+
+    return {
+      consistencyPercentage,
+      activeDays,
+      totalDays,
+      dailyRecords,
+    };
+  },
+
+  /**
+   * Get top performers
+   */
+  async getTopPerformers(query: {
+    dateFrom?: string;
+    dateTo?: string;
+    halaqohId?: string;
+    limit?: number;
+  }) {
+    const where: Prisma.MurojaahRecordWhereInput = {};
+
+    if (query.dateFrom || query.dateTo) {
+      where.murojaahDate = {};
+      if (query.dateFrom) where.murojaahDate.gte = new Date(query.dateFrom);
+      if (query.dateTo) where.murojaahDate.lte = new Date(query.dateTo);
+    }
+
+    if (query.halaqohId) where.halaqohId = query.halaqohId;
+
+    // Get all records grouped by student
+    const records = await prisma.murojaahRecord.findMany({
+      where,
+      select: {
+        studentId: true,
+        qualityScore: true,
+        pagesReviewed: true,
+        student: {
+          select: {
+            id: true,
+            nis: true,
+            user: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    // Group by student and calculate stats
+    const studentStats: Record<string, {
+      studentId: string;
+      studentName: string;
+      recordCount: number;
+      totalPages: number;
+      avgQuality: number;
+      scores: number[];
+    }> = {};
+
+    for (const record of records) {
+      if (!studentStats[record.studentId]) {
+        studentStats[record.studentId] = {
+          studentId: record.studentId,
+          studentName: record.student.user?.name || 'Unknown',
+          recordCount: 0,
+          totalPages: 0,
+          avgQuality: 0,
+          scores: [],
+        };
+      }
+      studentStats[record.studentId].recordCount++;
+      studentStats[record.studentId].totalPages += record.pagesReviewed;
+      studentStats[record.studentId].scores.push(record.qualityScore);
+    }
+
+    // Calculate averages and sort
+    const performers = Object.values(studentStats)
+      .map(student => ({
+        ...student,
+        avgQuality: student.scores.reduce((sum, score) => sum + score, 0) / student.scores.length,
+      }))
+      .sort((a, b) => b.avgQuality - a.avgQuality)
+      .slice(0, query.limit || 10)
+      .map((student, index) => ({
+        rank: index + 1,
+        studentId: student.studentId,
+        studentName: student.studentName,
+        recordCount: student.recordCount,
+        totalPages: student.totalPages,
+        avgQuality: Math.round(student.avgQuality * 10) / 10,
+      }));
+
+    return { performers };
+  },
 };

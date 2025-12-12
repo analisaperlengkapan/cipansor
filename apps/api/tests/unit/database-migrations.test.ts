@@ -8,7 +8,10 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-describe('Database Schema - PAUD Models', () => {
+// Skip database tests if DATABASE_URL is not configured (e.g., in CI without DB)
+const describeDb = process.env.DATABASE_URL ? describe : describe.skip;
+
+describeDb('Database Schema - PAUD Models', () => {
   describe('PAUDDevelopmentIndicator Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'paud_development_indicators';
@@ -143,7 +146,7 @@ describe('Database Schema - PAUD Models', () => {
   });
 });
 
-describe('Database Schema - Daily Report Models', () => {
+describeDb('Database Schema - Daily Report Models', () => {
   describe('DailyStudentReport Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'daily_student_reports';
@@ -236,7 +239,7 @@ describe('Database Schema - Daily Report Models', () => {
   });
 });
 
-describe('Database Schema - Tahfidz Models', () => {
+describeDb('Database Schema - Tahfidz Models', () => {
   describe('MurojaahRecord Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'murojaah_records';
@@ -322,7 +325,7 @@ describe('Database Schema - Tahfidz Models', () => {
   });
 });
 
-describe('Database Schema - Dashboard Models', () => {
+describeDb('Database Schema - Dashboard Models', () => {
   describe('DashboardMetricSnapshot Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'dashboard_metric_snapshots';
@@ -378,7 +381,7 @@ describe('Database Schema - Dashboard Models', () => {
   });
 });
 
-describe('Database Schema - Health Models', () => {
+describeDb('Database Schema - Health Models', () => {
   describe('GrowthRecord Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'growth_records';
@@ -425,7 +428,7 @@ describe('Database Schema - Health Models', () => {
   });
 });
 
-describe('Database Indexes', () => {
+describeDb('Database Indexes', () => {
   it('should have indexes on frequently queried fields', async () => {
     const indexes = await prisma.$queryRaw<any[]>`
       SELECT

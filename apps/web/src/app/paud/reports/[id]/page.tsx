@@ -5,7 +5,6 @@ import { MainLayout } from '@/components/layout';
 import { PageHeader } from '@/components/shared';
 import {
   usePAUDReport,
-  useReportPhotos,
   useFinalizePAUDReport,
   ReportStatus,
 } from '@/hooks/use-paud-report';
@@ -56,7 +55,8 @@ export default function PAUDReportDetailPage() {
   const reportId = params.id as string;
 
   const { data: report, isLoading } = usePAUDReport(reportId);
-  const { data: photos, isLoading: photosLoading } = useReportPhotos(reportId);
+  const photos = report?.photos || [];
+  const photosLoading = isLoading;
   const finalizeMutation = useFinalizePAUDReport();
 
   const handleFinalize = async () => {

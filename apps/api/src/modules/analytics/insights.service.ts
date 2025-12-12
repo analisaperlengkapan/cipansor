@@ -4,6 +4,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { AttendanceStatus } from '@prisma/client';
 
 // Risk levels
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
@@ -96,7 +97,7 @@ async function calculateAttendanceRisk(studentId: string): Promise<RiskFactor> {
     });
 
     const total = attendance.length || 1;
-    const present = attendance.filter((a) => a.status === 'present').length;
+    const present = attendance.filter((a) => a.status === AttendanceStatus.PRESENT).length;
     const rate = (present / total) * 100;
 
     let score: number;

@@ -4,7 +4,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, AttendanceStatus } from '@prisma/client';
 
 interface UnitMetrics {
     unitId: string;
@@ -76,7 +76,7 @@ export async function compareUnitsPerformance(options?: {
         });
 
         const totalAttendance = attendanceData.reduce((sum, a) => sum + a._count, 0);
-        const presentCount = attendanceData.find((a) => a.status === 'present')?._count || 0;
+        const presentCount = attendanceData.find((a) => a.status === AttendanceStatus.PRESENT)?._count || 0;
         const attendanceRate = totalAttendance > 0 ? (presentCount / totalAttendance) * 100 : 0;
 
         // Payment collection rate

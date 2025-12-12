@@ -5,7 +5,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { createNotification } from '@/modules/notifications/service';
-import { NotificationType } from '@prisma/client';
+import { NotificationType, AttendanceStatus } from '@prisma/client';
 import { logger } from '@/lib/logger';
 
 export interface AlertRule {
@@ -141,7 +141,7 @@ async function checkAttendanceRule(rule: AlertRule): Promise<AlertTrigger[]> {
         });
 
         const total = attendance.length || 1;
-        const present = attendance.filter((a) => a.status === 'present').length;
+        const present = attendance.filter((a) => a.status === AttendanceStatus.PRESENT).length;
         const rate = (present / total) * 100;
 
         if (compareValue(rate, rule.threshold, rule.operator)) {

@@ -31,7 +31,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { useSimaanExam, useUpdateSimaanExam } from '@/hooks/use-simaan';
+import { useSimaanExam, useUpdateSimaan } from '@/hooks/use-simaan';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -69,7 +69,7 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
   const { toast } = useToast();
 
   const { data: exam, isLoading, error } = useSimaanExam(resolvedParams.id);
-  const updateMutation = useUpdateSimaanExam();
+  const updateMutation = useUpdateSimaan();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),

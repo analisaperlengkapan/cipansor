@@ -100,11 +100,12 @@ export default function GeneratePAUDReportPage() {
     try {
       const result = await generateMutation.mutateAsync({
         studentId: selectedStudentId,
+        unitId: user?.unitId || '',
         academicYearId,
         semester,
       });
       toast.success('Raport berhasil digenerate');
-      router.push(`/paud/reports/${result.data.id}`);
+      router.push(`/paud/reports/${result.id}`);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Gagal generate raport';
       toast.error(message);
@@ -114,8 +115,8 @@ export default function GeneratePAUDReportPage() {
   };
 
   const handleGenerateBulk = async () => {
-    if (!academicYearId || !classId || selectedStudentIds.length === 0) {
-      toast.error('Lengkapi semua field dan pilih minimal 1 siswa');
+    if (!academicYearId || !classId) {
+      toast.error('Lengkapi semua field');
       return;
     }
 
@@ -125,26 +126,25 @@ export default function GeneratePAUDReportPage() {
 
     try {
       const result = await bulkGenerateMutation.mutateAsync({
-        studentIds: selectedStudentIds,
         academicYearId,
         semester,
         classId,
+        unitId: user?.unitId || '',
       });
 
-      // Map results
-      const results: GenerationResult[] = result.data.map((r: { studentId: string; success: boolean; reportId?: string; error?: string }) => ({
-        success: r.success,
-        studentId: r.studentId,
-        studentName: students?.data?.find((s) => s.id === r.studentId)?.user?.name || r.studentId,
-        reportId: r.reportId,
-        error: r.error,
+      // Map errors to GenerationResult format for display
+      const results: GenerationResult[] = result.errors.map((e) => ({
+        success: false,
+        studentId: e.studentId,
+        studentName: e.studentName,
+        error: e.error,
       }));
 
+      // Add dummy success results for the count if needed, or just change UI
       setGenerationResults(results);
       setGenerationProgress(100);
 
-      const successCount = results.filter((r) => r.success).length;
-      toast.success(`${successCount}/${results.length} raport berhasil digenerate`);
+      toast.success(`${result.success} raport berhasil digenerate, ${result.failed} gagal, ${result.skipped} dilewati`);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Gagal bulk generate raport';
       toast.error(message);
@@ -268,7 +268,7 @@ export default function GeneratePAUDReportPage() {
                     <SelectContent>
                       {students?.data?.map((student) => (
                         <SelectItem key={student.id} value={student.id}>
-                          {student.user?.name} ({student.nis})
+                          {student.name} ({student.nis})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -365,12 +365,12 @@ export default function GeneratePAUDReportPage() {
                             ) : (
                               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                                 <span className="text-sm font-medium">
-                                  {student.user?.name?.[0] || '?'}
+                                  {student.name?.[0] || '?'}
                                 </span>
                               </div>
                             )}
                             <div>
-                              <p className="font-medium">{student.user?.name}</p>
+                              <p className="font-medium">{student.name}</p>
                               <p className="text-sm text-muted-foreground">{student.nis}</p>
                             </div>
                           </div>

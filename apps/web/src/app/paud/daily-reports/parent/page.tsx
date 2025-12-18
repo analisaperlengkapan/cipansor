@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/common';
+import { PageHeader } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -60,7 +60,7 @@ export default function ParentDailyReportsPage() {
 
   // In real implementation, this would filter by parent's children
   const { data, isLoading } = useDailyReports({
-    reportDate: format(selectedDate, 'yyyy-MM-dd'),
+    date: format(selectedDate, 'yyyy-MM-dd'),
   });
 
   const reports = data?.data || [];

@@ -120,12 +120,12 @@ export default function MurojaahListPage() {
           ) : (
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
               <span className="text-xs font-medium">
-                {row.original.student?.user?.name?.[0] || '?'}
+                {row.original.student?.name?.[0] || row.original.student?.user?.name?.[0] || '?'}
               </span>
             </div>
           )}
           <div>
-            <p className="font-medium">{row.original.student?.user?.name || '-'}</p>
+            <p className="font-medium">{row.original.student?.name || row.original.student?.user?.name || '-'}</p>
             <p className="text-xs text-muted-foreground">{row.original.student?.nis}</p>
           </div>
         </div>
@@ -183,8 +183,8 @@ export default function MurojaahListPage() {
               ? row.original.grade >= 80
                 ? 'text-green-600'
                 : row.original.grade >= 60
-                ? 'text-yellow-600'
-                : 'text-red-600'
+                  ? 'text-yellow-600'
+                  : 'text-red-600'
               : 'text-muted-foreground'
           )}
         >
@@ -196,7 +196,7 @@ export default function MurojaahListPage() {
       accessorKey: 'teacher',
       header: 'Musyrif',
       cell: ({ row }) => (
-        <span className="text-sm">{row.original.teacher?.user?.name || '-'}</span>
+        <span className="text-sm">{row.original.teacher?.name || row.original.teacher?.user?.name || '-'}</span>
       ),
     },
     {
@@ -244,7 +244,10 @@ export default function MurojaahListPage() {
           title="Murojaah Al-Qur'an"
           description="Kelola catatan murojaah (pengulangan) hafalan santri"
           actions={
-            <Button onClick={() => router.push('/tahfidz/murojaah/new')}>
+            <Button
+              onClick={() => router.push('/tahfidz/murojaah/new')}
+              className="transition-all hover:shadow-md hover:-translate-y-0.5"
+            >
               <Plus className="mr-2 h-4 w-4" />
               Tambah Murojaah
             </Button>
@@ -252,7 +255,7 @@ export default function MurojaahListPage() {
         />
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="glass-card p-4 rounded-xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 shadow-sm border-none">
           <SearchInput
             placeholder="Cari nama santri atau surah..."
             value={search}
@@ -260,7 +263,7 @@ export default function MurojaahListPage() {
           />
 
           <Select value={classFilter} onValueChange={setClassFilter}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-background/50 backdrop-blur-sm border-muted-foreground/20">
               <SelectValue placeholder="Semua Kelas/Halaqah" />
             </SelectTrigger>
             <SelectContent>
@@ -274,7 +277,7 @@ export default function MurojaahListPage() {
           </Select>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-background/50 backdrop-blur-sm border-muted-foreground/20">
               <SelectValue placeholder="Semua Status" />
             </SelectTrigger>
             <SelectContent>
@@ -296,48 +299,56 @@ export default function MurojaahListPage() {
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-4">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="glass-card border-none bg-yellow-50/50 rounded-xl p-4 transition-all hover:shadow-lg group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-yellow-700">Menunggu Review</p>
-                <p className="text-2xl font-bold text-yellow-800">
+                <p className="text-xs font-bold text-yellow-600 uppercase tracking-wider">Menunggu Review</p>
+                <p className="text-2xl font-bold text-yellow-800 mt-1">
                   {data?.summary?.pending || 0}
                 </p>
               </div>
-              <Clock className="h-8 w-8 text-yellow-500" />
+              <div className="p-2 bg-yellow-100 rounded-lg group-hover:scale-110 transition-transform">
+                <Clock className="h-6 w-6 text-yellow-600" />
+              </div>
             </div>
           </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="glass-card border-none bg-green-50/50 rounded-xl p-4 transition-all hover:shadow-lg group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-green-700">Lulus</p>
-                <p className="text-2xl font-bold text-green-800">
+                <p className="text-xs font-bold text-green-600 uppercase tracking-wider">Lulus</p>
+                <p className="text-2xl font-bold text-green-800 mt-1">
                   {data?.summary?.passed || 0}
                 </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
+              <div className="p-2 bg-green-100 rounded-lg group-hover:scale-110 transition-transform">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
             </div>
           </div>
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <div className="glass-card border-none bg-orange-50/50 rounded-xl p-4 transition-all hover:shadow-lg group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-orange-700">Perlu Perbaikan</p>
-                <p className="text-2xl font-bold text-orange-800">
+                <p className="text-xs font-bold text-orange-600 uppercase tracking-wider">Perlu Perbaikan</p>
+                <p className="text-2xl font-bold text-orange-800 mt-1">
                   {data?.summary?.needImprovement || 0}
                 </p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-orange-500" />
+              <div className="p-2 bg-orange-100 rounded-lg group-hover:scale-110 transition-transform">
+                <AlertTriangle className="h-6 w-6 text-orange-600" />
+              </div>
             </div>
           </div>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="glass-card border-none bg-blue-50/50 rounded-xl p-4 transition-all hover:shadow-lg group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-700">Total Bulan Ini</p>
-                <p className="text-2xl font-bold text-blue-800">
+                <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">Total Bulan Ini</p>
+                <p className="text-2xl font-bold text-blue-800 mt-1">
                   {data?.summary?.thisMonth || 0}
                 </p>
               </div>
-              <BookOpen className="h-8 w-8 text-blue-500" />
+              <div className="p-2 bg-blue-100 rounded-lg group-hover:scale-110 transition-transform">
+                <BookOpen className="h-6 w-6 text-blue-600" />
+              </div>
             </div>
           </div>
         </div>
@@ -348,11 +359,11 @@ export default function MurojaahListPage() {
           data={data?.data || []}
           isLoading={isLoading}
           pagination={{
-            pageIndex: page - 1,
+            page: page,
             pageSize,
-            pageCount: data?.pagination?.totalPages || 0,
-            total: data?.pagination?.total || 0,
-            onPageChange: (newPage) => setPage(newPage + 1),
+            totalPages: data?.meta?.totalPages || 0,
+            total: data?.meta?.total || 0,
+            onPageChange: (newPage) => setPage(newPage),
             onPageSizeChange: setPageSize,
           }}
         />

@@ -15,13 +15,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useStudents, Student } from '@/hooks/use-students';
 import { useUnits } from '@/hooks/use-units';
 import { useClasses } from '@/hooks/use-classes';
-import { 
-  CERTIFICATE_TEMPLATES, 
-  CertificateType, 
-  generateCertificateNumber 
-} from '@/hooks/use-certificates';
-import { 
-  Award, 
+import {
+  CERTIFICATE_TEMPLATES,
+  CertificateType,
+  generateCertificateNumber
+} from '@/hooks/use-certificate';
+import {
+  Award,
   Printer,
   Download,
   Search,
@@ -72,7 +72,7 @@ export default function CertificateGeneratorPage() {
   const printRef = useRef<HTMLDivElement>(null);
 
   const { data: units = [], isLoading: unitsLoading } = useUnits();
-  const { data: classesData, isLoading: classesLoading } = useClasses({ 
+  const { data: classesData, isLoading: classesLoading } = useClasses({
     unitId: selectedUnitId || undefined,
   });
   const classes = classesData?.data || [];
@@ -170,36 +170,46 @@ export default function CertificateGeneratorPage() {
   const renderCertificatePreview = () => {
     if (!selectedStudent || !selectedTemplate) return null;
 
-    const bgGradient = {
+    const bgGradient: Record<string, string> = {
       GRADUATION: 'linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%)',
       TAHFIDZ: 'linear-gradient(135deg, #065f46 0%, #022c22 100%)',
       ACHIEVEMENT: 'linear-gradient(135deg, #92400e 0%, #451a03 100%)',
       COURSE_COMPLETION: 'linear-gradient(135deg, #5b21b6 0%, #2e1065 100%)',
       APPRECIATION: 'linear-gradient(135deg, #be185d 0%, #500724 100%)',
+      IJAZAH: 'linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%)',
+      STTB: 'linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%)',
+      SANAD: 'linear-gradient(135deg, #065f46 0%, #022c22 100%)',
+      PARTICIPATION: 'linear-gradient(135deg, #5b21b6 0%, #2e1065 100%)',
+      OTHER: 'linear-gradient(135deg, #4b5563 0%, #1f2937 100%)',
     };
 
-    const accentColor = {
+    const accentColor: Record<string, string> = {
       GRADUATION: '#c9a227',
       TAHFIDZ: '#10b981',
       ACHIEVEMENT: '#f59e0b',
       COURSE_COMPLETION: '#8b5cf6',
       APPRECIATION: '#ec4899',
+      IJAZAH: '#c9a227',
+      STTB: '#c9a227',
+      SANAD: '#10b981',
+      PARTICIPATION: '#8b5cf6',
+      OTHER: '#9ca3af',
     };
 
     return (
-      <div 
+      <div
         ref={printRef}
         className="w-[297mm] h-[210mm] relative overflow-hidden"
-        style={{ 
+        style={{
           background: bgGradient[formData.type],
         }}
       >
         {/* Decorative Border */}
-        <div 
+        <div
           className="absolute inset-4 border-4 rounded-lg"
           style={{ borderColor: accentColor[formData.type] }}
         >
-          <div 
+          <div
             className="absolute inset-2 border-2 rounded"
             style={{ borderColor: accentColor[formData.type], opacity: 0.5 }}
           />
@@ -236,7 +246,7 @@ export default function CertificateGeneratorPage() {
           {/* Header */}
           <div className="text-center mb-4">
             <p className="text-sm tracking-[0.3em] uppercase opacity-80">Yayasan Pendidikan Islam</p>
-            <h1 
+            <h1
               className="text-3xl font-bold tracking-wide mt-1"
               style={{ fontFamily: "'Cinzel', serif", color: accentColor[formData.type] }}
             >
@@ -247,7 +257,7 @@ export default function CertificateGeneratorPage() {
 
           {/* Certificate Type */}
           <div className="text-center mb-6">
-            <p 
+            <p
               className="text-5xl font-bold tracking-widest"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
@@ -262,7 +272,7 @@ export default function CertificateGeneratorPage() {
           {/* Main Text */}
           <div className="text-center mb-6">
             <p className="text-lg mb-3">Diberikan kepada:</p>
-            <p 
+            <p
               className="text-4xl mb-2"
               style={{ fontFamily: "'Great Vibes', cursive", color: accentColor[formData.type] }}
             >
@@ -275,7 +285,7 @@ export default function CertificateGeneratorPage() {
           <div className="text-center mb-6 max-w-2xl">
             {formData.type === 'GRADUATION' && (
               <p className="text-base leading-relaxed">
-                Telah menyelesaikan pendidikan di {selectedStudent.unit?.name || 'unit'} dengan 
+                Telah menyelesaikan pendidikan di {selectedStudent.unit?.name || 'unit'} dengan
                 {formData.metadata.finalGrade && ` nilai ${formData.metadata.finalGrade}`}
                 {formData.metadata.rank && ` dan meraih peringkat ${formData.metadata.rank}`}
                 {formData.metadata.graduationYear && ` pada tahun ${formData.metadata.graduationYear}`}.
@@ -323,7 +333,7 @@ export default function CertificateGeneratorPage() {
           <div className="flex justify-center gap-32 w-full">
             <div className="text-center">
               <p className="text-sm mb-16">Kepala {selectedStudent.unit?.type === 'SD_IT' ? 'Sekolah' : selectedStudent.unit?.type === 'SMP_IT' || selectedStudent.unit?.type === 'SMA_IT' || selectedStudent.unit?.type === 'MA' ? 'Madrasah' : 'Lembaga'}</p>
-              <div 
+              <div
                 className="w-48 border-b mb-2"
                 style={{ borderColor: accentColor[formData.type] }}
               />
@@ -332,7 +342,7 @@ export default function CertificateGeneratorPage() {
             {formData.type === 'TAHFIDZ' && formData.metadata.teacherName && (
               <div className="text-center">
                 <p className="text-sm mb-16">Musyrif/ah</p>
-                <div 
+                <div
                   className="w-48 border-b mb-2"
                   style={{ borderColor: accentColor[formData.type] }}
                 />
@@ -341,7 +351,7 @@ export default function CertificateGeneratorPage() {
             )}
             <div className="text-center">
               <p className="text-sm mb-16">Ketua Yayasan</p>
-              <div 
+              <div
                 className="w-48 border-b mb-2"
                 style={{ borderColor: accentColor[formData.type] }}
               />
@@ -373,10 +383,11 @@ export default function CertificateGeneratorPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="default" 
+            <Button
+              variant="default"
               onClick={handlePrint}
               disabled={!selectedStudent}
+              className="transition-all hover:shadow-md hover:-translate-y-0.5"
             >
               <Printer className="h-4 w-4 mr-2" />
               Cetak Sertifikat
@@ -422,15 +433,15 @@ export default function CertificateGeneratorPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col gap-4 md:flex-row mb-6">
-                  <Select 
-                    value={selectedUnitId} 
+                <div className="glass-card p-4 rounded-xl flex flex-col gap-4 md:flex-row mb-6 shadow-sm border-none">
+                  <Select
+                    value={selectedUnitId}
                     onValueChange={(value) => {
                       setSelectedUnitId(value);
                       setSelectedClassId('');
                     }}
                   >
-                    <SelectTrigger className="w-full md:w-48">
+                    <SelectTrigger className="w-full md:w-48 bg-background/50 backdrop-blur-sm border-muted-foreground/20">
                       <SelectValue placeholder="Pilih unit" />
                     </SelectTrigger>
                     <SelectContent>
@@ -443,12 +454,12 @@ export default function CertificateGeneratorPage() {
                     </SelectContent>
                   </Select>
 
-                  <Select 
-                    value={selectedClassId} 
+                  <Select
+                    value={selectedClassId}
                     onValueChange={setSelectedClassId}
                     disabled={!selectedUnitId}
                   >
-                    <SelectTrigger className="w-full md:w-48">
+                    <SelectTrigger className="w-full md:w-48 bg-background/50 backdrop-blur-sm border-muted-foreground/20">
                       <SelectValue placeholder="Pilih kelas" />
                     </SelectTrigger>
                     <SelectContent>
@@ -467,7 +478,7 @@ export default function CertificateGeneratorPage() {
                       placeholder="Cari nama atau NIS..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9"
+                      className="pl-9 bg-background/50 backdrop-blur-sm border-muted-foreground/20"
                     />
                   </div>
                 </div>

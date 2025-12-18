@@ -73,6 +73,7 @@ export function useDashboardStats() {
       const response = await api.get<DashboardStats>('/dashboard/stats');
       return response.data;
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -180,6 +181,7 @@ export function useProfile() {
       const response = await api.get<UserProfile>('/auth/profile');
       return response.data;
     },
+    staleTime: 15 * 60 * 1000, // 15 minutes
   });
 }
 

@@ -133,12 +133,12 @@ export default function SimaanListPage() {
           ) : (
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
               <span className="text-xs font-medium">
-                {row.original.student?.user?.name?.[0] || '?'}
+                {row.original.student?.name?.[0] || '?'}
               </span>
             </div>
           )}
           <div>
-            <p className="font-medium">{row.original.student?.user?.name || '-'}</p>
+            <p className="font-medium">{row.original.student?.name || '-'}</p>
             <p className="text-xs text-muted-foreground">{row.original.student?.nis}</p>
           </div>
         </div>
@@ -199,8 +199,8 @@ export default function SimaanListPage() {
               ? row.original.overallGrade >= 80
                 ? 'text-green-600'
                 : row.original.overallGrade >= 60
-                ? 'text-yellow-600'
-                : 'text-red-600'
+                  ? 'text-yellow-600'
+                  : 'text-red-600'
               : 'text-muted-foreground'
           )}
         >
@@ -263,7 +263,10 @@ export default function SimaanListPage() {
           title="Ujian Simaan"
           description="Kelola ujian simaan (tasmi') hafalan santri"
           actions={
-            <Button onClick={() => router.push('/tahfidz/simaan/new')}>
+            <Button
+              onClick={() => router.push('/tahfidz/simaan/new')}
+              className="transition-all hover:shadow-md hover:-translate-y-0.5"
+            >
               <Plus className="mr-2 h-4 w-4" />
               Jadwalkan Simaan
             </Button>
@@ -271,7 +274,7 @@ export default function SimaanListPage() {
         />
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="glass-card p-4 rounded-xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 shadow-sm border-none">
           <SearchInput
             placeholder="Cari nama santri..."
             value={search}
@@ -279,7 +282,7 @@ export default function SimaanListPage() {
           />
 
           <Select value={classFilter} onValueChange={setClassFilter}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-background/50 backdrop-blur-sm border-muted-foreground/20">
               <SelectValue placeholder="Semua Kelas/Halaqah" />
             </SelectTrigger>
             <SelectContent>
@@ -293,7 +296,7 @@ export default function SimaanListPage() {
           </Select>
 
           <Select value={examTypeFilter} onValueChange={setExamTypeFilter}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-background/50 backdrop-blur-sm border-muted-foreground/20">
               <SelectValue placeholder="Semua Jenis" />
             </SelectTrigger>
             <SelectContent>
@@ -307,7 +310,7 @@ export default function SimaanListPage() {
           </Select>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-background/50 backdrop-blur-sm border-muted-foreground/20">
               <SelectValue placeholder="Semua Status" />
             </SelectTrigger>
             <SelectContent>
@@ -329,48 +332,56 @@ export default function SimaanListPage() {
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="glass-card border-none bg-blue-50/50 rounded-xl p-4 transition-all hover:shadow-lg group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-700">Terjadwal</p>
-                <p className="text-2xl font-bold text-blue-800">
+                <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">Terjadwal</p>
+                <p className="text-2xl font-bold text-blue-800 mt-1">
                   {data?.summary?.scheduled || 0}
                 </p>
               </div>
-              <Calendar className="h-8 w-8 text-blue-500" />
+              <div className="p-2 bg-blue-100 rounded-lg group-hover:scale-110 transition-transform">
+                <Calendar className="h-6 w-6 text-blue-600" />
+              </div>
             </div>
           </div>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="glass-card border-none bg-yellow-50/50 rounded-xl p-4 transition-all hover:shadow-lg group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-yellow-700">Berlangsung</p>
-                <p className="text-2xl font-bold text-yellow-800">
+                <p className="text-xs font-bold text-yellow-600 uppercase tracking-wider">Berlangsung</p>
+                <p className="text-2xl font-bold text-yellow-800 mt-1">
                   {data?.summary?.inProgress || 0}
                 </p>
               </div>
-              <Play className="h-8 w-8 text-yellow-500" />
+              <div className="p-2 bg-yellow-100 rounded-lg group-hover:scale-110 transition-transform">
+                <Play className="h-6 w-6 text-yellow-600" />
+              </div>
             </div>
           </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="glass-card border-none bg-green-50/50 rounded-xl p-4 transition-all hover:shadow-lg group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-green-700">Selesai</p>
-                <p className="text-2xl font-bold text-green-800">
+                <p className="text-xs font-bold text-green-600 uppercase tracking-wider">Selesai</p>
+                <p className="text-2xl font-bold text-green-800 mt-1">
                   {data?.summary?.completed || 0}
                 </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
+              <div className="p-2 bg-green-100 rounded-lg group-hover:scale-110 transition-transform">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
             </div>
           </div>
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+          <div className="glass-card border-none bg-purple-50/50 rounded-xl p-4 transition-all hover:shadow-lg group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-purple-700">Rata-rata Nilai</p>
-                <p className="text-2xl font-bold text-purple-800">
+                <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">Rata-rata Nilai</p>
+                <p className="text-2xl font-bold text-purple-800 mt-1">
                   {data?.summary?.averageGrade?.toFixed(1) || '-'}
                 </p>
               </div>
-              <Award className="h-8 w-8 text-purple-500" />
+              <div className="p-2 bg-purple-100 rounded-lg group-hover:scale-110 transition-transform">
+                <Award className="h-6 w-6 text-purple-600" />
+              </div>
             </div>
           </div>
         </div>
@@ -381,11 +392,11 @@ export default function SimaanListPage() {
           data={data?.data || []}
           isLoading={isLoading}
           pagination={{
-            pageIndex: page - 1,
+            page: page,
             pageSize,
-            pageCount: data?.pagination?.totalPages || 0,
-            total: data?.pagination?.total || 0,
-            onPageChange: (newPage) => setPage(newPage + 1),
+            totalPages: data?.meta?.totalPages || 0,
+            total: data?.meta?.total || 0,
+            onPageChange: (newPage) => setPage(newPage),
             onPageSizeChange: setPageSize,
           }}
         />

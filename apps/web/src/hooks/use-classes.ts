@@ -49,7 +49,7 @@ export interface CreateClassData {
   homeroomTeacherId?: string;
 }
 
-export interface UpdateClassData extends Partial<CreateClassData> {}
+export interface UpdateClassData extends Partial<CreateClassData> { }
 
 export interface Enrollment {
   id: string;
@@ -71,6 +71,7 @@ export function useClasses(params: ClassListParams = {}) {
       const response = await api.get<PaginatedResponse<Class>>('/classes', { params });
       return response.data;
     },
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 }
 
@@ -98,7 +99,7 @@ export function useClassEnrollments(classId: string) {
 
 export function useCreateClass() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateClassData) => {
       const response = await api.post<ApiResponse<Class>>('/classes', data);
@@ -112,7 +113,7 @@ export function useCreateClass() {
 
 export function useUpdateClass() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateClassData }) => {
       const response = await api.put<ApiResponse<Class>>(`/classes/${id}`, data);
@@ -127,7 +128,7 @@ export function useUpdateClass() {
 
 export function useDeleteClass() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/classes/${id}`);
@@ -140,7 +141,7 @@ export function useDeleteClass() {
 
 export function useEnrollStudent() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ classId, studentId }: { classId: string; studentId: string }) => {
       const response = await api.post<ApiResponse<Enrollment>>(`/classes/${classId}/enrollments`, {
@@ -156,7 +157,7 @@ export function useEnrollStudent() {
 
 export function useUnenrollStudent() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ classId, studentId }: { classId: string; studentId: string }) => {
       await api.delete(`/classes/${classId}/enrollments/${studentId}`);

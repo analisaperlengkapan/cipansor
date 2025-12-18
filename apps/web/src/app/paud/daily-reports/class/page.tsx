@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/common';
+import { PageHeader, DataTable } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { DataTable } from '@/components/ui/data-table';
 import { useDailyReports } from '@/hooks/use-daily-report';
 import { useClasses } from '@/hooks/use-classes';
 import { ColumnDef } from '@tanstack/react-table';
@@ -80,7 +79,6 @@ export default function ClassDailyReportsPage() {
 
   const { data: classesData } = useClasses({ limit: 100 });
   const { data, isLoading } = useDailyReports({
-    reportDate: format(selectedDate, 'yyyy-MM-dd'),
     classId: selectedClass || undefined,
   });
 

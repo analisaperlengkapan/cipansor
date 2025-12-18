@@ -108,7 +108,7 @@ export default function BulkCheckInPage() {
       setStudents(
         studentData.data.map((student) => ({
           studentId: student.id,
-          studentName: student.user?.name || '',
+          studentName: student.name || '',
           photoUrl: student.photoUrl,
           selected: true,
           checkInTime: defaultCheckInTime,
@@ -142,9 +142,9 @@ export default function BulkCheckInPage() {
         if (s.studentId === studentId) {
           // If attendance is not PRESENT or LATE, uncheck the student
           if (field === 'attendanceStatus' && !['PRESENT', 'LATE'].includes(value as string)) {
-            return { ...s, [field]: value, selected: false };
+            return { ...s, [field]: value, selected: false } as StudentCheckIn;
           }
-          return { ...s, [field]: value };
+          return { ...s, [field]: value } as StudentCheckIn;
         }
         return s;
       })

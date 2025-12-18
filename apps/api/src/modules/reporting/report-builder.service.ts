@@ -188,7 +188,10 @@ async function generateStudentReport(
         include: {
             user: { select: { name: true, email: true, phone: true } },
             unit: { select: { name: true } },
-            class: { select: { name: true } },
+            enrollments: {
+                where: { status: 'active' },
+                include: { class: { select: { name: true } } }
+            },
         },
         orderBy: sortBy ? { [sortBy]: sortOrder || 'asc' } : { createdAt: 'desc' },
     });
@@ -199,7 +202,7 @@ async function generateStudentReport(
         gender: s.gender,
         birthDate: s.birthDate?.toISOString().split('T')[0] || '',
         unitName: s.unit?.name || '',
-        className: s.class?.name || '',
+        className: s.enrollments[0]?.class?.name || '',
         status: s.status,
         enrollmentDate: s.enrollmentDate?.toISOString().split('T')[0] || '',
         parentName: '',
@@ -222,9 +225,13 @@ async function generateAttendanceReport(
                 include: {
                     user: { select: { name: true } },
                     unit: { select: { name: true } },
-                    class: { select: { name: true } },
+                    enrollments: {
+                        where: { status: 'active' },
+                        include: { class: { select: { name: true } } }
+                    },
                 },
             },
+            class: { select: { name: true } },
         },
         orderBy: { date: 'desc' },
     });
@@ -234,7 +241,7 @@ async function generateAttendanceReport(
         studentName: a.student?.user?.name || '',
         status: a.status,
         unitName: a.student?.unit?.name || '',
-        className: a.student?.class?.name || '',
+        className: a.class?.name || '',
         notes: a.notes || '',
     }));
 }
@@ -296,10 +303,10 @@ async function generateTahfidzReport(
     return records.map((r) => ({
         studentName: r.student?.user?.name || '',
         surah: r.surahName,
-        fromAyah: r.fromAyah,
-        toAyah: r.toAyah,
+        ayahStart: r.ayahStart,
+        ayahEnd: r.ayahEnd,
         totalAyah: r.totalAyah,
-        grade: r.grade,
+        score: r.score,
         recordedAt: r.recordedAt?.toISOString().split('T')[0] || '',
         unitName: r.student?.unit?.name || '',
     }));
@@ -334,7 +341,7 @@ async function generateAcademicReport(
         score: g.score,
         type: g.type,
         semester: '',
-        className: g.student?.class?.name || '',
+        className: g.student?.enrollments[0]?.class?.name || '',
         unitName: g.student?.unit?.name || '',
     }));
 }
@@ -362,8 +369,8 @@ async function generateTeacherReport(
         email: t.user?.email || '',
         phone: t.user?.phone || '',
         unitName: t.unit?.name || '',
-        position: t.position || '',
+        specialization: t.specialization || '',
         subjects: '',
-        status: t.status,
+        status: t.employmentStatus || '',
     }));
 }

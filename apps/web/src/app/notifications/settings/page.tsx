@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
+import { MainLayout } from '@/components/layout';
+import { PageHeader } from '@/components/shared';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -99,17 +99,19 @@ export default function NotificationSettingsPage() {
     const queryClient = useQueryClient();
 
     // Fetch current preferences
-    const { isLoading } = useQuery({
+    const { isLoading, data: fetchedPreferences } = useQuery({
         queryKey: ['notification-preferences'],
         queryFn: async () => {
             // In production, this would fetch from API
             return DEFAULT_PREFERENCES;
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        onSuccess: (data: any) => {
-            setPreferences(data);
-        },
     });
+
+    useEffect(() => {
+        if (fetchedPreferences) {
+            setPreferences(fetchedPreferences);
+        }
+    }, [fetchedPreferences]);
 
     // Save mutation
     const saveMutation = useMutation({

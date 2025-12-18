@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/common';
+import { PageHeader } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -30,7 +30,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useSimaanExam, useUpdateSimaan } from '@/hooks/use-simaan';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -66,7 +66,6 @@ type FormData = z.infer<typeof formSchema>;
 export default function EditSimaanPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const { toast } = useToast();
 
   const { data: exam, isLoading, error } = useSimaanExam(resolvedParams.id);
   const updateMutation = useUpdateSimaan();
@@ -116,17 +115,10 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
           status: data.status,
         },
       });
-      toast({
-        title: 'Berhasil',
-        description: 'Data ujian simaan berhasil diperbarui',
-      });
+      toast.success('Data ujian simaan berhasil diperbarui');
       router.push(`/tahfidz/simaan/${resolvedParams.id}`);
     } catch {
-      toast({
-        title: 'Gagal',
-        description: 'Gagal memperbarui data ujian simaan',
-        variant: 'destructive',
-      });
+      toast.error('Gagal memperbarui data ujian simaan');
     }
   };
 
@@ -188,7 +180,7 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
           </Button>
           <PageHeader
             title="Edit Ujian Simaan"
-            description={`Santri: ${exam.student?.name || 'N/A'}`}
+            description={`Santri: ${exam.student?.user?.name || 'N/A'}`}
             icon={BookOpen}
           />
         </div>

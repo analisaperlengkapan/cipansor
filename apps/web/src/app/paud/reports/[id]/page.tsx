@@ -61,7 +61,7 @@ export default function PAUDReportDetailPage() {
 
   const handleFinalize = async () => {
     try {
-      await finalizeMutation.mutateAsync(reportId);
+      await finalizeMutation.mutateAsync({ id: reportId, data: {} });
       toast.success('Raport berhasil difinalisasi');
     } catch {
       toast.error('Gagal memfinalisasi raport');
@@ -182,7 +182,7 @@ export default function PAUDReportDetailPage() {
                     <div>
                       <h3 className="font-semibold text-lg">{report.student?.user?.name || '-'}</h3>
                       <p className="text-muted-foreground">NIS: {report.student?.nis || '-'}</p>
-                      <p className="text-muted-foreground">{report.class?.name || '-'}</p>
+                      <p className="text-muted-foreground">{report.student?.enrollments?.[0]?.class?.name || '-'}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -236,11 +236,13 @@ export default function PAUDReportDetailPage() {
                     <p className="text-sm text-muted-foreground">Sakit</p>
                   </div>
                   <div className="text-center p-4 bg-muted/50 rounded-lg">
-                    <p className="text-2xl font-bold text-blue-600">{report.permittedDays}</p>
+                    <p className="text-2xl font-bold text-blue-600">{report.excusedDays}</p>
                     <p className="text-sm text-muted-foreground">Izin</p>
                   </div>
                   <div className="text-center p-4 bg-muted/50 rounded-lg">
-                    <p className="text-2xl font-bold text-red-600">{report.absentDays}</p>
+                    <p className="text-2xl font-bold text-red-600">
+                      {report.totalDays - report.presentDays - report.sickDays - report.excusedDays}
+                    </p>
                     <p className="text-sm text-muted-foreground">Alpha</p>
                   </div>
                   <div className="text-center p-4 bg-muted/50 rounded-lg">
@@ -261,8 +263,8 @@ export default function PAUDReportDetailPage() {
                         attendancePercentage >= 90
                           ? 'bg-green-500'
                           : attendancePercentage >= 75
-                          ? 'bg-yellow-500'
-                          : 'bg-red-500'
+                            ? 'bg-yellow-500'
+                            : 'bg-red-500'
                       )}
                       style={{ width: `${attendancePercentage}%` }}
                     />
@@ -298,11 +300,14 @@ export default function PAUDReportDetailPage() {
           <TabsContent value="narrative" className="space-y-6">
             {/* Narrative Sections */}
             {[
-              { title: 'Agama & Budi Pekerti', content: report.religiousMoralNarrative, icon: '🕌' },
-              { title: 'Jati Diri', content: report.socialEmotionalNarrative, icon: '💪' },
-              { title: 'Literasi & STEAM', content: report.languageLiteracyNarrative, icon: '📚' },
-              { title: 'Catatan Guru', content: report.teacherNotes, icon: '✍️' },
-              { title: 'Rekomendasi', content: report.recommendations, icon: '💡' },
+              { title: 'Agama & Budi Pekerti', content: report.narrativeNAM, icon: '🕌' },
+              { title: 'Fisik Motorik', content: report.narrativeFM, icon: '🏃' },
+              { title: 'Kognitif', content: report.narrativeKOG, icon: '🧩' },
+              { title: 'Bahasa', content: report.narrativeBHS, icon: '🗣️' },
+              { title: 'Jati Diri (Sosial Emosional)', content: report.narrativeSE, icon: '💪' },
+              { title: 'Seni', content: report.narrativeSNI, icon: '🎨' },
+              { title: 'Kekuatan Umum', content: report.overallStrengths, icon: '✍️' },
+              { title: 'Rekomendasi', content: report.parentRecommendations, icon: '💡' },
             ].map((section, index) => (
               <Card key={index}>
                 <CardHeader>
@@ -343,9 +348,9 @@ export default function PAUDReportDetailPage() {
                       <Skeleton key={i} className="aspect-square rounded-lg" />
                     ))}
                   </div>
-                ) : photos?.data?.length ? (
+                ) : photos?.length ? (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {photos.data.map((photo) => (
+                    {photos.map((photo) => (
                       <div key={photo.id} className="group relative">
                         <img
                           src={photo.photoUrl}

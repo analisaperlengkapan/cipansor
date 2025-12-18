@@ -24,11 +24,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Pagination } from '@/components/ui/pagination';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { PageHeader } from '@/components/page-header';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { useToast } from '@/hooks/use-toast';
+import { Pagination, ConfirmDialog, PageHeader, LoadingSpinner } from '@/components/shared';
+import { toast } from 'sonner';
 import { useUnits } from '@/hooks/use-units';
 import { useClasses } from '@/hooks/use-classes';
 import { useAcademicYears } from '@/hooks/use-academic-years';
@@ -44,7 +41,6 @@ const PAGE_SIZE = 10;
 
 export default function RaporPesantrenPage() {
   const router = useRouter();
-  const { toast } = useToast();
 
   // Filters
   const [unitId, setUnitId] = useState<string>('');
@@ -77,19 +73,15 @@ export default function RaporPesantrenPage() {
   const deleteRapor = useDeleteRapor();
 
   const units = unitsData || [];
-  const classes = classesData || [];
-  const academicYears = academicYearsData || [];
+  const classes = classesData?.data || [];
+  const academicYears = academicYearsData?.data || [];
 
   const rapors: RaporListItem[] = raporData?.data || [];
-  const pagination = raporData?.pagination;
+  const pagination = raporData?.meta;
 
   const handleGenerateBatch = async () => {
     if (!unitId || !academicYearId || !semester) {
-      toast({
-        title: 'Error',
-        description: 'Pilih unit, tahun ajaran, dan semester terlebih dahulu',
-        variant: 'destructive',
-      });
+      toast.error('Pilih unit, tahun ajaran, dan semester terlebih dahulu');
       return;
     }
 
@@ -101,16 +93,9 @@ export default function RaporPesantrenPage() {
         semester: parseInt(semester),
       });
 
-      toast({
-        title: 'Berhasil',
-        description: `Rapor berhasil digenerate: ${result.success}/${result.total}`,
-      });
+      toast.success(`Rapor berhasil digenerate: ${result.success}/${result.total}`);
     } catch {
-      toast({
-        title: 'Error',
-        description: 'Gagal generate rapor',
-        variant: 'destructive',
-      });
+      toast.error('Gagal generate rapor');
     }
   };
 
@@ -119,17 +104,10 @@ export default function RaporPesantrenPage() {
 
     try {
       await deleteRapor.mutateAsync(deleteId);
-      toast({
-        title: 'Berhasil',
-        description: 'Rapor berhasil dihapus',
-      });
+      toast.success('Rapor berhasil dihapus');
       setDeleteId(null);
     } catch {
-      toast({
-        title: 'Error',
-        description: 'Gagal menghapus rapor',
-        variant: 'destructive',
-      });
+      toast.error('Gagal menghapus rapor');
     }
   };
 
@@ -370,6 +348,8 @@ export default function RaporPesantrenPage() {
                     <Pagination
                       page={page}
                       totalPages={Math.ceil(pagination.total / PAGE_SIZE)}
+                      pageSize={PAGE_SIZE}
+                      total={pagination.total}
                       onPageChange={setPage}
                     />
                   )}
@@ -492,7 +472,7 @@ export default function RaporPesantrenPage() {
               <p className="text-muted-foreground mb-4">
                 Konfigurasi bobot penilaian dapat diatur per unit. Pilih unit terlebih dahulu untuk mengatur bobot.
               </p>
-              
+
               <div className="space-y-4">
                 <Select value={unitId} onValueChange={setUnitId}>
                   <SelectTrigger className="w-64">

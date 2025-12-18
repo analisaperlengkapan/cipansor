@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/common';
-import { DataTable } from '@/components/ui/data-table';
+import { PageHeader, DataTable } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useSanadRecords, SanadRecord } from '@/hooks/use-certificate';
+import { useSanadRecords, SanadRecord } from '@/hooks/use-takhosus';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -68,16 +67,12 @@ export default function SanadPage() {
     {
       accessorKey: 'enrollment.student.name',
       header: 'Santri',
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium">
-            {row.original.enrollment?.student?.name || '-'}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {row.original.enrollment?.student?.nis || '-'}
-          </div>
-        </div>
-      ),
+      cell: ({ row }) => row.original.enrollment?.student?.name || row.original.enrollment?.student?.user?.name || '-',
+    },
+    {
+      accessorKey: 'nis',
+      header: 'NIS',
+      cell: ({ row }) => row.original.enrollment?.student?.nis || '-',
     },
     {
       accessorKey: 'juz',
@@ -87,6 +82,16 @@ export default function SanadPage() {
           Juz {row.original.juz}
         </Badge>
       ),
+    },
+    {
+      accessorKey: 'teacher.name',
+      header: 'Pensahih',
+      cell: ({ row }) => row.original.teacher?.name || '-',
+    },
+    {
+      accessorKey: 'nip',
+      header: 'NIP',
+      cell: ({ row }) => row.original.teacher?.nip || '-',
     },
     {
       accessorKey: 'surahRange',
@@ -99,20 +104,6 @@ export default function SanadPage() {
         }
         return <span>Surah {surahStart} - {surahEnd}</span>;
       },
-    },
-    {
-      accessorKey: 'teacher.name',
-      header: 'Pensahih',
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium">{row.original.teacher?.name || '-'}</div>
-          {row.original.teacher?.nip && (
-            <div className="text-xs text-muted-foreground">
-              {row.original.teacher.nip}
-            </div>
-          )}
-        </div>
-      ),
     },
     {
       accessorKey: 'grade',
@@ -161,14 +152,15 @@ export default function SanadPage() {
   ];
 
   // Filter by search
-  const filteredData = data?.data?.filter((record) =>
+  const filteredData = data?.data?.filter((record: SanadRecord) =>
     record.enrollment?.student?.name?.toLowerCase().includes(search.toLowerCase()) ||
+    record.enrollment?.student?.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
     record.teacher?.name?.toLowerCase().includes(search.toLowerCase())
   ) || [];
 
   // Calculate stats
   const totalRecords = data?.meta?.total || 0;
-  const completedJuz = new Set(data?.data?.map(r => r.juz) || []).size;
+  const completedJuz = new Set(data?.data?.map((r: SanadRecord) => r.juz) || []).size;
 
   return (
     <MainLayout>
@@ -224,7 +216,7 @@ export default function SanadPage() {
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-yellow-500" />
                 <span className="text-2xl font-bold">
-                  {data?.data?.filter(r => r.grade === 'Mumtaz').length || 0}
+                  {data?.data?.filter((r: SanadRecord) => r.grade === 'Mumtaz').length || 0}
                 </span>
               </div>
             </CardContent>
@@ -239,11 +231,11 @@ export default function SanadPage() {
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-purple-500" />
                 <span className="text-2xl font-bold">
-                  {data?.data?.filter(r => {
+                  {data?.data?.filter((r: SanadRecord) => {
                     const certDate = new Date(r.certifiedAt);
                     const now = new Date();
                     return certDate.getMonth() === now.getMonth() &&
-                           certDate.getFullYear() === now.getFullYear();
+                      certDate.getFullYear() === now.getFullYear();
                   }).length || 0}
                 </span>
               </div>

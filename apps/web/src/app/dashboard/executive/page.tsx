@@ -63,7 +63,8 @@ interface Alert {
   message: string;
   severity: 'INFO' | 'WARNING' | 'CRITICAL';
   timestamp: string;
-  unitId: string;
+  unitId?: string;
+  metricType?: string;
 }
 
 const mockAlerts: Alert[] = [
@@ -83,6 +84,54 @@ const mockAlerts: Alert[] = [
   },
 ];
 
+interface KPICardProps {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  activeCount?: number;
+  trend?: string;
+  icon: React.ElementType;
+  iconColor: string;
+  iconBg: string;
+}
+
+function KPICard({ title, value, subtitle, activeCount, trend, icon: Icon, iconColor, iconBg }: KPICardProps) {
+  return (
+    <Card className="glass-card overflow-hidden transition-all hover:shadow-2xl hover:-translate-y-1 group">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-semibold text-muted-foreground group-hover:text-foreground transition-colors">{title}</CardTitle>
+        <div className={cn("p-2 rounded-xl transition-all group-hover:scale-110", iconBg)}>
+          <Icon className={cn("h-4 w-4", iconColor)} />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold tracking-tight">{value}</div>
+        {(activeCount !== undefined || trend) && (
+          <div className="flex items-center gap-2 mt-2">
+            {activeCount !== undefined && (
+              <Badge variant="secondary" className="text-[10px] font-bold px-1.5 py-0 bg-secondary/50">
+                {activeCount} AKTIF
+              </Badge>
+            )}
+            {trend && (
+              <span className="text-xs text-green-600 font-bold flex items-center gap-0.5">
+                <TrendingUp className="h-3 w-3" />
+                {trend}
+              </span>
+            )}
+          </div>
+        )}
+        {subtitle && (
+          <p className="text-xs font-medium text-muted-foreground mt-2 opacity-80">
+            {subtitle}
+          </p>
+        )}
+      </CardContent>
+      <div className={cn("h-1 w-full bg-gradient-to-r from-transparent via-current to-transparent opacity-10", iconColor)} />
+    </Card>
+  );
+}
+
 export default function ExecutiveDashboardPage() {
   const [metrics, setMetrics] = useState<any>(null);
   const [alerts, setAlerts] = useState(mockAlerts);
@@ -96,9 +145,9 @@ export default function ExecutiveDashboardPage() {
       console.log('Metrics updated:', data);
       setMetrics(data);
     },
-    onAlert: (alert) => {
+    onAlert: (alert: any) => {
       console.log('New alert:', alert);
-      setAlerts((prev) => [alert, ...prev].slice(0, 10)); // Keep last 10 alerts
+      setAlerts((prev) => [alert as Alert, ...prev].slice(0, 10)); // Keep last 10 alerts
     },
   });
 
@@ -149,34 +198,43 @@ export default function ExecutiveDashboardPage() {
 
         {/* Alerts Panel */}
         {alerts.length > 0 && (
-          <Card className="border-orange-200 bg-orange-50/50">
-            <CardHeader>
+          <Card className="border-orange-200 bg-orange-50/50 glass-card">
+            <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Bell className="h-4 w-4 text-orange-600" />
-                  <CardTitle className="text-sm">Notifikasi & Alert</CardTitle>
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <Bell className="h-4 w-4 text-orange-600" />
+                  </div>
+                  <CardTitle className="text-sm font-semibold">Notifikasi & Alert</CardTitle>
                 </div>
-                <Badge variant="secondary">{alerts.length}</Badge>
+                <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors">
+                  {alerts.length} Baru
+                </Badge>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {alerts.slice(0, 3).map((alert) => (
+                {alerts.slice(0, 3).map((alert, idx) => (
                   <div
                     key={alert.id}
-                    className="flex items-start gap-3 p-3 bg-white rounded-lg border"
+                    className={cn(
+                      "flex items-start gap-3 p-3 bg-white/60 backdrop-blur-sm rounded-lg border border-orange-100/50 transition-all hover:shadow-md",
+                      "animate-in slide-in-from-right duration-300",
+                      idx === 1 && "delay-75",
+                      idx === 2 && "delay-150"
+                    )}
                   >
-                    <AlertTriangle
-                      className={cn(
-                        'h-4 w-4 mt-0.5',
-                        alert.severity === 'CRITICAL' && 'text-red-600',
-                        alert.severity === 'WARNING' && 'text-orange-600',
-                        alert.severity === 'INFO' && 'text-blue-600'
-                      )}
-                    />
+                    <div className={cn(
+                      "p-1.5 rounded-full mt-0.5",
+                      alert.severity === 'CRITICAL' && 'bg-red-100 text-red-600',
+                      alert.severity === 'WARNING' && 'bg-orange-100 text-orange-600',
+                      alert.severity === 'INFO' && 'bg-blue-100 text-blue-600'
+                    )}>
+                      <AlertTriangle className="h-4 w-4" />
+                    </div>
                     <div className="flex-1">
-                      <p className="text-sm">{alert.message}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-sm font-medium leading-normal">{alert.message}</p>
+                      <p className="text-xs text-muted-foreground mt-1 font-medium opacity-70">
                         {format(new Date(alert.timestamp), 'HH:mm', { locale: idLocale })}
                       </p>
                     </div>
@@ -189,152 +247,131 @@ export default function ExecutiveDashboardPage() {
 
         {/* KPI Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Siswa</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {metrics?.students?.total || 798}
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className="text-xs">
-                  {metrics?.students?.active || 750} aktif
-                </Badge>
-                <span className="text-xs text-green-600 flex items-center gap-1">
-                  <TrendingUp className="h-3 w-3" />
-                  +5.2%
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Dari bulan lalu
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Guru</CardTitle>
-              <GraduationCap className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {metrics?.teachers?.total || 85}
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className="text-xs">
-                  82 aktif
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Across all units
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Kehadiran Hari Ini</CardTitle>
-              <UserCheck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {metrics?.attendance?.rate || 89}%
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs">
-                  {metrics?.attendance?.present || 708} dari {metrics?.attendance?.total || 798}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Update real-time
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Tahfidz Progress</CardTitle>
-              <BookOpen className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {metrics?.tahfidz?.totalHafidz || 156}
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs">
-                  Avg: {metrics?.tahfidz?.avgQuality || 84.5}
-                </span>
-                <Badge variant="secondary" className="text-xs">
-                  {metrics?.tahfidz?.simaanThisMonth || 12} simaan
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Bulan ini
-              </p>
-            </CardContent>
-          </Card>
+          <KPICard
+            title="Total Siswa"
+            value={metrics?.students?.total || 798}
+            activeCount={metrics?.students?.active || 750}
+            trend="+5.2%"
+            icon={Users}
+            iconColor="text-blue-600"
+            iconBg="bg-blue-100"
+          />
+          <KPICard
+            title="Total Guru"
+            value={metrics?.teachers?.total || 85}
+            activeCount={82}
+            icon={GraduationCap}
+            iconColor="text-green-600"
+            iconBg="bg-green-100"
+          />
+          <KPICard
+            title="Kehadiran"
+            value={`${metrics?.attendance?.rate || 89}%`}
+            subtitle={`${metrics?.attendance?.present || 708} / ${metrics?.attendance?.total || 798}`}
+            icon={UserCheck}
+            iconColor="text-orange-600"
+            iconBg="bg-orange-100"
+          />
+          <KPICard
+            title="Tahfidz Progress"
+            value={metrics?.tahfidz?.totalHafidz || 156}
+            subtitle={`Avg: ${metrics?.tahfidz?.avgQuality || 84.5}`}
+            icon={BookOpen}
+            iconColor="text-purple-600"
+            iconBg="bg-purple-100"
+          />
         </div>
 
         {/* Charts */}
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           {/* Enrollment Trend */}
-          <Card className="col-span-2">
-            <CardHeader>
-              <CardTitle>Tren Pendaftaran Siswa</CardTitle>
-              <CardDescription>
-                Jumlah siswa aktif per unit dalam 6 bulan terakhir
-              </CardDescription>
+          <Card className="col-span-2 glass-card border-none shadow-2xl">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-xl font-bold leading-none">Tren Pendaftaran Siswa</CardTitle>
+                <CardDescription className="mt-1.5">
+                  Jumlah siswa aktif per unit dalam 6 bulan terakhir
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="h-8">6 Bulan</Button>
+                <Button variant="outline" size="sm" className="h-8">1 Tahun</Button>
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
+            <CardContent className="pt-4">
+              <div className="h-[350px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={mockEnrollmentTrend}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
+                  <AreaChart data={mockEnrollmentTrend} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorPAUD" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorSDIT" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(var(--border))" opacity={0.5} />
+                    <XAxis
+                      dataKey="month"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: 'oklch(var(--muted-foreground))', fontSize: 12 }}
+                      dy={10}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: 'oklch(var(--muted-foreground))', fontSize: 12 }}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'oklch(var(--background))', border: '1px solid oklch(var(--border))', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                      itemStyle={{ fontSize: '12px', fontWeight: '600' }}
+                    />
+                    <Legend verticalAlign="top" height={36} iconType="circle" />
                     <Area
                       type="monotone"
                       dataKey="PAUD"
                       stackId="1"
                       stroke="#22c55e"
-                      fill="#22c55e"
-                      fillOpacity={0.6}
+                      strokeWidth={3}
+                      fill="url(#colorPAUD)"
                     />
                     <Area
                       type="monotone"
                       dataKey="SDIT"
                       stackId="1"
                       stroke="#3b82f6"
-                      fill="#3b82f6"
-                      fillOpacity={0.6}
+                      strokeWidth={3}
+                      fill="url(#colorSDIT)"
                     />
                     <Area
                       type="monotone"
                       dataKey="SMPIT"
                       stackId="1"
                       stroke="#f59e0b"
+                      strokeWidth={3}
+                      fillOpacity={0.1}
                       fill="#f59e0b"
-                      fillOpacity={0.6}
                     />
                     <Area
                       type="monotone"
                       dataKey="SMAQ"
                       stackId="1"
                       stroke="#8b5cf6"
+                      strokeWidth={3}
+                      fillOpacity={0.1}
                       fill="#8b5cf6"
-                      fillOpacity={0.6}
                     />
                     <Area
                       type="monotone"
                       dataKey="Pesantren"
                       stackId="1"
                       stroke="#ec4899"
+                      strokeWidth={3}
+                      fillOpacity={0.1}
                       fill="#ec4899"
-                      fillOpacity={0.6}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -343,20 +380,35 @@ export default function ExecutiveDashboardPage() {
           </Card>
 
           {/* Attendance by Unit */}
-          <Card>
+          <Card className="glass-card border-none shadow-xl">
             <CardHeader>
-              <CardTitle>Kehadiran per Unit</CardTitle>
-              <CardDescription>Tingkat kehadiran hari ini</CardDescription>
+              <CardTitle className="text-lg font-bold">Kehadiran per Unit</CardTitle>
+              <CardDescription>Tingkat kehadiran hari ini (%)</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={mockAttendanceByUnit}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="unit" />
-                    <YAxis domain={[0, 100]} />
-                    <Tooltip />
-                    <Bar dataKey="rate" fill="#3b82f6" name="Kehadiran (%)" />
+                  <BarChart data={mockAttendanceByUnit} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(var(--border))" opacity={0.5} />
+                    <XAxis
+                      dataKey="unit"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: 'oklch(var(--muted-foreground))', fontSize: 11, fontWeight: '600' }}
+                    />
+                    <YAxis axisLine={false} tickLine={false} domain={[0, 100]} hide />
+                    <Tooltip cursor={{ fill: 'oklch(var(--muted))', opacity: 0.4 }} />
+                    <Bar
+                      dataKey="rate"
+                      fill="#3b82f6"
+                      radius={[6, 6, 0, 0]}
+                      barSize={40}
+                      name="Kehadiran"
+                    >
+                      {mockAttendanceByUnit.map((entry, index) => (
+                        <Bar key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>

@@ -44,17 +44,19 @@ const SEMESTER_LABELS = {
 };
 
 const editReportSchema = z.object({
-  religiousMoralNarrative: z.string().optional(),
-  socialEmotionalNarrative: z.string().optional(),
-  languageLiteracyNarrative: z.string().optional(),
-  teacherNotes: z.string().optional(),
-  recommendations: z.string().optional(),
+  narrativeNAM: z.string().optional(),
+  narrativeFM: z.string().optional(),
+  narrativeKOG: z.string().optional(),
+  narrativeBHS: z.string().optional(),
+  narrativeSE: z.string().optional(),
+  narrativeSNI: z.string().optional(),
+  overallStrengths: z.string().optional(),
+  parentRecommendations: z.string().optional(),
   height: z.number().optional().nullable(),
   weight: z.number().optional().nullable(),
   presentDays: z.number().min(0),
   sickDays: z.number().min(0),
-  permittedDays: z.number().min(0),
-  absentDays: z.number().min(0),
+  excusedDays: z.number().min(0),
   totalDays: z.number().min(0),
 });
 
@@ -71,17 +73,19 @@ export default function EditPAUDReportPage() {
   const form = useForm<EditReportFormData>({
     resolver: zodResolver(editReportSchema),
     defaultValues: {
-      religiousMoralNarrative: '',
-      socialEmotionalNarrative: '',
-      languageLiteracyNarrative: '',
-      teacherNotes: '',
-      recommendations: '',
+      narrativeNAM: '',
+      narrativeFM: '',
+      narrativeKOG: '',
+      narrativeBHS: '',
+      narrativeSE: '',
+      narrativeSNI: '',
+      overallStrengths: '',
+      parentRecommendations: '',
       height: null,
       weight: null,
       presentDays: 0,
       sickDays: 0,
-      permittedDays: 0,
-      absentDays: 0,
+      excusedDays: 0,
       totalDays: 0,
     },
   });
@@ -90,18 +94,20 @@ export default function EditPAUDReportPage() {
   useEffect(() => {
     if (report) {
       form.reset({
-        religiousMoralNarrative: report.religiousMoralNarrative || '',
-        socialEmotionalNarrative: report.socialEmotionalNarrative || '',
-        languageLiteracyNarrative: report.languageLiteracyNarrative || '',
-        teacherNotes: report.teacherNotes || '',
-        recommendations: report.recommendations || '',
+        narrativeNAM: report.narrativeNAM || '',
+        narrativeFM: report.narrativeFM || '',
+        narrativeKOG: report.narrativeKOG || '',
+        narrativeBHS: report.narrativeBHS || '',
+        narrativeSE: report.narrativeSE || '',
+        narrativeSNI: report.narrativeSNI || '',
+        overallStrengths: report.overallStrengths || '',
+        parentRecommendations: report.parentRecommendations || '',
         height: report.height,
         weight: report.weight,
-        presentDays: report.presentDays,
-        sickDays: report.sickDays,
-        permittedDays: report.permittedDays,
-        absentDays: report.absentDays,
-        totalDays: report.totalDays,
+        presentDays: report.presentDays || 0,
+        sickDays: report.sickDays || 0,
+        excusedDays: report.excusedDays || 0,
+        totalDays: report.totalDays || 0,
       });
     }
   }, [report, form]);
@@ -111,9 +117,20 @@ export default function EditPAUDReportPage() {
       await updateMutation.mutateAsync({
         id: reportId,
         data: {
-          ...data,
+          narrativeNAM: data.narrativeNAM,
+          narrativeFM: data.narrativeFM,
+          narrativeKOG: data.narrativeKOG,
+          narrativeBHS: data.narrativeBHS,
+          narrativeSE: data.narrativeSE,
+          narrativeSNI: data.narrativeSNI,
+          overallStrengths: data.overallStrengths,
+          parentRecommendations: data.parentRecommendations,
           height: data.height || undefined,
           weight: data.weight || undefined,
+          presentDays: data.presentDays,
+          sickDays: data.sickDays,
+          excusedDays: data.excusedDays,
+          totalDays: data.totalDays,
         },
       });
       toast.success('Raport berhasil diperbarui');
@@ -196,7 +213,7 @@ export default function EditPAUDReportPage() {
               <div>
                 <h3 className="font-semibold text-lg">{report.student?.user?.name || '-'}</h3>
                 <p className="text-muted-foreground">NIS: {report.student?.nis || '-'}</p>
-                <p className="text-muted-foreground">{report.class?.name || '-'}</p>
+                <p className="text-muted-foreground">{report.student?.enrollments?.[0]?.class?.name || '-'}</p>
               </div>
             </div>
           </CardContent>
@@ -225,7 +242,7 @@ export default function EditPAUDReportPage() {
                   <CardContent>
                     <FormField
                       control={form.control}
-                      name="religiousMoralNarrative"
+                      name="narrativeNAM"
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
@@ -254,7 +271,7 @@ export default function EditPAUDReportPage() {
                   <CardContent>
                     <FormField
                       control={form.control}
-                      name="socialEmotionalNarrative"
+                      name="narrativeSE"
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
@@ -283,7 +300,7 @@ export default function EditPAUDReportPage() {
                   <CardContent>
                     <FormField
                       control={form.control}
-                      name="languageLiteracyNarrative"
+                      name="narrativeBHS"
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
@@ -312,7 +329,7 @@ export default function EditPAUDReportPage() {
                   <CardContent>
                     <FormField
                       control={form.control}
-                      name="teacherNotes"
+                      name="overallStrengths"
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
@@ -341,7 +358,7 @@ export default function EditPAUDReportPage() {
                   <CardContent>
                     <FormField
                       control={form.control}
-                      name="recommendations"
+                      name="parentRecommendations"
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
@@ -411,7 +428,7 @@ export default function EditPAUDReportPage() {
 
                       <FormField
                         control={form.control}
-                        name="permittedDays"
+                        name="excusedDays"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Izin</FormLabel>
@@ -427,23 +444,7 @@ export default function EditPAUDReportPage() {
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
-                        name="absentDays"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Alpha</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      {/* absentDays is removed from hook and schema */}
 
                       <FormField
                         control={form.control}

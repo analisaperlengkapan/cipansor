@@ -17,6 +17,19 @@ export interface SimaanExam {
   hafalanGrade?: number;
   tajwidGrade?: number;
   fashahahGrade?: number;
+  location?: string;
+  startAyat?: number;
+  endAyat?: number;
+  totalJuz?: number;
+  finalScore?: number; // alias for overallGrade
+  isPassed?: boolean;  // alias for passed
+  passed?: boolean;    // another alias for passed
+  predicate?: string;  // alias for grade
+  grade?: string;      // another alias for grade
+  adabScore?: number;
+  tartilScore?: number;
+  tajwidScore?: number;
+  fashahahScore?: number;
   notes?: string;
   createdById: string;
   createdAt: string;
@@ -25,9 +38,18 @@ export interface SimaanExam {
     id: string;
     nis: string;
     photoUrl?: string;
+    name?: string; // alias for user.name
     user?: {
       name: string;
     };
+    class?: {
+      id: string;
+      name: string;
+    };
+  };
+  halaqoh?: {
+    id: string;
+    name: string;
   };
   examiners?: SimaanExaminer[];
   _count?: {
@@ -72,6 +94,10 @@ export interface CreateSimaanData {
   startSurah?: string;
   endSurah?: string;
   duration?: number;
+  location?: string;
+  startAyat?: number;
+  endAyat?: number;
+  totalJuz?: number;
   notes?: string;
   examinerIds?: string[];
 }
@@ -90,7 +116,7 @@ export interface AddExaminerData {
 }
 
 export interface UpdateExaminerScoreData {
-visibleExaminerId: string;
+  visibleExaminerId: string;
   grade: number;
   notes?: string;
 }
@@ -124,6 +150,7 @@ export function useSimaanExams(filters: SimaanFilters = {}) {
       const response = await apiClient.get(`/simaan?${params.toString()}`);
       return response.data;
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -136,6 +163,7 @@ export function useSimaanExam(id: string) {
       return response.data.data as SimaanExam;
     },
     enabled: !!id,
+    staleTime: 10 * 60 * 1000,
   });
 }
 
@@ -161,6 +189,7 @@ export function useStudentSimaan(
       return response.data;
     },
     enabled: !!studentId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -184,6 +213,7 @@ export function useUpcomingSimaan() {
       const response = await apiClient.get('/simaan/upcoming');
       return response.data;
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -318,19 +348,13 @@ export function useCompleteSimaan() {
       data,
     }: {
       id: string;
-      data: {
-        overallGrade: number;
-        hafalanGrade?: number;
-        tajwidGrade?: number;
-        fashahahGrade?: number;
-        notes?: string;
-      };
+      data: { overallGrade: number };
     }) => {
-      const response = await apiClient.patch(`/simaan/${id}/complete`, data);
+      const response = await apiClient.post(`/simaan/${id}/complete`, data);
       return response.data;
     },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: simaanKeys.detail(id) });
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: simaanKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: simaanKeys.lists() });
     },
   });

@@ -35,15 +35,16 @@ export function useUnits(params?: UseUnitsParams) {
       const response = await api.get<ApiResponse<Unit[]>>('/units', { params });
       return response.data.data;
     },
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 }
 
 // Hook to get current user's unit based on stored unitId
 export function useCurrentUnit() {
-  const unitId = typeof window !== 'undefined' 
-    ? localStorage.getItem('unitId') 
+  const unitId = typeof window !== 'undefined'
+    ? localStorage.getItem('unitId')
     : null;
-    
+
   return useQuery({
     queryKey: ['units', unitId],
     queryFn: async () => {
@@ -52,6 +53,7 @@ export function useCurrentUnit() {
       return response.data.data;
     },
     enabled: !!unitId,
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 }
 
@@ -77,7 +79,7 @@ export interface CreateUnitData {
 
 export function useCreateUnit() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateUnitData) => {
       const response = await api.post<ApiResponse<Unit>>('/units', data);
@@ -91,7 +93,7 @@ export function useCreateUnit() {
 
 export function useUpdateUnit() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<CreateUnitData> }) => {
       const response = await api.patch<ApiResponse<Unit>>(`/units/${id}`, data);
@@ -106,7 +108,7 @@ export function useUpdateUnit() {
 
 export function useDeleteUnit() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/units/${id}`);

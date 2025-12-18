@@ -12,16 +12,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { 
+import {
   useActivePeriod,
-  useRegistrationPeriods, 
+  useRegistrationPeriods,
   useCreateRegistration,
   RegistrationPeriod,
   Gender
 } from '@/hooks/use-psb';
 import { useUnits } from '@/hooks/use-units';
-import { 
-  GraduationCap, 
+import {
+  GraduationCap,
   Calendar,
   Users,
   Clock,
@@ -53,12 +53,12 @@ interface FormData {
   birthDate: string;
   nationalId: string;
   familyCardNumber: string;
-  
+
   // Previous school
   previousSchool: string;
   previousSchoolAddress: string;
   graduationYear: string;
-  
+
   // Parent info
   fatherName: string;
   fatherOccupation: string;
@@ -67,7 +67,7 @@ interface FormData {
   motherName: string;
   motherOccupation: string;
   motherPhone: string;
-  
+
   // Address
   address: string;
   village: string;
@@ -75,11 +75,11 @@ interface FormData {
   city: string;
   province: string;
   postalCode: string;
-  
+
   // Quran
   quranAbility: string;
   memorizedJuz: string;
-  
+
   // Unit
   unitId: string;
   periodId: string;
@@ -133,7 +133,7 @@ export default function PublicPPDBPage() {
   const { data: activePeriod, isLoading: periodLoading } = useActivePeriod();
   const { data: periods = [] } = useRegistrationPeriods({ isActive: true });
   const { data: units = [] } = useUnits();
-  
+
   const createRegistration = useCreateRegistration();
 
   const steps = [
@@ -175,7 +175,7 @@ export default function PublicPPDBPage() {
     setIsSubmitting(true);
     try {
       const formDataToSend = new FormData();
-      
+
       // Add all form fields
       Object.entries(formData).forEach(([key, value]) => {
         if (value) {
@@ -189,12 +189,12 @@ export default function PublicPPDBPage() {
       }
 
       const result = await createRegistration.mutateAsync(formDataToSend);
-      
+
       setSuccessData({
         registrationNumber: result.registrationNumber || 'PSB-' + Date.now(),
         name: formData.fullName,
       });
-      
+
       // Reset form
       setFormData(initialFormData);
       setCurrentStep(0);
@@ -347,10 +347,10 @@ export default function PublicPPDBPage() {
                     <CardContent>
                       <p className="text-sm text-muted-foreground">
                         {unit.type === 'PESANTREN' && 'Program Tahfidz & Kepesantrenan'}
+                        {unit.type === 'TK_QURAN' && 'Taman Kanak-kanak Al-Quran'}
                         {unit.type === 'SD_IT' && 'Sekolah Dasar Islam Terpadu (6-12 tahun)'}
                         {unit.type === 'SMP_IT' && 'Sekolah Menengah Pertama Islam Terpadu (12-15 tahun)'}
-                        {unit.type === 'SMA_IT' && 'Sekolah Menengah Atas Islam Terpadu (15-18 tahun)'}
-                        {unit.type === 'MA' && 'Madrasah Aliyah Al-Quran (15-18 tahun)'}
+                        {unit.type === 'SMA_QURAN' && 'SMA Al-Quran / Madrasah Aliyah (15-18 tahun)'}
                       </p>
                     </CardContent>
                   </Card>

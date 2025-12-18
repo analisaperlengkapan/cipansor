@@ -3,7 +3,7 @@
 import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/common';
+import { PageHeader } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,8 +21,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
-import { useSimaanExam, useDeleteSimaanExam, useFinalizeSimaanExam } from '@/hooks/use-simaan';
+import { toast } from 'sonner';
+import { useSimaanExam, useDeleteSimaan, useCompleteSimaan } from '@/hooks/use-simaan';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import {
@@ -74,7 +74,7 @@ const StatusBadge = ({ status }: { status: ExamStatus }) => {
     COMPLETED: 'default',
     CANCELLED: 'destructive',
   };
-  
+
   const icons: Record<ExamStatus, React.ReactNode> = {
     SCHEDULED: <Clock className="h-3 w-3 mr-1" />,
     IN_PROGRESS: <Play className="h-3 w-3 mr-1" />,
@@ -83,7 +83,7 @@ const StatusBadge = ({ status }: { status: ExamStatus }) => {
   };
 
   return (
-    <Badge variant={variants[status]} className="flex items-center w-fit">
+    <Badge variant={variants[status] || 'default'} className="flex items-center w-fit">
       {icons[status]}
       {statusLabels[status]}
     </Badge>
@@ -93,42 +93,32 @@ const StatusBadge = ({ status }: { status: ExamStatus }) => {
 export default function SimaanDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const { toast } = useToast();
 
   const { data: exam, isLoading, error } = useSimaanExam(resolvedParams.id);
-  const deleteMutation = useDeleteSimaanExam();
-  const finalizeMutation = useFinalizeSimaanExam();
+  const deleteMutation = useDeleteSimaan();
+  const finalizeMutation = useCompleteSimaan();
 
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(resolvedParams.id);
-      toast({
-        title: 'Berhasil',
-        description: 'Data ujian simaan berhasil dihapus',
-      });
+      toast.success('Data ujian simaan berhasil dihapus');
       router.push('/tahfidz/simaan');
     } catch {
-      toast({
-        title: 'Gagal',
-        description: 'Gagal menghapus data ujian simaan',
-        variant: 'destructive',
-      });
+      toast.error('Gagal menghapus data ujian simaan');
     }
   };
 
   const handleFinalize = async () => {
     try {
-      await finalizeMutation.mutateAsync(resolvedParams.id);
-      toast({
-        title: 'Berhasil',
-        description: 'Ujian simaan berhasil diselesaikan',
+      await finalizeMutation.mutateAsync({
+        id: resolvedParams.id,
+        data: {
+          overallGrade: exam?.overallGrade || 0,
+        }
       });
+      toast.success('Ujian simaan berhasil diselesaikan');
     } catch {
-      toast({
-        title: 'Gagal',
-        description: 'Gagal menyelesaikan ujian simaan',
-        variant: 'destructive',
-      });
+      toast.error('Gagal menyelesaikan ujian simaan');
     }
   };
 
@@ -261,13 +251,13 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
                 <Avatar className="h-16 w-16">
                   <AvatarImage src={exam.student?.photoUrl} />
                   <AvatarFallback className="text-lg">
-                    {exam.student?.name?.substring(0, 2).toUpperCase() || 'ST'}
+                    {exam.student?.user?.name?.substring(0, 2).toUpperCase() || 'ST'}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-lg font-semibold">{exam.student?.name || 'N/A'}</h3>
+                  <h3 className="text-lg font-semibold">{exam.student?.user?.name || 'N/A'}</h3>
                   <p className="text-sm text-muted-foreground">{exam.student?.nis || '-'}</p>
-                  <p className="text-sm text-muted-foreground">{exam.student?.class?.name || '-'}</p>
+                  <p className="text-sm text-muted-foreground">{exam.halaqoh?.name || '-'}</p>
                 </div>
               </div>
 
@@ -344,12 +334,12 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
                   {/* Final Score */}
                   <div className="text-center py-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-lg">
                     <div className="text-5xl font-bold text-green-600 dark:text-green-400">
-                      {exam.finalScore.toFixed(1)}
+                      {(exam.finalScore || exam.overallGrade || 0).toFixed(1)}
                     </div>
                     <div className="text-muted-foreground mt-1">Nilai Akhir</div>
-                    {exam.predicate && (
+                    {(exam.predicate || exam.grade) && (
                       <Badge className="mt-3" variant="default">
-                        {exam.predicate}
+                        {exam.predicate || exam.grade}
                       </Badge>
                     )}
                   </div>
@@ -373,13 +363,13 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
                   </div>
 
                   {/* Pass/Fail Status */}
-                  {exam.isPassed !== undefined && (
+                  {(exam.isPassed !== undefined || exam.passed !== undefined) && (
                     <div className="flex items-center justify-center pt-4">
                       <Badge
-                        variant={exam.isPassed ? 'default' : 'destructive'}
+                        variant={(exam.isPassed || exam.passed) ? 'default' : 'destructive'}
                         className="text-lg py-2 px-4"
                       >
-                        {exam.isPassed ? '✓ LULUS' : '✗ TIDAK LULUS'}
+                        {(exam.isPassed || exam.passed) ? '✓ LULUS' : '✗ TIDAK LULUS'}
                       </Badge>
                     </div>
                   )}
@@ -391,8 +381,8 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
                     {exam.status === 'SCHEDULED'
                       ? 'Ujian belum dimulai'
                       : exam.status === 'IN_PROGRESS'
-                      ? 'Ujian sedang berlangsung'
-                      : 'Ujian dibatalkan'}
+                        ? 'Ujian sedang berlangsung'
+                        : 'Ujian dibatalkan'}
                   </p>
                 </div>
               )}
@@ -483,10 +473,10 @@ function ScoreBar({ label, score }: { label: string; score: number }) {
     percentage >= 85
       ? 'bg-green-500'
       : percentage >= 70
-      ? 'bg-blue-500'
-      : percentage >= 55
-      ? 'bg-yellow-500'
-      : 'bg-red-500';
+        ? 'bg-blue-500'
+        : percentage >= 55
+          ? 'bg-yellow-500'
+          : 'bg-red-500';
 
   return (
     <div className="space-y-1">

@@ -54,17 +54,24 @@ export interface SanadRecord {
   id: string;
   enrollmentId: string;
   juz: number;
+  surahStart?: number;
+  surahEnd?: number;
   teacherId: string;
   grade: string;
   certifiedAt: string;
   notes?: string;
   createdAt: string;
   enrollment?: {
-    student: {
-      user: { id: string; name: string };
+    id: string;
+    studentId: string;
+    student?: {
+      id: string;
+      name: string;
+      nis: string;
+      user?: { id: string; name: string };
     };
   };
-  teacher?: { id: string; name: string; email?: string };
+  teacher?: { id: string; name: string; email?: string; nip?: string };
 }
 
 export interface StudentProgress {
@@ -181,6 +188,7 @@ export function useHalaqohs(params: HalaqohParams = {}) {
       const response = await api.get<PaginatedResponse<Halaqoh>>('/takhosus/halaqoh', { params });
       return response.data;
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -192,6 +200,7 @@ export function useHalaqoh(id: string) {
       return response.data.data;
     },
     enabled: !!id,
+    staleTime: 10 * 60 * 1000,
   });
 }
 
@@ -203,6 +212,7 @@ export function useHalaqohProgress(halaqohId: string) {
       return response.data.data;
     },
     enabled: !!halaqohId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -281,6 +291,7 @@ export function useEnrollments(params: EnrollmentParams = {}) {
       const response = await api.get<PaginatedResponse<TakhosusEnrollment>>('/takhosus/enrollment', { params });
       return response.data;
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -292,6 +303,7 @@ export function useEnrollment(id: string) {
       return response.data.data;
     },
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -303,6 +315,7 @@ export function useEnrollmentByStudent(studentId: string) {
       return response.data.data;
     },
     enabled: !!studentId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -319,6 +332,7 @@ export function useEnrollmentStats(unitId?: string) {
       }>>('/takhosus/enrollment/stats', { params: { unitId } });
       return response.data.data;
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -382,6 +396,7 @@ export interface SanadParams {
   limit?: number;
   enrollmentId?: string;
   teacherId?: string;
+  juz?: number;
 }
 
 export function useSanadRecords(params: SanadParams = {}) {
@@ -391,6 +406,7 @@ export function useSanadRecords(params: SanadParams = {}) {
       const response = await api.get<PaginatedResponse<SanadRecord>>('/takhosus/sanad', { params });
       return response.data;
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -402,12 +418,15 @@ export function useSanadRecord(id: string) {
       return response.data.data;
     },
     enabled: !!id,
+    staleTime: 10 * 60 * 1000,
   });
 }
 
 export interface CreateSanadData {
   enrollmentId: string;
   juz: number;
+  surahStart?: number;
+  surahEnd?: number;
   teacherId: string;
   grade: string;
   certifiedAt?: string;
@@ -474,6 +493,7 @@ export function useStudentProgress(studentId: string) {
       return response.data.data;
     },
     enabled: !!studentId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -484,5 +504,6 @@ export function useMyProgress() {
       const response = await api.get<ApiResponse<StudentProgress>>('/takhosus/progress/me');
       return response.data.data;
     },
+    staleTime: 5 * 60 * 1000,
   });
 }

@@ -355,11 +355,11 @@ export default function DailyReportListPage() {
           data={data?.data || []}
           isLoading={isLoading}
           pagination={{
-            pageIndex: page - 1,
+            page: page,
             pageSize,
-            pageCount: data?.pagination?.totalPages || 0,
-            total: data?.pagination?.total || 0,
-            onPageChange: (newPage) => setPage(newPage + 1),
+            totalPages: data?.meta?.totalPages || 0,
+            total: data?.meta?.total || 0,
+            onPageChange: (newPage) => setPage(newPage),
             onPageSizeChange: setPageSize,
           }}
         />

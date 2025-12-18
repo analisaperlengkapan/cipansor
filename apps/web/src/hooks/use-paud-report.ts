@@ -62,6 +62,8 @@ export interface PAUDNarrativeReport {
     name: string;
   };
   photos?: PAUDReportPhoto[];
+  height?: number;
+  weight?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -108,6 +110,8 @@ export interface UpdateReportData {
   presentDays?: number;
   sickDays?: number;
   excusedDays?: number;
+  height?: number;
+  weight?: number;
 }
 
 export interface GenerateReportData {
@@ -142,6 +146,7 @@ export function usePAUDReports(params: ReportListParams = {}) {
       const response = await api.get<PaginatedResponse<PAUDNarrativeReport>>('/paud-report', { params });
       return response.data;
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -153,6 +158,7 @@ export function usePAUDReport(id: string) {
       return response.data.data;
     },
     enabled: !!id,
+    staleTime: 10 * 60 * 1000,
   });
 }
 

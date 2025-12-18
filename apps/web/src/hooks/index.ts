@@ -28,7 +28,7 @@ export * from './use-alumni';
 export * from './use-analytics';
 export * from './use-reports';
 export * from './use-roles';
-export * from './use-certificates';
+export * from './use-certificate';
 export * from './use-calendar';
 export * from './use-extracurricular';
 export * from './use-counseling';

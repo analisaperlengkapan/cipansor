@@ -216,7 +216,7 @@ export default function CreateDailyReportPage() {
                         <SelectContent>
                           {students?.data?.map((student) => (
                             <SelectItem key={student.id} value={student.id}>
-                              {student.user?.name} ({student.nis})
+                              {student.name} ({student.nis})
                             </SelectItem>
                           ))}
                         </SelectContent>

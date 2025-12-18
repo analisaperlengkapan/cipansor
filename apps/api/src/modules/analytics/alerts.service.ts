@@ -127,7 +127,7 @@ async function checkAttendanceRule(rule: AlertRule): Promise<AlertTrigger[]> {
             user: { select: { id: true, name: true } },
             _count: {
                 select: {
-                    attendance: { where: { date: { gte: thirtyDaysAgo } } },
+                    attendances: { where: { date: { gte: thirtyDaysAgo } } },
                 },
             },
         },
@@ -207,6 +207,20 @@ async function checkPaymentRule(rule: AlertRule): Promise<AlertTrigger[]> {
         }
     }
 
+    // FINANCE_ANOMALY check (placeholder for missing logic but fixing decimal issues)
+    const largeInvoices = overdueInvoices.filter(inv => Number(inv.amount) > 1000000);
+    for (const inv of largeInvoices) {
+        triggers.push({
+            ruleId: rule.id,
+            studentId: inv.studentId,
+            studentName: inv.student?.user?.name || 'Unknown',
+            value: Number(inv.amount),
+            threshold: 1000000,
+            message: `Tagihan besar (Rp ${Number(inv.amount)}) belum dibayar.`,
+            triggeredAt: new Date().toISOString(),
+        });
+    }
+
     return triggers;
 }
 
@@ -227,14 +241,15 @@ async function checkAcademicRule(rule: AlertRule): Promise<AlertTrigger[]> {
     const triggers: AlertTrigger[] = [];
 
     for (const grade of recentGrades) {
-        if (compareValue(grade.score, rule.threshold, rule.operator)) {
+        const score = Number(grade.score);
+        if (compareValue(score, rule.threshold, rule.operator)) {
             const trigger: AlertTrigger = {
                 ruleId: rule.id,
                 studentId: grade.studentId,
                 studentName: grade.student?.user?.name || 'Unknown',
-                value: grade.score,
+                value: score,
                 threshold: rule.threshold,
-                message: `Nilai ${grade.subject?.name} ${grade.student?.user?.name}: ${grade.score}`,
+                message: `Nilai ${grade.subject?.name} ${grade.student?.user?.name}: ${score}`,
                 triggeredAt: new Date().toISOString(),
             };
             triggers.push(trigger);
@@ -257,14 +272,15 @@ async function checkBehaviorRule(rule: AlertRule): Promise<AlertTrigger[]> {
 
     const violationCounts = await prisma.violation.groupBy({
         by: ['studentId'],
-        where: { date: { gte: sixtyDaysAgo } },
-        _count: true,
+        where: { occurredAt: { gte: sixtyDaysAgo } },
+        _count: { _all: true },
     });
 
     const triggers: AlertTrigger[] = [];
 
     for (const vc of violationCounts) {
-        if (compareValue(vc._count, rule.threshold, rule.operator)) {
+        const count = (vc._count as any)?._all || (vc as any)._count || 0;
+        if (compareValue(count, rule.threshold, rule.operator)) {
             const student = await prisma.student.findUnique({
                 where: { id: vc.studentId },
                 include: { user: { select: { id: true, name: true } } },
@@ -274,9 +290,9 @@ async function checkBehaviorRule(rule: AlertRule): Promise<AlertTrigger[]> {
                 ruleId: rule.id,
                 studentId: vc.studentId,
                 studentName: student?.user?.name || 'Unknown',
-                value: vc._count,
+                value: count,
                 threshold: rule.threshold,
-                message: `${student?.user?.name} memiliki ${vc._count} pelanggaran dalam 60 hari`,
+                message: `${student?.user?.name} memiliki ${count} pelanggaran dalam 60 hari`,
                 triggeredAt: new Date().toISOString(),
             };
             triggers.push(trigger);

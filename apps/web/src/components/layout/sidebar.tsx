@@ -44,22 +44,22 @@ const realmColors: Record<string, string> = {
 export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
-  
+
   // Get active role from userRoles
   const userRoles = user?.userRoles as UserRole[] | undefined;
   const activeRole = userRoles?.find(r => r.isPrimary) || userRoles?.[0];
-  
+
   // Get navigation based on active role code or fallback to legacy role
-  const navigation = activeRole 
+  const navigation = activeRole
     ? getNavigationForRoleCode(activeRole.role.code)
-    : user 
-      ? getNavigationForRole(user.role) 
+    : user
+      ? getNavigationForRole(user.role)
       : [];
 
   return (
     <div
       className={cn(
-        'flex h-screen flex-col border-r bg-background transition-all duration-300',
+        'flex h-screen flex-col border-r sidebar-gradient transition-all duration-300',
         collapsed ? 'w-16' : 'w-64'
       )}
     >
@@ -109,9 +109,9 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
               <p className="truncate text-sm font-medium">{user.name}</p>
               {activeRole && (
                 <div className="flex items-center gap-1">
-                  <Badge 
+                  <Badge
                     className={cn(
-                      'text-[10px] px-1 py-0 text-white', 
+                      'text-[10px] px-1 py-0 text-white',
                       realmColors[activeRole.role.realm]
                     )}
                   >
@@ -167,8 +167,9 @@ function NavGroupComponent({ group, pathname, collapsed, showSeparator }: NavGro
               <Button
                 variant={isActive ? 'secondary' : 'ghost'}
                 className={cn(
-                  'w-full justify-start',
-                  collapsed && 'justify-center px-2'
+                  'w-full justify-start transition-all duration-200 hover:translate-x-1',
+                  isActive && 'active-glow bg-secondary/80 font-medium',
+                  collapsed && 'justify-center px-2 hover:translate-x-0'
                 )}
               >
                 <Icon className="h-4 w-4" />

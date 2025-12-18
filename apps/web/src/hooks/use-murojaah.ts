@@ -21,6 +21,7 @@ export interface MurojaahRecord {
   student?: {
     id: string;
     nis: string;
+    name?: string;
     photoUrl?: string;
     user?: {
       name: string;
@@ -28,6 +29,7 @@ export interface MurojaahRecord {
   };
   teacher?: {
     id: string;
+    name?: string;
     user?: {
       name: string;
     };
@@ -123,6 +125,7 @@ export function useMurojaahRecords(filters: MurojaahFilters = {}) {
       const response = await apiClient.get(`/murojaah?${params.toString()}`);
       return response.data;
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -135,6 +138,7 @@ export function useMurojaah(id: string) {
       return response.data.data as MurojaahRecord;
     },
     enabled: !!id,
+    staleTime: 10 * 60 * 1000,
   });
 }
 
@@ -160,6 +164,7 @@ export function useStudentMurojaah(
       return response.data;
     },
     enabled: !!studentId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -184,6 +189,7 @@ export function useStudentMurojaahSummary(studentId: string) {
       return response.data.data as StudentMurojaahSummary;
     },
     enabled: !!studentId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -196,6 +202,7 @@ export function useClassMurojaahSummary(classId: string) {
       return response.data;
     },
     enabled: !!classId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

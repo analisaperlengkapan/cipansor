@@ -9,9 +9,10 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 interface MainLayoutProps {
   children: React.ReactNode;
   allowedRoles?: string[];
+  showSidebar?: boolean;
 }
 
-export function MainLayout({ children, allowedRoles }: MainLayoutProps) {
+export function MainLayout({ children, allowedRoles, showSidebar = true }: MainLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -19,12 +20,14 @@ export function MainLayout({ children, allowedRoles }: MainLayoutProps) {
     <ProtectedRoute allowedRoles={allowedRoles}>
       <div className="flex h-screen overflow-hidden">
         {/* Desktop Sidebar */}
-        <div className="hidden lg:block">
-          <Sidebar
-            collapsed={sidebarCollapsed}
-            onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-          />
-        </div>
+        {showSidebar && (
+          <div className="hidden lg:block">
+            <Sidebar
+              collapsed={sidebarCollapsed}
+              onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+            />
+          </div>
+        )}
 
         {/* Mobile Sidebar */}
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -35,9 +38,11 @@ export function MainLayout({ children, allowedRoles }: MainLayoutProps) {
 
         {/* Main Content */}
         <div className="flex flex-1 flex-col overflow-hidden">
-          <Header onMenuClick={() => setMobileOpen(true)} />
-          <main className="flex-1 overflow-auto bg-muted/30 p-4 lg:p-6">
-            {children}
+          <Header onMenuClick={showSidebar ? () => setMobileOpen(true) : undefined} />
+          <main className="flex-1 overflow-auto bg-muted/30 p-4 lg:p-6 premium-gradient">
+            <div className="mx-auto max-w-7xl animate-in fade-in duration-500">
+              {children}
+            </div>
           </main>
         </div>
       </div>

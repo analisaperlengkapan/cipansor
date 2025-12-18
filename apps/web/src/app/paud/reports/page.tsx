@@ -218,11 +218,18 @@ export default function PAUDReportListPage() {
           description="Kelola raport narasi deskriptif siswa TK Qur'an"
           actions={
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => router.push('/paud/reports/generate')}>
-                <Sparkles className="mr-2 h-4 w-4" />
+              <Button
+                variant="outline"
+                onClick={() => router.push('/paud/reports/generate')}
+                className="transition-all hover:shadow-md hover:-translate-y-0.5 group"
+              >
+                <Sparkles className="mr-2 h-4 w-4 transition-transform group-hover:rotate-12 group-hover:scale-110" />
                 Generate Raport
               </Button>
-              <Button onClick={() => router.push('/paud/reports/new')}>
+              <Button
+                onClick={() => router.push('/paud/reports/new')}
+                className="transition-all hover:shadow-md hover:-translate-y-0.5"
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Buat Manual
               </Button>
@@ -231,7 +238,7 @@ export default function PAUDReportListPage() {
         />
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="glass-card p-4 rounded-xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 shadow-sm border-none">
           <SearchInput
             placeholder="Cari nama siswa atau NIS..."
             value={search}
@@ -239,7 +246,7 @@ export default function PAUDReportListPage() {
           />
 
           <Select value={academicYearFilter} onValueChange={setAcademicYearFilter}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-background/50 backdrop-blur-sm border-muted-foreground/20">
               <SelectValue placeholder="Semua Tahun Ajaran" />
             </SelectTrigger>
             <SelectContent>
@@ -253,7 +260,7 @@ export default function PAUDReportListPage() {
           </Select>
 
           <Select value={semesterFilter} onValueChange={setSemesterFilter}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-background/50 backdrop-blur-sm border-muted-foreground/20">
               <SelectValue placeholder="Semua Semester" />
             </SelectTrigger>
             <SelectContent>
@@ -264,7 +271,7 @@ export default function PAUDReportListPage() {
           </Select>
 
           <Select value={classFilter} onValueChange={setClassFilter}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-background/50 backdrop-blur-sm border-muted-foreground/20">
               <SelectValue placeholder="Semua Kelas" />
             </SelectTrigger>
             <SelectContent>
@@ -278,7 +285,7 @@ export default function PAUDReportListPage() {
           </Select>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-background/50 backdrop-blur-sm border-muted-foreground/20">
               <SelectValue placeholder="Semua Status" />
             </SelectTrigger>
             <SelectContent>
@@ -298,11 +305,11 @@ export default function PAUDReportListPage() {
           data={data?.data || []}
           isLoading={isLoading}
           pagination={{
-            pageIndex: page - 1,
+            page: page,
             pageSize,
-            pageCount: data?.pagination?.totalPages || 0,
-            total: data?.pagination?.total || 0,
-            onPageChange: (newPage) => setPage(newPage + 1),
+            totalPages: data?.meta?.totalPages || 0,
+            total: data?.meta?.total || 0,
+            onPageChange: (newPage) => setPage(newPage),
             onPageSizeChange: setPageSize,
           }}
         />

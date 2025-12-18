@@ -110,7 +110,7 @@ export interface CreateAssessmentData {
   recommendations?: string;
 }
 
-export interface UpdateAssessmentData extends Partial<CreateAssessmentData> {}
+export interface UpdateAssessmentData extends Partial<CreateAssessmentData> { }
 
 export interface BulkAssessmentData {
   classId: string;
@@ -153,6 +153,7 @@ export function usePAUDIndicators(params: { aspect?: PAUDAspect; isActive?: bool
       const response = await api.get<ApiResponse<PAUDIndicator[]>>('/paud-assessment/indicators', { params });
       return response.data.data;
     },
+    staleTime: 30 * 60 * 1000, // Indicators change very rarely
   });
 }
 
@@ -167,6 +168,7 @@ export function usePAUDAssessments(params: AssessmentListParams = {}) {
       const response = await api.get<PaginatedResponse<PAUDAssessment>>('/paud-assessment/assessments', { params });
       return response.data;
     },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -178,6 +180,7 @@ export function usePAUDAssessment(id: string) {
       return response.data.data;
     },
     enabled: !!id,
+    staleTime: 10 * 60 * 1000,
   });
 }
 
@@ -282,6 +285,7 @@ export function useStudentProgressSummary(studentId: string, academicYearId?: st
       return response.data.data;
     },
     enabled: !!studentId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -297,5 +301,6 @@ export function useClassProgressSummary(classId: string, academicYearId?: string
       return response.data.data;
     },
     enabled: !!classId,
+    staleTime: 5 * 60 * 1000,
   });
 }

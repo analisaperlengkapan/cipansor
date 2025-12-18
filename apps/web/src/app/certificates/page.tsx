@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/common';
-import { DataTable } from '@/components/ui/data-table';
+import { PageHeader, DataTable } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +38,7 @@ import {
   BookOpen,
   Trophy,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const certificateTypeLabels: Record<string, string> = {
   IJAZAH: 'Ijazah',
@@ -221,25 +221,28 @@ export default function CertificatesPage() {
             description="Kelola sertifikat dan piagam digital santri"
             icon={Award}
           />
-          <Button onClick={() => router.push('/certificates/new')}>
+          <Button
+            onClick={() => router.push('/certificates/new')}
+            className="transition-all hover:shadow-md hover:-translate-y-0.5"
+          >
             <Plus className="mr-2 h-4 w-4" />
             Buat Sertifikat
           </Button>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-4">
+        <div className="glass-card p-4 rounded-xl flex flex-wrap gap-4 shadow-sm border-none">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Cari santri, nomor, atau judul..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-background/50 backdrop-blur-sm border-muted-foreground/20"
             />
           </div>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-[200px] bg-background/50 backdrop-blur-sm border-muted-foreground/20">
               <SelectValue placeholder="Semua tipe" />
             </SelectTrigger>
             <SelectContent>
@@ -260,14 +263,18 @@ export default function CertificatesPage() {
           <StatCard
             title="Total Sertifikat"
             value={data?.meta?.total || 0}
-            icon={<Award className="h-5 w-5 text-blue-500" />}
+            icon={<Award className="h-6 w-6 text-blue-600" />}
+            bgColor="bg-blue-50/50"
+            iconBg="bg-blue-100"
           />
           <StatCard
             title="Sertifikat Tahfidz"
             value={
               data?.data?.filter((c) => c.certificateType === 'TAHFIDZ').length || 0
             }
-            icon={<BookOpen className="h-5 w-5 text-green-500" />}
+            icon={<BookOpen className="h-6 w-6 text-emerald-600" />}
+            bgColor="bg-emerald-50/50"
+            iconBg="bg-emerald-100"
           />
           <StatCard
             title="Ijazah/STTB"
@@ -276,7 +283,9 @@ export default function CertificatesPage() {
                 (c) => c.certificateType === 'IJAZAH' || c.certificateType === 'STTB'
               ).length || 0
             }
-            icon={<GraduationCap className="h-5 w-5 text-purple-500" />}
+            icon={<GraduationCap className="h-6 w-6 text-indigo-600" />}
+            bgColor="bg-indigo-50/50"
+            iconBg="bg-indigo-100"
           />
           <StatCard
             title="Piagam Prestasi"
@@ -284,7 +293,9 @@ export default function CertificatesPage() {
               data?.data?.filter((c) => c.certificateType === 'ACHIEVEMENT').length ||
               0
             }
-            icon={<Trophy className="h-5 w-5 text-yellow-500" />}
+            icon={<Trophy className="h-6 w-6 text-amber-600" />}
+            bgColor="bg-amber-50/50"
+            iconBg="bg-amber-100"
           />
         </div>
 
@@ -328,19 +339,25 @@ function StatCard({
   title,
   value,
   icon,
+  bgColor,
+  iconBg,
 }: {
   title: string;
   value: number;
   icon: React.ReactNode;
+  bgColor: string;
+  iconBg: string;
 }) {
   return (
-    <div className="bg-card border rounded-lg p-4">
+    <div className={cn("glass-card border-none rounded-xl p-4 transition-all hover:shadow-lg group", bgColor)}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="text-2xl font-bold">{value}</p>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider group-hover:text-foreground transition-colors">{title}</p>
+          <p className="text-2xl font-bold mt-1">{value}</p>
         </div>
-        {icon}
+        <div className={cn("p-2 rounded-lg group-hover:scale-110 transition-transform", iconBg)}>
+          {icon}
+        </div>
       </div>
     </div>
   );

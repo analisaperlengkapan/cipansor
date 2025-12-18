@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/common';
+import { PageHeader } from '@/components/shared';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -58,7 +58,7 @@ export default function UnitComparisonPage() {
   const { data: unitsData, isLoading: isLoadingUnits } = useUnits();
   const { data: stats, isLoading: isLoadingStats } = useDashboardStats();
 
-  const units = unitsData?.data || [];
+  const units = unitsData || [];
 
   // Sample comparison data - replace with real API
   const comparisonData = [
@@ -324,10 +324,10 @@ export default function UnitComparisonPage() {
                       item.rank === 1
                         ? 'bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800'
                         : item.rank === 2
-                        ? 'bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700'
-                        : item.rank === 3
-                        ? 'bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800'
-                        : 'border border-border'
+                          ? 'bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700'
+                          : item.rank === 3
+                            ? 'bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800'
+                            : 'border border-border'
                     )}
                   >
                     <div className="flex items-center gap-4">
@@ -337,10 +337,10 @@ export default function UnitComparisonPage() {
                           item.rank === 1
                             ? 'bg-yellow-500 text-white'
                             : item.rank === 2
-                            ? 'bg-gray-400 text-white'
-                            : item.rank === 3
-                            ? 'bg-orange-400 text-white'
-                            : 'bg-muted text-muted-foreground'
+                              ? 'bg-gray-400 text-white'
+                              : item.rank === 3
+                                ? 'bg-orange-400 text-white'
+                                : 'bg-muted text-muted-foreground'
                         )}
                       >
                         {item.rank}

@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/common';
+import { PageHeader } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useCreateCertificate } from '@/hooks/use-certificate';
 import { useStudents } from '@/hooks/use-students';
 import { format } from 'date-fns';
@@ -49,15 +49,15 @@ const formSchema = z.object({
   studentId: z.string().min(1, 'Santri wajib dipilih'),
   certificateType: z.string().min(1, 'Tipe sertifikat wajib dipilih'),
   title: z.string().min(3, 'Judul minimal 3 karakter'),
-  description: z.string().optional(),
-  grade: z.string().optional(),
-  rank: z.coerce.number().min(1).optional().or(z.literal('')),
+  description: z.string().optional().default(''),
+  grade: z.string().optional().default(''),
+  rank: z.string().optional().default(''),
   issueDate: z.date({
     required_error: 'Tanggal terbit wajib diisi',
   }),
   signatoryName: z.string().min(3, 'Nama penandatangan wajib diisi'),
   signatoryTitle: z.string().min(3, 'Jabatan penandatangan wajib diisi'),
-  signatureUrl: z.string().url().optional().or(z.literal('')),
+  signatureUrl: z.string().optional().default(''),
   isPublic: z.boolean().default(false),
 });
 
@@ -65,14 +65,15 @@ type FormData = z.infer<typeof formSchema>;
 
 export default function NewCertificatePage() {
   const router = useRouter();
-  const { toast } = useToast();
 
   const { data: studentsData, isLoading: isLoadingStudents } = useStudents({ limit: 1000 });
   const createMutation = useCreateCertificate();
 
-  const form = useForm<FormData>({
+  const form = useForm<any>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      studentId: '',
+      certificateType: '',
       title: '',
       description: '',
       grade: '',
@@ -102,17 +103,10 @@ export default function NewCertificatePage() {
         signatureUrl: data.signatureUrl || undefined,
         isPublic: data.isPublic,
       });
-      toast({
-        title: 'Berhasil',
-        description: 'Sertifikat berhasil dibuat',
-      });
+      toast.success('Sertifikat berhasil dibuat');
       router.push('/certificates');
     } catch {
-      toast({
-        title: 'Gagal',
-        description: 'Gagal membuat sertifikat',
-        variant: 'destructive',
-      });
+      toast.error('Gagal membuat sertifikat');
     }
   };
 
@@ -148,7 +142,7 @@ export default function NewCertificatePage() {
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6">
             {/* Student Selection */}
             <Card>
               <CardHeader>
@@ -160,7 +154,7 @@ export default function NewCertificatePage() {
               </CardHeader>
               <CardContent>
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="studentId"
                   render={({ field }) => (
                     <FormItem>
@@ -179,7 +173,7 @@ export default function NewCertificatePage() {
                           ) : (
                             studentsData?.data?.map((student: any) => (
                               <SelectItem key={student.id} value={student.id}>
-                                {student.name} - {student.nis}
+                                {student.name || student.user?.name} - {student.nis}
                               </SelectItem>
                             ))
                           )}
@@ -204,7 +198,7 @@ export default function NewCertificatePage() {
                 <div className="grid gap-6 md:grid-cols-2">
                   {/* Certificate Type */}
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="certificateType"
                     render={({ field }) => (
                       <FormItem>
@@ -239,7 +233,7 @@ export default function NewCertificatePage() {
 
                   {/* Issue Date */}
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="issueDate"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
@@ -281,7 +275,7 @@ export default function NewCertificatePage() {
 
                 {/* Title */}
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="title"
                   render={({ field }) => (
                     <FormItem>
@@ -296,7 +290,7 @@ export default function NewCertificatePage() {
 
                 {/* Description */}
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="description"
                   render={({ field }) => (
                     <FormItem>
@@ -316,7 +310,7 @@ export default function NewCertificatePage() {
                 <div className="grid gap-6 md:grid-cols-2">
                   {/* Grade */}
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="grade"
                     render={({ field }) => (
                       <FormItem>
@@ -344,7 +338,7 @@ export default function NewCertificatePage() {
 
                   {/* Rank */}
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="rank"
                     render={({ field }) => (
                       <FormItem>
@@ -370,7 +364,7 @@ export default function NewCertificatePage() {
               <CardContent className="space-y-6">
                 <div className="grid gap-6 md:grid-cols-2">
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="signatoryName"
                     render={({ field }) => (
                       <FormItem>
@@ -384,7 +378,7 @@ export default function NewCertificatePage() {
                   />
 
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="signatoryTitle"
                     render={({ field }) => (
                       <FormItem>
@@ -399,7 +393,7 @@ export default function NewCertificatePage() {
                 </div>
 
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="signatureUrl"
                   render={({ field }) => (
                     <FormItem>
@@ -424,7 +418,7 @@ export default function NewCertificatePage() {
               </CardHeader>
               <CardContent>
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="isPublic"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">

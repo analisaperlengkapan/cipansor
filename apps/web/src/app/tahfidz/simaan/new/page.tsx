@@ -83,7 +83,7 @@ export default function CreateSimaanPage() {
     unitId: user?.unitId,
     limit: 100,
   });
-  const { data: teachers } = useTeachers({ unitId: user?.unitId });
+  const { data: teachers } = useTeachers(user?.unitId);
 
   const createMutation = useCreateSimaan();
 
@@ -184,7 +184,7 @@ export default function CreateSimaanPage() {
                         <SelectContent>
                           {students?.data?.map((student) => (
                             <SelectItem key={student.id} value={student.id}>
-                              {student.user?.name} ({student.nis})
+                              {student.name} ({student.nis})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -358,7 +358,7 @@ export default function CreateSimaanPage() {
                       </div>
                       <ScrollArea className="h-[200px] border rounded-lg p-4">
                         <div className="space-y-3">
-                          {teachers?.data?.map((teacher) => (
+                          {teachers?.map((teacher) => (
                             <div
                               key={teacher.id}
                               className={cn(
@@ -375,13 +375,13 @@ export default function CreateSimaanPage() {
                               />
                               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                                 <span className="text-xs font-medium">
-                                  {teacher.user?.name?.[0] || '?'}
+                                  {teacher.name?.[0] || '?'}
                                 </span>
                               </div>
                               <div>
-                                <p className="font-medium">{teacher.user?.name}</p>
+                                <p className="font-medium">{teacher.name}</p>
                                 <p className="text-xs text-muted-foreground">
-                                  {teacher.specialization || 'Pengajar'}
+                                  Pengajar
                                 </p>
                               </div>
                             </div>

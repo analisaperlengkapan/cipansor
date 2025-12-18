@@ -3,7 +3,7 @@
 import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/common';
+import { PageHeader } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,14 +21,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import {
   useCertificate,
   useDeleteCertificate,
   useGenerateCertificatePDF,
 } from '@/hooks/use-certificate';
+import { useCreateSanad } from '@/hooks/use-takhosus';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { id as idLocale } from 'date-fns/locale';
 import {
   ArrowLeft,
   Award,
@@ -67,7 +68,6 @@ export default function CertificateDetailPage({
 }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const { toast } = useToast();
 
   const { data: certificate, isLoading, error } = useCertificate(resolvedParams.id);
   const deleteMutation = useDeleteCertificate();
@@ -76,46 +76,29 @@ export default function CertificateDetailPage({
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(resolvedParams.id);
-      toast({
-        title: 'Berhasil',
-        description: 'Sertifikat berhasil dihapus',
-      });
+      toast.success('Sertifikat berhasil dihapus');
       router.push('/certificates');
     } catch {
-      toast({
-        title: 'Gagal',
-        description: 'Gagal menghapus sertifikat',
-        variant: 'destructive',
-      });
+      toast.error('Gagal menghapus sertifikat');
     }
   };
 
   const handleGeneratePDF = async () => {
     try {
       const result = await generatePDFMutation.mutateAsync(resolvedParams.id);
-      toast({
-        title: 'Berhasil',
-        description: 'PDF sertifikat berhasil dibuat',
-      });
+      toast.success('PDF sertifikat berhasil dibuat');
       if (result.pdfUrl) {
         window.open(result.pdfUrl, '_blank');
       }
     } catch {
-      toast({
-        title: 'Gagal',
-        description: 'Gagal membuat PDF sertifikat',
-        variant: 'destructive',
-      });
+      toast.error('Gagal membuat PDF sertifikat');
     }
   };
 
   const handleCopyLink = () => {
     if (certificate?.verificationUrl) {
       navigator.clipboard.writeText(certificate.verificationUrl);
-      toast({
-        title: 'Berhasil',
-        description: 'Link verifikasi disalin ke clipboard',
-      });
+      toast.success('Link verifikasi disalin ke clipboard');
     }
   };
 
@@ -224,7 +207,7 @@ export default function CertificateDetailPage({
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="text-lg font-semibold">{certificate.student?.name || 'N/A'}</h3>
+                    <h3 className="text-lg font-semibold">{certificate.student?.name || certificate.student?.user?.name || 'N/A'}</h3>
                     <p className="text-sm text-muted-foreground">{certificate.student?.nis || '-'}</p>
                     <p className="text-sm text-muted-foreground">
                       {certificate.student?.class?.name || '-'}
@@ -249,7 +232,7 @@ export default function CertificateDetailPage({
                     <div>
                       <p className="text-sm text-muted-foreground">Tanggal Terbit</p>
                       <p className="font-medium">
-                        {format(new Date(certificate.issueDate), 'dd MMMM yyyy', { locale: id })}
+                        {format(new Date(certificate.issueDate), 'dd MMMM yyyy', { locale: idLocale })}
                       </p>
                     </div>
                   </div>
@@ -431,7 +414,7 @@ export default function CertificateDetailPage({
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Dibuat pada</span>
                   <span className="font-medium">
-                    {format(new Date(certificate.createdAt), 'dd MMM yyyy', { locale: id })}
+                    {format(new Date(certificate.createdAt), 'dd MMM yyyy', { locale: idLocale })}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">

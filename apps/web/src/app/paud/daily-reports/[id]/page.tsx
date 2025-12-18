@@ -95,7 +95,7 @@ export default function DailyReportDetailPage() {
 
   const handleAddParentNotes = async () => {
     if (!parentNotes.trim()) return;
-    
+
     try {
       await addParentNotesMutation.mutateAsync({
         reportId,
@@ -374,7 +374,7 @@ export default function DailyReportDetailPage() {
                   </div>
                 ) : photos?.data?.length ? (
                   <div className="grid grid-cols-2 gap-2">
-                    {photos.data.map((photo) => (
+                    {photos.data.map((photo: any) => (
                       <div key={photo.id} className="group relative">
                         <img
                           src={photo.photoUrl}

@@ -115,7 +115,7 @@ export default function CreateMurojaahPage() {
     unitId: user?.unitId,
     limit: 100,
   });
-  const { data: teachers } = useTeachers({ unitId: user?.unitId });
+  const { data: teachers } = useTeachers(user?.unitId);
 
   const createMutation = useCreateMurojaah();
 
@@ -218,7 +218,7 @@ export default function CreateMurojaahPage() {
                         <SelectContent>
                           {students?.data?.map((student) => (
                             <SelectItem key={student.id} value={student.id}>
-                              {student.user?.name} ({student.nis})
+                              {student.name} ({student.nis})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -241,9 +241,9 @@ export default function CreateMurojaahPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {teachers?.data?.map((teacher) => (
+                          {teachers?.map((teacher) => (
                             <SelectItem key={teacher.id} value={teacher.id}>
-                              {teacher.user?.name}
+                              {teacher.name}
                             </SelectItem>
                           ))}
                         </SelectContent>

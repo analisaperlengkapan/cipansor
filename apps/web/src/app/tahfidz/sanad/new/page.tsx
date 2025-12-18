@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/common';
+import { PageHeader } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -28,8 +28,8 @@ import {
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useToast } from '@/hooks/use-toast';
-import { useCreateSanad } from '@/hooks/use-certificate';
+import { toast } from 'sonner';
+import { useCreateSanad } from '@/hooks/use-takhosus';
 import { useTeachers } from '@/hooks/use-teachers';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -68,9 +68,8 @@ const mockEnrollments = [
 
 export default function NewSanadPage() {
   const router = useRouter();
-  const { toast } = useToast();
 
-  const { data: teachersData, isLoading: isLoadingTeachers } = useTeachers({ limit: 100 });
+  const { data: teachersData, isLoading: isLoadingTeachers } = useTeachers();
   const createMutation = useCreateSanad();
 
   const form = useForm<FormData>({
@@ -91,20 +90,13 @@ export default function NewSanadPage() {
         surahStart: data.surahStart,
         surahEnd: data.surahEnd,
         certifiedAt: data.certifiedAt.toISOString(),
-        grade: data.grade,
-        notes: data.notes,
+        grade: data.grade || '',
+        notes: data.notes || '',
       });
-      toast({
-        title: 'Berhasil',
-        description: 'Sanad hafidz berhasil ditambahkan',
-      });
+      toast.success('Sanad hafidz berhasil ditambahkan');
       router.push('/tahfidz/sanad');
     } catch {
-      toast({
-        title: 'Gagal',
-        description: 'Gagal menambahkan sanad hafidz',
-        variant: 'destructive',
-      });
+      toast.error('Gagal menambahkan sanad hafidz');
     }
   };
 
@@ -280,7 +272,7 @@ export default function NewSanadPage() {
                                 Memuat...
                               </SelectItem>
                             ) : (
-                              teachersData?.data?.map((teacher: any) => (
+                              teachersData?.map((teacher: any) => (
                                 <SelectItem key={teacher.id} value={teacher.id}>
                                   {teacher.name}
                                 </SelectItem>

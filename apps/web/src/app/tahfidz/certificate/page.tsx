@@ -379,8 +379,8 @@ export default function TahfidzCertificatePage() {
               Tempat/Tanggal Lahir: {selectedStudent.birthPlace || '-'},{' '}
               {selectedStudent.birthDate
                 ? format(new Date(selectedStudent.birthDate), 'd MMMM yyyy', {
-                    locale: idLocale,
-                  })
+                  locale: idLocale,
+                })
                 : '-'}
             </p>
           </div>
@@ -526,6 +526,7 @@ export default function TahfidzCertificatePage() {
               variant="default"
               onClick={handlePrint}
               disabled={!selectedStudent}
+              className="transition-all hover:shadow-md hover:-translate-y-0.5"
             >
               <Printer className="h-4 w-4 mr-2" />
               Cetak Sertifikat
@@ -536,13 +537,12 @@ export default function TahfidzCertificatePage() {
         {/* Progress Steps */}
         <div className="flex items-center justify-center gap-2 flex-wrap">
           <div
-            className={`flex items-center gap-2 px-4 py-2 rounded-full ${
-              activeTab === 'select-student'
+            className={`flex items-center gap-2 px-4 py-2 rounded-full ${activeTab === 'select-student'
                 ? 'bg-primary text-primary-foreground'
                 : selectedStudent
-                ? 'bg-green-100 text-green-800'
-                : 'bg-muted'
-            }`}
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-muted'
+              }`}
           >
             {selectedStudent ? (
               <CheckCircle2 className="h-4 w-4" />
@@ -555,13 +555,12 @@ export default function TahfidzCertificatePage() {
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
           <div
-            className={`flex items-center gap-2 px-4 py-2 rounded-full ${
-              activeTab === 'select-type'
+            className={`flex items-center gap-2 px-4 py-2 rounded-full ${activeTab === 'select-type'
                 ? 'bg-primary text-primary-foreground'
                 : formData.certificateType && selectedStudent
-                ? 'bg-green-100 text-green-800'
-                : 'bg-muted'
-            }`}
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-muted'
+              }`}
           >
             <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-xs">
               2
@@ -570,11 +569,10 @@ export default function TahfidzCertificatePage() {
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
           <div
-            className={`flex items-center gap-2 px-4 py-2 rounded-full ${
-              activeTab === 'fill-details'
+            className={`flex items-center gap-2 px-4 py-2 rounded-full ${activeTab === 'fill-details'
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-muted'
-            }`}
+              }`}
           >
             <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-xs">
               3
@@ -603,7 +601,7 @@ export default function TahfidzCertificatePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col gap-4 md:flex-row mb-6">
+                <div className="glass-card p-4 rounded-xl flex flex-col gap-4 md:flex-row mb-6 shadow-sm border-none">
                   <Select
                     value={selectedUnitId}
                     onValueChange={(value) => {
@@ -611,7 +609,7 @@ export default function TahfidzCertificatePage() {
                       setSelectedClassId('');
                     }}
                   >
-                    <SelectTrigger className="w-full md:w-48">
+                    <SelectTrigger className="w-full md:w-48 bg-background/50 backdrop-blur-sm border-muted-foreground/20">
                       <SelectValue placeholder="Pilih unit" />
                     </SelectTrigger>
                     <SelectContent>
@@ -629,7 +627,7 @@ export default function TahfidzCertificatePage() {
                     onValueChange={setSelectedClassId}
                     disabled={!selectedUnitId}
                   >
-                    <SelectTrigger className="w-full md:w-48">
+                    <SelectTrigger className="w-full md:w-48 bg-background/50 backdrop-blur-sm border-muted-foreground/20">
                       <SelectValue placeholder="Pilih kelas" />
                     </SelectTrigger>
                     <SelectContent>
@@ -648,7 +646,7 @@ export default function TahfidzCertificatePage() {
                       placeholder="Cari nama atau NIS..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9"
+                      className="pl-9 bg-background/50 backdrop-blur-sm border-muted-foreground/20"
                     />
                   </div>
                 </div>
@@ -681,10 +679,9 @@ export default function TahfidzCertificatePage() {
                           key={student.id}
                           className={`
                             flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all
-                            ${
-                              isSelected
-                                ? 'bg-primary/10 border-primary ring-2 ring-primary'
-                                : 'hover:bg-muted hover:border-muted-foreground/50'
+                            ${isSelected
+                              ? 'bg-primary/10 border-primary ring-2 ring-primary'
+                              : 'hover:bg-muted hover:border-muted-foreground/50'
                             }
                           `}
                           onClick={() => handleSelectStudent(student)}
@@ -740,10 +737,9 @@ export default function TahfidzCertificatePage() {
                         key={type.id}
                         className={`
                           p-6 rounded-xl border-2 cursor-pointer transition-all
-                          ${
-                            isSelected
-                              ? 'border-primary bg-primary/5 shadow-lg'
-                              : 'border-muted hover:border-muted-foreground/50 hover:bg-muted/50'
+                          ${isSelected
+                            ? 'border-primary bg-primary/5 shadow-lg'
+                            : 'border-muted hover:border-muted-foreground/50 hover:bg-muted/50'
                           }
                         `}
                         onClick={() => handleSelectType(type.id)}
@@ -891,10 +887,9 @@ export default function TahfidzCertificatePage() {
                           onClick={() => handleJuzToggle(juz.number)}
                           className={`
                             w-full aspect-square rounded-md text-sm font-medium transition-all
-                            ${
-                              formData.completedJuz.includes(juz.number)
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted hover:bg-muted/80'
+                            ${formData.completedJuz.includes(juz.number)
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted hover:bg-muted/80'
                             }
                           `}
                           title={juz.name}
@@ -908,18 +903,18 @@ export default function TahfidzCertificatePage() {
                   {/* Sanad Chain (for full Sanad) */}
                   {(formData.certificateType === 'TAHFIDZ_30_JUZ' ||
                     formData.certificateType === 'SANAD_QIRAAH') && (
-                    <div className="space-y-2">
-                      <Label>Silsilah Sanad (Opsional)</Label>
-                      <Textarea
-                        value={formData.sanadChain}
-                        onChange={(e) =>
-                          setFormData({ ...formData, sanadChain: e.target.value })
-                        }
-                        placeholder="Ust. Muhammad Ridwan → Syeikh Abdullah → ..."
-                        rows={3}
-                      />
-                    </div>
-                  )}
+                      <div className="space-y-2">
+                        <Label>Silsilah Sanad (Opsional)</Label>
+                        <Textarea
+                          value={formData.sanadChain}
+                          onChange={(e) =>
+                            setFormData({ ...formData, sanadChain: e.target.value })
+                          }
+                          placeholder="Ust. Muhammad Ridwan → Syeikh Abdullah → ..."
+                          rows={3}
+                        />
+                      </div>
+                    )}
 
                   {/* Notes */}
                   <div className="space-y-2">

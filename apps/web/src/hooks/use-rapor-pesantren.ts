@@ -307,7 +307,7 @@ async function saveRaporConfig(config: RaporConfig) {
 
 export function useRaporList(params: ListRaporParams = {}) {
   return useQuery({
-    queryKey: raporPesantrenKeys.list(params),
+    queryKey: raporPesantrenKeys.list(params as Record<string, unknown>),
     queryFn: () => listRapor(params),
   });
 }

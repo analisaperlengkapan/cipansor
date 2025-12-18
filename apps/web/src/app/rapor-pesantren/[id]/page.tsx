@@ -17,7 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { LoadingSpinner } from '@/components/shared';
 import { useRaporDetail, RAPOR_STATUS, GRADE_COLORS, COMPONENT_LABELS } from '@/hooks/use-rapor-pesantren';
 
 export default function RaporDetailPage() {
@@ -483,9 +483,9 @@ export default function RaporDetailPage() {
                           <TableCell>{kitab.category}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Progress 
-                                value={(kitab.completedPages / kitab.totalPages) * 100} 
-                                className="w-20 h-2" 
+                              <Progress
+                                value={(kitab.completedPages / kitab.totalPages) * 100}
+                                className="w-20 h-2"
                               />
                               <span className="text-sm">
                                 {kitab.completedPages}/{kitab.totalPages}
@@ -494,8 +494,8 @@ export default function RaporDetailPage() {
                           </TableCell>
                           <TableCell>
                             <Badge variant={kitab.status === 'COMPLETED' ? 'default' : 'secondary'}>
-                              {kitab.status === 'COMPLETED' ? 'Selesai' : 
-                               kitab.status === 'IN_PROGRESS' ? 'Berjalan' : 'Belum Mulai'}
+                              {kitab.status === 'COMPLETED' ? 'Selesai' :
+                                kitab.status === 'IN_PROGRESS' ? 'Berjalan' : 'Belum Mulai'}
                             </Badge>
                           </TableCell>
                         </TableRow>

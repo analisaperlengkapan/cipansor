@@ -112,6 +112,28 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+@layer utilities {
+  .glass {
+    @apply backdrop-blur-md bg-background/80 border-border/50;
+  }
+  
+  .glass-card {
+    @apply backdrop-blur-lg bg-card/70 border-border/40 shadow-xl;
+  }
+
+  .premium-gradient {
+    @apply bg-gradient-to-br from-background via-muted/20 to-secondary/10;
+  }
+
+  .sidebar-gradient {
+    @apply bg-gradient-to-b from-sidebar to-sidebar/95;
+  }
+
+  .active-glow {
+    @apply relative after:absolute after:left-0 after:top-1/4 after:h-1/2 after:w-1 after:bg-primary after:rounded-r-full after:shadow-[0_0_10px_oklch(var(--primary))];
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

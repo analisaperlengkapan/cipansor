@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
 
 // Types
+export type CertificateType = 'IJAZAH' | 'STTB' | 'TAHFIDZ' | 'SANAD' | 'ACHIEVEMENT' | 'GRADUATION' | 'PARTICIPATION' | 'COURSE_COMPLETION' | 'APPRECIATION' | 'OTHER';
+
 export interface DigitalCertificate {
   id: string;
   studentId: string;
@@ -10,9 +12,11 @@ export interface DigitalCertificate {
     name: string;
     nis: string;
     photoUrl?: string;
+    user?: { name: string };
     class?: { id: string; name: string };
+    unit?: { id: string; name: string; type?: string };
   };
-  certificateType: string;
+  certificateType: CertificateType;
   title: string;
   description?: string;
   certificateNumber: string;
@@ -34,33 +38,93 @@ export interface DigitalCertificate {
   updatedAt: string;
 }
 
-export interface SanadRecord {
-  id: string;
-  enrollmentId: string;
-  enrollment?: {
-    id: string;
-    studentId: string;
-    student?: {
-      id: string;
-      name: string;
-      nis: string;
-    };
-  };
-  teacherId: string;
-  teacher?: {
-    id: string;
-    name: string;
-    nip?: string;
-  };
-  juz: number;
-  surahStart?: number;
-  surahEnd?: number;
-  certifiedAt: string;
-  grade?: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
+export interface CertificateTemplate {
+  type: CertificateType;
+  label: string;
+  labelEn: string;
+  description: string;
+  icon: string;
+  color: string;
+  fields: {
+    key: string;
+    label: string;
+    type: 'text' | 'date' | 'number' | 'select';
+    required?: boolean;
+    options?: string[];
+  }[];
 }
+
+export const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
+  {
+    type: 'GRADUATION',
+    label: 'Ijazah / Surat Kelulusan',
+    labelEn: 'Graduation Certificate',
+    description: 'Sertifikat kelulusan untuk santri yang telah menyelesaikan pendidikan',
+    icon: 'GraduationCap',
+    color: 'bg-blue-100 text-blue-800',
+    fields: [
+      { key: 'graduationYear', label: 'Tahun Kelulusan', type: 'number', required: true },
+      { key: 'finalGrade', label: 'Nilai Akhir', type: 'text' },
+      { key: 'rank', label: 'Peringkat', type: 'number' },
+      { key: 'program', label: 'Program Studi', type: 'text' },
+    ],
+  },
+  {
+    type: 'TAHFIDZ',
+    label: 'Syahadah Tahfidz',
+    labelEn: 'Quran Memorization Certificate',
+    description: 'Sertifikat pencapaian hafalan Al-Quran',
+    icon: 'BookOpen',
+    color: 'bg-emerald-100 text-emerald-800',
+    fields: [
+      { key: 'juzCount', label: 'Jumlah Juz', type: 'number', required: true },
+      { key: 'completedJuz', label: 'Juz yang Dikhatamkan', type: 'text', required: true },
+      { key: 'grade', label: 'Predikat', type: 'select', options: ['Mumtaz', 'Jayyid Jiddan', 'Jayyid', 'Maqbul'], required: true },
+      { key: 'teacherName', label: 'Nama Musyrif/ah', type: 'text', required: true },
+    ],
+  },
+  {
+    type: 'ACHIEVEMENT',
+    label: 'Piagam Penghargaan',
+    labelEn: 'Achievement Certificate',
+    description: 'Penghargaan untuk prestasi akademik, ekstrakurikuler, atau lainnya',
+    icon: 'Trophy',
+    color: 'bg-amber-100 text-amber-800',
+    fields: [
+      { key: 'achievementType', label: 'Jenis Prestasi', type: 'select', options: ['Akademik', 'Ekstrakurikuler', 'Lomba', 'Kepribadian', 'Lainnya'], required: true },
+      { key: 'achievement', label: 'Prestasi', type: 'text', required: true },
+      { key: 'level', label: 'Tingkat', type: 'select', options: ['Kelas', 'Sekolah', 'Kecamatan', 'Kabupaten/Kota', 'Provinsi', 'Nasional', 'Internasional'] },
+      { key: 'rank', label: 'Peringkat/Juara', type: 'text' },
+    ],
+  },
+  {
+    type: 'COURSE_COMPLETION',
+    label: 'Sertifikat Kursus',
+    labelEn: 'Course Completion Certificate',
+    description: 'Sertifikat penyelesaian kursus atau pelatihan',
+    icon: 'Award',
+    color: 'bg-purple-100 text-purple-800',
+    fields: [
+      { key: 'courseName', label: 'Nama Kursus/Pelatihan', type: 'text', required: true },
+      { key: 'duration', label: 'Durasi', type: 'text', required: true },
+      { key: 'instructor', label: 'Instruktur/Pemateri', type: 'text' },
+      { key: 'score', label: 'Nilai', type: 'text' },
+    ],
+  },
+  {
+    type: 'APPRECIATION',
+    label: 'Surat Penghargaan',
+    labelEn: 'Letter of Appreciation',
+    description: 'Surat penghargaan untuk kontribusi atau partisipasi',
+    icon: 'Heart',
+    color: 'bg-pink-100 text-pink-800',
+    fields: [
+      { key: 'reason', label: 'Alasan Penghargaan', type: 'text', required: true },
+      { key: 'event', label: 'Kegiatan', type: 'text' },
+      { key: 'role', label: 'Peran/Kontribusi', type: 'text' },
+    ],
+  },
+];
 
 export interface CertificateFilters {
   studentId?: string;
@@ -68,16 +132,6 @@ export interface CertificateFilters {
   issueDateFrom?: string;
   issueDateTo?: string;
   isPublic?: boolean;
-  page?: number;
-  limit?: number;
-}
-
-export interface SanadFilters {
-  enrollmentId?: string;
-  teacherId?: string;
-  juz?: number;
-  certifiedFrom?: string;
-  certifiedTo?: string;
   page?: number;
   limit?: number;
 }
@@ -96,17 +150,6 @@ export interface CreateCertificateData {
   isPublic?: boolean;
 }
 
-export interface CreateSanadData {
-  enrollmentId: string;
-  teacherId: string;
-  juz: number;
-  surahStart?: number;
-  surahEnd?: number;
-  certifiedAt: string;
-  grade?: string;
-  notes?: string;
-}
-
 // Query Keys
 export const certificateKeys = {
   all: ['certificates'] as const,
@@ -118,18 +161,7 @@ export const certificateKeys = {
   verification: (code: string) => [...certificateKeys.all, 'verify', code] as const,
 };
 
-export const sanadKeys = {
-  all: ['sanad'] as const,
-  lists: () => [...sanadKeys.all, 'list'] as const,
-  list: (filters?: SanadFilters) => [...sanadKeys.lists(), filters] as const,
-  details: () => [...sanadKeys.all, 'detail'] as const,
-  detail: (id: string) => [...sanadKeys.details(), id] as const,
-  byEnrollment: (enrollmentId: string) => [...sanadKeys.all, 'enrollment', enrollmentId] as const,
-  byStudent: (studentId: string) => [...sanadKeys.all, 'student', studentId] as const,
-};
-
-// Certificate Hooks
-
+// Hooks
 export function useCertificates(filters?: CertificateFilters) {
   return useQuery({
     queryKey: certificateKeys.list(filters),
@@ -142,12 +174,10 @@ export function useCertificates(filters?: CertificateFilters) {
           }
         });
       }
-      const response = await api.get<{
-        data: DigitalCertificate[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
-      }>(`/certificates?${params.toString()}`);
+      const response = await api.get<PaginatedResponse<DigitalCertificate>>(`/certificates?${params.toString()}`);
       return response.data;
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -155,10 +185,11 @@ export function useCertificate(id: string) {
   return useQuery({
     queryKey: certificateKeys.detail(id),
     queryFn: async () => {
-      const response = await api.get<DigitalCertificate>(`/certificates/${id}`);
-      return response.data;
+      const response = await api.get<ApiResponse<DigitalCertificate>>(`/certificates/${id}`);
+      return response.data.data;
     },
     enabled: !!id,
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 }
 
@@ -166,10 +197,7 @@ export function useStudentCertificates(studentId: string) {
   return useQuery({
     queryKey: certificateKeys.byStudent(studentId),
     queryFn: async () => {
-      const response = await api.get<{
-        data: DigitalCertificate[];
-        meta: { total: number };
-      }>(`/certificates/student/${studentId}`);
+      const response = await api.get<PaginatedResponse<DigitalCertificate>>(`/certificates/student/${studentId}`);
       return response.data;
     },
     enabled: !!studentId,
@@ -180,12 +208,12 @@ export function useVerifyCertificate(code: string) {
   return useQuery({
     queryKey: certificateKeys.verification(code),
     queryFn: async () => {
-      const response = await api.get<{
+      const response = await api.get<ApiResponse<{
         valid: boolean;
         certificate?: DigitalCertificate;
         message?: string;
-      }>(`/certificates/verify/${code}`);
-      return response.data;
+      }>>(`/certificates/verify/${code}`);
+      return response.data.data;
     },
     enabled: !!code,
   });
@@ -196,8 +224,8 @@ export function useCreateCertificate() {
 
   return useMutation({
     mutationFn: async (data: CreateCertificateData) => {
-      const response = await api.post<DigitalCertificate>('/certificates', data);
-      return response.data;
+      const response = await api.post<ApiResponse<DigitalCertificate>>('/certificates', data);
+      return response.data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: certificateKeys.lists() });
@@ -210,8 +238,8 @@ export function useUpdateCertificate() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<CreateCertificateData> }) => {
-      const response = await api.put<DigitalCertificate>(`/certificates/${id}`, data);
-      return response.data;
+      const response = await api.put<ApiResponse<DigitalCertificate>>(`/certificates/${id}`, data);
+      return response.data.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: certificateKeys.detail(variables.id) });
@@ -225,8 +253,7 @@ export function useDeleteCertificate() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.delete(`/certificates/${id}`);
-      return response.data;
+      await api.delete(`/certificates/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: certificateKeys.lists() });
@@ -254,126 +281,11 @@ export function useDownloadCertificate() {
   });
 }
 
-// Sanad Hooks
-
-export function useSanadRecords(filters?: SanadFilters) {
-  return useQuery({
-    queryKey: sanadKeys.list(filters),
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== '') {
-            params.append(key, String(value));
-          }
-        });
-      }
-      const response = await api.get<{
-        data: SanadRecord[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
-      }>(`/sanad?${params.toString()}`);
-      return response.data;
-    },
-  });
-}
-
-export function useSanadRecord(id: string) {
-  return useQuery({
-    queryKey: sanadKeys.detail(id),
-    queryFn: async () => {
-      const response = await api.get<SanadRecord>(`/sanad/${id}`);
-      return response.data;
-    },
-    enabled: !!id,
-  });
-}
-
-export function useStudentSanadRecords(studentId: string) {
-  return useQuery({
-    queryKey: sanadKeys.byStudent(studentId),
-    queryFn: async () => {
-      const response = await api.get<{
-        data: SanadRecord[];
-        totalJuz: number;
-        juzList: number[];
-      }>(`/sanad/student/${studentId}`);
-      return response.data;
-    },
-    enabled: !!studentId,
-  });
-}
-
-export function useEnrollmentSanadRecords(enrollmentId: string) {
-  return useQuery({
-    queryKey: sanadKeys.byEnrollment(enrollmentId),
-    queryFn: async () => {
-      const response = await api.get<{
-        data: SanadRecord[];
-        totalJuz: number;
-      }>(`/sanad/enrollment/${enrollmentId}`);
-      return response.data;
-    },
-    enabled: !!enrollmentId,
-  });
-}
-
-export function useCreateSanad() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: CreateSanadData) => {
-      const response = await api.post<SanadRecord>('/sanad', data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: sanadKeys.lists() });
-    },
-  });
-}
-
-export function useUpdateSanad() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateSanadData> }) => {
-      const response = await api.put<SanadRecord>(`/sanad/${id}`, data);
-      return response.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: sanadKeys.detail(variables.id) });
-      queryClient.invalidateQueries({ queryKey: sanadKeys.lists() });
-    },
-  });
-}
-
-export function useDeleteSanad() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const response = await api.delete(`/sanad/${id}`);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: sanadKeys.lists() });
-    },
-  });
-}
-
-// Generate sanad certificate
-export function useGenerateSanadCertificate() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (enrollmentId: string) => {
-      const response = await api.post<{
-        certificate: DigitalCertificate;
-        sanadRecords: SanadRecord[];
-      }>(`/sanad/enrollment/${enrollmentId}/generate-certificate`);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: certificateKeys.lists() });
-    },
-  });
+// Generate certificate number
+export function generateCertificateNumber(type: CertificateType, unitCode: string = 'CPN'): string {
+  const year = new Date().getFullYear();
+  const month = String(new Date().getMonth() + 1).padStart(2, '0');
+  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  const typeCode = type.substring(0, 3).toUpperCase();
+  return `${unitCode}/${typeCode}/${year}${month}/${random}`;
 }

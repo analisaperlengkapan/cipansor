@@ -17,6 +17,7 @@ export interface Student {
   parentPhone: string;
   fatherName?: string;
   motherName?: string;
+  photoUrl?: string;
   status: 'ACTIVE' | 'INACTIVE' | 'GRADUATED' | 'DROPPED_OUT';
   enrollmentDate: string;
   unitId: string;
@@ -71,6 +72,7 @@ export function useStudents(params: StudentListParams = {}) {
       const response = await api.get<PaginatedResponse<Student>>('/students', { params });
       return response.data;
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -87,7 +89,7 @@ export function useStudent(id: string) {
 
 export function useCreateStudent() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateStudentData) => {
       const response = await api.post<ApiResponse<Student>>('/students', data);
@@ -101,7 +103,7 @@ export function useCreateStudent() {
 
 export function useUpdateStudent() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateStudentData }) => {
       const response = await api.put<ApiResponse<Student>>(`/students/${id}`, data);
@@ -116,7 +118,7 @@ export function useUpdateStudent() {
 
 export function useDeleteStudent() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/students/${id}`);

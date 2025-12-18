@@ -4,7 +4,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 import { logger } from '@/lib/logger';
 import { createBulkNotifications } from '@/modules/notifications/service';
 import { NotificationType } from '@prisma/client';
@@ -71,14 +71,14 @@ export async function bulkImportStudents(
             }
 
             // Create user and student in transaction
-            await prisma.$transaction(async (tx) => {
+            await (prisma as any).$transaction(async (tx: any) => {
                 const user = await tx.user.create({
                     data: {
                         email: row.email || `${row.nis}@student.cipansor.id`,
                         name: row.name,
                         phone: row.phone,
                         role: 'STUDENT',
-                        password: defaultPassword, // Should be hashed in production
+                        passwordHash: defaultPassword, // Should be hashed in production
                         isActive: true,
                     },
                 });
@@ -89,8 +89,11 @@ export async function bulkImportStudents(
                         unitId: unit!.id,
                         nis: row.nis,
                         gender: row.gender,
-                        birthDate: row.birthDate ? new Date(row.birthDate) : undefined,
-                        enrollmentDate: new Date(),
+                        birthPlace: row.birthDate ? 'Unknown' : 'Unknown', // Required field
+                        birthDate: row.birthDate ? new Date(row.birthDate) : new Date(),
+                        address: 'Belum diisi', // Required field
+                        parentName: row.parentName || 'Unknown', // Required field
+                        parentPhone: row.parentPhone || '000000000', // Required field
                         status: 'ACTIVE',
                     },
                 });
@@ -151,10 +154,9 @@ export async function bulkProcessPayments(
                     data: {
                         invoiceId: invoice.id,
                         amount: row.amount,
-                        paymentMethod: row.paymentMethod,
+                        method: row.paymentMethod as any,
                         paidAt: row.paymentDate ? new Date(row.paymentDate) : new Date(),
-                        reference: row.reference,
-                        status: 'COMPLETED',
+                        referenceNo: row.reference,
                     },
                 });
 
@@ -224,7 +226,7 @@ export async function sendMassNotification(
 
         case 'class':
             const classStudents = await prisma.student.findMany({
-                where: { classId: targetId, status: 'ACTIVE' },
+                where: { enrollments: { some: { classId: targetId, status: 'active' } }, status: 'ACTIVE' },
                 select: { userId: true },
             });
             userIds = classStudents.map((s) => s.userId);
@@ -281,6 +283,7 @@ export async function bulkImportAttendance(
         try {
             const student = await prisma.student.findFirst({
                 where: { nis: row.nis },
+                include: { enrollments: { where: { status: 'active' }, take: 1 } }
             });
 
             if (!student) {
@@ -289,22 +292,35 @@ export async function bulkImportAttendance(
                 continue;
             }
 
-            await prisma.attendance.upsert({
+            const classId = student.enrollments[0]?.classId;
+            if (!classId) {
+                result.errors.push({ row: i + 1, error: `Siswa "${row.nis}" tidak terdaftar di kelas manapun` });
+                result.failed++;
+                continue;
+            }
+
+            const status = row.status.toUpperCase() as any;
+            const recorder = await prisma.user.findFirst({ where: { role: UserRole.SUPER_ADMIN } });
+
+            await (prisma.attendance as any).upsert({
                 where: {
-                    studentId_date: {
+                    studentId_classId_date: {
                         studentId: student.id,
+                        classId,
                         date: new Date(row.date),
                     },
                 },
                 update: {
-                    status: row.status,
+                    status,
                     notes: row.notes,
                 },
                 create: {
                     studentId: student.id,
+                    classId,
                     date: new Date(row.date),
-                    status: row.status,
+                    status,
                     notes: row.notes,
+                    recordedById: recorder?.id || 'system',
                 },
             });
 

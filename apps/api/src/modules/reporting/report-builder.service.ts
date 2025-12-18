@@ -204,7 +204,7 @@ async function generateStudentReport(
         unitName: s.unit?.name || '',
         className: s.enrollments[0]?.class?.name || '',
         status: s.status,
-        enrollmentDate: s.enrollmentDate?.toISOString().split('T')[0] || '',
+        enrollmentDate: s.enrollments[0]?.enrolledAt?.toISOString().split('T')[0] || '',
         parentName: '',
         parentPhone: '',
     }));
@@ -238,10 +238,10 @@ async function generateAttendanceReport(
 
     return attendance.map((a) => ({
         date: a.date.toISOString().split('T')[0],
-        studentName: a.student?.user?.name || '',
+        studentName: (a as any).student?.user?.name || '',
         status: a.status,
-        unitName: a.student?.unit?.name || '',
-        className: a.class?.name || '',
+        unitName: (a as any).student?.unit?.name || '',
+        className: (a as any).class?.name || '',
         notes: a.notes || '',
     }));
 }
@@ -263,6 +263,7 @@ async function generateFinanceReport(
                     unit: { select: { name: true } },
                 },
             },
+            paymentType: { select: { name: true } },
         },
         orderBy: { createdAt: 'desc' },
     });
@@ -274,7 +275,7 @@ async function generateFinanceReport(
         paidAmount: Number(i.paidAmount),
         status: i.status,
         dueDate: i.dueDate?.toISOString().split('T')[0] || '',
-        type: i.type,
+        type: i.paymentType?.name || '',
         unitName: i.student?.unit?.name || '',
     }));
 }
@@ -327,7 +328,10 @@ async function generateAcademicReport(
                 include: {
                     user: { select: { name: true } },
                     unit: { select: { name: true } },
-                    class: { select: { name: true } },
+                    enrollments: {
+                        where: { status: 'active' },
+                        include: { class: { select: { name: true } } }
+                    },
                 },
             },
             subject: { select: { name: true } },
@@ -335,13 +339,13 @@ async function generateAcademicReport(
         orderBy: { createdAt: 'desc' },
     });
 
-    return grades.map((g) => ({
+    return grades.map((g: any) => ({
         studentName: g.student?.user?.name || '',
         subjectName: g.subject?.name || '',
-        score: g.score,
+        score: Number(g.score),
         type: g.type,
         semester: '',
-        className: g.student?.enrollments[0]?.class?.name || '',
+        className: g.student?.enrollments?.[0]?.class?.name || '',
         unitName: g.student?.unit?.name || '',
     }));
 }

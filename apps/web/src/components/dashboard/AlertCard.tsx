@@ -4,10 +4,10 @@ import { ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  AlertTriangle, 
-  AlertCircle, 
-  Info, 
+import {
+  AlertTriangle,
+  AlertCircle,
+  Info,
   CheckCircle2,
   ArrowRight,
   X,
@@ -56,7 +56,7 @@ const severityConfig = {
     bgColor: 'bg-amber-50 dark:bg-amber-950/30',
     borderColor: 'border-amber-200 dark:border-amber-900',
     iconColor: 'text-amber-600 dark:text-amber-400',
-    badgeVariant: 'warning' as const,
+    badgeVariant: 'secondary' as const,
   },
   info: {
     icon: Info,
@@ -70,7 +70,7 @@ const severityConfig = {
     bgColor: 'bg-green-50 dark:bg-green-950/30',
     borderColor: 'border-green-200 dark:border-green-900',
     iconColor: 'text-green-600 dark:text-green-400',
-    badgeVariant: 'success' as const,
+    badgeVariant: 'outline' as const,
   },
 };
 
@@ -93,7 +93,7 @@ export function AlertCard({
     const severityOrder = { critical: 0, warning: 1, info: 2, success: 3 };
     const severityDiff = severityOrder[a.severity] - severityOrder[b.severity];
     if (severityDiff !== 0) return severityDiff;
-    
+
     if (a.timestamp && b.timestamp) {
       return b.timestamp.getTime() - a.timestamp.getTime();
     }
@@ -143,7 +143,7 @@ export function AlertCard({
               </Badge>
             )}
             {warningCount > 0 && (
-              <Badge variant="warning" className="text-xs bg-amber-100 text-amber-800">
+              <Badge variant="outline" className="text-xs border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400">
                 {warningCount} peringatan
               </Badge>
             )}
@@ -190,7 +190,7 @@ export function AlertCard({
                     {alert.metadata && Object.keys(alert.metadata).length > 0 && !compact && (
                       <div className="flex flex-wrap gap-2 mt-2">
                         {Object.entries(alert.metadata).map(([key, value]) => (
-                          <span 
+                          <span
                             key={key}
                             className="text-xs bg-white/50 dark:bg-black/20 px-2 py-0.5 rounded"
                           >
@@ -209,9 +209,9 @@ export function AlertCard({
                         </Button>
                       </Link>
                     ) : alert.actionLabel && onAction && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="h-7 text-xs"
                         onClick={() => onAction(alert)}
                       >
@@ -265,7 +265,7 @@ function formatTimeAgo(date: Date): string {
   if (diffHours < 24) return `${diffHours} jam lalu`;
   if (diffDays === 1) return 'Kemarin';
   if (diffDays < 7) return `${diffDays} hari lalu`;
-  
+
   return date.toLocaleDateString('id-ID', {
     day: 'numeric',
     month: 'short',

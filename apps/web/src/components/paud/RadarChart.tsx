@@ -46,12 +46,12 @@ const LEVEL_COLORS: Record<PAUDAchievementLevel, string> = {
 export function PAUDRadarChart({ data, studentName, className }: PAUDRadarChartProps) {
   // Transform data for radar chart
   const aspects: PAUDAspect[] = ['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI'];
-  
+
   const chartData: AspectScore[] = aspects.map((aspect) => {
     const aspectData = data[aspect];
     const level = aspectData.latestLevel;
     const score = level ? LEVEL_TO_SCORE[level] : 0;
-    
+
     return {
       aspect,
       score,
@@ -75,7 +75,7 @@ export function PAUDRadarChart({ data, studentName, className }: PAUDRadarChartP
   // Custom tooltip
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload;
+      const data = payload[0].payload as AspectScore;
       return (
         <div className="bg-white p-3 border rounded-lg shadow-lg">
           <p className="font-semibold text-sm">{data.label}</p>
@@ -160,10 +160,10 @@ export function PAUDRadarChart({ data, studentName, className }: PAUDRadarChartP
                   style={{ backgroundColor: color }}
                 />
                 <span className="text-xs">
-                  {level} - {level === 'BB' ? 'Belum Berkembang' : 
-                             level === 'MB' ? 'Mulai Berkembang' :
-                             level === 'BSH' ? 'Berkembang Sesuai Harapan' :
-                             'Berkembang Sangat Baik'}
+                  {level} - {level === 'BB' ? 'Belum Berkembang' :
+                    level === 'MB' ? 'Mulai Berkembang' :
+                      level === 'BSH' ? 'Berkembang Sesuai Harapan' :
+                        'Berkembang Sangat Baik'}
                 </span>
               </div>
             ))}
@@ -203,12 +203,12 @@ export function PAUDRadarChart({ data, studentName, className }: PAUDRadarChartP
 // Helper component for compact version (dashboard widget)
 export function PAUDRadarChartCompact({ data, className }: Omit<PAUDRadarChartProps, 'studentName'>) {
   const aspects: PAUDAspect[] = ['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI'];
-  
+
   const chartData = aspects.map((aspect) => {
     const aspectData = data[aspect];
     const level = aspectData.latestLevel;
     const score = level ? LEVEL_TO_SCORE[level] : 0;
-    
+
     return {
       aspect,
       score,
@@ -217,7 +217,7 @@ export function PAUDRadarChartCompact({ data, className }: Omit<PAUDRadarChartPr
   });
 
   const avgScore = chartData.reduce((sum, item) => sum + item.score, 0) / chartData.length;
-  
+
   const getOverallColor = () => {
     if (avgScore >= 3.5) return LEVEL_COLORS.BSB;
     if (avgScore >= 2.5) return LEVEL_COLORS.BSH;

@@ -108,7 +108,7 @@ export async function seedImmunizationReference() {
     await prisma.setting.update({
       where: { id: existingSetting.id },
       data: {
-        value: scheduleData,
+        value: scheduleData as any,
         updatedAt: new Date()
       }
     });
@@ -121,7 +121,7 @@ export async function seedImmunizationReference() {
         data: {
           unitId: firstUnit.id,
           key: 'immunization_schedule_reference',
-          value: scheduleData
+          value: scheduleData as any
         }
       });
       console.log('✅ Created Immunization Reference Data');

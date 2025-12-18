@@ -40,7 +40,7 @@ export async function exportStudentsData(options: ExportOptions) {
         email: student.user.email,
         class: student.enrollments[0]?.class?.name || '-',
         unit: student.unit.name,
-        gender: student.gender === 'L' ? 'Laki-laki' : 'Perempuan',
+        gender: student.gender === 'MALE' ? 'Laki-laki' : 'Perempuan',
         birthPlace: student.birthPlace,
         birthDate: student.birthDate.toISOString().split('T')[0],
         address: student.address,

@@ -15,9 +15,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  Plus, 
-  Trash2, 
+import {
+  Plus,
+  Trash2,
   BookOpen,
   Calendar,
   GripVertical,
@@ -96,8 +96,8 @@ export function HomeworkList({
   };
 
   const toggleCompletion = (id: string) => {
-    updateHomework(id, { 
-      isCompleted: !items.find(i => i.id === id)?.isCompleted 
+    updateHomework(id, {
+      isCompleted: !items.find(i => i.id === id)?.isCompleted
     });
   };
 
@@ -111,12 +111,12 @@ export function HomeworkList({
     today.setHours(0, 0, 0, 0);
     const due = new Date(dueDate);
     due.setHours(0, 0, 0, 0);
-    
+
     const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays < 0) return { label: 'Terlambat', variant: 'destructive' as const };
-    if (diffDays === 0) return { label: 'Hari ini', variant: 'warning' as const };
-    if (diffDays === 1) return { label: 'Besok', variant: 'secondary' as const };
+    if (diffDays === 0) return { label: 'Hari ini', variant: 'default' as const, color: 'bg-amber-100 text-amber-800' };
+    if (diffDays === 1) return { label: 'Besok', variant: 'secondary' as const, color: '' };
     return { label: `${diffDays} hari lagi`, variant: 'outline' as const };
   };
 
@@ -159,8 +159,8 @@ export function HomeworkList({
       {/* Homework Items */}
       <div className="space-y-2">
         {items.map((item, index) => (
-          <Card 
-            key={item.id} 
+          <Card
+            key={item.id}
             className={cn(
               "transition-all",
               item.isCompleted && "opacity-60 bg-muted/50"
@@ -193,12 +193,15 @@ export function HomeworkList({
                         </span>
                       )}
                       {getDueDateStatus(item.dueDate) && !item.isCompleted && (
-                        <Badge variant={getDueDateStatus(item.dueDate)?.variant}>
+                        <Badge
+                          variant={getDueDateStatus(item.dueDate)?.variant}
+                          className={getDueDateStatus(item.dueDate)?.color}
+                        >
                           {getDueDateStatus(item.dueDate)?.label}
                         </Badge>
                       )}
                       {item.isCompleted && (
-                        <Badge variant="success" className="bg-green-100 text-green-800">
+                        <Badge variant="secondary" className="bg-green-100 text-green-800">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
                           Selesai
                         </Badge>
@@ -287,7 +290,7 @@ export function HomeworkList({
 
       {/* Empty state for edit mode */}
       {!readOnly && items.length === 0 && (
-        <div 
+        <div
           className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
           onClick={addHomework}
         >

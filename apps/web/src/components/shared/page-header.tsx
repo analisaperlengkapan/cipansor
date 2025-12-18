@@ -12,6 +12,7 @@ export interface BreadcrumbItem {
 export interface PageHeaderProps {
   title: string | React.ReactNode;
   description?: string;
+  icon?: React.ComponentType<{ className?: string }>;
   action?: {
     label: string;
     href?: string;
@@ -21,12 +22,13 @@ export interface PageHeaderProps {
   backHref?: string;
   backLabel?: string;
   breadcrumbs?: BreadcrumbItem[];
+  actions?: React.ReactNode;
   children?: React.ReactNode;
 }
 
-export function PageHeader({ title, description, action, backHref, backLabel, breadcrumbs, children }: PageHeaderProps) {
+export function PageHeader({ title, description, icon: Icon, action, actions, backHref, backLabel, breadcrumbs, children }: PageHeaderProps) {
   const isActionObject = action && typeof action === 'object' && 'label' in action;
-  
+
   return (
     <div className="mb-6">
       {/* Breadcrumbs */}
@@ -49,7 +51,7 @@ export function PageHeader({ title, description, action, backHref, backLabel, br
           ))}
         </nav>
       )}
-      
+
       {/* Header Content */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
@@ -61,6 +63,11 @@ export function PageHeader({ title, description, action, backHref, backLabel, br
               </Link>
             </Button>
           )}
+          {Icon && (
+            <div className="hidden md:flex h-12 w-12 items-center justify-center rounded-lg border bg-card text-card-foreground shadow-sm">
+              <Icon className="h-6 w-6" />
+            </div>
+          )}
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
             {description && (
@@ -69,6 +76,7 @@ export function PageHeader({ title, description, action, backHref, backLabel, br
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {actions}
           {children}
           {isActionObject ? (
             (action as { label: string; href?: string; onClick?: () => void; icon?: React.ReactNode }).href ? (

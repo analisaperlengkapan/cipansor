@@ -84,7 +84,7 @@ export async function getEnrollmentForecast(unitId?: string): Promise<ForecastRe
   `;
 
     const values = monthlyEnrollments.map((m) => Number(m.count));
-    const dataPoints = monthlyEnrollments.map((m) => ({
+    const dataPoints: Array<{ date: string; value: number; predicted?: boolean }> = monthlyEnrollments.map((m) => ({
         date: m.month,
         value: Number(m.count),
     }));
@@ -150,7 +150,7 @@ export async function getPaymentForecast(unitId?: string): Promise<ForecastResul
   `;
 
     const values = monthlyPayments.map((m) => Number(m.total));
-    const dataPoints = monthlyPayments.map((m) => ({
+    const dataPoints: Array<{ date: string; value: number; predicted?: boolean }> = monthlyPayments.map((m) => ({
         date: m.month,
         value: Number(m.total),
     }));
@@ -221,7 +221,7 @@ export async function getOutstandingPaymentPrediction(unitId?: string): Promise<
     });
 
     const totalOutstanding = outstandingInvoices.reduce(
-        (sum, inv) => sum + (inv.amount - inv.paidAmount),
+        (sum, inv) => sum + (Number(inv.amount) - Number(inv.paidAmount)),
         0
     );
 
@@ -238,7 +238,7 @@ export async function getOutstandingPaymentPrediction(unitId?: string): Promise<
     });
 
     const collectionRate =
-        historicalStats._sum.amount && historicalStats._sum.amount > 0
+        historicalStats._sum.amount && Number(historicalStats._sum.amount) > 0
             ? (Number(historicalStats._sum.paidAmount) / Number(historicalStats._sum.amount)) * 100
             : 75; // Default assumption
 
@@ -258,7 +258,7 @@ export async function getOutstandingPaymentPrediction(unitId?: string): Promise<
         const daysDiff = Math.floor(
             (now.getTime() - new Date(inv.dueDate).getTime()) / (1000 * 60 * 60 * 24)
         );
-        const outstanding = inv.amount - inv.paidAmount;
+        const outstanding = Number(inv.amount) - Number(inv.paidAmount);
 
         if (daysDiff < 30) {
             categories['Kurang dari 30 hari'] += outstanding;

@@ -128,7 +128,7 @@ async function calculateAcademicRisk(studentId: string): Promise<RiskFactor> {
     });
 
     const avgScore = grades.length > 0
-        ? grades.reduce((sum, g) => sum + g.score, 0) / grades.length
+        ? grades.reduce((sum, g) => sum + Number(g.score), 0) / grades.length
         : 70;
 
     let score: number;
@@ -156,7 +156,7 @@ async function calculateBehaviorRisk(studentId: string): Promise<RiskFactor> {
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
     const violations = await prisma.violation.count({
-        where: { studentId, date: { gte: sixtyDaysAgo } },
+        where: { studentId, occurredAt: { gte: sixtyDaysAgo } },
     });
 
     let score: number;
@@ -320,7 +320,7 @@ export async function getClassRiskSummary(classId: string): Promise<{
     topRisks: StudentRiskAssessment[];
 }> {
     const students = await prisma.student.findMany({
-        where: { classId },
+        where: { enrollments: { some: { classId, status: 'active' } } },
         select: { id: true },
     });
 

@@ -6,10 +6,10 @@
 'use client';
 
 import React, { Component, ReactNode, ErrorInfo } from 'react';
-import * as Sentry from '@sentry/nextjs';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { captureError } from '@/lib/sentry';
 
 interface Props {
   children: ReactNode;
@@ -22,14 +22,6 @@ interface State {
   error: Error | null;
   errorInfo: ErrorInfo | null;
 }
-
-const captureError = (error: unknown, errorInfo?: ErrorInfo) => {
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-    Sentry.captureException(error, {
-      contexts: errorInfo ? { react: { componentStack: errorInfo.componentStack } } : undefined,
-    });
-  }
-};
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {

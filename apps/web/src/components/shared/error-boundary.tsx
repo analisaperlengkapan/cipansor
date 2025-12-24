@@ -4,6 +4,7 @@ import React, { Component, ErrorInfo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, RefreshCw, Home, ChevronDown, ChevronUp } from 'lucide-react';
+import { captureError } from '@/lib/sentry';
 
 interface Props {
     children: React.ReactNode;
@@ -45,6 +46,9 @@ export class ErrorBoundary extends Component<Props, State> {
         if (process.env.NODE_ENV === 'development') {
             console.error('ErrorBoundary caught an error:', error, errorInfo);
         }
+
+        // Capture error to reporting service
+        captureError(error, errorInfo);
     }
 
     handleRetry = () => {

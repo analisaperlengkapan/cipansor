@@ -6,6 +6,7 @@
 'use client';
 
 import React, { Component, ReactNode, ErrorInfo } from 'react';
+import * as Sentry from '@sentry/nextjs';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -52,8 +53,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
     // Log to error reporting service (e.g., Sentry)
     if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-      // TODO: Integrate with error reporting service
-      // Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo.componentStack } } });
+      Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo.componentStack } } });
     }
   }
 
@@ -128,9 +128,9 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="mt-4 text-center text-sm text-gray-600">
               <p>
                 Jika masalah berlanjut, silakan hubungi dukungan teknis atau{' '}
-                <a href="/" className="text-blue-600 hover:underline">
+                <Button variant="link" className="text-blue-600 hover:underline p-0 h-auto font-normal" onClick={() => window.location.href = '/'}>
                   kembali ke beranda
-                </a>
+                </Button>
                 .
               </p>
             </div>

@@ -187,6 +187,10 @@ export class AsyncErrorBoundary extends Component<Props, State> {
       error: event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
       errorInfo: null,
     });
+
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+      Sentry.captureException(event.reason);
+    }
   };
 
   static getDerivedStateFromError(error: Error): Partial<State> {
@@ -205,6 +209,10 @@ export class AsyncErrorBoundary extends Component<Props, State> {
     });
 
     this.props.onError?.(error, errorInfo);
+
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+      Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo.componentStack } } });
+    }
   }
 
   handleReset = () => {

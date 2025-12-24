@@ -248,10 +248,7 @@ export async function getUnitRankings(metric: 'attendance' | 'payment' | 'tahfid
             }
 
             let trend: 'up' | 'down' | 'stable' = 'stable';
-            // Use a small threshold for floating point comparison if needed,
-            // but strict comparison is usually fine for trend unless changes are minute.
-            // Let's assume strict change for now, or maybe with a small margin.
-            // Given data is rounded to 2 decimals, strict comparison is safe enough for display purposes.
+
             if (value > previousValue) {
                 trend = 'up';
             } else if (value < previousValue) {

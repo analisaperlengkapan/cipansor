@@ -12,7 +12,7 @@
 
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
-// Note: Install nodemailer with: pnpm add nodemailer && pnpm add -D @types/nodemailer
+import nodemailer from 'nodemailer';
 
 // Notification templates
 const templates = {
@@ -292,13 +292,34 @@ class NotificationService {
       return { success: true, channel: 'EMAIL', messageId: `log_${Date.now()}` };
     }
 
-    // TODO: Implement actual email sending with nodemailer/SendGrid/AWS SES
-    // Example: pnpm add nodemailer @types/nodemailer
-    // Then: const nodemailer = require('nodemailer');
-    // Create transporter and send mail...
-    
-    logger.info(`Email queued for ${recipientEmail}`);
-    return { success: true, channel: 'EMAIL', messageId: `queued_${Date.now()}` };
+    try {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+
+      const info = await transporter.sendMail({
+        from: process.env.SMTP_FROM || '"Cipansor System" <no-reply@cipansor.id>',
+        to: recipientEmail,
+        subject: subject,
+        html: htmlContent,
+      });
+
+      logger.info(`Email sent to ${recipientEmail}: ${info.messageId}`);
+      return { success: true, channel: 'EMAIL', messageId: info.messageId };
+    } catch (error) {
+      logger.error(`Failed to send email to ${recipientEmail}:`, error);
+      return {
+        success: false,
+        channel: 'EMAIL',
+        error: error instanceof Error ? error.message : 'Unknown email error',
+      };
+    }
   }
 
   /**

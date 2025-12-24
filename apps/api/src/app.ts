@@ -1,4 +1,5 @@
 import express from 'express';
+import * as Sentry from '@sentry/node';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -81,6 +82,9 @@ import dashboardRoutes from '@/modules/dashboard/dashboard.routes';
 
 // Create Express app
 const app = express();
+
+// Sentry Request Handler
+Sentry.setupExpressErrorHandler(app);
 
 // Trust proxy (for production behind reverse proxy)
 app.set('trust proxy', 1);

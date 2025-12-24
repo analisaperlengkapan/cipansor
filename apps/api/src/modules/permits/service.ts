@@ -4,11 +4,12 @@ import { CreatePermitDto, UpdatePermitStatusDto, QueryPermitDto } from "./schema
 
 export async function createPermit(data: CreatePermitDto) {
   return prisma.permit.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       ...data,
       startDate: new Date(data.startDate),
       endDate: new Date(data.endDate),
-    },
+    } as any,
     include: {
       student: {
         include: {

@@ -115,7 +115,10 @@ export default function EditPermitPage() {
         nis: permit.student.nis,
       });
     }
-  }, [permit, form, router, permitId]);
+
+    // We explicitly only want to run this effect when permit loads for the first time
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [permit]);
 
   const onSubmit = async (data: FormData) => {
     try {

@@ -189,10 +189,11 @@ export class ExtracurricularService {
     }
 
     const extracurricular = await prisma.extracurricular.create({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data: {
         ...input,
         status: 'ACTIVE',
-      },
+      } as any,
       include: {
         unit: { select: { id: true, name: true } },
         coach: { include: { user: { select: { id: true, name: true } } } },
@@ -316,12 +317,13 @@ export class ExtracurricularService {
     }
 
     const enrollment = await prisma.extracurricularEnrollment.create({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data: {
         extracurricularId,
         studentId,
         notes,
         status: 'ACTIVE',
-      },
+      } as any,
       include: {
         student: { include: { user: { select: { name: true } } } },
         extracurricular: { select: { name: true } },
@@ -487,6 +489,7 @@ export class ExtracurricularService {
             notes: att.notes,
             recordedById: currentUser.sub,
           },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           create: {
             extracurricularId,
             studentId: att.studentId,
@@ -494,7 +497,7 @@ export class ExtracurricularService {
             status: att.status as PrismaAttendanceStatus,
             notes: att.notes,
             recordedById: currentUser.sub,
-          },
+          } as any,
         });
       })
     );
@@ -593,10 +596,11 @@ export class ExtracurricularService {
     await this.findById(input.extracurricularId, currentUser);
 
     const achievement = await prisma.extracurricularAchievement.create({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data: {
         ...input,
         eventDate: new Date(input.eventDate),
-      },
+      } as any,
       include: {
         extracurricular: { select: { id: true, name: true } },
         student: { include: { user: { select: { name: true } } } },

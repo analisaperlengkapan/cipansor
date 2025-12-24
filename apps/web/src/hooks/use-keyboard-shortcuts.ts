@@ -211,7 +211,11 @@ export function useKeyboardShortcut(
   } = options;
 
   const handlerRef = useRef(handler);
-  handlerRef.current = handler;
+
+  // Update ref only on mount and when handler changes, not during render
+  useEffect(() => {
+      handlerRef.current = handler;
+  }, [handler]);
 
   useEffect(() => {
     if (!enabled) return;

@@ -4,7 +4,6 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-  ArrowLeft,
   Save,
   User,
   MapPin,
@@ -96,45 +95,52 @@ export default function StudentComplianceEditPage({ params }: PageProps) {
   // Initialize form data when student loads
   useEffect(() => {
     if (student) {
-      setFormData({
-        nisn: student.nisn || '',
-        nik: student.nik || '',
-        noAkta: student.noAkta || '',
-        noKK: student.noKK || '',
-        address: student.address || '',
-        rt: student.rt || '',
-        rw: student.rw || '',
-        villageId: student.villageId || '',
-        transportMode: student.transportMode || '',
-        distance: student.distance || undefined,
-        travelTime: student.travelTime || undefined,
-        isKIP: student.isKIP || false,
-        kipNumber: student.kipNumber || '',
-        isPKH: student.isPKH || false,
-        pkhNumber: student.pkhNumber || '',
-        isKKS: student.isKKS || false,
-        kksNumber: student.kksNumber || '',
-        height: student.height || undefined,
-        weight: student.weight || undefined,
-        bloodType: student.bloodType || '',
-        hasDisability: student.hasDisability || false,
-        disabilityType: student.disabilityType || '',
-        fatherName: student.fatherName || '',
-        fatherNIK: student.fatherNIK || '',
-        fatherBirthDate: student.fatherBirthDate?.split('T')[0] || '',
-        fatherEducation: student.fatherEducation || '',
-        fatherOccupation: student.fatherOccupation || '',
-        fatherIncome: student.fatherIncome || undefined,
-        motherName: student.motherName || '',
-        motherNIK: student.motherNIK || '',
-        motherBirthDate: student.motherBirthDate?.split('T')[0] || '',
-        motherEducation: student.motherEducation || '',
-        motherOccupation: student.motherOccupation || '',
-        motherIncome: student.motherIncome || undefined,
-        guardianName: student.guardianName || '',
-        guardianNIK: student.guardianNIK || '',
-        guardianRelation: student.guardianRelation || '',
-        guardianPhone: student.guardianPhone || '',
+      setFormData(prev => {
+        // Simple equality check to prevent unnecessary updates
+        if (prev.nisn === student.nisn && prev.nik === student.nik) {
+            return prev;
+        }
+
+        return {
+          nisn: student.nisn || '',
+          nik: student.nik || '',
+          noAkta: student.noAkta || '',
+          noKK: student.noKK || '',
+          address: student.address || '',
+          rt: student.rt || '',
+          rw: student.rw || '',
+          villageId: student.villageId || '',
+          transportMode: student.transportMode || '',
+          distance: student.distance || undefined,
+          travelTime: student.travelTime || undefined,
+          isKIP: student.isKIP || false,
+          kipNumber: student.kipNumber || '',
+          isPKH: student.isPKH || false,
+          pkhNumber: student.pkhNumber || '',
+          isKKS: student.isKKS || false,
+          kksNumber: student.kksNumber || '',
+          height: student.height || undefined,
+          weight: student.weight || undefined,
+          bloodType: student.bloodType || '',
+          hasDisability: student.hasDisability || false,
+          disabilityType: student.disabilityType || '',
+          fatherName: student.fatherName || '',
+          fatherNIK: student.fatherNIK || '',
+          fatherBirthDate: student.fatherBirthDate?.split('T')[0] || '',
+          fatherEducation: student.fatherEducation || '',
+          fatherOccupation: student.fatherOccupation || '',
+          fatherIncome: student.fatherIncome || undefined,
+          motherName: student.motherName || '',
+          motherNIK: student.motherNIK || '',
+          motherBirthDate: student.motherBirthDate?.split('T')[0] || '',
+          motherEducation: student.motherEducation || '',
+          motherOccupation: student.motherOccupation || '',
+          motherIncome: student.motherIncome || undefined,
+          guardianName: student.guardianName || '',
+          guardianNIK: student.guardianNIK || '',
+          guardianRelation: student.guardianRelation || '',
+          guardianPhone: student.guardianPhone || '',
+        };
       });
       
       // Set wilayah cascade
@@ -148,6 +154,8 @@ export default function StudentComplianceEditPage({ params }: PageProps) {
         setSelectedDistrict(student.village.district.id);
       }
     }
+    // We explicitly exclude formData from deps as we only want to update on student change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [student]);
   
   const handleSubmit = async (e: React.FormEvent) => {

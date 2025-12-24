@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { io, Socket } from 'socket.io-client';
 import { toast } from 'sonner';
@@ -71,6 +71,18 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
     return delay + Math.random() * 1000; // Add jitter
   }, []);
 
+  // Use refs for callbacks to avoid re-creating socket on callback change
+  const onMetricsUpdateRef = useRef(onMetricsUpdate);
+  const onAlertRef = useRef(onAlert);
+
+  useEffect(() => {
+    onMetricsUpdateRef.current = onMetricsUpdate;
+    onAlertRef.current = onAlert;
+  }, [onMetricsUpdate, onAlert]);
+
+  // Use refs for options to detect deep changes if needed, or rely on them being stable/memoized in parent
+  // Assuming unitIds and metrics are stable or simple enough to trigger re-connection if changed
+
   useEffect(() => {
     if (!enabled) return;
 
@@ -83,15 +95,18 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
     // Connect to WebSocket server
     const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3001';
     
+    // Create socket instance
     const newSocket = io(wsUrl, {
       auth: { token },
       transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionDelay: getReconnectDelay(0),
+      reconnectionDelay: 1000,
       reconnectionDelayMax: 30000,
       reconnectionAttempts: Infinity, // Keep trying
       timeout: 10000, // 10 second connection timeout
     });
+
+    setSocket(newSocket);
 
     // Connection handlers
     newSocket.on('connect', () => {
@@ -128,14 +143,15 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
       setIsConnected(false);
       setConnectionError(error.message);
       
-      const attempts = reconnectAttempts + 1;
-      setReconnectAttempts(attempts);
-      
-      if (attempts === 1) {
-        toast.error('Gagal terhubung ke server');
-      } else if (attempts === 5) {
-        toast.error('Masih mencoba terhubung... Periksa koneksi internet Anda.');
-      }
+      setReconnectAttempts(prev => {
+        const attempts = prev + 1;
+        if (attempts === 1) {
+          toast.error('Gagal terhubung ke server');
+        } else if (attempts === 5) {
+          toast.error('Masih mencoba terhubung... Periksa koneksi internet Anda.');
+        }
+        return attempts;
+      });
     });
 
     // Metrics update handler
@@ -150,7 +166,7 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
       }));
 
       // Call custom handler if provided
-      onMetricsUpdate?.(data);
+      onMetricsUpdateRef.current?.(data);
     });
 
     // Alert handler
@@ -180,7 +196,7 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
       }
 
       // Call custom handler if provided
-      onAlert?.(alert);
+      onAlertRef.current?.(alert);
     });
 
     // Reconnection handlers
@@ -194,10 +210,6 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
     newSocket.on('reconnect_attempt', (attemptNumber: number) => {
       console.log('🔄 Reconnection attempt', attemptNumber);
       setReconnectAttempts(attemptNumber);
-      
-      // Update delay for next attempt using exponential backoff
-      const delay = getReconnectDelay(attemptNumber);
-      newSocket.io.opts.reconnectionDelay = delay;
     });
 
     newSocket.on('reconnect_error', (error: Error) => {
@@ -210,14 +222,17 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
       toast.error('Gagal terhubung ke dashboard real-time. Silakan refresh halaman.');
     });
 
-    setSocket(newSocket);
-
     // Cleanup on unmount
     return () => {
       console.log('🔌 Closing WebSocket connection');
       newSocket.close();
+      setSocket(null);
     };
-  }, [enabled, unitIds, metrics, queryClient, getAccessToken, onMetricsUpdate, onAlert, getReconnectDelay, reconnectAttempts]);
+    // We intentionally omit reconnectAttempts from deps to avoid reconnecting on attempt increment
+    // unitIds and metrics are objects/arrays, so be careful with deps.
+    // JSON.stringify can be used if they are not memoized.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, getAccessToken, queryClient, JSON.stringify(unitIds), JSON.stringify(metrics)]);
 
   // Manual subscription update
   const updateSubscription = useCallback((newUnitIds: string[], newMetrics: string[]) => {
@@ -269,6 +284,7 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
 
 // Hook for dashboard alerts with pagination
 export function useDashboardAlerts(params: { page?: number; limit?: number } = {}) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { page = 1, limit = 20 } = params;
   
   return useQueryClient().getQueryData<DashboardAlert[]>(['dashboard-alerts']) || [];

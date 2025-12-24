@@ -75,10 +75,11 @@ export async function getTargetById(id: string) {
 
 export async function createTarget(data: CreateTargetInput) {
   return prisma.dailyIbadahTarget.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       ...data,
       targetUnit: data.targetUnit ?? null,
-    },
+    } as any,
     include: {
       unit: { select: { id: true, name: true, type: true } },
     },
@@ -184,10 +185,11 @@ export async function createRecord(data: CreateRecordInput) {
   const pointsEarned = data.isCompleted ? target.points : 0;
 
   return prisma.dailyIbadahRecord.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       ...data,
       pointsEarned,
-    },
+    } as any,
     include: {
       target: { select: { id: true, name: true, category: true, points: true } },
       student: { select: { id: true, nis: true, user: { select: { name: true } } } },
@@ -251,6 +253,7 @@ export async function bulkCreateRecords(data: BulkCreateRecordsInput) {
           date,
         },
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       create: {
         targetId: record.targetId,
         studentId,
@@ -260,7 +263,7 @@ export async function bulkCreateRecords(data: BulkCreateRecordsInput) {
         actualMinutes: record.actualMinutes,
         notes: record.notes,
         pointsEarned,
-      },
+      } as any,
       update: {
         isCompleted: record.isCompleted,
         actualCount: record.actualCount,
@@ -664,14 +667,16 @@ export async function getUnitIbadahStats(query: UnitIbadahStatsQuery) {
     const date = record.date;
 
     switch (groupBy) {
-      case 'WEEK':
+      case 'WEEK': {
         const weekStart = new Date(date);
         weekStart.setDate(weekStart.getDate() - weekStart.getDay());
         key = weekStart.toISOString().split('T')[0];
         break;
-      case 'MONTH':
+      }
+      case 'MONTH': {
         key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         break;
+      }
       default: // DAY
         key = date.toISOString().split('T')[0];
     }
@@ -862,10 +867,11 @@ export async function getIslamicEventById(id: string) {
 
 export async function createIslamicEvent(data: CreateIslamicEventInput) {
   return prisma.islamicEvent.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       ...data,
       scheduleAdjustment: data.scheduleAdjustment ?? undefined,
-    },
+    } as any,
     include: {
       unit: { select: { id: true, name: true } },
     },

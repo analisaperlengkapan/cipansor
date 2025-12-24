@@ -404,8 +404,8 @@ export const dailyReportService = {
 
     // Calculate meal statistics
     const mealStats: Record<string, Record<string, number>> = {
-      meal: { FULL: 0, HALF: 0, QUARTER: 0, NONE: 0 },
-      snack: { FULL: 0, HALF: 0, QUARTER: 0, NONE: 0 },
+      meal: { HABIS: 0, SETENGAH: 0, SEDIKIT: 0, TIDAK_MAU: 0 },
+      snack: { HABIS: 0, SETENGAH: 0, SEDIKIT: 0, TIDAK_MAU: 0 },
     };
 
     // Calculate attendance and confirmation

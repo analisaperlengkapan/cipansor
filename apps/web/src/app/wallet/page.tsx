@@ -71,6 +71,7 @@ import {
   getTransactionTypeColor,
   getTransactionTypeLabel,
   getReferenceTypeLabel,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getPaymentMethodLabel,
   TRANSACTION_TYPES,
   REFERENCE_TYPES,
@@ -89,6 +90,7 @@ import api from '@/lib/api';
 const searchStudents = async (search: string) => {
   if (!search || search.length < 2) return [];
   const res = await api.get('/students', { params: { search, limit: 10 } });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return res.data.data.map((s: any) => ({
     id: s.id,
     nis: s.nis,
@@ -97,6 +99,50 @@ const searchStudents = async (search: string) => {
     walletBalance: s.wallet?.balance,
   }));
 };
+
+// Student picker component extracted to avoid re-creation in render
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const StudentPicker = ({ onSelect, search, setSearch, results }: { onSelect: (student: any) => void, search: string, setSearch: (v: string) => void, results: any[] | undefined }) => (
+  <div className="space-y-2">
+    <Label>Cari Santri</Label>
+    <Input
+      placeholder="Ketik nama atau NIS santri..."
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+    />
+    {results && results.length > 0 && (
+      <div className="border rounded-md max-h-40 overflow-auto">
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        {results.map((student: any) => (
+          <button
+            key={student.id}
+            className="w-full p-3 text-left hover:bg-muted flex justify-between items-center border-b last:border-b-0"
+            onClick={() => {
+              onSelect(student);
+            }}
+          >
+            <div>
+              <span className="font-medium">{student.name}</span>
+              <span className="text-sm text-muted-foreground ml-2">
+                ({student.nis})
+              </span>
+              {student.className && (
+                <span className="text-sm text-muted-foreground ml-2">
+                  - {student.className}
+                </span>
+              )}
+            </div>
+            {student.walletBalance !== undefined && (
+              <span className="text-sm font-medium text-green-600">
+                {formatCurrency(student.walletBalance)}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+    )}
+  </div>
+);
 
 export default function WalletPage() {
   const [activeTab, setActiveTab] = useState('wallets');
@@ -291,49 +337,11 @@ export default function WalletPage() {
     },
   ], [summary]);
 
-  // Student picker component
-  const StudentPicker = ({ onSelect }: { onSelect: (student: any) => void }) => (
-    <div className="space-y-2">
-      <Label>Cari Santri</Label>
-      <Input
-        placeholder="Ketik nama atau NIS santri..."
-        value={studentSearch}
-        onChange={(e) => setStudentSearch(e.target.value)}
-      />
-      {searchResults && searchResults.length > 0 && (
-        <div className="border rounded-md max-h-40 overflow-auto">
-          {searchResults.map((student: any) => (
-            <button
-              key={student.id}
-              className="w-full p-3 text-left hover:bg-muted flex justify-between items-center border-b last:border-b-0"
-              onClick={() => {
-                onSelect(student);
-                setSelectedStudentId(student.id);
-                setStudentSearch(student.name);
-              }}
-            >
-              <div>
-                <span className="font-medium">{student.name}</span>
-                <span className="text-sm text-muted-foreground ml-2">
-                  ({student.nis})
-                </span>
-                {student.className && (
-                  <span className="text-sm text-muted-foreground ml-2">
-                    - {student.className}
-                  </span>
-                )}
-              </div>
-              {student.walletBalance !== undefined && (
-                <span className="text-sm font-medium text-green-600">
-                  {formatCurrency(student.walletBalance)}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleStudentSelect = (student: any) => {
+    setSelectedStudentId(student.id);
+    setStudentSearch(student.name);
+  };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -443,6 +451,7 @@ export default function WalletPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Semua Unit</SelectItem>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     {units?.map((unit: any) => (
                       <SelectItem key={unit.id} value={unit.id}>
                         {unit.name}
@@ -728,7 +737,12 @@ export default function WalletPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <StudentPicker onSelect={() => {}} />
+            <StudentPicker
+              onSelect={handleStudentSelect}
+              search={studentSearch}
+              setSearch={setStudentSearch}
+              results={searchResults}
+            />
             
             <div className="space-y-2">
               <Label>Nominal Top Up</Label>
@@ -816,7 +830,12 @@ export default function WalletPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <StudentPicker onSelect={() => {}} />
+            <StudentPicker
+              onSelect={handleStudentSelect}
+              search={studentSearch}
+              setSearch={setStudentSearch}
+              results={searchResults}
+            />
             
             <div className="space-y-2">
               <Label>Nominal</Label>
@@ -887,7 +906,12 @@ export default function WalletPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <StudentPicker onSelect={() => {}} />
+            <StudentPicker
+              onSelect={handleStudentSelect}
+              search={studentSearch}
+              setSearch={setStudentSearch}
+              results={searchResults}
+            />
             
             <div className="space-y-2">
               <Label>Nominal Refund</Label>

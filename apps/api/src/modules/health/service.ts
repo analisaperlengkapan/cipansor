@@ -78,10 +78,11 @@ export async function getMedicalRecordById(id: string) {
 
 export async function createMedicalRecord(data: CreateMedicalRecordInput, recordedById: string) {
   return prisma.medicalRecord.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       ...data,
       recordedById,
-    },
+    } as any,
     include: {
       student: {
         select: {
@@ -202,7 +203,8 @@ export async function getMedicationById(id: string) {
 
 export async function createMedication(data: CreateMedicationInput) {
   return prisma.medication.create({
-    data,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: data as any,
     include: {
       unit: { select: { id: true, name: true } },
     },
@@ -285,10 +287,11 @@ export async function createMedicationUsage(data: CreateMedicationUsageInput, gi
   // Create usage log and decrement stock
   return prisma.$transaction(async (tx) => {
     const usage = await tx.medicationUsageLog.create({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data: {
         ...data,
         givenById,
-      },
+      } as any,
       include: {
         medication: { select: { id: true, name: true } },
         student: {

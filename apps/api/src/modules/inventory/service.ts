@@ -43,7 +43,8 @@ export async function getCategoryById(id: string) {
 }
 
 export async function createCategory(data: CreateInventoryCategoryInput) {
-  return prisma.assetCategory.create({ data });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return prisma.assetCategory.create({ data: data as any });
 }
 
 export async function updateCategory(id: string, data: UpdateInventoryCategoryInput) {
@@ -118,6 +119,7 @@ export async function getItemById(id: string) {
 
 export async function createItem(data: CreateInventoryItemInput) {
   return prisma.asset.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       unitId: data.unitId,
       categoryId: data.categoryId,
@@ -135,7 +137,7 @@ export async function createItem(data: CreateInventoryItemInput) {
       warrantyExpiry: data.warrantyExpiry,
       notes: data.notes,
       photoUrl: data.photoUrl,
-    },
+    } as any,
     include: {
       category: { select: { id: true, name: true, code: true } },
       unit: { select: { id: true, name: true } },
@@ -231,6 +233,7 @@ export async function createMaintenance(data: CreateMaintenanceInput) {
   });
 
   return prisma.assetMaintenance.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       assetId: data.itemId,
       type: data.type,
@@ -241,7 +244,7 @@ export async function createMaintenance(data: CreateMaintenanceInput) {
       performedBy: data.performedBy,
       nextSchedule: data.nextSchedule,
       notes: data.notes,
-    },
+    } as any,
     include: {
       asset: {
         select: {

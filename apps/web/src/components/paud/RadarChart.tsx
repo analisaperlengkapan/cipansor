@@ -6,7 +6,6 @@ import {
   PolarRadiusAxis,
   ResponsiveContainer,
   Tooltip,
-  Legend,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PAUDAspect, PAUDAchievementLevel, ASPECT_LABELS } from '@/hooks/use-paud-assessment';
@@ -43,6 +42,28 @@ const LEVEL_COLORS: Record<PAUDAchievementLevel, string> = {
   BSB: '#22c55e', // green
 };
 
+// Define CustomTooltip outside component to avoid re-creation
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload as AspectScore;
+    return (
+      <div className="bg-white p-3 border rounded-lg shadow-lg">
+        <p className="font-semibold text-sm">{data.label}</p>
+        <p className="text-sm text-muted-foreground">
+          Score: {data.score}/4
+        </p>
+        {data.level && (
+          <p className="text-sm font-medium" style={{ color: LEVEL_COLORS[data.level] }}>
+            {data.level}
+          </p>
+        )}
+      </div>
+    );
+  }
+  return null;
+};
+
 export function PAUDRadarChart({ data, studentName, className }: PAUDRadarChartProps) {
   // Transform data for radar chart
   const aspects: PAUDAspect[] = ['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI'];
@@ -70,27 +91,6 @@ export function PAUDRadarChart({ data, studentName, className }: PAUDRadarChartP
     if (avgScore >= 2.5) return LEVEL_COLORS.BSH;
     if (avgScore >= 1.5) return LEVEL_COLORS.MB;
     return LEVEL_COLORS.BB;
-  };
-
-  // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload as AspectScore;
-      return (
-        <div className="bg-white p-3 border rounded-lg shadow-lg">
-          <p className="font-semibold text-sm">{data.label}</p>
-          <p className="text-sm text-muted-foreground">
-            Score: {data.score}/4
-          </p>
-          {data.level && (
-            <p className="text-sm font-medium" style={{ color: LEVEL_COLORS[data.level] }}>
-              {data.level}
-            </p>
-          )}
-        </div>
-      );
-    }
-    return null;
   };
 
   return (

@@ -159,10 +159,19 @@ export function useOnlineStatus(
 
   // Initial check
   useEffect(() => {
+    let mounted = true;
     if (pingUrl) {
-      checkConnection();
+      checkConnection().then(() => {
+        if (!mounted) return;
+        // Do nothing else
+      });
     }
-  }, [pingUrl, checkConnection]);
+    return () => {
+      mounted = false;
+    };
+    // We intentionally ignore checkConnection dependency here to run only on mount/unmount or pingUrl change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pingUrl]);
 
   return {
     isOnline,

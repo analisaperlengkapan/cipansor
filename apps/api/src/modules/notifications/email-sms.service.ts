@@ -315,7 +315,9 @@ class NotificationService {
     }
 
     // Log SMS for development/debugging
-    logger.info(`[SMS] To: ${recipientPhone}, Message: ${message}`);
+    // Redact potential sensitive info in message
+    const redactedMessage = message.replace(/\b\d{4,8}\b/g, '****');
+    logger.info(`[SMS] To: ${recipientPhone}, Message: ${redactedMessage}`);
 
     // Check if Twilio is configured
     const { accountSid, authToken, phoneNumber } = config.twilio;

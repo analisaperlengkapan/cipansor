@@ -192,6 +192,34 @@ interface NotificationResult {
 }
 
 class NotificationService {
+  private transporter: nodemailer.Transporter | null = null;
+
+  /**
+   * Get or create email transporter
+   */
+  private getTransporter(): nodemailer.Transporter | null {
+    if (this.transporter) {
+      return this.transporter;
+    }
+
+    const smtpHost = process.env.SMTP_HOST;
+    if (!smtpHost) {
+      return null;
+    }
+
+    this.transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    return this.transporter;
+  }
+
   /**
    * Send a notification through specified channel
    */
@@ -285,24 +313,15 @@ class NotificationService {
     // Log email for development/debugging
     logger.info(`[EMAIL] To: ${recipientEmail}, Subject: ${subject}`);
     
+    const transporter = this.getTransporter();
+
     // Check if SMTP is configured
-    const smtpHost = process.env.SMTP_HOST;
-    if (!smtpHost) {
+    if (!transporter) {
       logger.warn('Email not configured - SMTP_HOST not set. Email logged only.');
       return { success: true, channel: 'EMAIL', messageId: `log_${Date.now()}` };
     }
 
     try {
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT || '587'),
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        },
-      });
-
       const info = await transporter.sendMail({
         from: process.env.SMTP_FROM || '"Cipansor System" <no-reply@cipansor.id>',
         to: recipientEmail,

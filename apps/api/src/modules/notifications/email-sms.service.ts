@@ -12,6 +12,7 @@
 
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
+import { Twilio } from 'twilio';
 // Note: Install nodemailer with: pnpm add nodemailer && pnpm add -D @types/nodemailer
 
 // Notification templates
@@ -317,18 +318,34 @@ class NotificationService {
 
     // Check if Twilio is configured
     const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-    if (!twilioSid) {
-      logger.warn('SMS not configured - TWILIO_ACCOUNT_SID not set. SMS logged only.');
+    const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+    const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+
+    if (!twilioSid || !twilioAuthToken || !twilioPhoneNumber) {
+      logger.warn(
+        'SMS not configured - TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, or TWILIO_PHONE_NUMBER not set. SMS logged only.',
+      );
       return { success: true, channel: 'SMS', messageId: `log_${Date.now()}` };
     }
 
-    // TODO: Implement actual SMS sending with Twilio/AWS SNS
-    // Example: pnpm add twilio
-    // Then: const twilio = require('twilio');
-    // Create client and send message...
+    try {
+      const client = new Twilio(twilioSid, twilioAuthToken);
+      const response = await client.messages.create({
+        body: message,
+        from: twilioPhoneNumber,
+        to: recipientPhone,
+      });
 
-    logger.info(`SMS queued for ${recipientPhone}`);
-    return { success: true, channel: 'SMS', messageId: `queued_${Date.now()}` };
+      logger.info(`SMS sent to ${recipientPhone}, SID: ${response.sid}`);
+      return { success: true, channel: 'SMS', messageId: response.sid };
+    } catch (error) {
+      logger.error('Failed to send SMS via Twilio:', error);
+      return {
+        success: false,
+        channel: 'SMS',
+        error: error instanceof Error ? error.message : 'Twilio error',
+      };
+    }
   }
 
   /**

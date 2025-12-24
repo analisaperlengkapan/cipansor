@@ -47,19 +47,23 @@ export async function compareUnitsPerformance(options?: {
     unitIds?: string[];
     startDate?: Date;
     endDate?: Date;
+    prefetchedUnits?: { id: string; name: string; type: string }[];
 }): Promise<ComparisonResult> {
     const startDate = options?.startDate || new Date(new Date().setMonth(new Date().getMonth() - 1));
     const endDate = options?.endDate || new Date();
 
-    // Get all units or filtered units
-    const units = await prisma.unit.findMany({
-        where: options?.unitIds ? { id: { in: options.unitIds } } : undefined,
-        select: { id: true, name: true, type: true },
-    });
+    // Get all units or filtered units, unless prefetched
+    let units = options?.prefetchedUnits;
+    if (!units) {
+        units = await prisma.unit.findMany({
+            where: options?.unitIds ? { id: { in: options.unitIds } } : undefined,
+            select: { id: true, name: true, type: true } as any, // Cast as any if type mismatch occurs due to missing fields in select vs return type
+        }) as any;
+    }
 
     const unitMetrics: UnitMetrics[] = [];
 
-    for (const unit of units) {
+    for (const unit of units || []) {
         // Student count
         const studentCount = await prisma.student.count({
             where: { unitId: unit.id, deletedAt: null, status: 'active' },
@@ -157,7 +161,43 @@ export async function compareUnitsPerformance(options?: {
  * Get unit rankings by various KPIs
  */
 export async function getUnitRankings(metric: 'attendance' | 'payment' | 'tahfidz' | 'academic' | 'all' = 'all'): Promise<RankingResult[]> {
-    const comparison = await compareUnitsPerformance();
+    // Determine current period
+    const currentEnd = new Date();
+    const currentStart = new Date(new Date().setMonth(new Date().getMonth() - 1));
+
+    // Calculate previous period dates
+    const duration = currentEnd.getTime() - currentStart.getTime();
+    const previousEnd = new Date(currentStart);
+    const previousStart = new Date(previousEnd.getTime() - duration);
+
+    // Fetch units once to avoid redundant DB calls
+    const units = await prisma.unit.findMany({
+        select: { id: true, name: true, type: true },
+    });
+
+    // Map units to match the expected structure for internal use
+    const mappedUnits = units.map(u => ({ id: u.id, name: u.name, type: u.type }));
+
+    // Execute current and previous comparisons in parallel
+    const [comparison, previousComparison] = await Promise.all([
+        compareUnitsPerformance({
+            startDate: currentStart,
+            endDate: currentEnd,
+            prefetchedUnits: mappedUnits
+        }),
+        compareUnitsPerformance({
+            startDate: previousStart,
+            endDate: previousEnd,
+            prefetchedUnits: mappedUnits
+        })
+    ]);
+
+    // Create a map for faster lookup of previous unit data
+    const previousUnitMap = new Map<string, UnitMetrics>();
+    previousComparison.units.forEach(unit => {
+        previousUnitMap.set(unit.unitId, unit);
+    });
+
     const rankings: RankingResult[] = [];
 
     const metricsToRank = metric === 'all'
@@ -182,21 +222,40 @@ export async function getUnitRankings(metric: 'attendance' | 'payment' | 'tahfid
 
         sorted.forEach((unit, index) => {
             let value: number;
+            let previousValue: number = 0;
+            const previousUnit = previousUnitMap.get(unit.unitId);
+
             switch (m) {
                 case 'attendance':
                     value = unit.attendanceRate;
+                    previousValue = previousUnit?.attendanceRate || 0;
                     break;
                 case 'payment':
                     value = unit.paymentCollectionRate;
+                    previousValue = previousUnit?.paymentCollectionRate || 0;
                     break;
                 case 'tahfidz':
                     value = unit.tahfidzProgress;
+                    previousValue = previousUnit?.tahfidzProgress || 0;
                     break;
                 case 'academic':
                     value = unit.academicAverage;
+                    previousValue = previousUnit?.academicAverage || 0;
                     break;
                 default:
                     value = 0;
+                    previousValue = 0;
+            }
+
+            let trend: 'up' | 'down' | 'stable' = 'stable';
+            // Use a small threshold for floating point comparison if needed,
+            // but strict comparison is usually fine for trend unless changes are minute.
+            // Let's assume strict change for now, or maybe with a small margin.
+            // Given data is rounded to 2 decimals, strict comparison is safe enough for display purposes.
+            if (value > previousValue) {
+                trend = 'up';
+            } else if (value < previousValue) {
+                trend = 'down';
             }
 
             rankings.push({
@@ -205,7 +264,7 @@ export async function getUnitRankings(metric: 'attendance' | 'payment' | 'tahfid
                 metric: m,
                 value,
                 rank: index + 1,
-                trend: 'stable', // TODO: Compare with previous period
+                trend,
             });
         });
     }

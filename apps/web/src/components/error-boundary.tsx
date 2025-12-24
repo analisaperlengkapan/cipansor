@@ -23,6 +23,14 @@ interface State {
   errorInfo: ErrorInfo | null;
 }
 
+const captureError = (error: unknown, errorInfo?: ErrorInfo) => {
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+    Sentry.captureException(error, {
+      contexts: errorInfo ? { react: { componentStack: errorInfo.componentStack } } : undefined,
+    });
+  }
+};
+
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
@@ -52,9 +60,7 @@ export class ErrorBoundary extends Component<Props, State> {
     this.props.onError?.(error, errorInfo);
 
     // Log to error reporting service (e.g., Sentry)
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-      Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo.componentStack } } });
-    }
+    captureError(error, errorInfo);
   }
 
   handleReset = () => {
@@ -187,6 +193,8 @@ export class AsyncErrorBoundary extends Component<Props, State> {
       error: event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
       errorInfo: null,
     });
+
+    captureError(event.reason);
   };
 
   static getDerivedStateFromError(error: Error): Partial<State> {
@@ -205,6 +213,7 @@ export class AsyncErrorBoundary extends Component<Props, State> {
     });
 
     this.props.onError?.(error, errorInfo);
+    captureError(error, errorInfo);
   }
 
   handleReset = () => {

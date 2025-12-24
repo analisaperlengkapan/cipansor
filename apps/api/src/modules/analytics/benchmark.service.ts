@@ -158,6 +158,26 @@ export async function compareUnitsPerformance(options?: {
  */
 export async function getUnitRankings(metric: 'attendance' | 'payment' | 'tahfidz' | 'academic' | 'all' = 'all'): Promise<RankingResult[]> {
     const comparison = await compareUnitsPerformance();
+
+    // Calculate previous period dates
+    const currentStart = new Date(comparison.period.start);
+    const currentEnd = new Date(comparison.period.end);
+    const duration = currentEnd.getTime() - currentStart.getTime();
+    const previousEnd = new Date(currentStart);
+    const previousStart = new Date(previousEnd.getTime() - duration);
+
+    // Get previous period data
+    const previousComparison = await compareUnitsPerformance({
+        startDate: previousStart,
+        endDate: previousEnd
+    });
+
+    // Create a map for faster lookup of previous unit data
+    const previousUnitMap = new Map<string, UnitMetrics>();
+    previousComparison.units.forEach(unit => {
+        previousUnitMap.set(unit.unitId, unit);
+    });
+
     const rankings: RankingResult[] = [];
 
     const metricsToRank = metric === 'all'
@@ -182,21 +202,40 @@ export async function getUnitRankings(metric: 'attendance' | 'payment' | 'tahfid
 
         sorted.forEach((unit, index) => {
             let value: number;
+            let previousValue: number = 0;
+            const previousUnit = previousUnitMap.get(unit.unitId);
+
             switch (m) {
                 case 'attendance':
                     value = unit.attendanceRate;
+                    previousValue = previousUnit?.attendanceRate || 0;
                     break;
                 case 'payment':
                     value = unit.paymentCollectionRate;
+                    previousValue = previousUnit?.paymentCollectionRate || 0;
                     break;
                 case 'tahfidz':
                     value = unit.tahfidzProgress;
+                    previousValue = previousUnit?.tahfidzProgress || 0;
                     break;
                 case 'academic':
                     value = unit.academicAverage;
+                    previousValue = previousUnit?.academicAverage || 0;
                     break;
                 default:
                     value = 0;
+                    previousValue = 0;
+            }
+
+            let trend: 'up' | 'down' | 'stable' = 'stable';
+            // Use a small threshold for floating point comparison if needed,
+            // but strict comparison is usually fine for trend unless changes are minute.
+            // Let's assume strict change for now, or maybe with a small margin.
+            // Given data is rounded to 2 decimals, strict comparison is safe enough for display purposes.
+            if (value > previousValue) {
+                trend = 'up';
+            } else if (value < previousValue) {
+                trend = 'down';
             }
 
             rankings.push({
@@ -205,7 +244,7 @@ export async function getUnitRankings(metric: 'attendance' | 'payment' | 'tahfid
                 metric: m,
                 value,
                 rank: index + 1,
-                trend: 'stable', // TODO: Compare with previous period
+                trend,
             });
         });
     }

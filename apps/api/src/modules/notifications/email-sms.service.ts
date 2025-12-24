@@ -13,6 +13,7 @@
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
 import { Twilio } from 'twilio';
+import { config } from '../../config';
 // Note: Install nodemailer with: pnpm add nodemailer && pnpm add -D @types/nodemailer
 
 // Notification templates
@@ -317,11 +318,9 @@ class NotificationService {
     logger.info(`[SMS] To: ${recipientPhone}, Message: ${message}`);
 
     // Check if Twilio is configured
-    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-    const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
-    const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+    const { accountSid, authToken, phoneNumber } = config.twilio;
 
-    if (!twilioSid || !twilioAuthToken || !twilioPhoneNumber) {
+    if (!accountSid || !authToken || !phoneNumber) {
       logger.warn(
         'SMS not configured - TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, or TWILIO_PHONE_NUMBER not set. SMS logged only.',
       );
@@ -329,10 +328,10 @@ class NotificationService {
     }
 
     try {
-      const client = new Twilio(twilioSid, twilioAuthToken);
+      const client = new Twilio(accountSid, authToken);
       const response = await client.messages.create({
         body: message,
-        from: twilioPhoneNumber,
+        from: phoneNumber,
         to: recipientPhone,
       });
 

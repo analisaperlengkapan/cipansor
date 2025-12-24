@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { notificationService } from '../src/modules/notifications/email-sms.service';
 import { Twilio } from 'twilio';
 
 // Mock Prisma
@@ -35,6 +34,10 @@ vi.mock('twilio', () => {
   };
 });
 
+// We need to delay importing the service until we set up the mock for config
+// But we want to test different config states.
+// In Vitest, we can use `vi.doMock` for module mocking per test.
+
 describe('NotificationService - SMS', () => {
   const originalEnv = process.env;
 
@@ -50,10 +53,19 @@ describe('NotificationService - SMS', () => {
   });
 
   it('should log SMS when Twilio is not configured', async () => {
-    // Ensure Twilio env vars are unset
-    delete process.env.TWILIO_ACCOUNT_SID;
-    delete process.env.TWILIO_AUTH_TOKEN;
-    delete process.env.TWILIO_PHONE_NUMBER;
+    // Mock config to be empty
+    vi.doMock('../src/config', () => ({
+      config: {
+        twilio: {
+          accountSid: undefined,
+          authToken: undefined,
+          phoneNumber: undefined,
+        },
+      },
+    }));
+
+    // Import service dynamically to pick up the mock
+    const { notificationService } = await import('../src/modules/notifications/email-sms.service');
 
     const result = await notificationService.send({
       channel: 'SMS',
@@ -70,9 +82,18 @@ describe('NotificationService - SMS', () => {
   });
 
   it('should send SMS via Twilio when configured', async () => {
-    process.env.TWILIO_ACCOUNT_SID = 'AC123';
-    process.env.TWILIO_AUTH_TOKEN = 'token';
-    process.env.TWILIO_PHONE_NUMBER = '+1000000000';
+    // Mock config to have values
+    vi.doMock('../src/config', () => ({
+      config: {
+        twilio: {
+          accountSid: 'AC123',
+          authToken: 'token',
+          phoneNumber: '+1000000000',
+        },
+      },
+    }));
+
+    const { notificationService } = await import('../src/modules/notifications/email-sms.service');
 
     mockCreate.mockResolvedValue({ sid: 'SM12345' });
 
@@ -95,9 +116,18 @@ describe('NotificationService - SMS', () => {
   });
 
   it('should handle Twilio errors gracefully', async () => {
-    process.env.TWILIO_ACCOUNT_SID = 'AC123';
-    process.env.TWILIO_AUTH_TOKEN = 'token';
-    process.env.TWILIO_PHONE_NUMBER = '+1000000000';
+    // Mock config to have values
+    vi.doMock('../src/config', () => ({
+      config: {
+        twilio: {
+          accountSid: 'AC123',
+          authToken: 'token',
+          phoneNumber: '+1000000000',
+        },
+      },
+    }));
+
+    const { notificationService } = await import('../src/modules/notifications/email-sms.service');
 
     mockCreate.mockRejectedValue(new Error('Twilio error'));
 

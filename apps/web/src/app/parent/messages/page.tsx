@@ -136,6 +136,8 @@ export default function ParentMessagesPage() {
     });
 
     // Load messages when conversation selected
+    // Note: Setting state in effect is okay here as it's triggered by user selection change
+    // and we're loading mock data. In real app, this would be a useQuery.
     useEffect(() => {
         if (selectedConversation) {
             setMessages(DEMO_MESSAGES);

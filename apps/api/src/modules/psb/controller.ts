@@ -153,7 +153,10 @@ export async function enrollRegistrant(req: Request, res: Response, next: NextFu
       nisn: z.string().optional(),
     });
     const data = schema.parse(req.body);
-    const result = await service.enrollRegistrant(req.params.id, data);
+    const result = await service.enrollRegistrant(req.params.id, {
+      nis: data.nis,
+      nisn: data.nisn
+    });
     res.json({ 
       success: true, 
       data: result,

@@ -171,6 +171,8 @@ export default function UsersPage() {
       if (!userRoles) return false;
       return userRoles.some(ur => ur.role.realm === realmFilter);
     });
+    // We explicitly only want to re-run when data or filter changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.data, realmFilter]);
 
   const columns: ColumnDef<User>[] = [

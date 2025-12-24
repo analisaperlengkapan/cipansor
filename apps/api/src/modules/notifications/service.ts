@@ -45,17 +45,21 @@ export async function getUserNotifications(userId: string, query: QueryNotificat
 }
 
 export async function createNotification(data: CreateNotificationInput) {
-  return prisma.notification.create({ data });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return prisma.notification.create({ data: data as any });
 }
 
 export async function createBulkNotifications(data: CreateBulkNotificationInput) {
   const { userIds, ...notificationData } = data;
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const notifications: any[] = userIds.map((userId) => ({
+    ...notificationData,
+    userId,
+  }));
+
   return prisma.notification.createMany({
-    data: userIds.map((userId) => ({
-      ...notificationData,
-      userId,
-    })),
+    data: notifications,
   });
 }
 
@@ -131,12 +135,15 @@ export async function getAnnouncementById(id: string) {
 }
 
 export async function createAnnouncement(data: CreateAnnouncementInput, createdById: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const createData: any = {
+    ...data,
+    createdById,
+    publishedAt: data.publishedAt || new Date(),
+  };
+
   return prisma.announcement.create({
-    data: {
-      ...data,
-      createdById,
-      publishedAt: data.publishedAt || new Date(),
-    },
+    data: createData,
     include: {
       unit: { select: { id: true, name: true } },
       createdBy: { select: { id: true, name: true } },

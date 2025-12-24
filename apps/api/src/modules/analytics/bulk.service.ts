@@ -49,7 +49,7 @@ export async function bulkImportStudents(
 
         try {
             // Find or create unit
-            let unit = await prisma.unit.findFirst({
+            const unit = await prisma.unit.findFirst({
                 where: { name: { contains: row.unitName, mode: 'insensitive' } },
             });
 
@@ -207,7 +207,7 @@ export async function sendMassNotification(
     let userIds: string[] = [];
 
     switch (targetType) {
-        case 'all':
+        case 'all': {
             const allUsers = await prisma.user.findMany({
                 where: { isActive: true },
                 select: { id: true },
@@ -215,24 +215,27 @@ export async function sendMassNotification(
             });
             userIds = allUsers.map((u) => u.id);
             break;
+        }
 
-        case 'unit':
+        case 'unit': {
             const unitStudents = await prisma.student.findMany({
                 where: { unitId: targetId, status: 'ACTIVE' },
                 select: { userId: true },
             });
             userIds = unitStudents.map((s) => s.userId);
             break;
+        }
 
-        case 'class':
+        case 'class': {
             const classStudents = await prisma.student.findMany({
                 where: { enrollments: { some: { classId: targetId, status: 'active' } }, status: 'ACTIVE' },
                 select: { userId: true },
             });
             userIds = classStudents.map((s) => s.userId);
             break;
+        }
 
-        case 'role':
+        case 'role': {
             const roleUsers = await prisma.user.findMany({
                 where: { role: targetRole as any, isActive: true },
                 select: { id: true },
@@ -240,6 +243,7 @@ export async function sendMassNotification(
             });
             userIds = roleUsers.map((u) => u.id);
             break;
+        }
     }
 
     if (userIds.length === 0) {

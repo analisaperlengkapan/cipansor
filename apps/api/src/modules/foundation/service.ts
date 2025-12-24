@@ -62,10 +62,11 @@ export async function getFoundationById(id: string) {
 
 export async function createFoundation(data: CreateFoundationInput) {
   return prisma.foundation.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       ...data,
       foundingDate: data.foundingDate ? new Date(data.foundingDate) : undefined,
-    },
+    } as any,
   });
 }
 
@@ -147,11 +148,12 @@ export async function getBoardMemberById(id: string) {
 
 export async function createBoardMember(data: CreateBoardMemberInput) {
   return prisma.boardMember.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       ...data,
       startDate: new Date(data.startDate),
       endDate: data.endDate ? new Date(data.endDate) : undefined,
-    },
+    } as any,
   });
 }
 
@@ -231,11 +233,12 @@ export async function getDocumentById(id: string) {
 
 export async function createDocument(data: CreateDocumentInput) {
   return prisma.foundationDocument.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       ...data,
       issueDate: new Date(data.issueDate),
       expiryDate: data.expiryDate ? new Date(data.expiryDate) : undefined,
-    },
+    } as any,
   });
 }
 

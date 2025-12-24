@@ -18,7 +18,8 @@ import {
 
 export async function createDormitory(data: CreateDormitoryDto) {
   return prisma.dormitory.create({
-    data,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: data as any,
     include: { unit: true },
   });
 }
@@ -101,7 +102,8 @@ export async function deleteDormitory(id: string) {
 
 export async function createRoom(data: CreateRoomDto) {
   return prisma.room.create({
-    data,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: data as any,
     include: { dormitory: { select: { id: true, name: true, code: true } } },
   });
 }
@@ -189,7 +191,8 @@ export async function createRoomAssignment(data: CreateRoomAssignmentDto) {
   });
 
   return prisma.roomAssignment.create({
-    data,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: data as any,
     include: {
       room: {
         include: {

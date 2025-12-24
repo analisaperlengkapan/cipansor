@@ -276,6 +276,10 @@ export default function TahfidzCertificatePage() {
 
     const accentColor = isSanad ? '#fbbf24' : '#10b981';
 
+    // Generate random but stable number based on student ID if possible, or just don't use Math.random in render
+    // For now, let's use a fixed placeholder or derived from ID
+    const certNumber = selectedStudent.id ? selectedStudent.id.substring(0, 3).toUpperCase() : '001';
+
     return (
       <div
         ref={printRef}
@@ -328,7 +332,7 @@ export default function TahfidzCertificatePage() {
             >
               PONDOK PESANTREN CIPANSOR
             </h1>
-            <p className="text-xs opacity-70 mt-1">Tahfidz Al-Qur'an Program</p>
+            <p className="text-xs opacity-70 mt-1">Tahfidz Al-Qur&apos;an Program</p>
           </div>
 
           {/* Certificate Type Title */}
@@ -360,7 +364,7 @@ export default function TahfidzCertificatePage() {
 
           {/* Certificate Number */}
           <p className="text-xs opacity-60 mb-3">
-            No: {Math.floor(Math.random() * 1000).toString().padStart(3, '0')}/
+            No: {certNumber}/
             {formData.certificateType.split('_').pop()}/CPN/
             {format(new Date(), 'MM/yyyy')}
           </p>
@@ -416,7 +420,7 @@ export default function TahfidzCertificatePage() {
               </p>
             </div>
             <div>
-              <p className="text-xs opacity-70">Qira'ah</p>
+              <p className="text-xs opacity-70">Qira&apos;ah</p>
               <p
                 className="text-base font-semibold"
                 style={{ color: accentColor }}
@@ -518,7 +522,7 @@ export default function TahfidzCertificatePage() {
               Sertifikat & Sanad Tahfidz
             </h1>
             <p className="text-muted-foreground">
-              Generate sertifikat hafalan Al-Qur'an dan sanad resmi
+              Generate sertifikat hafalan Al-Qur&apos;an dan sanad resmi
             </p>
           </div>
           <div className="flex gap-2">
@@ -856,7 +860,7 @@ export default function TahfidzCertificatePage() {
 
                   {/* Qiraah Type */}
                   <div className="space-y-2">
-                    <Label>Qira'ah</Label>
+                    <Label>Qira&apos;ah</Label>
                     <Select
                       value={formData.qiraahType}
                       onValueChange={(value) =>

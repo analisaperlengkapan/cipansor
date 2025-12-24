@@ -49,7 +49,8 @@ export function TableSkeleton({
               <Skeleton 
                 key={colIndex} 
                 className="h-4 flex-1"
-                style={{ width: `${Math.random() * 40 + 60}%` }}
+                // Using standard CSS width instead of random for stable rendering
+                style={{ width: `${60 + ((rowIndex + colIndex) % 5) * 10}%` }}
               />
             ))}
           </div>
@@ -183,7 +184,7 @@ export function ChartSkeleton({ height = 300 }: { height?: number }) {
           <div 
             key={i} 
             className="flex-1"
-            style={{ height: `${Math.random() * 60 + 20}%` }}
+            style={{ height: `${20 + (i % 6) * 10}%` }}
           >
             <Skeleton className="h-full w-full" />
           </div>

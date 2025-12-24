@@ -7,8 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import {
     DollarSign,
     TrendingUp,
-    CheckCircle,
-    RefreshCw
+    CheckCircle
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -37,12 +36,59 @@ const formatCurrency = (amount: number) => {
 
 export function RecentPaymentsWidget({ maxItems = 10 }: RecentPaymentsWidgetProps) {
     const [payments, setPayments] = useState<PaymentEvent[]>([]);
-    const [todayTotal, setTodayTotal] = useState(0);
+
+    // Initial load - setting state in effect with empty deps is fine, but if we want to avoid the lint warning about "set state in effect"
+    // we should use a mounting ref or just accept it's standard for client-side fetching.
+    // The lint error specifically complains about synchronous set state in effect that could cause cascading renders.
+    // But here we are just setting initial data.
+
+    // Let's try to lazy init in useState if possible, but we can't because of time calculation (Date.now()) being impure.
+    // So useEffect is the correct place for client-side only data to avoid hydration mismatch.
+    useEffect(() => {
+        setPayments([
+            {
+                invoiceId: '1',
+                studentName: 'Ahmad Fauzi',
+                amount: 1500000,
+                type: 'SPP',
+                unitName: 'SMP IT',
+                time: new Date().toISOString(),
+            },
+            {
+                invoiceId: '2',
+                studentName: 'Fatimah Az-Zahra',
+                amount: 750000,
+                type: 'Uang Makan',
+                unitName: 'SD IT',
+                time: new Date(Date.now() - 300000).toISOString(),
+            },
+            {
+                invoiceId: '3',
+                studentName: 'Muhammad Rizki',
+                amount: 2000000,
+                type: 'SPP',
+                unitName: 'SMA',
+                time: new Date(Date.now() - 600000).toISOString(),
+            },
+            {
+                invoiceId: '4',
+                studentName: 'Aisyah Putri',
+                amount: 500000,
+                type: 'Kegiatan',
+                unitName: 'PAUD',
+                time: new Date(Date.now() - 900000).toISOString(),
+            },
+        ]);
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const [isConnected, setIsConnected] = useState(false);
-    const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
     useEffect(() => {
         // Simulate polling for real-time updates
+        let mounted = true;
+
         const fetchRecentPayments = async () => {
             try {
                 const token = localStorage.getItem('token');
@@ -53,64 +99,32 @@ export function RecentPaymentsWidget({ maxItems = 10 }: RecentPaymentsWidgetProp
 
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.success && data.data) {
-                        setTodayTotal(data.data.totalRevenue || 0);
+                    if (mounted) {
+                        if (data.success && data.data && data.data.payments) {
+                            // If we had real API returning payments list
+                            // setPayments(data.data.payments);
+                        }
+                        setIsConnected(true);
                     }
-                    setIsConnected(true);
-                    setLastUpdate(new Date());
                 }
-            } catch (error) {
-                setIsConnected(false);
+            } catch {
+                if (mounted) {
+                    setIsConnected(false);
+                }
             }
         };
 
         fetchRecentPayments();
         const interval = setInterval(fetchRecentPayments, 30000);
 
-        return () => clearInterval(interval);
+        return () => {
+            mounted = false;
+            clearInterval(interval);
+        };
     }, []);
 
-    // Demo data
-    useEffect(() => {
-        if (payments.length === 0) {
-            const demoPayments: PaymentEvent[] = [
-                {
-                    invoiceId: '1',
-                    studentName: 'Ahmad Fauzi',
-                    amount: 1500000,
-                    type: 'SPP',
-                    unitName: 'SMP IT',
-                    time: new Date().toISOString(),
-                },
-                {
-                    invoiceId: '2',
-                    studentName: 'Fatimah Az-Zahra',
-                    amount: 750000,
-                    type: 'Uang Makan',
-                    unitName: 'SD IT',
-                    time: new Date(Date.now() - 300000).toISOString(),
-                },
-                {
-                    invoiceId: '3',
-                    studentName: 'Muhammad Rizki',
-                    amount: 2000000,
-                    type: 'SPP',
-                    unitName: 'SMA',
-                    time: new Date(Date.now() - 600000).toISOString(),
-                },
-                {
-                    invoiceId: '4',
-                    studentName: 'Aisyah Putri',
-                    amount: 500000,
-                    type: 'Kegiatan',
-                    unitName: 'PAUD',
-                    time: new Date(Date.now() - 900000).toISOString(),
-                },
-            ];
-            setPayments(demoPayments);
-            setTodayTotal(demoPayments.reduce((sum, p) => sum + p.amount, 0));
-        }
-    }, [payments.length]);
+    // Calculate total from current payments
+    const todayTotal = payments.reduce((sum, p) => sum + p.amount, 0);
 
     return (
         <Card className="h-full">

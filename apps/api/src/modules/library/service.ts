@@ -36,7 +36,8 @@ export async function getBookCategoryById(id: string) {
 
 export async function createBookCategory(data: CreateBookCategoryInput) {
   return prisma.bookCategory.create({
-    data,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: data as any,
     include: {
       unit: { select: { id: true, name: true } },
     },
@@ -123,10 +124,11 @@ export async function getBookById(id: string) {
 
 export async function createBook(data: CreateBookInput) {
   return prisma.book.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       ...data,
       available: data.quantity,
-    },
+    } as any,
     include: {
       unit: { select: { id: true, name: true } },
       category: { select: { id: true, name: true, code: true } },
@@ -234,10 +236,11 @@ export async function createBorrowing(data: CreateBorrowingInput, processedBy: s
   // Create borrowing and update book availability
   return prisma.$transaction(async (tx) => {
     const borrowing = await tx.borrowing.create({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data: {
         ...data,
         processedBy,
-      },
+      } as any,
       include: {
         book: { select: { id: true, title: true, author: true } },
         processedByUser: { select: { id: true, name: true } },

@@ -61,64 +61,170 @@ export async function compareUnitsPerformance(options?: {
         }) as any;
     }
 
-    const unitMetrics: UnitMetrics[] = [];
+    if (!units || units.length === 0) {
+        return {
+            units: [],
+            averages: {
+                attendanceRate: 0,
+                paymentCollectionRate: 0,
+                tahfidzProgress: 0,
+                academicAverage: 0,
+            },
+            period: {
+                start: startDate.toISOString(),
+                end: endDate.toISOString(),
+            },
+        };
+    }
 
-    for (const unit of units || []) {
-        // Student count
-        const studentCount = await prisma.student.count({
-            where: { unitId: unit.id, deletedAt: null, status: 'active' },
-        });
+    const unitIds = units.map((u) => u.id);
 
-        // Attendance rate
-        const attendanceData = await prisma.attendance.groupBy({
-            by: ['status'],
+    // 1. Get student counts per unit (direct aggregation)
+    const studentCounts = await prisma.student.groupBy({
+        by: ['unitId'],
+        where: {
+            unitId: { in: unitIds },
+            deletedAt: null,
+            status: 'active'
+        },
+        _count: { _all: true },
+    });
+
+    // 2. Fetch all students to map studentId -> unitId for related table aggregations
+    // We need this because Attendance, Invoice, etc. don't have unitId column
+    const students = await prisma.student.findMany({
+        where: {
+            unitId: { in: unitIds },
+            deletedAt: null,
+            status: 'active'
+        },
+        select: { id: true, unitId: true }
+    });
+
+    const studentIds = students.map(s => s.id);
+    const studentUnitMap = new Map<string, string>(); // studentId -> unitId
+    students.forEach(s => studentUnitMap.set(s.id, s.unitId));
+
+    // 3. Bulk queries for related data grouped by studentId
+    const [
+        attendanceData,
+        invoiceData,
+        tahfidzData,
+        gradeData
+    ] = await Promise.all([
+        // Attendance data per student and status
+        prisma.attendance.groupBy({
+            by: ['studentId', 'status'],
             where: {
-                student: { unitId: unit.id },
+                studentId: { in: studentIds },
                 date: { gte: startDate, lte: endDate },
             },
             _count: true,
-        });
-
-        const totalAttendance = attendanceData.reduce((sum, a) => sum + a._count, 0);
-        const presentCount = attendanceData.find((a) => a.status === AttendanceStatus.PRESENT)?._count || 0;
-        const attendanceRate = totalAttendance > 0 ? (presentCount / totalAttendance) * 100 : 0;
-
-        // Payment collection rate
-        const invoiceData = await prisma.invoice.aggregate({
+        }),
+        // Payment data per student
+        prisma.invoice.groupBy({
+            by: ['studentId'],
             where: {
-                student: { unitId: unit.id },
+                studentId: { in: studentIds },
                 createdAt: { gte: startDate, lte: endDate },
             },
             _sum: { amount: true, paidAmount: true },
-        });
-
-        const totalAmount = Number(invoiceData._sum.amount || 0);
-        const paidAmount = Number(invoiceData._sum.paidAmount || 0);
-        const paymentCollectionRate = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
-
-        // Tahfidz progress (average ayah per student per month)
-        const tahfidzData = await prisma.tahfidzRecord.aggregate({
+        }),
+        // Tahfidz data per student
+        prisma.tahfidzRecord.groupBy({
+            by: ['studentId'],
             where: {
-                student: { unitId: unit.id },
+                studentId: { in: studentIds },
                 recordedAt: { gte: startDate, lte: endDate },
             },
             _sum: { totalAyah: true },
-            _count: true,
-        });
-
-        const tahfidzProgress =
-            studentCount > 0 ? (Number(tahfidzData._sum.totalAyah || 0) / studentCount) : 0;
-
-        // Academic average (from grades)
-        const gradeData = await prisma.grade.aggregate({
+        }),
+        // Grade data per student
+        prisma.grade.groupBy({
+            by: ['studentId'],
             where: {
-                student: { unitId: unit.id },
+                studentId: { in: studentIds },
                 createdAt: { gte: startDate, lte: endDate },
             },
             _avg: { score: true },
-        });
+        }),
+    ]);
 
-        const academicAverage = Number(gradeData._avg.score || 0);
+    // 4. Aggregate student-level data into unit-level metrics in memory
+
+    // Maps to store unit aggregated data
+    const studentCountMap = new Map<string, number>();
+    studentCounts.forEach(item => {
+        studentCountMap.set(item.unitId, item._count._all);
+    });
+
+    const attendanceMap = new Map<string, { total: number, present: number }>();
+    attendanceData.forEach(item => {
+        const unitId = studentUnitMap.get(item.studentId);
+        if (unitId) {
+            const current = attendanceMap.get(unitId) || { total: 0, present: 0 };
+            current.total += item._count;
+            if (item.status === AttendanceStatus.PRESENT) {
+                current.present += item._count;
+            }
+            attendanceMap.set(unitId, current);
+        }
+    });
+
+    const invoiceMap = new Map<string, { totalAmount: number, paidAmount: number }>();
+    invoiceData.forEach(item => {
+        const unitId = studentUnitMap.get(item.studentId);
+        if (unitId) {
+            const current = invoiceMap.get(unitId) || { totalAmount: 0, paidAmount: 0 };
+            current.totalAmount += Number(item._sum.amount || 0);
+            current.paidAmount += Number(item._sum.paidAmount || 0);
+            invoiceMap.set(unitId, current);
+        }
+    });
+
+    const tahfidzMap = new Map<string, number>();
+    tahfidzData.forEach(item => {
+        const unitId = studentUnitMap.get(item.studentId);
+        if (unitId) {
+            const current = tahfidzMap.get(unitId) || 0;
+            tahfidzMap.set(unitId, current + Number(item._sum.totalAyah || 0));
+        }
+    });
+
+    // Grade is average. We need weighted average or sum/count.
+    // groupBy student gives avg score per student.
+    // To get unit avg, we can avg the student avgs (approximation) or sum them and divide by student count.
+    // Averaging student averages is acceptable for "Average Grade".
+    const gradeSumMap = new Map<string, { sum: number, count: number }>();
+    gradeData.forEach(item => {
+        const unitId = studentUnitMap.get(item.studentId);
+        if (unitId) {
+            const current = gradeSumMap.get(unitId) || { sum: 0, count: 0 };
+            if (item._avg.score !== null) {
+                current.sum += Number(item._avg.score);
+                current.count += 1;
+            }
+            gradeSumMap.set(unitId, current);
+        }
+    });
+
+
+    const unitMetrics: UnitMetrics[] = [];
+
+    for (const unit of units) {
+        const studentCount = studentCountMap.get(unit.id) || 0;
+
+        const attendance = attendanceMap.get(unit.id) || { total: 0, present: 0 };
+        const attendanceRate = attendance.total > 0 ? (attendance.present / attendance.total) * 100 : 0;
+
+        const invoice = invoiceMap.get(unit.id) || { totalAmount: 0, paidAmount: 0 };
+        const paymentCollectionRate = invoice.totalAmount > 0 ? (invoice.paidAmount / invoice.totalAmount) * 100 : 0;
+
+        const totalAyah = tahfidzMap.get(unit.id) || 0;
+        const tahfidzProgress = studentCount > 0 ? (totalAyah / studentCount) : 0;
+
+        const gradeInfo = gradeSumMap.get(unit.id) || { sum: 0, count: 0 };
+        const academicAverage = gradeInfo.count > 0 ? (gradeInfo.sum / gradeInfo.count) : 0;
 
         unitMetrics.push({
             unitId: unit.id,

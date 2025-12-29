@@ -12,6 +12,8 @@
 
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
+import { Twilio } from 'twilio';
+import { config } from '../../config';
 import nodemailer from 'nodemailer';
 
 // Notification templates
@@ -283,7 +285,7 @@ class NotificationService {
     if (templateKey && templateData && templates[templateKey]) {
       const template = templates[templateKey];
       subject = template.subject.replace('{title}', (templateData.title as string) || title);
-      
+
       // Type-safe template rendering based on key
       switch (templateKey) {
         case 'welcome':
@@ -312,7 +314,7 @@ class NotificationService {
 
     // Log email for development/debugging
     logger.info(`[EMAIL] To: ${recipientEmail}, Subject: ${subject}`);
-    
+
     const transporter = this.getTransporter();
 
     // Check if SMTP is configured
@@ -353,22 +355,38 @@ class NotificationService {
     }
 
     // Log SMS for development/debugging
-    logger.info(`[SMS] To: ${recipientPhone}, Message: ${message}`);
+    // Redact potential sensitive info in message
+    const redactedMessage = message.replace(/\b\d{4,8}\b/g, '****');
+    logger.info(`[SMS] To: ${recipientPhone}, Message: ${redactedMessage}`);
 
     // Check if Twilio is configured
-    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-    if (!twilioSid) {
-      logger.warn('SMS not configured - TWILIO_ACCOUNT_SID not set. SMS logged only.');
+    const { accountSid, authToken, phoneNumber } = config.twilio;
+
+    if (!accountSid || !authToken || !phoneNumber) {
+      logger.warn(
+        'SMS not configured - TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, or TWILIO_PHONE_NUMBER not set. SMS logged only.',
+      );
       return { success: true, channel: 'SMS', messageId: `log_${Date.now()}` };
     }
 
-    // TODO: Implement actual SMS sending with Twilio/AWS SNS
-    // Example: pnpm add twilio
-    // Then: const twilio = require('twilio');
-    // Create client and send message...
+    try {
+      const client = new Twilio(accountSid, authToken);
+      const response = await client.messages.create({
+        body: message,
+        from: phoneNumber,
+        to: recipientPhone,
+      });
 
-    logger.info(`SMS queued for ${recipientPhone}`);
-    return { success: true, channel: 'SMS', messageId: `queued_${Date.now()}` };
+      logger.info(`SMS sent to ${recipientPhone}, SID: ${response.sid}`);
+      return { success: true, channel: 'SMS', messageId: response.sid };
+    } catch (error) {
+      logger.error('Failed to send SMS via Twilio:', error);
+      return {
+        success: false,
+        channel: 'SMS',
+        error: error instanceof Error ? error.message : 'Twilio error',
+      };
+    }
   }
 
   /**

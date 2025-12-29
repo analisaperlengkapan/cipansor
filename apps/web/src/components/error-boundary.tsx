@@ -9,6 +9,7 @@ import React, { Component, ReactNode, ErrorInfo } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { captureError } from '@/lib/sentry';
 
 interface Props {
   children: ReactNode;
@@ -51,10 +52,7 @@ export class ErrorBoundary extends Component<Props, State> {
     this.props.onError?.(error, errorInfo);
 
     // Log to error reporting service (e.g., Sentry)
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-      // TODO: Integrate with error reporting service
-      // Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo.componentStack } } });
-    }
+    captureError(error, errorInfo);
   }
 
   handleReset = () => {
@@ -128,9 +126,9 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="mt-4 text-center text-sm text-gray-600">
               <p>
                 Jika masalah berlanjut, silakan hubungi dukungan teknis atau{' '}
-                <a href="/" className="text-blue-600 hover:underline">
+                <Button variant="link" className="text-blue-600 hover:underline p-0 h-auto font-normal" onClick={() => window.location.href = '/'}>
                   kembali ke beranda
-                </a>
+                </Button>
                 .
               </p>
             </div>
@@ -187,6 +185,8 @@ export class AsyncErrorBoundary extends Component<Props, State> {
       error: event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
       errorInfo: null,
     });
+
+    captureError(event.reason);
   };
 
   static getDerivedStateFromError(error: Error): Partial<State> {
@@ -205,6 +205,7 @@ export class AsyncErrorBoundary extends Component<Props, State> {
     });
 
     this.props.onError?.(error, errorInfo);
+    captureError(error, errorInfo);
   }
 
   handleReset = () => {

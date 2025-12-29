@@ -67,6 +67,7 @@ const MOOD_LABELS: Record<string, string> = {
   SAD: '😢 Sedih',
   EXCITED: '🤩 Antusias',
   TIRED: '😴 Lelah',
+  SICK: '🤒 Sakit',
 };
 
 const HEALTH_LABELS: Record<string, string> = {
@@ -141,68 +142,56 @@ export default function DailyReportListPage() {
           )}
           <div>
             <p className="font-medium">{row.original.student?.user?.name || '-'}</p>
-            <p className="text-xs text-muted-foreground">{row.original.class?.name || '-'}</p>
+            <p className="text-xs text-muted-foreground">{row.original.student?.nis || '-'}</p>
           </div>
         </div>
       ),
     },
     {
-      accessorKey: 'date',
+      accessorKey: 'reportDate',
       header: 'Tanggal',
       cell: ({ row }) => (
         <div>
           <p className="font-medium">
-            {format(new Date(row.original.date), 'EEEE', { locale: idLocale })}
+            {format(new Date(row.original.reportDate), 'EEEE', { locale: idLocale })}
           </p>
           <p className="text-xs text-muted-foreground">
-            {format(new Date(row.original.date), 'dd MMM yyyy', { locale: idLocale })}
+            {format(new Date(row.original.reportDate), 'dd MMM yyyy', { locale: idLocale })}
           </p>
         </div>
       ),
     },
     {
-      accessorKey: 'attendance',
-      header: 'Kehadiran',
+      accessorKey: 'unitType',
+      header: 'Unit',
+      cell: ({ row }) => (
+        <Badge variant="outline" className="font-normal">
+          {row.original.unitType.replace('_', ' ')}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: 'mood',
+      header: 'Kondisi',
       cell: ({ row }) => (
         <div className="space-y-1">
-          <Badge className={cn('font-normal', ATTENDANCE_COLORS[row.original.attendanceStatus])}>
-            {ATTENDANCE_LABELS[row.original.attendanceStatus]}
-          </Badge>
-          {row.original.checkInTime && (
-            <p className="text-xs text-muted-foreground">
-              <Clock className="inline h-3 w-3 mr-1" />
-              {row.original.checkInTime}
-              {row.original.checkOutTime && ` - ${row.original.checkOutTime}`}
+          {row.original.mood && (
+            <span className="text-sm">{MOOD_LABELS[row.original.mood]}</span>
+          )}
+          {row.original.healthStatus && (
+            <p className="text-xs text-muted-foreground truncate max-w-[150px]">
+              {row.original.healthStatus}
             </p>
           )}
         </div>
       ),
     },
     {
-      accessorKey: 'moodStatus',
-      header: 'Kondisi',
-      cell: ({ row }) => (
-        <div className="space-y-1">
-          {row.original.moodStatus && (
-            <span className="text-sm">{MOOD_LABELS[row.original.moodStatus]}</span>
-          )}
-          {row.original.healthStatus && (
-            <Badge
-              variant="outline"
-              className={cn('text-xs', HEALTH_COLORS[row.original.healthStatus])}
-            >
-              {HEALTH_LABELS[row.original.healthStatus]}
-            </Badge>
-          )}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'activities',
-      header: 'Kegiatan',
+      accessorKey: 'activitiesSummary',
+      header: 'Ringkasan Kegiatan',
       cell: ({ row }) => (
         <p className="text-sm text-muted-foreground line-clamp-2 max-w-xs">
-          {row.original.activities || '-'}
+          {row.original.activitiesSummary || '-'}
         </p>
       ),
     },

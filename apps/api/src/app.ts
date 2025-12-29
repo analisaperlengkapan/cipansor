@@ -1,4 +1,5 @@
 import express from 'express';
+import * as Sentry from '@sentry/node';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -82,6 +83,9 @@ import dashboardRoutes from '@/modules/dashboard/dashboard.routes';
 // Create Express app
 const app = express();
 
+// Sentry Request Handler
+Sentry.setupExpressErrorHandler(app);
+
 // Trust proxy (for production behind reverse proxy)
 app.set('trust proxy', 1);
 
@@ -99,9 +103,13 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Compression
 app.use(compression());
 
+// Static files
+import path from 'path';
+app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
+
 // Rate limiting - apply to all routes except health check
-// Active in all environments except test, with more lenient limits in development
-if (config.env !== 'test') {
+// Active in all environments except test and development
+if (config.env !== 'test' && config.env !== 'development') {
   app.use(defaultLimiter);
 }
 
@@ -143,7 +151,12 @@ if (config.env !== 'production') {
 const apiRouter = express.Router();
 
 // Apply stricter rate limiting to auth routes
-apiRouter.use('/auth', authLimiter, authRoutes);
+// Apply stricter rate limiting to auth routes
+if (config.env !== 'test' && config.env !== 'development') {
+  apiRouter.use('/auth', authLimiter, authRoutes);
+} else {
+  apiRouter.use('/auth', authRoutes);
+}
 apiRouter.use('/users', userRoutes);
 apiRouter.use('/units', unitRoutes);
 apiRouter.use('/students', studentRoutes);

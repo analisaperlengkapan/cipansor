@@ -5,21 +5,29 @@ import { apiClient } from '@/lib/api-client';
 export interface DailyReport {
   id: string;
   studentId: string;
-  classId: string;
-  date: string;
-  checkInTime?: string;
-  checkOutTime?: string;
-  attendanceStatus: 'PRESENT' | 'ABSENT' | 'LATE' | 'SICK' | 'EXCUSED';
-  moodStatus?: 'HAPPY' | 'NEUTRAL' | 'SAD' | 'EXCITED' | 'TIRED';
-  healthStatus?: 'HEALTHY' | 'SICK' | 'RECOVERING' | 'NEED_ATTENTION';
-  sleepQuality?: 'GOOD' | 'FAIR' | 'POOR';
-  appetiteLevel?: 'GOOD' | 'FAIR' | 'POOR';
-  napTime?: number;
-  activities?: string;
+  unitId: string;
+  academicYearId?: string;
+  reportDate: string;
+  unitType: 'PESANTREN' | 'TK_QURAN' | 'SD_IT' | 'SMP_IT' | 'SMA_QURAN' | 'OTHER';
+  arrivalTime?: string;
+  mood?: 'HAPPY' | 'NEUTRAL' | 'SAD' | 'TIRED' | 'EXCITED' | 'SICK';
+  healthStatus?: string;
+  temperature?: number;
+  hadBreakfast?: boolean;
+  mealStatus?: 'HABIS' | 'SETENGAH' | 'SEDIKIT' | 'TIDAK_MAU';
+  snackStatus?: 'HABIS' | 'SETENGAH' | 'SEDIKIT' | 'TIDAK_MAU';
+  napDuration?: number;
+  toiletNotes?: string;
+  sholatDhuha?: boolean;
+  tahfidzActivity?: string;
+  activitiesSummary?: string;
   achievements?: string;
-  concerns?: string;
+  behaviorNotes?: string;
   teacherNotes?: string;
-  parentNotes?: string;
+  homeActivity?: string;
+  departureTime?: string;
+  pickedUpBy?: string;
+  parentReadAt?: string;
   createdById: string;
   createdAt: string;
   updatedAt: string;
@@ -31,11 +39,12 @@ export interface DailyReport {
       name: string;
     };
   };
-  class?: {
+  unit?: {
     id: string;
     name: string;
   };
   createdBy?: {
+    id: string;
     name: string;
   };
   photos?: DailyReportPhoto[];
@@ -65,20 +74,31 @@ export interface DailyReportFilters {
 
 export interface CreateDailyReportData {
   studentId: string;
-  classId: string;
-  date: string;
-  checkInTime?: string;
-  checkOutTime?: string;
-  attendanceStatus: string;
-  moodStatus?: string;
-  healthStatus?: string;
-  sleepQuality?: string;
-  appetiteLevel?: string;
-  napTime?: number;
-  activities?: string;
-  achievements?: string;
-  concerns?: string;
-  teacherNotes?: string;
+  unitId: string;
+  academicYearId: string;
+  reportDate: string;
+  morningMood?: string;
+  afternoonMood?: string;
+  healthNotes?: string;
+  temperature?: number;
+  breakfastConsumption?: string;
+  lunchConsumption?: string;
+  snackConsumption?: string;
+  napDurationMinutes?: number;
+  napQuality?: string;
+  bathroomCount?: number;
+  toiletingNotes?: string;
+  activitiesSummary?: string;
+  learningAchievements?: string;
+  specialMoments?: string;
+  ibadahNotes?: string;
+  doaPractice?: string;
+  surahPractice?: string;
+  socialInteraction?: string;
+  behaviorNotes?: string;
+  parentNotes?: string;
+  homeworkSuggestion?: string;
+  photoUrls?: string[];
 }
 
 export interface UpdateDailyReportData extends Partial<CreateDailyReportData> {

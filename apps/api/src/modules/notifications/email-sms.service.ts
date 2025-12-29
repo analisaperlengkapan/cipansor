@@ -14,7 +14,7 @@ import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
 import { Twilio } from 'twilio';
 import { config } from '../../config';
-// Note: Install nodemailer with: pnpm add nodemailer && pnpm add -D @types/nodemailer
+import nodemailer from 'nodemailer';
 
 // Notification templates
 const templates = {
@@ -194,6 +194,34 @@ interface NotificationResult {
 }
 
 class NotificationService {
+  private transporter: nodemailer.Transporter | null = null;
+
+  /**
+   * Get or create email transporter
+   */
+  private getTransporter(): nodemailer.Transporter | null {
+    if (this.transporter) {
+      return this.transporter;
+    }
+
+    const smtpHost = process.env.SMTP_HOST;
+    if (!smtpHost) {
+      return null;
+    }
+
+    this.transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587', 10),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    return this.transporter;
+  }
+
   /**
    * Send a notification through specified channel
    */
@@ -257,7 +285,7 @@ class NotificationService {
     if (templateKey && templateData && templates[templateKey]) {
       const template = templates[templateKey];
       subject = template.subject.replace('{title}', (templateData.title as string) || title);
-      
+
       // Type-safe template rendering based on key
       switch (templateKey) {
         case 'welcome':
@@ -286,21 +314,33 @@ class NotificationService {
 
     // Log email for development/debugging
     logger.info(`[EMAIL] To: ${recipientEmail}, Subject: ${subject}`);
-    
+
+    const transporter = this.getTransporter();
+
     // Check if SMTP is configured
-    const smtpHost = process.env.SMTP_HOST;
-    if (!smtpHost) {
+    if (!transporter) {
       logger.warn('Email not configured - SMTP_HOST not set. Email logged only.');
       return { success: true, channel: 'EMAIL', messageId: `log_${Date.now()}` };
     }
 
-    // TODO: Implement actual email sending with nodemailer/SendGrid/AWS SES
-    // Example: pnpm add nodemailer @types/nodemailer
-    // Then: const nodemailer = require('nodemailer');
-    // Create transporter and send mail...
-    
-    logger.info(`Email queued for ${recipientEmail}`);
-    return { success: true, channel: 'EMAIL', messageId: `queued_${Date.now()}` };
+    try {
+      const info = await transporter.sendMail({
+        from: process.env.SMTP_FROM || '"Cipansor System" <no-reply@cipansor.id>',
+        to: recipientEmail,
+        subject: subject,
+        html: htmlContent,
+      });
+
+      logger.info(`Email sent to ${recipientEmail}: ${info.messageId}`);
+      return { success: true, channel: 'EMAIL', messageId: info.messageId };
+    } catch (error) {
+      logger.error(`Failed to send email to ${recipientEmail}:`, error);
+      return {
+        success: false,
+        channel: 'EMAIL',
+        error: error instanceof Error ? error.message : 'Unknown email error',
+      };
+    }
   }
 
   /**

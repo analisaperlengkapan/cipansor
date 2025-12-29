@@ -18,11 +18,43 @@ import {
   assessmentSummaryQuerySchema,
   classSummaryQuerySchema,
 } from './paud-assessment.schema';
+import { handleSingleUpload } from '../../middleware/upload';
 
 const router = Router();
 
 // All routes require authentication
 router.use(authenticate);
+
+/**
+ * @swagger
+ * /api/paud-assessment/evidences:
+ *   post:
+ *     summary: Create evidence for an assessment
+ *     tags: [PAUD Assessment]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - assessmentId
+ *               - file
+ *             properties:
+ *               assessmentId:
+ *                 type: string
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *               caption:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Evidence created
+ */
+router.post('/evidences', handleSingleUpload('file'), validate(createEvidenceSchema), controller.createEvidence);
 
 // ============================================
 // INDICATOR ROUTES
@@ -425,39 +457,7 @@ router.delete('/assessments/:id', controller.deleteAssessment);
 // EVIDENCE ROUTES
 // ============================================
 
-/**
- * @swagger
- * /api/paud-assessment/evidences:
- *   post:
- *     summary: Create evidence for an assessment
- *     tags: [PAUD Assessment]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - assessmentId
- *               - evidenceType
- *               - fileUrl
- *             properties:
- *               assessmentId:
- *                 type: string
- *               evidenceType:
- *                 type: string
- *                 enum: [photo, video, audio, document]
- *               fileUrl:
- *                 type: string
- *               description:
- *                 type: string
- *     responses:
- *       201:
- *         description: Evidence created
- */
-router.post('/evidences', validate(createEvidenceSchema), controller.createEvidence);
+
 
 /**
  * @swagger

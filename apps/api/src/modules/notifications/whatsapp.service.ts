@@ -235,6 +235,26 @@ Jazakallahu khairan.
 _Panitia PSB Pesantren Cipansor_`,
   },
 
+  // Laporan harian PAUD/TK
+  dailyReport: {
+    name: 'daily_report',
+    text: (data: { parentName: string; studentName: string; date: string; mood?: string | null; healthStatus?: string | null }) =>
+      `Assalamu'alaikum Bapak/Ibu *${data.parentName}*,
+
+📝 *LAPORAN HARIAN*
+
+Alhamdulillah, berikut adalah ringkasan kegiatan *${data.studentName}* hari ini (${data.date}):
+
+${data.mood ? `😊 *Mood:* ${data.mood}` : ''}
+${data.healthStatus ? `🤒 *Kondisi:* ${data.healthStatus}` : ''}
+
+Laporan lengkap dapat dilihat melalui aplikasi atau Portal Orang Tua.
+
+Terima kasih atas kepercayaannya.
+
+_Pesan otomatis dari Sistem Informasi Pesantren Cipansor_`,
+  },
+
   // OTP verification
   otpVerification: {
     name: 'otp_verification',
@@ -521,6 +541,41 @@ class WhatsAppService {
     });
   }
 
+  /**
+   * Send daily report notification
+   */
+  async sendDailyReportNotification(data: {
+    parentPhone: string;
+    parentName: string;
+    studentName: string;
+    date: Date;
+    mood?: string | null;
+    healthStatus?: string | null;
+  }): Promise<SendResult> {
+    const moodMap: Record<string, string> = {
+      HAPPY: 'Senang 😊',
+      NEUTRAL: 'Biasa 😐',
+      SAD: 'Sedih 😢',
+      TIRED: 'Lelah 😴',
+      EXCITED: 'Antusias 🤩',
+      SICK: 'Sakit 🤒',
+    };
+
+    const message = WA_TEMPLATES.dailyReport.text({
+      parentName: data.parentName,
+      studentName: data.studentName,
+      date: data.date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+      mood: data.mood ? (moodMap[data.mood as string] || data.mood) : undefined,
+      healthStatus: data.healthStatus,
+    });
+
+    return this.sendMessage({
+      to: data.parentPhone,
+      message,
+      type: 'text',
+    });
+  }
+
   // ==================== Provider Implementations ====================
 
   /**
@@ -540,7 +595,7 @@ class WhatsAppService {
 
     try {
       const url = `https://graph.facebook.com/v17.0/${this.config.phoneNumberId}/messages`;
-      
+
       const body: Record<string, unknown> = {
         messaging_product: 'whatsapp',
         to: phone,
@@ -618,7 +673,7 @@ class WhatsAppService {
       const formData = new FormData();
       formData.append('target', phone);
       formData.append('message', message);
-      
+
       if (type === 'image' && mediaUrl) {
         formData.append('url', mediaUrl);
       }

@@ -7,7 +7,7 @@ export const PAUDAspectEnum = z.enum(['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI']);
 export const PAUDAchievementLevelEnum = z.enum(['BB', 'MB', 'BSH', 'BSB']);
 
 // Report Period enum  
-export const PAUDReportPeriodEnum = z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'SEMESTER']);
+export const PAUDReportPeriodEnum = z.enum(['HARIAN', 'MINGGUAN', 'BULANAN', 'SEMESTER']);
 
 // ============================================
 // PAUD Development Indicator Schemas

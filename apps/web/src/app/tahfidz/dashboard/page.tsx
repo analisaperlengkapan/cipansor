@@ -69,22 +69,22 @@ const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
 export default function TahfidzDashboardPage() {
-  const [unitId, setUnitId] = useState<string>('');
+  const [unitId, setUnitId] = useState<string>('ALL');
   const [year, setYear] = useState<number>(currentYear);
-  const [month, setMonth] = useState<number | undefined>(undefined);
+  const [month, setMonth] = useState<string>('ALL');
 
   const { data: unitsData } = useUnits();
   const units = unitsData || [];
 
   const { data: stats, isLoading } = useTahfidzDashboard({
-    unitId: unitId || undefined,
+    unitId: unitId === 'ALL' ? undefined : unitId,
     year,
-    month,
+    month: month === 'ALL' ? undefined : parseInt(month),
   });
 
   // Calculate max student count for juz progress
-  const maxJuzStudentCount = stats?.progressByJuz 
-    ? Math.max(...stats.progressByJuz.map(j => j.studentCount), 1) 
+  const maxJuzStudentCount = stats?.progressByJuz
+    ? Math.max(...stats.progressByJuz.map(j => j.studentCount), 1)
     : 1;
 
   // Calculate total monthly activity
@@ -121,7 +121,7 @@ export default function TahfidzDashboardPage() {
                 <SelectValue placeholder="Semua Unit" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Unit</SelectItem>
+                <SelectItem value="ALL">Semua Unit</SelectItem>
                 {units.map((unit) => (
                   <SelectItem key={unit.id} value={unit.id}>
                     {unit.name}
@@ -130,8 +130,8 @@ export default function TahfidzDashboardPage() {
               </SelectContent>
             </Select>
 
-            <Select 
-              value={year.toString()} 
+            <Select
+              value={year.toString()}
               onValueChange={(v) => setYear(parseInt(v))}
             >
               <SelectTrigger className="w-[120px]">
@@ -146,15 +146,15 @@ export default function TahfidzDashboardPage() {
               </SelectContent>
             </Select>
 
-            <Select 
-              value={month !== undefined ? month.toString() : ''} 
-              onValueChange={(v) => setMonth(v ? parseInt(v) : undefined)}
+            <Select
+              value={month}
+              onValueChange={setMonth}
             >
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Semua Bulan" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Bulan</SelectItem>
+                <SelectItem value="ALL">Semua Bulan</SelectItem>
                 {MONTHS.map((m) => (
                   <SelectItem key={m.value} value={m.value.toString()}>
                     {m.label}
@@ -166,9 +166,9 @@ export default function TahfidzDashboardPage() {
             <Button
               variant="ghost"
               onClick={() => {
-                setUnitId('');
+                setUnitId('ALL');
                 setYear(currentYear);
-                setMonth(undefined);
+                setMonth('ALL');
               }}
             >
               Reset
@@ -230,8 +230,8 @@ export default function TahfidzDashboardPage() {
               <Skeleton className="h-8 w-20" />
             ) : (
               <p className="text-2xl font-bold">
-                {stats?.monthlyActivity?.length 
-                  ? Math.round(stats.monthlyActivity.reduce((a, b) => a + getMonthTotal(b), 0) / stats.monthlyActivity.length) 
+                {stats?.monthlyActivity?.length
+                  ? Math.round(stats.monthlyActivity.reduce((a, b) => a + getMonthTotal(b), 0) / stats.monthlyActivity.length)
                   : 0}
               </p>
             )}
@@ -262,13 +262,13 @@ export default function TahfidzDashboardPage() {
                   const typeConfig = TAHFIDZ_TYPES.find((t) => t.value === item.type);
                   const total = stats.totalRecords || 1;
                   const percentage = Math.round((item.count / total) * 100);
-                  
+
                   return (
                     <div key={item.type} className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Badge 
-                            variant="outline" 
+                          <Badge
+                            variant="outline"
                             className={cn(
                               item.type === 'SETORAN' && 'bg-green-50 border-green-200 text-green-700',
                               item.type === 'MURAJAAH' && 'bg-blue-50 border-blue-200 text-blue-700',
@@ -282,8 +282,8 @@ export default function TahfidzDashboardPage() {
                           {item.count} ({percentage}%)
                         </span>
                       </div>
-                      <Progress 
-                        value={percentage} 
+                      <Progress
+                        value={percentage}
                         className={cn(
                           'h-2',
                           item.type === 'SETORAN' && '[&>div]:bg-green-500',
@@ -378,14 +378,14 @@ export default function TahfidzDashboardPage() {
               {stats.progressByJuz.map((juz) => {
                 const percentage = Math.min(Math.round((juz.studentCount / maxJuzStudentCount) * 100), 100);
                 const hasData = juz.studentCount > 0;
-                
+
                 return (
                   <div
                     key={juz.juz}
                     className={cn(
                       'p-2 rounded-lg border text-center transition-colors',
-                      hasData 
-                        ? 'bg-green-50 border-green-200 hover:bg-green-100' 
+                      hasData
+                        ? 'bg-green-50 border-green-200 hover:bg-green-100'
                         : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
                     )}
                   >
@@ -404,7 +404,7 @@ export default function TahfidzDashboardPage() {
                     </p>
                     {hasData && (
                       <div className="h-1 mt-1 bg-green-200 rounded-full overflow-hidden">
-                        <div 
+                        <div
                           className="h-full bg-green-500 transition-all"
                           style={{ width: `${percentage}%` }}
                         />
@@ -442,14 +442,14 @@ export default function TahfidzDashboardPage() {
                 const total = getMonthTotal(item);
                 const maxCount = Math.max(...stats.monthlyActivity!.map((m) => getMonthTotal(m)), 1);
                 const height = Math.max((total / maxCount) * 100, 5);
-                
+
                 return (
-                  <div 
-                    key={item.month} 
+                  <div
+                    key={item.month}
                     className="flex-1 flex flex-col items-center gap-1"
                   >
                     <span className="text-xs font-medium">{total}</span>
-                    <div 
+                    <div
                       className="w-full bg-primary rounded-t transition-all hover:bg-primary/80"
                       style={{ height: `${height}%` }}
                     />
@@ -495,20 +495,20 @@ export default function TahfidzDashboardPage() {
                 {stats.recentRecords.map((record) => (
                   <TableRow key={record.id}>
                     <TableCell className="text-sm">
-                      {format(new Date(record.date), 'd MMM yyyy', { locale: localeId })}
+                      {record.recordedAt ? format(new Date(record.recordedAt), 'd MMM yyyy', { locale: localeId }) : '-'}
                     </TableCell>
-                    <TableCell className="font-medium">{record.student?.name || '-'}</TableCell>
-                    <TableCell>{record.surah}</TableCell>
+                    <TableCell className="font-medium">{record.student?.user?.name || '-'}</TableCell>
+                    <TableCell>{record.surahName || '-'}</TableCell>
                     <TableCell>
-                      {record.startAyah} - {record.endAyah}
+                      {record.ayahStart} - {record.ayahEnd}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-xs">
-                        {TAHFIDZ_TYPES.find((t) => t.value === record.type)?.label || record.type}
+                        {TAHFIDZ_TYPES.find((t) => t.value === record.activityType)?.label || record.activityType}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{record.grade}</Badge>
+                      <Badge variant="secondary">{record.score ?? '-'}</Badge>
                     </TableCell>
                   </TableRow>
                 ))}

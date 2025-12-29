@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { dailyReportService } from '@/modules/daily-report/daily-report.service';
 import { prisma } from '@/lib/prisma';
 import { DailyMood, MealConsumption, UnitType } from '@prisma/client';
+import { whatsAppService } from '@/modules/notifications';
+
+// Mock WhatsApp Service
+vi.mock('@/modules/notifications', () => ({
+  whatsAppService: {
+    sendDailyReportNotification: vi.fn().mockResolvedValue({ success: true }),
+  },
+}));
 
 // Mock Prisma
 vi.mock('@/lib/prisma', () => ({
@@ -338,6 +346,25 @@ describe('DailyReportService', () => {
       expect(prisma.dailyStudentReport.create).toHaveBeenCalledOnce();
     });
 
+    it('should trigger WhatsApp notification when created', async () => {
+      vi.mocked(prisma.dailyStudentReport.create).mockResolvedValue(mockReport as any);
+      vi.mocked(prisma.student.findUnique).mockResolvedValue({
+        ...mockStudent,
+        parentPhone: '628123456789',
+        parentName: 'Parent Name'
+      } as any);
+
+      await dailyReportService.create(createInput, mockUserId);
+
+      expect(whatsAppService.sendDailyReportNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          parentPhone: '628123456789',
+          parentName: 'Parent Name',
+          studentName: 'Test Student',
+        })
+      );
+    });
+
     it('should normalize report date to midnight', async () => {
       vi.mocked(prisma.dailyStudentReport.create).mockResolvedValue(mockReport as any);
 
@@ -423,6 +450,20 @@ describe('DailyReportService', () => {
       expect(result.failed).toBe(0);
       expect(result.details.success).toHaveLength(2);
       expect(prisma.dailyStudentReport.create).toHaveBeenCalledTimes(2);
+    });
+
+    it('should trigger WhatsApp notifications for multiple students', async () => {
+      vi.mocked(prisma.dailyStudentReport.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.dailyStudentReport.create).mockResolvedValue(mockReport as any);
+      vi.mocked(prisma.student.findUnique).mockResolvedValue({
+        ...mockStudent,
+        parentPhone: '628123456789',
+        parentName: 'Parent'
+      } as any);
+
+      await dailyReportService.bulkCreate(bulkInput, mockUserId);
+
+      expect(whatsAppService.sendDailyReportNotification).toHaveBeenCalledTimes(2);
     });
 
     it('should handle duplicate reports', async () => {
@@ -560,9 +601,9 @@ describe('DailyReportService', () => {
   describe('getStudentMonthlySummary', () => {
     it('should calculate monthly summary statistics', async () => {
       const reports = [
-        { ...mockReport, mood: DailyMood.HAPPY, mealStatus: MealConsumption.FULL, snackStatus: null, napDuration: 60, parentReadAt: new Date() },
-        { ...mockReport, id: 'report-2', mood: DailyMood.NEUTRAL, mealStatus: MealConsumption.HALF, snackStatus: null, napDuration: 45, parentReadAt: null },
-        { ...mockReport, id: 'report-3', mood: DailyMood.HAPPY, mealStatus: null, snackStatus: MealConsumption.QUARTER, napDuration: null, parentReadAt: new Date() },
+        { ...mockReport, mood: DailyMood.HAPPY, mealStatus: MealConsumption.HABIS, snackStatus: null, napDuration: 60, parentReadAt: new Date() },
+        { ...mockReport, id: 'report-2', mood: DailyMood.NEUTRAL, mealStatus: MealConsumption.SETENGAH, snackStatus: null, napDuration: 45, parentReadAt: null },
+        { ...mockReport, id: 'report-3', mood: DailyMood.HAPPY, mealStatus: null, snackStatus: MealConsumption.SEDIKIT, napDuration: null, parentReadAt: new Date() },
       ];
       vi.mocked(prisma.dailyStudentReport.findMany).mockResolvedValue(reports as any);
       vi.mocked(prisma.student.findUnique).mockResolvedValue(mockStudent as any);
@@ -648,9 +689,9 @@ describe('DailyReportService', () => {
 
     it('should calculate average nap duration', async () => {
       const reports = [
-        { ...mockReport, mood: DailyMood.HAPPY, mealStatus: MealConsumption.FULL, snackStatus: null, napDuration: 60, parentReadAt: new Date() },
-        { ...mockReport, id: 'report-2', mood: DailyMood.NEUTRAL, mealStatus: MealConsumption.HALF, snackStatus: null, napDuration: 45, parentReadAt: null },
-        { ...mockReport, id: 'report-3', mood: DailyMood.HAPPY, mealStatus: null, snackStatus: MealConsumption.QUARTER, napDuration: null, parentReadAt: new Date() },
+        { ...mockReport, mood: DailyMood.HAPPY, mealStatus: MealConsumption.HABIS, snackStatus: null, napDuration: 60, parentReadAt: new Date() },
+        { ...mockReport, id: 'report-2', mood: DailyMood.NEUTRAL, mealStatus: MealConsumption.SETENGAH, snackStatus: null, napDuration: 45, parentReadAt: null },
+        { ...mockReport, id: 'report-3', mood: DailyMood.HAPPY, mealStatus: null, snackStatus: MealConsumption.SEDIKIT, napDuration: null, parentReadAt: new Date() },
       ];
       vi.mocked(prisma.dailyStudentReport.findMany).mockResolvedValue(reports as any);
       vi.mocked(prisma.student.findUnique).mockResolvedValue(mockStudent as any);

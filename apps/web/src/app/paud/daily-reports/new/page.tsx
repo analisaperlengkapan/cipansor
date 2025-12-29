@@ -55,37 +55,34 @@ const MOOD_OPTIONS = [
   { value: 'NEUTRAL', label: '😐 Biasa' },
   { value: 'TIRED', label: '😴 Lelah' },
   { value: 'SAD', label: '😢 Sedih' },
+  { value: 'SICK', label: '🤒 Sakit' },
 ];
 
-const HEALTH_OPTIONS = [
-  { value: 'HEALTHY', label: 'Sehat' },
-  { value: 'SICK', label: 'Sakit' },
-  { value: 'RECOVERING', label: 'Pemulihan' },
-  { value: 'NEED_ATTENTION', label: 'Perlu Perhatian' },
-];
-
-const QUALITY_OPTIONS = [
-  { value: 'GOOD', label: 'Baik' },
-  { value: 'FAIR', label: 'Cukup' },
-  { value: 'POOR', label: 'Kurang' },
+const CONSUMPTION_OPTIONS = [
+  { value: 'HABIS', label: 'Habis' },
+  { value: 'SETENGAH', label: 'Setengah' },
+  { value: 'SEDIKIT', label: 'Sedikit' },
+  { value: 'TIDAK_MAU', label: 'Tidak Mau' },
 ];
 
 const dailyReportSchema = z.object({
   studentId: z.string().min(1, 'Siswa wajib dipilih'),
   classId: z.string().min(1, 'Kelas wajib dipilih'),
-  date: z.date({ required_error: 'Tanggal wajib diisi' }),
-  checkInTime: z.string().optional(),
-  checkOutTime: z.string().optional(),
-  attendanceStatus: z.string().min(1, 'Status kehadiran wajib dipilih'),
-  moodStatus: z.string().optional(),
-  healthStatus: z.string().optional(),
-  sleepQuality: z.string().optional(),
-  appetiteLevel: z.string().optional(),
-  napTime: z.number().optional(),
-  activities: z.string().optional(),
-  achievements: z.string().optional(),
-  concerns: z.string().optional(),
-  teacherNotes: z.string().optional(),
+  reportDate: z.date({ required_error: 'Tanggal wajib diisi' }),
+  morningMood: z.string().optional(),
+  healthNotes: z.string().optional(),
+  temperature: z.number().optional(),
+  breakfastConsumption: z.string().optional(),
+  lunchConsumption: z.string().optional(),
+  snackConsumption: z.string().optional(),
+  napDurationMinutes: z.number().optional(),
+  toiletingNotes: z.string().optional(),
+  activitiesSummary: z.string().optional(),
+  learningAchievements: z.string().optional(),
+  surahPractice: z.string().optional(),
+  behaviorNotes: z.string().optional(),
+  parentNotes: z.string().optional(),
+  homeworkSuggestion: z.string().optional(),
 });
 
 type DailyReportFormData = z.infer<typeof dailyReportSchema>;
@@ -109,19 +106,21 @@ export default function CreateDailyReportPage() {
     defaultValues: {
       studentId: '',
       classId: '',
-      date: new Date(),
-      checkInTime: '',
-      checkOutTime: '',
-      attendanceStatus: 'PRESENT',
-      moodStatus: '',
-      healthStatus: '',
-      sleepQuality: '',
-      appetiteLevel: '',
-      napTime: undefined,
-      activities: '',
-      achievements: '',
-      concerns: '',
-      teacherNotes: '',
+      reportDate: new Date(),
+      morningMood: 'HAPPY',
+      healthNotes: '',
+      temperature: 36.5,
+      breakfastConsumption: 'HABIS',
+      lunchConsumption: 'HABIS',
+      snackConsumption: 'HABIS',
+      napDurationMinutes: 0,
+      toiletingNotes: '',
+      activitiesSummary: '',
+      learningAchievements: '',
+      surahPractice: '',
+      behaviorNotes: '',
+      parentNotes: '',
+      homeworkSuggestion: '',
     },
   });
 
@@ -129,12 +128,9 @@ export default function CreateDailyReportPage() {
     try {
       await createMutation.mutateAsync({
         ...data,
-        date: format(data.date, 'yyyy-MM-dd'),
-        napTime: data.napTime || undefined,
-        moodStatus: data.moodStatus || undefined,
-        healthStatus: data.healthStatus || undefined,
-        sleepQuality: data.sleepQuality || undefined,
-        appetiteLevel: data.appetiteLevel || undefined,
+        reportDate: format(data.reportDate, 'yyyy-MM-dd'),
+        unitId: user?.unitId || '',
+        academicYearId: user?.academicYearId || '', // Need to ensure this is in auth store or fetched
       });
       toast.success('Laporan harian berhasil dibuat');
       router.push('/paud/daily-reports');
@@ -228,7 +224,7 @@ export default function CreateDailyReportPage() {
 
                 <FormField
                   control={form.control}
-                  name="date"
+                  name="reportDate"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tanggal *</FormLabel>
@@ -265,88 +261,19 @@ export default function CreateDailyReportPage() {
               </CardContent>
             </Card>
 
-            {/* Attendance */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Kehadiran</CardTitle>
-                <CardDescription>Status dan waktu kehadiran siswa</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="attendanceStatus"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status Kehadiran *</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          className="flex flex-wrap gap-4"
-                        >
-                          {ATTENDANCE_OPTIONS.map((opt) => (
-                            <div key={opt.value} className="flex items-center space-x-2">
-                              <RadioGroupItem value={opt.value} id={`attendance-${opt.value}`} />
-                              <Label
-                                htmlFor={`attendance-${opt.value}`}
-                                className={cn('cursor-pointer', opt.color)}
-                              >
-                                {opt.label}
-                              </Label>
-                            </div>
-                          ))}
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid gap-6 md:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="checkInTime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Jam Masuk</FormLabel>
-                        <FormControl>
-                          <Input type="time" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="checkOutTime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Jam Pulang</FormLabel>
-                        <FormControl>
-                          <Input type="time" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Condition */}
             <Card>
               <CardHeader>
-                <CardTitle>Kondisi Anak</CardTitle>
-                <CardDescription>Mood, kesehatan, dan kondisi fisik</CardDescription>
+                <CardTitle>Kondisi & Kesehatan</CardTitle>
+                <CardDescription>Mood, kesehatan, dan suhu tubuh</CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-6 md:grid-cols-2">
+              <CardContent className="grid gap-6 md:grid-cols-3">
                 <FormField
                   control={form.control}
-                  name="moodStatus"
+                  name="morningMood"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Mood</FormLabel>
+                      <FormLabel>Mood Pagi</FormLabel>
                       <Select value={field.value} onValueChange={field.onChange}>
                         <FormControl>
                           <SelectTrigger>
@@ -368,99 +295,160 @@ export default function CreateDailyReportPage() {
 
                 <FormField
                   control={form.control}
-                  name="healthStatus"
+                  name="temperature"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Kesehatan</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pilih status kesehatan" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {HEALTH_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sleepQuality"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Kualitas Tidur</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pilih kualitas" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {QUALITY_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="appetiteLevel"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nafsu Makan</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pilih level" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {QUALITY_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="napTime"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Waktu Tidur Siang (menit)</FormLabel>
+                      <FormLabel>Suhu Tubuh (°C)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
-                          placeholder="Contoh: 60"
-                          value={field.value ?? ''}
-                          onChange={(e) =>
-                            field.onChange(e.target.value ? parseInt(e.target.value) : undefined)
-                          }
+                          step="0.1"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="healthNotes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Catatan Kesehatan</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Cth: Sehat, Batuk, dll" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Nutrition */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Nutrisi & Istirahat</CardTitle>
+                <CardDescription>Konsumsi makanan dan waktu tidur siang</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="breakfastConsumption"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sarapan</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih konsumsi" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {CONSUMPTION_OPTIONS.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="lunchConsumption"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Makan Siang</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih konsumsi" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {CONSUMPTION_OPTIONS.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="snackConsumption"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Snack/Cemilan</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih konsumsi" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {CONSUMPTION_OPTIONS.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="napDurationMinutes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Durasi Tidur Siang (menit)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="toiletingNotes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Catatan Toileting</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Cth: BAB 1x, Ganti popok 2x"
+                            {...field}
+                            rows={3}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </CardContent>
             </Card>
 
@@ -473,14 +461,14 @@ export default function CreateDailyReportPage() {
               <CardContent className="space-y-6">
                 <FormField
                   control={form.control}
-                  name="activities"
+                  name="activitiesSummary"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Kegiatan Hari Ini</FormLabel>
+                      <FormLabel>Ringkasan Kegiatan Hari Ini</FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
-                          placeholder="Tuliskan kegiatan yang dilakukan anak hari ini..."
+                          placeholder="Tuliskan kegiatan utama yang dilakukan hari ini..."
                           rows={4}
                         />
                       </FormControl>
@@ -489,52 +477,92 @@ export default function CreateDailyReportPage() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="achievements"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Pencapaian</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Tuliskan pencapaian atau perkembangan positif anak..."
-                          rows={3}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="learningAchievements"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Pencapaian Belajar</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            placeholder="Cth: Sudah hafal doa sebelum makan..."
+                            rows={3}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="surahPractice"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Hafalan/Tahfidz</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            placeholder="Cth: Murajaah Surah Al-Fatihah..."
+                            rows={3}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="behaviorNotes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Perilaku & Sosial</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            placeholder="Cth: Berbagi mainan dengan teman..."
+                            rows={3}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="homeworkSuggestion"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Saran Kegiatan di Rumah</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            placeholder="Cth: Mohon dibantu murajaah Surah An-Nas..."
+                            rows={3}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <FormField
                   control={form.control}
-                  name="concerns"
+                  name="parentNotes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Hal yang Perlu Diperhatikan</FormLabel>
+                      <FormLabel>Pesan untuk Orang Tua</FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
-                          placeholder="Tuliskan hal-hal yang perlu mendapat perhatian khusus..."
-                          rows={3}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="teacherNotes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Catatan Guru</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Catatan tambahan dari guru..."
+                          placeholder="Pesan tambahan dari guru..."
                           rows={3}
                         />
                       </FormControl>

@@ -20,7 +20,7 @@ test.describe('Authentication', () => {
     test('should show error for invalid credentials', async ({ page }) => {
         await page.getByLabel(/email/i).fill('invalid@example.com');
         await page.getByLabel(/password|kata sandi/i).fill('wrongpassword');
-        await page.getByRole('button', { name: /masuk|login/i }).click();
+        await page.getByRole('button', { name: /sign in|masuk|login/i }).click();
 
         // Wait for error message
         await expect(page.getByText(/invalid|salah|gagal/i)).toBeVisible({ timeout: 10000 });
@@ -28,9 +28,9 @@ test.describe('Authentication', () => {
 
     test('should redirect to dashboard after successful login', async ({ page }) => {
         // Use test credentials from README.md
-        await page.getByLabel(/email/i).fill('admin@cipansor.com');
-        await page.getByLabel(/password|kata sandi/i).fill('admin123');
-        await page.getByRole('button', { name: /masuk|login/i }).click();
+        await page.getByLabel(/email/i).fill('superadmin@cipansor.id');
+        await page.getByLabel(/password|kata sandi/i).fill('SuperAdmin123!');
+        await page.getByRole('button', { name: /sign in|masuk|login/i }).click();
 
         // Should redirect to dashboard
         await expect(page).toHaveURL(/dashboard/, { timeout: 15000 });
@@ -38,9 +38,9 @@ test.describe('Authentication', () => {
 
     test('should logout successfully', async ({ page }) => {
         // Login first
-        await page.getByLabel(/email/i).fill('admin@cipansor.com');
-        await page.getByLabel(/password|kata sandi/i).fill('admin123');
-        await page.getByRole('button', { name: /masuk|login/i }).click();
+        await page.getByLabel(/email/i).fill('superadmin@cipansor.id');
+        await page.getByLabel(/password|kata sandi/i).fill('SuperAdmin123!');
+        await page.getByRole('button', { name: /sign in|masuk|login/i }).click();
         await expect(page).toHaveURL(/dashboard/, { timeout: 15000 });
 
         // Find and click logout

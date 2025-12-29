@@ -7,7 +7,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  
+
   login: (credentials: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
@@ -53,19 +53,19 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await authApi.login(credentials);
           const { user, accessToken, refreshToken } = response.data.data;
-          
+
           localStorage.setItem('accessToken', accessToken);
           localStorage.setItem('refreshToken', refreshToken);
           // Also set token in cookie for middleware
           document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; samesite=lax`;
-          
+
           set({ user, isAuthenticated: true, isLoading: false });
         } catch (error: unknown) {
           const message = error instanceof Error ? error.message : 'Login failed';
           const axiosError = error as { response?: { data?: { message?: string } } };
-          set({ 
-            error: axiosError.response?.data?.message || message, 
-            isLoading: false 
+          set({
+            error: axiosError.response?.data?.message || message,
+            isLoading: false
           });
           throw error;
         }
@@ -92,7 +92,7 @@ export const useAuthStore = create<AuthState>()(
           set({ isAuthenticated: false, user: null });
           return;
         }
-        
+
         set({ isLoading: true });
         try {
           const response = await authApi.me();
@@ -112,24 +112,24 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await rolesApi.switchRole(roleAssignmentId);
           const { accessToken, refreshToken } = response.data.data;
-          
+
           // Update tokens
           localStorage.setItem('accessToken', accessToken);
           localStorage.setItem('refreshToken', refreshToken);
           document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; samesite=lax`;
-          
+
           // Fetch updated user data
           const userResponse = await authApi.me();
           set({ user: userResponse.data.data, isLoading: false });
-          
+
           // Reload page to refresh navigation and permissions
           window.location.reload();
         } catch (error: unknown) {
           const message = error instanceof Error ? error.message : 'Failed to switch role';
           const axiosError = error as { response?: { data?: { message?: string } } };
-          set({ 
-            error: axiosError.response?.data?.message || message, 
-            isLoading: false 
+          set({
+            error: axiosError.response?.data?.message || message,
+            isLoading: false
           });
           throw error;
         }
@@ -140,10 +140,20 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => customStorage),
-      partialize: (state) => ({ 
-        user: state.user, 
-        isAuthenticated: state.isAuthenticated 
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated
       }),
+      onRehydrateStorage: () => (state) => {
+        // After hydration, trigger fetchUser if token exists
+        if (state && typeof window !== 'undefined') {
+          const token = localStorage.getItem('accessToken');
+          if (token) {
+            // Delay fetchUser to next tick to ensure store is ready
+            setTimeout(() => state.fetchUser(), 0);
+          }
+        }
+      },
     }
   )
 );

@@ -43,7 +43,11 @@ import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/auth';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { Progress } from '@/components/ui/progress';
+import { useAddEvidence } from '@/hooks/use-paud-assessment';
+import { ImagePlus, X, CheckCircle2 } from 'lucide-react';
 
 const formSchema = z.object({
   studentId: z.string().min(1, 'Pilih siswa'),
@@ -106,14 +110,48 @@ export default function CreatePAUDAssessmentPage() {
     isActive: true,
   });
 
+  const [step, setStep] = useState(1);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+
   const createMutation = useCreatePAUDAssessment();
+  const addEvidenceMutation = useAddEvidence();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setFiles((prev) => [...prev, ...newFiles]);
+
+      const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
+      setPreviews((prev) => [...prev, ...newPreviews]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const onSubmit = async (values: FormValues) => {
     try {
-      await createMutation.mutateAsync({
+      const result = await createMutation.mutateAsync({
         ...values,
         periodDate: format(values.periodDate, 'yyyy-MM-dd'),
       });
+
+      // Upload evidence if any
+      if (files.length > 0) {
+        for (const file of files) {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('fileType', file.type.startsWith('image/') ? 'IMAGE' : 'VIDEO');
+          await addEvidenceMutation.mutateAsync({
+            assessmentId: result.id,
+            data: formData,
+          });
+        }
+      }
+
       toast.success('Penilaian berhasil disimpan');
       router.push('/paud/assessment');
     } catch (error: unknown) {
@@ -121,6 +159,18 @@ export default function CreatePAUDAssessmentPage() {
       toast.error(message);
     }
   };
+
+  const nextStep = async () => {
+    let fieldsToValidate: (keyof FormValues)[] = [];
+    if (step === 1) fieldsToValidate = ['studentId', 'academicYearId', 'periodType', 'periodDate'];
+    if (step === 2) fieldsToValidate = ['aspect', 'achievementLevel'];
+    if (step === 3) fieldsToValidate = ['indicatorId', 'narrativeText', 'teacherNotes', 'recommendations'];
+
+    const isValid = await form.trigger(fieldsToValidate);
+    if (isValid) setStep((prev) => prev + 1);
+  };
+
+  const prevStep = () => setStep((prev) => prev - 1);
 
   // Get active academic year as default
   const activeYear = academicYears?.data?.find((y) => y.isActive);
@@ -142,13 +192,22 @@ export default function CreatePAUDAssessmentPage() {
           }
         />
 
+        <div className="max-w-4xl mx-auto space-y-4">
+          <Progress value={(step / 4) * 100} className="h-2" />
+          <div className="flex justify-between text-xs text-muted-foreground font-medium px-1">
+            <span>Siswa & Periode</span>
+            <span>Aspek & Capaian</span>
+            <span>Detail & Narasi</span>
+            <span>Bukti & Review</span>
+          </div>
+        </div>
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid gap-6 lg:grid-cols-2">
-              {/* Left Column - Basic Info */}
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-4xl mx-auto">
+            {step === 1 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Informasi Dasar</CardTitle>
+                  <CardTitle>Langkah 1: Informasi Siswa & Periode</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
@@ -208,7 +267,7 @@ export default function CreatePAUDAssessmentPage() {
                     )}
                   />
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="periodType"
@@ -276,13 +335,14 @@ export default function CreatePAUDAssessmentPage() {
                   </div>
                 </CardContent>
               </Card>
+            )}
 
-              {/* Right Column - Assessment */}
+            {step === 2 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Penilaian Perkembangan</CardTitle>
+                  <CardTitle>Langkah 2: Aspek & Tingkat Capaian</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
                   <FormField
                     control={form.control}
                     name="aspect"
@@ -311,6 +371,58 @@ export default function CreatePAUDAssessmentPage() {
                     )}
                   />
 
+                  <FormField
+                    control={form.control}
+                    name="achievementLevel"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tingkat Capaian *</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="grid grid-cols-2 md:grid-cols-4 gap-4"
+                          >
+                            {ACHIEVEMENT_OPTIONS.map((option) => (
+                              <div key={option.value}>
+                                <RadioGroupItem
+                                  value={option.value}
+                                  id={option.value}
+                                  className="peer sr-only"
+                                />
+                                <label
+                                  htmlFor={option.value}
+                                  className={cn(
+                                    'flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-accent transition-all cursor-pointer h-full',
+                                    option.color
+                                  )}
+                                >
+                                  <span className="text-2xl font-bold">{option.value}</span>
+                                  <span className="text-[10px] text-center font-medium uppercase mt-2">
+                                    {option.label}
+                                  </span>
+                                  <span className="text-[9px] text-center text-muted-foreground leading-tight mt-1">
+                                    {option.description}
+                                  </span>
+                                </label>
+                              </div>
+                            ))}
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
+            {step === 3 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Langkah 3: Detail & Narasi</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   {selectedAspect && indicators && indicators.length > 0 && (
                     <FormField
                       control={form.control}
@@ -340,136 +452,163 @@ export default function CreatePAUDAssessmentPage() {
 
                   <FormField
                     control={form.control}
-                    name="achievementLevel"
+                    name="narrativeText"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tingkat Capaian *</FormLabel>
+                        <FormLabel>Narasi Deskriptif</FormLabel>
                         <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            value={field.value}
-                            className="grid grid-cols-2 gap-4"
-                          >
-                            {ACHIEVEMENT_OPTIONS.map((option) => (
-                              <div key={option.value}>
-                                <RadioGroupItem
-                                  value={option.value}
-                                  id={option.value}
-                                  className="peer sr-only"
-                                />
-                                <label
-                                  htmlFor={option.value}
-                                  className={cn(
-                                    'flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer',
-                                    option.color
-                                  )}
-                                >
-                                  <span className="text-2xl font-bold">{option.value}</span>
-                                  <span className="text-xs text-center text-muted-foreground">
-                                    {option.description}
-                                  </span>
-                                </label>
-                              </div>
-                            ))}
-                          </RadioGroup>
+                          <Textarea
+                            placeholder="Jelaskan secara mendetail perkembangan atau kejadian yang diamati..."
+                            className="min-h-[120px]"
+                            {...field}
+                          />
                         </FormControl>
+                        <FormDescription className="flex justify-between">
+                          <span>Focus on specific evidence or behavior observed.</span>
+                          <span>{field.value?.length || 0} / 2000</span>
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="teacherNotes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Catatan Internal Guru</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Catatan tambahan untuk evaluasi internal..."
+                              className="min-h-[80px]"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="recommendations"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Rekomendasi / Tindak Lanjut</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Saran untuk orang tua atau langkah stimulasi selanjutnya..."
+                              className="min-h-[80px]"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </CardContent>
               </Card>
-            </div>
+            )}
 
-            {/* Narratives */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Catatan & Narasi</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="narrativeText"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Deskripsi Perkembangan</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Jelaskan perkembangan anak pada aspek ini..."
-                          className="min-h-[100px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Maksimal 2000 karakter. Saat ini: {field.value?.length || 0} karakter
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="teacherNotes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Catatan Guru</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Catatan khusus dari guru..."
-                            className="min-h-[80px]"
-                            {...field}
+            {step === 4 && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Langkah 4: Bukti & Review Akhir</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <FormLabel>Unggah Foto/Video Bukti</FormLabel>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {previews.map((preview, index) => (
+                          <div key={index} className="relative aspect-square rounded-md overflow-hidden border">
+                            <img src={preview} alt={`Evidence ${index}`} className="object-cover w-full h-full" />
+                            <button
+                              type="button"
+                              onClick={() => removeFile(index)}
+                              className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                        <label className="flex flex-col items-center justify-center aspect-square rounded-md border-2 border-dashed border-muted-foreground/25 hover:border-primary hover:bg-accent/50 cursor-pointer transition-all">
+                          <ImagePlus className="h-8 w-8 text-muted-foreground" />
+                          <span className="text-[10px] mt-2 font-medium">Tambah Bukti</span>
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*,video/*"
+                            className="hidden"
+                            onChange={handleFileChange}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                        </label>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground italic">
+                        * Unggah foto atau video yang menunjukkan aktivitas terkait capaian ini.
+                      </p>
+                    </div>
 
-                  <FormField
-                    control={form.control}
-                    name="recommendations"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Rekomendasi untuk Orang Tua</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Saran aktivitas di rumah..."
-                            className="min-h-[80px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                    <div className="mt-8 p-4 bg-accent/30 rounded-lg border space-y-4">
+                      <h4 className="text-sm font-semibold flex items-center">
+                        <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
+                        Ringkasan Penilaian
+                      </h4>
+                      <div className="grid grid-cols-2 gap-y-2 text-sm">
+                        <span className="text-muted-foreground">Siswa:</span>
+                        <span className="font-medium">{students?.data?.find(s => s.id === form.getValues('studentId'))?.name}</span>
+                        <span className="text-muted-foreground">Aspek:</span>
+                        <span className="font-medium">{ASPECT_LABELS[form.getValues('aspect')]}</span>
+                        <span className="text-muted-foreground">Capaian:</span>
+                        <span className="font-medium">{ACHIEVEMENT_LABELS[form.getValues('achievementLevel')]}</span>
+                        <span className="text-muted-foreground">Indikator:</span>
+                        <span className="font-medium">{indicators?.find(i => i.id === form.getValues('indicatorId'))?.name || '-'}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
-            {/* Submit */}
-            <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => router.back()}>
-                Batal
+            {/* Navigation Buttons */}
+            <div className="flex justify-between items-center bg-background/80 backdrop-blur-sm p-4 border rounded-lg sticky bottom-4 z-10">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={step === 1 ? () => router.back() : prevStep}
+              >
+                {step === 1 ? 'Batal' : 'Kembali'}
               </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Menyimpan...
-                  </>
+
+              <div className="flex gap-3">
+                {step < 4 ? (
+                  <Button type="button" onClick={nextStep}>
+                    Lanjut
+                  </Button>
                 ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Simpan Penilaian
-                  </>
+                  <Button type="submit" disabled={createMutation.isPending || addEvidenceMutation.isPending}>
+                    {createMutation.isPending || addEvidenceMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Menyimpan...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Selesaikan & Simpan
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
+              </div>
             </div>
           </form>
         </Form>
       </div>
-    </MainLayout>
+    </div>
+    </MainLayout >
   );
 }

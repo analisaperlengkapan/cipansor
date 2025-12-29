@@ -67,6 +67,7 @@ const MOOD_LABELS: Record<string, { label: string; emoji: string; color: string 
   SAD: { label: 'Sedih', emoji: '😢', color: 'text-blue-600' },
   EXCITED: { label: 'Antusias', emoji: '🤩', color: 'text-yellow-600' },
   TIRED: { label: 'Lelah', emoji: '😴', color: 'text-purple-600' },
+  SICK: { label: 'Sakit', emoji: '🤒', color: 'text-red-600' },
 };
 
 const HEALTH_LABELS: Record<string, { label: string; color: string }> = {
@@ -94,19 +95,9 @@ export default function DailyReportDetailPage() {
   const addParentNotesMutation = useAddParentNotes();
 
   const handleAddParentNotes = async () => {
-    if (!parentNotes.trim()) return;
-
-    try {
-      await addParentNotesMutation.mutateAsync({
-        reportId,
-        notes: parentNotes,
-      });
-      toast.success('Catatan orang tua berhasil ditambahkan');
-      setShowParentDialog(false);
-      setParentNotes('');
-    } catch {
-      toast.error('Gagal menambahkan catatan');
-    }
+    // This feature is currently not supported in the backend
+    toast.error('Gagal menambahkan catatan: Fitur belum tersedia');
+    setShowParentDialog(false);
   };
 
   if (isLoading) {
@@ -135,17 +126,16 @@ export default function DailyReportDetailPage() {
     );
   }
 
-  const moodInfo = report.moodStatus ? MOOD_LABELS[report.moodStatus] : null;
-  const healthInfo = report.healthStatus ? HEALTH_LABELS[report.healthStatus] : null;
-  const sleepInfo = report.sleepQuality ? QUALITY_LABELS[report.sleepQuality] : null;
-  const appetiteInfo = report.appetiteLevel ? QUALITY_LABELS[report.appetiteLevel] : null;
+  const moodInfo = report.mood ? MOOD_LABELS[report.mood] : null;
+  const sleepInfo = report.napDuration ? { label: report.napDuration + ' menit', color: 'text-blue-600' } : null;
+  const appetiteInfo = report.mealStatus ? { label: report.mealStatus, color: 'text-green-600' } : null;
 
   return (
     <MainLayout>
       <div className="space-y-6">
         <PageHeader
           title={`Laporan Harian - ${report.student?.user?.name || '-'}`}
-          description={format(new Date(report.date), 'EEEE, dd MMMM yyyy', { locale: idLocale })}
+          description={format(new Date(report.reportDate), 'EEEE, dd MMMM yyyy', { locale: idLocale })}
           actions={
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => router.back()}>
@@ -185,30 +175,30 @@ export default function DailyReportDetailPage() {
                     <div>
                       <h3 className="font-semibold text-lg">{report.student?.user?.name || '-'}</h3>
                       <p className="text-muted-foreground">NIS: {report.student?.nis || '-'}</p>
-                      <p className="text-muted-foreground">{report.class?.name || '-'}</p>
+                      <p className="text-muted-foreground capitalize">{report.unitType.toLowerCase().replace('_', ' ')}</p>
                     </div>
                   </div>
-                  <Badge className={cn('text-sm', ATTENDANCE_COLORS[report.attendanceStatus])}>
-                    {ATTENDANCE_LABELS[report.attendanceStatus]}
+                  <Badge variant="outline" className="text-sm">
+                    {report.parentReadAt ? 'Dibaca' : 'Belum Dibaca'}
                   </Badge>
                 </div>
 
                 {/* Time Info */}
-                {(report.checkInTime || report.checkOutTime) && (
+                {(report.arrivalTime || report.departureTime) && (
                   <div className="mt-4 flex gap-6">
-                    {report.checkInTime && (
+                    {report.arrivalTime && (
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-green-600" />
                         <span className="text-sm">
-                          Masuk: <strong>{report.checkInTime}</strong>
+                          Datang: <strong>{format(new Date(report.arrivalTime), 'HH:mm')}</strong>
                         </span>
                       </div>
                     )}
-                    {report.checkOutTime && (
+                    {report.departureTime && (
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-red-600" />
                         <span className="text-sm">
-                          Pulang: <strong>{report.checkOutTime}</strong>
+                          Pulang: <strong>{format(new Date(report.departureTime), 'HH:mm')}</strong>
                         </span>
                       </div>
                     )}
@@ -244,15 +234,20 @@ export default function DailyReportDetailPage() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Activity className="h-4 w-4" />
-                    Kesehatan
+                    Kesehatan & Suhu
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {healthInfo ? (
-                    <Badge className={cn('text-sm', healthInfo.color)}>{healthInfo.label}</Badge>
-                  ) : (
-                    <span className="text-muted-foreground">Tidak dicatat</span>
-                  )}
+                  <div className="space-y-2">
+                    {report.temperature && (
+                      <div className="text-xl font-bold">{report.temperature}°C</div>
+                    )}
+                    {report.healthStatus ? (
+                      <p className="text-sm text-muted-foreground">{report.healthStatus}</p>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">Tidak ada catatan</span>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
@@ -265,17 +260,12 @@ export default function DailyReportDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {sleepInfo ? (
-                    <span className={cn('text-lg font-semibold', sleepInfo.color)}>
-                      {sleepInfo.label}
+                  {report.napDuration ? (
+                    <span className="text-lg font-semibold">
+                      {report.napDuration} menit
                     </span>
                   ) : (
                     <span className="text-muted-foreground">Tidak dicatat</span>
-                  )}
-                  {report.napTime && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Tidur siang: {report.napTime} menit
-                    </p>
                   )}
                 </CardContent>
               </Card>
@@ -289,13 +279,20 @@ export default function DailyReportDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {appetiteInfo ? (
-                    <span className={cn('text-lg font-semibold', appetiteInfo.color)}>
-                      {appetiteInfo.label}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">Tidak dicatat</span>
-                  )}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Sarapan</span>
+                      <span>{report.hadBreakfast ? 'Ya' : 'Tidak'}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Makan Siang</span>
+                      <span>{report.mealStatus || '-'}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Snack</span>
+                      <span>{report.snackStatus || '-'}</span>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -309,8 +306,8 @@ export default function DailyReportDetailPage() {
                 {/* Activities */}
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground mb-2">Kegiatan Hari Ini</h4>
-                  {report.activities ? (
-                    <p className="whitespace-pre-wrap">{report.activities}</p>
+                  {report.activitiesSummary ? (
+                    <p className="whitespace-pre-wrap">{report.activitiesSummary}</p>
                   ) : (
                     <p className="text-muted-foreground italic">Tidak ada catatan kegiatan</p>
                   )}
@@ -320,35 +317,57 @@ export default function DailyReportDetailPage() {
 
                 {/* Achievements */}
                 <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Pencapaian</h4>
-                  {report.achievements ? (
-                    <p className="whitespace-pre-wrap">{report.achievements}</p>
-                  ) : (
-                    <p className="text-muted-foreground italic">Tidak ada catatan pencapaian</p>
-                  )}
+                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Pencapaian & Tahfidz</h4>
+                  <div className="space-y-4">
+                    {report.achievements && (
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase font-semibold">Belajar</p>
+                        <p className="whitespace-pre-wrap">{report.achievements}</p>
+                      </div>
+                    )}
+                    {report.tahfidzActivity && (
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase font-semibold">Hafalan/Tahfidz</p>
+                        <p className="whitespace-pre-wrap">{report.tahfidzActivity}</p>
+                      </div>
+                    )}
+                    {!report.achievements && !report.tahfidzActivity && (
+                      <p className="text-muted-foreground italic">Tidak ada catatan pencapaian</p>
+                    )}
+                  </div>
                 </div>
 
                 <Separator />
 
-                {/* Concerns */}
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Hal yang Perlu Diperhatikan</h4>
-                  {report.concerns ? (
-                    <p className="whitespace-pre-wrap text-orange-700">{report.concerns}</p>
-                  ) : (
-                    <p className="text-muted-foreground italic">Tidak ada</p>
-                  )}
+                {/* Behavior & Home */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-2">Perilaku & Sosial</h4>
+                    {report.behaviorNotes ? (
+                      <p className="whitespace-pre-wrap">{report.behaviorNotes}</p>
+                    ) : (
+                      <p className="text-muted-foreground italic">Tidak ada catatan</p>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-2">Kegiatan di Rumah</h4>
+                    {report.homeActivity ? (
+                      <p className="whitespace-pre-wrap">{report.homeActivity}</p>
+                    ) : (
+                      <p className="text-muted-foreground italic">Tidak ada saran kegiatan</p>
+                    )}
+                  </div>
                 </div>
 
                 <Separator />
 
                 {/* Teacher Notes */}
                 <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Catatan Guru</h4>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Pesan Guru</h4>
                   {report.teacherNotes ? (
                     <p className="whitespace-pre-wrap">{report.teacherNotes}</p>
                   ) : (
-                    <p className="text-muted-foreground italic">Tidak ada catatan guru</p>
+                    <p className="text-muted-foreground italic">Tidak ada pesan untuk hari ini</p>
                   )}
                 </div>
               </CardContent>
@@ -441,11 +460,11 @@ export default function DailyReportDetailPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                {report.parentNotes ? (
-                  <p className="whitespace-pre-wrap text-sm">{report.parentNotes}</p>
+                {report.teacherNotes ? (
+                  <p className="whitespace-pre-wrap text-sm">{report.teacherNotes}</p>
                 ) : (
                   <p className="text-muted-foreground text-sm italic">
-                    Belum ada catatan dari orang tua
+                    Belum ada catatan dari guru
                   </p>
                 )}
               </CardContent>

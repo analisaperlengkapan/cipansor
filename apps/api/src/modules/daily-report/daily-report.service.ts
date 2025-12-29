@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma, DailyMood, MealConsumption, UnitType } from '@prisma/client';
+import { whatsAppService } from '../notifications';
+import { logger } from '@/lib/logger';
 import type {
   ListDailyReportsQuery,
   CreateDailyReportInput,
@@ -205,11 +207,11 @@ export const dailyReportService = {
         createdById: userId,
         photos: data.photoUrls && data.photoUrls.length > 0
           ? {
-              create: data.photoUrls.map((url) => ({
-                photoUrl: url,
-                caption: '',
-              })),
-            }
+            create: data.photoUrls.map((url) => ({
+              photoUrl: url,
+              caption: '',
+            })),
+          }
           : undefined,
       },
       include: {
@@ -219,6 +221,27 @@ export const dailyReportService = {
         photos: true,
       },
     });
+
+    // Send WhatsApp notification
+    try {
+      const studentData = await prisma.student.findUnique({
+        where: { id: data.studentId },
+        select: { parentName: true, parentPhone: true },
+      });
+
+      if (studentData?.parentPhone) {
+        whatsAppService.sendDailyReportNotification({
+          parentPhone: studentData.parentPhone,
+          parentName: studentData.parentName || 'Orang Tua',
+          studentName: report.student.user.name,
+          date: reportDate,
+          mood: data.morningMood,
+          healthStatus: data.healthNotes,
+        }).catch(err => logger.error(`Failed to send WA notification: ${err}`));
+      }
+    } catch (err) {
+      logger.error(`Error in daily report notification trigger: ${err}`);
+    }
 
     return report;
   },
@@ -250,7 +273,7 @@ export const dailyReportService = {
           continue;
         }
 
-        await prisma.dailyStudentReport.create({
+        const createdReport = await prisma.dailyStudentReport.create({
           data: {
             studentId: report.studentId,
             unitId: data.unitId,
@@ -266,7 +289,32 @@ export const dailyReportService = {
             teacherNotes: report.parentNotes,
             createdById: userId,
           },
+          include: {
+            student: { select: { id: true, user: { select: { name: true } } } },
+          },
         });
+
+        // Send WhatsApp notification
+        try {
+          const studentData = await prisma.student.findUnique({
+            where: { id: report.studentId },
+            select: { parentName: true, parentPhone: true },
+          });
+
+          if (studentData?.parentPhone) {
+            whatsAppService.sendDailyReportNotification({
+              parentPhone: studentData.parentPhone,
+              parentName: studentData.parentName || 'Orang Tua',
+              studentName: createdReport.student.user.name,
+              date: reportDate,
+              mood: report.morningMood,
+              healthStatus: report.healthNotes,
+            }).catch(err => logger.error(`Failed to send WA notification in bulk: ${err}`));
+          }
+        } catch (err) {
+          logger.error(`Error in bulk daily report notification trigger: ${err}`);
+        }
+
         results.success.push(report.studentId);
       } catch (error) {
         results.failed.push({
@@ -316,7 +364,7 @@ export const dailyReportService = {
     if (data.photoUrls !== undefined) {
       // Delete existing photos
       await prisma.dailyReportPhoto.deleteMany({ where: { reportId: id } });
-      
+
       // Create new photos
       if (data.photoUrls.length > 0) {
         await prisma.dailyReportPhoto.createMany({

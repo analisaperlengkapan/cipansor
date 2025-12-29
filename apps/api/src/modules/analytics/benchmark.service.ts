@@ -47,74 +47,184 @@ export async function compareUnitsPerformance(options?: {
     unitIds?: string[];
     startDate?: Date;
     endDate?: Date;
+    prefetchedUnits?: { id: string; name: string; type: string }[];
 }): Promise<ComparisonResult> {
     const startDate = options?.startDate || new Date(new Date().setMonth(new Date().getMonth() - 1));
     const endDate = options?.endDate || new Date();
 
-    // Get all units or filtered units
-    const units = await prisma.unit.findMany({
-        where: options?.unitIds ? { id: { in: options.unitIds } } : undefined,
-        select: { id: true, name: true, type: true },
+    // Get all units or filtered units, unless prefetched
+    let units = options?.prefetchedUnits;
+    if (!units) {
+        units = await prisma.unit.findMany({
+            where: options?.unitIds ? { id: { in: options.unitIds } } : undefined,
+            select: { id: true, name: true, type: true } as any, // Cast as any if type mismatch occurs due to missing fields in select vs return type
+        }) as any;
+    }
+
+    if (!units || units.length === 0) {
+        return {
+            units: [],
+            averages: {
+                attendanceRate: 0,
+                paymentCollectionRate: 0,
+                tahfidzProgress: 0,
+                academicAverage: 0,
+            },
+            period: {
+                start: startDate.toISOString(),
+                end: endDate.toISOString(),
+            },
+        };
+    }
+
+    const unitIds = units.map((u) => u.id);
+
+    // 1. Get student counts per unit (direct aggregation)
+    const studentCounts = await prisma.student.groupBy({
+        by: ['unitId'],
+        where: {
+            unitId: { in: unitIds },
+            deletedAt: null,
+            status: 'active'
+        },
+        _count: { _all: true },
     });
+
+    // 2. Fetch all students to map studentId -> unitId for related table aggregations
+    // We need this because Attendance, Invoice, etc. don't have unitId column
+    const students = await prisma.student.findMany({
+        where: {
+            unitId: { in: unitIds },
+            deletedAt: null,
+            status: 'active'
+        },
+        select: { id: true, unitId: true }
+    });
+
+    const studentIds = students.map(s => s.id);
+    const studentUnitMap = new Map<string, string>(); // studentId -> unitId
+    students.forEach(s => studentUnitMap.set(s.id, s.unitId));
+
+    // 3. Bulk queries for related data grouped by studentId
+    const [
+        attendanceData,
+        invoiceData,
+        tahfidzData,
+        gradeData
+    ] = await Promise.all([
+        // Attendance data per student and status
+        prisma.attendance.groupBy({
+            by: ['studentId', 'status'],
+            where: {
+                studentId: { in: studentIds },
+                date: { gte: startDate, lte: endDate },
+            },
+            _count: true,
+        }),
+        // Payment data per student
+        prisma.invoice.groupBy({
+            by: ['studentId'],
+            where: {
+                studentId: { in: studentIds },
+                createdAt: { gte: startDate, lte: endDate },
+            },
+            _sum: { amount: true, paidAmount: true },
+        }),
+        // Tahfidz data per student
+        prisma.tahfidzRecord.groupBy({
+            by: ['studentId'],
+            where: {
+                studentId: { in: studentIds },
+                recordedAt: { gte: startDate, lte: endDate },
+            },
+            _sum: { totalAyah: true },
+        }),
+        // Grade data per student
+        prisma.grade.groupBy({
+            by: ['studentId'],
+            where: {
+                studentId: { in: studentIds },
+                createdAt: { gte: startDate, lte: endDate },
+            },
+            _avg: { score: true },
+        }),
+    ]);
+
+    // 4. Aggregate student-level data into unit-level metrics in memory
+
+    // Maps to store unit aggregated data
+    const studentCountMap = new Map<string, number>();
+    studentCounts.forEach(item => {
+        studentCountMap.set(item.unitId, item._count._all);
+    });
+
+    const attendanceMap = new Map<string, { total: number, present: number }>();
+    attendanceData.forEach(item => {
+        const unitId = studentUnitMap.get(item.studentId);
+        if (unitId) {
+            const current = attendanceMap.get(unitId) || { total: 0, present: 0 };
+            current.total += item._count;
+            if (item.status === AttendanceStatus.PRESENT) {
+                current.present += item._count;
+            }
+            attendanceMap.set(unitId, current);
+        }
+    });
+
+    const invoiceMap = new Map<string, { totalAmount: number, paidAmount: number }>();
+    invoiceData.forEach(item => {
+        const unitId = studentUnitMap.get(item.studentId);
+        if (unitId) {
+            const current = invoiceMap.get(unitId) || { totalAmount: 0, paidAmount: 0 };
+            current.totalAmount += Number(item._sum.amount || 0);
+            current.paidAmount += Number(item._sum.paidAmount || 0);
+            invoiceMap.set(unitId, current);
+        }
+    });
+
+    const tahfidzMap = new Map<string, number>();
+    tahfidzData.forEach(item => {
+        const unitId = studentUnitMap.get(item.studentId);
+        if (unitId) {
+            const current = tahfidzMap.get(unitId) || 0;
+            tahfidzMap.set(unitId, current + Number(item._sum.totalAyah || 0));
+        }
+    });
+
+    // Grade is average. We need weighted average or sum/count.
+    // groupBy student gives avg score per student.
+    // To get unit avg, we can avg the student avgs (approximation) or sum them and divide by student count.
+    // Averaging student averages is acceptable for "Average Grade".
+    const gradeSumMap = new Map<string, { sum: number, count: number }>();
+    gradeData.forEach(item => {
+        const unitId = studentUnitMap.get(item.studentId);
+        if (unitId) {
+            const current = gradeSumMap.get(unitId) || { sum: 0, count: 0 };
+            if (item._avg.score !== null) {
+                current.sum += Number(item._avg.score);
+                current.count += 1;
+            }
+            gradeSumMap.set(unitId, current);
+        }
+    });
+
 
     const unitMetrics: UnitMetrics[] = [];
 
     for (const unit of units) {
-        // Student count
-        const studentCount = await prisma.student.count({
-            where: { unitId: unit.id, deletedAt: null, status: 'active' },
-        });
+        const studentCount = studentCountMap.get(unit.id) || 0;
 
-        // Attendance rate
-        const attendanceData = await prisma.attendance.groupBy({
-            by: ['status'],
-            where: {
-                student: { unitId: unit.id },
-                date: { gte: startDate, lte: endDate },
-            },
-            _count: true,
-        });
+        const attendance = attendanceMap.get(unit.id) || { total: 0, present: 0 };
+        const attendanceRate = attendance.total > 0 ? (attendance.present / attendance.total) * 100 : 0;
 
-        const totalAttendance = attendanceData.reduce((sum, a) => sum + a._count, 0);
-        const presentCount = attendanceData.find((a) => a.status === AttendanceStatus.PRESENT)?._count || 0;
-        const attendanceRate = totalAttendance > 0 ? (presentCount / totalAttendance) * 100 : 0;
+        const invoice = invoiceMap.get(unit.id) || { totalAmount: 0, paidAmount: 0 };
+        const paymentCollectionRate = invoice.totalAmount > 0 ? (invoice.paidAmount / invoice.totalAmount) * 100 : 0;
 
-        // Payment collection rate
-        const invoiceData = await prisma.invoice.aggregate({
-            where: {
-                student: { unitId: unit.id },
-                createdAt: { gte: startDate, lte: endDate },
-            },
-            _sum: { amount: true, paidAmount: true },
-        });
+        const totalAyah = tahfidzMap.get(unit.id) || 0;
+        const tahfidzProgress = studentCount > 0 ? (totalAyah / studentCount) : 0;
 
-        const totalAmount = Number(invoiceData._sum.amount || 0);
-        const paidAmount = Number(invoiceData._sum.paidAmount || 0);
-        const paymentCollectionRate = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
-
-        // Tahfidz progress (average ayah per student per month)
-        const tahfidzData = await prisma.tahfidzRecord.aggregate({
-            where: {
-                student: { unitId: unit.id },
-                recordedAt: { gte: startDate, lte: endDate },
-            },
-            _sum: { totalAyah: true },
-            _count: true,
-        });
-
-        const tahfidzProgress =
-            studentCount > 0 ? (Number(tahfidzData._sum.totalAyah || 0) / studentCount) : 0;
-
-        // Academic average (from grades)
-        const gradeData = await prisma.grade.aggregate({
-            where: {
-                student: { unitId: unit.id },
-                createdAt: { gte: startDate, lte: endDate },
-            },
-            _avg: { score: true },
-        });
-
-        const academicAverage = Number(gradeData._avg.score || 0);
+        const gradeInfo = gradeSumMap.get(unit.id) || { sum: 0, count: 0 };
+        const academicAverage = gradeInfo.count > 0 ? (gradeInfo.sum / gradeInfo.count) : 0;
 
         unitMetrics.push({
             unitId: unit.id,
@@ -157,7 +267,43 @@ export async function compareUnitsPerformance(options?: {
  * Get unit rankings by various KPIs
  */
 export async function getUnitRankings(metric: 'attendance' | 'payment' | 'tahfidz' | 'academic' | 'all' = 'all'): Promise<RankingResult[]> {
-    const comparison = await compareUnitsPerformance();
+    // Determine current period
+    const currentEnd = new Date();
+    const currentStart = new Date(new Date().setMonth(new Date().getMonth() - 1));
+
+    // Calculate previous period dates
+    const duration = currentEnd.getTime() - currentStart.getTime();
+    const previousEnd = new Date(currentStart);
+    const previousStart = new Date(previousEnd.getTime() - duration);
+
+    // Fetch units once to avoid redundant DB calls
+    const units = await prisma.unit.findMany({
+        select: { id: true, name: true, type: true },
+    });
+
+    // Map units to match the expected structure for internal use
+    const mappedUnits = units.map(u => ({ id: u.id, name: u.name, type: u.type }));
+
+    // Execute current and previous comparisons in parallel
+    const [comparison, previousComparison] = await Promise.all([
+        compareUnitsPerformance({
+            startDate: currentStart,
+            endDate: currentEnd,
+            prefetchedUnits: mappedUnits
+        }),
+        compareUnitsPerformance({
+            startDate: previousStart,
+            endDate: previousEnd,
+            prefetchedUnits: mappedUnits
+        })
+    ]);
+
+    // Create a map for faster lookup of previous unit data
+    const previousUnitMap = new Map<string, UnitMetrics>();
+    previousComparison.units.forEach(unit => {
+        previousUnitMap.set(unit.unitId, unit);
+    });
+
     const rankings: RankingResult[] = [];
 
     const metricsToRank = metric === 'all'
@@ -182,21 +328,37 @@ export async function getUnitRankings(metric: 'attendance' | 'payment' | 'tahfid
 
         sorted.forEach((unit, index) => {
             let value: number;
+            let previousValue: number = 0;
+            const previousUnit = previousUnitMap.get(unit.unitId);
+
             switch (m) {
                 case 'attendance':
                     value = unit.attendanceRate;
+                    previousValue = previousUnit?.attendanceRate || 0;
                     break;
                 case 'payment':
                     value = unit.paymentCollectionRate;
+                    previousValue = previousUnit?.paymentCollectionRate || 0;
                     break;
                 case 'tahfidz':
                     value = unit.tahfidzProgress;
+                    previousValue = previousUnit?.tahfidzProgress || 0;
                     break;
                 case 'academic':
                     value = unit.academicAverage;
+                    previousValue = previousUnit?.academicAverage || 0;
                     break;
                 default:
                     value = 0;
+                    previousValue = 0;
+            }
+
+            let trend: 'up' | 'down' | 'stable' = 'stable';
+
+            if (value > previousValue) {
+                trend = 'up';
+            } else if (value < previousValue) {
+                trend = 'down';
             }
 
             rankings.push({
@@ -205,7 +367,7 @@ export async function getUnitRankings(metric: 'attendance' | 'payment' | 'tahfid
                 metric: m,
                 value,
                 rank: index + 1,
-                trend: 'stable', // TODO: Compare with previous period
+                trend,
             });
         });
     }

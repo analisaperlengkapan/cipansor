@@ -129,10 +129,10 @@ export default function TahfidzDetailPage() {
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold">Detail Catatan Tahfidz</h1>
-                {getTypeBadge(record.type)}
+                {getTypeBadge(record.activityType)}
               </div>
               <p className="text-muted-foreground">
-                {format(new Date(record.date), 'd MMMM yyyy', { locale: localeId })}
+                {format(new Date(record.recordedAt), 'd MMMM yyyy', { locale: localeId })}
               </p>
             </div>
           </div>
@@ -166,7 +166,7 @@ export default function TahfidzDetailPage() {
                   <User className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="font-semibold text-lg">{record.student?.name || '-'}</p>
+                  <p className="font-semibold text-lg">{record.student?.user?.name || record.student?.name || '-'}</p>
                   <p className="text-sm text-muted-foreground">NIS: {record.student?.nis || '-'}</p>
                 </div>
               </div>
@@ -196,12 +196,12 @@ export default function TahfidzDetailPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Surah</p>
-                  <p className="font-semibold text-lg">{record.surah}</p>
+                  <p className="font-semibold text-lg">{record.surahName}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Ayat</p>
                   <p className="font-semibold text-lg">
-                    {record.startAyah} - {record.endAyah}
+                    {record.ayahStart} - {record.ayahEnd}
                   </p>
                 </div>
               </div>
@@ -210,7 +210,7 @@ export default function TahfidzDetailPage() {
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Jumlah Ayat</p>
                   <p className="font-semibold">
-                    {record.endAyah - record.startAyah + 1} ayat
+                    {record.ayahEnd - record.ayahStart + 1} ayat
                   </p>
                 </div>
                 <div>
@@ -232,16 +232,16 @@ export default function TahfidzDetailPage() {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Tipe</span>
-                {getTypeBadge(record.type)}
+                {getTypeBadge(record.activityType)}
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Nilai</span>
-                {getGradeBadge(record.grade)}
+                {record.score !== undefined ? <Badge variant="secondary">{record.score}</Badge> : (record.grade ? getGradeBadge(record.grade) : '-')}
               </div>
               <Separator />
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Pembimbing</p>
-                <p className="font-medium">{record.teacher?.name || '-'}</p>
+                <p className="font-medium">{record.recordedBy?.name || '-'}</p>
               </div>
             </CardContent>
           </Card>
@@ -258,7 +258,7 @@ export default function TahfidzDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Tanggal</p>
                 <p className="font-medium">
-                  {format(new Date(record.date), 'EEEE, d MMMM yyyy', { locale: localeId })}
+                  {format(new Date(record.recordedAt), 'EEEE, d MMMM yyyy', { locale: localeId })}
                 </p>
               </div>
               {record.createdAt && (

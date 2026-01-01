@@ -342,19 +342,13 @@ export default function StudentTranscriptPage() {
                 {tahfidzRecords.data.slice(0, 10).map((record, idx) => (
                   <tr key={record.id}>
                     <td className="text-center">{idx + 1}</td>
-                    <td>{format(new Date(record.date), 'd MMM yyyy', { locale: idLocale })}</td>
-                    <td>{record.surah}</td>
-                    <td className="text-center">{record.startAyah} - {record.endAyah}</td>
-                    <td className="text-center">{record.type}</td>
+                    <td>{format(new Date(record.recordedAt), 'd MMM yyyy', { locale: idLocale })}</td>
+                    <td>{record.surahName}</td>
+                    <td className="text-center">{record.ayahStart} - {record.ayahEnd}</td>
+                    <td className="text-center">{record.activityType}</td>
                     <td className="text-center">
-                      <span className={`px-2 py-0.5 rounded text-xs ${
-                        record.grade === 'MUMTAZ' ? 'bg-green-100 text-green-800' :
-                        record.grade === 'JAYYID_JIDDAN' ? 'bg-blue-100 text-blue-800' :
-                        record.grade === 'JAYYID' ? 'bg-cyan-100 text-cyan-800' :
-                        record.grade === 'MAQBUL' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {record.grade.replace('_', ' ')}
+                      <span className="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-800">
+                        {record.score !== undefined ? record.score : (record.grade || '-')}
                       </span>
                     </td>
                   </tr>
@@ -734,23 +728,17 @@ export default function StudentTranscriptPage() {
                               {tahfidzRecords.data.slice(0, 10).map((record) => (
                                 <div key={record.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                                   <div>
-                                    <p className="font-medium">{record.surah}</p>
+                                    <p className="font-medium">{record.surahName}</p>
                                     <p className="text-sm text-muted-foreground">
-                                      Ayat {record.startAyah} - {record.endAyah} • {record.type}
+                                      Ayat {record.ayahStart} - {record.ayahEnd} • {record.activityType}
                                     </p>
                                   </div>
                                   <div className="text-right">
-                                    <Badge className={
-                                      record.grade === 'MUMTAZ' ? 'bg-green-100 text-green-800' :
-                                      record.grade === 'JAYYID_JIDDAN' ? 'bg-blue-100 text-blue-800' :
-                                      record.grade === 'JAYYID' ? 'bg-cyan-100 text-cyan-800' :
-                                      record.grade === 'MAQBUL' ? 'bg-yellow-100 text-yellow-800' :
-                                      'bg-red-100 text-red-800'
-                                    }>
-                                      {record.grade.replace('_', ' ')}
+                                    <Badge variant="secondary">
+                                      {record.score !== undefined ? record.score : (record.grade || '-')}
                                     </Badge>
                                     <p className="text-xs text-muted-foreground mt-1">
-                                      {format(new Date(record.date), 'd MMM yyyy', { locale: idLocale })}
+                                      {format(new Date(record.recordedAt), 'd MMM yyyy', { locale: idLocale })}
                                     </p>
                                   </div>
                                 </div>

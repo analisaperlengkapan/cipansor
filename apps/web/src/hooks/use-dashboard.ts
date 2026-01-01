@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { DashboardNotification } from '@cipansor/shared';
 
 // Types
 export interface DashboardStats {
@@ -209,16 +210,6 @@ export function useChangePassword() {
 }
 
 // Dashboard Notification Hooks (simplified for dashboard display)
-export interface DashboardNotification {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  isRead: boolean;
-  data?: Record<string, unknown>;
-  createdAt: string;
-}
-
 export function useDashboardNotifications(params?: { page?: number; limit?: number; unreadOnly?: boolean }) {
   return useQuery({
     queryKey: ['dashboard-notifications', params],

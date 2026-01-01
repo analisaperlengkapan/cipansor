@@ -10,43 +10,103 @@ interface DateRange {
 
 export async function getDashboardStats(unitId?: string) {
   const unitFilter = unitId ? { unitId } : {};
-  
+  const studentFilter = { ...unitFilter, deletedAt: null };
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+  const endOfDay = new Date(now.setHours(23, 59, 59, 999));
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
   const [
     totalStudents,
-    totalTeachers,
-    totalStaff,
-    totalClasses,
-    totalAlumni,
     activeStudents,
-    pendingPayments,
-    todayAttendance,
+    newStudentsThisMonth,
+    attendanceTodayPresent,
+    attendanceWeeklyTotal,
+    attendanceWeeklyPresent,
+    financeStats,
+    financeOutstanding,
+    tahfidzAvgJuz
   ] = await Promise.all([
-    prisma.student.count({ where: { ...unitFilter, deletedAt: null } }),
-    prisma.teacher.count({ where: { ...unitFilter, deletedAt: null } }),
-    prisma.staff.count({ where: { ...unitFilter, deletedAt: null } }),
-    prisma.class.count({ where: { ...unitFilter, deletedAt: null } }),
-    prisma.alumni.count({ where: { ...unitFilter, deletedAt: null } }),
-    prisma.student.count({ where: { ...unitFilter, status: "active", deletedAt: null } }),
-    prisma.invoice.count({ where: { status: { in: ["PENDING", "PARTIAL"] } } }),
+    prisma.student.count({ where: studentFilter }),
+    prisma.student.count({ where: { ...studentFilter, status: "active" } }),
+    prisma.student.count({
+      where: {
+        ...studentFilter,
+        createdAt: { gte: startOfMonth }
+      }
+    }),
+    // Attendance Today
     prisma.attendance.count({
       where: {
-        date: {
-          gte: new Date(new Date().setHours(0, 0, 0, 0)),
-          lt: new Date(new Date().setHours(23, 59, 59, 999)),
-        },
-        status: "PRESENT",
+        ...unitFilter,
+        date: { gte: startOfDay, lte: endOfDay },
+        status: "PRESENT"
       },
     }),
+    // Attendance Weekly
+    prisma.attendance.count({
+      where: {
+        ...unitFilter,
+        date: { gte: oneWeekAgo }
+      }
+    }),
+    prisma.attendance.count({
+      where: {
+        ...unitFilter,
+        date: { gte: oneWeekAgo },
+        status: "PRESENT"
+      }
+    }),
+    // Finance (Monthly Revenue)
+    prisma.payment.aggregate({
+      where: {
+        paidAt: { gte: startOfMonth },
+        invoice: unitId ? { student: { unitId } } : undefined
+      },
+      _sum: { amount: true }
+    }),
+    // Finance (Outstanding)
+    prisma.invoice.aggregate({
+      where: {
+        ...unitFilter,
+        status: { in: ["PENDING", "PARTIAL"] }
+      },
+      _sum: { amount: true, paidAmount: true }
+    }),
+    // Tahfidz
+    prisma.tahfidzRecord.aggregate({
+      where: unitId ? { student: { unitId } } : {},
+      _avg: { juz: true }
+    })
   ]);
 
+  const outstandingAmount = (Number(financeOutstanding._sum.amount) || 0) - (Number(financeOutstanding._sum.paidAmount) || 0);
+
+  const totalInvoicedOutstanding = Number(financeOutstanding._sum.amount) || 0;
+  const collectionRate = totalInvoicedOutstanding > 0
+    ? 100 - ((outstandingAmount / totalInvoicedOutstanding) * 100)
+    : 100;
+
   return {
-    students: { total: totalStudents, active: activeStudents },
-    teachers: totalTeachers,
-    staff: totalStaff,
-    classes: totalClasses,
-    alumni: totalAlumni,
-    finance: { pendingPayments },
-    attendance: { todayPresent: todayAttendance },
+    students: {
+      total: totalStudents,
+      active: activeStudents,
+      newThisMonth: newStudentsThisMonth
+    },
+    attendance: {
+      todayRate: activeStudents > 0 ? (attendanceTodayPresent / activeStudents) * 100 : 0,
+      weeklyAverage: attendanceWeeklyTotal > 0 ? (attendanceWeeklyPresent / attendanceWeeklyTotal) * 100 : 0
+    },
+    finance: {
+      monthlyRevenue: Number(financeStats._sum.amount) || 0,
+      outstandingBills: outstandingAmount,
+      collectionRate: Number(collectionRate.toFixed(2))
+    },
+    tahfidz: {
+      averageJuz: Number(tahfidzAvgJuz._avg?.juz?.toFixed(2)) || 0,
+      completedHafidz: 0
+    }
   };
 }
 

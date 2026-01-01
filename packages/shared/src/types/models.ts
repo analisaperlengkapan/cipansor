@@ -1,4 +1,4 @@
-import { UserRole, UnitType, Gender } from './enums';
+import { UnitType, Gender } from './enums';
 
 // Base types
 export interface BaseEntity {
@@ -6,14 +6,6 @@ export interface BaseEntity {
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date | null;
-}
-
-// User
-export interface User extends BaseEntity {
-  name: string;
-  email: string;
-  role: UserRole;
-  unitId?: string | null;
 }
 
 // Unit
@@ -42,7 +34,8 @@ export interface Student extends BaseEntity {
 // API Response Types
 export interface ApiResponse<T = unknown> {
   success: boolean;
-  data?: T;
+  data: T;
+  message?: string;
   error?: ApiError;
   meta?: {
     pagination?: Pagination;
@@ -60,25 +53,4 @@ export interface Pagination {
   limit: number;
   total: number;
   totalPages: number;
-}
-
-// Auth Types
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  user: Omit<User, 'deletedAt'>;
-  token: string;
-  refreshToken?: string;
-}
-
-export interface JwtPayload {
-  sub: string;
-  email: string;
-  role: UserRole;
-  unitId?: string | null;
-  iat: number;
-  exp: number;
 }

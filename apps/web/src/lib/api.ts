@@ -1,5 +1,21 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { toast } from 'sonner';
+import {
+  User,
+  LoginRequest,
+  LoginResponse,
+  UserRoleAssignment,
+  Role,
+  RoleAssignment,
+  SwitchRoleResponse,
+  AssignRoleRequest,
+  ApiResponse
+} from '@cipansor/shared';
+
+export * from '@cipansor/shared';
+
+// Compatibility alias
+export type UserRole = UserRoleAssignment;
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -75,13 +91,6 @@ api.interceptors.response.use(
   }
 );
 
-// API Types
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-}
-
 export interface PaginatedResponse<T> {
   success: boolean;
   data: T[];
@@ -91,52 +100,6 @@ export interface PaginatedResponse<T> {
     total: number;
     totalPages: number;
   };
-}
-
-// Auth Types
-export interface UserRole {
-  id: string;
-  isPrimary: boolean;
-  role: {
-    id: string;
-    code: string;
-    name: string;
-    realm: string;
-    description?: string;
-  };
-  unit?: {
-    id: string;
-    name: string;
-  } | null;
-}
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  phone?: string;
-  role: 'SUPER_ADMIN' | 'UNIT_ADMIN' | 'TEACHER' | 'STUDENT' | 'STAFF' | 'PARENT';
-  unitId?: string;
-  unit?: {
-    id: string;
-    name: string;
-    type: string;
-  };
-  userRoles?: UserRole[];
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  user: User;
-  accessToken: string;
-  refreshToken: string;
 }
 
 // Auth API
@@ -154,55 +117,10 @@ export const authApi = {
     api.put('/auth/password', data),
 };
 
-// Roles API
-export interface Role {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
-  realm: string;
-  permissions?: string[];
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface RoleAssignment {
-  id: string;
-  userId: string;
-  roleId: string;
-  unitId?: string;
-  isPrimary: boolean;
-  isActive: boolean;
-  assignedAt: string;
-  expiresAt?: string;
-  role: Role;
-  unit?: {
-    id: string;
-    name: string;
-    type: string;
-  };
-  user?: User;
-}
-
-export interface SwitchRoleResponse {
-  message: string;
-  activeRole: UserRole;
-  accessToken: string;
-  refreshToken: string;
-}
-
-export interface AssignRoleRequest {
-  userId: string;
-  roleId: string;
-  unitId?: string;
-  isPrimary?: boolean;
-}
-
 export const rolesApi = {
   // Get current user's roles
   getMyRoles: () =>
-    api.get<ApiResponse<UserRole[]>>('/roles/my-roles'),
+    api.get<ApiResponse<UserRoleAssignment[]>>('/roles/my-roles'),
 
   // Switch active role
   switchRole: (roleAssignmentId: string) =>

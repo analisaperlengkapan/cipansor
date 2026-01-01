@@ -121,7 +121,7 @@ export default function NewBillPage() {
           dueDate: data.dueDate,
           description: data.description,
         });
-        toast.success('Tagihan berhasil dibuat');
+        toast.success('Tagihan berhasil dibuat dan notifikasi dikirim ke santri');
       } else {
         await createBulkBillsMutation.mutateAsync({
           studentIds: selectedStudents,

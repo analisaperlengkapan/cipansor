@@ -1,43 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
+import { TahfidzRecord, TahfidzActivityType } from '@cipansor/shared';
 
-export interface TahfidzRecord {
-  id: string;
-  studentId: string;
-  recordedById: string;
-  recordedAt: string;
-  surahName: string;
-  surahNumber?: number;
-  juz?: number;
-  ayahStart: number;
-  ayahEnd: number;
-  activityType: TahfidzType;
-  score?: number;
-  grade?: TahfidzGrade; // Keep for backward compat if needed
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-  student?: {
-    id: string;
-    user?: { name: string };
-    name?: string; // Compat
-    nis: string;
-    class?: { name: string };
-    unit?: { name: string };
-  };
-  recordedBy?: {
-    id: string;
-    name: string;
-  };
-}
+// Re-export shared types for component usage
+export type { TahfidzRecord };
+// Map frontend legacy type name to shared type
+export type TahfidzType = TahfidzActivityType;
 
-export type TahfidzType = 'SETORAN' | 'MURAJAAH' | 'TASMI';
 export type TahfidzGrade = 'MUMTAZ' | 'JAYYID_JIDDAN' | 'JAYYID' | 'MAQBUL' | 'RASIB';
 
 export const TAHFIDZ_TYPES: { value: TahfidzType; label: string }[] = [
-  { value: 'SETORAN', label: 'Setoran Baru' },
-  { value: 'MURAJAAH', label: 'Murajaah (Pengulangan)' },
+  { value: 'ZIYADAH', label: 'Setoran Baru (Ziyadah)' },
+  { value: 'MUROJAAH', label: 'Murajaah (Pengulangan)' },
   { value: 'TASMI', label: 'Tasmi (Tes)' },
+  { value: 'ASSESSMENT', label: 'Ujian' },
 ];
 
 export const TAHFIDZ_GRADES: { value: TahfidzGrade; label: string; color: string }[] = [
@@ -128,6 +104,7 @@ export interface CreateTahfidzData {
   activityType: TahfidzType;
   score?: number;
   notes?: string;
+  totalAyah?: number;
 }
 
 export function useCreateTahfidz() {

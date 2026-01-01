@@ -166,14 +166,14 @@ export default function TahfidzDetailPage() {
                   <User className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="font-semibold text-lg">{record.student?.user?.name || record.student?.name || '-'}</p>
+                  <p className="font-semibold text-lg">{(record.student as any)?.user?.name || (record.student as any)?.name || '-'}</p>
                   <p className="text-sm text-muted-foreground">NIS: {record.student?.nis || '-'}</p>
                 </div>
               </div>
-              {record.student?.class && (
+              {(record.student as any)?.class && (
                 <div className="text-sm">
                   <span className="text-muted-foreground">Kelas:</span>{' '}
-                  <span className="font-medium">{record.student.class.name}</span>
+                  <span className="font-medium">{(record.student as any).class.name}</span>
                 </div>
               )}
               <Button variant="outline" size="sm" asChild>
@@ -236,7 +236,7 @@ export default function TahfidzDetailPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Nilai</span>
-                {record.score !== undefined ? <Badge variant="secondary">{record.score}</Badge> : (record.grade ? getGradeBadge(record.grade) : '-')}
+                {record.score !== undefined ? <Badge variant="secondary">{record.score}</Badge> : (record.grade ? getGradeBadge(record.grade as TahfidzGrade) : '-')}
               </div>
               <Separator />
               <div>

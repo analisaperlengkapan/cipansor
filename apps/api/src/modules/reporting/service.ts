@@ -113,7 +113,7 @@ class ReportingService {
   }
 
   private async generateStudentListReport(filters: ReportFilter) {
-    const where: Prisma.StudentWhereInput = {
+    const where = {
       ...(filters.unitId && { unitId: filters.unitId }),
       ...(filters.status && { status: filters.status }),
       deletedAt: null,
@@ -216,7 +216,7 @@ class ReportingService {
   }
 
   private async generateFinancialSummaryReport(filters: ReportFilter) {
-    const invoiceWhere: Prisma.InvoiceWhereInput = {
+    const invoiceWhere = {
       ...(filters.unitId && { student: { unitId: filters.unitId } }),
       ...(filters.startDate && filters.endDate && {
         createdAt: { gte: filters.startDate, lte: filters.endDate },

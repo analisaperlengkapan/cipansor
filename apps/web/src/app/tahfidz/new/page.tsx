@@ -61,7 +61,7 @@ const tahfidzSchema = z.object({
   surah: z.string().min(1, 'Surah wajib dipilih'),
   startAyah: z.coerce.number().min(1, 'Ayat awal minimal 1'),
   endAyah: z.coerce.number().min(1, 'Ayat akhir minimal 1'),
-  type: z.enum(['SETORAN', 'MURAJAAH', 'TASMI'] as const, {
+  type: z.enum(['ZIYADAH', 'MUROJAAH', 'TASMI', 'ASSESSMENT'] as const, {
     required_error: 'Tipe wajib dipilih',
   }),
   grade: z.enum(['MUMTAZ', 'JAYYID_JIDDAN', 'JAYYID', 'MAQBUL', 'RASIB'] as const, {

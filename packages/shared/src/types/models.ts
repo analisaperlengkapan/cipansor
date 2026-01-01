@@ -54,3 +54,12 @@ export interface Pagination {
   total: number;
   totalPages: number;
 }
+
+export interface PaginatedResponse<T> {
+  success: boolean;
+  data: T[];
+  message?: string;
+  meta: {
+    pagination: Pagination;
+  };
+}

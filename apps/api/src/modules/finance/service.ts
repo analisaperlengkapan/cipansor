@@ -1,5 +1,6 @@
 import { prisma } from "../../lib/prisma";
-import { PaymentStatus, Prisma } from "@prisma/client";
+import { PaymentStatus, Prisma, NotificationType } from "@prisma/client";
+import * as notificationService from "../notifications/service";
 import {
   CreatePaymentTypeDto,
   UpdatePaymentTypeDto,
@@ -17,11 +18,10 @@ import {
 
 export async function createPaymentType(data: CreatePaymentTypeDto) {
   return prisma.paymentType.create({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       ...data,
       amount: new Prisma.Decimal(data.amount),
-    } as any,
+    },
     include: { unit: { select: { id: true, name: true } } },
   });
 }
@@ -109,26 +109,65 @@ async function generateInvoiceNumber(unitId?: string): Promise<string> {
 }
 
 export async function createInvoice(data: CreateInvoiceDto) {
-  const invoiceNumber = await generateInvoiceNumber();
+  let invoice;
+  let retries = 3;
 
-  return prisma.invoice.create({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data: {
-      ...data,
-      invoiceNumber,
-      amount: new Prisma.Decimal(data.amount),
-      dueDate: new Date(data.dueDate),
-    } as any,
-    include: {
-      student: {
-        include: {
-          user: { select: { id: true, name: true, email: true } },
-          unit: { select: { id: true, name: true } },
+  while (retries > 0) {
+    try {
+      const invoiceNumber = await generateInvoiceNumber();
+
+      invoice = await prisma.invoice.create({
+        data: {
+          ...data,
+          invoiceNumber,
+          amount: new Prisma.Decimal(data.amount),
+          dueDate: new Date(data.dueDate),
         },
-      },
-      paymentType: { select: { id: true, name: true, code: true } },
-    },
-  });
+        include: {
+          student: {
+            include: {
+              user: { select: { id: true, name: true, email: true } },
+              unit: { select: { id: true, name: true } },
+            },
+          },
+          paymentType: { select: { id: true, name: true, code: true } },
+        },
+      });
+      break;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        retries--;
+        if (retries === 0) throw error;
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  if (invoice) {
+    try {
+      const formatter = new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        minimumFractionDigits: 0,
+      });
+
+      await notificationService.createNotification({
+        userId: invoice.student.user.id,
+        title: "Tagihan Baru",
+        message: `Tagihan baru ${invoice.paymentType.name} sebesar ${formatter.format(
+          invoice.amount.toNumber()
+        )} telah dibuat. Jatuh tempo: ${new Date(invoice.dueDate).toLocaleDateString("id-ID")}`,
+        type: NotificationType.PAYMENT,
+        link: `/finance/bills/${invoice.id}`,
+      });
+    } catch (error) {
+      console.error("Failed to send notification:", error);
+      // Don't fail the request if notification fails
+    }
+  }
+
+  return invoice;
 }
 
 export async function getInvoices(query: QueryInvoiceDto) {
@@ -229,7 +268,7 @@ export async function deleteInvoice(id: string) {
 
 export async function createPayment(data: CreatePaymentDto) {
   // Create payment and update invoice in a transaction
-  return prisma.$transaction(async (tx) => {
+  const payment = await prisma.$transaction(async (tx) => {
     const invoice = await tx.invoice.findUnique({
       where: { id: data.invoiceId },
     });
@@ -239,11 +278,10 @@ export async function createPayment(data: CreatePaymentDto) {
     }
 
     const payment = await tx.payment.create({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data: {
         ...data,
         amount: new Prisma.Decimal(data.amount),
-      } as any,
+      },
       include: {
         invoice: {
           include: {
@@ -280,6 +318,29 @@ export async function createPayment(data: CreatePaymentDto) {
 
     return payment;
   });
+
+  // Send notification after transaction commits
+  try {
+    const formatter = new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    });
+
+    await notificationService.createNotification({
+      userId: payment.invoice.student.user.id,
+      title: "Pembayaran Berhasil",
+      message: `Pembayaran untuk tagihan ${payment.invoice.paymentType.name} sebesar ${formatter.format(
+        payment.amount.toNumber()
+      )} telah diterima.`,
+      type: NotificationType.PAYMENT,
+      link: `/finance/bills/${payment.invoice.id}`,
+    });
+  } catch (error) {
+    console.error("Failed to send payment notification:", error);
+  }
+
+  return payment;
 }
 
 export async function getPayments(query: QueryPaymentDto) {
@@ -653,7 +714,6 @@ export async function generateBulkSppInvoices(data: {
     if (!existing) {
       const invoiceNumber = await generateInvoiceNumber();
       const invoice = await prisma.invoice.create({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         data: {
           studentId: student.id,
           paymentTypeId,
@@ -662,7 +722,7 @@ export async function generateBulkSppInvoices(data: {
           dueDate,
           period,
           notes: `Tagihan ${paymentType.name} untuk ${period}`,
-        } as any,
+        },
       });
       createdInvoices.push(invoice);
     }

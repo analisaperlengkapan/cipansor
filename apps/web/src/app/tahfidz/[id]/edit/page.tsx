@@ -62,7 +62,7 @@ const tahfidzSchema = z.object({
   surah: z.string().min(1, 'Surah wajib dipilih'),
   startAyah: z.coerce.number().min(1, 'Ayat awal minimal 1'),
   endAyah: z.coerce.number().min(1, 'Ayat akhir minimal 1'),
-  type: z.enum(['SETORAN', 'MURAJAAH', 'TASMI'] as const, {
+  type: z.enum(['ZIYADAH', 'MUROJAAH', 'TASMI', 'ASSESSMENT'] as const, {
     required_error: 'Tipe wajib dipilih',
   }),
   grade: z.enum(['MUMTAZ', 'JAYYID_JIDDAN', 'JAYYID', 'MAQBUL', 'RASIB'] as const, {
@@ -119,7 +119,7 @@ export default function EditTahfidzPage() {
         startAyah: record.ayahStart,
         endAyah: record.ayahEnd,
         type: record.activityType,
-        grade: record.grade || 'MUMTAZ',
+        grade: (record.grade as any) || 'MUMTAZ',
         notes: record.notes || '',
       });
     }
@@ -196,7 +196,7 @@ export default function EditTahfidzPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Edit Catatan Tahfidz</h1>
             <p className="text-muted-foreground">
-              {record.student?.name} · {record.surahName}
+              {(record.student as any)?.user?.name || (record.student as any)?.name} · {record.surahName}
             </p>
           </div>
         </div>
@@ -220,7 +220,7 @@ export default function EditTahfidzPage() {
                         className="w-full justify-between"
                       >
                         {selectedStudent ? (
-                          <span>{selectedStudent.name} ({selectedStudent.nis})</span>
+                          <span>{(selectedStudent as any).user?.name || (selectedStudent as any).name} ({selectedStudent.nis})</span>
                         ) : (
                           <span className="text-muted-foreground">Cari santri...</span>
                         )}

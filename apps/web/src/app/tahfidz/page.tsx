@@ -147,7 +147,7 @@ export default function TahfidzPage() {
               <span className="text-sm text-muted-foreground">Setoran</span>
             </div>
             <p className="text-2xl font-bold text-green-600">
-              {records.filter((r) => r.activityType === 'SETORAN').length}
+              {records.filter((r) => r.activityType === 'ZIYADAH').length}
             </p>
           </CardContent>
         </Card>
@@ -158,7 +158,7 @@ export default function TahfidzPage() {
               <span className="text-sm text-muted-foreground">Murajaah</span>
             </div>
             <p className="text-2xl font-bold text-blue-600">
-              {records.filter((r) => r.activityType === 'MURAJAAH').length}
+              {records.filter((r) => r.activityType === 'MUROJAAH').length}
             </p>
           </CardContent>
         </Card>
@@ -299,7 +299,7 @@ export default function TahfidzPage() {
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{record.student?.user?.name || record.student?.name || '-'}</p>
+                        <p className="font-medium">{(record.student as any)?.user?.name || (record.student as any)?.name || '-'}</p>
                         <p className="text-sm text-muted-foreground">{record.student?.nis}</p>
                       </div>
                     </TableCell>
@@ -310,7 +310,7 @@ export default function TahfidzPage() {
                     <TableCell>
                       <Badge variant="outline">{getTypeLabel(record.activityType)}</Badge>
                     </TableCell>
-                    <TableCell>{record.score !== undefined ? record.score : (record.grade ? getGradeBadge(record.grade) : '-')}</TableCell>
+                    <TableCell>{record.score !== undefined ? record.score : (record.grade ? getGradeBadge(record.grade as TahfidzGrade) : '-')}</TableCell>
                     <TableCell>{record.recordedBy?.name || '-'}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">

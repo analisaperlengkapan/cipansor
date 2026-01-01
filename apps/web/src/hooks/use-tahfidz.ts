@@ -4,25 +4,28 @@ import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
 export interface TahfidzRecord {
   id: string;
   studentId: string;
-  teacherId: string;
-  date: string;
-  surah: string;
+  recordedById: string;
+  recordedAt: string;
+  surahName: string;
+  surahNumber?: number;
   juz?: number;
-  startAyah: number;
-  endAyah: number;
-  type: TahfidzType;
-  grade: TahfidzGrade;
+  ayahStart: number;
+  ayahEnd: number;
+  activityType: TahfidzType;
+  score?: number;
+  grade?: TahfidzGrade; // Keep for backward compat if needed
   notes?: string;
   createdAt: string;
   updatedAt: string;
   student?: {
     id: string;
-    name: string;
+    user?: { name: string };
+    name?: string; // Compat
     nis: string;
     class?: { name: string };
     unit?: { name: string };
   };
-  teacher?: {
+  recordedBy?: {
     id: string;
     name: string;
   };
@@ -116,12 +119,14 @@ export function useStudentTahfidzProgress(studentId: string) {
 
 export interface CreateTahfidzData {
   studentId: string;
-  date: string;
-  surah: string;
-  startAyah: number;
-  endAyah: number;
-  type: TahfidzType;
-  grade: TahfidzGrade;
+  recordedAt: string;
+  surahName: string;
+  surahNumber?: number;
+  juz?: number;
+  ayahStart: number;
+  ayahEnd: number;
+  activityType: TahfidzType;
+  score?: number;
   notes?: string;
 }
 

@@ -147,7 +147,7 @@ export default function TahfidzPage() {
               <span className="text-sm text-muted-foreground">Setoran</span>
             </div>
             <p className="text-2xl font-bold text-green-600">
-              {records.filter((r) => r.type === 'SETORAN').length}
+              {records.filter((r) => r.activityType === 'SETORAN').length}
             </p>
           </CardContent>
         </Card>
@@ -158,7 +158,7 @@ export default function TahfidzPage() {
               <span className="text-sm text-muted-foreground">Murajaah</span>
             </div>
             <p className="text-2xl font-bold text-blue-600">
-              {records.filter((r) => r.type === 'MURAJAAH').length}
+              {records.filter((r) => r.activityType === 'MURAJAAH').length}
             </p>
           </CardContent>
         </Card>
@@ -169,7 +169,7 @@ export default function TahfidzPage() {
               <span className="text-sm text-muted-foreground">Tasmi</span>
             </div>
             <p className="text-2xl font-bold text-purple-600">
-              {records.filter((r) => r.type === 'TASMI').length}
+              {records.filter((r) => r.activityType === 'TASMI').length}
             </p>
           </CardContent>
         </Card>
@@ -295,23 +295,23 @@ export default function TahfidzPage() {
                 records.map((record) => (
                   <TableRow key={record.id}>
                     <TableCell>
-                      {format(new Date(record.date), 'd MMM yyyy', { locale: localeId })}
+                      {format(new Date(record.recordedAt), 'd MMM yyyy', { locale: localeId })}
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{record.student?.name || '-'}</p>
+                        <p className="font-medium">{record.student?.user?.name || record.student?.name || '-'}</p>
                         <p className="text-sm text-muted-foreground">{record.student?.nis}</p>
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">{record.surah}</TableCell>
+                    <TableCell className="font-medium">{record.surahName}</TableCell>
                     <TableCell>
-                      {record.startAyah} - {record.endAyah}
+                      {record.ayahStart} - {record.ayahEnd}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{getTypeLabel(record.type)}</Badge>
+                      <Badge variant="outline">{getTypeLabel(record.activityType)}</Badge>
                     </TableCell>
-                    <TableCell>{getGradeBadge(record.grade)}</TableCell>
-                    <TableCell>{record.teacher?.name || '-'}</TableCell>
+                    <TableCell>{record.score !== undefined ? record.score : (record.grade ? getGradeBadge(record.grade) : '-')}</TableCell>
+                    <TableCell>{record.recordedBy?.name || '-'}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Button variant="ghost" size="sm" asChild>

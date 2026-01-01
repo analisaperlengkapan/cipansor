@@ -608,7 +608,6 @@ export default function CreatePAUDAssessmentPage() {
           </form>
         </Form>
       </div>
-    </div>
-    </MainLayout >
+    </MainLayout>
   );
 }

@@ -114,12 +114,12 @@ export default function EditTahfidzPage() {
     if (record) {
       reset({
         studentId: record.studentId,
-        date: new Date(record.date),
-        surah: record.surah,
-        startAyah: record.startAyah,
-        endAyah: record.endAyah,
-        type: record.type,
-        grade: record.grade,
+        date: new Date(record.recordedAt),
+        surah: record.surahName,
+        startAyah: record.ayahStart,
+        endAyah: record.ayahEnd,
+        type: record.activityType,
+        grade: record.grade || 'MUMTAZ',
         notes: record.notes || '',
       });
     }
@@ -139,8 +139,17 @@ export default function EditTahfidzPage() {
       await updateTahfidz.mutateAsync({
         id,
         data: {
-          ...data,
-          date: format(data.date, 'yyyy-MM-dd'),
+          studentId: data.studentId,
+          recordedAt: format(data.date, 'yyyy-MM-dd'),
+          surahName: data.surah,
+          surahNumber: SURAH_LIST.indexOf(data.surah) + 1,
+          ayahStart: data.startAyah,
+          ayahEnd: data.endAyah,
+          activityType: data.type,
+          score: data.grade === 'MUMTAZ' ? 100 :
+                 data.grade === 'JAYYID_JIDDAN' ? 90 :
+                 data.grade === 'JAYYID' ? 80 :
+                 data.grade === 'MAQBUL' ? 70 : 60,
           notes: data.notes || undefined,
         },
       });
@@ -187,7 +196,7 @@ export default function EditTahfidzPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Edit Catatan Tahfidz</h1>
             <p className="text-muted-foreground">
-              {record.student?.name} · {record.surah}
+              {record.student?.name} · {record.surahName}
             </p>
           </div>
         </div>

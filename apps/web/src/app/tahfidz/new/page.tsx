@@ -112,8 +112,18 @@ export default function NewTahfidzPage() {
   const onSubmit = async (data: TahfidzFormData) => {
     try {
       await createTahfidz.mutateAsync({
-        ...data,
-        date: format(data.date, 'yyyy-MM-dd'),
+        studentId: data.studentId,
+        recordedAt: format(data.date, 'yyyy-MM-dd'),
+        surahName: data.surah,
+        surahNumber: SURAH_LIST.indexOf(data.surah) + 1,
+        ayahStart: data.startAyah,
+        ayahEnd: data.endAyah,
+        activityType: data.type,
+        score: data.grade === 'MUMTAZ' ? 100 :
+               data.grade === 'JAYYID_JIDDAN' ? 90 :
+               data.grade === 'JAYYID' ? 80 :
+               data.grade === 'MAQBUL' ? 70 : 60,
+        juz: 30, // Defaulting to 30 as form does not provide it yet
         notes: data.notes || undefined,
       });
       toast.success('Catatan tahfidz berhasil disimpan');

@@ -40,7 +40,6 @@ import { Badge } from '@/components/ui/badge';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -68,7 +67,9 @@ export default function TahfidzPage() {
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data: tahfidzData, isLoading } = useTahfidzRecords({
+  // Hook now uses the standardized API which returns PaginatedResponse
+  // The structure change from flat meta to meta.pagination is handled here
+  const { data: response, isLoading } = useTahfidzRecords({
     page,
     limit: pageSize,
     type: (type as TahfidzType) || undefined,
@@ -78,8 +79,9 @@ export default function TahfidzPage() {
 
   const deleteTahfidz = useDeleteTahfidz();
 
-  const records = tahfidzData?.data || [];
-  const pagination = tahfidzData?.meta;
+  const records = response?.data || [];
+  // Handle nested pagination structure from shared type
+  const pagination = response?.meta?.pagination;
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -129,7 +131,10 @@ export default function TahfidzPage() {
         </Button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Removed or Refactored */}
+      {/* Note: Stats calculation from PaginatedResponse might be inaccurate if it's just based on current page.
+           Ideally, stats should come from a separate API call or the dashboard.
+           For now, we keep the simple count from the pagination metadata. */}
       <div className="grid gap-4 md:grid-cols-4 mb-6">
         <Card>
           <CardContent className="p-4">
@@ -138,39 +143,6 @@ export default function TahfidzPage() {
               <span className="text-sm text-muted-foreground">Total Catatan</span>
             </div>
             <p className="text-2xl font-bold">{pagination?.total || 0}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-green-500" />
-              <span className="text-sm text-muted-foreground">Setoran</span>
-            </div>
-            <p className="text-2xl font-bold text-green-600">
-              {records.filter((r) => r.activityType === 'ZIYADAH').length}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-blue-500" />
-              <span className="text-sm text-muted-foreground">Murajaah</span>
-            </div>
-            <p className="text-2xl font-bold text-blue-600">
-              {records.filter((r) => r.activityType === 'MUROJAAH').length}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-purple-500" />
-              <span className="text-sm text-muted-foreground">Tasmi</span>
-            </div>
-            <p className="text-2xl font-bold text-purple-600">
-              {records.filter((r) => r.activityType === 'TASMI').length}
-            </p>
           </CardContent>
         </Card>
       </div>
@@ -299,6 +271,7 @@ export default function TahfidzPage() {
                     </TableCell>
                     <TableCell>
                       <div>
+                        {/* Safe navigation for student.user.name or fallback */}
                         <p className="font-medium">{(record.student as any)?.user?.name || (record.student as any)?.name || '-'}</p>
                         <p className="text-sm text-muted-foreground">{record.student?.nis}</p>
                       </div>
@@ -308,9 +281,9 @@ export default function TahfidzPage() {
                       {record.ayahStart} - {record.ayahEnd}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{getTypeLabel(record.activityType)}</Badge>
+                      <Badge variant="outline">{getTypeLabel(record.activityType as any)}</Badge>
                     </TableCell>
-                    <TableCell>{record.score !== undefined ? record.score : (record.grade ? getGradeBadge(record.grade as TahfidzGrade) : '-')}</TableCell>
+                    <TableCell>{record.score !== undefined && record.score !== null ? record.score : (record.grade ? getGradeBadge(record.grade as TahfidzGrade) : '-')}</TableCell>
                     <TableCell>{record.recordedBy?.name || '-'}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">

@@ -9,13 +9,33 @@ import {
   RoleAssignment,
   SwitchRoleResponse,
   AssignRoleRequest,
-  ApiResponse
+  ApiResponse,
+  PaginatedResponse as SharedPaginatedResponse,
+  TahfidzRecord,
+  TahfidzDashboardStats
 } from '@cipansor/shared';
 
+// Explicitly export SharedPaginatedResponse for new modules
+export type { SharedPaginatedResponse };
+// Re-export shared types
 export * from '@cipansor/shared';
 
 // Compatibility alias
 export type UserRole = UserRoleAssignment;
+
+// LEGACY PaginatedResponse
+// Restoring this to prevent build errors in legacy modules.
+// New modules should use `SharedPaginatedResponse`.
+export interface PaginatedResponse<T> {
+  success: boolean;
+  data: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -91,17 +111,6 @@ api.interceptors.response.use(
   }
 );
 
-export interface PaginatedResponse<T> {
-  success: boolean;
-  data: T[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
 // Auth API
 export const authApi = {
   login: (data: LoginRequest) =>
@@ -152,6 +161,31 @@ export const rolesApi = {
   // Remove role assignment
   removeRoleAssignment: (assignmentId: string) =>
     api.delete<ApiResponse<void>>(`/roles/assignments/${assignmentId}`),
+};
+
+// Tahfidz API
+// Uses SharedPaginatedResponse to enforce standard structure
+export const tahfidzApi = {
+  getRecords: (params?: any) =>
+    api.get<SharedPaginatedResponse<TahfidzRecord>>('/tahfidz', { params }),
+
+  getRecordById: (id: string) =>
+    api.get<ApiResponse<TahfidzRecord>>(`/tahfidz/${id}`),
+
+  createRecord: (data: any) =>
+    api.post<ApiResponse<TahfidzRecord>>('/tahfidz', data),
+
+  updateRecord: (id: string, data: any) =>
+    api.put<ApiResponse<TahfidzRecord>>(`/tahfidz/${id}`, data),
+
+  deleteRecord: (id: string) =>
+    api.delete<ApiResponse<void>>(`/tahfidz/${id}`),
+
+  getDashboard: (params: { unitId?: string; year?: number; month?: number }) =>
+    api.get<ApiResponse<TahfidzDashboardStats>>('/tahfidz/dashboard', { params }),
+
+  getStudentSummary: (studentId: string) =>
+    api.get<ApiResponse<any>>(`/tahfidz/students/${studentId}/summary`),
 };
 
 export default api;

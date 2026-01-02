@@ -36,3 +36,35 @@ export interface TahfidzRecord {
     name: string;
   };
 }
+
+export interface TahfidzDashboardStats {
+  totalRecords: number;
+  totalStudents: number;
+  recordsByType: {
+    type: string;
+    count: number;
+  }[];
+  recordsByGrade: {
+    grade: string;
+    count: number;
+  }[];
+  progressByJuz: {
+    juz: number;
+    studentCount: number;
+    completedCount: number;
+  }[];
+  monthlyActivity: {
+    month: string;
+    setoran: number;
+    murajaah: number;
+    tasmi: number;
+  }[];
+  topStudents: {
+    studentId: string;
+    studentName: string;
+    nis: string;
+    totalAyah: number;
+    completedJuz: number;
+  }[];
+  recentRecords: TahfidzRecord[];
+}

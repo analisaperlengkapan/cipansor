@@ -375,13 +375,17 @@ export class TahfidzService {
     });
 
     // 4. Progress by Juz (Optimized using Raw SQL)
-    // We count distinct students per juz
+    // We count distinct students per juz and those who passed assessment for that juz
     const progressByJuzRaw = await prisma.$queryRaw<
-      Array<{ juz: number; student_count: bigint }>
+      Array<{ juz: number; student_count: bigint; completed_count: bigint }>
     >`
       SELECT
         tr.juz,
-        COUNT(DISTINCT tr.student_id)::bigint as student_count
+        COUNT(DISTINCT tr.student_id)::bigint as student_count,
+        COUNT(DISTINCT CASE
+          WHEN tr.activity_type IN ('ASSESSMENT', 'TASMI') AND tr.score >= 60
+          THEN tr.student_id
+        END)::bigint as completed_count
       FROM tahfidz_records tr
       ${unitId ? Prisma.sql`JOIN students s ON tr.student_id = s.id` : Prisma.empty}
       WHERE tr.recorded_at >= ${startOfYear} AND tr.recorded_at <= ${endOfYear}
@@ -398,13 +402,10 @@ export class TahfidzService {
     const progressByJuz = Array.from({ length: 30 }, (_, i) => {
       const juz = i + 1;
       const record = progressByJuzRaw.find((r) => r.juz === juz);
-      const studentCount = Number(record?.student_count || 0);
-      // Simplified "completed" logic: 30% of students in that juz
-      const completedCount = studentCount > 0 ? Math.ceil(studentCount * 0.3) : 0;
       return {
         juz,
-        studentCount,
-        completedCount,
+        studentCount: Number(record?.student_count || 0),
+        completedCount: Number(record?.completed_count || 0),
       };
     });
 

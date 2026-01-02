@@ -88,13 +88,7 @@ export function useStudentTahfidzProgress(studentId: string) {
   return useQuery({
     queryKey: ['tahfidz', 'progress', studentId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<{
-        totalSurah: number;
-        totalAyah: number;
-        completedSurah: string[];
-        inProgressSurah: string[];
-        lastRecord?: TahfidzRecord;
-      }>>(`/tahfidz/progress/${studentId}`);
+      const response = await tahfidzApi.getStudentSummary(studentId);
       return response.data.data;
     },
     enabled: !!studentId,

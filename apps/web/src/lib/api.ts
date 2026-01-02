@@ -13,6 +13,7 @@ import {
   PaginatedResponse as SharedPaginatedResponse,
   TahfidzRecord,
   TahfidzDashboardStats,
+  TahfidzStudentSummary,
   CreateTahfidzInput,
   UpdateTahfidzInput
 } from '@cipansor/shared';
@@ -187,7 +188,7 @@ export const tahfidzApi = {
     api.get<ApiResponse<TahfidzDashboardStats>>('/tahfidz/dashboard', { params }),
 
   getStudentSummary: (studentId: string) =>
-    api.get<ApiResponse<any>>(`/tahfidz/students/${studentId}/summary`),
+    api.get<ApiResponse<TahfidzStudentSummary>>(`/tahfidz/students/${studentId}/summary`),
 };
 
 export default api;

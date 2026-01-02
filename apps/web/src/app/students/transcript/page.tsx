@@ -280,38 +280,25 @@ export default function StudentTranscriptPage() {
               <div className="grid grid-cols-3 gap-4 mb-3 text-sm">
                 <div className="p-3 bg-green-50 rounded border">
                   <p className="text-xs text-gray-600">Total Surah</p>
-                  <p className="text-xl font-bold text-green-700">{tahfidzProgress.totalSurah}</p>
+                  <p className="text-xl font-bold text-green-700">{tahfidzProgress.summary?.surahCoveredCount || 0}</p>
                 </div>
                 <div className="p-3 bg-blue-50 rounded border">
                   <p className="text-xs text-gray-600">Total Ayat</p>
-                  <p className="text-xl font-bold text-blue-700">{tahfidzProgress.totalAyah}</p>
+                  <p className="text-xl font-bold text-blue-700">{tahfidzProgress.summary?.totalAyahMemorized || 0}</p>
                 </div>
                 <div className="p-3 bg-amber-50 rounded border">
-                  <p className="text-xs text-gray-600">Surah Selesai</p>
-                  <p className="text-xl font-bold text-amber-700">{tahfidzProgress.completedSurah?.length || 0}</p>
+                  <p className="text-xs text-gray-600">Juz Selesai</p>
+                  <p className="text-xl font-bold text-amber-700">{tahfidzProgress.summary?.juzCoveredCount || 0}</p>
                 </div>
               </div>
               
-              {tahfidzProgress.completedSurah && tahfidzProgress.completedSurah.length > 0 && (
+              {tahfidzProgress.surahCovered && tahfidzProgress.surahCovered.length > 0 && (
                 <div className="mb-3">
-                  <p className="text-xs font-semibold mb-1">Surah yang dikhatamkan:</p>
+                  <p className="text-xs font-semibold mb-1">Surah yang dihafal:</p>
                   <div className="flex flex-wrap gap-1">
-                    {tahfidzProgress.completedSurah.map((surah: string) => (
-                      <span key={surah} className="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded">
-                        {surah}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {tahfidzProgress.inProgressSurah && tahfidzProgress.inProgressSurah.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold mb-1">Surah dalam proses:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {tahfidzProgress.inProgressSurah.map((surah: string) => (
-                      <span key={surah} className="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 text-xs rounded">
-                        {surah}
+                    {tahfidzProgress.surahCovered.map((s) => (
+                      <span key={s.surahNumber} className="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded">
+                        {s.surahName}
                       </span>
                     ))}
                   </div>
@@ -413,9 +400,10 @@ export default function StudentTranscriptPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <Select 
-                  value={selectedUnitId} 
+                  value={selectedUnitId || "ALL"}
                   onValueChange={(value) => {
-                    setSelectedUnitId(value);
+                    const val = value === 'ALL' ? '' : value;
+                    setSelectedUnitId(val);
                     setSelectedClassId('');
                     setSelectedStudent(null);
                   }}
@@ -424,7 +412,7 @@ export default function StudentTranscriptPage() {
                     <SelectValue placeholder="Pilih unit" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Unit</SelectItem>
+                    <SelectItem value="ALL">Semua Unit</SelectItem>
                     {units.map((unit) => (
                       <SelectItem key={unit.id} value={unit.id}>
                         {unit.name}
@@ -434,9 +422,10 @@ export default function StudentTranscriptPage() {
                 </Select>
 
                 <Select 
-                  value={selectedClassId} 
+                  value={selectedClassId || "ALL"}
                   onValueChange={(value) => {
-                    setSelectedClassId(value);
+                    const val = value === 'ALL' ? '' : value;
+                    setSelectedClassId(val);
                     setSelectedStudent(null);
                   }}
                   disabled={!selectedUnitId}
@@ -445,7 +434,7 @@ export default function StudentTranscriptPage() {
                     <SelectValue placeholder="Pilih kelas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Kelas</SelectItem>
+                    <SelectItem value="ALL">Semua Kelas</SelectItem>
                     {classes.map((cls) => (
                       <SelectItem key={cls.id} value={cls.id}>
                         {cls.name}
@@ -673,36 +662,36 @@ export default function StudentTranscriptPage() {
                             <Card>
                               <CardContent className="pt-4 text-center">
                                 <BookOpen className="h-8 w-8 mx-auto mb-2 text-emerald-600" />
-                                <p className="text-2xl font-bold text-emerald-600">{tahfidzProgress.totalSurah}</p>
+                                <p className="text-2xl font-bold text-emerald-600">{tahfidzProgress.summary?.surahCoveredCount || 0}</p>
                                 <p className="text-sm text-muted-foreground">Total Surah</p>
                               </CardContent>
                             </Card>
                             <Card>
                               <CardContent className="pt-4 text-center">
                                 <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                                <p className="text-2xl font-bold text-blue-600">{tahfidzProgress.completedSurah?.length || 0}</p>
-                                <p className="text-sm text-muted-foreground">Surah Selesai</p>
+                                <p className="text-2xl font-bold text-blue-600">{tahfidzProgress.summary?.juzCoveredCount || 0}</p>
+                                <p className="text-sm text-muted-foreground">Juz Selesai</p>
                               </CardContent>
                             </Card>
                             <Card>
                               <CardContent className="pt-4 text-center">
                                 <Clock className="h-8 w-8 mx-auto mb-2 text-amber-600" />
-                                <p className="text-2xl font-bold text-amber-600">{tahfidzProgress.inProgressSurah?.length || 0}</p>
-                                <p className="text-sm text-muted-foreground">Dalam Proses</p>
+                                <p className="text-2xl font-bold text-amber-600">{tahfidzProgress.summary?.totalAyahMemorized || 0}</p>
+                                <p className="text-sm text-muted-foreground">Total Ayat</p>
                               </CardContent>
                             </Card>
                           </div>
 
-                          {tahfidzProgress.completedSurah && tahfidzProgress.completedSurah.length > 0 && (
+                          {tahfidzProgress.surahCovered && tahfidzProgress.surahCovered.length > 0 && (
                             <Card>
                               <CardHeader className="pb-2">
-                                <CardTitle className="text-base">Surah yang Dikhatamkan</CardTitle>
+                                <CardTitle className="text-base">Surah yang Dihafal</CardTitle>
                               </CardHeader>
                               <CardContent>
                                 <div className="flex flex-wrap gap-2">
-                                  {tahfidzProgress.completedSurah.map((surah: string) => (
-                                    <Badge key={surah} className="bg-emerald-100 text-emerald-800">
-                                      {surah}
+                                  {tahfidzProgress.surahCovered.map((s) => (
+                                    <Badge key={s.surahNumber} className="bg-emerald-100 text-emerald-800">
+                                      {s.surahName}
                                     </Badge>
                                   ))}
                                 </div>

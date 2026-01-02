@@ -15,20 +15,27 @@ import {
   TahfidzDashboardStats
 } from '@cipansor/shared';
 
+// Explicitly export SharedPaginatedResponse for new modules
+export type { SharedPaginatedResponse };
+// Re-export shared types
 export * from '@cipansor/shared';
 
 // Compatibility alias
 export type UserRole = UserRoleAssignment;
 
-// Re-export PaginatedResponse from shared to enforce standard.
-// NOTE: This breaks legacy code that expects flat meta.
-// We provide a legacy interface locally if needed, but for now we alias Shared
-export type PaginatedResponse<T> = SharedPaginatedResponse<T>;
-
-// Legacy support: We might need to handle this via adapter if we can't fix all files.
-// For now, we are enforcing the Shared type as the source of truth.
-// If you encounter "property 'totalPages' does not exist on type '{ pagination: Pagination }'",
-// it means you need to update the call site to use `meta.pagination.totalPages`.
+// LEGACY PaginatedResponse
+// Restoring this to prevent build errors in legacy modules.
+// New modules should use `SharedPaginatedResponse`.
+export interface PaginatedResponse<T> {
+  success: boolean;
+  data: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -157,6 +164,7 @@ export const rolesApi = {
 };
 
 // Tahfidz API
+// Uses SharedPaginatedResponse to enforce standard structure
 export const tahfidzApi = {
   getRecords: (params?: any) =>
     api.get<SharedPaginatedResponse<TahfidzRecord>>('/tahfidz', { params }),

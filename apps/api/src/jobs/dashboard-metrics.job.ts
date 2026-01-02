@@ -11,6 +11,7 @@ import {
   DashboardAlert 
 } from '@/lib/realtime';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 /**
  * Aggregate and publish dashboard metrics
@@ -24,6 +25,18 @@ export async function aggregateDashboardMetrics(): Promise<void> {
     const globalMetrics = await getCurrentDashboardMetrics();
     await publishDashboardMetrics(globalMetrics);
 
+    // Save global history
+    try {
+        await prisma.dashboardHistory.create({
+            data: {
+                metrics: globalMetrics as unknown as Prisma.InputJsonValue,
+                unitId: null
+            }
+        });
+    } catch (histError) {
+        logger.error('Error saving global metrics history:', histError);
+    }
+
     // Get all active units
     const units = await prisma.unit.findMany({
       where: { deletedAt: null },
@@ -36,6 +49,14 @@ export async function aggregateDashboardMetrics(): Promise<void> {
         const unitMetrics = await getCurrentDashboardMetrics(unit.id);
         await publishDashboardMetrics(unitMetrics, unit.id);
         
+        // Save unit history
+        await prisma.dashboardHistory.create({
+            data: {
+                metrics: unitMetrics as unknown as Prisma.InputJsonValue,
+                unitId: unit.id
+            }
+        });
+
         logger.debug('Unit metrics published', { 
           unitId: unit.id, 
           unitName: unit.name 

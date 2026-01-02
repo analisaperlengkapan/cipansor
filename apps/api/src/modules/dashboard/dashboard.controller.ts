@@ -389,11 +389,34 @@ export async function getTahfidzStats(req: Request, res: Response): Promise<void
  * Returns last N metrics snapshots
  */
 async function getRecentMetricsHistory(unitId?: string): Promise<DashboardMetrics[]> {
-    // In a production system, this would query a metrics history table
-    // For now, return current metrics as a single point
-    // TODO: Implement metrics history storage
-    const current = await getCurrentDashboardMetrics(unitId);
-    return [current];
+    try {
+        const history = await prisma.dashboardHistory.findMany({
+            where: {
+                unitId: unitId || null
+            },
+            orderBy: {
+                createdAt: 'desc'
+            },
+            take: 12 // Last 12 points (12 minutes)
+        });
+
+        // If no history, return current state
+        if (history.length === 0) {
+            const current = await getCurrentDashboardMetrics(unitId);
+            return [current];
+        }
+
+        // Map back to DashboardMetrics
+        return history.map(h => {
+            const metrics = h.metrics as unknown as DashboardMetrics;
+            return metrics;
+        }).reverse(); // Return in chronological order
+    } catch (error) {
+        logger.error('Error fetching metrics history:', error);
+        // Fallback to current
+        const current = await getCurrentDashboardMetrics(unitId);
+        return [current];
+    }
 }
 
 /**

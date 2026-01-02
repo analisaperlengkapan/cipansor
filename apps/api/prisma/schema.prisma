@@ -467,6 +467,7 @@ model Unit {
   unitComparisonReports  UnitComparisonReport[]
   growthRecords          GrowthRecord[]
   immunizationRecords    ImmunizationRecord[]
+  dashboardHistory       DashboardHistory[]
 
   @@index([type])
   @@index([foundationId])
@@ -5744,4 +5745,17 @@ model ImmunizationRecord {
   @@index([unitId])
   @@index([status])
   @@map("immunization_records")
+}
+/// DashboardHistory - High frequency metrics history for realtime charts
+model DashboardHistory {
+  id        String   @id @default(uuid())
+  unitId    String?  @map("unit_id")
+  metrics   Json     @map("metrics") // Stores DashboardMetrics object
+  createdAt DateTime @default(now()) @map("created_at")
+
+  unit      Unit?    @relation(fields: [unitId], references: [id])
+
+  @@index([unitId])
+  @@index([createdAt])
+  @@map("dashboard_history")
 }

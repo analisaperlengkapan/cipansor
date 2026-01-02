@@ -47,6 +47,7 @@ const subjectSchema = z.object({
   }),
   credits: z.coerce.number().min(1, 'Minimal 1 SKS'),
   hoursPerWeek: z.coerce.number().min(1, 'Minimal 1 jam per minggu'),
+  passingScore: z.coerce.number().min(0).max(100).optional(),
   unitId: z.string().min(1, 'Unit wajib dipilih'),
   isActive: z.boolean(),
 });
@@ -69,6 +70,7 @@ export default function EditSubjectPage({ params }: { params: Promise<{ id: stri
       type: undefined,
       credits: 2,
       hoursPerWeek: 2,
+      passingScore: 70,
       unitId: '',
       isActive: true,
     },
@@ -83,6 +85,7 @@ export default function EditSubjectPage({ params }: { params: Promise<{ id: stri
         type: subject.type,
         credits: subject.credits,
         hoursPerWeek: subject.hoursPerWeek,
+        passingScore: subject.passingScore || 70,
         unitId: subject.unitId,
         isActive: subject.isActive,
       });
@@ -100,6 +103,7 @@ export default function EditSubjectPage({ params }: { params: Promise<{ id: stri
           type: data.type as SubjectType,
           credits: data.credits,
           hoursPerWeek: data.hoursPerWeek,
+          passingScore: data.passingScore,
           unitId: data.unitId,
           isActive: data.isActive,
         },
@@ -283,6 +287,21 @@ export default function EditSubjectPage({ params }: { params: Promise<{ id: stri
                           <Input type="number" min={1} {...field} />
                         </FormControl>
                         <FormDescription>Jumlah jam pelajaran per minggu</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="passingScore"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>KKM (Passing Score)</FormLabel>
+                        <FormControl>
+                          <Input type="number" min={0} max={100} {...field} />
+                        </FormControl>
+                        <FormDescription>Nilai minimal kelulusan (default 70)</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

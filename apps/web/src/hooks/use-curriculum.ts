@@ -32,6 +32,7 @@ export interface Subject {
   type: SubjectType;
   credits: number;
   hoursPerWeek: number;
+  passingScore?: number;
   unitId: string;
   unit?: {
     id: string;

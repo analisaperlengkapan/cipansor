@@ -396,7 +396,7 @@ export async function getAttendanceStats(unitId?: string, dateRange?: DateRange)
     }),
   };
 
-  const [byStatus, dailyTrend, byClass] = await Promise.all([
+  const [byStatus, dailyTrend, byClassBreakdown] = await Promise.all([
     prisma.attendance.groupBy({
       by: ["status"],
       where,
@@ -415,20 +415,13 @@ export async function getAttendanceStats(unitId?: string, dateRange?: DateRange)
       GROUP BY date::date
       ORDER BY date DESC
     `,
-    // By class
+    // By class and status
     prisma.attendance.groupBy({
-      by: ["classId"],
-      where: where,
+      by: ["classId", "status"],
+      where,
       _count: true,
     }),
   ]);
-
-  // Get class names
-  const classIds = byClass.map(c => c.classId);
-  const classes = await prisma.class.findMany({
-    where: { id: { in: classIds } },
-    select: { id: true, name: true, level: true },
-  });
 
   const totalRecords = byStatus.reduce((sum, s) => sum + s._count, 0);
   const presentCount = byStatus.find(s => s.status === "PRESENT")?._count || 0;
@@ -437,22 +430,31 @@ export async function getAttendanceStats(unitId?: string, dateRange?: DateRange)
   const sickCount = byStatus.find(s => s.status === "SICK")?._count || 0;
   const permittedCount = byStatus.find(s => s.status === "EXCUSED")?._count || 0; // EXCUSED is the enum value in schema
 
-  // Calculate class presence rates
-  // Quick fix: group by class AND status to get numerator
-  const byClassAndStatus = await prisma.attendance.groupBy({
-      by: ["classId", "status"],
-      where,
-      _count: true
+  // Process class breakdown
+  const classStatsMap = new Map<string, { total: number; present: number }>();
+
+  byClassBreakdown.forEach(record => {
+      if (!record.classId) return;
+      const stats = classStatsMap.get(record.classId) || { total: 0, present: 0 };
+      stats.total += record._count;
+      if (record.status === "PRESENT") {
+          stats.present += record._count;
+      }
+      classStatsMap.set(record.classId, stats);
+  });
+
+  const classIds = Array.from(classStatsMap.keys());
+  const classes = await prisma.class.findMany({
+    where: { id: { in: classIds } },
+    select: { id: true, name: true, level: true },
   });
 
   const classRates = classIds.map(cid => {
-      const classRecords = byClassAndStatus.filter(c => c.classId === cid);
-      const total = classRecords.reduce((sum, c) => sum + c._count, 0);
-      const present = classRecords.find(c => c.status === "PRESENT")?._count || 0;
+      const stats = classStatsMap.get(cid) || { total: 0, present: 0 };
       return {
           classId: cid,
           className: classes.find(c => c.id === cid)?.name || "Unknown",
-          presentRate: total > 0 ? Number((present / total * 100).toFixed(2)) : 0
+          presentRate: stats.total > 0 ? Number((stats.present / stats.total * 100).toFixed(2)) : 0
       };
   });
 

@@ -409,7 +409,39 @@ export class TahfidzService {
       };
     });
 
-    // 5. Top students (Prisma groupBy is efficient enough here)
+    // 5. Records by Grade (Optimized using Raw SQL)
+    // Based on score: >=90 Mumtaz, >=80 Jayyid Jiddan, >=70 Jayyid, >=60 Maqbul, <60 Rasib
+    const recordsByGradeRaw = await prisma.$queryRaw<
+      Array<{ grade: string; count: bigint }>
+    >`
+      SELECT
+        CASE
+          WHEN score >= 90 THEN 'MUMTAZ'
+          WHEN score >= 80 THEN 'JAYYID_JIDDAN'
+          WHEN score >= 70 THEN 'JAYYID'
+          WHEN score >= 60 THEN 'MAQBUL'
+          ELSE 'RASIB'
+        END as grade,
+        COUNT(*)::bigint as count
+      FROM tahfidz_records tr
+      ${unitId ? Prisma.sql`JOIN students s ON tr.student_id = s.id` : Prisma.empty}
+      WHERE tr.score IS NOT NULL
+      AND tr.recorded_at >= ${startOfYear} AND tr.recorded_at <= ${endOfYear}
+      ${unitId ? Prisma.sql`AND s.unit_id = ${unitId}` : Prisma.empty}
+      ${
+        month !== undefined
+          ? Prisma.sql`AND tr.recorded_at >= ${new Date(currentYear, month, 1)} AND tr.recorded_at <= ${new Date(currentYear, month + 1, 0, 23, 59, 59)}`
+          : Prisma.empty
+      }
+      GROUP BY grade
+    `;
+
+    const recordsByGrade = recordsByGradeRaw.map((r) => ({
+      grade: r.grade,
+      count: Number(r.count),
+    }));
+
+    // 6. Top students (Prisma groupBy is efficient enough here)
     const topStudentsData = await prisma.tahfidzRecord.groupBy({
       by: ['studentId'],
       where: {
@@ -449,7 +481,7 @@ export class TahfidzService {
       })
     );
 
-    // 6. Recent records
+    // 7. Recent records
     const recentRecords = await prisma.tahfidzRecord.findMany({
       where: unitId ? { student: { unitId } } : {},
       orderBy: { recordedAt: 'desc' },
@@ -472,6 +504,7 @@ export class TahfidzService {
         type: r.activityType,
         count: r._count._all,
       })),
+      recordsByGrade,
       progressByJuz,
       monthlyActivity,
       topStudents: topStudentsWithJuz,

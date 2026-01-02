@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
+import { AttendanceStatus } from '@cipansor/shared';
 
 // Types
 export type ExtracurricularCategory = 
@@ -86,7 +87,7 @@ export interface ExtracurricularAttendance {
   enrollmentId: string;
   enrollment?: ExtracurricularEnrollment;
   date: string;
-  status: 'PRESENT' | 'ABSENT' | 'SICK' | 'PERMITTED';
+  status: AttendanceStatus;
   notes?: string;
   createdAt: string;
   updatedAt: string;

@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { ApiResponse } from '@/lib/api';
+import { AttendanceStatus } from '@cipansor/shared';
 
 // Types
 export interface HomeroomClass {
@@ -53,7 +54,7 @@ export interface HomeroomAttendanceSummary {
   present: number;
   absent: number;
   sick: number;
-  permitted: number;
+  excused: number; // Was permitted
   late: number;
   attendanceRate: number;
 }
@@ -117,7 +118,7 @@ export interface ParentMessage {
 
 export interface QuickAttendance {
   studentId: string;
-  status: 'PRESENT' | 'ABSENT' | 'SICK' | 'PERMITTED' | 'LATE';
+  status: AttendanceStatus;
   notes?: string;
 }
 
@@ -279,7 +280,7 @@ export function useHomeroomClassAttendance(classId?: string, date?: string) {
       present: number;
       absent: number;
       sick: number;
-      permitted: number;
+      excused: number;
       late: number;
     };
   }>({
@@ -292,7 +293,7 @@ export function useHomeroomClassAttendance(classId?: string, date?: string) {
           present: number;
           absent: number;
           sick: number;
-          permitted: number;
+          excused: number;
           late: number;
         };
       }>>(`/homeroom/classes/${classId}/attendance?date=${date}`);

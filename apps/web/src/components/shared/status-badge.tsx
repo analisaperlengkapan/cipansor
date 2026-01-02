@@ -29,7 +29,8 @@ const statusTypeMap: Record<string, StatusType> = {
   ABSENT: 'error',
   LATE: 'warning',
   SICK: 'info',
-  PERMITTED: 'info',
+  PERMITTED: 'info', // Legacy support
+  EXCUSED: 'info',
   
   // Permit statuses
   PENDING: 'warning',

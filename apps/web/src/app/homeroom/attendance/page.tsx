@@ -29,10 +29,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { AttendanceStatus } from '@cipansor/shared';
 
 // Types
-type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'SICK' | 'PERMITTED' | 'LATE';
-
 interface StudentAttendance {
   studentId: string;
   nis: string;
@@ -66,7 +65,7 @@ const STATUS_CONFIG: Record<AttendanceStatus, { label: string; color: string; ic
   PRESENT: { label: 'Hadir', color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400', icon: <Check className="h-4 w-4" /> },
   LATE: { label: 'Terlambat', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400', icon: <Clock className="h-4 w-4" /> },
   SICK: { label: 'Sakit', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400', icon: <AlertCircle className="h-4 w-4" /> },
-  PERMITTED: { label: 'Izin', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400', icon: <AlertCircle className="h-4 w-4" /> },
+  EXCUSED: { label: 'Izin', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400', icon: <AlertCircle className="h-4 w-4" /> },
   ABSENT: { label: 'Alpha', color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400', icon: <X className="h-4 w-4" /> },
 };
 
@@ -93,7 +92,7 @@ export default function QuickAttendancePage() {
       present: attendances.filter(a => a.status === 'PRESENT').length,
       late: attendances.filter(a => a.status === 'LATE').length,
       sick: attendances.filter(a => a.status === 'SICK').length,
-      permitted: attendances.filter(a => a.status === 'PERMITTED').length,
+      excused: attendances.filter(a => a.status === 'EXCUSED').length,
       absent: attendances.filter(a => a.status === 'ABSENT').length,
       total: attendances.length,
     };
@@ -184,7 +183,7 @@ export default function QuickAttendancePage() {
                 Sakit: {summary.sick}
               </Badge>
               <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400 text-sm px-3 py-1">
-                Izin: {summary.permitted}
+                Izin: {summary.excused}
               </Badge>
               <Badge className="bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 text-sm px-3 py-1">
                 Alpha: {summary.absent}

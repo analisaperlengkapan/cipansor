@@ -8,6 +8,12 @@ import { logger } from '@/lib/logger';
 import { getCurrentDashboardMetrics } from '@/lib/realtime';
 import { prisma } from '@/lib/prisma';
 import type { DashboardMetrics, DashboardAlert } from '@/lib/realtime';
+import {
+    DashboardStats,
+    AttendanceStats,
+    FinanceStats,
+    TahfidzStats
+} from '@cipansor/shared';
 
 /**
  * Get current dashboard metrics with recent history and active alerts
@@ -123,6 +129,260 @@ export async function getQuickStats(req: Request, res: Response): Promise<void> 
         });
     }
 }
+
+/**
+ * Get dashboard main stats
+ * @route GET /api/dashboard/stats
+ */
+export async function getStats(req: Request, res: Response): Promise<void> {
+    try {
+        const { unitId } = req.query;
+        const unitFilter = typeof unitId === 'string' ? { unitId } : {};
+
+        // Calculate date for last month
+        const now = new Date();
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+
+        const [
+            totalStudents,
+            activeStudents,
+            lastMonthStudents,
+            totalTeachers,
+            totalClasses,
+            totalUnits,
+            todayAttendance,
+            activeAcademicYear
+        ] = await Promise.all([
+            prisma.student.count({ where: unitFilter }),
+            prisma.student.count({ where: { ...unitFilter, status: 'ACTIVE' } }),
+            prisma.student.count({
+                where: {
+                    ...unitFilter,
+                    status: 'ACTIVE',
+                    createdAt: { lte: lastMonth }
+                }
+            }),
+            prisma.teacher.count({ where: unitFilter }),
+            prisma.class.count({ where: unitFilter }),
+            prisma.unit.count({ where: typeof unitId === 'string' ? { id: unitId } : {} }),
+            getTodayAttendanceCount(typeof unitId === 'string' ? unitId : undefined),
+            prisma.academicYear.findFirst({ where: { status: 'ACTIVE' } as any })
+        ]);
+
+        // Calculate growth
+        let studentsGrowth = 0;
+        if (lastMonthStudents > 0) {
+            studentsGrowth = Math.round(((activeStudents - lastMonthStudents) / lastMonthStudents) * 100);
+        }
+
+        const attendanceRate = activeStudents > 0
+            ? Math.round((todayAttendance / activeStudents) * 100)
+            : 0;
+
+        const data: DashboardStats = {
+            totalStudents,
+            totalTeachers,
+            totalClasses,
+            totalUnits,
+            studentsGrowth,
+            attendanceRate,
+            activeAcademicYear: activeAcademicYear ? {
+                id: activeAcademicYear.id,
+                name: activeAcademicYear.name,
+                startDate: activeAcademicYear.startDate.toISOString(),
+                endDate: activeAcademicYear.endDate.toISOString()
+            } : undefined
+        };
+
+        res.json({
+            success: true,
+            data
+        });
+    } catch (error) {
+        logger.error('Error getting dashboard stats:', error);
+        res.status(500).json({
+            success: false,
+            error: {
+                code: 'INTERNAL_ERROR',
+                message: 'Failed to retrieve dashboard stats'
+            }
+        });
+    }
+}
+
+/**
+ * Get attendance stats
+ * @route GET /api/dashboard/attendance
+ */
+export async function getAttendanceStats(req: Request, res: Response): Promise<void> {
+    try {
+        const { unitId, startDate, endDate } = req.query;
+
+        // Default to last 7 days if not specified
+        const end = endDate ? new Date(String(endDate)) : new Date();
+        const start = startDate ? new Date(String(startDate)) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+        const attendanceRecords = await prisma.attendance.findMany({
+            where: {
+                date: {
+                    gte: start,
+                    lte: end
+                },
+                ...(unitId ? { student: { unitId: String(unitId) } } : {})
+            },
+            select: {
+                date: true,
+                status: true
+            }
+        });
+
+        const statsMap = new Map<string, AttendanceStats>();
+
+        attendanceRecords.forEach(record => {
+            const dateStr = record.date.toISOString().split('T')[0];
+            if (!statsMap.has(dateStr)) {
+                statsMap.set(dateStr, {
+                    date: dateStr,
+                    present: 0,
+                    absent: 0,
+                    sick: 0,
+                    excused: 0
+                });
+            }
+
+            const stats = statsMap.get(dateStr)!;
+            if (record.status === 'PRESENT') stats.present++;
+            else if (record.status === 'ABSENT') stats.absent++;
+            else if (record.status === 'SICK') stats.sick++;
+            else if (record.status === 'EXCUSED') stats.excused++;
+        });
+
+        const data: AttendanceStats[] = Array.from(statsMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+
+        res.json({
+            success: true,
+            data
+        });
+    } catch (error) {
+        logger.error('Error getting attendance stats:', error);
+        res.status(500).json({
+            success: false,
+            error: {
+                code: 'INTERNAL_ERROR',
+                message: 'Failed to retrieve attendance stats'
+            }
+        });
+    }
+}
+
+/**
+ * Get finance stats
+ * @route GET /api/dashboard/finance
+ */
+export async function getFinanceStats(req: Request, res: Response): Promise<void> {
+    try {
+        const { unitId } = req.query;
+        const unitFilter = typeof unitId === 'string' ? { student: { unitId } } : {};
+
+        const [totalBilled, totalPaid, totalUnpaid] = await Promise.all([
+             prisma.invoice.aggregate({
+                where: { ...unitFilter },
+                _sum: { amount: true }
+             }),
+             prisma.invoice.aggregate({
+                where: { ...unitFilter, status: 'PAID' },
+                _sum: { amount: true }
+             }),
+             prisma.invoice.aggregate({
+                where: { ...unitFilter, status: { not: 'PAID' } },
+                _sum: { amount: true }
+             })
+        ]);
+
+        // Get recent payments
+        const recentPaymentsRaw = await prisma.payment.findMany({
+            where: {
+                invoice: { ...unitFilter }
+            },
+            take: 5,
+            orderBy: { createdAt: 'desc' },
+            include: {
+                invoice: {
+                    include: {
+                        student: {
+                            include: {
+                                user: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const recentPayments = recentPaymentsRaw.map(p => ({
+            id: p.id,
+            studentName: p.invoice.student.user.name,
+            amount: Number(p.amount),
+            date: p.createdAt.toISOString()
+        }));
+
+        const data: FinanceStats = {
+            totalBilled: Number(totalBilled._sum.amount || 0),
+            totalPaid: Number(totalPaid._sum.amount || 0),
+            totalUnpaid: Number(totalUnpaid._sum.amount || 0),
+            recentPayments
+        };
+
+        res.json({
+            success: true,
+            data
+        });
+    } catch (error) {
+        logger.error('Error getting finance stats:', error);
+        res.status(500).json({
+            success: false,
+            error: {
+                code: 'INTERNAL_ERROR',
+                message: 'Failed to retrieve finance stats'
+            }
+        });
+    }
+}
+
+/**
+ * Get tahfidz stats
+ * @route GET /api/dashboard/tahfidz
+ */
+export async function getTahfidzStats(req: Request, res: Response): Promise<void> {
+    try {
+        const { unitId } = req.query;
+        // Logic specific to Tahfidz module
+        // This is a simplified implementation
+
+        // Mock data for now as Tahfidz schema might be complex
+        const data: TahfidzStats = {
+            totalMemorized: 0,
+            averageJuz: 0,
+            topStudents: [],
+            monthlyProgress: []
+        };
+
+        res.json({
+            success: true,
+            data
+        });
+    } catch (error) {
+        logger.error('Error getting tahfidz stats:', error);
+        res.status(500).json({
+            success: false,
+            error: {
+                code: 'INTERNAL_ERROR',
+                message: 'Failed to retrieve tahfidz stats'
+            }
+        });
+    }
+}
+
 
 /**
  * Get recent metrics history

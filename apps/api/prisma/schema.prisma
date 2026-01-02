@@ -1738,6 +1738,7 @@ model Notification {
   link      String? // Deep link ke halaman terkait
   status    NotificationStatus @default(UNREAD)
   readAt    DateTime?          @map("read_at")
+  data      Json?              @map("data") // Additional data for extended types
   createdAt DateTime           @default(now()) @map("created_at")
 
   // Relations

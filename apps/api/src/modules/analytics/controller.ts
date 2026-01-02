@@ -1,7 +1,16 @@
 import { Request, Response, NextFunction } from "express";
 import * as service from "./service";
+import type {
+  ApiResponse,
+  DashboardSummary,
+  StudentStatistics,
+  TahfidzProgress,
+  FinanceReport,
+  AnalyticsAttendanceSummary,
+  AcademicPerformance,
+} from "@cipansor/shared";
 
-export async function getDashboardStats(req: Request, res: Response, next: NextFunction) {
+export async function getDashboardStats(req: Request, res: Response<ApiResponse<DashboardSummary>>, next: NextFunction) {
   try {
     const { unitId } = req.query;
     const stats = await service.getDashboardStats(unitId as string | undefined);
@@ -11,7 +20,7 @@ export async function getDashboardStats(req: Request, res: Response, next: NextF
   }
 }
 
-export async function getStudentStats(req: Request, res: Response, next: NextFunction) {
+export async function getStudentStats(req: Request, res: Response<ApiResponse<StudentStatistics>>, next: NextFunction) {
   try {
     const { unitId } = req.query;
     const stats = await service.getStudentStats(unitId as string | undefined);
@@ -21,7 +30,7 @@ export async function getStudentStats(req: Request, res: Response, next: NextFun
   }
 }
 
-export async function getTahfidzStats(req: Request, res: Response, next: NextFunction) {
+export async function getTahfidzStats(req: Request, res: Response<ApiResponse<TahfidzProgress>>, next: NextFunction) {
   try {
     const { unitId, startDate, endDate } = req.query;
     const stats = await service.getTahfidzStats(
@@ -34,7 +43,7 @@ export async function getTahfidzStats(req: Request, res: Response, next: NextFun
   }
 }
 
-export async function getFinanceStats(req: Request, res: Response, next: NextFunction) {
+export async function getFinanceStats(req: Request, res: Response<ApiResponse<FinanceReport>>, next: NextFunction) {
   try {
     const { unitId, startDate, endDate } = req.query;
     const stats = await service.getFinanceStats(
@@ -47,7 +56,7 @@ export async function getFinanceStats(req: Request, res: Response, next: NextFun
   }
 }
 
-export async function getAttendanceStats(req: Request, res: Response, next: NextFunction) {
+export async function getAttendanceStats(req: Request, res: Response<ApiResponse<AnalyticsAttendanceSummary>>, next: NextFunction) {
   try {
     const { unitId, startDate, endDate } = req.query;
     const stats = await service.getAttendanceStats(
@@ -60,7 +69,7 @@ export async function getAttendanceStats(req: Request, res: Response, next: Next
   }
 }
 
-export async function getAcademicStats(req: Request, res: Response, next: NextFunction) {
+export async function getAcademicStats(req: Request, res: Response<ApiResponse<AcademicPerformance>>, next: NextFunction) {
   try {
     const { unitId } = req.query;
     const stats = await service.getAcademicStats(unitId as string | undefined);

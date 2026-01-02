@@ -457,9 +457,16 @@ export async function createAnnouncement(data: CreateAnnouncementInput, createdB
 }
 
 export async function updateAnnouncement(id: string, data: UpdateAnnouncementInput) {
+  const { unitId, type, ...rest } = data;
+  const { dbType } = type ? mapTypeToPrisma(type) : { dbType: undefined };
+
   return prisma.announcement.update({
     where: { id },
-    data,
+    data: {
+      ...rest,
+      ...(type && { type: dbType as any }), // Cast to any because of enum mismatch in Zod vs Prisma
+      ...(unitId && { unit: { connect: { id: unitId } } }),
+    },
     include: {
       unit: { select: { id: true, name: true } },
       createdBy: { select: { id: true, name: true } },

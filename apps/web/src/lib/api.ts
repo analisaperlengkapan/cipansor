@@ -12,7 +12,9 @@ import {
   ApiResponse,
   PaginatedResponse as SharedPaginatedResponse,
   TahfidzRecord,
-  TahfidzDashboardStats
+  TahfidzDashboardStats,
+  CreateTahfidzInput,
+  UpdateTahfidzInput
 } from '@cipansor/shared';
 
 // Explicitly export SharedPaginatedResponse for new modules
@@ -172,10 +174,10 @@ export const tahfidzApi = {
   getRecordById: (id: string) =>
     api.get<ApiResponse<TahfidzRecord>>(`/tahfidz/${id}`),
 
-  createRecord: (data: any) =>
+  createRecord: (data: CreateTahfidzInput) =>
     api.post<ApiResponse<TahfidzRecord>>('/tahfidz', data),
 
-  updateRecord: (id: string, data: any) =>
+  updateRecord: (id: string, data: UpdateTahfidzInput) =>
     api.put<ApiResponse<TahfidzRecord>>(`/tahfidz/${id}`, data),
 
   deleteRecord: (id: string) =>

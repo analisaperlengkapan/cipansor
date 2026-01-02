@@ -63,6 +63,6 @@ export const tahfidzSummaryQuerySchema = z.object({
 // Types
 export type TahfidzActivityType = z.infer<typeof TahfidzActivityEnum>;
 export type ListTahfidzQuery = z.infer<typeof listTahfidzQuerySchema>;
-export type CreateTahfidzInput = z.infer<typeof createTahfidzSchema>;
-export type UpdateTahfidzInput = z.infer<typeof updateTahfidzSchema>;
+// export type CreateTahfidzInput = z.infer<typeof createTahfidzSchema>; // Moved to shared
+// export type UpdateTahfidzInput = z.infer<typeof updateTahfidzSchema>; // Moved to shared
 export type TahfidzSummaryQuery = z.infer<typeof tahfidzSummaryQuerySchema>;

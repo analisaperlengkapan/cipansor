@@ -168,7 +168,7 @@ export default function TemplatesPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {template.channels.map((channel) => (
+                      {template.channels.map((channel: string) => (
                         <Badge key={channel} variant="outline" className="text-xs">
                           {channel === 'EMAIL' && <Mail className="mr-1 h-3 w-3" />}
                           {channel === 'IN_APP' && <Bell className="mr-1 h-3 w-3" />}

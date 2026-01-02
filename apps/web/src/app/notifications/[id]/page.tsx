@@ -269,7 +269,7 @@ export default function NotificationDetailPage({ params }: PageProps) {
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Channel</span>
                 <div className="flex gap-1">
-                  {notification.channels.map((channel) => (
+                  {notification.channels.map((channel: string) => (
                     <Badge key={channel} variant="outline" className="text-xs">
                       {channel}
                     </Badge>
@@ -316,7 +316,7 @@ export default function NotificationDetailPage({ params }: PageProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {notification.recipients.map((recipient) => (
+                {notification.recipients.map((recipient: any) => (
                   <TableRow key={recipient.id}>
                     <TableCell>
                       <div>

@@ -139,8 +139,6 @@ export default function EditTahfidzPage() {
       await updateTahfidz.mutateAsync({
         id,
         data: {
-          studentId: data.studentId,
-          recordedAt: format(data.date, 'yyyy-MM-dd'),
           surahName: data.surah,
           surahNumber: SURAH_LIST.indexOf(data.surah) + 1,
           ayahStart: data.startAyah,

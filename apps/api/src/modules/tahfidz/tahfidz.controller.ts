@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { tahfidzService } from './tahfidz.service';
 import { TahfidzMapper } from './tahfidz.mapper';
-import type { ListTahfidzQuery, CreateTahfidzInput, UpdateTahfidzInput } from './tahfidz.schema';
-import type { TahfidzRecord, TahfidzDashboardStats } from '@cipansor/shared';
+import type { ListTahfidzQuery } from './tahfidz.schema';
+import type { TahfidzRecord, TahfidzDashboardStats, CreateTahfidzInput, UpdateTahfidzInput } from '@cipansor/shared';
 import type { PaginatedResponse, ApiResponse } from '@cipansor/shared';
 
 /**
@@ -109,7 +109,7 @@ export const getStudentSummary = asyncHandler(async (req: Request, res: Response
  * Get tahfidz dashboard stats
  * GET /api/tahfidz/dashboard
  */
-export const getDashboard = asyncHandler(async (req: Request, res: Response<ApiResponse<TahfidzDashboardStats>>) => {
+export const getDashboardStats = asyncHandler(async (req: Request, res: Response<ApiResponse<TahfidzDashboardStats>>) => {
   const { unitId, year, month } = req.query;
   
   const stats = await tahfidzService.getDashboardStats({
@@ -128,3 +128,8 @@ export const getDashboard = asyncHandler(async (req: Request, res: Response<ApiR
     data: safeStats,
   });
 });
+
+/**
+ * Export getDashboardStats as getDashboard for backward compatibility or routing consistency
+ */
+export const getDashboard = getDashboardStats;

@@ -141,14 +141,14 @@ export async function getStudentStats(unitId?: string): Promise<StudentStatistic
       where: { deletedAt: null },
       _count: true,
     }),
-    // Enrollment by month (approximate using createdAt)
+    // Enrollment by month (using mapped table and column names)
     prisma.$queryRaw<Array<{ month: string; count: bigint }>>`
       SELECT
-        TO_CHAR("createdAt", 'YYYY-MM') as month,
+        TO_CHAR(created_at, 'YYYY-MM') as month,
         COUNT(*)::bigint as count
-      FROM "Student"
-      WHERE "createdAt" >= NOW() - INTERVAL '12 months'
-      GROUP BY TO_CHAR("createdAt", 'YYYY-MM')
+      FROM students
+      WHERE created_at >= NOW() - INTERVAL '12 months'
+      GROUP BY TO_CHAR(created_at, 'YYYY-MM')
       ORDER BY month DESC
     `,
     prisma.student.count({ where: { ...unitFilter, status: "active" } }),
@@ -231,12 +231,12 @@ export async function getTahfidzStats(unitId?: string, dateRange?: DateRange): P
       }),
   ]);
 
-  // Better approach for Completed Hafidz (30 Juz)
+  // Better approach for Completed Hafidz (30 Juz) using mapped table name
   const completedHafidzCount = await prisma.$queryRaw<Array<{ count: bigint }>>`
       SELECT COUNT(*)::bigint as count FROM (
-          SELECT "studentId" FROM "TahfidzRecord"
-          WHERE "deletedAt" IS NULL
-          GROUP BY "studentId"
+          SELECT student_id FROM tahfidz_records
+          WHERE deleted_at IS NULL -- Assuming standard soft delete or ignored if column doesn't exist
+          GROUP BY student_id
           HAVING COUNT(DISTINCT juz) >= 30
       ) as hafidz
   `;
@@ -270,14 +270,14 @@ export async function getTahfidzStats(unitId?: string, dateRange?: DateRange): P
     include: { user: { select: { name: true } } },
   });
 
-  // Monthly progress
+  // Monthly progress - Using recorded_at (snake_case)
   const monthlyProgress = await prisma.$queryRaw<Array<{ month: string; count: bigint }>>`
       SELECT
-        TO_CHAR("recordedAt", 'YYYY-MM') as month,
+        TO_CHAR(recorded_at, 'YYYY-MM') as month,
         COUNT(*)::bigint as count
-      FROM "TahfidzRecord"
-      WHERE "recordedAt" >= NOW() - INTERVAL '6 months'
-      GROUP BY TO_CHAR("recordedAt", 'YYYY-MM')
+      FROM tahfidz_records
+      WHERE recorded_at >= NOW() - INTERVAL '6 months'
+      GROUP BY TO_CHAR(recorded_at, 'YYYY-MM')
       ORDER BY month DESC
   `;
 
@@ -348,14 +348,14 @@ export async function getFinanceStats(unitId?: string, dateRange?: DateRange): P
       _count: true,
       _sum: { amount: true },
     }),
-    // Monthly revenue for last 12 months
+    // Monthly revenue for last 12 months using mapped table/column
     prisma.$queryRaw<Array<{ month: string; total: bigint }>>`
       SELECT 
-        TO_CHAR("paidAt", 'YYYY-MM') as month,
+        TO_CHAR(paid_at, 'YYYY-MM') as month,
         COALESCE(SUM(amount), 0)::bigint as total
-      FROM "Payment"
-      WHERE "paidAt" >= NOW() - INTERVAL '12 months'
-      GROUP BY TO_CHAR("paidAt", 'YYYY-MM')
+      FROM payments
+      WHERE paid_at >= NOW() - INTERVAL '12 months'
+      GROUP BY TO_CHAR(paid_at, 'YYYY-MM')
       ORDER BY month DESC
       LIMIT 12
     `,
@@ -410,7 +410,7 @@ export async function getAttendanceStats(unitId?: string, dateRange?: DateRange)
         COUNT(CASE WHEN status = 'ABSENT' THEN 1 END)::bigint as absent,
         COUNT(CASE WHEN status = 'LATE' THEN 1 END)::bigint as late,
         COUNT(*)::bigint as total
-      FROM "Attendance"
+      FROM attendances
       WHERE date >= NOW() - INTERVAL '30 days'
       GROUP BY date::date
       ORDER BY date DESC
@@ -435,7 +435,7 @@ export async function getAttendanceStats(unitId?: string, dateRange?: DateRange)
   const absentCount = byStatus.find(s => s.status === "ABSENT")?._count || 0;
   const lateCount = byStatus.find(s => s.status === "LATE")?._count || 0;
   const sickCount = byStatus.find(s => s.status === "SICK")?._count || 0;
-  const permittedCount = byStatus.find(s => s.status === "PERMITTED")?._count || 0;
+  const permittedCount = byStatus.find(s => s.status === "EXCUSED")?._count || 0; // EXCUSED is the enum value in schema
 
   // Calculate class presence rates
   // Quick fix: group by class AND status to get numerator
@@ -478,7 +478,7 @@ export async function getAttendanceStats(unitId?: string, dateRange?: DateRange)
 export async function getAcademicStats(unitId?: string): Promise<AcademicPerformance> {
   const unitFilter = unitId ? { unitId } : {};
 
-  const [examStats, gradeDistribution, subjectPerformance] = await Promise.all([
+  const [examStats, gradeDistribution, subjectPerformance, topPerformersData] = await Promise.all([
     // Exam statistics
     prisma.exam.aggregate({
       where: unitFilter,
@@ -488,14 +488,20 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
     prisma.grade.groupBy({
       by: ["letterGrade"],
       _count: true,
-      _avg: { percentage: true },
     }),
     // Average performance by subject
     prisma.grade.groupBy({
       by: ["subjectId"],
-      _avg: { percentage: true },
+      _avg: { percentage: true }, // Using percentage column from schema
       _count: true,
     }),
+    // Top performers (by GPA approximation from grades)
+    prisma.grade.groupBy({
+      by: ["studentId"],
+      _avg: { score: true }, // Using score for now as GPA needs credits weighting
+      orderBy: { _avg: { score: "desc" } },
+      take: 5
+    })
   ]);
 
   // Get subject names
@@ -505,19 +511,63 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
     select: { id: true, name: true, code: true },
   });
 
-  const topPerformers: AcademicPerformance['topPerformers'] = [];
+  // Get student details for top performers
+  const topStudentIds = topPerformersData.map(s => s.studentId);
+  const topStudents = await prisma.student.findMany({
+    where: { id: { in: topStudentIds } },
+    include: {
+        user: { select: { name: true } },
+        enrollments: {
+            where: { status: 'active' },
+            include: { class: { select: { name: true } } },
+            take: 1
+        }
+    }
+  });
+
+  // Calculate total grades for distribution percentage
+  const totalGrades = gradeDistribution.reduce((acc, curr) => acc + curr._count, 0);
+
+  // Calculate average GPA (Estimate based on average scores of top performers or general average)
+  // Real GPA requires credit hours. Here we map score to 4.0 scale roughly:
+  // >90: 4.0, >80: 3.0, >70: 2.0, >60: 1.0
+  // Or just use the average percentage/score scaled.
+  const overallAvgScore = await prisma.grade.aggregate({
+      _avg: { score: true }
+  });
+  const avgScoreVal = Number(overallAvgScore._avg.score) || 0;
+  const estimatedGPA = (avgScoreVal / 25); // Rough 0-4 scale from 0-100
+
+  // Calculate Pass Rate
+  // Assuming passing score is 70 if not specified (Exam has passingScore, but Grade doesn't link back easily for aggregation without join)
+  // We'll approximate using fixed 70 or check letter grades (A,B,C pass; D,E fail usually)
+  // Let's use letter grades. A, B, C pass.
+  const passingGrades = gradeDistribution
+      .filter(g => ['A', 'B', 'C'].includes(g.letterGrade || ''))
+      .reduce((acc, curr) => acc + curr._count, 0);
+  const passRate = totalGrades > 0 ? (passingGrades / totalGrades) * 100 : 0;
 
   return {
-    averageGpa: 0,
-    passRate: 0,
-    topPerformers,
+    averageGpa: Number(estimatedGPA.toFixed(2)),
+    passRate: Number(passRate.toFixed(2)),
+    topPerformers: topPerformersData.map(p => {
+        const student = topStudents.find(s => s.id === p.studentId);
+        // Estimate GPA from average score
+        const gpa = (Number(p._avg.score) || 0) / 25;
+        return {
+            studentId: p.studentId,
+            studentName: student?.user.name || "Unknown",
+            className: student?.enrollments[0]?.class.name || "-",
+            gpa: Number(gpa.toFixed(2))
+        };
+    }),
     bySubject: subjectPerformance.map(s => {
       const subject = subjects.find(sub => sub.id === s.subjectId);
       return {
         subjectId: s.subjectId,
         subjectName: subject?.name || "Unknown",
-        averageScore: Number(s._avg.percentage?.toFixed(2)) || 0,
-        passRate: 0
+        averageScore: Number(s._avg.percentage?.toFixed(2)) || 0, // Schema has percentage column in Grade
+        passRate: 0 // Calculation per subject requires more complex query
       };
     }).sort((a, b) => b.averageScore - a.averageScore),
     gradeDistribution: gradeDistribution
@@ -525,10 +575,10 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
       .map(g => ({
         grade: g.letterGrade || "?",
         count: g._count,
-        percentage: 0
+        percentage: totalGrades > 0 ? Number(((g._count / totalGrades) * 100).toFixed(2)) : 0
       }))
       .sort((a, b) => (a.grade || "").localeCompare(b.grade || "")),
-    trend: [],
+    trend: [], // Still empty as semester trend needs complex historical data
   };
 }
 

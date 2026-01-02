@@ -208,6 +208,7 @@ describe('Analytics Service', () => {
 
     describe('getAcademicStats', () => {
         it('should return academic statistics', async () => {
+            // [examStats, gradeDistribution, subjectPerformance, topPerformersData]
             prismaMock.exam.aggregate.mockResolvedValue({
                 _count: 50,
             });
@@ -218,18 +219,32 @@ describe('Analytics Service', () => {
                 ]) // gradeDistribution
                 .mockResolvedValueOnce([
                     { subjectId: 'subj-1', _avg: { percentage: 88 }, _count: 50 },
-                ]); // subjectPerformance
+                ]) // subjectPerformance
+                .mockResolvedValueOnce([
+                    { studentId: 'student-1', _avg: { score: 95 } }
+                ]); // topPerformersData
 
             prismaMock.subject.findMany.mockResolvedValue([
                 { id: 'subj-1', name: 'Matematika', code: 'MTK' },
             ]);
 
+            prismaMock.student.findMany.mockResolvedValue([
+                {
+                    id: 'student-1',
+                    user: { name: 'Ahmad' },
+                    enrollments: [{ class: { name: '7A' } }]
+                }
+            ]);
+
+            prismaMock.grade.aggregate.mockResolvedValue({ _avg: { score: 85 } });
+
             const result = await analyticsService.getAcademicStats();
 
-            expect(result).toHaveProperty('averageGpa'); // Placeholder 0
+            expect(result).toHaveProperty('averageGpa');
             expect(result).toHaveProperty('gradeDistribution');
             expect(result.gradeDistribution[0]).toHaveProperty('grade', 'A');
-            expect(result.gradeDistribution[0]).toHaveProperty('percentage', 0); // Placeholder
+            // Since we mocked 30 grades, all 'A', percentage should be 100
+            expect(result.gradeDistribution[0]).toHaveProperty('percentage', 100);
             expect(result).toHaveProperty('bySubject');
             expect(result.bySubject[0]).toHaveProperty('subjectName', 'Matematika');
             expect(result.bySubject[0]).toHaveProperty('averageScore', 88.00);

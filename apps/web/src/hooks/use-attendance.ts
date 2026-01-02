@@ -1,39 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
+import api from '@/lib/api';
+import {
+  Attendance,
+  AttendanceStatus,
+  AttendanceSummary,
+  AttendanceCalendarResponse,
+  CreateAttendanceInput,
+  BulkAttendanceInput,
+  UpdateAttendanceInput,
+  SharedPaginatedResponse,
+  ApiResponse
+} from '@cipansor/shared';
 
-export interface Attendance {
-  id: string;
-  studentId: string;
-  classId: string;
-  date: string;
-  status: AttendanceStatus;
-  notes?: string;
-  recordedBy: string;
-  createdAt: string;
-  updatedAt: string;
-  student?: {
-    id: string;
-    name: string;
-    nis: string;
-  };
-  class?: {
-    id: string;
-    name: string;
-  };
-  recorder?: {
-    id: string;
-    name: string;
-  };
-}
-
-export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'SICK' | 'PERMITTED';
-
+// Re-export constants for UI usage
 export const ATTENDANCE_STATUSES: { value: AttendanceStatus; label: string; color: string }[] = [
-  { value: 'PRESENT', label: 'Hadir', color: 'bg-green-100 text-green-800' },
-  { value: 'ABSENT', label: 'Tidak Hadir', color: 'bg-red-100 text-red-800' },
-  { value: 'LATE', label: 'Terlambat', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'SICK', label: 'Sakit', color: 'bg-blue-100 text-blue-800' },
-  { value: 'PERMITTED', label: 'Izin', color: 'bg-purple-100 text-purple-800' },
+  { value: AttendanceStatus.PRESENT, label: 'Hadir', color: 'bg-green-100 text-green-800' },
+  { value: AttendanceStatus.ABSENT, label: 'Tidak Hadir', color: 'bg-red-100 text-red-800' },
+  { value: AttendanceStatus.LATE, label: 'Terlambat', color: 'bg-yellow-100 text-yellow-800' },
+  { value: AttendanceStatus.SICK, label: 'Sakit', color: 'bg-blue-100 text-blue-800' },
+  { value: AttendanceStatus.EXCUSED, label: 'Izin', color: 'bg-purple-100 text-purple-800' },
 ];
 
 export interface AttendanceParams {
@@ -51,7 +36,8 @@ export function useAttendances(params: AttendanceParams = {}) {
   return useQuery({
     queryKey: ['attendances', params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Attendance>>('/attendance', { params });
+      // Use SharedPaginatedResponse
+      const response = await api.get<SharedPaginatedResponse<Attendance>>('/attendance', { params });
       return response.data;
     },
   });
@@ -72,38 +58,38 @@ export function useClassAttendance(classId: string, date: string) {
   return useQuery({
     queryKey: ['attendances', 'class', classId, date],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Attendance[]>>(`/attendance/class/${classId}`, {
-        params: { date },
+      // Note: The backend returns records array inside pagination usually, but if this endpoint
+      // returns a list, we check the generic.
+      // However, looking at the API controller, 'list' returns SharedPaginatedResponse.
+      // If there is a specific endpoint for class attendance without pagination, it might be different.
+      // Based on previous code, this was likely calling the list endpoint with filters.
+      // But the previous code had `/attendance/class/${classId}` which is NOT in the controller I saw.
+      // The controller has `list`, `getById`, `create`, `bulkCreate`, `update`, `remove`, `getSummary`, `getCalendar`.
+      // It does NOT have `/attendance/class/:classId`.
+      // Assuming the previous code was calling a route that might have been removed or I missed it?
+      // Wait, let's check the controller again.
+      // Controller: list, getById, create, bulkCreate, update, remove, getSummary, getCalendar.
+      // No `get /class/:classId`.
+      // So `useClassAttendance` was likely broken or using a route I didn't see in the file.
+      // I will fallback to using `list` with classId and date params, which is what `useAttendances` does.
+      // Or maybe it was `list` with a different path?
+      // actually, let's keep it as is if it matches a route I haven't seen, OR refactor it to use `list`.
+      // Since I didn't see the route in `attendance.controller.ts`, I will assume `list` is the way.
+
+      const response = await api.get<SharedPaginatedResponse<Attendance>>('/attendance', {
+        params: { classId, date, limit: 100 } // specific for class view
       });
-      return response.data.data;
+      return response.data.data; // data is the array in SharedPaginatedResponse
     },
     enabled: !!classId && !!date,
   });
-}
-
-export interface CreateAttendanceData {
-  studentId: string;
-  classId: string;
-  date: string;
-  status: AttendanceStatus;
-  notes?: string;
-}
-
-export interface BulkAttendanceData {
-  classId: string;
-  date: string;
-  attendances: {
-    studentId: string;
-    status: AttendanceStatus;
-    notes?: string;
-  }[];
 }
 
 export function useCreateAttendance() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (data: CreateAttendanceData) => {
+    mutationFn: async (data: CreateAttendanceInput) => {
       const response = await api.post<ApiResponse<Attendance>>('/attendance', data);
       return response.data.data;
     },
@@ -117,14 +103,15 @@ export function useBulkCreateAttendance() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (data: BulkAttendanceData) => {
-      const response = await api.post<ApiResponse<Attendance[]>>('/attendance/bulk', data);
+    mutationFn: async (data: BulkAttendanceInput) => {
+      const response = await api.post<ApiResponse<{ created: number; skipped: number }>>('/attendance/bulk', data);
       return response.data.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['attendances'] });
+      // Invalidate calendar if needed
       queryClient.invalidateQueries({ 
-        queryKey: ['attendances', 'class', variables.classId, variables.date] 
+        queryKey: ['attendance-calendar', variables.classId]
       });
     },
   });
@@ -134,7 +121,7 @@ export function useUpdateAttendance() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateAttendanceData> }) => {
+    mutationFn: async ({ id, data }: { id: string; data: UpdateAttendanceInput }) => {
       const response = await api.patch<ApiResponse<Attendance>>(`/attendance/${id}`, data);
       return response.data.data;
     },
@@ -158,71 +145,32 @@ export function useDeleteAttendance() {
   });
 }
 
-export interface AttendanceSummary {
-  totalDays: number;
-  present: number;
-  absent: number;
-  late: number;
-  sick: number;
-  permitted: number;
-  attendanceRate: number;
-}
-
 export function useStudentAttendanceSummary(studentId: string, startDate?: string, endDate?: string) {
   return useQuery({
     queryKey: ['attendance-summary', studentId, startDate, endDate],
     queryFn: async () => {
-      const params = { startDate, endDate };
+      const params = { startDate, endDate, studentId };
       const response = await api.get<ApiResponse<AttendanceSummary>>(
-        `/attendance/summary/student/${studentId}`,
+        '/attendance/summary', // Changed to correct endpoint
         { params }
       );
       return response.data.data;
     },
-    enabled: !!studentId,
+    enabled: !!studentId && !!startDate && !!endDate,
   });
 }
 
-export function useClassAttendanceSummary(classId: string, date: string) {
+export function useClassAttendanceSummary(classId: string, startDate: string, endDate: string) {
   return useQuery({
-    queryKey: ['attendance-summary', 'class', classId, date],
+    queryKey: ['attendance-summary', 'class', classId, startDate, endDate],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<{
-        total: number;
-        present: number;
-        absent: number;
-        late: number;
-        sick: number;
-        permitted: number;
-      }>>(`/attendance/summary/class/${classId}`, { params: { date } });
+      const response = await api.get<ApiResponse<AttendanceSummary>>('/attendance/summary', {
+        params: { classId, startDate, endDate }
+      });
       return response.data.data;
     },
-    enabled: !!classId && !!date,
+    enabled: !!classId && !!startDate && !!endDate,
   });
-}
-
-// Calendar view interfaces
-export interface AttendanceCalendarDay {
-  date: string;
-  present: number;
-  absent: number;
-  late: number;
-  sick: number;
-  permitted: number;
-  total: number;
-}
-
-export interface AttendanceCalendarResponse {
-  classId: string;
-  className: string;
-  year: number;
-  month: number;
-  days: AttendanceCalendarDay[];
-  summary: {
-    totalStudents: number;
-    totalSchoolDays: number;
-    avgAttendanceRate: number;
-  };
 }
 
 export function useAttendanceCalendar(classId: string, year: number, month: number) {

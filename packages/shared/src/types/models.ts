@@ -63,3 +63,6 @@ export interface PaginatedResponse<T> {
     pagination: Pagination;
   };
 }
+
+// Alias for consistency with new modules
+export type SharedPaginatedResponse<T> = PaginatedResponse<T>;

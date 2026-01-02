@@ -169,6 +169,9 @@ export async function createInvoice(data: CreateInvoiceDto) {
         )} telah dibuat. Jatuh tempo: ${new Date(invoice.dueDate).toLocaleDateString("id-ID")}`,
         type: NotificationType.PAYMENT,
         link: `/finance/bills/${invoice.id}`,
+        priority: 'HIGH',
+        channels: ['IN_APP', 'EMAIL'],
+        recipientType: 'INDIVIDUAL',
       });
     } catch (error) {
       console.error("Failed to send notification:", error);
@@ -348,6 +351,9 @@ export async function createPayment(data: CreatePaymentDto) {
       )} telah diterima.`,
       type: NotificationType.PAYMENT,
       link: `/finance/bills/${payment.invoice.id}`,
+      priority: 'HIGH',
+      channels: ['IN_APP', 'EMAIL'],
+      recipientType: 'INDIVIDUAL',
     });
   } catch (error) {
     console.error("Failed to send payment notification:", error);

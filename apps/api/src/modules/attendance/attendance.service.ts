@@ -1,11 +1,17 @@
 import { prisma } from '@/lib/prisma';
 import { Errors } from '@/middleware/error';
-import { UserRole, AttendanceStatus, Prisma } from '@prisma/client';
-import type {
-  ListAttendanceQuery,
+import { UserRole, Prisma, AttendanceStatus as PrismaAttendanceStatus } from '@prisma/client';
+import {
+  AttendanceStatus,
   CreateAttendanceInput,
   BulkAttendanceInput,
   UpdateAttendanceInput,
+  Attendance,
+  AttendanceCalendarResponse,
+  AttendanceSummary
+} from '@cipansor/shared';
+import type {
+  ListAttendanceQuery,
   AttendanceSummaryQuery,
 } from './attendance.schema';
 
@@ -35,7 +41,8 @@ export class AttendanceService {
     }
 
     if (status) {
-      where.status = status as AttendanceStatus;
+      // Cast shared status to Prisma status (safe because we aligned them)
+      where.status = status as unknown as PrismaAttendanceStatus;
     }
 
     // Date filtering
@@ -77,8 +84,17 @@ export class AttendanceService {
       prisma.attendance.count({ where }),
     ]);
 
+    // Map to shared type Attendance
+    const mappedRecords: Attendance[] = records.map(r => ({
+      ...r,
+      date: r.date,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      status: r.status as unknown as AttendanceStatus
+    }));
+
     return {
-      records,
+      records: mappedRecords,
       pagination: {
         page,
         limit,
@@ -91,7 +107,7 @@ export class AttendanceService {
   /**
    * Get single attendance record
    */
-  async findById(id: string) {
+  async findById(id: string): Promise<Attendance> {
     const attendance = await prisma.attendance.findUnique({
       where: { id },
       include: {
@@ -110,13 +126,16 @@ export class AttendanceService {
       throw Errors.notFound('Attendance record');
     }
 
-    return attendance;
+    return {
+      ...attendance,
+      status: attendance.status as unknown as AttendanceStatus
+    };
   }
 
   /**
    * Create single attendance record
    */
-  async create(input: CreateAttendanceInput, recordedById: string) {
+  async create(input: CreateAttendanceInput, recordedById: string): Promise<Attendance> {
     // Verify student exists
     const student = await prisma.student.findFirst({
       where: { id: input.studentId, deletedAt: null },
@@ -140,13 +159,14 @@ export class AttendanceService {
     }
 
     // Check for duplicate attendance on same date
+    const inputDate = new Date(input.date);
     const existingAttendance = await prisma.attendance.findFirst({
       where: {
         studentId: input.studentId,
         classId: input.classId,
         date: {
-          gte: new Date(new Date(input.date).setHours(0, 0, 0, 0)),
-          lt: new Date(new Date(input.date).setHours(23, 59, 59, 999)),
+          gte: new Date(new Date(inputDate).setHours(0, 0, 0, 0)),
+          lt: new Date(new Date(inputDate).setHours(23, 59, 59, 999)),
         },
       },
     });
@@ -159,8 +179,8 @@ export class AttendanceService {
       data: {
         studentId: input.studentId,
         classId: input.classId,
-        date: input.date,
-        status: input.status as AttendanceStatus,
+        date: inputDate,
+        status: input.status as unknown as PrismaAttendanceStatus,
         notes: input.notes,
         recordedById,
       },
@@ -174,7 +194,10 @@ export class AttendanceService {
       },
     });
 
-    return attendance;
+    return {
+      ...attendance,
+      status: attendance.status as unknown as AttendanceStatus
+    };
   }
 
   /**
@@ -210,7 +233,7 @@ export class AttendanceService {
         classId: input.classId,
         date: {
           gte: new Date(targetDate.setHours(0, 0, 0, 0)),
-          lt: new Date(new Date(input.date).setHours(23, 59, 59, 999)),
+          lt: new Date(new Date(targetDate).setHours(23, 59, 59, 999)),
         },
       },
       select: { studentId: true },
@@ -230,8 +253,8 @@ export class AttendanceService {
       data: newRecords.map(record => ({
         studentId: record.studentId,
         classId: input.classId,
-        date: input.date,
-        status: record.status as AttendanceStatus,
+        date: targetDate,
+        status: record.status as unknown as PrismaAttendanceStatus,
         notes: record.notes,
         recordedById,
       })),
@@ -246,7 +269,7 @@ export class AttendanceService {
   /**
    * Update attendance record
    */
-  async update(id: string, input: UpdateAttendanceInput) {
+  async update(id: string, input: UpdateAttendanceInput): Promise<Attendance> {
     const attendance = await prisma.attendance.findUnique({
       where: { id },
     });
@@ -258,7 +281,7 @@ export class AttendanceService {
     const updated = await prisma.attendance.update({
       where: { id },
       data: {
-        status: input.status as AttendanceStatus | undefined,
+        status: input.status ? (input.status as unknown as PrismaAttendanceStatus) : undefined,
         notes: input.notes,
       },
       include: {
@@ -271,7 +294,10 @@ export class AttendanceService {
       },
     });
 
-    return updated;
+    return {
+      ...updated,
+      status: updated.status as unknown as AttendanceStatus
+    };
   }
 
   /**
@@ -296,7 +322,7 @@ export class AttendanceService {
   /**
    * Get attendance summary/statistics
    */
-  async getSummary(query: AttendanceSummaryQuery, currentUser: { role: UserRole; unitId: string | null }) {
+  async getSummary(query: AttendanceSummaryQuery, currentUser: { role: UserRole; unitId: string | null }): Promise<AttendanceSummary> {
     const { classId, studentId, startDate, endDate } = query;
 
     const where: Prisma.AttendanceWhereInput = {
@@ -332,7 +358,7 @@ export class AttendanceService {
     const total = await prisma.attendance.count({ where });
 
     // Transform to summary object
-    const summary: Record<string, number> = {
+    const counts = {
       total,
       present: 0,
       absent: 0,
@@ -342,21 +368,27 @@ export class AttendanceService {
     };
 
     for (const item of statusCounts) {
-      summary[item.status.toLowerCase()] = item._count._all;
+      const statusKey = item.status.toLowerCase();
+      // Ensure we map known statuses correctly
+      if (statusKey === 'present') counts.present = item._count._all;
+      else if (statusKey === 'absent') counts.absent = item._count._all;
+      else if (statusKey === 'late') counts.late = item._count._all;
+      else if (statusKey === 'sick') counts.sick = item._count._all;
+      else if (statusKey === 'excused') counts.excused = item._count._all;
     }
 
     // Calculate percentages
     const percentages = {
-      present: total > 0 ? ((summary.present / total) * 100).toFixed(1) : '0',
-      absent: total > 0 ? ((summary.absent / total) * 100).toFixed(1) : '0',
-      late: total > 0 ? ((summary.late / total) * 100).toFixed(1) : '0',
-      sick: total > 0 ? ((summary.sick / total) * 100).toFixed(1) : '0',
-      excused: total > 0 ? ((summary.excused / total) * 100).toFixed(1) : '0',
+      present: total > 0 ? ((counts.present / total) * 100).toFixed(1) : '0',
+      absent: total > 0 ? ((counts.absent / total) * 100).toFixed(1) : '0',
+      late: total > 0 ? ((counts.late / total) * 100).toFixed(1) : '0',
+      sick: total > 0 ? ((counts.sick / total) * 100).toFixed(1) : '0',
+      excused: total > 0 ? ((counts.excused / total) * 100).toFixed(1) : '0',
     };
 
     return {
       period: { startDate, endDate },
-      counts: summary,
+      counts,
       percentages,
     };
   }
@@ -364,7 +396,7 @@ export class AttendanceService {
   /**
    * Get attendance calendar for a class (monthly view)
    */
-  async getCalendar(classId: string, year: number, month: number, currentUser: { role: UserRole; unitId: string | null }) {
+  async getCalendar(classId: string, year: number, month: number, currentUser: { role: UserRole; unitId: string | null }): Promise<AttendanceCalendarResponse> {
     // Get class info
     const classInfo = await prisma.class.findUnique({
       where: { id: classId },

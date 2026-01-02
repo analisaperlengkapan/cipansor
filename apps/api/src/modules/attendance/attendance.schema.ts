@@ -1,8 +1,5 @@
 import { z } from 'zod';
-
-// Attendance status enum
-const AttendanceStatusEnum = z.enum(['PRESENT', 'ABSENT', 'LATE', 'SICK', 'EXCUSED']);
-
+import { AttendanceStatus } from '@cipansor/shared';
 // Query params
 export const listAttendanceQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
@@ -12,7 +9,7 @@ export const listAttendanceQuerySchema = z.object({
   date: z.string().optional(), // YYYY-MM-DD
   startDate: z.string().optional(), // YYYY-MM-DD
   endDate: z.string().optional(), // YYYY-MM-DD
-  status: AttendanceStatusEnum.optional(),
+  status: z.nativeEnum(AttendanceStatus).optional(),
 });
 
 // Single attendance record
@@ -20,7 +17,7 @@ export const createAttendanceSchema = z.object({
   studentId: z.string().uuid('Invalid student ID'),
   classId: z.string().uuid('Invalid class ID'),
   date: z.coerce.date(),
-  status: AttendanceStatusEnum,
+  status: z.nativeEnum(AttendanceStatus),
   notes: z.string().max(500).optional(),
 });
 
@@ -30,14 +27,14 @@ export const bulkAttendanceSchema = z.object({
   date: z.coerce.date(),
   records: z.array(z.object({
     studentId: z.string().uuid('Invalid student ID'),
-    status: AttendanceStatusEnum,
+    status: z.nativeEnum(AttendanceStatus),
     notes: z.string().max(500).optional(),
   })).min(1, 'At least one record is required'),
 });
 
 // Update attendance
 export const updateAttendanceSchema = z.object({
-  status: AttendanceStatusEnum.optional(),
+  status: z.nativeEnum(AttendanceStatus).optional(),
   notes: z.string().max(500).optional().nullable(),
 });
 
@@ -54,10 +51,6 @@ export const attendanceSummaryQuerySchema = z.object({
   endDate: z.string(), // YYYY-MM-DD required
 });
 
-// Types
-export type AttendanceStatus = z.infer<typeof AttendanceStatusEnum>;
+// Export inferred types (optional, but we use shared types in service)
 export type ListAttendanceQuery = z.infer<typeof listAttendanceQuerySchema>;
-export type CreateAttendanceInput = z.infer<typeof createAttendanceSchema>;
-export type BulkAttendanceInput = z.infer<typeof bulkAttendanceSchema>;
-export type UpdateAttendanceInput = z.infer<typeof updateAttendanceSchema>;
 export type AttendanceSummaryQuery = z.infer<typeof attendanceSummaryQuerySchema>;

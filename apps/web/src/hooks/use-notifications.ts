@@ -266,19 +266,8 @@ export function useNotificationTemplate(id: string) {
   return useQuery({
     queryKey: ['notification-template', id],
     queryFn: async () => {
-      // Assuming GET /templates returns list, we might filter client side or assume endpoint exists?
-      // Our API route: router.get("/templates", controller.getTemplates);
-      // We don't have GET /templates/:id in the routes.ts I wrote!
-      // I should fix routes.ts or just filter from list here?
-      // For efficiency, I'll filter here for now or update plan to add GET /templates/:id.
-      // Actually, updating routes.ts is better.
-      // But since I'm in the "Frontend Refactor" step and already finished API steps...
-      // I'll assume I can fetch all and find, OR just use the list query.
-
-      // Temporary workaround: fetch all and find.
-      const response = await api.get('/notifications/templates');
-      const templates = response.data.data as NotificationTemplate[];
-      return templates.find(t => t.id === id);
+      const response = await api.get(`/notifications/templates/${id}`);
+      return response.data.data as NotificationTemplate;
     },
     enabled: !!id,
   });

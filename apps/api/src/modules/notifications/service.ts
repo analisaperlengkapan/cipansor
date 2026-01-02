@@ -295,6 +295,16 @@ export async function getTemplates(query: QueryTemplateInput) {
   return templates;
 }
 
+export async function getTemplateById(id: string) {
+  const setting = await prisma.setting.findFirst({
+    where: { key: "NOTIFICATION_TEMPLATES" },
+  });
+
+  const templates = Array.isArray(setting?.value) ? setting.value : [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (templates as any[]).find(t => t.id === id) || null;
+}
+
 export async function createTemplate(data: CreateTemplateInput, unitId?: string) {
   // If unitId is provided, we use it. If not, we fallback to finding the first unit.
   // Ideally, this should always be provided by the controller.

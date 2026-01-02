@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as controller from "./controller";
 import { authenticate, authorize } from "../../middleware/auth";
+import { UserRole } from "@prisma/client";
 
 const router = Router();
 
@@ -68,7 +69,7 @@ router.get("/", controller.getMyNotifications);
  *         description: List of all notifications
  */
 // Protected Admin Routes
-router.get("/admin", authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN']), controller.getAllNotifications);
+router.get("/admin", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.getAllNotifications);
 
 /**
  * @swagger
@@ -104,7 +105,7 @@ router.get("/admin", authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN']), 
  *         description: Notification created
  */
 // Creating notifications usually requires admin/staff privileges
-router.post("/", authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN', 'TEACHER', 'STAFF']), controller.createNotification);
+router.post("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.createNotification);
 
 /**
  * @swagger
@@ -139,17 +140,17 @@ router.post("/", authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN', 'TEACH
  *       201:
  *         description: Notifications sent
  */
-router.post("/bulk", authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN', 'TEACHER', 'STAFF']), controller.createBulkNotifications);
+router.post("/bulk", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.createBulkNotifications);
 
-router.get("/stats", authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN']), controller.getStats);
+router.get("/stats", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.getStats);
 
 // Templates (Admin Only)
-router.get("/templates", authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN', 'TEACHER']), controller.getTemplates);
-router.post("/templates", authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN']), controller.createTemplate);
-router.put("/templates/:id", authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN']), controller.updateTemplate);
-router.delete("/templates/:id", authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN']), controller.deleteTemplate);
+router.get("/templates", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getTemplates);
+router.post("/templates", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.createTemplate);
+router.put("/templates/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.updateTemplate);
+router.delete("/templates/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteTemplate);
 
-router.post("/:id/send", authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN']), controller.sendNotification);
+router.post("/:id/send", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.sendNotification);
 
 router.post("/read-all", controller.markAllAsRead);
 
@@ -157,19 +158,19 @@ router.post("/read-all", controller.markAllAsRead);
 
 router.get("/announcements", controller.getAnnouncements);
 router.get("/announcements/:id", controller.getAnnouncementById);
-router.post("/announcements", authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN', 'TEACHER']), controller.createAnnouncement);
-router.put("/announcements/:id", authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN']), controller.updateAnnouncement);
-router.delete("/announcements/:id", authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN']), controller.deleteAnnouncement);
+router.post("/announcements", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.createAnnouncement);
+router.put("/announcements/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.updateAnnouncement);
+router.delete("/announcements/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteAnnouncement);
 
 // ==================== WHATSAPP ====================
 
-router.post("/whatsapp/send", authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN']), controller.sendWhatsApp);
-router.post("/whatsapp/broadcast", authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN']), controller.broadcastWhatsApp);
-router.get("/whatsapp/status", authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN']), controller.getWhatsAppStatus);
+router.post("/whatsapp/send", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.sendWhatsApp);
+router.post("/whatsapp/broadcast", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.broadcastWhatsApp);
+router.get("/whatsapp/status", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.getWhatsAppStatus);
 
 // ==================== SCHEDULER ====================
 
-router.post("/scheduler/trigger", authorize(['SUPER_ADMIN']), controller.triggerScheduledTask);
+router.post("/scheduler/trigger", authorize(UserRole.SUPER_ADMIN), controller.triggerScheduledTask);
 
 // ==================== GENERIC ID ROUTES (MUST BE LAST) ====================
 

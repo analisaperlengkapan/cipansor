@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { tahfidzService } from './tahfidz.service';
+import { TahfidzMapper } from './tahfidz.mapper';
 import type { ListTahfidzQuery, CreateTahfidzInput, UpdateTahfidzInput } from './tahfidz.schema';
 import type { TahfidzRecord, TahfidzDashboardStats } from '@cipansor/shared';
 import type { PaginatedResponse, ApiResponse } from '@cipansor/shared';
@@ -16,9 +17,7 @@ export const list = asyncHandler(async (req: Request, res: Response<PaginatedRes
     unitId: req.user!.unitId,
   });
 
-  // Use type assertion to ensure compatibility with Shared Types if there are minor mismatches
-  // (e.g. Dates as Date objects vs strings) which Express handles automatically in res.json
-  const records = result.records as unknown as TahfidzRecord[];
+  const records = TahfidzMapper.toSharedRecords(result.records);
 
   res.json({
     success: true,
@@ -39,7 +38,7 @@ export const getById = asyncHandler(async (req: Request, res: Response<ApiRespon
 
   res.json({
     success: true,
-    data: record as unknown as TahfidzRecord,
+    data: TahfidzMapper.toSharedRecord(record),
   });
 });
 
@@ -53,7 +52,7 @@ export const create = asyncHandler(async (req: Request, res: Response<ApiRespons
 
   res.status(201).json({
     success: true,
-    data: record as unknown as TahfidzRecord,
+    data: TahfidzMapper.toSharedRecord(record),
   });
 });
 
@@ -68,7 +67,7 @@ export const update = asyncHandler(async (req: Request, res: Response<ApiRespons
 
   res.json({
     success: true,
-    data: record as unknown as TahfidzRecord,
+    data: TahfidzMapper.toSharedRecord(record),
   });
 });
 
@@ -94,9 +93,15 @@ export const getStudentSummary = asyncHandler(async (req: Request, res: Response
   const { studentId } = req.params;
   const summary = await tahfidzService.getStudentSummary(studentId);
 
+  // Summary object structure is specific, but recentRecords inside it should be mapped
+  const safeSummary = {
+    ...summary,
+    recentRecords: TahfidzMapper.toSharedRecords(summary.recentRecords)
+  };
+
   res.json({
     success: true,
-    data: summary,
+    data: safeSummary,
   });
 });
 
@@ -113,11 +118,9 @@ export const getDashboard = asyncHandler(async (req: Request, res: Response<ApiR
     month: month !== undefined ? parseInt(month as string) : undefined,
   });
 
-  // Ensure strict alignment with TahfidzDashboardStats
   const safeStats: TahfidzDashboardStats = {
     ...stats,
-    // Cast recentRecords if necessary, but TahfidzRecord (shared) and Prisma Record should be close
-    recentRecords: stats.recentRecords as unknown as TahfidzRecord[]
+    recentRecords: TahfidzMapper.toSharedRecords(stats.recentRecords)
   };
 
   res.json({

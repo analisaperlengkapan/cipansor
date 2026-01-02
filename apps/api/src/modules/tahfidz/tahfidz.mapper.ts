@@ -1,7 +1,21 @@
-import { TahfidzRecord } from '@cipansor/shared';
+import { TahfidzRecord, TahfidzGrade } from '@cipansor/shared';
 
 export class TahfidzMapper {
+  private static calculateGrade(score: number): TahfidzGrade {
+    if (score >= 90) return 'MUMTAZ';
+    if (score >= 80) return 'JAYYID_JIDDAN';
+    if (score >= 70) return 'JAYYID';
+    if (score >= 60) return 'MAQBUL';
+    return 'RASIB';
+  }
+
   static toSharedRecord(record: any): TahfidzRecord {
+    // Determine grade: use existing if available, or calculate from score if present
+    let grade = record.grade;
+    if (!grade && record.score !== null && record.score !== undefined) {
+      grade = this.calculateGrade(record.score);
+    }
+
     return {
       id: record.id,
       studentId: record.studentId,
@@ -13,7 +27,7 @@ export class TahfidzMapper {
       juz: record.juz,
       totalAyah: record.totalAyah,
       score: record.score,
-      grade: record.grade || null,
+      grade: grade || null,
       notes: record.notes,
       recordedAt: record.recordedAt,
       recordedById: record.recordedById,

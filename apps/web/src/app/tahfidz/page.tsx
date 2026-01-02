@@ -280,7 +280,7 @@ export default function TahfidzPage() {
                       {record.ayahStart} - {record.ayahEnd}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{getTypeLabel(record.activityType as any)}</Badge>
+                      <Badge variant="outline">{getTypeLabel(record.activityType)}</Badge>
                     </TableCell>
                     <TableCell>{record.score !== undefined && record.score !== null ? record.score : (record.grade ? getGradeBadge(record.grade as TahfidzGrade) : '-')}</TableCell>
                     <TableCell>{record.recordedBy?.name || '-'}</TableCell>

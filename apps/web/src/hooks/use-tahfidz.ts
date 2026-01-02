@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
-import { TahfidzRecord, TahfidzActivityType } from '@cipansor/shared';
+import api, { ApiResponse, tahfidzApi } from '@/lib/api';
+import { TahfidzRecord, TahfidzActivityType, PaginatedResponse, TahfidzDashboardStats } from '@cipansor/shared';
 
 // Re-export shared types for component usage
 export type { TahfidzRecord };
@@ -59,7 +59,8 @@ export function useTahfidzRecords(params: TahfidzParams = {}) {
   return useQuery({
     queryKey: ['tahfidz', params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<TahfidzRecord>>('/tahfidz', { params });
+      // Use the typed API client
+      const response = await tahfidzApi.getRecords(params);
       return response.data;
     },
   });
@@ -69,7 +70,7 @@ export function useTahfidzRecord(id: string) {
   return useQuery({
     queryKey: ['tahfidz', id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<TahfidzRecord>>(`/tahfidz/${id}`);
+      const response = await tahfidzApi.getRecordById(id);
       return response.data.data;
     },
     enabled: !!id,
@@ -112,7 +113,7 @@ export function useCreateTahfidz() {
 
   return useMutation({
     mutationFn: async (data: CreateTahfidzData) => {
-      const response = await api.post<ApiResponse<TahfidzRecord>>('/tahfidz', data);
+      const response = await tahfidzApi.createRecord(data);
       return response.data.data;
     },
     onSuccess: () => {
@@ -126,7 +127,7 @@ export function useUpdateTahfidz() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<CreateTahfidzData> }) => {
-      const response = await api.patch<ApiResponse<TahfidzRecord>>(`/tahfidz/${id}`, data);
+      const response = await tahfidzApi.updateRecord(id, data);
       return response.data.data;
     },
     onSuccess: (_, variables) => {
@@ -141,7 +142,7 @@ export function useDeleteTahfidz() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/tahfidz/${id}`);
+      await tahfidzApi.deleteRecord(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tahfidz'] });
@@ -149,50 +150,20 @@ export function useDeleteTahfidz() {
   });
 }
 
-// Dashboard stats for Tahfidz progress visualization
-export interface TahfidzDashboardStats {
-  totalRecords: number;
-  totalStudents: number;
-  recordsByType: {
-    type: TahfidzType;
-    count: number;
-  }[];
-  recordsByGrade: {
-    grade: TahfidzGrade;
-    count: number;
-  }[];
-  progressByJuz: {
-    juz: number;
-    studentCount: number;
-    completedCount: number;
-  }[];
-  monthlyActivity: {
-    month: string;
-    setoran: number;
-    murajaah: number;
-    tasmi: number;
-  }[];
-  topStudents: {
-    studentId: string;
-    studentName: string;
-    nis: string;
-    totalAyah: number;
-    completedJuz: number;
-  }[];
-  recentRecords: TahfidzRecord[];
-}
+export type { TahfidzDashboardStats };
+export type { TahfidzDashboardParams } from '@cipansor/shared'; // Or locally if not exported
 
 export interface TahfidzDashboardParams {
-  unitId?: string;
-  year?: number;
-  month?: number;
+    unitId?: string;
+    year?: number;
+    month?: number;
 }
 
 export function useTahfidzDashboard(params: TahfidzDashboardParams = {}) {
   return useQuery({
     queryKey: ['tahfidz', 'dashboard', params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<TahfidzDashboardStats>>('/tahfidz/dashboard', { params });
+      const response = await tahfidzApi.getDashboard(params);
       return response.data.data;
     },
   });

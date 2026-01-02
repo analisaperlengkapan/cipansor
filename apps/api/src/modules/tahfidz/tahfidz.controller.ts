@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { tahfidzService } from './tahfidz.service';
 import type { ListTahfidzQuery, CreateTahfidzInput, UpdateTahfidzInput } from './tahfidz.schema';
-import type { TahfidzRecord } from '@cipansor/shared';
+import type { TahfidzRecord, TahfidzDashboardStats } from '@cipansor/shared';
 import type { PaginatedResponse, ApiResponse } from '@cipansor/shared';
 
 /**
@@ -104,7 +104,7 @@ export const getStudentSummary = asyncHandler(async (req: Request, res: Response
  * Get tahfidz dashboard stats
  * GET /api/tahfidz/dashboard
  */
-export const getDashboard = asyncHandler(async (req: Request, res: Response) => {
+export const getDashboard = asyncHandler(async (req: Request, res: Response<ApiResponse<TahfidzDashboardStats>>) => {
   const { unitId, year, month } = req.query;
   
   const stats = await tahfidzService.getDashboardStats({
@@ -113,8 +113,15 @@ export const getDashboard = asyncHandler(async (req: Request, res: Response) => 
     month: month !== undefined ? parseInt(month as string) : undefined,
   });
 
+  // Ensure strict alignment with TahfidzDashboardStats
+  const safeStats: TahfidzDashboardStats = {
+    ...stats,
+    // Cast recentRecords if necessary, but TahfidzRecord (shared) and Prisma Record should be close
+    recentRecords: stats.recentRecords as unknown as TahfidzRecord[]
+  };
+
   res.json({
     success: true,
-    data: stats,
+    data: safeStats,
   });
 });

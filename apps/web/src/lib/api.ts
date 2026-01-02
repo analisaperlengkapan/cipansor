@@ -9,13 +9,26 @@ import {
   RoleAssignment,
   SwitchRoleResponse,
   AssignRoleRequest,
-  ApiResponse
+  ApiResponse,
+  PaginatedResponse as SharedPaginatedResponse,
+  TahfidzRecord,
+  TahfidzDashboardStats
 } from '@cipansor/shared';
 
 export * from '@cipansor/shared';
 
 // Compatibility alias
 export type UserRole = UserRoleAssignment;
+
+// Re-export PaginatedResponse from shared to enforce standard.
+// NOTE: This breaks legacy code that expects flat meta.
+// We provide a legacy interface locally if needed, but for now we alias Shared
+export type PaginatedResponse<T> = SharedPaginatedResponse<T>;
+
+// Legacy support: We might need to handle this via adapter if we can't fix all files.
+// For now, we are enforcing the Shared type as the source of truth.
+// If you encounter "property 'totalPages' does not exist on type '{ pagination: Pagination }'",
+// it means you need to update the call site to use `meta.pagination.totalPages`.
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -91,17 +104,6 @@ api.interceptors.response.use(
   }
 );
 
-export interface PaginatedResponse<T> {
-  success: boolean;
-  data: T[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
 // Auth API
 export const authApi = {
   login: (data: LoginRequest) =>
@@ -152,6 +154,30 @@ export const rolesApi = {
   // Remove role assignment
   removeRoleAssignment: (assignmentId: string) =>
     api.delete<ApiResponse<void>>(`/roles/assignments/${assignmentId}`),
+};
+
+// Tahfidz API
+export const tahfidzApi = {
+  getRecords: (params?: any) =>
+    api.get<SharedPaginatedResponse<TahfidzRecord>>('/tahfidz', { params }),
+
+  getRecordById: (id: string) =>
+    api.get<ApiResponse<TahfidzRecord>>(`/tahfidz/${id}`),
+
+  createRecord: (data: any) =>
+    api.post<ApiResponse<TahfidzRecord>>('/tahfidz', data),
+
+  updateRecord: (id: string, data: any) =>
+    api.put<ApiResponse<TahfidzRecord>>(`/tahfidz/${id}`, data),
+
+  deleteRecord: (id: string) =>
+    api.delete<ApiResponse<void>>(`/tahfidz/${id}`),
+
+  getDashboard: (params: { unitId?: string; year?: number; month?: number }) =>
+    api.get<ApiResponse<TahfidzDashboardStats>>('/tahfidz/dashboard', { params }),
+
+  getStudentSummary: (studentId: string) =>
+    api.get<ApiResponse<any>>(`/tahfidz/students/${studentId}/summary`),
 };
 
 export default api;

@@ -52,6 +52,16 @@ const DEFAULT_RULES: AlertRule[] = [
         enabled: true,
     },
     {
+        id: 'finance-anomaly',
+        name: 'Anomali Keuangan',
+        type: 'payment',
+        threshold: 2, // 2 Standard Deviations
+        operator: 'gt',
+        action: 'notify',
+        recipients: 'admin',
+        enabled: true,
+    },
+    {
         id: 'low-grades',
         name: 'Nilai Rendah',
         type: 'academic',
@@ -170,6 +180,18 @@ async function checkAttendanceRule(rule: AlertRule): Promise<AlertTrigger[]> {
  * Check payment rule
  */
 async function checkPaymentRule(rule: AlertRule): Promise<AlertTrigger[]> {
+    if (rule.id === 'finance-anomaly') {
+        return checkFinanceAnomalies(rule);
+    }
+
+    // Default to overdue check for other payment rules or specifically 'payment-overdue'
+    return checkOverdueInvoices(rule);
+}
+
+/**
+ * Check overdue invoices
+ */
+async function checkOverdueInvoices(rule: AlertRule): Promise<AlertTrigger[]> {
     const overdueInvoices = await prisma.invoice.findMany({
         where: {
             status: 'OVERDUE',
@@ -207,18 +229,111 @@ async function checkPaymentRule(rule: AlertRule): Promise<AlertTrigger[]> {
         }
     }
 
-    // FINANCE_ANOMALY check (placeholder for missing logic but fixing decimal issues)
-    const largeInvoices = overdueInvoices.filter(inv => Number(inv.amount) > 1000000);
-    for (const inv of largeInvoices) {
-        triggers.push({
-            ruleId: rule.id,
-            studentId: inv.studentId,
-            studentName: inv.student?.user?.name || 'Unknown',
-            value: Number(inv.amount),
-            threshold: 1000000,
-            message: `Tagihan besar (Rp ${Number(inv.amount)}) belum dibayar.`,
-            triggeredAt: new Date().toISOString(),
+    return triggers;
+}
+
+/**
+ * Check finance anomalies (Outliers & Duplicates)
+ */
+async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
+    const triggers: AlertTrigger[] = [];
+    // Optimization: Restrict anomaly check window to last 24 hours to reduce alert spam and improving performance
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    try {
+        // 1. Check for Duplicate Invoices (Potential double billing)
+        // Same student, same payment type, same amount, same period (if applicable), created recently
+        // Optimization: Use Prisma's groupBy which is efficient
+        const potentialDuplicates = await prisma.invoice.groupBy({
+            by: ['studentId', 'paymentTypeId', 'amount', 'period'],
+            where: {
+                createdAt: { gte: oneDayAgo },
+                status: { not: 'CANCELLED' }
+            },
+            having: {
+                studentId: { _count: { gt: 1 } }
+            },
+            _count: {
+                _all: true
+            }
         });
+
+        for (const dup of potentialDuplicates) {
+            // Fetch student name for the alert
+            const student = await prisma.student.findUnique({
+                where: { id: dup.studentId },
+                include: { user: { select: { name: true, id: true } } }
+            });
+
+            if (!student) continue;
+
+            const trigger: AlertTrigger = {
+                ruleId: rule.id,
+                studentId: dup.studentId,
+                studentName: student.user?.name || 'Unknown',
+                value: dup._count._all,
+                threshold: 1,
+                message: `Terdeteksi ${dup._count._all} tagihan duplikat untuk ${student.user?.name || 'Unknown'} (Rp ${Number(dup.amount)})`,
+                triggeredAt: new Date().toISOString(),
+            };
+            triggers.push(trigger);
+        }
+
+        // 2. Check for Statistical Outliers (Unusually high amounts)
+        // Best Practice: Calculate statistics over a longer period (1 year) to establish a reliable baseline
+        // Use raw query for efficient STDDEV calculation as Prisma doesn't support it natively yet
+        const stats = await prisma.$queryRaw<Array<{ payment_type_id: string; avg_val: number; stddev_val: number }>>`
+            SELECT
+                "payment_type_id",
+                AVG(amount) as avg_val,
+                STDDEV(amount) as stddev_val
+            FROM invoices
+            WHERE created_at > NOW() - INTERVAL '1 year'
+            AND status != 'CANCELLED'
+            GROUP BY "payment_type_id"
+        `;
+
+        // Check recent invoices against these stats
+        const recentInvoices = await prisma.invoice.findMany({
+            where: {
+                createdAt: { gte: oneDayAgo },
+                status: { not: 'CANCELLED' }
+            },
+            include: {
+                student: { include: { user: { select: { name: true } } } }
+            }
+        });
+
+        for (const invoice of recentInvoices) {
+            const stat = stats.find(s => s.payment_type_id === invoice.paymentTypeId);
+            if (!stat || !stat.stddev_val) continue;
+
+            const amount = Number(invoice.amount);
+            const avg = Number(stat.avg_val);
+            const stddev = Number(stat.stddev_val);
+
+            // Z-Score check: (Value - Mean) / StdDev > Threshold
+            // Default threshold is 2 (2 sigma)
+            if (stddev > 0) {
+                const zScore = (amount - avg) / stddev;
+
+                if (zScore > rule.threshold) {
+                    const trigger: AlertTrigger = {
+                        ruleId: rule.id,
+                        studentId: invoice.studentId,
+                        studentName: invoice.student?.user?.name || 'Unknown',
+                        value: amount,
+                        threshold: avg + (rule.threshold * stddev),
+                        message: `Tagihan tidak wajar (Z-Score: ${zScore.toFixed(2)}) untuk ${invoice.student?.user?.name}. Jumlah: Rp ${amount}, Rata-rata: Rp ${avg.toFixed(0)}`,
+                        triggeredAt: new Date().toISOString(),
+                    };
+                    triggers.push(trigger);
+                }
+            }
+        }
+
+    } catch (error) {
+        logger.error('Error checking finance anomalies:', error);
     }
 
     return triggers;

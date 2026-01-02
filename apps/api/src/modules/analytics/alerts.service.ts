@@ -237,15 +237,17 @@ async function checkOverdueInvoices(rule: AlertRule): Promise<AlertTrigger[]> {
  */
 async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
     const triggers: AlertTrigger[] = [];
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    // Optimization: Restrict anomaly check window to last 24 hours to reduce alert spam and improving performance
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     try {
         // 1. Check for Duplicate Invoices (Potential double billing)
         // Same student, same payment type, same amount, same period (if applicable), created recently
+        // Optimization: Use Prisma's groupBy which is efficient
         const potentialDuplicates = await prisma.invoice.groupBy({
             by: ['studentId', 'paymentTypeId', 'amount', 'period'],
             where: {
-                createdAt: { gte: sevenDaysAgo },
+                createdAt: { gte: oneDayAgo },
                 status: { not: 'CANCELLED' }
             },
             having: {
@@ -278,7 +280,8 @@ async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
         }
 
         // 2. Check for Statistical Outliers (Unusually high amounts)
-        // Get stats per payment type using raw query for STDDEV
+        // Best Practice: Calculate statistics over a longer period (1 year) to establish a reliable baseline
+        // Use raw query for efficient STDDEV calculation as Prisma doesn't support it natively yet
         const stats = await prisma.$queryRaw<Array<{ payment_type_id: string; avg_val: number; stddev_val: number }>>`
             SELECT
                 "payment_type_id",
@@ -293,7 +296,7 @@ async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
         // Check recent invoices against these stats
         const recentInvoices = await prisma.invoice.findMany({
             where: {
-                createdAt: { gte: sevenDaysAgo },
+                createdAt: { gte: oneDayAgo },
                 status: { not: 'CANCELLED' }
             },
             include: {

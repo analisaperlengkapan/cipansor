@@ -539,13 +539,20 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
   const estimatedGPA = (avgScoreVal / 25); // Rough 0-4 scale from 0-100
 
   // Calculate Pass Rate
-  // Assuming passing score is 70 if not specified (Exam has passingScore, but Grade doesn't link back easily for aggregation without join)
-  // We'll approximate using fixed 70 or check letter grades (A,B,C pass; D,E fail usually)
-  // Let's use letter grades. A, B, C pass.
-  const passingGrades = gradeDistribution
-      .filter(g => ['A', 'B', 'C'].includes(g.letterGrade || ''))
-      .reduce((acc, curr) => acc + curr._count, 0);
-  const passRate = totalGrades > 0 ? (passingGrades / totalGrades) * 100 : 0;
+  // Calculate exact number of passing grades by joining Grade, Exam (optional), and Subject.
+  // Priority: Exam.passingScore > Subject.passingScore > 70 (default)
+  // We use queryRaw for this complex join condition not easily expressible in Prisma findMany/aggregate
+  const passingGradesResult = await prisma.$queryRaw<Array<{ count: bigint }>>`
+    SELECT COUNT(*)::bigint as count
+    FROM grades g
+    LEFT JOIN exams e ON g.exam_id = e.id
+    JOIN subjects s ON g.subject_id = s.id
+    WHERE g.score >= COALESCE(e.passing_score, s.passing_score, 70)
+    ${unitId ? Prisma.sql`AND s.unit_id = ${unitId}` : Prisma.empty}
+  `;
+
+  const passingGradesCount = Number(passingGradesResult[0]?.count || 0);
+  const passRate = totalGrades > 0 ? (passingGradesCount / totalGrades) * 100 : 0;
 
   return {
     averageGpa: Number(estimatedGPA.toFixed(2)),

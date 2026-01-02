@@ -3,7 +3,7 @@ import { asyncHandler } from '@/middleware/error';
 import { tahfidzService } from './tahfidz.service';
 import { TahfidzMapper } from './tahfidz.mapper';
 import type { ListTahfidzQuery } from './tahfidz.schema';
-import type { TahfidzRecord, TahfidzDashboardStats, CreateTahfidzInput, UpdateTahfidzInput } from '@cipansor/shared';
+import type { TahfidzRecord, TahfidzDashboardStats, TahfidzStudentSummary, CreateTahfidzInput, UpdateTahfidzInput } from '@cipansor/shared';
 import type { PaginatedResponse, ApiResponse } from '@cipansor/shared';
 
 /**
@@ -89,12 +89,12 @@ export const remove = asyncHandler(async (req: Request, res: Response) => {
  * Get student tahfidz summary
  * GET /api/tahfidz/students/:studentId/summary
  */
-export const getStudentSummary = asyncHandler(async (req: Request, res: Response) => {
+export const getStudentSummary = asyncHandler(async (req: Request, res: Response<ApiResponse<TahfidzStudentSummary>>) => {
   const { studentId } = req.params;
   const summary = await tahfidzService.getStudentSummary(studentId);
 
   // Summary object structure is specific, but recentRecords inside it should be mapped
-  const safeSummary = {
+  const safeSummary: TahfidzStudentSummary = {
     ...summary,
     recentRecords: TahfidzMapper.toSharedRecords(summary.recentRecords)
   };

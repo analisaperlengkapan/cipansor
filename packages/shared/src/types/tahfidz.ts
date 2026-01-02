@@ -71,6 +71,31 @@ export interface TahfidzDashboardStats {
   recentRecords: TahfidzRecord[];
 }
 
+export interface TahfidzStudentSummary {
+  student: Student & {
+    user?: { id: string; name: string };
+    unit?: { id: string; name: string };
+  };
+  summary: {
+    totalRecords: number;
+    totalAyahMemorized: number;
+    juzCoveredCount: number;
+    surahCoveredCount: number;
+    averageScore: number | null;
+  };
+  byActivity: {
+    type: string;
+    count: number;
+    totalAyah: number;
+  }[];
+  juzCovered: number[];
+  surahCovered: {
+    surahNumber: number;
+    surahName: string;
+  }[];
+  recentRecords: TahfidzRecord[];
+}
+
 export interface CreateTahfidzInput {
   studentId: string;
   activityType: TahfidzActivityType;

@@ -21,7 +21,7 @@ export async function createPaymentType(data: CreatePaymentTypeDto) {
     data: {
       ...data,
       amount: new Prisma.Decimal(data.amount),
-    },
+    } as any,
     include: { unit: { select: { id: true, name: true } } },
   });
 }
@@ -122,7 +122,7 @@ export async function createInvoice(data: CreateInvoiceDto) {
           invoiceNumber,
           amount: new Prisma.Decimal(data.amount),
           dueDate: new Date(data.dueDate),
-        },
+        } as any,
         include: {
           student: {
             include: {
@@ -281,7 +281,7 @@ export async function createPayment(data: CreatePaymentDto) {
       data: {
         ...data,
         amount: new Prisma.Decimal(data.amount),
-      },
+      } as any,
       include: {
         invoice: {
           include: {

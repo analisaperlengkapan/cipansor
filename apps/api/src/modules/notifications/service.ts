@@ -459,7 +459,7 @@ export async function createAnnouncement(data: CreateAnnouncementInput, createdB
 export async function updateAnnouncement(id: string, data: UpdateAnnouncementInput) {
   return prisma.announcement.update({
     where: { id },
-    data,
+    data: data as any,
     include: {
       unit: { select: { id: true, name: true } },
       createdBy: { select: { id: true, name: true } },

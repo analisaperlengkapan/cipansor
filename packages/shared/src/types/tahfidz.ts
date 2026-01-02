@@ -70,3 +70,29 @@ export interface TahfidzDashboardStats {
   }[];
   recentRecords: TahfidzRecord[];
 }
+
+export interface CreateTahfidzInput {
+  studentId: string;
+  activityType: TahfidzActivityType;
+  surahNumber: number;
+  surahName: string;
+  ayahStart: number;
+  ayahEnd: number;
+  juz: number;
+  totalAyah?: number;
+  score?: number | null;
+  notes?: string;
+  recordedAt?: Date | string;
+}
+
+export interface UpdateTahfidzInput {
+  activityType?: TahfidzActivityType;
+  surahNumber?: number;
+  surahName?: string;
+  ayahStart?: number;
+  ayahEnd?: number;
+  juz?: number;
+  totalAyah?: number;
+  score?: number | null;
+  notes?: string | null;
+}

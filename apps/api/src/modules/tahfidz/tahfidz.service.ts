@@ -3,9 +3,8 @@ import { Errors } from '@/middleware/error';
 import { UserRole, TahfidzActivityType, Prisma } from '@prisma/client';
 import type {
   ListTahfidzQuery,
-  CreateTahfidzInput,
-  UpdateTahfidzInput,
 } from './tahfidz.schema';
+import type { CreateTahfidzInput, UpdateTahfidzInput } from '@cipansor/shared';
 
 export class TahfidzService {
   /**
@@ -441,7 +440,7 @@ export class TahfidzService {
       count: Number(r.count),
     }));
 
-    // 6. Top students (Prisma groupBy is efficient enough here)
+    // 6. Top students
     const topStudentsData = await prisma.tahfidzRecord.groupBy({
       by: ['studentId'],
       where: {
@@ -455,31 +454,34 @@ export class TahfidzService {
     });
 
     const topStudentIds = topStudentsData.map((s) => s.studentId);
-    const topStudentDetails = await prisma.student.findMany({
-      where: { id: { in: topStudentIds } },
-      include: { user: { select: { name: true } } },
-    });
 
-    // Get juz counts for top students
-    const topStudentsWithJuz = await Promise.all(
-      topStudentsData.map(async (ts) => {
-        const juzCount = await prisma.tahfidzRecord.findMany({
-          where: { studentId: ts.studentId },
-          select: { juz: true },
-          distinct: ['juz'],
-        });
-
-        const studentDetail = topStudentDetails.find((s) => s.id === ts.studentId);
-
-        return {
-          studentId: ts.studentId,
-          studentName: studentDetail?.user?.name || '-',
-          nis: studentDetail?.nis || '-',
-          totalAyah: ts._sum.totalAyah || 0,
-          completedJuz: juzCount.length,
-        };
+    // Fetch details and juz counts in bulk to avoid N+1
+    const [topStudentDetails, allJuzCounts] = await Promise.all([
+      prisma.student.findMany({
+        where: { id: { in: topStudentIds } },
+        include: { user: { select: { name: true } } },
+      }),
+      prisma.tahfidzRecord.groupBy({
+        by: ['studentId', 'juz'],
+        where: { studentId: { in: topStudentIds } },
+        _count: { juz: true }, // Just to satisfy groupBy, we only need the groups
       })
-    );
+    ]);
+
+    // Map the results
+    const topStudentsWithJuz = topStudentsData.map((ts) => {
+      const studentDetail = topStudentDetails.find((s) => s.id === ts.studentId);
+      // Filter juz counts for this student
+      const studentJuzCounts = allJuzCounts.filter(j => j.studentId === ts.studentId);
+
+      return {
+        studentId: ts.studentId,
+        studentName: studentDetail?.user?.name || '-',
+        nis: studentDetail?.nis || '-',
+        totalAyah: ts._sum.totalAyah || 0,
+        completedJuz: studentJuzCounts.length,
+      };
+    });
 
     // 7. Recent records
     const recentRecords = await prisma.tahfidzRecord.findMany({

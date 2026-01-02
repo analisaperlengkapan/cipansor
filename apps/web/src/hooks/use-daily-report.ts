@@ -38,6 +38,7 @@ export interface DailyReport {
     user?: {
       name: string;
     };
+    classId?: string;
   };
   unit?: {
     id: string;

@@ -6,3 +6,4 @@ export * from './types/notifications';
 export * from './types/tahfidz';
 export * from './types/dashboard';
 export * from './types/attendance';
+export * from './types/daily-report';

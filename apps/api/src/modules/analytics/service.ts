@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, Gender } from "@prisma/client";
 import type {
   DashboardSummary,
   StudentStatistics,
@@ -186,8 +186,8 @@ export async function getStudentStats(unitId?: string): Promise<StudentStatistic
     newStudentsThisMonth,
     graduatedThisYear,
     byGender: {
-        male: byGender.find(g => g.gender === "L")?._count || 0,
-        female: byGender.find(g => g.gender === "P")?._count || 0,
+        male: byGender.find(g => g.gender === Gender.MALE)?._count || 0,
+        female: byGender.find(g => g.gender === Gender.FEMALE)?._count || 0,
     },
     byUnit: byUnit.map(u => ({
       unitId: u.unitId,
@@ -519,7 +519,7 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
         user: { select: { name: true } },
         enrollments: {
             where: { status: 'active' },
-            include: { class: { select: { name: true } } },
+            include: { class: { select: { id: true, name: true } } },
             take: 1
         }
     }
@@ -557,6 +557,7 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
         return {
             studentId: p.studentId,
             studentName: student?.user.name || "Unknown",
+            classId: student?.enrollments[0]?.class.id || "",
             className: student?.enrollments[0]?.class.name || "-",
             gpa: Number(gpa.toFixed(2))
         };

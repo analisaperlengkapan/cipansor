@@ -50,7 +50,9 @@ export async function getUserNotifications(userId: string, query: QueryNotificat
     where.type = dbType as any;
 
     if (originalType) {
-      where.data = {
+      // Prisma JSON filter workaround
+      // Cast to any because Prisma strict typing for JSON filters can be finicky
+      (where as any).data = {
         path: ['originalType'],
         equals: originalType,
       };
@@ -105,7 +107,8 @@ export async function getAllNotifications(query: QueryNotificationInput) {
     const { dbType, originalType } = mapTypeToPrisma(type);
     where.type = dbType as any;
     if (originalType) {
-      where.data = {
+      // Prisma JSON filter workaround
+      (where as any).data = {
         path: ['originalType'],
         equals: originalType,
       };

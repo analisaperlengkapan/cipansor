@@ -6,7 +6,8 @@ import {
   AttendanceStats,
   FinanceStats,
   TahfidzStats,
-  ViolationRewardStats
+  ViolationRewardStats,
+  DashboardMetricsResponse
 } from '@cipansor/shared';
 
 // Dashboard Hooks
@@ -18,6 +19,19 @@ export function useDashboardStats() {
       return response.data;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useDashboardMetrics(unitId?: string) {
+  return useQuery({
+    queryKey: ['dashboard', 'metrics', unitId],
+    queryFn: async () => {
+      const response = await api.get<DashboardMetricsResponse>('/dashboard/metrics', {
+        params: { unitId }
+      });
+      return response.data;
+    },
+    refetchInterval: 60000, // Refresh every minute
   });
 }
 

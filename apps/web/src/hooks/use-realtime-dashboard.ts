@@ -2,27 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { io, Socket } from 'socket.io-client';
 import { toast } from 'sonner';
-
-interface DashboardMetrics {
-  timestamp: string;
-  students?: {
-    total: number;
-    active: number;
-  };
-  teachers?: {
-    total: number;
-  };
-  attendance?: {
-    rate: number;
-    present: number;
-    total: number;
-  };
-  tahfidz?: {
-    totalHafidz: number;
-    avgQuality: number;
-    simaanThisMonth: number;
-  };
-}
+import { DashboardMetrics } from '@cipansor/shared';
 
 interface DashboardAlert {
   id: string;

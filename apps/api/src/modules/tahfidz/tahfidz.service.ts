@@ -371,7 +371,7 @@ export class TahfidzService {
         month: name,
         setoran: getCount('ZIYADAH'),
         murajaah: getCount('MUROJAAH'),
-        tasmi: getCount('ASSESSMENT'), // 'ASSESSMENT' maps to 'tasmi' in frontend stats
+        tasmi: getCount('TASMI') + getCount('ASSESSMENT'), // Count both TASMI and ASSESSMENT
       };
     });
 

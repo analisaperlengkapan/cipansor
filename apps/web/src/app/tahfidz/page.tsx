@@ -271,8 +271,7 @@ export default function TahfidzPage() {
                     </TableCell>
                     <TableCell>
                       <div>
-                        {/* Safe navigation for student.user.name or fallback */}
-                        <p className="font-medium">{(record.student as any)?.user?.name || (record.student as any)?.name || '-'}</p>
+                        <p className="font-medium">{record.student?.user?.name || '-'}</p>
                         <p className="text-sm text-muted-foreground">{record.student?.nis}</p>
                       </div>
                     </TableCell>

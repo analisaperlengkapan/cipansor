@@ -400,9 +400,10 @@ export default function StudentTranscriptPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <Select 
-                  value={selectedUnitId} 
+                  value={selectedUnitId || "ALL"}
                   onValueChange={(value) => {
-                    setSelectedUnitId(value);
+                    const val = value === 'ALL' ? '' : value;
+                    setSelectedUnitId(val);
                     setSelectedClassId('');
                     setSelectedStudent(null);
                   }}
@@ -411,7 +412,7 @@ export default function StudentTranscriptPage() {
                     <SelectValue placeholder="Pilih unit" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Unit</SelectItem>
+                    <SelectItem value="ALL">Semua Unit</SelectItem>
                     {units.map((unit) => (
                       <SelectItem key={unit.id} value={unit.id}>
                         {unit.name}
@@ -421,9 +422,10 @@ export default function StudentTranscriptPage() {
                 </Select>
 
                 <Select 
-                  value={selectedClassId} 
+                  value={selectedClassId || "ALL"}
                   onValueChange={(value) => {
-                    setSelectedClassId(value);
+                    const val = value === 'ALL' ? '' : value;
+                    setSelectedClassId(val);
                     setSelectedStudent(null);
                   }}
                   disabled={!selectedUnitId}
@@ -432,7 +434,7 @@ export default function StudentTranscriptPage() {
                     <SelectValue placeholder="Pilih kelas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Kelas</SelectItem>
+                    <SelectItem value="ALL">Semua Kelas</SelectItem>
                     {classes.map((cls) => (
                       <SelectItem key={cls.id} value={cls.id}>
                         {cls.name}

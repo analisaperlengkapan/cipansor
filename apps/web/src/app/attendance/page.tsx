@@ -91,7 +91,7 @@ export default function AttendancePage() {
     absent: attendances.filter((a) => a.status === 'ABSENT').length,
     late: attendances.filter((a) => a.status === 'LATE').length,
     sick: attendances.filter((a) => a.status === 'SICK').length,
-    permitted: attendances.filter((a) => a.status === 'PERMITTED').length,
+    excused: attendances.filter((a) => a.status === 'EXCUSED').length,
   };
 
   return (
@@ -159,7 +159,7 @@ export default function AttendancePage() {
               <div className="h-3 w-3 rounded-full bg-purple-500" />
               <span className="text-sm text-muted-foreground">Izin</span>
             </div>
-            <p className="text-2xl font-bold text-purple-600">{summary.permitted}</p>
+            <p className="text-2xl font-bold text-purple-600">{summary.excused}</p>
           </CardContent>
         </Card>
       </div>

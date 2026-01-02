@@ -35,7 +35,7 @@ export enum AttendanceStatus {
   ABSENT = 'ABSENT',
   LATE = 'LATE',
   SICK = 'SICK',
-  PERMISSION = 'PERMISSION',
+  EXCUSED = 'EXCUSED',
 }
 
 // Memorization Quality

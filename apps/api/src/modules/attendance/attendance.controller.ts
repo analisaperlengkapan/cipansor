@@ -1,11 +1,18 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { attendanceService } from './attendance.service';
-import type {
-  ListAttendanceQuery,
+import {
+  ApiResponse,
+  SharedPaginatedResponse,
+  Attendance,
+  AttendanceSummary,
+  AttendanceCalendarResponse,
   CreateAttendanceInput,
   BulkAttendanceInput,
-  UpdateAttendanceInput,
+  UpdateAttendanceInput
+} from '@cipansor/shared';
+import type {
+  ListAttendanceQuery,
   AttendanceSummaryQuery,
 } from './attendance.schema';
 
@@ -13,7 +20,7 @@ import type {
  * List attendance records
  * GET /api/attendance
  */
-export const list = asyncHandler(async (req: Request, res: Response) => {
+export const list = asyncHandler(async (req: Request, res: Response<SharedPaginatedResponse<Attendance>>) => {
   const query = (res.locals.validatedQuery || req.query) as ListAttendanceQuery;
   const result = await attendanceService.findAll(query, {
     role: req.user!.role,
@@ -33,7 +40,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
  * Get attendance by ID
  * GET /api/attendance/:id
  */
-export const getById = asyncHandler(async (req: Request, res: Response) => {
+export const getById = asyncHandler(async (req: Request, res: Response<ApiResponse<Attendance>>) => {
   const { id } = req.params;
   const attendance = await attendanceService.findById(id);
 
@@ -47,7 +54,7 @@ export const getById = asyncHandler(async (req: Request, res: Response) => {
  * Create single attendance
  * POST /api/attendance
  */
-export const create = asyncHandler(async (req: Request, res: Response) => {
+export const create = asyncHandler(async (req: Request, res: Response<ApiResponse<Attendance>>) => {
   const input: CreateAttendanceInput = req.body;
   const attendance = await attendanceService.create(input, req.user!.sub);
 
@@ -61,7 +68,7 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
  * Bulk create attendance
  * POST /api/attendance/bulk
  */
-export const bulkCreate = asyncHandler(async (req: Request, res: Response) => {
+export const bulkCreate = asyncHandler(async (req: Request, res: Response<ApiResponse<{ created: number; skipped: number }>>) => {
   const input: BulkAttendanceInput = req.body;
   const result = await attendanceService.bulkCreate(input, req.user!.sub);
 
@@ -75,7 +82,7 @@ export const bulkCreate = asyncHandler(async (req: Request, res: Response) => {
  * Update attendance
  * PUT /api/attendance/:id
  */
-export const update = asyncHandler(async (req: Request, res: Response) => {
+export const update = asyncHandler(async (req: Request, res: Response<ApiResponse<Attendance>>) => {
   const { id } = req.params;
   const input: UpdateAttendanceInput = req.body;
   const attendance = await attendanceService.update(id, input);
@@ -90,7 +97,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
  * Delete attendance
  * DELETE /api/attendance/:id
  */
-export const remove = asyncHandler(async (req: Request, res: Response) => {
+export const remove = asyncHandler(async (req: Request, res: Response<ApiResponse<{ message: string }>>) => {
   const { id } = req.params;
   const result = await attendanceService.delete(id);
 
@@ -104,7 +111,7 @@ export const remove = asyncHandler(async (req: Request, res: Response) => {
  * Get attendance summary
  * GET /api/attendance/summary
  */
-export const getSummary = asyncHandler(async (req: Request, res: Response) => {
+export const getSummary = asyncHandler(async (req: Request, res: Response<ApiResponse<AttendanceSummary>>) => {
   const query = (res.locals.validatedQuery || req.query) as AttendanceSummaryQuery;
   const summary = await attendanceService.getSummary(query, {
     role: req.user!.role,
@@ -121,7 +128,7 @@ export const getSummary = asyncHandler(async (req: Request, res: Response) => {
  * Get attendance calendar for a class (monthly view)
  * GET /api/attendance/calendar/:classId
  */
-export const getCalendar = asyncHandler(async (req: Request, res: Response) => {
+export const getCalendar = asyncHandler(async (req: Request, res: Response<ApiResponse<AttendanceCalendarResponse>>) => {
   const { classId } = req.params;
   const year = parseInt(req.query.year as string) || new Date().getFullYear();
   const month = parseInt(req.query.month as string);
@@ -129,7 +136,11 @@ export const getCalendar = asyncHandler(async (req: Request, res: Response) => {
   if (isNaN(month) || month < 0 || month > 11) {
     return res.status(400).json({
       success: false,
-      error: 'Invalid month parameter (0-11 required)',
+      data: null as any,
+      error: {
+        code: 'INVALID_PARAM',
+        message: 'Invalid month parameter (0-11 required)',
+      },
     });
   }
 

@@ -13,6 +13,7 @@ import { prisma } from '../../lib/prisma';
 import { createNotification } from './service';
 import { whatsAppService } from './whatsapp.service';
 import { NotificationType, AttendanceStatus, PaymentStatus } from '@prisma/client';
+import { NotificationPriority, NotificationChannel, RecipientType } from '@cipansor/shared';
 import { logger } from '../../lib/logger';
 
 interface ScheduledTask {
@@ -273,6 +274,9 @@ export class SchedulerService {
         title,
         message,
         type: NotificationType.PAYMENT,
+        priority: 'HIGH',
+        channels: ['IN_APP', 'EMAIL'],
+        recipientType: 'INDIVIDUAL',
       });
 
       sentCount++;
@@ -337,6 +341,9 @@ export class SchedulerService {
         title,
         message,
         type: NotificationType.ALERT,
+        priority: 'HIGH',
+        channels: ['IN_APP'],
+        recipientType: 'INDIVIDUAL',
       });
 
       sentCount++;
@@ -405,6 +412,9 @@ export class SchedulerService {
         title,
         message,
         type: NotificationType.ACADEMIC,
+        priority: 'NORMAL',
+        channels: ['IN_APP'],
+        recipientType: 'INDIVIDUAL',
       });
 
       sentCount++;
@@ -464,6 +474,9 @@ export class SchedulerService {
           title,
           message,
           type: NotificationType.REMINDER,
+          priority: 'NORMAL',
+          channels: ['IN_APP'],
+          recipientType: 'INDIVIDUAL',
         });
 
         sentCount++;
@@ -504,6 +517,9 @@ export class SchedulerService {
         title,
         message,
         type: NotificationType.ACADEMIC,
+        priority: 'NORMAL',
+        channels: ['IN_APP'],
+        recipientType: 'INDIVIDUAL',
       });
 
       sentCount++;
@@ -604,6 +620,9 @@ export class SchedulerService {
           title,
           message,
           type,
+          priority: 'NORMAL',
+          channels: ['IN_APP'],
+          recipientType: 'INDIVIDUAL',
         });
 
         // Send via WhatsApp if enabled

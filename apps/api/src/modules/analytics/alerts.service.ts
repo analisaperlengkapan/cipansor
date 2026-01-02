@@ -334,6 +334,9 @@ async function sendAlertNotification(
             title: `⚠️ ${rule.name}`,
             message: trigger.message,
             type: NotificationType.ALERT,
+            priority: 'HIGH',
+            channels: ['IN_APP'],
+            recipientType: 'INDIVIDUAL',
         });
         logger.info(`Alert sent: ${rule.name} for ${trigger.studentName}`);
     } catch (error) {

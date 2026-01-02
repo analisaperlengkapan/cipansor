@@ -255,6 +255,8 @@ export async function sendMassNotification(
         title,
         message,
         type,
+        priority: 'NORMAL',
+        channels: ['IN_APP'],
     });
 
     logger.info(`Mass notification sent to ${userIds.length} users`);

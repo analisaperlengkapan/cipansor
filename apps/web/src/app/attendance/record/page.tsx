@@ -163,7 +163,7 @@ function RecordAttendanceContent() {
         return <Clock className="h-5 w-5 text-yellow-600" />;
       case 'SICK':
         return <ThermometerSun className="h-5 w-5 text-blue-600" />;
-      case 'PERMITTED':
+      case 'EXCUSED':
         return <FileText className="h-5 w-5 text-purple-600" />;
       default:
         return null;
@@ -176,7 +176,7 @@ function RecordAttendanceContent() {
     absent: studentAttendances.filter((s) => s.status === 'ABSENT').length,
     late: studentAttendances.filter((s) => s.status === 'LATE').length,
     sick: studentAttendances.filter((s) => s.status === 'SICK').length,
-    permitted: studentAttendances.filter((s) => s.status === 'PERMITTED').length,
+    excused: studentAttendances.filter((s) => s.status === 'EXCUSED').length,
   };
 
   const isLoading = enrollmentsLoading || existingLoading;
@@ -318,7 +318,7 @@ function RecordAttendanceContent() {
                     Sakit: {summary.sick}
                   </Badge>
                   <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-                    Izin: {summary.permitted}
+                    Izin: {summary.excused}
                   </Badge>
                 </div>
 

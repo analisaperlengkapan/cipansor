@@ -56,7 +56,7 @@ interface AttendanceSummary {
     PRESENT: number;
     ABSENT: number;
     SICK: number;
-    PERMITTED: number;
+    EXCUSED: number;
     LATE: number;
   };
   percentage: number;
@@ -404,7 +404,7 @@ export default function ChildrenPage() {
                       <Card>
                         <CardContent className="p-4 text-center">
                           <div className="text-2xl font-bold text-blue-600">
-                            {attendance.summary.PERMITTED}
+                            {attendance.summary.EXCUSED}
                           </div>
                           <p className="text-sm text-muted-foreground">Izin</p>
                         </CardContent>

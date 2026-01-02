@@ -303,21 +303,19 @@ export class TahfidzService {
     const { unitId, year, month } = params;
     const currentYear = year || new Date().getFullYear();
 
-    // Build where clause
+    // Date range for the entire year
+    const startOfYear = new Date(currentYear, 0, 1);
+    const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59);
+
+    // Build Prisma where clause for standard queries
     const where: Prisma.TahfidzRecordWhereInput = {};
     if (unitId) {
       where.student = { unitId };
     }
-
-    // Filter by year
-    const startOfYear = new Date(currentYear, 0, 1);
-    const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59);
     where.recordedAt = {
       gte: startOfYear,
       lte: endOfYear,
     };
-
-    // If month is specified, filter by month
     if (month !== undefined && month >= 0 && month <= 11) {
       where.recordedAt = {
         gte: new Date(currentYear, month, 1),
@@ -325,7 +323,9 @@ export class TahfidzService {
       };
     }
 
-    // Get total records and students
+    // --- Optimized Aggregations ---
+
+    // 1. Total records and unique students
     const [totalRecords, uniqueStudents] = await Promise.all([
       prisma.tahfidzRecord.count({ where }),
       prisma.tahfidzRecord.findMany({
@@ -335,76 +335,126 @@ export class TahfidzService {
       }),
     ]);
 
-    // Records by activity type
+    // 2. Records by activity type
     const recordsByType = await prisma.tahfidzRecord.groupBy({
       by: ['activityType'],
       where,
       _count: { _all: true },
     });
 
-    // Progress by juz (students who have records for each juz)
-    const progressByJuz = [];
-    for (let juz = 1; juz <= 30; juz++) {
-      const juzWhere = { ...where, juz };
-      const studentsInJuz = await prisma.tahfidzRecord.findMany({
-        where: juzWhere,
-        select: { studentId: true },
-        distinct: ['studentId'],
-      });
-      
-      // Count students who completed at least 50% of the juz (simplified)
-      const completedCount = studentsInJuz.length > 0 ? Math.ceil(studentsInJuz.length * 0.3) : 0;
-      
-      progressByJuz.push({
-        juz,
-        studentCount: studentsInJuz.length,
-        completedCount,
-      });
-    }
+    // 3. Monthly Activity (Optimized using Raw SQL)
+    // We filter by year and unitId if provided.
+    // NOTE: 'tahfidz_records' is the mapped table name.
+    const monthlyActivityRaw = await prisma.$queryRaw<
+      Array<{ month: number; type: string; count: bigint }>
+    >`
+      SELECT
+        CAST(EXTRACT(MONTH FROM tr.recorded_at) AS INTEGER) as month,
+        tr.activity_type as type,
+        COUNT(*)::bigint as count
+      FROM tahfidz_records tr
+      ${unitId ? Prisma.sql`JOIN students s ON tr.student_id = s.id` : Prisma.empty}
+      WHERE tr.recorded_at >= ${startOfYear} AND tr.recorded_at <= ${endOfYear}
+      ${unitId ? Prisma.sql`AND s.unit_id = ${unitId}` : Prisma.empty}
+      GROUP BY EXTRACT(MONTH FROM tr.recorded_at), tr.activity_type
+      ORDER BY month
+    `;
 
-    // Monthly activity (for the year)
-    const monthlyActivity = [];
+    // Process raw results into the expected format
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    for (let m = 0; m < 12; m++) {
-      const monthStart = new Date(currentYear, m, 1);
-      const monthEnd = new Date(currentYear, m + 1, 0, 23, 59, 59);
-      
-      const monthWhere: Prisma.TahfidzRecordWhereInput = {
-        ...(unitId && { student: { unitId } }),
-        recordedAt: {
-          gte: monthStart,
-          lte: monthEnd,
-        },
+    const monthlyActivity = monthNames.map((name, index) => {
+      const monthNum = index + 1;
+      const records = monthlyActivityRaw.filter((r) => r.month === monthNum);
+      const getCount = (type: string) => Number(records.find((r) => r.type === type)?.count || 0);
+
+      return {
+        month: name,
+        setoran: getCount('ZIYADAH'),
+        murajaah: getCount('MUROJAAH'),
+        tasmi: getCount('ASSESSMENT'), // 'ASSESSMENT' maps to 'tasmi' in frontend stats
       };
+    });
 
-      const [ziyadah, murojaah, assessment] = await Promise.all([
-        prisma.tahfidzRecord.count({ where: { ...monthWhere, activityType: 'ZIYADAH' } }),
-        prisma.tahfidzRecord.count({ where: { ...monthWhere, activityType: 'MUROJAAH' } }),
-        prisma.tahfidzRecord.count({ where: { ...monthWhere, activityType: 'ASSESSMENT' } }),
-      ]);
+    // 4. Progress by Juz (Optimized using Raw SQL)
+    // We count distinct students per juz
+    const progressByJuzRaw = await prisma.$queryRaw<
+      Array<{ juz: number; student_count: bigint }>
+    >`
+      SELECT
+        tr.juz,
+        COUNT(DISTINCT tr.student_id)::bigint as student_count
+      FROM tahfidz_records tr
+      ${unitId ? Prisma.sql`JOIN students s ON tr.student_id = s.id` : Prisma.empty}
+      WHERE tr.recorded_at >= ${startOfYear} AND tr.recorded_at <= ${endOfYear}
+      ${unitId ? Prisma.sql`AND s.unit_id = ${unitId}` : Prisma.empty}
+      ${
+        month !== undefined
+          ? Prisma.sql`AND tr.recorded_at >= ${new Date(currentYear, month, 1)} AND tr.recorded_at <= ${new Date(currentYear, month + 1, 0, 23, 59, 59)}`
+          : Prisma.empty
+      }
+      GROUP BY tr.juz
+      ORDER BY tr.juz
+    `;
 
-      monthlyActivity.push({
-        month: monthNames[m],
-        setoran: ziyadah,
-        murajaah: murojaah,
-        tasmi: assessment,
-      });
-    }
+    const progressByJuz = Array.from({ length: 30 }, (_, i) => {
+      const juz = i + 1;
+      const record = progressByJuzRaw.find((r) => r.juz === juz);
+      const studentCount = Number(record?.student_count || 0);
+      // Simplified "completed" logic: 30% of students in that juz
+      const completedCount = studentCount > 0 ? Math.ceil(studentCount * 0.3) : 0;
+      return {
+        juz,
+        studentCount,
+        completedCount,
+      };
+    });
 
-    // Top students by total ayah memorized (ziyadah)
+    // 5. Records by Grade (Optimized using Raw SQL)
+    // Based on score: >=90 Mumtaz, >=80 Jayyid Jiddan, >=70 Jayyid, >=60 Maqbul, <60 Rasib
+    const recordsByGradeRaw = await prisma.$queryRaw<
+      Array<{ grade: string; count: bigint }>
+    >`
+      SELECT
+        CASE
+          WHEN score >= 90 THEN 'MUMTAZ'
+          WHEN score >= 80 THEN 'JAYYID_JIDDAN'
+          WHEN score >= 70 THEN 'JAYYID'
+          WHEN score >= 60 THEN 'MAQBUL'
+          ELSE 'RASIB'
+        END as grade,
+        COUNT(*)::bigint as count
+      FROM tahfidz_records tr
+      ${unitId ? Prisma.sql`JOIN students s ON tr.student_id = s.id` : Prisma.empty}
+      WHERE tr.score IS NOT NULL
+      AND tr.recorded_at >= ${startOfYear} AND tr.recorded_at <= ${endOfYear}
+      ${unitId ? Prisma.sql`AND s.unit_id = ${unitId}` : Prisma.empty}
+      ${
+        month !== undefined
+          ? Prisma.sql`AND tr.recorded_at >= ${new Date(currentYear, month, 1)} AND tr.recorded_at <= ${new Date(currentYear, month + 1, 0, 23, 59, 59)}`
+          : Prisma.empty
+      }
+      GROUP BY grade
+    `;
+
+    const recordsByGrade = recordsByGradeRaw.map((r) => ({
+      grade: r.grade,
+      count: Number(r.count),
+    }));
+
+    // 6. Top students (Prisma groupBy is efficient enough here)
     const topStudentsData = await prisma.tahfidzRecord.groupBy({
       by: ['studentId'],
       where: {
         ...(unitId && { student: { unitId } }),
         activityType: 'ZIYADAH',
+        recordedAt: { gte: startOfYear, lte: endOfYear },
       },
       _sum: { totalAyah: true },
       orderBy: { _sum: { totalAyah: 'desc' } },
       take: 10,
     });
 
-    const topStudentIds = topStudentsData.map(s => s.studentId);
+    const topStudentIds = topStudentsData.map((s) => s.studentId);
     const topStudentDetails = await prisma.student.findMany({
       where: { id: { in: topStudentIds } },
       include: { user: { select: { name: true } } },
@@ -418,9 +468,9 @@ export class TahfidzService {
           select: { juz: true },
           distinct: ['juz'],
         });
-        
-        const studentDetail = topStudentDetails.find(s => s.id === ts.studentId);
-        
+
+        const studentDetail = topStudentDetails.find((s) => s.id === ts.studentId);
+
         return {
           studentId: ts.studentId,
           studentName: studentDetail?.user?.name || '-',
@@ -431,7 +481,7 @@ export class TahfidzService {
       })
     );
 
-    // Recent records
+    // 7. Recent records
     const recentRecords = await prisma.tahfidzRecord.findMany({
       where: unitId ? { student: { unitId } } : {},
       orderBy: { recordedAt: 'desc' },
@@ -450,10 +500,11 @@ export class TahfidzService {
     return {
       totalRecords,
       totalStudents: uniqueStudents.length,
-      recordsByType: recordsByType.map(r => ({
+      recordsByType: recordsByType.map((r) => ({
         type: r.activityType,
         count: r._count._all,
       })),
+      recordsByGrade,
       progressByJuz,
       monthlyActivity,
       topStudents: topStudentsWithJuz,

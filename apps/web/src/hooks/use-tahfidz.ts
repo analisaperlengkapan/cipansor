@@ -1,9 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { ApiResponse, tahfidzApi } from '@/lib/api';
-import { TahfidzRecord, TahfidzActivityType, PaginatedResponse, TahfidzDashboardStats } from '@cipansor/shared';
+import {
+  TahfidzRecord,
+  TahfidzActivityType,
+  PaginatedResponse,
+  TahfidzDashboardStats,
+  CreateTahfidzInput,
+  UpdateTahfidzInput
+} from '@cipansor/shared';
 
 // Re-export shared types for component usage
-export type { TahfidzRecord };
+export type { TahfidzRecord, CreateTahfidzInput, UpdateTahfidzInput };
 // Map frontend legacy type name to shared type
 export type TahfidzType = TahfidzActivityType;
 
@@ -94,25 +101,12 @@ export function useStudentTahfidzProgress(studentId: string) {
   });
 }
 
-export interface CreateTahfidzData {
-  studentId: string;
-  recordedAt: string;
-  surahName: string;
-  surahNumber?: number;
-  juz?: number;
-  ayahStart: number;
-  ayahEnd: number;
-  activityType: TahfidzType;
-  score?: number;
-  notes?: string;
-  totalAyah?: number;
-}
-
+// Use shared input types instead of local definition
 export function useCreateTahfidz() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: CreateTahfidzData) => {
+    mutationFn: async (data: CreateTahfidzInput) => {
       const response = await tahfidzApi.createRecord(data);
       return response.data.data;
     },
@@ -126,7 +120,7 @@ export function useUpdateTahfidz() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateTahfidzData> }) => {
+    mutationFn: async ({ id, data }: { id: string; data: UpdateTahfidzInput }) => {
       const response = await tahfidzApi.updateRecord(id, data);
       return response.data.data;
     },
@@ -151,7 +145,6 @@ export function useDeleteTahfidz() {
 }
 
 export type { TahfidzDashboardStats };
-export type { TahfidzDashboardParams } from '@cipansor/shared'; // Or locally if not exported
 
 export interface TahfidzDashboardParams {
     unitId?: string;

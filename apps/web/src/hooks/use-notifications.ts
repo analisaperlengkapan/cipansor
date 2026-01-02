@@ -9,7 +9,7 @@ import {
   type UserNotification,
   type NotificationTemplate,
   type NotificationStats,
-} from '@cipansor/shared/types/notifications';
+} from '@cipansor/shared';
 
 // Re-export types from shared
 export type {

@@ -17,11 +17,17 @@ import {
 // =====================================
 
 export async function createPaymentType(data: CreatePaymentTypeDto) {
+  const { unitId, ...rest } = data;
   return prisma.paymentType.create({
     data: {
-      ...data,
+      name: rest.name,
+      code: rest.code,
+      description: rest.description,
+      isRecurring: rest.isRecurring,
+      isActive: rest.isActive,
       amount: new Prisma.Decimal(data.amount),
-    } as any,
+      unit: { connect: { id: unitId } },
+    },
     include: { unit: { select: { id: true, name: true } } },
   });
 }
@@ -116,13 +122,16 @@ export async function createInvoice(data: CreateInvoiceDto) {
     try {
       const invoiceNumber = await generateInvoiceNumber();
 
+      const { studentId, paymentTypeId, ...invoiceData } = data;
       invoice = await prisma.invoice.create({
         data: {
-          ...data,
+          ...invoiceData,
           invoiceNumber,
           amount: new Prisma.Decimal(data.amount),
           dueDate: new Date(data.dueDate),
-        } as any,
+          student: { connect: { id: studentId } },
+          paymentType: { connect: { id: paymentTypeId } },
+        },
         include: {
           student: {
             include: {
@@ -277,11 +286,15 @@ export async function createPayment(data: CreatePaymentDto) {
       throw new Error("Invoice not found");
     }
 
+    const { invoiceId, ...paymentData } = data;
     const payment = await tx.payment.create({
       data: {
-        ...data,
+        method: paymentData.method,
+        referenceNo: paymentData.referenceNo,
+        notes: paymentData.notes,
         amount: new Prisma.Decimal(data.amount),
-      } as any,
+        invoice: { connect: { id: invoiceId } },
+      },
       include: {
         invoice: {
           include: {

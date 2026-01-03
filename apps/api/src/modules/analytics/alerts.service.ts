@@ -306,7 +306,7 @@ async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
 
         for (const invoice of recentInvoices) {
             const stat = stats.find(s => s.payment_type_id === invoice.paymentTypeId);
-            if (!stat || !stat.stddev_val) continue;
+            if (!stat) continue;
 
             const amount = Number(invoice.amount);
             const avg = Number(stat.avg_val);
@@ -329,6 +329,19 @@ async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
                     };
                     triggers.push(trigger);
                 }
+            } else if (Math.abs(amount - avg) > 100) {
+                // Special case: If stddev is 0 (all historical values are identical),
+                // any deviation > 100 (epsilon) is an anomaly (infinite Z-Score)
+                const trigger: AlertTrigger = {
+                    ruleId: rule.id,
+                    studentId: invoice.studentId,
+                    studentName: invoice.student?.user?.name || 'Unknown',
+                    value: amount,
+                    threshold: avg,
+                    message: `Tagihan tidak wajar (Z-Score: ∞) untuk ${invoice.student?.user?.name}. Jumlah: Rp ${amount}, Rata-rata: Rp ${avg.toFixed(0)}`,
+                    triggeredAt: new Date().toISOString(),
+                };
+                triggers.push(trigger);
             }
         }
 

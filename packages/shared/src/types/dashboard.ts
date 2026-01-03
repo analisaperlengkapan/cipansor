@@ -83,8 +83,18 @@ export interface DashboardMetrics {
   timestamp: string;
 }
 
+export interface DashboardAlert {
+  id: string;
+  title: string;
+  message: string;
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  timestamp: string;
+  unitId?: string;
+  unitName?: string;
+}
+
 export interface DashboardMetricsResponse {
   current: DashboardMetrics;
   recent: DashboardMetrics[];
-  alerts: any[]; // Using any for alerts as defined in API
+  alerts: DashboardAlert[];
 }

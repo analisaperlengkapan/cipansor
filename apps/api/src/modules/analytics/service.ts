@@ -1,3 +1,480 @@
+import { prisma } from "@/lib/prisma";
+import { Prisma, Gender } from "@prisma/client";
+import type {
+  DashboardSummary,
+  StudentStatistics,
+  TahfidzProgress,
+  FinanceReport,
+  AnalyticsAttendanceSummary,
+  AcademicPerformance,
+  HealthSummary,
+  ViolationSummary,
+  LibrarySummary,
+  PsbSummary,
+} from "@cipansor/shared";
+
+interface DateRange {
+  startDate?: string;
+  endDate?: string;
+}
+
+// ==================== DASHBOARD OVERVIEW ====================
+
+export async function getDashboardStats(unitId?: string): Promise<DashboardSummary> {
+  const unitFilter = unitId ? { unitId } : {};
+  const studentFilter = { ...unitFilter, deletedAt: null };
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+  const endOfDay = new Date(now.setHours(23, 59, 59, 999));
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const [
+    totalStudents,
+    activeStudents,
+    newStudentsThisMonth,
+    attendanceTodayPresent,
+    attendanceWeeklyTotal,
+    attendanceWeeklyPresent,
+    financeStats,
+    financeOutstanding,
+    tahfidzAvgJuz
+  ] = await Promise.all([
+    prisma.student.count({ where: studentFilter }),
+    prisma.student.count({ where: { ...studentFilter, status: "active" } }),
+    prisma.student.count({
+      where: {
+        ...studentFilter,
+        createdAt: { gte: startOfMonth }
+      }
+    }),
+    // Attendance Today
+    prisma.attendance.count({
+      where: {
+        ...unitFilter,
+        date: { gte: startOfDay, lte: endOfDay },
+        status: "PRESENT"
+      },
+    }),
+    // Attendance Weekly
+    prisma.attendance.count({
+      where: {
+        ...unitFilter,
+        date: { gte: oneWeekAgo }
+      }
+    }),
+    prisma.attendance.count({
+      where: {
+        ...unitFilter,
+        date: { gte: oneWeekAgo },
+        status: "PRESENT"
+      }
+    }),
+    // Finance (Monthly Revenue)
+    prisma.payment.aggregate({
+      where: {
+        paidAt: { gte: startOfMonth },
+        invoice: unitId ? { student: { unitId } } : undefined
+      },
+      _sum: { amount: true }
+    }),
+    // Finance (Outstanding)
+    prisma.invoice.aggregate({
+      where: {
+        ...unitFilter,
+        status: { in: ["PENDING", "PARTIAL"] }
+      },
+      _sum: { amount: true, paidAmount: true }
+    }),
+    // Tahfidz
+    prisma.tahfidzRecord.aggregate({
+      where: unitId ? { student: { unitId } } : {},
+      _avg: { juz: true }
+    })
+  ]);
+
+  const outstandingAmount = (Number(financeOutstanding._sum.amount) || 0) - (Number(financeOutstanding._sum.paidAmount) || 0);
+
+  const totalInvoicedOutstanding = Number(financeOutstanding._sum.amount) || 0;
+  const collectionRate = totalInvoicedOutstanding > 0
+    ? 100 - ((outstandingAmount / totalInvoicedOutstanding) * 100)
+    : 100;
+
+  return {
+    students: {
+      total: totalStudents,
+      active: activeStudents,
+      newThisMonth: newStudentsThisMonth
+    },
+    attendance: {
+      todayRate: activeStudents > 0 ? Number(((attendanceTodayPresent / activeStudents) * 100).toFixed(2)) : 0,
+      weeklyAverage: attendanceWeeklyTotal > 0 ? Number(((attendanceWeeklyPresent / attendanceWeeklyTotal) * 100).toFixed(2)) : 0
+    },
+    finance: {
+      monthlyRevenue: Number(financeStats._sum.amount) || 0,
+      outstandingBills: outstandingAmount,
+      collectionRate: Number(collectionRate.toFixed(2))
+    },
+    tahfidz: {
+      averageJuz: Number(tahfidzAvgJuz._avg?.juz?.toFixed(2)) || 0,
+      completedHafidz: 0
+    }
+  };
+}
+
+// ==================== STUDENT STATISTICS ====================
+
+export async function getStudentStats(unitId?: string): Promise<StudentStatistics> {
+  const unitFilter = unitId ? { unitId } : {};
+
+  const [byStatus, byGender, byUnit, enrollmentTrendRaw, activeStudents, graduatedThisYear] = await Promise.all([
+    prisma.student.groupBy({
+      by: ["status"],
+      where: { ...unitFilter, deletedAt: null },
+      _count: true,
+    }),
+    prisma.student.groupBy({
+      by: ["gender"],
+      where: { ...unitFilter, deletedAt: null },
+      _count: true,
+    }),
+    prisma.student.groupBy({
+      by: ["unitId"],
+      where: { deletedAt: null },
+      _count: true,
+    }),
+    // Enrollment by month (using mapped table and column names)
+    prisma.$queryRaw<Array<{ month: string; count: bigint }>>`
+      SELECT
+        TO_CHAR(created_at, 'YYYY-MM') as month,
+        COUNT(*)::bigint as count
+      FROM students
+      WHERE created_at >= NOW() - INTERVAL '12 months'
+      GROUP BY TO_CHAR(created_at, 'YYYY-MM')
+      ORDER BY month DESC
+    `,
+    prisma.student.count({ where: { ...unitFilter, status: "active" } }),
+    prisma.student.count({
+      where: {
+        ...unitFilter,
+        status: "graduated",
+        updatedAt: { gte: new Date(new Date().getFullYear(), 0, 1) }
+      }
+    }),
+  ]);
+
+  // Get unit names for stats
+  const unitIds = byUnit.map(u => u.unitId);
+  const units = await prisma.unit.findMany({
+    where: { id: { in: unitIds } },
+    select: { id: true, name: true, type: true },
+  });
+
+  const totalStudents = byStatus.reduce((acc, curr) => acc + curr._count, 0);
+
+  // Approximate "new students this month"
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  const newStudentsThisMonth = await prisma.student.count({
+      where: {
+          ...unitFilter,
+          createdAt: { gte: startOfMonth }
+      }
+  });
+
+  return {
+    totalStudents,
+    activeStudents,
+    newStudentsThisMonth,
+    graduatedThisYear,
+    byGender: {
+        male: byGender.find(g => g.gender === Gender.MALE)?._count || 0,
+        female: byGender.find(g => g.gender === Gender.FEMALE)?._count || 0,
+    },
+    byUnit: byUnit.map(u => ({
+      unitId: u.unitId,
+      unitName: units.find(unit => unit.id === u.unitId)?.name || "Unknown",
+      count: u._count,
+    })),
+    byClass: [], // Placeholder
+    trend: enrollmentTrendRaw.map(e => ({
+      month: e.month,
+      count: Number(e.count),
+    })),
+  };
+}
+
+// ==================== TAHFIDZ STATISTICS ====================
+
+export async function getTahfidzStats(unitId?: string, dateRange?: DateRange): Promise<TahfidzProgress> {
+  const where: Prisma.TahfidzRecordWhereInput = {
+    ...(unitId && { student: { unitId } }),
+    ...(dateRange?.startDate && dateRange?.endDate && {
+      createdAt: {
+        gte: new Date(dateRange.startDate),
+        lte: new Date(dateRange.endDate),
+      },
+    }),
+  };
+
+  const [totalStudents, avgJuz, topStudents] = await Promise.all([
+      prisma.student.count({ where: unitId ? { unitId } : {} }),
+      prisma.tahfidzRecord.aggregate({
+          where,
+          _avg: { juz: true }
+      }),
+      // Top students by total ayah
+      prisma.tahfidzRecord.groupBy({
+        by: ["studentId"],
+        where,
+        _sum: { totalAyah: true },
+        orderBy: { _sum: { totalAyah: "desc" } },
+        take: 5,
+      }),
+  ]);
+
+  // Better approach for Completed Hafidz (30 Juz) using mapped table name
+  const completedHafidzCount = await prisma.$queryRaw<Array<{ count: bigint }>>`
+      SELECT COUNT(*)::bigint as count FROM (
+          SELECT student_id FROM tahfidz_records
+          WHERE deleted_at IS NULL -- Assuming standard soft delete or ignored if column doesn't exist
+          GROUP BY student_id
+          HAVING COUNT(DISTINCT juz) >= 30
+      ) as hafidz
+  `;
+  const realCompletedHafidz = Number(completedHafidzCount[0]?.count || 0);
+
+  // Optimized: Parallel execution for juz ranges
+  const rangePromises = [
+      prisma.tahfidzRecord.count({ where: { ...where, juz: { gte: 1, lte: 5 } } }),
+      prisma.tahfidzRecord.count({ where: { ...where, juz: { gte: 6, lte: 10 } } }),
+      prisma.tahfidzRecord.count({ where: { ...where, juz: { gte: 11, lte: 15 } } }),
+      prisma.tahfidzRecord.count({ where: { ...where, juz: { gte: 16, lte: 20 } } }),
+      prisma.tahfidzRecord.count({ where: { ...where, juz: { gte: 21, lte: 25 } } }),
+      prisma.tahfidzRecord.count({ where: { ...where, juz: { gte: 26, lte: 30 } } }),
+  ];
+
+  const [r1, r2, r3, r4, r5, r6] = await Promise.all(rangePromises);
+
+  const byJuzRange = [
+      { range: '1-5', count: r1 },
+      { range: '6-10', count: r2 },
+      { range: '11-15', count: r3 },
+      { range: '16-20', count: r4 },
+      { range: '21-25', count: r5 },
+      { range: '26-30', count: r6 },
+  ];
+
+  // Get student names for top students
+  const studentIds = topStudents.map(s => s.studentId);
+  const students = await prisma.student.findMany({
+    where: { id: { in: studentIds } },
+    include: { user: { select: { name: true } } },
+  });
+
+  // Monthly progress - Using recorded_at (snake_case)
+  const monthlyProgress = await prisma.$queryRaw<Array<{ month: string; count: bigint }>>`
+      SELECT
+        TO_CHAR(recorded_at, 'YYYY-MM') as month,
+        COUNT(*)::bigint as count
+      FROM tahfidz_records
+      WHERE recorded_at >= NOW() - INTERVAL '6 months'
+      GROUP BY TO_CHAR(recorded_at, 'YYYY-MM')
+      ORDER BY month DESC
+  `;
+
+  return {
+    totalStudents,
+    averageJuz: Number(avgJuz._avg.juz?.toFixed(2)) || 0,
+    completedHafidz: realCompletedHafidz,
+    byJuzRange,
+    topPerformers: topStudents.map(s => {
+      const student = students.find(st => st.id === s.studentId);
+      return {
+        studentId: s.studentId,
+        studentName: student?.user.name || "Unknown",
+        totalJuz: 0,
+        totalAyat: s._sum.totalAyah || 0,
+      };
+    }),
+    monthlyProgress: monthlyProgress.map(m => ({
+        month: m.month,
+        newMemorization: Number(m.count),
+        murajaah: 0
+    })),
+  };
+}
+
+// ==================== FINANCE STATISTICS ====================
+
+export async function getFinanceStats(unitId?: string, dateRange?: DateRange): Promise<FinanceReport> {
+  const invoiceWhere: Prisma.InvoiceWhereInput = {
+    ...(unitId && { student: { unitId } }),
+    ...(dateRange?.startDate && dateRange?.endDate && {
+      createdAt: {
+        gte: new Date(dateRange.startDate),
+        lte: new Date(dateRange.endDate),
+      },
+    }),
+  };
+
+  const paymentWhere: Prisma.PaymentWhereInput = {
+    ...(dateRange?.startDate && dateRange?.endDate && {
+      paidAt: {
+        gte: new Date(dateRange.startDate),
+        lte: new Date(dateRange.endDate),
+      },
+    }),
+  };
+
+  const [invoiceStats, paymentStats, byStatus, byMethod, monthlyRevenue] = await Promise.all([
+    prisma.invoice.aggregate({
+      where: invoiceWhere,
+      _sum: { amount: true, paidAmount: true },
+      _count: true,
+    }),
+    prisma.payment.aggregate({
+      where: paymentWhere,
+      _sum: { amount: true },
+      _count: true,
+    }),
+    prisma.invoice.groupBy({
+      by: ["status"],
+      where: invoiceWhere,
+      _count: true,
+      _sum: { amount: true },
+    }),
+    prisma.payment.groupBy({
+      by: ["method"],
+      where: paymentWhere,
+      _count: true,
+      _sum: { amount: true },
+    }),
+    // Monthly revenue for last 12 months using mapped table/column
+    prisma.$queryRaw<Array<{ month: string; total: bigint }>>`
+      SELECT 
+        TO_CHAR(paid_at, 'YYYY-MM') as month,
+        COALESCE(SUM(amount), 0)::bigint as total
+      FROM payments
+      WHERE paid_at >= NOW() - INTERVAL '12 months'
+      GROUP BY TO_CHAR(paid_at, 'YYYY-MM')
+      ORDER BY month DESC
+      LIMIT 12
+    `,
+  ]);
+
+  const totalRevenue = Number(paymentStats._sum.amount) || 0;
+  // Expense logic is missing in current schema, placeholder 0
+  const totalExpense = 0;
+
+  return {
+    totalRevenue,
+    totalExpense,
+    netIncome: totalRevenue - totalExpense,
+    outstandingBills: (Number(invoiceStats._sum.amount) || 0) - (Number(invoiceStats._sum.paidAmount) || 0),
+    collectionRate: invoiceStats._sum.amount && Number(invoiceStats._sum.amount) > 0
+        ? Number(((Number(invoiceStats._sum.paidAmount) || 0) / Number(invoiceStats._sum.amount) * 100).toFixed(2))
+        : 0,
+    revenueByCategory: [],
+    expenseByCategory: [],
+    monthlyTrend: monthlyRevenue.map(m => ({
+      month: m.month,
+      revenue: Number(m.total),
+      expense: 0
+    })),
+  };
+}
+
+// ==================== ATTENDANCE STATISTICS ====================
+
+export async function getAttendanceStats(unitId?: string, dateRange?: DateRange): Promise<AnalyticsAttendanceSummary> {
+  const where: Prisma.AttendanceWhereInput = {
+    ...(unitId && { student: { unitId } }),
+    ...(dateRange?.startDate && dateRange?.endDate && {
+      date: {
+        gte: new Date(dateRange.startDate),
+        lte: new Date(dateRange.endDate),
+      },
+    }),
+  };
+
+  const startDate = dateRange?.startDate ? new Date(dateRange.startDate) : undefined;
+  const endDate = dateRange?.endDate ? new Date(dateRange.endDate) : undefined;
+
+  const [byStatus, dailyTrend, classStatsRaw] = await Promise.all([
+    prisma.attendance.groupBy({
+      by: ["status"],
+      where,
+      _count: true,
+    }),
+    // Daily attendance for last 30 days
+    prisma.$queryRaw<Array<{ date: Date; present: bigint; total: bigint; absent: bigint; late: bigint }>>`
+      SELECT 
+        date::date as date,
+        COUNT(CASE WHEN status = 'PRESENT' THEN 1 END)::bigint as present,
+        COUNT(CASE WHEN status = 'ABSENT' THEN 1 END)::bigint as absent,
+        COUNT(CASE WHEN status = 'LATE' THEN 1 END)::bigint as late,
+        COUNT(*)::bigint as total
+      FROM attendances
+      WHERE date >= NOW() - INTERVAL '30 days'
+      GROUP BY date::date
+      ORDER BY date DESC
+    `,
+    // Optimized: By class stats using single query
+    prisma.$queryRaw<Array<{ classId: string; total: number; present: number }>>`
+      SELECT
+        a.class_id as "classId",
+        COUNT(*)::int as total,
+        COUNT(CASE WHEN a.status = 'PRESENT' THEN 1 END)::int as present
+      FROM attendances a
+      JOIN students s ON a.student_id = s.id
+      WHERE 1=1
+      ${unitId ? Prisma.sql`AND s.unit_id = ${unitId}` : Prisma.empty}
+      ${startDate && endDate ? Prisma.sql`AND a.date >= ${startDate} AND a.date <= ${endDate}` : Prisma.empty}
+      GROUP BY a.class_id
+    `,
+  ]);
+
+  const totalRecords = byStatus.reduce((sum, s) => sum + s._count, 0);
+  const presentCount = byStatus.find(s => s.status === "PRESENT")?._count || 0;
+  const absentCount = byStatus.find(s => s.status === "ABSENT")?._count || 0;
+  const lateCount = byStatus.find(s => s.status === "LATE")?._count || 0;
+  const sickCount = byStatus.find(s => s.status === "SICK")?._count || 0;
+  const permittedCount = byStatus.find(s => s.status === "EXCUSED")?._count || 0; // EXCUSED is the enum value in schema
+
+  const classIds = classStatsRaw.map(s => s.classId).filter(Boolean);
+  const classes = await prisma.class.findMany({
+    where: { id: { in: classIds } },
+    select: { id: true, name: true, level: true },
+  });
+
+  const classRates = classStatsRaw.map(stats => {
+      const cid = stats.classId;
+      return {
+          classId: cid,
+          className: classes.find(c => c.id === cid)?.name || "Unknown",
+          presentRate: stats.total > 0 ? Number((stats.present / stats.total * 100).toFixed(2)) : 0
+      };
+  });
+
+  return {
+    totalDays: totalRecords,
+    presentRate: totalRecords > 0 ? Number((presentCount / totalRecords * 100).toFixed(2)) : 0,
+    absentRate: totalRecords > 0 ? Number((absentCount / totalRecords * 100).toFixed(2)) : 0,
+    lateRate: totalRecords > 0 ? Number((lateCount / totalRecords * 100).toFixed(2)) : 0,
+    sickRate: totalRecords > 0 ? Number((sickCount / totalRecords * 100).toFixed(2)) : 0,
+    permittedRate: totalRecords > 0 ? Number((permittedCount / totalRecords * 100).toFixed(2)) : 0,
+    byClass: classRates,
+    trend: dailyTrend.map(d => ({
+      date: new Date(d.date).toISOString().split('T')[0],
+      present: Number(d.present),
+      absent: Number(d.absent),
+      late: Number(d.late),
+    })),
+  };
+}
+
+
 // ==================== ACADEMIC STATISTICS ====================
 
 export async function getAcademicStats(unitId?: string): Promise<AcademicPerformance> {

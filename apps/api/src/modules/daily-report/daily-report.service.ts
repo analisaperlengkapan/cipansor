@@ -4,13 +4,19 @@ import { whatsAppService } from '../notifications';
 import { logger } from '@/lib/logger';
 import type {
   ListDailyReportsQuery,
-  CreateDailyReportInput,
-  UpdateDailyReportInput,
-  ConfirmReportInput,
-  BulkCreateDailyReportsInput,
   StudentDailySummaryQuery,
   ClassDailySummaryQuery,
 } from './daily-report.schema';
+import type {
+  CreateDailyReportInput,
+  UpdateDailyReportInput,
+  BulkCreateDailyReportsInput,
+} from '@cipansor/shared';
+
+// Helper interface for validation since schema types might not be exported from shared yet or match perfectly
+interface ConfirmReportInput {
+  isConfirmed: boolean;
+}
 
 interface AuthContext {
   role: string;

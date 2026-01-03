@@ -301,7 +301,7 @@ export async function getTemplateById(id: string) {
     where: { key: "NOTIFICATION_TEMPLATES" },
   });
 
-  const templates = (Array.isArray(setting?.value) ? setting.value : []) as NotificationTemplate[];
+  const templates = (Array.isArray(setting?.value) ? setting.value : []) as unknown as NotificationTemplate[];
   return templates.find(t => t.id === id) || null;
 }
 

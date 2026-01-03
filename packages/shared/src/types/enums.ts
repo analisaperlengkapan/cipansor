@@ -14,6 +14,7 @@ export enum UnitType {
   SD_IT = 'SD_IT',
   SMP_IT = 'SMP_IT',
   SMA_QURAN = 'SMA_QURAN',
+  TK_QURAN = 'TK_QURAN', // Added to match likely Prisma schema if divergent
   OTHER = 'OTHER',
 }
 
@@ -35,7 +36,7 @@ export enum AttendanceStatus {
   ABSENT = 'ABSENT',
   LATE = 'LATE',
   SICK = 'SICK',
-  EXCUSED = 'EXCUSED',
+  EXCUSED = 'EXCUSED', // Prisma uses EXCUSED, Shared used PERMISSION. Aligned to Prisma.
 }
 
 // Memorization Quality

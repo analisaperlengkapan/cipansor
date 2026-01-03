@@ -49,14 +49,17 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { useClasses } from '@/hooks/use-classes';
 import { useUnits } from '@/hooks/use-units';
-import { useAttendanceCalendar, AttendanceCalendarDay, ATTENDANCE_STATUSES } from '@/hooks/use-attendance';
+import { useAttendanceCalendar, ATTENDANCE_STATUSES, AttendanceStatus } from '@/hooks/use-attendance';
 import { cn } from '@/lib/utils';
+import { AttendanceCalendarResponse } from '@cipansor/shared';
 
 const DAYS_OF_WEEK = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 const MONTHS = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
 ];
+
+type AttendanceCalendarDay = AttendanceCalendarResponse['days'][0];
 
 export default function AttendanceCalendarPage() {
   const currentDate = new Date();
@@ -94,7 +97,7 @@ export default function AttendanceCalendarPage() {
   // Create a map of date to attendance data
   const attendanceMap = useMemo(() => {
     const map = new Map<string, AttendanceCalendarDay>();
-    calendarData?.days?.forEach((day: AttendanceCalendarDay) => {
+    calendarData?.days?.forEach((day) => {
       map.set(day.date, day);
     });
     return map;
@@ -330,7 +333,7 @@ export default function AttendanceCalendarPage() {
                                   <p>Tidak Hadir: {attendance.absent}</p>
                                   <p>Terlambat: {attendance.late}</p>
                                   <p>Sakit: {attendance.sick}</p>
-                                  <p>Izin: {attendance.permitted}</p>
+                                  <p>Izin: {attendance.excused}</p>
                                 </div>
                               </TooltipContent>
                             )}
@@ -402,7 +405,7 @@ export default function AttendanceCalendarPage() {
                 </div>
                 <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 col-span-2">
                   <p className="text-sm text-muted-foreground">Izin</p>
-                  <p className="text-2xl font-bold text-purple-600">{selectedDayData.permitted}</p>
+                  <p className="text-2xl font-bold text-purple-600">{selectedDayData.excused}</p>
                 </div>
               </div>
 

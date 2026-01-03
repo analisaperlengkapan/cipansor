@@ -12,7 +12,9 @@ import {
   ApiResponse
 } from '@cipansor/shared';
 
-export type { AttendanceStatus, AttendanceCalendarDay };
+// Re-export shared types for convenience
+export { AttendanceStatus };
+export type { AttendanceCalendarResponse };
 
 // Re-export constants for UI usage
 export const ATTENDANCE_STATUSES: { value: AttendanceStatus; label: string; color: string }[] = [
@@ -60,24 +62,6 @@ export function useClassAttendance(classId: string, date: string) {
   return useQuery({
     queryKey: ['attendances', 'class', classId, date],
     queryFn: async () => {
-      // Note: The backend returns records array inside pagination usually, but if this endpoint
-      // returns a list, we check the generic.
-      // However, looking at the API controller, 'list' returns SharedPaginatedResponse.
-      // If there is a specific endpoint for class attendance without pagination, it might be different.
-      // Based on previous code, this was likely calling the list endpoint with filters.
-      // But the previous code had `/attendance/class/${classId}` which is NOT in the controller I saw.
-      // The controller has `list`, `getById`, `create`, `bulkCreate`, `update`, `remove`, `getSummary`, `getCalendar`.
-      // It does NOT have `/attendance/class/:classId`.
-      // Assuming the previous code was calling a route that might have been removed or I missed it?
-      // Wait, let's check the controller again.
-      // Controller: list, getById, create, bulkCreate, update, remove, getSummary, getCalendar.
-      // No `get /class/:classId`.
-      // So `useClassAttendance` was likely broken or using a route I didn't see in the file.
-      // I will fallback to using `list` with classId and date params, which is what `useAttendances` does.
-      // Or maybe it was `list` with a different path?
-      // actually, let's keep it as is if it matches a route I haven't seen, OR refactor it to use `list`.
-      // Since I didn't see the route in `attendance.controller.ts`, I will assume `list` is the way.
-
       const response = await api.get<SharedPaginatedResponse<Attendance>>('/attendance', {
         params: { classId, date, limit: 100 } // specific for class view
       });
@@ -153,7 +137,7 @@ export function useStudentAttendanceSummary(studentId: string, startDate?: strin
     queryFn: async () => {
       const params = { startDate, endDate, studentId };
       const response = await api.get<ApiResponse<AttendanceSummary>>(
-        '/attendance/summary', // Changed to correct endpoint
+        '/attendance/summary',
         { params }
       );
       return response.data.data;

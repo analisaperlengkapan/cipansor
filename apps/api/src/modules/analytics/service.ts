@@ -9,6 +9,8 @@ import type {
   AcademicPerformance,
   HealthSummary,
   ViolationSummary,
+  LibrarySummary,
+  PsbSummary,
 } from "@cipansor/shared";
 
 interface DateRange {
@@ -594,7 +596,7 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
 
 // ==================== LIBRARY STATISTICS ====================
 
-export async function getLibraryStats(unitId?: string) {
+export async function getLibraryStats(unitId?: string): Promise<LibrarySummary> {
   const unitFilter = unitId ? { unitId } : {};
 
   const [bookStats, borrowingStats, overdue, popularBooks] = await Promise.all([
@@ -648,7 +650,7 @@ export async function getLibraryStats(unitId?: string) {
 
 // ==================== PSB STATISTICS ====================
 
-export async function getPSBStats(unitId?: string) {
+export async function getPSBStats(unitId?: string): Promise<PsbSummary> {
   const unitFilter = unitId ? { admissionPeriod: { unitId } } : {};
 
   const [registrantStats, byStatus, byPeriod] = await Promise.all([

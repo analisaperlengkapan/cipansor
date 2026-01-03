@@ -37,6 +37,8 @@ export const REPORT_TYPES: ReportType[] = [
   'TAHFIDZ_PROGRESS',
   'HEALTH_SUMMARY',
   'VIOLATION_SUMMARY',
+  'LIBRARY_STATISTICS',
+  'PSB_STATISTICS',
 ];
 
 export const REPORT_TYPE_LABELS: Record<ReportType, string> = {
@@ -47,6 +49,8 @@ export const REPORT_TYPE_LABELS: Record<ReportType, string> = {
   TAHFIDZ_PROGRESS: 'Progres Tahfidz',
   HEALTH_SUMMARY: 'Ringkasan Kesehatan',
   VIOLATION_SUMMARY: 'Ringkasan Pelanggaran',
+  LIBRARY_STATISTICS: 'Statistik Perpustakaan',
+  PSB_STATISTICS: 'Statistik PSB',
 };
 
 export const TIME_RANGES: TimeRange[] = ['WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'CUSTOM'];

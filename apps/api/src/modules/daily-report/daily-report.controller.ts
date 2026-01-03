@@ -3,13 +3,37 @@ import { asyncHandler } from '@/middleware/error';
 import { dailyReportService } from './daily-report.service';
 import type {
   ListDailyReportsQuery,
-  CreateDailyReportInput,
-  UpdateDailyReportInput,
-  ConfirmReportInput,
-  BulkCreateDailyReportsInput,
   StudentDailySummaryQuery,
   ClassDailySummaryQuery,
 } from './daily-report.schema';
+import type {
+  CreateDailyReportInput,
+  UpdateDailyReportInput,
+  BulkCreateDailyReportsInput,
+  DailyMood
+} from '@cipansor/shared';
+
+// Define local helper for ConfirmReportInput as strict typing for partial/null removal
+interface ConfirmReportInput {
+  isConfirmed: boolean;
+  parentFeedback?: string;
+}
+
+// Helper to clean nulls to undefined for Prisma compatibility with Shared Types
+function cleanInput<T>(obj: T): T {
+  if (Array.isArray(obj)) {
+    return obj.map(cleanInput) as unknown as T;
+  }
+  if (obj !== null && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj as Record<string, unknown>).map(([key, value]) => [
+        key,
+        value === null ? undefined : cleanInput(value),
+      ])
+    ) as unknown as T;
+  }
+  return obj;
+}
 
 // ============================================
 // DAILY REPORT CONTROLLERS
@@ -54,7 +78,7 @@ export const getDailyReportById = asyncHandler(async (req: Request, res: Respons
  * POST /api/daily-report
  */
 export const createDailyReport = asyncHandler(async (req: Request, res: Response) => {
-  const input: CreateDailyReportInput = req.body;
+  const input = cleanInput(req.body) as CreateDailyReportInput;
   const report = await dailyReportService.create(input, req.user!.sub);
 
   res.status(201).json({
@@ -68,7 +92,7 @@ export const createDailyReport = asyncHandler(async (req: Request, res: Response
  * POST /api/daily-report/bulk
  */
 export const bulkCreateDailyReports = asyncHandler(async (req: Request, res: Response) => {
-  const input: BulkCreateDailyReportsInput = req.body;
+  const input = cleanInput(req.body) as BulkCreateDailyReportsInput;
   const result = await dailyReportService.bulkCreate(input, req.user!.sub);
 
   res.status(201).json({
@@ -83,7 +107,7 @@ export const bulkCreateDailyReports = asyncHandler(async (req: Request, res: Res
  */
 export const updateDailyReport = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const input: UpdateDailyReportInput = req.body;
+  const input = cleanInput(req.body) as UpdateDailyReportInput;
   const report = await dailyReportService.update(id, input);
 
   res.json({
@@ -113,6 +137,7 @@ export const deleteDailyReport = asyncHandler(async (req: Request, res: Response
 export const confirmDailyReport = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const input: ConfirmReportInput = req.body;
+  // Service expects ConfirmReportInput which has isConfirmed
   const report = await dailyReportService.confirmByParent(id, input, req.user!.sub);
 
   res.json({

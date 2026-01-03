@@ -15,7 +15,7 @@ describe('Notification Templates Controller', () => {
       params: {},
       query: {},
       body: {},
-      user: { sub: 'user-id', role: 'SUPER_ADMIN' }
+      user: { sub: 'user-id', role: 'SUPER_ADMIN', unitId: 'unit-1' }
     };
     res = {
       json: vi.fn(),
@@ -33,7 +33,19 @@ describe('Notification Templates Controller', () => {
 
       await controller.getTemplateById(req, res, next);
 
-      expect(service.getTemplateById).toHaveBeenCalledWith('template-1');
+      expect(service.getTemplateById).toHaveBeenCalledWith('template-1', 'unit-1');
+      expect(res.json).toHaveBeenCalledWith({ success: true, data: mockTemplate });
+    });
+
+    it('should pass undefined unitId if not present on user', async () => {
+      req.params.id = 'template-1';
+      req.user.unitId = undefined;
+      const mockTemplate = { id: 'template-1', name: 'Test' };
+      (service.getTemplateById as any).mockResolvedValue(mockTemplate);
+
+      await controller.getTemplateById(req, res, next);
+
+      expect(service.getTemplateById).toHaveBeenCalledWith('template-1', undefined);
       expect(res.json).toHaveBeenCalledWith({ success: true, data: mockTemplate });
     });
 
@@ -44,8 +56,6 @@ describe('Notification Templates Controller', () => {
       await controller.getTemplateById(req, res, next);
 
       const expectedError = Errors.notFound("Template not found");
-      // The controller logic creates an error object and passes it to next()
-      // We check that next was called with an error that matches the properties of expectedError
       expect(next).toHaveBeenCalledWith(expect.objectContaining({
         message: expectedError.message,
         code: expectedError.code

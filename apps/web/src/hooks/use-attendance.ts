@@ -12,6 +12,8 @@ import {
   ApiResponse
 } from '@cipansor/shared';
 
+export type { AttendanceStatus, AttendanceCalendarDay };
+
 // Re-export constants for UI usage
 export const ATTENDANCE_STATUSES: { value: AttendanceStatus; label: string; color: string }[] = [
   { value: AttendanceStatus.PRESENT, label: 'Hadir', color: 'bg-green-100 text-green-800' },

@@ -60,3 +60,31 @@ export interface ViolationRewardStats {
     count: number;
   }[];
 }
+
+// Added for metrics history
+export interface DashboardMetrics {
+  students: {
+    total: number;
+    active: number;
+    change: number;
+  };
+  teachers: {
+    total: number;
+  };
+  attendance: {
+    rate: number;
+    present: number;
+    total: number;
+  };
+  tahfidz: {
+    totalHafidz: number;
+    avgQuality: number;
+  };
+  timestamp: string;
+}
+
+export interface DashboardMetricsResponse {
+  current: DashboardMetrics;
+  recent: DashboardMetrics[];
+  alerts: any[]; // Using any for alerts as defined in API
+}

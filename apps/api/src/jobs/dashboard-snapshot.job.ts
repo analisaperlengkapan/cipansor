@@ -279,6 +279,7 @@ export async function cleanupOldSnapshots(): Promise<void> {
   logger.info(`[${jobName}] Starting cleanup job`);
 
   try {
+    // Cleanup old snapshots (365 days)
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - 365);
 
@@ -291,6 +292,20 @@ export async function cleanupOldSnapshots(): Promise<void> {
     });
 
     logger.info(`[${jobName}] Deleted ${result.count} old snapshots`);
+
+    // Cleanup high-frequency history (keep last 24 hours)
+    const historyCutoff = new Date();
+    historyCutoff.setHours(historyCutoff.getHours() - 24);
+
+    const historyResult = await prisma.dashboardHistory.deleteMany({
+      where: {
+        createdAt: {
+          lt: historyCutoff
+        }
+      }
+    });
+
+    logger.info(`[${jobName}] Deleted ${historyResult.count} old history records`);
   } catch (error) {
     logger.error(`[${jobName}] Error cleaning up old snapshots:`, error);
     throw error;

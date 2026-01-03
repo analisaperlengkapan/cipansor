@@ -1,7 +1,16 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '@/middleware/auth';
+import { validate } from '@/middleware/validate';
 import { UserRole } from '@prisma/client';
 import { financeEnhancementController } from './finance-enhancement.controller';
+import {
+  createAccountCodeSchema,
+  updateAccountCodeSchema,
+  createJournalEntrySchema,
+  createScholarshipSchema,
+  assignScholarshipSchema,
+  createPaymentComponentSchema
+} from './schema';
 
 const router = Router();
 
@@ -18,12 +27,14 @@ router.get(
 router.post(
   '/account-codes',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validate(createAccountCodeSchema),
   financeEnhancementController.createAccountCode
 );
 
 router.put(
   '/account-codes/:id',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validate(updateAccountCodeSchema),
   financeEnhancementController.updateAccountCode
 );
 
@@ -38,6 +49,7 @@ router.get(
 router.post(
   '/journal-entries',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validate(createJournalEntrySchema),
   financeEnhancementController.createJournalEntry
 );
 
@@ -56,6 +68,7 @@ router.get(
 router.post(
   '/scholarships',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validate(createScholarshipSchema),
   financeEnhancementController.createScholarship
 );
 
@@ -72,6 +85,7 @@ router.get(
 router.post(
   '/scholarship-recipients',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validate(assignScholarshipSchema),
   financeEnhancementController.assignScholarship
 );
 
@@ -85,6 +99,7 @@ router.get(
 router.post(
   '/payment-components',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validate(createPaymentComponentSchema),
   financeEnhancementController.createPaymentComponent
 );
 

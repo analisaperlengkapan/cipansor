@@ -40,30 +40,7 @@ import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/auth';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
-
-const ATTENDANCE_OPTIONS = [
-  { value: 'PRESENT', label: 'Hadir', color: 'text-green-600' },
-  { value: 'LATE', label: 'Terlambat', color: 'text-yellow-600' },
-  { value: 'SICK', label: 'Sakit', color: 'text-orange-600' },
-  { value: 'EXCUSED', label: 'Izin', color: 'text-blue-600' },
-  { value: 'ABSENT', label: 'Alpha', color: 'text-red-600' },
-];
-
-const MOOD_OPTIONS = [
-  { value: 'HAPPY', label: '😊 Senang' },
-  { value: 'EXCITED', label: '🤩 Antusias' },
-  { value: 'NEUTRAL', label: '😐 Biasa' },
-  { value: 'TIRED', label: '😴 Lelah' },
-  { value: 'SAD', label: '😢 Sedih' },
-  { value: 'SICK', label: '🤒 Sakit' },
-];
-
-const CONSUMPTION_OPTIONS = [
-  { value: 'HABIS', label: 'Habis' },
-  { value: 'SETENGAH', label: 'Setengah' },
-  { value: 'SEDIKIT', label: 'Sedikit' },
-  { value: 'TIDAK_MAU', label: 'Tidak Mau' },
-];
+import { MOOD_OPTIONS, CONSUMPTION_OPTIONS } from '../constants';
 
 const dailyReportSchema = z.object({
   studentId: z.string().min(1, 'Siswa wajib dipilih'),

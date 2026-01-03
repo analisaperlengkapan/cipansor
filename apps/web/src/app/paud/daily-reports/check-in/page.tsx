@@ -32,27 +32,12 @@ import {
   Users,
   Info,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, set, parse } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/auth';
 import { cn } from '@/lib/utils';
-
-// Maps for UI options to Backend Enums
-const MOOD_OPTIONS: { value: DailyMood; label: string }[] = [
-  { value: 'HAPPY', label: '😊 Senang' },
-  { value: 'EXCITED', label: '🤩 Antusias' },
-  { value: 'NEUTRAL', label: '😐 Biasa' },
-  { value: 'TIRED', label: '😴 Lelah' },
-  { value: 'SAD', label: '😢 Sedih' },
-];
-
-const HEALTH_OPTIONS = [
-  { value: 'Sehat', label: 'Sehat' },
-  { value: 'Sakit', label: 'Sakit' },
-  { value: 'Pemulihan', label: 'Pemulihan' },
-  { value: 'Perlu Perhatian', label: 'Perlu Perhatian' },
-];
+import { MOOD_OPTIONS, HEALTH_OPTIONS, ATTENDANCE_OPTIONS } from '../constants';
 
 interface StudentCheckIn {
   studentId: string;
@@ -163,13 +148,30 @@ export default function BulkCheckInPage() {
         unitId: user.unitId,
         academicYearId: activeAcademicYear.id,
         reportDate: date.toISOString(),
-        reports: selectedStudents.map((s) => ({
-          studentId: s.studentId,
-          arrivalTime: s.checkInTime,
-          morningMood: s.moodStatus,
-          healthNotes: s.healthStatus,
-          // Other fields optional as per shared type
-        })),
+        reports: selectedStudents.map((s) => {
+          // Construct full ISO datetime for arrivalTime
+          let arrivalTime: string | undefined = undefined;
+          if (s.checkInTime) {
+            const timeParts = s.checkInTime.split(':');
+            if (timeParts.length === 2) {
+              const checkInDate = set(date, {
+                hours: parseInt(timeParts[0], 10),
+                minutes: parseInt(timeParts[1], 10),
+                seconds: 0,
+                milliseconds: 0,
+              });
+              arrivalTime = checkInDate.toISOString();
+            }
+          }
+
+          return {
+            studentId: s.studentId,
+            arrivalTime: arrivalTime,
+            morningMood: s.moodStatus,
+            healthNotes: s.healthStatus,
+            // Other fields optional as per shared type
+          };
+        }),
       };
 
       await bulkCreateMutation.mutateAsync(payload);

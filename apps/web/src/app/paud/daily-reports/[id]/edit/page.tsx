@@ -9,6 +9,7 @@ import { PageHeader } from '@/components/shared';
 import {
     useDailyReport,
     useUpdateDailyReport,
+    DailyMood,
 } from '@/hooks/use-daily-report';
 import { useStudents } from '@/hooks/use-students';
 import { useClasses } from '@/hooks/use-classes';
@@ -40,22 +41,7 @@ import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/auth';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
-
-const MOOD_OPTIONS = [
-    { value: 'HAPPY', label: '😊 Senang' },
-    { value: 'EXCITED', label: '🤩 Antusias' },
-    { value: 'NEUTRAL', label: '😐 Biasa' },
-    { value: 'TIRED', label: '😴 Lelah' },
-    { value: 'SAD', label: '😢 Sedih' },
-    { value: 'SICK', label: '🤒 Sakit' },
-];
-
-const CONSUMPTION_OPTIONS = [
-    { value: 'HABIS', label: 'Habis' },
-    { value: 'SETENGAH', label: 'Setengah' },
-    { value: 'SEDIKIT', label: 'Sedikit' },
-    { value: 'TIDAK_MAU', label: 'Tidak Mau' },
-];
+import { MOOD_OPTIONS, CONSUMPTION_OPTIONS } from '../../constants';
 
 const dailyReportSchema = z.object({
     studentId: z.string().min(1, 'Siswa wajib dipilih'),
@@ -126,11 +112,15 @@ export default function EditDailyReportPage() {
 
     const onSubmit = async (data: DailyReportFormData) => {
         try {
+            // Remove reportDate from data as it's not part of UpdateDailyReportInput
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { reportDate, ...updateData } = data;
+
             await updateMutation.mutateAsync({
                 id,
                 data: {
-                    ...data,
-                    reportDate: format(data.reportDate, 'yyyy-MM-dd'),
+                    ...updateData,
+                    morningMood: updateData.morningMood as DailyMood | undefined,
                 },
             });
             toast.success('Laporan harian berhasil diperbarui');

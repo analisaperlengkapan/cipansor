@@ -161,6 +161,7 @@ describe('AttendanceService', () => {
       it('should update attendance successfully when ignoring self in duplicate check', async () => {
           const id = 'att1';
           const input = { status: AttendanceStatus.ABSENT };
+          const currentUser = { role: UserRole.TEACHER, unitId: 'unit1' };
 
           const existingRecord = {
               id: 'att1',
@@ -168,6 +169,7 @@ describe('AttendanceService', () => {
               classId: 'c1',
               date: new Date('2023-10-27T00:00:00Z'),
               status: 'PRESENT',
+              student: { unitId: 'unit1' }
           };
 
           (prisma.attendance.findUnique as any).mockResolvedValue(existingRecord);
@@ -181,10 +183,30 @@ describe('AttendanceService', () => {
           const updatedRecord = { ...existingRecord, status: 'ABSENT' };
           (prisma.attendance.update as any).mockResolvedValue(updatedRecord);
 
-          const result = await service.update(id, input);
+          const result = await service.update(id, input, currentUser);
 
           expect(result.status).toBe(AttendanceStatus.ABSENT);
           expect(prisma.attendance.update).toHaveBeenCalled();
       });
+
+      it('should throw forbidden error if updating attendance from another unit', async () => {
+        const id = 'att1';
+        const input = { status: AttendanceStatus.ABSENT };
+        const currentUser = { role: UserRole.TEACHER, unitId: 'unit2' }; // Different unit
+
+        const existingRecord = {
+            id: 'att1',
+            studentId: 's1',
+            classId: 'c1',
+            date: new Date('2023-10-27T00:00:00Z'),
+            status: 'PRESENT',
+            student: { unitId: 'unit1' }
+        };
+
+        (prisma.attendance.findUnique as any).mockResolvedValue(existingRecord);
+
+        await expect(service.update(id, input, currentUser))
+            .rejects.toThrow('Access denied');
+    });
   });
 });

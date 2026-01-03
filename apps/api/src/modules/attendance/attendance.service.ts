@@ -247,7 +247,7 @@ export class AttendanceService {
           lte: endOfDay,
         },
       },
-      select: { studentId: true, id: true },
+      select: { studentId: true },
     });
 
     const existingStudentIds = new Set(existingAttendance.map(a => a.studentId));
@@ -280,13 +280,23 @@ export class AttendanceService {
   /**
    * Update attendance record
    */
-  async update(id: string, input: UpdateAttendanceInput): Promise<Attendance> {
+  async update(id: string, input: UpdateAttendanceInput, currentUser: { role: UserRole; unitId: string | null }): Promise<Attendance> {
     const attendance = await prisma.attendance.findUnique({
       where: { id },
+      include: {
+        student: { select: { unitId: true } }
+      }
     });
 
     if (!attendance) {
       throw Errors.notFound('Attendance record');
+    }
+
+    // Check permission for non-super-admins
+    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+      if (attendance.student.unitId !== currentUser.unitId) {
+        throw Errors.forbidden('Access denied to update attendance for this unit');
+      }
     }
 
     const updated = await prisma.attendance.update({
@@ -311,13 +321,23 @@ export class AttendanceService {
   /**
    * Delete attendance record
    */
-  async delete(id: string) {
+  async delete(id: string, currentUser: { role: UserRole; unitId: string | null }) {
     const attendance = await prisma.attendance.findUnique({
       where: { id },
+      include: {
+        student: { select: { unitId: true } }
+      }
     });
 
     if (!attendance) {
       throw Errors.notFound('Attendance record');
+    }
+
+    // Check permission for non-super-admins
+    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+      if (attendance.student.unitId !== currentUser.unitId) {
+        throw Errors.forbidden('Access denied to delete attendance for this unit');
+      }
     }
 
     await prisma.attendance.delete({

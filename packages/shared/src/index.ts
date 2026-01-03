@@ -8,3 +8,4 @@ export * from './types/dashboard';
 export * from './types/attendance';
 export * from './types/daily-report';
 export * from './types/class';
+export * from './types/finance';

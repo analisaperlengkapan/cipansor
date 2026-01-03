@@ -70,11 +70,19 @@ export class AuthService {
       data: { lastLoginAt: new Date() },
     });
 
+    // Get active academic year
+    const academicYear = await prisma.academicYear.findFirst({
+      where: { isActive: true },
+    });
+
     // Return user without password
     const { passwordHash, ...userWithoutPassword } = user;
 
     return {
-      user: userWithoutPassword,
+      user: {
+        ...userWithoutPassword,
+        academicYearId: academicYear?.id,
+      },
       ...tokens,
     };
   }
@@ -228,8 +236,16 @@ export class AuthService {
       throw Errors.notFound('User');
     }
 
+    // Get active academic year
+    const academicYear = await prisma.academicYear.findFirst({
+      where: { isActive: true },
+    });
+
     const { passwordHash, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return {
+      ...userWithoutPassword,
+      academicYearId: academicYear?.id,
+    };
   }
 
   /**

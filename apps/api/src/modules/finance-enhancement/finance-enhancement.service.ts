@@ -528,52 +528,76 @@ export class FinanceEnhancementService {
   }): Promise<IncomeExpenseReport> {
     const { unitId, startDate, endDate, groupBy = 'month' } = params;
 
-    // Fetch entries joined with account to filter by type REVENUE/EXPENSE
-    // This is hard to do with pure groupBy unless we filter by account IDs first.
-    // Given the need for date grouping + account type filtering, raw query might be cleaner,
-    // or we fetch relevant entries.
+    // Optimization: Use prisma.$queryRaw for efficient database-level aggregation
+    // This avoids fetching thousands of records into memory
 
-    const entries = await prisma.journalEntry.findMany({
-      where: {
-        unitId,
-        date: { gte: startDate, lte: endDate },
-        account: {
-          type: { in: ['REVENUE', 'EXPENSE'] } // Prisma Enum mapping
-        }
-      },
-      include: {
-        account: { select: { type: true } }
-      },
-      orderBy: { date: 'asc' }
-    });
+    const dateFormat = groupBy === 'month' ? 'YYYY-MM' : 'YYYY-MM-DD';
 
+    // Note: We use raw table names "journal_entries" and "account_codes" and snake_case columns
+    // We also handle the filtering for 'REVENUE' and 'EXPENSE' account types
+
+    const results = await prisma.$queryRaw<Array<{ period: string, type: string, total: bigint }>>`
+      SELECT
+        TO_CHAR(je.date, ${dateFormat}) as period,
+        ac.type,
+        SUM(COALESCE(je.credit, 0) - COALESCE(je.debit, 0)) as total
+      FROM "journal_entries" je
+      JOIN "account_codes" ac ON je.account_id = ac.id
+      WHERE je.unit_id = ${unitId}
+        AND je.date >= ${startDate}
+        AND je.date <= ${endDate}
+        AND ac.type IN ('REVENUE', 'EXPENSE')
+      GROUP BY 1, 2
+      ORDER BY 1 ASC
+    `;
+
+    // Process results into the desired format
+    const breakdownMap: Record<string, { income: number; expense: number }> = {};
     let totalIncome = 0;
     let totalExpense = 0;
-    const breakdownMap: Record<string, { income: number; expense: number }> = {};
 
-    for (const entry of entries) {
-      const isIncome = entry.account.type === 'REVENUE';
-      const isExpense = entry.account.type === 'EXPENSE';
+    results.forEach((row) => {
+      const period = row.period;
+      // Note: total is BigInt, cast to Number (safe for finance reports usually, or use string)
+      // Revenue is usually positive in this calculation (Credit - Debit),
+      // Expense is usually negative if we did Credit - Debit, but let's handle signs carefully.
 
-      const dateKey = groupBy === 'month'
-        ? `${entry.date.getFullYear()}-${String(entry.date.getMonth() + 1).padStart(2, '0')}`
-        : entry.date.toISOString().split('T')[0];
+      // Actually, for Account Type:
+      // Revenue: Credit increases it.
+      // Expense: Debit increases it.
+      // The query did SUM(Credit - Debit).
+      // So Revenue items will be positive.
+      // Expense items will be negative (since they are mostly Debit).
 
-      if (!breakdownMap[dateKey]) {
-        breakdownMap[dateKey] = { income: 0, expense: 0 };
+      const val = Number(row.total);
+
+      if (!breakdownMap[period]) {
+        breakdownMap[period] = { income: 0, expense: 0 };
       }
 
-      if (isIncome) {
-        const val = Number(entry.credit); // Revenue is usually Credit
-        totalIncome += val;
-        breakdownMap[dateKey].income += val;
+      if (row.type === 'REVENUE') {
+        // Revenue is Credit balance
+        const amount = val; // Positive
+        breakdownMap[period].income += amount;
+        totalIncome += amount;
+      } else if (row.type === 'EXPENSE') {
+        // Expense is Debit balance.
+        // Query did Credit - Debit. So Expense entries (Debit) resulted in negative val.
+        // We want positive magnitude for the report.
+        const amount = -val;
+        breakdownMap[period].expense += amount;
+        totalExpense += amount;
       }
-      if (isExpense) {
-        const val = Number(entry.debit); // Expense is usually Debit
-        totalExpense += val;
-        breakdownMap[dateKey].expense += val;
-      }
-    }
+    });
+
+    const breakdown = Object.entries(breakdownMap)
+      .map(([period, data]) => ({
+        period,
+        income: data.income,
+        expense: data.expense,
+        net: data.income - data.expense
+      }))
+      .sort((a, b) => a.period.localeCompare(b.period));
 
     return {
       period: {
@@ -585,13 +609,7 @@ export class FinanceEnhancementService {
         totalExpense,
         netIncome: totalIncome - totalExpense
       },
-      breakdown: Object.entries(breakdownMap)
-        .map(([period, data]) => ({
-          period,
-          ...data,
-          net: data.income - data.expense
-        }))
-        .sort((a, b) => a.period.localeCompare(b.period))
+      breakdown
     };
   }
 }

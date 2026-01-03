@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FinanceEnhancementService } from '../../../src/modules/finance-enhancement/finance-enhancement.service';
 import { prisma } from '../../../src/lib/prisma';
-import { AccountType, JournalReferenceType } from '@cipansor/shared';
+import { AccountType } from '@cipansor/shared';
 
 // Mock Prisma
 vi.mock('../../../src/lib/prisma', () => ({
@@ -36,7 +36,8 @@ vi.mock('../../../src/lib/prisma', () => ({
       findMany: vi.fn(),
       count: vi.fn(),
       create: vi.fn(),
-    }
+    },
+    $queryRaw: vi.fn(),
   }
 }));
 
@@ -91,15 +92,10 @@ describe('FinanceEnhancementService', () => {
         createdById: 'user1'
       };
 
-      // Use string for decimal in mock return if mimicking Prisma Decimal
-      // But typically we mock the resolved object.
-      // The service maps Decimal to Number.
-      // Let's assume Prisma returns an object with a number-like property or we mock the exact shape if needed.
-      // Since the service does `Number(entry.debit)`, we can pass a number or a string.
       (prisma.journalEntry.create as any).mockResolvedValue({
         id: '1',
         ...input,
-        debit: 1000, // as number for simplicity in mock, service logic handles casting
+        debit: 1000,
         credit: 0
       });
 
@@ -134,6 +130,33 @@ describe('FinanceEnhancementService', () => {
       expect(result.totals.debit).toBe(1000);
       expect(result.totals.credit).toBe(1000);
       expect(result.isBalanced).toBe(true);
+    });
+  });
+
+  describe('Reports: Income Expense', () => {
+    it('should calculate income expense report correctly', async () => {
+      // Mock $queryRaw response
+      const mockRawData = [
+        { period: '2023-10', type: 'REVENUE', total: BigInt(5000) },
+        { period: '2023-10', type: 'EXPENSE', total: BigInt(-2000) }
+      ];
+
+      (prisma.$queryRaw as any).mockResolvedValue(mockRawData);
+
+      const result = await service.getIncomeExpenseReport({
+        unitId: 'u1',
+        startDate: new Date('2023-01-01'),
+        endDate: new Date('2023-12-31'),
+        groupBy: 'month'
+      });
+
+      expect(prisma.$queryRaw).toHaveBeenCalled();
+      expect(result.summary.totalIncome).toBe(5000);
+      expect(result.summary.totalExpense).toBe(2000);
+      expect(result.summary.netIncome).toBe(3000);
+      expect(result.breakdown).toHaveLength(1);
+      expect(result.breakdown[0].period).toBe('2023-10');
+      expect(result.breakdown[0].net).toBe(3000);
     });
   });
 });

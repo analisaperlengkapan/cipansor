@@ -3,6 +3,7 @@ import { Errors } from '@/middleware/error';
 import { UserRole, TahfidzActivityType, Prisma } from '@prisma/client';
 import type {
   ListTahfidzQuery,
+  GenerateCertificateInput,
 } from './tahfidz.schema';
 import type { CreateTahfidzInput, UpdateTahfidzInput, TahfidzStudentSummary, TahfidzDashboardStats } from '@cipansor/shared';
 
@@ -518,6 +519,126 @@ export class TahfidzService {
       topStudents: topStudentsWithJuz,
       recentRecords: recentRecords as any[], // Cast to any[] to bypass strict shared type check against Prisma result
     };
+  }
+
+  /**
+   * Generate or retrieve certificate
+   */
+  async generateCertificate(input: GenerateCertificateInput, createdById: string) {
+    const { studentId, certificateType, issueDate = new Date() } = input;
+    const date = new Date(issueDate);
+
+    // Check if certificate already exists
+    const existing = await prisma.digitalCertificate.findFirst({
+      where: {
+        studentId,
+        certificateType,
+      },
+      include: {
+        student: true,
+      }
+    });
+
+    if (existing) {
+      // Update details if needed (e.g. reprint with corrections), but keep number
+       const updated = await prisma.digitalCertificate.update({
+        where: { id: existing.id },
+        data: {
+            grade: input.grade,
+            signatoryName: input.musyrifName || existing.signatoryName,
+            description: input.notes,
+            // We could store more details in description or dedicated fields if model allowed
+        },
+        include: {
+          student: true,
+        }
+       });
+       return updated;
+    }
+
+    // Generate new Number
+    // Format: [SEQ]/[TYPE]/CPN/[MM]/[YYYY]
+    // SEQ resets every month
+
+    // Determine the TYPE code
+    let typeCode = 'TAHFIDZ';
+    if (certificateType === 'TAHFIDZ_JUZ_AMMA') typeCode = 'JUZ30';
+    else if (certificateType === 'TAHFIDZ_5_JUZ') typeCode = '5JUZ';
+    else if (certificateType === 'TAHFIDZ_10_JUZ') typeCode = '10JUZ';
+    else if (certificateType === 'TAHFIDZ_30_JUZ') typeCode = '30JUZ';
+    else if (certificateType === 'SANAD_QIRAAH') typeCode = 'QIRAAH';
+
+    // Get month and year for formatting
+    const month = date.getMonth() + 1; // 1-12
+    const year = date.getFullYear();
+    const monthStr = month.toString().padStart(2, '0');
+
+    // Retry logic for sequence generation
+    let retries = 0;
+    const maxRetries = 5;
+
+    while (retries < maxRetries) {
+       try {
+         // Optimized: Find the latest certificate number for this month/year pattern
+         const pattern = `%/${typeCode}/CPN/${monthStr}/${year}`;
+         const latestCert = await prisma.digitalCertificate.findFirst({
+             where: {
+                 certificateNumber: {
+                     endsWith: `/${typeCode}/CPN/${monthStr}/${year}`
+                 }
+             },
+             orderBy: {
+                 certificateNumber: 'desc'
+             },
+             select: {
+                 certificateNumber: true
+             }
+         });
+
+         let nextSeq = 1;
+         if (latestCert) {
+             const parts = latestCert.certificateNumber.split('/');
+             const lastSeq = parseInt(parts[0], 10);
+             if (!isNaN(lastSeq)) {
+                 nextSeq = lastSeq + 1 + retries; // Add retries to jump over gaps/collisions in loop
+             }
+         }
+
+         const seq = nextSeq.toString().padStart(3, '0');
+         const certificateNumber = `${seq}/${typeCode}/CPN/${monthStr}/${year}`;
+
+         // Generate generic placeholder values for required fields
+         const cert = await prisma.digitalCertificate.create({
+            data: {
+                studentId,
+                certificateType,
+                certificateNumber,
+                title: 'Sertifikat Tahfidz',
+                grade: input.grade,
+                issueDate: date,
+                qrCode: crypto.randomUUID(), // Placeholder unique QR code
+                verificationUrl: `https://cipansor.com/verify/${crypto.randomUUID()}`, // Placeholder
+                signatoryName: input.musyrifName || 'Administrator',
+                signatoryTitle: 'Musyrif Tahfidz',
+                description: input.notes,
+                createdById,
+            },
+            include: {
+              student: true,
+            }
+         });
+
+         return cert;
+
+       } catch (e: any) {
+         if (e.code === 'P2002') { // Unique constraint failed
+            retries++;
+            continue;
+         }
+         throw e;
+       }
+    }
+    throw new Error('Failed to generate unique certificate number after multiple retries');
   }
 }
 

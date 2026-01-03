@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { MainLayout } from '@/components/layout';
 import { PageHeader, DataTable, SearchInput, ConfirmDialog } from '@/components/shared';
-import { useClasses, useDeleteClass, Class } from '@/hooks/use-classes';
+import { useClasses, useDeleteClass } from '@/hooks/use-classes';
+import { Class } from '@cipansor/shared';
 import { useUnits } from '@/hooks/use-units';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -101,7 +102,7 @@ export default function ClassesPage() {
       accessorKey: 'homeroomTeacher',
       header: 'Homeroom Teacher',
       cell: ({ row }) => (
-        <span className="text-sm">{row.original.homeroomTeacher?.name || '-'}</span>
+        <span className="text-sm">{row.original.homeroomTeacher?.user.name || '-'}</span>
       ),
     },
     {

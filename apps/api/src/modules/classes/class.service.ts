@@ -130,7 +130,10 @@ export class ClassService {
           where: { status: 'active' },
           include: {
             student: {
-              include: {
+              select: {
+                id: true,
+                nis: true,
+                gender: true,
                 user: {
                   select: {
                     id: true,
@@ -405,7 +408,10 @@ export class ClassService {
       },
       include: {
         student: {
-          include: {
+          select: {
+            id: true,
+            nis: true,
+            gender: true,
             user: {
               select: { id: true, name: true },
             },
@@ -474,7 +480,10 @@ export class ClassService {
       },
       include: {
         student: {
-          include: {
+          select: {
+            id: true,
+            nis: true,
+            gender: true,
             user: {
               select: {
                 id: true,

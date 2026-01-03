@@ -9,6 +9,7 @@ import { PageHeader } from '@/components/shared';
 import {
     useDailyReport,
     useUpdateDailyReport,
+    DailyMood,
 } from '@/hooks/use-daily-report';
 import { useStudents } from '@/hooks/use-students';
 import { useClasses } from '@/hooks/use-classes';
@@ -126,11 +127,15 @@ export default function EditDailyReportPage() {
 
     const onSubmit = async (data: DailyReportFormData) => {
         try {
+            // Remove reportDate from data as it's not part of UpdateDailyReportInput
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { reportDate, ...updateData } = data;
+
             await updateMutation.mutateAsync({
                 id,
                 data: {
-                    ...data,
-                    reportDate: format(data.reportDate, 'yyyy-MM-dd'),
+                    ...updateData,
+                    morningMood: updateData.morningMood as DailyMood | undefined,
                 },
             });
             toast.success('Laporan harian berhasil diperbarui');

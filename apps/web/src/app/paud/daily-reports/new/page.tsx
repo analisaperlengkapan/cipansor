@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { MainLayout } from '@/components/layout';
 import { PageHeader } from '@/components/shared';
-import { useCreateDailyReport } from '@/hooks/use-daily-report';
+import { useCreateDailyReport, DailyMood } from '@/hooks/use-daily-report';
 import { useClasses } from '@/hooks/use-classes';
 import { useStudents } from '@/hooks/use-students';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -129,6 +129,7 @@ export default function CreateDailyReportPage() {
       await createMutation.mutateAsync({
         ...data,
         reportDate: format(data.reportDate, 'yyyy-MM-dd'),
+        morningMood: data.morningMood as DailyMood | undefined,
         unitId: user?.unitId || '',
         academicYearId: user?.academicYearId || '',
       });

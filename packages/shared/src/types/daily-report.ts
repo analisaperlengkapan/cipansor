@@ -60,3 +60,43 @@ export interface DailyReport {
   };
   photos?: DailyReportPhoto[];
 }
+
+export interface CreateDailyReportInput {
+  studentId: string;
+  unitId: string;
+  academicYearId: string;
+  reportDate: string;
+  morningMood?: DailyMood;
+  healthNotes?: string;
+  temperature?: number;
+  breakfastConsumption?: string; // Should be stricter ideally, but mapped in service
+  lunchConsumption?: string;
+  snackConsumption?: string;
+  napDurationMinutes?: number;
+  toiletingNotes?: string;
+  activitiesSummary?: string;
+  learningAchievements?: string;
+  surahPractice?: string;
+  behaviorNotes?: string;
+  parentNotes?: string;
+  homeworkSuggestion?: string;
+  photoUrls?: string[];
+}
+
+export interface UpdateDailyReportInput extends Partial<Omit<CreateDailyReportInput, 'studentId' | 'unitId' | 'academicYearId' | 'reportDate'>> {}
+
+export interface BulkCreateDailyReportsInput {
+  unitId: string;
+  academicYearId: string;
+  reportDate: string;
+  reports: Array<{
+    studentId: string;
+    morningMood?: DailyMood;
+    healthNotes?: string;
+    breakfastConsumption?: string;
+    lunchConsumption?: string;
+    activitiesSummary?: string;
+    ibadahNotes?: string; // tahfidzActivity
+    parentNotes?: string; // teacherNotes
+  }>;
+}

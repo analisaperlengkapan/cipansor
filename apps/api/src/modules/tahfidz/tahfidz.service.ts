@@ -516,7 +516,7 @@ export class TahfidzService {
       progressByJuz,
       monthlyActivity,
       topStudents: topStudentsWithJuz,
-      recentRecords,
+      recentRecords: recentRecords as any[], // Cast to any[] to bypass strict shared type check against Prisma result
     };
   }
 }

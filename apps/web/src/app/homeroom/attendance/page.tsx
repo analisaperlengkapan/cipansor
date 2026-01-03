@@ -44,29 +44,29 @@ interface StudentAttendance {
 
 // Demo data
 const DEMO_STUDENTS: StudentAttendance[] = [
-  { studentId: 's1', nis: '2024001', name: 'Ahmad Fauzan', gender: 'MALE', status: 'PRESENT', notes: '' },
-  { studentId: 's2', nis: '2024002', name: 'Aisyah Putri', gender: 'FEMALE', status: 'PRESENT', notes: '' },
-  { studentId: 's3', nis: '2024003', name: 'Muhammad Rizki', gender: 'MALE', status: 'PRESENT', notes: '' },
-  { studentId: 's4', nis: '2024004', name: 'Zahra Amelia', gender: 'FEMALE', status: 'PRESENT', notes: '' },
-  { studentId: 's5', nis: '2024005', name: 'Dimas Pratama', gender: 'MALE', status: 'PRESENT', notes: '' },
-  { studentId: 's6', nis: '2024006', name: 'Nur Hidayah', gender: 'FEMALE', status: 'PRESENT', notes: '' },
-  { studentId: 's7', nis: '2024007', name: 'Farel Aditya', gender: 'MALE', status: 'PRESENT', notes: '' },
-  { studentId: 's8', nis: '2024008', name: 'Siti Rahmawati', gender: 'FEMALE', status: 'PRESENT', notes: '' },
-  { studentId: 's9', nis: '2024009', name: 'Alif Rahman', gender: 'MALE', status: 'PRESENT', notes: '' },
-  { studentId: 's10', nis: '2024010', name: 'Putri Maharani', gender: 'FEMALE', status: 'PRESENT', notes: '' },
-  { studentId: 's11', nis: '2024011', name: 'Fajar Ramadhan', gender: 'MALE', status: 'PRESENT', notes: '' },
-  { studentId: 's12', nis: '2024012', name: 'Anisa Fitri', gender: 'FEMALE', status: 'PRESENT', notes: '' },
-  { studentId: 's13', nis: '2024013', name: 'Rizky Maulana', gender: 'MALE', status: 'PRESENT', notes: '' },
-  { studentId: 's14', nis: '2024014', name: 'Dewi Anggraini', gender: 'FEMALE', status: 'PRESENT', notes: '' },
-  { studentId: 's15', nis: '2024015', name: 'Budi Santoso', gender: 'MALE', status: 'PRESENT', notes: '' },
+  { studentId: 's1', nis: '2024001', name: 'Ahmad Fauzan', gender: 'MALE', status: AttendanceStatus.PRESENT, notes: '' },
+  { studentId: 's2', nis: '2024002', name: 'Aisyah Putri', gender: 'FEMALE', status: AttendanceStatus.PRESENT, notes: '' },
+  { studentId: 's3', nis: '2024003', name: 'Muhammad Rizki', gender: 'MALE', status: AttendanceStatus.PRESENT, notes: '' },
+  { studentId: 's4', nis: '2024004', name: 'Zahra Amelia', gender: 'FEMALE', status: AttendanceStatus.PRESENT, notes: '' },
+  { studentId: 's5', nis: '2024005', name: 'Dimas Pratama', gender: 'MALE', status: AttendanceStatus.PRESENT, notes: '' },
+  { studentId: 's6', nis: '2024006', name: 'Nur Hidayah', gender: 'FEMALE', status: AttendanceStatus.PRESENT, notes: '' },
+  { studentId: 's7', nis: '2024007', name: 'Farel Aditya', gender: 'MALE', status: AttendanceStatus.PRESENT, notes: '' },
+  { studentId: 's8', nis: '2024008', name: 'Siti Rahmawati', gender: 'FEMALE', status: AttendanceStatus.PRESENT, notes: '' },
+  { studentId: 's9', nis: '2024009', name: 'Alif Rahman', gender: 'MALE', status: AttendanceStatus.PRESENT, notes: '' },
+  { studentId: 's10', nis: '2024010', name: 'Putri Maharani', gender: 'FEMALE', status: AttendanceStatus.PRESENT, notes: '' },
+  { studentId: 's11', nis: '2024011', name: 'Fajar Ramadhan', gender: 'MALE', status: AttendanceStatus.PRESENT, notes: '' },
+  { studentId: 's12', nis: '2024012', name: 'Anisa Fitri', gender: 'FEMALE', status: AttendanceStatus.PRESENT, notes: '' },
+  { studentId: 's13', nis: '2024013', name: 'Rizky Maulana', gender: 'MALE', status: AttendanceStatus.PRESENT, notes: '' },
+  { studentId: 's14', nis: '2024014', name: 'Dewi Anggraini', gender: 'FEMALE', status: AttendanceStatus.PRESENT, notes: '' },
+  { studentId: 's15', nis: '2024015', name: 'Budi Santoso', gender: 'MALE', status: AttendanceStatus.PRESENT, notes: '' },
 ];
 
 const STATUS_CONFIG: Record<AttendanceStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  PRESENT: { label: 'Hadir', color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400', icon: <Check className="h-4 w-4" /> },
-  LATE: { label: 'Terlambat', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400', icon: <Clock className="h-4 w-4" /> },
-  SICK: { label: 'Sakit', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400', icon: <AlertCircle className="h-4 w-4" /> },
-  EXCUSED: { label: 'Izin', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400', icon: <AlertCircle className="h-4 w-4" /> },
-  ABSENT: { label: 'Alpha', color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400', icon: <X className="h-4 w-4" /> },
+  [AttendanceStatus.PRESENT]: { label: 'Hadir', color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400', icon: <Check className="h-4 w-4" /> },
+  [AttendanceStatus.LATE]: { label: 'Terlambat', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400', icon: <Clock className="h-4 w-4" /> },
+  [AttendanceStatus.SICK]: { label: 'Sakit', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400', icon: <AlertCircle className="h-4 w-4" /> },
+  [AttendanceStatus.EXCUSED]: { label: 'Izin', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400', icon: <AlertCircle className="h-4 w-4" /> },
+  [AttendanceStatus.ABSENT]: { label: 'Alpha', color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400', icon: <X className="h-4 w-4" /> },
 };
 
 export default function QuickAttendancePage() {
@@ -83,17 +83,17 @@ export default function QuickAttendancePage() {
   };
 
   const setAllPresent = () => {
-    setAttendances(prev => prev.map(a => ({ ...a, status: 'PRESENT' as AttendanceStatus })));
+    setAttendances(prev => prev.map(a => ({ ...a, status: AttendanceStatus.PRESENT })));
     toast.success('Semua siswa diset hadir');
   };
 
   const getSummary = () => {
     return {
-      present: attendances.filter(a => a.status === 'PRESENT').length,
-      late: attendances.filter(a => a.status === 'LATE').length,
-      sick: attendances.filter(a => a.status === 'SICK').length,
-      excused: attendances.filter(a => a.status === 'EXCUSED').length,
-      absent: attendances.filter(a => a.status === 'ABSENT').length,
+      present: attendances.filter(a => a.status === AttendanceStatus.PRESENT).length,
+      late: attendances.filter(a => a.status === AttendanceStatus.LATE).length,
+      sick: attendances.filter(a => a.status === AttendanceStatus.SICK).length,
+      excused: attendances.filter(a => a.status === AttendanceStatus.EXCUSED).length,
+      absent: attendances.filter(a => a.status === AttendanceStatus.ABSENT).length,
       total: attendances.length,
     };
   };

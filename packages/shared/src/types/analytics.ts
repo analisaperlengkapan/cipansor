@@ -5,7 +5,9 @@ export type ReportType =
   | 'ACADEMIC_PERFORMANCE'
   | 'TAHFIDZ_PROGRESS'
   | 'HEALTH_SUMMARY'
-  | 'VIOLATION_SUMMARY';
+  | 'VIOLATION_SUMMARY'
+  | 'LIBRARY_STATISTICS'
+  | 'PSB_STATISTICS';
 
 export type TimeRange = 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY' | 'CUSTOM';
 
@@ -164,6 +166,36 @@ export interface ViolationSummary {
   monthlyTrend: Array<{
     month: string;
     count: number;
+  }>;
+}
+
+export interface LibrarySummary {
+  books: {
+    totalBooks: number;
+    totalCopies: number;
+    available: number;
+  };
+  borrowings: Record<string, number>;
+  overdue: number;
+  popularBooks: Array<{
+    bookId: string;
+    title: string;
+    author: string;
+    borrowCount: number;
+  }>;
+}
+
+export interface PsbSummary {
+  totalRegistrants: number;
+  byStatus: Record<string, number>;
+  byPeriod: Array<{
+    periodId: string;
+    periodName: string;
+    quota: number;
+    registrantCount: number;
+    startDate: Date;
+    endDate: Date;
+    isActive: boolean;
   }>;
 }
 

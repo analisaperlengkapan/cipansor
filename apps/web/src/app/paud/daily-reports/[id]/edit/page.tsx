@@ -102,14 +102,9 @@ export default function EditDailyReportPage() {
 
     useEffect(() => {
         if (report) {
-            // Safe access for classId in case student relation is missing or incomplete in type
-            // The type error suggests report.student might not have classId property defined in the type
-            // casting to any for safety in this specific regression fix
-            const studentData = report.student as any;
-
             form.reset({
                 studentId: report.studentId,
-                classId: studentData?.classId || '',
+                classId: report.student?.classId || '',
                 reportDate: new Date(report.reportDate),
                 morningMood: report.mood || 'HAPPY',
                 healthNotes: report.healthStatus || '',

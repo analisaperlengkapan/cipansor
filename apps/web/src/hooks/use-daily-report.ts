@@ -1,63 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
+import { DailyReport } from '@cipansor/shared';
 
 // Types
-export interface DailyReport {
-  id: string;
-  studentId: string;
-  unitId: string;
-  academicYearId?: string;
-  reportDate: string;
-  unitType: 'PESANTREN' | 'TK_QURAN' | 'SD_IT' | 'SMP_IT' | 'SMA_QURAN' | 'OTHER';
-  arrivalTime?: string;
-  mood?: 'HAPPY' | 'NEUTRAL' | 'SAD' | 'TIRED' | 'EXCITED' | 'SICK';
-  healthStatus?: string;
-  temperature?: number;
-  hadBreakfast?: boolean;
-  mealStatus?: 'HABIS' | 'SETENGAH' | 'SEDIKIT' | 'TIDAK_MAU';
-  snackStatus?: 'HABIS' | 'SETENGAH' | 'SEDIKIT' | 'TIDAK_MAU';
-  napDuration?: number;
-  toiletNotes?: string;
-  sholatDhuha?: boolean;
-  tahfidzActivity?: string;
-  activitiesSummary?: string;
-  achievements?: string;
-  behaviorNotes?: string;
-  teacherNotes?: string;
-  homeActivity?: string;
-  departureTime?: string;
-  pickedUpBy?: string;
-  parentReadAt?: string;
-  createdById: string;
-  createdAt: string;
-  updatedAt: string;
-  student?: {
-    id: string;
-    nis: string;
-    photoUrl?: string;
-    user?: {
-      name: string;
-    };
-  };
-  unit?: {
-    id: string;
-    name: string;
-  };
-  createdBy?: {
-    id: string;
-    name: string;
-  };
-  photos?: DailyReportPhoto[];
-}
-
-export interface DailyReportPhoto {
-  id: string;
-  dailyReportId: string;
-  photoUrl: string;
-  caption?: string;
-  activityType?: string;
-  createdAt: string;
-}
+export { type DailyReport };
 
 export interface DailyReportFilters {
   page?: number;

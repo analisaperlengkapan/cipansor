@@ -136,6 +136,11 @@ export const dailyReportService = {
             nis: true,
             birthDate: true,
             user: { select: { id: true, name: true } },
+            enrollments: {
+              where: { status: 'active' },
+              select: { classId: true },
+              take: 1,
+            },
           },
         },
         unit: { select: { id: true, name: true, type: true } },
@@ -146,7 +151,13 @@ export const dailyReportService = {
       },
     });
 
-    return report;
+    return {
+      ...report,
+      student: {
+        ...report.student,
+        classId: report.student.enrollments[0]?.classId,
+      },
+    };
   },
 
   async findByStudentAndDate(studentId: string, date: Date) {

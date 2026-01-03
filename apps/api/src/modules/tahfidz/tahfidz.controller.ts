@@ -94,10 +94,10 @@ export const getStudentSummary = asyncHandler(async (req: Request, res: Response
   const summary = await tahfidzService.getStudentSummary(studentId);
 
   // Summary object structure is specific, but recentRecords inside it should be mapped
-  const safeSummary: TahfidzStudentSummary = {
+  const safeSummary = {
     ...summary,
     recentRecords: TahfidzMapper.toSharedRecords(summary.recentRecords)
-  };
+  } as unknown as TahfidzStudentSummary;
 
   res.json({
     success: true,

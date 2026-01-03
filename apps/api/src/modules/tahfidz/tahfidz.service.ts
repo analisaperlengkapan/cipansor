@@ -4,7 +4,7 @@ import { UserRole, TahfidzActivityType, Prisma } from '@prisma/client';
 import type {
   ListTahfidzQuery,
 } from './tahfidz.schema';
-import type { CreateTahfidzInput, UpdateTahfidzInput } from '@cipansor/shared';
+import type { CreateTahfidzInput, UpdateTahfidzInput, TahfidzStudentSummary, TahfidzDashboardStats } from '@cipansor/shared';
 
 export class TahfidzService {
   /**
@@ -212,6 +212,7 @@ export class TahfidzService {
 
   /**
    * Get student tahfidz summary/progress
+   * Optimized with Promise.all for parallel execution
    */
   async getStudentSummary(studentId: string) {
     const student = await prisma.student.findFirst({
@@ -226,54 +227,58 @@ export class TahfidzService {
       throw Errors.notFound('Student');
     }
 
-    // Get activity type counts
-    const activityCounts = await prisma.tahfidzRecord.groupBy({
-      by: ['activityType'],
-      where: { studentId },
-      _count: { _all: true },
-      _sum: { totalAyah: true },
-    });
-
-    // Get total records
-    const totalRecords = await prisma.tahfidzRecord.count({
-      where: { studentId },
-    });
-
-    // Get total ayah memorized (ziyadah only)
-    const totalAyahZiyadah = await prisma.tahfidzRecord.aggregate({
-      where: { studentId, activityType: 'ZIYADAH' },
-      _sum: { totalAyah: true },
-    });
-
-    // Get unique juz covered
-    const juzCovered = await prisma.tahfidzRecord.findMany({
-      where: { studentId },
-      select: { juz: true },
-      distinct: ['juz'],
-    });
-
-    // Get unique surah covered
-    const surahCovered = await prisma.tahfidzRecord.findMany({
-      where: { studentId },
-      select: { surahNumber: true, surahName: true },
-      distinct: ['surahNumber'],
-    });
-
-    // Get average score from assessments
-    const avgScore = await prisma.tahfidzRecord.aggregate({
-      where: { studentId, activityType: 'ASSESSMENT', score: { not: null } },
-      _avg: { score: true },
-    });
-
-    // Get recent records
-    const recentRecords = await prisma.tahfidzRecord.findMany({
-      where: { studentId },
-      orderBy: { recordedAt: 'desc' },
-      take: 5,
-      include: {
-        recordedBy: { select: { id: true, name: true } },
-      },
-    });
+    const [
+      activityCounts,
+      totalRecords,
+      totalAyahZiyadah,
+      juzCovered,
+      surahCovered,
+      avgScore,
+      recentRecords
+    ] = await Promise.all([
+      // 1. Get activity type counts
+      prisma.tahfidzRecord.groupBy({
+        by: ['activityType'],
+        where: { studentId },
+        _count: { _all: true },
+        _sum: { totalAyah: true },
+      }),
+      // 2. Get total records
+      prisma.tahfidzRecord.count({
+        where: { studentId },
+      }),
+      // 3. Get total ayah memorized (ziyadah only)
+      prisma.tahfidzRecord.aggregate({
+        where: { studentId, activityType: 'ZIYADAH' },
+        _sum: { totalAyah: true },
+      }),
+      // 4. Get unique juz covered
+      prisma.tahfidzRecord.findMany({
+        where: { studentId },
+        select: { juz: true },
+        distinct: ['juz'],
+      }),
+      // 5. Get unique surah covered
+      prisma.tahfidzRecord.findMany({
+        where: { studentId },
+        select: { surahNumber: true, surahName: true },
+        distinct: ['surahNumber'],
+      }),
+      // 6. Get average score from assessments
+      prisma.tahfidzRecord.aggregate({
+        where: { studentId, activityType: 'ASSESSMENT', score: { not: null } },
+        _avg: { score: true },
+      }),
+      // 7. Get recent records
+      prisma.tahfidzRecord.findMany({
+        where: { studentId },
+        orderBy: { recordedAt: 'desc' },
+        take: 5,
+        include: {
+          recordedBy: { select: { id: true, name: true } },
+        },
+      })
+    ]);
 
     return {
       student,
@@ -298,7 +303,7 @@ export class TahfidzService {
   /**
    * Get tahfidz dashboard stats for visualization
    */
-  async getDashboardStats(params: { unitId?: string; year?: number; month?: number }) {
+  async getDashboardStats(params: { unitId?: string; year?: number; month?: number }): Promise<TahfidzDashboardStats & { recentRecords: any[] }> {
     const { unitId, year, month } = params;
     const currentYear = year || new Date().getFullYear();
 
@@ -504,7 +509,7 @@ export class TahfidzService {
       totalRecords,
       totalStudents: uniqueStudents.length,
       recordsByType: recordsByType.map((r) => ({
-        type: r.activityType,
+        type: r.activityType as any, // Cast to any to satisfy Shared Type if mismatch exists
         count: r._count._all,
       })),
       recordsByGrade,

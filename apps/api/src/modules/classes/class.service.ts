@@ -362,7 +362,7 @@ export class ClassService {
   /**
    * Enroll student in class
    */
-  async enrollStudent(classId: string, input: EnrollStudentInput) {
+  async enrollStudent(classId: string, input: EnrollStudentInput): Promise<ClassEnrollment> {
     const classData = await prisma.class.findFirst({
       where: { id: classId, deletedAt: null },
       include: {
@@ -420,7 +420,7 @@ export class ClassService {
       },
     });
 
-    return enrollment;
+    return enrollment as unknown as ClassEnrollment;
   }
 
   /**
@@ -471,7 +471,7 @@ export class ClassService {
   /**
    * Get enrollments for a class
    */
-  async getEnrollments(classId: string) {
+  async getEnrollments(classId: string): Promise<ClassEnrollment[]> {
     const enrollments = await prisma.classEnrollment.findMany({
       where: {
         classId,
@@ -503,7 +503,7 @@ export class ClassService {
       },
     });
 
-    return enrollments;
+    return enrollments as unknown as ClassEnrollment[];
   }
 }
 

@@ -1,3 +1,5 @@
+import { Gender } from './enums';
+
 export interface Class {
   id: string;
   name: string;
@@ -50,8 +52,8 @@ export interface ClassEnrollment {
   status: string; // 'active', etc.
   student?: {
     id: string;
-    nis?: string | null;
-    gender?: string | null; // e.g. 'MALE' | 'FEMALE'
+    nis: string; // Required from DB
+    gender: Gender; // Required from DB
     name?: string; // Derived/Fallback
     user?: {
       id: string;

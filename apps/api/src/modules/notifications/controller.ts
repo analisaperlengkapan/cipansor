@@ -136,7 +136,8 @@ export async function getStats(req: Request, res: Response, next: NextFunction) 
 export async function getTemplates(req: Request, res: Response, next: NextFunction) {
   try {
     const query = queryTemplateSchema.parse(req.query);
-    const result = await service.getTemplates(query);
+    const unitId = (req as any).user?.unitId;
+    const result = await service.getTemplates(query, unitId);
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -145,7 +146,8 @@ export async function getTemplates(req: Request, res: Response, next: NextFuncti
 
 export async function getTemplateById(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await service.getTemplateById(req.params.id);
+    const unitId = (req as any).user?.unitId;
+    const result = await service.getTemplateById(req.params.id, unitId);
     if (!result) {
       throw Errors.notFound("Template not found");
     }

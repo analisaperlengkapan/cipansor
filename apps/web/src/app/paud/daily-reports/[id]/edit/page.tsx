@@ -112,9 +112,9 @@ export default function EditDailyReportPage() {
 
     const onSubmit = async (data: DailyReportFormData) => {
         try {
-            // Remove reportDate from data as it's not part of UpdateDailyReportInput
+            // Remove fields that shouldn't be updated
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { reportDate, ...updateData } = data;
+            const { reportDate, studentId, classId, ...updateData } = data;
 
             await updateMutation.mutateAsync({
                 id,

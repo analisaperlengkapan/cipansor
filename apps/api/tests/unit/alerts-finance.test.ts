@@ -21,7 +21,7 @@ interface StatMock {
     stddev_val: number;
 }
 
-// Mock dependencies
+// Mock dependencies with inline object to avoid hoisting issues
 vi.mock('../../src/lib/prisma', () => ({
     prisma: {
         invoice: {
@@ -41,8 +41,38 @@ vi.mock('../../src/lib/prisma', () => ({
         attendance: {
             findMany: vi.fn(),
         },
+        notification: {
+            findMany: vi.fn(),
+        },
         $queryRaw: vi.fn(),
-    },
+    }
+}));
+
+// Also mock the alias path just in case, with the same inline structure
+vi.mock('@/lib/prisma', () => ({
+    prisma: {
+        invoice: {
+            findMany: vi.fn(),
+            groupBy: vi.fn(),
+        },
+        student: {
+            findMany: vi.fn(),
+            findUnique: vi.fn(),
+        },
+        grade: {
+            findMany: vi.fn(),
+        },
+        violation: {
+            groupBy: vi.fn(),
+        },
+        attendance: {
+            findMany: vi.fn(),
+        },
+        notification: {
+            findMany: vi.fn(),
+        },
+        $queryRaw: vi.fn(),
+    }
 }));
 
 vi.mock('../../src/modules/notifications/service', () => ({
@@ -100,6 +130,9 @@ describe('Finance Anomaly Detection', () => {
         // Mock groupBy to return no duplicates for this test case
         (prisma.invoice.groupBy as any).mockResolvedValue([]);
 
+        // Mock existing notifications to allow sending
+        (prisma.notification.findMany as any).mockResolvedValue([]);
+
         // Mock other rules data to return empty
         (prisma.student.findMany as any).mockResolvedValue([]);
         (prisma.grade.findMany as any).mockResolvedValue([]);
@@ -142,6 +175,9 @@ describe('Finance Anomaly Detection', () => {
             user: { name: 'Student 1', id: 'u1' }
         });
 
+        // Mock existing notifications to allow sending
+        (prisma.notification.findMany as any).mockResolvedValue([]);
+
         // Mock other rules data to return empty
         (prisma.student.findMany as any).mockResolvedValue([]);
         (prisma.grade.findMany as any).mockResolvedValue([]);
@@ -179,6 +215,7 @@ describe('Finance Anomaly Detection', () => {
             ]);
         });
         (prisma.invoice.groupBy as any).mockResolvedValue([]);
+        (prisma.notification.findMany as any).mockResolvedValue([]);
         (prisma.student.findMany as any).mockResolvedValue([]);
         (prisma.grade.findMany as any).mockResolvedValue([]);
         (prisma.violation.groupBy as any).mockResolvedValue([]);

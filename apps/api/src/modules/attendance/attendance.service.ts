@@ -17,6 +17,16 @@ import type {
 
 export class AttendanceService {
   /**
+   * Helper to safely map Prisma Attendance to Shared Attendance
+   */
+  private mapToShared(record: any): Attendance {
+    return {
+      ...record,
+      status: record.status as unknown as AttendanceStatus,
+    };
+  }
+
+  /**
    * Get attendance records with pagination
    */
   async findAll(query: ListAttendanceQuery, currentUser: { role: UserRole; unitId: string | null }) {
@@ -45,12 +55,19 @@ export class AttendanceService {
       where.status = status as unknown as PrismaAttendanceStatus;
     }
 
-    // Date filtering
+    // Date filtering with timezone safety
     if (date) {
-      const targetDate = new Date(date);
+      const d = new Date(date);
+      // Use string comparison for date part to avoid timezone shifts if storing as Date
+      // OR explicitly set UTC boundaries if the DB stores timestamps
+      // Assuming DB stores DateTime (timestamp), we need range coverage
+      // Using UTC methods to ignore server local timezone
+      const startOfDay = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
+      const endOfDay = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
+
       where.date = {
-        gte: new Date(targetDate.setHours(0, 0, 0, 0)),
-        lt: new Date(targetDate.setHours(23, 59, 59, 999)),
+        gte: startOfDay,
+        lte: endOfDay,
       };
     } else if (startDate && endDate) {
       where.date = {
@@ -85,13 +102,7 @@ export class AttendanceService {
     ]);
 
     // Map to shared type Attendance
-    const mappedRecords: Attendance[] = records.map(r => ({
-      ...r,
-      date: r.date,
-      createdAt: r.createdAt,
-      updatedAt: r.updatedAt,
-      status: r.status as unknown as AttendanceStatus
-    }));
+    const mappedRecords: Attendance[] = records.map(this.mapToShared);
 
     return {
       records: mappedRecords,
@@ -126,10 +137,7 @@ export class AttendanceService {
       throw Errors.notFound('Attendance record');
     }
 
-    return {
-      ...attendance,
-      status: attendance.status as unknown as AttendanceStatus
-    };
+    return this.mapToShared(attendance);
   }
 
   /**
@@ -160,13 +168,16 @@ export class AttendanceService {
 
     // Check for duplicate attendance on same date
     const inputDate = new Date(input.date);
+    const startOfDay = new Date(Date.UTC(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 0, 0, 0, 0));
+    const endOfDay = new Date(Date.UTC(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 23, 59, 59, 999));
+
     const existingAttendance = await prisma.attendance.findFirst({
       where: {
         studentId: input.studentId,
         classId: input.classId,
         date: {
-          gte: new Date(new Date(inputDate).setHours(0, 0, 0, 0)),
-          lt: new Date(new Date(inputDate).setHours(23, 59, 59, 999)),
+          gte: startOfDay,
+          lte: endOfDay,
         },
       },
     });
@@ -194,10 +205,7 @@ export class AttendanceService {
       },
     });
 
-    return {
-      ...attendance,
-      status: attendance.status as unknown as AttendanceStatus
-    };
+    return this.mapToShared(attendance);
   }
 
   /**
@@ -228,15 +236,18 @@ export class AttendanceService {
 
     // Check for existing attendance on this date
     const targetDate = new Date(input.date);
+    const startOfDay = new Date(Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0));
+    const endOfDay = new Date(Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59, 999));
+
     const existingAttendance = await prisma.attendance.findMany({
       where: {
         classId: input.classId,
         date: {
-          gte: new Date(targetDate.setHours(0, 0, 0, 0)),
-          lt: new Date(new Date(targetDate).setHours(23, 59, 59, 999)),
+          gte: startOfDay,
+          lte: endOfDay,
         },
       },
-      select: { studentId: true },
+      select: { studentId: true, id: true },
     });
 
     const existingStudentIds = new Set(existingAttendance.map(a => a.studentId));
@@ -294,10 +305,7 @@ export class AttendanceService {
       },
     });
 
-    return {
-      ...updated,
-      status: updated.status as unknown as AttendanceStatus
-    };
+    return this.mapToShared(updated);
   }
 
   /**
@@ -358,7 +366,7 @@ export class AttendanceService {
     const total = await prisma.attendance.count({ where });
 
     // Transform to summary object
-    const counts = {
+    const counts: Record<string, number> = {
       total,
       present: 0,
       absent: 0,
@@ -367,29 +375,42 @@ export class AttendanceService {
       excused: 0,
     };
 
+    // Dynamic mapping from DB status to response keys
+    // Assumes shared AttendanceStatus keys map to lowercase response keys
     for (const item of statusCounts) {
-      const statusKey = item.status.toLowerCase();
-      // Ensure we map known statuses correctly
-      if (statusKey === 'present') counts.present = item._count._all;
-      else if (statusKey === 'absent') counts.absent = item._count._all;
-      else if (statusKey === 'late') counts.late = item._count._all;
-      else if (statusKey === 'sick') counts.sick = item._count._all;
-      else if (statusKey === 'excused') counts.excused = item._count._all;
+      const statusKey = item.status.toString().toLowerCase();
+      // Only assign if it's a known key to avoid pollution, or just assign everything if dynamic
+      if (statusKey in counts || ['present', 'absent', 'late', 'sick', 'excused'].includes(statusKey)) {
+        counts[statusKey] = item._count._all;
+      }
+    }
+
+    // Explicitly handle mapping if Enums don't match exactly (e.g. EXCUSED vs PERMISSION)
+    // Though we try to align them, let's be safe.
+    // 'PERMISSION' in DB -> 'excused' in shared type?
+    const permissionCount = statusCounts.find(s => s.status === 'PERMISSION' as PrismaAttendanceStatus)?._count._all || 0;
+    if (permissionCount > 0) {
+      counts.excused = (counts.excused || 0) + permissionCount;
     }
 
     // Calculate percentages
-    const percentages = {
-      present: total > 0 ? ((counts.present / total) * 100).toFixed(1) : '0',
-      absent: total > 0 ? ((counts.absent / total) * 100).toFixed(1) : '0',
-      late: total > 0 ? ((counts.late / total) * 100).toFixed(1) : '0',
-      sick: total > 0 ? ((counts.sick / total) * 100).toFixed(1) : '0',
-      excused: total > 0 ? ((counts.excused / total) * 100).toFixed(1) : '0',
+    const percentages: Record<string, string> = {
+      present: '0',
+      absent: '0',
+      late: '0',
+      sick: '0',
+      excused: '0'
     };
 
+    Object.keys(percentages).forEach(key => {
+       percentages[key] = total > 0 ? ((counts[key] / total) * 100).toFixed(1) : '0';
+    });
+
+    // Ensure type safety for the return
     return {
       period: { startDate, endDate },
-      counts,
-      percentages,
+      counts: counts as AttendanceSummary['counts'],
+      percentages: percentages as AttendanceSummary['percentages'],
     };
   }
 
@@ -417,9 +438,9 @@ export class AttendanceService {
 
     const totalStudents = classInfo.enrollments.length;
 
-    // Calculate start and end of month
-    const startOfMonth = new Date(year, month, 1);
-    const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
+    // Calculate start and end of month using UTC to avoid timezone issues
+    const startOfMonth = new Date(Date.UTC(year, month, 1));
+    const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
 
     // Get all attendance records for the month
     const attendances = await prisma.attendance.findMany({
@@ -461,7 +482,10 @@ export class AttendanceService {
         case 'ABSENT': day.absent++; break;
         case 'LATE': day.late++; break;
         case 'SICK': day.sick++; break;
-        case 'EXCUSED': day.excused++; break;
+        case 'EXCUSED':
+        case 'PERMISSION' as any: // Handle generic prisma mapping
+          day.excused++;
+          break;
       }
     }
 

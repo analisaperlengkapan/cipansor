@@ -546,37 +546,31 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
   // Calculate exact number of passing grades by joining Grade, Exam (optional), and Subject.
   // Priority: Exam.passingScore > Subject.passingScore > 70 (default)
   // We use queryRaw for this complex join condition not easily expressible in Prisma findMany/aggregate
-  const [passingGradesResult, passingGradesBySubjectResult] = await Promise.all([
-    prisma.$queryRaw<Array<{ count: bigint }>>`
-      SELECT COUNT(*)::bigint as count
-      FROM grades g
-      LEFT JOIN exams e ON g.exam_id = e.id
-      JOIN subjects s ON g.subject_id = s.id
-      WHERE g.score >= COALESCE(e.passing_score, s.passing_score, 70)
-      ${unitId ? Prisma.sql`AND s.unit_id = ${unitId}` : Prisma.empty}
-    `,
-    // Calculate passing grades per subject
-    prisma.$queryRaw<Array<{ subjectId: string; count: bigint }>>`
-      SELECT
-        g.subject_id as "subjectId",
-        COUNT(*)::bigint as count
-      FROM grades g
-      LEFT JOIN exams e ON g.exam_id = e.id
-      JOIN subjects s ON g.subject_id = s.id
-      WHERE g.score >= COALESCE(e.passing_score, s.passing_score, 70)
-      ${unitId ? Prisma.sql`AND s.unit_id = ${unitId}` : Prisma.empty}
-      GROUP BY g.subject_id
-    `
-  ]);
 
-  const passingGradesCount = Number(passingGradesResult[0]?.count || 0);
-  const passRate = totalGrades > 0 ? (passingGradesCount / totalGrades) * 100 : 0;
+  // Calculate passing grades per subject
+  const passingGradesBySubjectResult = await prisma.$queryRaw<Array<{ subjectId: string; count: bigint }>>`
+    SELECT
+      g.subject_id as "subjectId",
+      COUNT(*)::bigint as count
+    FROM grades g
+    LEFT JOIN exams e ON g.exam_id = e.id
+    JOIN subjects s ON g.subject_id = s.id
+    WHERE g.score >= COALESCE(e.passing_score, s.passing_score, 70)
+    ${unitId ? Prisma.sql`AND s.unit_id = ${unitId}` : Prisma.empty}
+    GROUP BY g.subject_id
+  `;
 
-  // Map passing counts for easy lookup
+  // Map passing counts for easy lookup and calculate total passing grades
   const passingBySubjectMap = new Map<string, number>();
+  let passingGradesCount = 0;
+
   passingGradesBySubjectResult.forEach(r => {
-    passingBySubjectMap.set(r.subjectId, Number(r.count));
+    const count = Number(r.count);
+    passingBySubjectMap.set(r.subjectId, count);
+    passingGradesCount += count;
   });
+
+  const passRate = totalGrades > 0 ? (passingGradesCount / totalGrades) * 100 : 0;
 
   return {
     averageGpa: Number(estimatedGPA.toFixed(2)),

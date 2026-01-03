@@ -252,8 +252,7 @@ describe('Analytics Service', () => {
 
             // Mock passing grades query
             prismaMock.$queryRaw
-                .mockResolvedValueOnce([{ count: BigInt(45) }]) // Overall passing
-                .mockResolvedValueOnce([{ subjectId: 'subj-1', count: BigInt(45) }]); // Passing per subject
+                .mockResolvedValueOnce([{ subjectId: 'subj-1', count: BigInt(24) }]); // Passing per subject
 
             const result = await analyticsService.getAcademicStats();
 

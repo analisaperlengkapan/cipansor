@@ -39,7 +39,7 @@ export interface CreateClassInput {
   unitId: string;
   academicYearId: string;
   level: string;
-  capacity: number;
+  capacity?: number; // Optional because it has a default
   homeroomTeacherId?: string | null; // Allow null or undefined
 }
 
@@ -65,4 +65,11 @@ export interface ClassEnrollment {
 
 export interface ClassEnrollmentInput {
   studentId: string;
+}
+
+// Aliases for compatibility
+export type EnrollStudentInput = ClassEnrollmentInput;
+
+export interface UpdateEnrollmentInput {
+  status: 'active' | 'completed' | 'transferred' | 'dropped';
 }

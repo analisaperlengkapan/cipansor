@@ -609,3 +609,26 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
     trend: [], // Still empty as semester trend needs complex historical data
   };
 }
+
+export async function getLibraryStats(unitId?: string): Promise<LibrarySummary> {
+  // Placeholder implementation - assumes schema exists but minimal logic for now
+  return {
+    books: {
+      totalBooks: 0,
+      totalCopies: 0,
+      available: 0
+    },
+    borrowings: {},
+    overdue: 0,
+    popularBooks: []
+  };
+}
+
+export async function getPSBStats(unitId?: string): Promise<PsbSummary> {
+  // Placeholder implementation
+  return {
+    totalRegistrants: 0,
+    byStatus: {},
+    byPeriod: []
+  };
+}

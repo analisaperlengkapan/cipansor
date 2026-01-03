@@ -80,7 +80,7 @@ export class FinanceEnhancementService {
       data: {
         code: input.code,
         name: input.name,
-        type: input.type as string, // Cast as string to match Prisma input if Enum mismatch
+        type: input.type as unknown as string, // Cast to unknown first to handle potential undefined type inference
         parentId: input.parentId,
         isActive: input.isActive ?? true
       }
@@ -172,7 +172,7 @@ export class FinanceEnhancementService {
         debit: input.debit || 0,
         credit: input.credit || 0,
         reference: input.reference,
-        referenceType: input.referenceType ?? null,
+        referenceType: input.referenceType ?? null, // Fixed null vs undefined issue
         createdById: input.createdById
       },
       include: {

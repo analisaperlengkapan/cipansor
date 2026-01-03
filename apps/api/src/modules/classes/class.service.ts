@@ -4,7 +4,7 @@ import { UserRole, Prisma } from '@prisma/client';
 import type {
   ListClassesQuery,
 } from './class.schema';
-import { CreateClassInput, UpdateClassInput, EnrollStudentInput, UpdateEnrollmentInput, Class } from '@cipansor/shared';
+import { CreateClassInput, UpdateClassInput, ClassEnrollmentInput, UpdateEnrollmentInput, Class, ClassEnrollment, EnrollStudentInput } from '@cipansor/shared';
 
 export class ClassService {
   /**
@@ -231,13 +231,16 @@ export class ClassService {
       }
     }
 
+    // Set default capacity if not provided
+    const capacity = input.capacity ?? 30;
+
     const classData = await prisma.class.create({
       data: {
         name: input.name,
         unitId: input.unitId,
         academicYearId: input.academicYearId,
         level: input.level,
-        capacity: input.capacity,
+        capacity,
         homeroomTeacherId: input.homeroomTeacherId,
       },
       include: {

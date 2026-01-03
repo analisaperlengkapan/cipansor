@@ -73,7 +73,7 @@ export default function AttendancePage() {
   });
 
   const attendances = attendanceData?.data || [];
-  const pagination = attendanceData?.meta;
+  const pagination = attendanceData?.meta?.pagination;
 
   const getStatusBadge = (status: AttendanceStatus) => {
     const statusConfig = ATTENDANCE_STATUSES.find((s) => s.value === status);
@@ -301,7 +301,7 @@ export default function AttendancePage() {
                     <TableCell className="max-w-[200px] truncate">
                       {attendance.notes || '-'}
                     </TableCell>
-                    <TableCell>{attendance.recorder?.name || '-'}</TableCell>
+                    <TableCell>{attendance.recordedBy?.name || '-'}</TableCell>
                     <TableCell>
                       <Button variant="ghost" size="sm" asChild>
                         <Link href={`/attendance/${attendance.id}`}>

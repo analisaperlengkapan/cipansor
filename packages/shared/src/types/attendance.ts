@@ -17,6 +17,8 @@ export interface Attendance {
   // Relations (optional/partial depending on query)
   student?: {
     id: string;
+    name?: string;
+    nis?: string;
     user?: {
       id: string;
       name: string;

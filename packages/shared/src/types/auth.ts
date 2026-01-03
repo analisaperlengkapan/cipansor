@@ -28,6 +28,7 @@ export interface User {
     name: string;
     type: string;
   };
+  academicYearId?: string;
   userRoles?: UserRoleAssignment[];
   isActive: boolean;
   createdAt: string;

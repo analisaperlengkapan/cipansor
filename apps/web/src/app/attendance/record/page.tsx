@@ -139,7 +139,7 @@ function RecordAttendanceContent() {
       await bulkCreate.mutateAsync({
         classId,
         date: format(date, 'yyyy-MM-dd'),
-        attendances: studentAttendances.map((s) => ({
+        records: studentAttendances.map((s) => ({
           studentId: s.studentId,
           status: s.status,
           notes: s.notes || undefined,
@@ -286,7 +286,7 @@ function RecordAttendanceContent() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleSetAllStatus('PRESENT')}
+                      onClick={() => handleSetAllStatus(AttendanceStatus.PRESENT)}
                     >
                       <CheckCircle className="h-4 w-4 mr-1 text-green-600" />
                       Semua Hadir
@@ -294,7 +294,7 @@ function RecordAttendanceContent() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleSetAllStatus('ABSENT')}
+                      onClick={() => handleSetAllStatus(AttendanceStatus.ABSENT)}
                     >
                       <XCircle className="h-4 w-4 mr-1 text-red-600" />
                       Semua Tidak Hadir

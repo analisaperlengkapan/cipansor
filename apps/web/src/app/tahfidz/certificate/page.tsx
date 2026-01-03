@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -159,6 +159,7 @@ export default function TahfidzCertificatePage() {
   });
   const [generatedCertNumber, setGeneratedCertNumber] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [shouldPrint, setShouldPrint] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
   const { data: units = [] } = useUnits();
@@ -212,6 +213,66 @@ export default function TahfidzCertificatePage() {
     }));
   };
 
+  // Trigger print logic when shouldPrint becomes true AND we have a generatedCertNumber
+  useEffect(() => {
+    if (shouldPrint && generatedCertNumber) {
+        // Double check printRef content is ready
+        // Small timeout to ensure state update propagated to DOM
+        const timer = setTimeout(() => {
+           performPrint();
+           setShouldPrint(false); // Reset trigger
+        }, 100);
+        return () => clearTimeout(timer);
+    }
+  }, [shouldPrint, generatedCertNumber]);
+
+  const performPrint = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error('Popup diblokir. Izinkan popup untuk mencetak.');
+      return;
+    }
+
+    const printContent = printRef.current?.innerHTML || '';
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Sertifikat Tahfidz - ${selectedStudent?.name}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cinzel:wght@400;600;700&family=Great+Vibes&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+          <style>
+            @page {
+              size: A4 landscape;
+              margin: 0;
+            }
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: 'Amiri', 'Noto Naskh Arabic', serif;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+          </style>
+        </head>
+        <body>
+          ${printContent}
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
+    toast.success('Sertifikat siap dicetak');
+  };
+
   const handlePrint = async () => {
     if (!selectedStudent) {
       toast.error('Pilih santri terlebih dahulu');
@@ -240,6 +301,8 @@ export default function TahfidzCertificatePage() {
                 currentCertNumber = res.data.data.certificateNumber;
                 setGeneratedCertNumber(currentCertNumber);
                 toast.success('Nomor sertifikat berhasil digenerate');
+                // Trigger print effect
+                setShouldPrint(true);
             } else {
                  toast.error('Gagal generate nomor sertifikat');
                  setIsGenerating(false);
@@ -252,66 +315,10 @@ export default function TahfidzCertificatePage() {
             return;
         }
         setIsGenerating(false);
+    } else {
+        // If already generated, just print
+        setShouldPrint(true);
     }
-
-    // We need to wait for state update to reflect in DOM before printing?
-    // React state updates are async. But we use `currentCertNumber` variable which is up to date.
-    // However, the printRef content relies on `renderCertificatePreview` which uses `generatedCertNumber` state or prop.
-    // So we strictly need the state to update and re-render.
-
-    // Since we updated state, let's use a timeout or useEffect?
-    // Or we can pass the number directly to a print function if we were building HTML string manually.
-    // But here we rely on `printRef.current.innerHTML`.
-    // The component needs to re-render with the new number first.
-
-    // Hack: Wait a bit for re-render.
-    setTimeout(() => {
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) {
-          toast.error('Popup diblokir. Izinkan popup untuk mencetak.');
-          return;
-        }
-
-        const printContent = printRef.current?.innerHTML || '';
-
-        printWindow.document.write(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>Sertifikat Tahfidz - ${selectedStudent.name}</title>
-              <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cinzel:wght@400;600;700&family=Great+Vibes&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
-              <style>
-                @page {
-                  size: A4 landscape;
-                  margin: 0;
-                }
-                * {
-                  margin: 0;
-                  padding: 0;
-                  box-sizing: border-box;
-                }
-                body {
-                  font-family: 'Amiri', 'Noto Naskh Arabic', serif;
-                  -webkit-print-color-adjust: exact !important;
-                  print-color-adjust: exact !important;
-                }
-              </style>
-            </head>
-            <body>
-              ${printContent}
-            </body>
-          </html>
-        `);
-
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => {
-          printWindow.print();
-          printWindow.close();
-        }, 500);
-    }, 100); // 100ms should be enough for React to re-render
-
-    toast.success('Sertifikat siap dicetak');
   };
 
   // ========================================

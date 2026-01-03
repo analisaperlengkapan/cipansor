@@ -579,24 +579,32 @@ export class TahfidzService {
 
     while (retries < maxRetries) {
        try {
-         // Get count of certificates in this month to determine next sequence
-         // Note: This is an estimation. For strict sequence, we might need a separate sequence table.
-         // Or we can find the max number matching the pattern.
-
-         // Let's use count + 1 + retries as a heuristic, but better is to find latest number.
-         const startOfMonth = new Date(year, month - 1, 1);
-         const endOfMonth = new Date(year, month, 0, 23, 59, 59);
-
-         const count = await prisma.digitalCertificate.count({
-            where: {
-                issueDate: {
-                    gte: startOfMonth,
-                    lte: endOfMonth
-                }
-            }
+         // Optimized: Find the latest certificate number for this month/year pattern
+         const pattern = `%/${typeCode}/CPN/${monthStr}/${year}`;
+         const latestCert = await prisma.digitalCertificate.findFirst({
+             where: {
+                 certificateNumber: {
+                     endsWith: `/${typeCode}/CPN/${monthStr}/${year}`
+                 }
+             },
+             orderBy: {
+                 certificateNumber: 'desc'
+             },
+             select: {
+                 certificateNumber: true
+             }
          });
 
-         const seq = (count + 1 + retries).toString().padStart(3, '0');
+         let nextSeq = 1;
+         if (latestCert) {
+             const parts = latestCert.certificateNumber.split('/');
+             const lastSeq = parseInt(parts[0], 10);
+             if (!isNaN(lastSeq)) {
+                 nextSeq = lastSeq + 1 + retries; // Add retries to jump over gaps/collisions in loop
+             }
+         }
+
+         const seq = nextSeq.toString().padStart(3, '0');
          const certificateNumber = `${seq}/${typeCode}/CPN/${monthStr}/${year}`;
 
          // Generate generic placeholder values for required fields

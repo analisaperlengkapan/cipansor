@@ -102,6 +102,7 @@ export default function EditDailyReportPage() {
 
     useEffect(() => {
         if (report) {
+            // Safe access for classId using optional chaining
             form.reset({
                 studentId: report.studentId,
                 classId: report.student?.classId || '',

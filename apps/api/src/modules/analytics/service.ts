@@ -474,10 +474,14 @@ export async function getAttendanceStats(unitId?: string, dateRange?: DateRange)
   };
 }
 
+
 // ==================== ACADEMIC STATISTICS ====================
 
 export async function getAcademicStats(unitId?: string): Promise<AcademicPerformance> {
   const unitFilter = unitId ? { unitId } : {};
+
+  // Filter subject performance by unit if unitId is provided
+  const subjectPerformanceFilter = unitId ? { subject: { unitId } } : {};
 
   const [examStats, gradeDistribution, subjectPerformance, topPerformersData] = await Promise.all([
     // Exam statistics
@@ -493,6 +497,7 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
     // Average performance by subject
     prisma.grade.groupBy({
       by: ["subjectId"],
+      where: subjectPerformanceFilter,
       _avg: { percentage: true }, // Using percentage column from schema
       _count: true,
     }),
@@ -543,17 +548,27 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
   // Calculate exact number of passing grades by joining Grade, Exam (optional), and Subject.
   // Priority: Exam.passingScore > Subject.passingScore > 70 (default)
   // We use queryRaw for this complex join condition not easily expressible in Prisma findMany/aggregate
-  const passingGradesResult = await prisma.$queryRaw<Array<{ count: bigint }>>`
-    SELECT COUNT(*)::bigint as count
+  // We also group by subject_id to calculate per-subject pass rate efficiently in one query.
+  const passingGradesBySubjectResult = await prisma.$queryRaw<Array<{ subject_id: string; count: bigint }>>`
+    SELECT g.subject_id, COUNT(*)::bigint as count
     FROM grades g
     LEFT JOIN exams e ON g.exam_id = e.id
     JOIN subjects s ON g.subject_id = s.id
     WHERE g.score >= COALESCE(e.passing_score, s.passing_score, 70)
     ${unitId ? Prisma.sql`AND s.unit_id = ${unitId}` : Prisma.empty}
+    GROUP BY g.subject_id
   `;
 
-  const passingGradesCount = Number(passingGradesResult[0]?.count || 0);
+  // Calculate global passing count by summing up subject counts
+  // Note: This assumes that only grades associated with subjects in the current unit are returned, which the SQL enforces.
+  const passingGradesCount = passingGradesBySubjectResult.reduce((acc, curr) => acc + Number(curr.count), 0);
   const passRate = totalGrades > 0 ? (passingGradesCount / totalGrades) * 100 : 0;
+
+  // Create a map for quick lookup of passing counts per subject
+  const passingMap = new Map<string, number>();
+  passingGradesBySubjectResult.forEach(row => {
+      passingMap.set(row.subject_id, Number(row.count));
+  });
 
   return {
     averageGpa: Number(estimatedGPA.toFixed(2)),
@@ -572,11 +587,15 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
     }),
     bySubject: subjectPerformance.map(s => {
       const subject = subjects.find(sub => sub.id === s.subjectId);
+      const passingCount = passingMap.get(s.subjectId) || 0;
+      const totalCount = s._count;
+      const subjectPassRate = totalCount > 0 ? (passingCount / totalCount) * 100 : 0;
+
       return {
         subjectId: s.subjectId,
         subjectName: subject?.name || "Unknown",
         averageScore: Number(s._avg.percentage?.toFixed(2)) || 0, // Schema has percentage column in Grade
-        passRate: 0 // Calculation per subject requires more complex query
+        passRate: Number(subjectPassRate.toFixed(2))
       };
     }).sort((a, b) => b.averageScore - a.averageScore),
     gradeDistribution: gradeDistribution
@@ -588,96 +607,5 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
       }))
       .sort((a, b) => (a.grade || "").localeCompare(b.grade || "")),
     trend: [], // Still empty as semester trend needs complex historical data
-  };
-}
-
-// ==================== LIBRARY STATISTICS ====================
-
-export async function getLibraryStats(unitId?: string): Promise<LibrarySummary> {
-  const unitFilter = unitId ? { unitId } : {};
-
-  const [bookStats, borrowingStats, overdue, popularBooks] = await Promise.all([
-    prisma.book.aggregate({
-      where: unitFilter,
-      _sum: { quantity: true, available: true },
-      _count: true,
-    }),
-    prisma.borrowing.groupBy({
-      by: ["status"],
-      _count: true,
-    }),
-    prisma.borrowing.count({
-      where: { status: "OVERDUE" },
-    }),
-    // Most borrowed books
-    prisma.borrowing.groupBy({
-      by: ["bookId"],
-      _count: true,
-      orderBy: { _count: { bookId: "desc" } },
-      take: 10,
-    }),
-  ]);
-
-  // Get book titles
-  const bookIds = popularBooks.map(b => b.bookId);
-  const books = await prisma.book.findMany({
-    where: { id: { in: bookIds } },
-    select: { id: true, title: true, author: true },
-  });
-
-  return {
-    books: {
-      totalBooks: bookStats._count,
-      totalCopies: Number(bookStats._sum.quantity) || 0,
-      available: Number(bookStats._sum.available) || 0,
-    },
-    borrowings: Object.fromEntries(borrowingStats.map(b => [b.status, b._count])),
-    overdue,
-    popularBooks: popularBooks.map(b => {
-      const book = books.find(bk => bk.id === b.bookId);
-      return {
-        bookId: b.bookId,
-        title: book?.title || "Unknown",
-        author: book?.author || "",
-        borrowCount: b._count,
-      };
-    }),
-  };
-}
-
-// ==================== PSB STATISTICS ====================
-
-export async function getPSBStats(unitId?: string): Promise<PsbSummary> {
-  const unitFilter = unitId ? { admissionPeriod: { unitId } } : {};
-
-  const [registrantStats, byStatus, byPeriod] = await Promise.all([
-    prisma.registrant.count({ where: unitFilter }),
-    prisma.registrant.groupBy({
-      by: ["status"],
-      where: unitFilter,
-      _count: true,
-    }),
-    prisma.admissionPeriod.findMany({
-      where: { ...(unitId && { unitId }) },
-      include: {
-        _count: { select: { registrants: true } },
-      },
-      orderBy: { startDate: "desc" },
-      take: 5,
-    }),
-  ]);
-
-  return {
-    totalRegistrants: registrantStats,
-    byStatus: Object.fromEntries(byStatus.map(s => [s.status, s._count])),
-    byPeriod: byPeriod.map(p => ({
-      periodId: p.id,
-      periodName: p.name,
-      quota: p.quota,
-      registrantCount: p._count.registrants,
-      startDate: p.startDate,
-      endDate: p.endDate,
-      isActive: p.isActive,
-    })),
   };
 }

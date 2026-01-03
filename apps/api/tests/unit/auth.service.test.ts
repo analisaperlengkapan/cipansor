@@ -14,6 +14,9 @@ const { mockPrisma, mockComparePassword, mockHashPassword, mockGenerateTokenPair
                 create: vi.fn(),
                 update: vi.fn(),
             },
+            academicYear: {
+                findFirst: vi.fn(),
+            },
             refreshToken: {
                 create: vi.fn(),
                 findFirst: vi.fn(),

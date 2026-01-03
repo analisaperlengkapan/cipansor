@@ -73,8 +73,17 @@ export class AuthService {
     // Return user without password
     const { passwordHash, ...userWithoutPassword } = user;
 
+    // Get active academic year
+    const activeAcademicYear = await prisma.academicYear.findFirst({
+      where: { isActive: true, deletedAt: null },
+      select: { id: true },
+    });
+
     return {
-      user: userWithoutPassword,
+      user: {
+        ...userWithoutPassword,
+        academicYearId: activeAcademicYear?.id,
+      },
       ...tokens,
     };
   }
@@ -119,7 +128,17 @@ export class AuthService {
 
     // Return without password
     const { passwordHash: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+
+    // Get active academic year
+    const activeAcademicYear = await prisma.academicYear.findFirst({
+      where: { isActive: true, deletedAt: null },
+      select: { id: true },
+    });
+
+    return {
+      ...userWithoutPassword,
+      academicYearId: activeAcademicYear?.id,
+    };
   }
 
   /**
@@ -229,7 +248,17 @@ export class AuthService {
     }
 
     const { passwordHash, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+
+    // Get active academic year
+    const activeAcademicYear = await prisma.academicYear.findFirst({
+      where: { isActive: true, deletedAt: null },
+      select: { id: true },
+    });
+
+    return {
+      ...userWithoutPassword,
+      academicYearId: activeAcademicYear?.id,
+    };
   }
 
   /**

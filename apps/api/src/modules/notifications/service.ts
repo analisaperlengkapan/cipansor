@@ -12,6 +12,7 @@ import type {
   UpdateTemplateInput,
   QueryTemplateInput,
 } from "./schema";
+import type { NotificationTemplate } from "@cipansor/shared";
 
 // Helper to map shared types to Prisma Enum
 const mapTypeToPrisma = (type: string): { dbType: string; originalType: string | null } => {
@@ -293,6 +294,15 @@ export async function getTemplates(query: QueryTemplateInput) {
   }
 
   return templates;
+}
+
+export async function getTemplateById(id: string) {
+  const setting = await prisma.setting.findFirst({
+    where: { key: "NOTIFICATION_TEMPLATES" },
+  });
+
+  const templates = (Array.isArray(setting?.value) ? setting.value : []) as NotificationTemplate[];
+  return templates.find(t => t.id === id) || null;
 }
 
 export async function createTemplate(data: CreateTemplateInput, unitId?: string) {

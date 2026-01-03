@@ -146,6 +146,7 @@ router.get("/stats", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), contr
 
 // Templates (Admin Only)
 router.get("/templates", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getTemplates);
+router.get("/templates/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getTemplateById);
 router.post("/templates", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.createTemplate);
 router.put("/templates/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.updateTemplate);
 router.delete("/templates/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteTemplate);

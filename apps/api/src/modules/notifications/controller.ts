@@ -143,6 +143,18 @@ export async function getTemplates(req: Request, res: Response, next: NextFuncti
   }
 }
 
+export async function getTemplateById(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await service.getTemplateById(req.params.id);
+    if (!result) {
+      throw Errors.notFound("Template not found");
+    }
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function createTemplate(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createTemplateSchema.parse(req.body);

@@ -482,6 +482,11 @@ export async function getAttendanceStats(unitId?: string, dateRange?: DateRange)
 export async function getAcademicStats(unitId?: string): Promise<AcademicPerformance> {
   const unitFilter = unitId ? { unitId } : {};
 
+  // Note: subjectPerformance currently lacks unitId filter support in Prisma groupBy unless relation filtering is used.
+  // We can add filtering if we want to strict scope, but for now we rely on the fact that subjects are usually scoped to unit.
+  // Actually, let's filter subjectPerformance by unit using `where: { subject: { unitId } }` if unitId is present.
+  const subjectPerformanceFilter = unitId ? { subject: { unitId } } : {};
+
   const [examStats, gradeDistribution, subjectPerformance, topPerformersData] = await Promise.all([
     // Exam statistics
     prisma.exam.aggregate({
@@ -496,6 +501,7 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
     // Average performance by subject
     prisma.grade.groupBy({
       by: ["subjectId"],
+      where: subjectPerformanceFilter,
       _avg: { percentage: true }, // Using percentage column from schema
       _count: true,
     }),
@@ -546,17 +552,27 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
   // Calculate exact number of passing grades by joining Grade, Exam (optional), and Subject.
   // Priority: Exam.passingScore > Subject.passingScore > 70 (default)
   // We use queryRaw for this complex join condition not easily expressible in Prisma findMany/aggregate
-  const passingGradesResult = await prisma.$queryRaw<Array<{ count: bigint }>>`
-    SELECT COUNT(*)::bigint as count
+  // We also group by subject_id to calculate per-subject pass rate efficiently in one query.
+  const passingGradesBySubjectResult = await prisma.$queryRaw<Array<{ subject_id: string; count: bigint }>>`
+    SELECT g.subject_id, COUNT(*)::bigint as count
     FROM grades g
     LEFT JOIN exams e ON g.exam_id = e.id
     JOIN subjects s ON g.subject_id = s.id
     WHERE g.score >= COALESCE(e.passing_score, s.passing_score, 70)
     ${unitId ? Prisma.sql`AND s.unit_id = ${unitId}` : Prisma.empty}
+    GROUP BY g.subject_id
   `;
 
-  const passingGradesCount = Number(passingGradesResult[0]?.count || 0);
+  // Calculate global passing count by summing up subject counts
+  // Note: This assumes that only grades associated with subjects in the current unit are returned, which the SQL enforces.
+  const passingGradesCount = passingGradesBySubjectResult.reduce((acc, curr) => acc + Number(curr.count), 0);
   const passRate = totalGrades > 0 ? (passingGradesCount / totalGrades) * 100 : 0;
+
+  // Create a map for quick lookup of passing counts per subject
+  const passingMap = new Map<string, number>();
+  passingGradesBySubjectResult.forEach(row => {
+      passingMap.set(row.subject_id, Number(row.count));
+  });
 
   return {
     averageGpa: Number(estimatedGPA.toFixed(2)),
@@ -575,11 +591,15 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
     }),
     bySubject: subjectPerformance.map(s => {
       const subject = subjects.find(sub => sub.id === s.subjectId);
+      const passingCount = passingMap.get(s.subjectId) || 0;
+      const totalCount = s._count;
+      const subjectPassRate = totalCount > 0 ? (passingCount / totalCount) * 100 : 0;
+
       return {
         subjectId: s.subjectId,
         subjectName: subject?.name || "Unknown",
         averageScore: Number(s._avg.percentage?.toFixed(2)) || 0, // Schema has percentage column in Grade
-        passRate: 0 // Calculation per subject requires more complex query
+        passRate: Number(subjectPassRate.toFixed(2))
       };
     }).sort((a, b) => b.averageScore - a.averageScore),
     gradeDistribution: gradeDistribution

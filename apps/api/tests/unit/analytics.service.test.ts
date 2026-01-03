@@ -68,8 +68,8 @@ describe('Analytics Service', () => {
                     { status: 'inactive', _count: 5 },
                 ]) // byStatus
                 .mockResolvedValueOnce([
-                    { gender: 'L', _count: 55 },
-                    { gender: 'P', _count: 45 },
+                    { gender: 'MALE', _count: 55 },
+                    { gender: 'FEMALE', _count: 45 },
                 ]) // byGender
                 .mockResolvedValueOnce([
                     { unitId: 'unit-1', _count: 40 },

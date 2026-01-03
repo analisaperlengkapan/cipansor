@@ -98,18 +98,20 @@ function RecordAttendanceContent() {
     
     const initialAttendances = enrollments.map((enrollment) => {
       // Check if there's existing attendance for this student
+      if (!enrollment.student) return null;
+
       const existing = existingAttendance?.find(
-        (a) => a.studentId === enrollment.student.id
+        (a) => a.studentId === enrollment.student!.id
       );
 
       return {
         studentId: enrollment.student.id,
-        name: enrollment.student.name,
-        nis: enrollment.student.nis,
+        name: enrollment.student.user?.name || enrollment.student.name || '',
+        nis: enrollment.student.nis || '',
         status: existing?.status || ('PRESENT' as AttendanceStatus),
         notes: existing?.notes || '',
       };
-    });
+    }).filter((a): a is StudentAttendance => a !== null);
     setStudentAttendances(initialAttendances);
   }, [enrollments, existingAttendance, classId, date]);
 

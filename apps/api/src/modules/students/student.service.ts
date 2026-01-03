@@ -83,8 +83,28 @@ export class StudentService {
       prisma.student.count({ where }),
     ]);
 
+    // Map response to match shared types/frontend expectations
+    // Specifically ensuring currentClass has 'grade' mapped from 'level'
+    const mappedStudents = students.map((student) => {
+      const currentEnrollment = student.enrollments[0]; // active enrollment due to filter
+      const currentClass = currentEnrollment?.class
+        ? {
+            id: currentEnrollment.class.id,
+            name: currentEnrollment.class.name,
+            grade: parseInt(currentEnrollment.class.level) || 0,
+            level: currentEnrollment.class.level,
+          }
+        : null;
+
+      return {
+        ...student,
+        currentClass,
+        // Flatten user properties if needed, but existing FE likely expects nested user
+      };
+    });
+
     return {
-      students,
+      students: mappedStudents,
       pagination: {
         page,
         limit,
@@ -135,7 +155,22 @@ export class StudentService {
       throw Errors.notFound('Student');
     }
 
-    return student;
+    // Find active enrollment for current class
+    const currentEnrollment = student.enrollments.find(e => e.status === 'active');
+    const currentClass = currentEnrollment?.class
+      ? {
+          id: currentEnrollment.class.id,
+          name: currentEnrollment.class.name,
+          grade: parseInt(currentEnrollment.class.level) || 0,
+          level: currentEnrollment.class.level,
+          academicYear: currentEnrollment.class.academicYear,
+        }
+      : null;
+
+    return {
+      ...student,
+      currentClass,
+    };
   }
 
   /**

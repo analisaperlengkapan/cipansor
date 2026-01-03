@@ -279,9 +279,14 @@ export async function getNotificationStats(startDate?: Date, endDate?: Date) {
 
 // ==================== TEMPLATES ====================
 
-export async function getTemplates(query: QueryTemplateInput) {
+export async function getTemplates(query: QueryTemplateInput, unitId?: string) {
+  const where: Prisma.SettingWhereInput = { key: "NOTIFICATION_TEMPLATES" };
+  if (unitId) {
+    where.unitId = unitId;
+  }
+
   const setting = await prisma.setting.findFirst({
-    where: { key: "NOTIFICATION_TEMPLATES" },
+    where,
   });
 
   let templates = (setting?.value as any[]) || [];
@@ -296,9 +301,14 @@ export async function getTemplates(query: QueryTemplateInput) {
   return templates;
 }
 
-export async function getTemplateById(id: string) {
+export async function getTemplateById(id: string, unitId?: string) {
+  const where: Prisma.SettingWhereInput = { key: "NOTIFICATION_TEMPLATES" };
+  if (unitId) {
+    where.unitId = unitId;
+  }
+
   const setting = await prisma.setting.findFirst({
-    where: { key: "NOTIFICATION_TEMPLATES" },
+    where,
   });
 
   const templates = (Array.isArray(setting?.value) ? setting.value : []) as unknown as NotificationTemplate[];

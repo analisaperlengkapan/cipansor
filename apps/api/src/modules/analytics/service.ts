@@ -546,17 +546,37 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
   // Calculate exact number of passing grades by joining Grade, Exam (optional), and Subject.
   // Priority: Exam.passingScore > Subject.passingScore > 70 (default)
   // We use queryRaw for this complex join condition not easily expressible in Prisma findMany/aggregate
-  const passingGradesResult = await prisma.$queryRaw<Array<{ count: bigint }>>`
-    SELECT COUNT(*)::bigint as count
-    FROM grades g
-    LEFT JOIN exams e ON g.exam_id = e.id
-    JOIN subjects s ON g.subject_id = s.id
-    WHERE g.score >= COALESCE(e.passing_score, s.passing_score, 70)
-    ${unitId ? Prisma.sql`AND s.unit_id = ${unitId}` : Prisma.empty}
-  `;
+  const [passingGradesResult, passingGradesBySubjectResult] = await Promise.all([
+    prisma.$queryRaw<Array<{ count: bigint }>>`
+      SELECT COUNT(*)::bigint as count
+      FROM grades g
+      LEFT JOIN exams e ON g.exam_id = e.id
+      JOIN subjects s ON g.subject_id = s.id
+      WHERE g.score >= COALESCE(e.passing_score, s.passing_score, 70)
+      ${unitId ? Prisma.sql`AND s.unit_id = ${unitId}` : Prisma.empty}
+    `,
+    // Calculate passing grades per subject
+    prisma.$queryRaw<Array<{ subjectId: string; count: bigint }>>`
+      SELECT
+        g.subject_id as "subjectId",
+        COUNT(*)::bigint as count
+      FROM grades g
+      LEFT JOIN exams e ON g.exam_id = e.id
+      JOIN subjects s ON g.subject_id = s.id
+      WHERE g.score >= COALESCE(e.passing_score, s.passing_score, 70)
+      ${unitId ? Prisma.sql`AND s.unit_id = ${unitId}` : Prisma.empty}
+      GROUP BY g.subject_id
+    `
+  ]);
 
   const passingGradesCount = Number(passingGradesResult[0]?.count || 0);
   const passRate = totalGrades > 0 ? (passingGradesCount / totalGrades) * 100 : 0;
+
+  // Map passing counts for easy lookup
+  const passingBySubjectMap = new Map<string, number>();
+  passingGradesBySubjectResult.forEach(r => {
+    passingBySubjectMap.set(r.subjectId, Number(r.count));
+  });
 
   return {
     averageGpa: Number(estimatedGPA.toFixed(2)),
@@ -575,11 +595,15 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
     }),
     bySubject: subjectPerformance.map(s => {
       const subject = subjects.find(sub => sub.id === s.subjectId);
+      const totalCount = s._count;
+      const passingCount = passingBySubjectMap.get(s.subjectId) || 0;
+      const passRate = totalCount > 0 ? (passingCount / totalCount) * 100 : 0;
+
       return {
         subjectId: s.subjectId,
         subjectName: subject?.name || "Unknown",
         averageScore: Number(s._avg.percentage?.toFixed(2)) || 0, // Schema has percentage column in Grade
-        passRate: 0 // Calculation per subject requires more complex query
+        passRate: Number(passRate.toFixed(2))
       };
     }).sort((a, b) => b.averageScore - a.averageScore),
     gradeDistribution: gradeDistribution

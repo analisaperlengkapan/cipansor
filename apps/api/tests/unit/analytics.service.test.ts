@@ -11,6 +11,18 @@ vi.mock('@/lib/prisma', () => ({
     prisma: prismaMock,
 }));
 
+// Mock @prisma/client enums to prevent undefined errors
+vi.mock('@prisma/client', () => ({
+    Prisma: {
+        sql: (strings: string[], ...values: any[]) => strings,
+        empty: '',
+    },
+    Gender: {
+        MALE: 'MALE',
+        FEMALE: 'FEMALE',
+    },
+}));
+
 describe('Analytics Service', () => {
     beforeEach(() => {
         resetPrismaMocks();
@@ -55,8 +67,8 @@ describe('Analytics Service', () => {
                     { status: 'inactive', _count: 5 },
                 ]) // byStatus
                 .mockResolvedValueOnce([
-                    { gender: 'L', _count: 55 },
-                    { gender: 'P', _count: 45 },
+                    { gender: 'MALE', _count: 55 },
+                    { gender: 'FEMALE', _count: 45 },
                 ]) // byGender
                 .mockResolvedValueOnce([
                     { unitId: 'unit-1', _count: 40 },
@@ -238,9 +250,15 @@ describe('Analytics Service', () => {
 
             prismaMock.grade.aggregate.mockResolvedValue({ _avg: { score: 85 } });
 
+            // Mock passing grades query
+            prismaMock.$queryRaw
+                .mockResolvedValueOnce([{ count: BigInt(45) }]) // Overall passing
+                .mockResolvedValueOnce([{ subjectId: 'subj-1', count: BigInt(45) }]); // Passing per subject
+
             const result = await analyticsService.getAcademicStats();
 
             expect(result).toHaveProperty('averageGpa');
+            expect(result).toHaveProperty('passRate'); // Check if passRate exists
             expect(result).toHaveProperty('gradeDistribution');
             expect(result.gradeDistribution[0]).toHaveProperty('grade', 'A');
             // Since we mocked 30 grades, all 'A', percentage should be 100

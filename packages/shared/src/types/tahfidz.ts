@@ -121,3 +121,29 @@ export interface UpdateTahfidzInput {
   score?: number | null;
   notes?: string | null;
 }
+
+export interface GenerateCertificateInput {
+  studentId: string;
+  certificateType: string;
+  issueDate?: Date | string;
+  grade?: string;
+  qiraahType?: string;
+  musyrifName?: string;
+  sanadChain?: string;
+  notes?: string;
+  completedJuz?: number[];
+}
+
+export interface DigitalCertificate {
+  id: string;
+  studentId: string;
+  certificateType: string;
+  certificateNumber: string;
+  issueDate: string | Date;
+  grade?: string | null;
+  qrCode: string;
+  verificationUrl: string;
+  signatoryName: string;
+  signatoryTitle: string;
+  student?: Student;
+}

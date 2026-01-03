@@ -60,9 +60,22 @@ export const tahfidzSummaryQuerySchema = z.object({
   studentId: z.string().uuid('Invalid student ID'),
 });
 
+export const generateCertificateSchema = z.object({
+  studentId: z.string().uuid(),
+  certificateType: z.string(),
+  issueDate: z.coerce.date().optional(),
+  grade: z.string().optional(),
+  completedJuz: z.array(z.number()).optional(),
+  qiraahType: z.string().optional(),
+  musyrifName: z.string().optional(),
+  sanadChain: z.string().optional(),
+  notes: z.string().optional(),
+});
+
 // Types
 export type TahfidzActivityType = z.infer<typeof TahfidzActivityEnum>;
 export type ListTahfidzQuery = z.infer<typeof listTahfidzQuerySchema>;
 // export type CreateTahfidzInput = z.infer<typeof createTahfidzSchema>; // Moved to shared
 // export type UpdateTahfidzInput = z.infer<typeof updateTahfidzSchema>; // Moved to shared
 export type TahfidzSummaryQuery = z.infer<typeof tahfidzSummaryQuerySchema>;
+export type GenerateCertificateInput = z.infer<typeof generateCertificateSchema>;

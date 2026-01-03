@@ -34,6 +34,7 @@ import {
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import { api } from '@/lib/api';
 
 // ========================================
 // JUZ DATA & SANAD TYPES
@@ -156,6 +157,8 @@ export default function TahfidzCertificatePage() {
     sanadChain: '',
     notes: '',
   });
+  const [generatedCertNumber, setGeneratedCertNumber] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
   const { data: units = [] } = useUnits();
@@ -178,6 +181,7 @@ export default function TahfidzCertificatePage() {
 
   const handleSelectStudent = (student: Student) => {
     setSelectedStudent(student);
+    setGeneratedCertNumber(null);
     setActiveTab('select-type');
   };
 
@@ -195,6 +199,7 @@ export default function TahfidzCertificatePage() {
       certificateType: typeId,
       completedJuz: defaultJuz,
     });
+    setGeneratedCertNumber(null);
     setActiveTab('fill-details');
   };
 
@@ -207,55 +212,104 @@ export default function TahfidzCertificatePage() {
     }));
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     if (!selectedStudent) {
       toast.error('Pilih santri terlebih dahulu');
       return;
     }
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      toast.error('Popup diblokir. Izinkan popup untuk mencetak.');
-      return;
+    // Generate certificate first if not already generated
+    let currentCertNumber = generatedCertNumber;
+
+    if (!currentCertNumber) {
+        setIsGenerating(true);
+        try {
+            const res = await api.post('/tahfidz/certificates', {
+                studentId: selectedStudent.id,
+                certificateType: formData.certificateType,
+                issueDate: formData.tanggalSertifikat,
+                grade: formData.grade,
+                completedJuz: formData.completedJuz,
+                qiraahType: formData.qiraahType,
+                musyrifName: formData.musyrifName,
+                sanadChain: formData.sanadChain,
+                notes: formData.notes
+            });
+
+            if (res.data && res.data.success) {
+                currentCertNumber = res.data.data.certificateNumber;
+                setGeneratedCertNumber(currentCertNumber);
+                toast.success('Nomor sertifikat berhasil digenerate');
+            } else {
+                 toast.error('Gagal generate nomor sertifikat');
+                 setIsGenerating(false);
+                 return;
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error('Gagal generate nomor sertifikat');
+            setIsGenerating(false);
+            return;
+        }
+        setIsGenerating(false);
     }
 
-    const printContent = printRef.current?.innerHTML || '';
+    // We need to wait for state update to reflect in DOM before printing?
+    // React state updates are async. But we use `currentCertNumber` variable which is up to date.
+    // However, the printRef content relies on `renderCertificatePreview` which uses `generatedCertNumber` state or prop.
+    // So we strictly need the state to update and re-render.
 
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Sertifikat Tahfidz - ${selectedStudent.name}</title>
-          <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cinzel:wght@400;600;700&family=Great+Vibes&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
-          <style>
-            @page {
-              size: A4 landscape;
-              margin: 0;
-            }
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
-            body {
-              font-family: 'Amiri', 'Noto Naskh Arabic', serif;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-          </style>
-        </head>
-        <body>
-          ${printContent}
-        </body>
-      </html>
-    `);
+    // Since we updated state, let's use a timeout or useEffect?
+    // Or we can pass the number directly to a print function if we were building HTML string manually.
+    // But here we rely on `printRef.current.innerHTML`.
+    // The component needs to re-render with the new number first.
 
-    printWindow.document.close();
-    printWindow.focus();
+    // Hack: Wait a bit for re-render.
     setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 500);
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+          toast.error('Popup diblokir. Izinkan popup untuk mencetak.');
+          return;
+        }
+
+        const printContent = printRef.current?.innerHTML || '';
+
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Sertifikat Tahfidz - ${selectedStudent.name}</title>
+              <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cinzel:wght@400;600;700&family=Great+Vibes&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+              <style>
+                @page {
+                  size: A4 landscape;
+                  margin: 0;
+                }
+                * {
+                  margin: 0;
+                  padding: 0;
+                  box-sizing: border-box;
+                }
+                body {
+                  font-family: 'Amiri', 'Noto Naskh Arabic', serif;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                }
+              </style>
+            </head>
+            <body>
+              ${printContent}
+            </body>
+          </html>
+        `);
+
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+        }, 500);
+    }, 100); // 100ms should be enough for React to re-render
 
     toast.success('Sertifikat siap dicetak');
   };
@@ -276,9 +330,10 @@ export default function TahfidzCertificatePage() {
 
     const accentColor = isSanad ? '#fbbf24' : '#10b981';
 
-    // Generate random but stable number based on student ID if possible, or just don't use Math.random in render
-    // For now, let's use a fixed placeholder or derived from ID
-    const certNumber = selectedStudent.id ? selectedStudent.id.substring(0, 3).toUpperCase() : '001';
+    // Use generated number or fallback to placeholder
+    const certNumberDisplay = generatedCertNumber
+        ? `No: ${generatedCertNumber}`
+        : `No: [DRAFT]/${formData.certificateType.split('_').pop()}/CPN/${format(new Date(), 'MM/yyyy')}`;
 
     return (
       <div
@@ -364,9 +419,7 @@ export default function TahfidzCertificatePage() {
 
           {/* Certificate Number */}
           <p className="text-xs opacity-60 mb-3">
-            No: {certNumber}/
-            {formData.certificateType.split('_').pop()}/CPN/
-            {format(new Date(), 'MM/yyyy')}
+            {certNumberDisplay}
           </p>
 
           {/* Main Text */}
@@ -529,11 +582,11 @@ export default function TahfidzCertificatePage() {
             <Button
               variant="default"
               onClick={handlePrint}
-              disabled={!selectedStudent}
+              disabled={!selectedStudent || isGenerating}
               className="transition-all hover:shadow-md hover:-translate-y-0.5"
             >
               <Printer className="h-4 w-4 mr-2" />
-              Cetak Sertifikat
+              {isGenerating ? 'Generating...' : 'Cetak Sertifikat'}
             </Button>
           </div>
         </div>
@@ -940,9 +993,9 @@ export default function TahfidzCertificatePage() {
                     >
                       Kembali
                     </Button>
-                    <Button onClick={handlePrint} className="flex-1">
+                    <Button onClick={handlePrint} className="flex-1" disabled={isGenerating}>
                       <Printer className="h-4 w-4 mr-2" />
-                      Cetak Sertifikat
+                      {isGenerating ? 'Generating...' : 'Cetak Sertifikat'}
                     </Button>
                   </div>
                 </CardContent>

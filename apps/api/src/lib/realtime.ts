@@ -9,6 +9,7 @@ import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import { verifyToken, JwtPayload } from '@/lib/jwt';
 import Redis from 'ioredis';
+import { DashboardMetrics } from '@cipansor/shared';
 
 // Event types
 export interface LiveEvent {
@@ -48,29 +49,7 @@ let io: SocketIOServer | null = null;
 let redisPublisher: Redis | null = null;
 let redisSubscriber: Redis | null = null;
 
-/**
- * Dashboard metrics interface
- */
-export interface DashboardMetrics {
-    students: {
-        total: number;
-        active: number;
-        change: number;
-    };
-    teachers: {
-        total: number;
-    };
-    attendance: {
-        rate: number;
-        present: number;
-        total: number;
-    };
-    tahfidz: {
-        totalHafidz: number;
-        avgQuality: number;
-    };
-    timestamp: string;
-}
+export type { DashboardMetrics };
 
 /**
  * Alert interface

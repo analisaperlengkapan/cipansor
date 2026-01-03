@@ -137,12 +137,17 @@ describe('Finance Anomaly Detection', () => {
             }
         ]);
 
-        (prisma.student.findUnique as any).mockResolvedValue({
-            user: { name: 'Student 1', id: 'u1' }
+        // Mock student.findMany to return the student for the duplicate check (N+1 fix)
+        (prisma.student.findMany as any).mockImplementation((args: any) => {
+            if (args?.where?.id?.in) {
+                 return Promise.resolve([
+                    { id: 's1', user: { name: 'Student 1', id: 'u1' } }
+                 ]);
+            }
+            return Promise.resolve([]);
         });
 
         // Mock other rules data to return empty
-        (prisma.student.findMany as any).mockResolvedValue([]);
         (prisma.grade.findMany as any).mockResolvedValue([]);
         (prisma.violation.groupBy as any).mockResolvedValue([]);
 

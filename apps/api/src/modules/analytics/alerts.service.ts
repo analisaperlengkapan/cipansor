@@ -7,27 +7,11 @@ import { prisma } from '@/lib/prisma';
 import { createNotification } from '@/modules/notifications/service';
 import { NotificationType, AttendanceStatus } from '@prisma/client';
 import { logger } from '@/lib/logger';
+import type { AlertRule, AlertTrigger } from '@cipansor/shared';
 
-export interface AlertRule {
-    id: string;
-    name: string;
-    type: 'attendance' | 'payment' | 'academic' | 'behavior';
-    threshold: number;
-    operator: 'lt' | 'lte' | 'gt' | 'gte' | 'eq';
-    action: 'notify' | 'email' | 'whatsapp' | 'all';
-    recipients: 'parent' | 'teacher' | 'admin' | 'all';
-    enabled: boolean;
-}
-
-export interface AlertTrigger {
-    ruleId: string;
-    studentId: string;
-    studentName: string;
-    value: number;
-    threshold: number;
-    message: string;
-    triggeredAt: string;
-}
+// Exporting from here for backward compatibility or local usage if needed,
+// but preferring shared types.
+export { AlertRule, AlertTrigger };
 
 // Default alert rules
 const DEFAULT_RULES: AlertRule[] = [
@@ -243,7 +227,6 @@ async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
     try {
         // 1. Check for Duplicate Invoices (Potential double billing)
         // Same student, same payment type, same amount, same period (if applicable), created recently
-        // Optimization: Use Prisma's groupBy which is efficient
         const potentialDuplicates = await prisma.invoice.groupBy({
             by: ['studentId', 'paymentTypeId', 'amount', 'period'],
             where: {
@@ -258,31 +241,38 @@ async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
             }
         });
 
-        for (const dup of potentialDuplicates) {
-            // Fetch student name for the alert
-            const student = await prisma.student.findUnique({
-                where: { id: dup.studentId },
-                include: { user: { select: { name: true, id: true } } }
+        // Optimization: Fix N+1 problem by fetching all affected students in one query
+        const studentIds = potentialDuplicates.map(d => d.studentId);
+
+        if (studentIds.length > 0) {
+            const students = await prisma.student.findMany({
+                where: { id: { in: studentIds } },
+                include: { user: { select: { id: true, name: true } } }
             });
 
-            if (!student) continue;
+            for (const dup of potentialDuplicates) {
+                const student = students.find(s => s.id === dup.studentId);
+                if (!student) continue;
 
-            const trigger: AlertTrigger = {
-                ruleId: rule.id,
-                studentId: dup.studentId,
-                studentName: student.user?.name || 'Unknown',
-                value: dup._count._all,
-                threshold: 1,
-                message: `Terdeteksi ${dup._count._all} tagihan duplikat untuk ${student.user?.name || 'Unknown'} (Rp ${Number(dup.amount)})`,
-                triggeredAt: new Date().toISOString(),
-            };
-            triggers.push(trigger);
+                const count = dup._count._all;
+
+                const trigger: AlertTrigger = {
+                    ruleId: rule.id,
+                    studentId: dup.studentId,
+                    studentName: student.user?.name || 'Unknown',
+                    value: count,
+                    threshold: 1,
+                    message: `Terdeteksi ${count} tagihan duplikat untuk ${student.user?.name || 'Unknown'} (Rp ${Number(dup.amount)})`,
+                    triggeredAt: new Date().toISOString(),
+                };
+                triggers.push(trigger);
+            }
         }
 
         // 2. Check for Statistical Outliers (Unusually high amounts)
         // Best Practice: Calculate statistics over a longer period (1 year) to establish a reliable baseline
         // Use raw query for efficient STDDEV calculation as Prisma doesn't support it natively yet
-        const stats = await prisma.$queryRaw<Array<{ payment_type_id: string; avg_val: number; stddev_val: number }>>`
+        const stats = await prisma.$queryRaw<Array<{ payment_type_id: string; avg_val: number | string; stddev_val: number | string }>>`
             SELECT
                 "payment_type_id",
                 AVG(amount) as avg_val,
@@ -306,7 +296,8 @@ async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
 
         for (const invoice of recentInvoices) {
             const stat = stats.find(s => s.payment_type_id === invoice.paymentTypeId);
-            if (!stat || !stat.stddev_val) continue;
+            // Ensure values are numbers before calculation (Prisma/PG might return strings for aggregations)
+            if (!stat || stat.stddev_val === null || stat.stddev_val === undefined) continue;
 
             const amount = Number(invoice.amount);
             const avg = Number(stat.avg_val);

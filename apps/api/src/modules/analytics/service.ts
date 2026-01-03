@@ -398,7 +398,10 @@ export async function getAttendanceStats(unitId?: string, dateRange?: DateRange)
     }),
   };
 
-  const [byStatus, dailyTrend, byClassBreakdown] = await Promise.all([
+  const startDate = dateRange?.startDate ? new Date(dateRange.startDate) : undefined;
+  const endDate = dateRange?.endDate ? new Date(dateRange.endDate) : undefined;
+
+  const [byStatus, dailyTrend, classStatsRaw] = await Promise.all([
     prisma.attendance.groupBy({
       by: ["status"],
       where,
@@ -417,12 +420,19 @@ export async function getAttendanceStats(unitId?: string, dateRange?: DateRange)
       GROUP BY date::date
       ORDER BY date DESC
     `,
-    // By class and status
-    prisma.attendance.groupBy({
-      by: ["classId", "status"],
-      where,
-      _count: true,
-    }),
+    // Optimized: By class stats using single query
+    prisma.$queryRaw<Array<{ classId: string; total: number; present: number }>>`
+      SELECT
+        a.class_id as "classId",
+        COUNT(*)::int as total,
+        COUNT(CASE WHEN a.status = 'PRESENT' THEN 1 END)::int as present
+      FROM attendances a
+      JOIN students s ON a.student_id = s.id
+      WHERE 1=1
+      ${unitId ? Prisma.sql`AND s.unit_id = ${unitId}` : Prisma.empty}
+      ${startDate && endDate ? Prisma.sql`AND a.date >= ${startDate} AND a.date <= ${endDate}` : Prisma.empty}
+      GROUP BY a.class_id
+    `,
   ]);
 
   const totalRecords = byStatus.reduce((sum, s) => sum + s._count, 0);
@@ -432,27 +442,14 @@ export async function getAttendanceStats(unitId?: string, dateRange?: DateRange)
   const sickCount = byStatus.find(s => s.status === "SICK")?._count || 0;
   const permittedCount = byStatus.find(s => s.status === "EXCUSED")?._count || 0; // EXCUSED is the enum value in schema
 
-  // Process class breakdown
-  const classStatsMap = new Map<string, { total: number; present: number }>();
-
-  byClassBreakdown.forEach(record => {
-      if (!record.classId) return;
-      const stats = classStatsMap.get(record.classId) || { total: 0, present: 0 };
-      stats.total += record._count;
-      if (record.status === "PRESENT") {
-          stats.present += record._count;
-      }
-      classStatsMap.set(record.classId, stats);
-  });
-
-  const classIds = Array.from(classStatsMap.keys());
+  const classIds = classStatsRaw.map(s => s.classId).filter(Boolean);
   const classes = await prisma.class.findMany({
     where: { id: { in: classIds } },
     select: { id: true, name: true, level: true },
   });
 
-  const classRates = classIds.map(cid => {
-      const stats = classStatsMap.get(cid) || { total: 0, present: 0 };
+  const classRates = classStatsRaw.map(stats => {
+      const cid = stats.classId;
       return {
           classId: cid,
           className: classes.find(c => c.id === cid)?.name || "Unknown",

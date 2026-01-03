@@ -11,6 +11,19 @@ vi.mock('@/lib/prisma', () => ({
     prisma: prismaMock,
 }));
 
+// Mock Prisma Client Enums
+vi.mock('@prisma/client', () => ({
+    PrismaClient: vi.fn(),
+    Gender: {
+        MALE: 'MALE',
+        FEMALE: 'FEMALE'
+    },
+    Prisma: {
+        sql: (strings: string[], ...values: any[]) => ({ strings, values }),
+        empty: {},
+    }
+}));
+
 describe('Analytics Service', () => {
     beforeEach(() => {
         resetPrismaMocks();
@@ -182,17 +195,18 @@ describe('Analytics Service', () => {
                     { classId: 'class-1', _count: 100 }
                 ]); // byClass
 
-            prismaMock.$queryRaw.mockResolvedValue([
-                { date: new Date('2024-12-01'), present: BigInt(80), absent: BigInt(10), late: BigInt(5), total: BigInt(100) },
-            ]);
+            prismaMock.$queryRaw
+                // Daily Trend
+                .mockResolvedValueOnce([
+                    { date: new Date('2024-12-01'), present: BigInt(80), absent: BigInt(10), late: BigInt(5), total: BigInt(100) },
+                ])
+                // Class Breakdown (Optimized)
+                .mockResolvedValueOnce([
+                     { classId: 'class-1', total: 100, present: 80 }
+                ]);
 
             prismaMock.class.findMany.mockResolvedValue([
                 { id: 'class-1', name: 'Kelas 7A', level: '7' },
-            ]);
-
-            // byClassAndStatus (for rate calculation workaround)
-            prismaMock.attendance.groupBy.mockResolvedValueOnce([
-                 { classId: 'class-1', status: 'PRESENT', _count: 80 }
             ]);
 
             const result = await analyticsService.getAttendanceStats();

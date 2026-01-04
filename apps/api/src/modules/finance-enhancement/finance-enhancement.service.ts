@@ -14,9 +14,9 @@ import {
   TrialBalanceReport,
   IncomeExpenseReport,
   SharedPaginatedResponse,
-  Pagination
+  Pagination,
+  AccountType
 } from '@cipansor/shared';
-import { AccountType } from '@cipansor/shared';
 import { Prisma } from '@prisma/client';
 
 export class FinanceEnhancementService {
@@ -46,8 +46,8 @@ export class FinanceEnhancementService {
       prisma.accountCode.findMany({
         where: whereClause,
         include: {
-          parent: { select: { id: true, code: true, name: true } },
-          children: { select: { id: true, code: true, name: true } }
+          parent: { select: { id: true, code: true, name: true, type: true } },
+          children: { select: { id: true, code: true, name: true, type: true } }
         },
         orderBy: { code: 'asc' },
         skip: (page - 1) * limit,
@@ -58,7 +58,7 @@ export class FinanceEnhancementService {
 
     return {
       success: true,
-      data: data as unknown as AccountCode[],
+      data: data.map(this.mapToAccountCode),
       meta: {
         pagination: {
           page,
@@ -80,13 +80,13 @@ export class FinanceEnhancementService {
       data: {
         code: input.code,
         name: input.name,
-        type: input.type as unknown as string, // Cast to unknown first to handle potential undefined type inference
+        type: input.type,
         parentId: input.parentId,
         isActive: input.isActive ?? true
       }
     });
 
-    return accountCode as unknown as AccountCode;
+    return this.mapToAccountCode(accountCode);
   }
 
   async updateAccountCode(id: string, input: UpdateAccountCodeInput): Promise<AccountCode> {
@@ -94,10 +94,10 @@ export class FinanceEnhancementService {
       where: { id },
       data: {
         ...input,
-        type: input.type ? (input.type as unknown as string) : undefined // Handle optional update
+        type: input.type ? input.type : undefined
       }
     });
-    return accountCode as unknown as AccountCode;
+    return this.mapToAccountCode(accountCode);
   }
 
   // ==================== JOURNAL ENTRIES ====================
@@ -140,17 +140,9 @@ export class FinanceEnhancementService {
       prisma.journalEntry.count({ where: whereClause })
     ]);
 
-    // Prisma returns Decimal, shared type expects number. Explicit cast needed or JSON serialization handles it.
-    // For safer typing, we map it.
-    const mappedData = data.map(entry => ({
-      ...entry,
-      debit: Number(entry.debit),
-      credit: Number(entry.credit)
-    }));
-
     return {
       success: true,
-      data: mappedData as unknown as JournalEntry[],
+      data: data.map(this.mapToJournalEntry),
       meta: {
         pagination: {
           page,
@@ -172,7 +164,7 @@ export class FinanceEnhancementService {
         debit: input.debit || 0,
         credit: input.credit || 0,
         reference: input.reference,
-        referenceType: input.referenceType ?? null, // Fixed null vs undefined issue
+        referenceType: input.referenceType ?? null,
         createdById: input.createdById
       },
       include: {
@@ -181,11 +173,7 @@ export class FinanceEnhancementService {
       }
     });
 
-    return {
-      ...entry,
-      debit: Number(entry.debit),
-      credit: Number(entry.credit)
-    } as unknown as JournalEntry;
+    return this.mapToJournalEntry(entry);
   }
 
   async getJournalEntryById(id: string): Promise<JournalEntry | null> {
@@ -200,11 +188,7 @@ export class FinanceEnhancementService {
 
     if (!entry) return null;
 
-    return {
-      ...entry,
-      debit: Number(entry.debit),
-      credit: Number(entry.credit)
-    } as unknown as JournalEntry;
+    return this.mapToJournalEntry(entry);
   }
 
   // ==================== SCHOLARSHIPS ====================
@@ -241,7 +225,7 @@ export class FinanceEnhancementService {
 
     return {
       success: true,
-      data: data as unknown as Scholarship[],
+      data: data.map(this.mapToScholarship),
       meta: {
         pagination: {
           page,
@@ -269,7 +253,7 @@ export class FinanceEnhancementService {
       }
     });
 
-    return scholarship as unknown as Scholarship;
+    return this.mapToScholarship(scholarship);
   }
 
   async getScholarshipById(id: string): Promise<Scholarship | null> {
@@ -285,7 +269,9 @@ export class FinanceEnhancementService {
         _count: { select: { recipients: true } }
       }
     });
-    return scholarship as unknown as Scholarship;
+
+    if (!scholarship) return null;
+    return this.mapToScholarship(scholarship);
   }
 
   async getScholarshipRecipients(id: string, params: {
@@ -321,29 +307,9 @@ export class FinanceEnhancementService {
       prisma.scholarshipRecipient.count({ where: whereClause })
     ]);
 
-    const mappedData = data.map(r => ({
-      id: r.id,
-      scholarshipId: r.scholarshipId,
-      studentId: r.studentId,
-      academicYearId: r.academicYearId,
-      startDate: r.startDate,
-      endDate: r.endDate,
-      notes: r.notes,
-      status: r.status,
-      createdAt: r.createdAt,
-      updatedAt: r.updatedAt,
-      student: {
-        id: r.student.id,
-        nis: r.student.nis,
-        name: r.student.user.name,
-        class: r.student.enrollments[0]?.class?.name || '-'
-      },
-      academicYear: { id: r.academicYearId, name: r.academicYear.name }
-    }));
-
     return {
       success: true,
-      data: mappedData as unknown as ScholarshipRecipient[],
+      data: data.map(this.mapToScholarshipRecipient),
       meta: {
         pagination: {
           page,
@@ -386,7 +352,7 @@ export class FinanceEnhancementService {
       }
     });
 
-    return recipient as unknown as ScholarshipRecipient;
+    return this.mapToScholarshipRecipient(recipient);
   }
 
   // ==================== PAYMENT COMPONENTS ====================
@@ -465,11 +431,6 @@ export class FinanceEnhancementService {
   }): Promise<TrialBalanceReport> {
     const { unitId, startDate, endDate } = params;
 
-    // Use aggregate where possible or query raw for efficiency if needed
-    // But since we need grouped by account, we can fetch all relevant entries
-    // and group by accountId, summing debits and credits.
-
-    // Optimization: Use groupBy to let DB do the heavy lifting
     const grouped = await prisma.journalEntry.groupBy({
       by: ['accountId'],
       where: {
@@ -482,7 +443,6 @@ export class FinanceEnhancementService {
       }
     });
 
-    // Fetch account details for the grouped IDs
     const accountIds = grouped.map(g => g.accountId);
     const accounts = await prisma.accountCode.findMany({
       where: { id: { in: accountIds } }
@@ -528,14 +488,9 @@ export class FinanceEnhancementService {
   }): Promise<IncomeExpenseReport> {
     const { unitId, startDate, endDate, groupBy = 'month' } = params;
 
-    // Optimization: Use prisma.$queryRaw for efficient database-level aggregation
-    // This avoids fetching thousands of records into memory
-
     const dateFormat = groupBy === 'month' ? 'YYYY-MM' : 'YYYY-MM-DD';
 
-    // Note: We use raw table names "journal_entries" and "account_codes" and snake_case columns
-    // We also handle the filtering for 'REVENUE' and 'EXPENSE' account types
-
+    // Optimization: Using Enum constants instead of hardcoded strings
     const results = await prisma.$queryRaw<Array<{ period: string, type: string, total: bigint }>>`
       SELECT
         TO_CHAR(je.date, ${dateFormat}) as period,
@@ -546,44 +501,28 @@ export class FinanceEnhancementService {
       WHERE je.unit_id = ${unitId}
         AND je.date >= ${startDate}
         AND je.date <= ${endDate}
-        AND ac.type IN ('REVENUE', 'EXPENSE')
+        AND ac.type IN (${AccountType.REVENUE}, ${AccountType.EXPENSE})
       GROUP BY 1, 2
       ORDER BY 1 ASC
     `;
 
-    // Process results into the desired format
     const breakdownMap: Record<string, { income: number; expense: number }> = {};
     let totalIncome = 0;
     let totalExpense = 0;
 
     results.forEach((row) => {
       const period = row.period;
-      // Note: total is BigInt, cast to Number (safe for finance reports usually, or use string)
-      // Revenue is usually positive in this calculation (Credit - Debit),
-      // Expense is usually negative if we did Credit - Debit, but let's handle signs carefully.
-
-      // Actually, for Account Type:
-      // Revenue: Credit increases it.
-      // Expense: Debit increases it.
-      // The query did SUM(Credit - Debit).
-      // So Revenue items will be positive.
-      // Expense items will be negative (since they are mostly Debit).
-
       const val = Number(row.total);
 
       if (!breakdownMap[period]) {
         breakdownMap[period] = { income: 0, expense: 0 };
       }
 
-      if (row.type === 'REVENUE') {
-        // Revenue is Credit balance
-        const amount = val; // Positive
+      if (row.type === AccountType.REVENUE) {
+        const amount = val;
         breakdownMap[period].income += amount;
         totalIncome += amount;
-      } else if (row.type === 'EXPENSE') {
-        // Expense is Debit balance.
-        // Query did Credit - Debit. So Expense entries (Debit) resulted in negative val.
-        // We want positive magnitude for the report.
+      } else if (row.type === AccountType.EXPENSE) {
         const amount = -val;
         breakdownMap[period].expense += amount;
         totalExpense += amount;
@@ -610,6 +549,106 @@ export class FinanceEnhancementService {
         netIncome: totalIncome - totalExpense
       },
       breakdown
+    };
+  }
+
+  // ==================== HELPERS ====================
+
+  private mapToAccountCode(prismaAccount: any): AccountCode {
+    return {
+      id: prismaAccount.id,
+      code: prismaAccount.code,
+      name: prismaAccount.name,
+      type: prismaAccount.type as AccountType, // Prisma enum should match Shared enum
+      parentId: prismaAccount.parentId,
+      isActive: prismaAccount.isActive,
+      createdAt: prismaAccount.createdAt,
+      updatedAt: prismaAccount.updatedAt,
+      // Map relations if they exist
+      parent: prismaAccount.parent ? {
+        id: prismaAccount.parent.id,
+        code: prismaAccount.parent.code,
+        name: prismaAccount.parent.name,
+        type: prismaAccount.parent.type as AccountType,
+        isActive: true // Partial mapping for relation
+      } : undefined,
+      children: prismaAccount.children ? prismaAccount.children.map((c: any) => ({
+        id: c.id,
+        code: c.code,
+        name: c.name,
+        type: c.type as AccountType,
+        isActive: true
+      })) : undefined
+    };
+  }
+
+  private mapToJournalEntry(prismaEntry: any): JournalEntry {
+    return {
+      id: prismaEntry.id,
+      unitId: prismaEntry.unitId,
+      accountId: prismaEntry.accountId,
+      date: prismaEntry.date, // Date object, shared type allows string or Date
+      description: prismaEntry.description,
+      debit: Number(prismaEntry.debit),
+      credit: Number(prismaEntry.credit),
+      reference: prismaEntry.reference,
+      referenceType: prismaEntry.referenceType,
+      createdById: prismaEntry.createdById,
+      createdAt: prismaEntry.createdAt,
+      updatedAt: prismaEntry.updatedAt,
+
+      unit: prismaEntry.unit,
+      account: prismaEntry.account ? {
+        id: prismaEntry.account.id,
+        code: prismaEntry.account.code,
+        name: prismaEntry.account.name,
+        type: prismaEntry.account.type as AccountType,
+        isActive: true
+      } : undefined,
+      createdBy: prismaEntry.createdBy
+    };
+  }
+
+  private mapToScholarship(prismaScholarship: any): Scholarship {
+    return {
+      id: prismaScholarship.id,
+      name: prismaScholarship.name,
+      description: prismaScholarship.description,
+      source: prismaScholarship.source,
+      type: prismaScholarship.type,
+      quota: prismaScholarship.quota,
+      requirements: prismaScholarship.requirements,
+      startDate: prismaScholarship.startDate,
+      endDate: prismaScholarship.endDate,
+      unitId: prismaScholarship.unitId,
+      isActive: prismaScholarship.isActive,
+      createdAt: prismaScholarship.createdAt,
+      updatedAt: prismaScholarship.updatedAt,
+      unit: prismaScholarship.unit,
+      _count: prismaScholarship._count
+    };
+  }
+
+  private mapToScholarshipRecipient(prismaRecipient: any): ScholarshipRecipient {
+    return {
+      id: prismaRecipient.id,
+      scholarshipId: prismaRecipient.scholarshipId,
+      studentId: prismaRecipient.studentId,
+      academicYearId: prismaRecipient.academicYearId,
+      startDate: prismaRecipient.startDate,
+      endDate: prismaRecipient.endDate,
+      notes: prismaRecipient.notes,
+      status: prismaRecipient.status,
+      createdAt: prismaRecipient.createdAt,
+      updatedAt: prismaRecipient.updatedAt,
+      student: prismaRecipient.student ? {
+        id: prismaRecipient.student.id,
+        nis: prismaRecipient.student.nis,
+        name: prismaRecipient.student.user?.name || '',
+        class: prismaRecipient.student.enrollments?.[0]?.class?.name || '-'
+      } : undefined,
+      academicYear: prismaRecipient.academicYear,
+      scholarship: prismaRecipient.scholarship
     };
   }
 }

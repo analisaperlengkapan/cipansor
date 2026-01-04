@@ -13,6 +13,7 @@ export const createPaymentTypeSchema = z.object({
   amount: z.number().positive("Amount must be positive"),
   isRecurring: z.boolean().default(false),
   isActive: z.boolean().default(true),
+  accountId: z.string().uuid("Invalid account ID").optional(),
 });
 
 export const updatePaymentTypeSchema = createPaymentTypeSchema.partial().omit({

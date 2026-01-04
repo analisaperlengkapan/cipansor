@@ -284,11 +284,16 @@ export async function deleteInvoice(id: string) {
 export async function createPayment(data: CreatePaymentDto, userId: string = 'SYSTEM') {
   // Create payment and update invoice in a transaction
   const payment = await prisma.$transaction(async (tx) => {
+    // 1. Fetch invoice with all required details upfront
     const invoice = await tx.invoice.findUnique({
       where: { id: data.invoiceId },
       include: {
-        student: { select: { unitId: true } },
-        paymentType: { select: { accountId: true } }
+        student: {
+          include: {
+            user: { select: { name: true } }, // Fetch user name for description
+          }
+        },
+        paymentType: { select: { id: true, name: true, accountId: true } }
       }
     });
 
@@ -343,19 +348,6 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
     // INTEGRATION: Create Journal Entry for Accounting
     // =================================================================
     if (invoice.paymentType.accountId && invoice.student.unitId) {
-      // Refetch invoice with full details for description
-      const invoiceDetails = await tx.invoice.findUnique({
-        where: { id: invoiceId },
-        include: {
-          paymentType: true,
-          student: { include: { user: true } }
-        }
-      });
-
-      if (!invoiceDetails) {
-        throw new Error("Invoice details not found for accounting integration");
-      }
-
       // 1. Determine Debit Account (Asset) based on Payment Method
       // Look up by Name (more robust than code potentially) or standard codes
       let assetAccount = await tx.accountCode.findFirst({
@@ -373,7 +365,7 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
       }
 
       if (assetAccount) {
-        const descriptionPrefix = `Pembayaran ${invoiceDetails.invoiceNumber}`;
+        const descriptionPrefix = `Pembayaran ${invoice.invoiceNumber}`;
 
         // Debit Entry (Asset increases)
         await tx.journalEntry.create({
@@ -396,7 +388,7 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
             unitId: invoice.student.unitId,
             accountId: invoice.paymentType.accountId,
             date: new Date(),
-            description: `Pendapatan ${invoiceDetails.paymentType.name} - ${invoiceDetails.student.user.name}`,
+            description: `Pendapatan ${invoice.paymentType.name} - ${invoice.student.user.name}`,
             debit: 0,
             credit: payment.amount,
             reference: payment.id,
@@ -406,14 +398,6 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
         });
       } else {
           // If no account found, we must throw error to maintain integrity
-          // Or we can create a "Suspense" account if that exists, but failing is safer for now
-          // to force Admin to configure accounts correctly.
-          // However, to avoid blocking payments in legacy systems without full accounting setup,
-          // we might just log warning if strictly requested.
-          // User requested "best practice", so failing on missing config is better than data drift.
-          // BUT, since we are introducing this to an existing system, blocking payments might be too aggressive
-          // if they haven't set up AccountCodes yet.
-          // Compromise: Log warning for now.
           console.warn(`Accounting Integration: No Asset Account found for method ${payment.method} in unit ${invoice.student.unitId}`);
       }
     }

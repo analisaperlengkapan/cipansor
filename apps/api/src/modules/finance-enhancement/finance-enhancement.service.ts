@@ -94,7 +94,7 @@ export class FinanceEnhancementService {
       where: { id },
       data: {
         ...input,
-        type: input.type as string // Cast as string
+        type: input.type ? (input.type as unknown as string) : undefined // Handle optional update
       }
     });
     return accountCode as unknown as AccountCode;
@@ -168,7 +168,7 @@ export class FinanceEnhancementService {
         unitId: input.unitId,
         accountId: input.accountId,
         date: new Date(input.date),
-        description: input.description,
+        description: input.description || '',
         debit: input.debit || 0,
         credit: input.credit || 0,
         reference: input.reference,

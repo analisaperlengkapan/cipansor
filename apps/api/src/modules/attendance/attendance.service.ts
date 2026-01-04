@@ -57,6 +57,7 @@ export class AttendanceService {
 
     // Date filtering with timezone safety
     if (date) {
+      // query.date is a string (YYYY-MM-DD) from schema
       const d = new Date(date);
       // Use string comparison for date part to avoid timezone shifts if storing as Date
       // OR explicitly set UTC boundaries if the DB stores timestamps

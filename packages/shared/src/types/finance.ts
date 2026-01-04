@@ -24,7 +24,8 @@ export enum JournalReferenceType {
 export enum ScholarshipType {
   FULL = 'FULL',
   PARTIAL = 'PARTIAL',
-  FIXED_AMOUNT = 'FIXED_AMOUNT'
+  FIXED_AMOUNT = 'FIXED_AMOUNT',
+  SPECIFIC = 'SPECIFIC'
 }
 
 export enum ScholarshipSource {
@@ -32,6 +33,7 @@ export enum ScholarshipSource {
   GOVERNMENT = 'GOVERNMENT',
   FOUNDATION = 'FOUNDATION',
   DONOR = 'DONOR',
+  COMPANY = 'COMPANY',
   OTHER = 'OTHER'
 }
 
@@ -49,6 +51,7 @@ export enum PaymentCategory {
   UNIFORM = 'UNIFORM',
   BOOK = 'BOOK',
   ACTIVITY = 'ACTIVITY',
+  EXAM = 'EXAM',
   OTHER = 'OTHER'
 }
 

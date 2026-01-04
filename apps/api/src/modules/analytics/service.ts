@@ -609,3 +609,138 @@ export async function getAcademicStats(unitId?: string): Promise<AcademicPerform
     trend: [], // Still empty as semester trend needs complex historical data
   };
 }
+
+export async function getLibraryStats(unitId?: string): Promise<LibrarySummary> {
+  const where: Prisma.BookWhereInput = unitId ? { unitId } : {};
+  const borrowingWhere: Prisma.BorrowingWhereInput = {
+    ...(unitId && { book: { unitId } }),
+  };
+
+  const [totalBooks, totalCopies, availableCopies, borrowingStats, overdueCount, popularBooks] = await Promise.all([
+    // Total titles
+    prisma.book.count({ where }),
+    // Total physical copies
+    prisma.book.aggregate({
+      where,
+      _sum: { quantity: true }
+    }),
+    // Available copies
+    prisma.book.aggregate({
+      where,
+      _sum: { available: true }
+    }),
+    // Borrowings by status
+    prisma.borrowing.groupBy({
+      by: ['status'],
+      where: borrowingWhere,
+      _count: true
+    }),
+    // Overdue count
+    prisma.borrowing.count({
+      where: {
+        ...borrowingWhere,
+        status: 'OVERDUE'
+      }
+    }),
+    // Popular books (most borrowed)
+    prisma.borrowing.groupBy({
+      by: ['bookId'],
+      where: borrowingWhere,
+      _count: true,
+      orderBy: { _count: { bookId: 'desc' } },
+      take: 5
+    })
+  ]);
+
+  // Fetch book details for popular books
+  const popularBookIds = popularBooks.map(b => b.bookId);
+  const books = await prisma.book.findMany({
+    where: { id: { in: popularBookIds } },
+    select: { id: true, title: true, author: true }
+  });
+
+  const popularBooksData = popularBooks.map(item => {
+    const book = books.find(b => b.id === item.bookId);
+    return {
+      bookId: item.bookId,
+      title: book?.title || 'Unknown',
+      author: book?.author || 'Unknown',
+      borrowCount: item._count
+    };
+  });
+
+  const borrowings = borrowingStats.reduce((acc, curr) => {
+    acc[curr.status] = curr._count;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return {
+    books: {
+      totalBooks: totalBooks,
+      totalCopies: totalCopies._sum.quantity || 0,
+      available: availableCopies._sum.available || 0
+    },
+    borrowings,
+    overdue: overdueCount,
+    popularBooks: popularBooksData
+  };
+}
+
+export async function getPSBStats(unitId?: string): Promise<PsbSummary> {
+  // Check for active admission period
+  const activePeriod = await prisma.admissionPeriod.findFirst({
+    where: {
+      isActive: true,
+      ...(unitId && { unitId })
+    },
+    orderBy: { startDate: 'desc' }
+  });
+
+  const periodFilter = activePeriod ? { admissionPeriodId: activePeriod.id } : {};
+
+  // Combine unit filter and period filter
+  const where: Prisma.RegistrantWhereInput = {
+    ...periodFilter,
+    ...(unitId ? { admissionPeriod: { unitId } } : {})
+  };
+
+  const [totalRegistrants, byStatus, admissionPeriods] = await Promise.all([
+    prisma.registrant.count({ where }),
+    prisma.registrant.groupBy({
+      by: ['status'],
+      where,
+      _count: true
+    }),
+    prisma.admissionPeriod.findMany({
+      where: unitId ? { unitId } : {},
+      orderBy: { startDate: 'desc' },
+      take: 5,
+      include: {
+        _count: {
+          select: { registrants: true }
+        }
+      }
+    })
+  ]);
+
+  const statusCounts = byStatus.reduce((acc, curr) => {
+    acc[curr.status] = curr._count;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const periodsData = admissionPeriods.map(p => ({
+    periodId: p.id,
+    periodName: p.name,
+    quota: p.quota,
+    registrantCount: p._count.registrants,
+    startDate: p.startDate,
+    endDate: p.endDate,
+    isActive: p.isActive
+  }));
+
+  return {
+    totalRegistrants,
+    byStatus: statusCounts,
+    byPeriod: periodsData
+  };
+}

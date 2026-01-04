@@ -485,6 +485,14 @@ export async function generateReportCard(studentId: string, classId: string, aca
   // We need to group by subject and calculate averages for Daily, Midterm, Final
   // Then average those components
 
+  // Use Prisma.sql for safer table name injection if possible, but strict raw query requires standard SQL
+  // In Prisma, raw queries on table names usually require knowing the mapped name.
+  // Based on schema.prisma, the mapped names are:
+  // Grade -> "grades"
+  // Exam -> "exams"
+  // Subject -> "subjects"
+  // This matches my previous assumption.
+
   const subjectAggregates = await prisma.$queryRaw<Array<{
     subject_id: string;
     subject_name: string;
@@ -498,9 +506,9 @@ export async function generateReportCard(studentId: string, classId: string, aca
       AVG(CASE WHEN e.type = 'DAILY_TEST' THEN g.percentage END) as avg_daily,
       AVG(CASE WHEN e.type = 'MIDTERM' THEN g.percentage END) as avg_midterm,
       AVG(CASE WHEN e.type = 'FINAL' THEN g.percentage END) as avg_final
-    FROM grades g
-    JOIN exams e ON g.exam_id = e.id
-    JOIN subjects s ON g.subject_id = s.id
+    FROM "grades" g
+    JOIN "exams" e ON g.exam_id = e.id
+    JOIN "subjects" s ON g.subject_id = s.id
     WHERE g.student_id = ${studentId}
       AND g.academic_year_id = ${academicYearId}
       AND g.type = 'EXAM'

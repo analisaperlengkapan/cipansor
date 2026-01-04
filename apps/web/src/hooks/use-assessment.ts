@@ -1,157 +1,65 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import {
+  Exam,
+  ExamType,
+  ExamStatus,
+  Grade,
+  GradeType,
+  ReportCard,
+  CreateExamInput,
+  UpdateExamInput,
+  CreateGradeInput,
+  UpdateGradeInput,
+  BulkCreateGradesInput,
+  CreateReportCardInput,
+  UpdateReportCardInput
+} from '@cipansor/shared';
 
-// Types
-export type AssessmentType = 'DAILY' | 'WEEKLY' | 'MIDTERM' | 'FINAL' | 'PRACTICAL' | 'PROJECT' | 'QUIZ';
-export type GradeType = 'LETTER' | 'NUMERIC' | 'PERCENTAGE';
+// Re-export constants for UI consumption
+export { ExamType, ExamStatus, GradeType };
 
-export const ASSESSMENT_TYPES: AssessmentType[] = ['DAILY', 'WEEKLY', 'MIDTERM', 'FINAL', 'PRACTICAL', 'PROJECT', 'QUIZ'];
-export const GRADE_TYPES: GradeType[] = ['LETTER', 'NUMERIC', 'PERCENTAGE'];
+export const ASSESSMENT_TYPES: ExamType[] = [
+  ExamType.DAILY_TEST,
+  ExamType.QUIZ,
+  ExamType.MIDTERM,
+  ExamType.FINAL,
+  ExamType.PRACTICAL,
+  ExamType.PROJECT,
+  ExamType.TAHFIDZ_TEST
+];
 
-export const ASSESSMENT_TYPE_LABELS: Record<AssessmentType, string> = {
-  DAILY: 'Harian',
-  WEEKLY: 'Mingguan',
-  MIDTERM: 'UTS',
-  FINAL: 'UAS',
-  PRACTICAL: 'Praktik',
-  PROJECT: 'Proyek',
-  QUIZ: 'Kuis',
+export const GRADE_TYPES: GradeType[] = [
+  GradeType.EXAM,
+  GradeType.ASSIGNMENT,
+  GradeType.PARTICIPATION,
+  GradeType.ATTENDANCE,
+  GradeType.PROJECT,
+  GradeType.TAHFIDZ
+];
+
+export const ASSESSMENT_TYPE_LABELS: Record<ExamType, string> = {
+  [ExamType.DAILY_TEST]: 'Ulangan Harian',
+  [ExamType.QUIZ]: 'Kuis',
+  [ExamType.MIDTERM]: 'UTS',
+  [ExamType.FINAL]: 'UAS',
+  [ExamType.PRACTICAL]: 'Praktik',
+  [ExamType.PROJECT]: 'Proyek',
+  [ExamType.TAHFIDZ_TEST]: 'Ujian Tahfidz',
 };
 
 export const GRADE_TYPE_LABELS: Record<GradeType, string> = {
-  LETTER: 'Huruf',
-  NUMERIC: 'Angka',
-  PERCENTAGE: 'Persentase',
+  [GradeType.EXAM]: 'Ujian',
+  [GradeType.ASSIGNMENT]: 'Tugas',
+  [GradeType.PARTICIPATION]: 'Partisipasi',
+  [GradeType.ATTENDANCE]: 'Kehadiran',
+  [GradeType.PROJECT]: 'Proyek',
+  [GradeType.TAHFIDZ]: 'Tahfidz',
 };
 
-export interface Assessment {
-  id: string;
-  name: string;
-  description?: string;
-  type: AssessmentType;
-  subjectId: string;
-  subject?: {
-    id: string;
-    name: string;
-    code: string;
-  };
-  classId: string;
-  class?: {
-    id: string;
-    name: string;
-  };
-  teacherId: string;
-  teacher?: {
-    id: string;
-    name: string;
-  };
-  academicYearId: string;
-  academicYear?: {
-    id: string;
-    name: string;
-  };
-  semester: number;
-  date: string;
-  maxScore: number;
-  passingScore?: number;
-  weight: number;
-  isPublished: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Grade {
-  id: string;
-  assessmentId: string;
-  assessment?: Assessment;
-  studentId: string;
-  student?: {
-    id: string;
-    name: string;
-    nis: string;
-  };
-  score: number;
-  letterGrade?: string;
-  notes?: string;
-  gradedById?: string;
-  gradedBy?: {
-    id: string;
-    name: string;
-  };
-  gradedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ReportCard {
-  id: string;
-  studentId: string;
-  student?: {
-    id: string;
-    name: string;
-    nis: string;
-    nisn?: string;
-  };
-  classId: string;
-  class?: {
-    id: string;
-    name: string;
-    teacher?: {
-      id: string;
-      name: string;
-    };
-  };
-  academicYearId: string;
-  academicYear?: {
-    id: string;
-    name: string;
-  };
-  semester: number;
-  subjects: ReportCardSubject[];
-  totalScore: number;
-  averageScore: number;
-  rank?: number;
-  totalStudents?: number;
-  attendance?: {
-    present: number;
-    sick: number;
-    permitted: number;
-    absent: number;
-  };
-  attendancePercentage?: number;
-  teacherNotes?: string;
-  principalNotes?: string;
-  isPublished: boolean;
-  publishedAt?: string;
-  printedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ReportCardSubject {
-  id?: string;
-  subjectId: string;
-  subject?: {
-    id: string;
-    name: string;
-    code: string;
-  };
-  subjectName?: string;
-  subjectCode?: string;
-  dailyScore?: number;
-  midtermScore?: number;
-  knowledgeScore?: number;
-  skillScore?: number;
-  finalScore: number;
-  practicalScore?: number;
-  finalGrade?: number;
-  letterGrade?: string;
-  notes?: string;
-  teacherNotes?: string;
-}
-
+// UI specific types that might not be in shared or are composed
 export interface GradeStats {
-  assessmentId: string;
+  examId: string;
   totalStudents: number;
   gradedCount: number;
   averageScore: number;
@@ -167,151 +75,165 @@ export interface StudentGradeSummary {
   studentName: string;
   nis: string;
   averageScore: number;
-  totalAssessments: number;
+  totalExams: number;
   rank?: number;
   trend: 'UP' | 'DOWN' | 'STABLE';
 }
 
-// Assessment queries
-export function useAssessments(params?: {
+// Assessment (Exam) queries
+export function useExams(params?: {
   classId?: string;
   subjectId?: string;
   teacherId?: string;
-  type?: AssessmentType;
+  type?: ExamType;
   academicYearId?: string;
-  semester?: number;
-  isPublished?: boolean;
+  status?: ExamStatus;
+  startDate?: string;
+  endDate?: string;
 }) {
   return useQuery({
-    queryKey: ['assessments', params],
+    queryKey: ['exams', params],
     queryFn: async () => {
-      const response = await api.get('/assessments', { params });
-      return response.data.data as Assessment[];
+      const response = await api.get('/assessment/exams', { params });
+      return response.data.data as Exam[];
     },
   });
 }
 
-export function useAssessment(id: string) {
+export function useExam(id: string) {
   return useQuery({
-    queryKey: ['assessment', id],
+    queryKey: ['exam', id],
     queryFn: async () => {
-      const response = await api.get(`/assessments/${id}`);
-      return response.data.data as Assessment;
+      const response = await api.get(`/assessment/exams/${id}`);
+      return response.data.data as Exam;
     },
     enabled: !!id,
   });
 }
 
-export function useAssessmentStats(id: string) {
-  return useQuery({
-    queryKey: ['assessment-stats', id],
-    queryFn: async () => {
-      const response = await api.get(`/assessments/${id}/stats`);
-      return response.data.data as GradeStats;
-    },
-    enabled: !!id,
-  });
-}
-
-export function useCreateAssessment() {
+export function useCreateExam() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Partial<Assessment>) => {
-      const response = await api.post('/assessments', data);
+    mutationFn: async (data: CreateExamInput) => {
+      const response = await api.post('/assessment/exams', data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assessments'] });
+      queryClient.invalidateQueries({ queryKey: ['exams'] });
     },
   });
 }
 
-export function useUpdateAssessment() {
+export function useUpdateExam() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Assessment> }) => {
-      const response = await api.put(`/assessments/${id}`, data);
+    mutationFn: async ({ id, data }: { id: string; data: UpdateExamInput }) => {
+      const response = await api.put(`/assessment/exams/${id}`, data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assessments'] });
+      queryClient.invalidateQueries({ queryKey: ['exams'] });
     },
   });
 }
 
-export function usePublishAssessment() {
+export function useUpdateExamStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: ExamStatus }) => {
+      const response = await api.patch(`/assessment/exams/${id}/status`, { status });
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exams'] });
+    },
+  });
+}
+
+export function useDeleteExam() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post(`/assessments/${id}/publish`);
-      return response.data.data;
+      await api.delete(`/assessment/exams/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assessments'] });
-    },
-  });
-}
-
-export function useDeleteAssessment() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/assessments/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assessments'] });
+      queryClient.invalidateQueries({ queryKey: ['exams'] });
     },
   });
 }
 
 // Grade queries
-export function useGrades(assessmentId: string) {
+export function useGrades(params: {
+  examId?: string;
+  studentId?: string;
+  subjectId?: string;
+  academicYearId?: string;
+  type?: GradeType;
+}) {
   return useQuery({
-    queryKey: ['grades', assessmentId],
+    queryKey: ['grades', params],
     queryFn: async () => {
-      const response = await api.get(`/assessments/${assessmentId}/grades`);
+      const response = await api.get('/assessment/grades', { params });
       return response.data.data as Grade[];
     },
-    enabled: !!assessmentId,
   });
 }
 
-export function useStudentGrades(studentId: string, params?: {
-  academicYearId?: string;
-  semester?: number;
-  subjectId?: string;
-}) {
+export function useStudentGrades(studentId: string, academicYearId?: string) {
   return useQuery({
-    queryKey: ['student-grades', studentId, params],
+    queryKey: ['student-grades', studentId, academicYearId],
     queryFn: async () => {
-      const response = await api.get(`/students/${studentId}/grades`, { params });
+      const response = await api.get(`/assessment/grades/student/${studentId}`, {
+        params: { academicYearId }
+      });
       return response.data.data as Grade[];
     },
     enabled: !!studentId,
   });
 }
 
-export function useSubmitGrades() {
+export function useExamGrades(examId: string) {
+  return useQuery({
+    queryKey: ['exam-grades', examId],
+    queryFn: async () => {
+      const response = await api.get(`/assessment/grades/exam/${examId}`);
+      return response.data.data as Grade[];
+    },
+    enabled: !!examId,
+  });
+}
+
+export function useCreateGrade() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      assessmentId,
-      grades,
-    }: {
-      assessmentId: string;
-      grades: Array<{ studentId: string; score: number; notes?: string }>;
-    }) => {
-      const response = await api.post(`/assessments/${assessmentId}/grades`, { grades });
+    mutationFn: async (data: CreateGradeInput) => {
+      const response = await api.post('/assessment/grades', data);
       return response.data.data;
     },
-    onSuccess: (_, { assessmentId }) => {
-      queryClient.invalidateQueries({ queryKey: ['grades', assessmentId] });
-      queryClient.invalidateQueries({ queryKey: ['assessment-stats', assessmentId] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['grades'] });
+    },
+  });
+}
+
+export function useBulkCreateGrades() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: BulkCreateGradesInput) => {
+      const response = await api.post('/assessment/grades/bulk', data);
+      return response.data.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['grades'] });
+      if (variables.examId) {
+        queryClient.invalidateQueries({ queryKey: ['exam-grades', variables.examId] });
+      }
     },
   });
 }
@@ -320,21 +242,25 @@ export function useUpdateGrade() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      assessmentId,
-      gradeId,
-      data,
-    }: {
-      assessmentId: string;
-      gradeId: string;
-      data: { score: number; notes?: string };
-    }) => {
-      const response = await api.put(`/assessments/${assessmentId}/grades/${gradeId}`, data);
+    mutationFn: async ({ id, data }: { id: string; data: UpdateGradeInput }) => {
+      const response = await api.put(`/assessment/grades/${id}`, data);
       return response.data.data;
     },
-    onSuccess: (_, { assessmentId }) => {
-      queryClient.invalidateQueries({ queryKey: ['grades', assessmentId] });
-      queryClient.invalidateQueries({ queryKey: ['assessment-stats', assessmentId] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['grades'] });
+    },
+  });
+}
+
+export function useDeleteGrade() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/assessment/grades/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['grades'] });
     },
   });
 }
@@ -349,7 +275,7 @@ export function useReportCards(params?: {
   return useQuery({
     queryKey: ['report-cards', params],
     queryFn: async () => {
-      const response = await api.get('/report-cards', { params });
+      const response = await api.get('/assessment/report-cards', { params });
       return response.data.data as ReportCard[];
     },
   });
@@ -359,73 +285,19 @@ export function useReportCard(id: string) {
   return useQuery({
     queryKey: ['report-card', id],
     queryFn: async () => {
-      const response = await api.get(`/report-cards/${id}`);
+      const response = await api.get(`/assessment/report-cards/${id}`);
       return response.data.data as ReportCard;
     },
     enabled: !!id,
   });
 }
 
-export function useStudentReportCard(studentId: string, academicYearId: string, semester: number) {
-  return useQuery({
-    queryKey: ['student-report-card', studentId, academicYearId, semester],
-    queryFn: async () => {
-      const response = await api.get(`/students/${studentId}/report-card`, {
-        params: { academicYearId, semester },
-      });
-      return response.data.data as ReportCard;
-    },
-    enabled: !!studentId && !!academicYearId,
-  });
-}
-
-export function useGenerateReportCards() {
+export function useCreateReportCard() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      classId,
-      academicYearId,
-      semester,
-      options,
-    }: {
-      classId: string;
-      academicYearId: string;
-      semester: number;
-      options?: {
-        includeAttendance?: boolean;
-        includeTahfidz?: boolean;
-        includeExtracurricular?: boolean;
-      };
-    }) => {
-      const response = await api.post('/report-cards/generate', {
-        classId,
-        academicYearId,
-        semester,
-        ...options,
-      });
-      return response.data.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['report-cards'] });
-    },
-  });
-}
-
-export function usePublishReportCards() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (
-      params:
-        | { classId: string; academicYearId: string; semester: number }
-        | string[]
-    ) => {
-      if (Array.isArray(params)) {
-        const response = await api.post('/report-cards/publish', { ids: params });
-        return response.data.data;
-      }
-      const response = await api.post('/report-cards/publish', params);
+    mutationFn: async (data: CreateReportCardInput) => {
+      const response = await api.post('/assessment/report-cards', data);
       return response.data.data;
     },
     onSuccess: () => {
@@ -438,14 +310,8 @@ export function useUpdateReportCard() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: { teacherNotes?: string; principalNotes?: string };
-    }) => {
-      const response = await api.put(`/report-cards/${id}`, data);
+    mutationFn: async ({ id, data }: { id: string; data: UpdateReportCardInput }) => {
+      const response = await api.put(`/assessment/report-cards/${id}`, data);
       return response.data.data;
     },
     onSuccess: () => {
@@ -454,17 +320,35 @@ export function useUpdateReportCard() {
   });
 }
 
-// Class grade summary
-export function useClassGradeSummary(classId: string, params?: {
-  academicYearId?: string;
-  semester?: number;
-}) {
-  return useQuery({
-    queryKey: ['class-grade-summary', classId, params],
-    queryFn: async () => {
-      const response = await api.get(`/classes/${classId}/grade-summary`, { params });
-      return response.data.data as StudentGradeSummary[];
+export function useGenerateReportCard() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      studentId: string;
+      classId: string;
+      academicYearId: string;
+      semester: number;
+    }) => {
+      const response = await api.post('/assessment/report-cards/generate', data);
+      return response.data.data;
     },
-    enabled: !!classId,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['report-cards'] });
+    },
+  });
+}
+
+export function usePublishReportCard() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.patch(`/assessment/report-cards/${id}/publish`);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['report-cards'] });
+    },
   });
 }

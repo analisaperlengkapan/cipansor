@@ -17,7 +17,6 @@ import {
   Pagination,
   AccountType
 } from '@cipansor/shared';
-// Removed redundant AccountType import as it is imported above
 import { Prisma } from '@prisma/client';
 
 export class FinanceEnhancementService {
@@ -226,7 +225,7 @@ export class FinanceEnhancementService {
 
     return {
       success: true,
-      data: data as unknown as Scholarship[], // Retaining unknown cast for Scholarship as full mapping is out of scope for this task unless critical
+      data: data.map(this.mapToScholarship),
       meta: {
         pagination: {
           page,
@@ -254,7 +253,7 @@ export class FinanceEnhancementService {
       }
     });
 
-    return scholarship as unknown as Scholarship;
+    return this.mapToScholarship(scholarship);
   }
 
   async getScholarshipById(id: string): Promise<Scholarship | null> {
@@ -270,7 +269,9 @@ export class FinanceEnhancementService {
         _count: { select: { recipients: true } }
       }
     });
-    return scholarship as unknown as Scholarship;
+
+    if (!scholarship) return null;
+    return this.mapToScholarship(scholarship);
   }
 
   async getScholarshipRecipients(id: string, params: {
@@ -306,29 +307,9 @@ export class FinanceEnhancementService {
       prisma.scholarshipRecipient.count({ where: whereClause })
     ]);
 
-    const mappedData = data.map(r => ({
-      id: r.id,
-      scholarshipId: r.scholarshipId,
-      studentId: r.studentId,
-      academicYearId: r.academicYearId,
-      startDate: r.startDate,
-      endDate: r.endDate,
-      notes: r.notes,
-      status: r.status,
-      createdAt: r.createdAt,
-      updatedAt: r.updatedAt,
-      student: {
-        id: r.student.id,
-        nis: r.student.nis,
-        name: r.student.user.name,
-        class: r.student.enrollments[0]?.class?.name || '-'
-      },
-      academicYear: { id: r.academicYearId, name: r.academicYear.name }
-    }));
-
     return {
       success: true,
-      data: mappedData as unknown as ScholarshipRecipient[],
+      data: data.map(this.mapToScholarshipRecipient),
       meta: {
         pagination: {
           page,
@@ -371,7 +352,7 @@ export class FinanceEnhancementService {
       }
     });
 
-    return recipient as unknown as ScholarshipRecipient;
+    return this.mapToScholarshipRecipient(recipient);
   }
 
   // ==================== PAYMENT COMPONENTS ====================
@@ -625,6 +606,49 @@ export class FinanceEnhancementService {
         isActive: true
       } : undefined,
       createdBy: prismaEntry.createdBy
+    };
+  }
+
+  private mapToScholarship(prismaScholarship: any): Scholarship {
+    return {
+      id: prismaScholarship.id,
+      name: prismaScholarship.name,
+      description: prismaScholarship.description,
+      source: prismaScholarship.source,
+      type: prismaScholarship.type,
+      quota: prismaScholarship.quota,
+      requirements: prismaScholarship.requirements,
+      startDate: prismaScholarship.startDate,
+      endDate: prismaScholarship.endDate,
+      unitId: prismaScholarship.unitId,
+      isActive: prismaScholarship.isActive,
+      createdAt: prismaScholarship.createdAt,
+      updatedAt: prismaScholarship.updatedAt,
+      unit: prismaScholarship.unit,
+      _count: prismaScholarship._count
+    };
+  }
+
+  private mapToScholarshipRecipient(prismaRecipient: any): ScholarshipRecipient {
+    return {
+      id: prismaRecipient.id,
+      scholarshipId: prismaRecipient.scholarshipId,
+      studentId: prismaRecipient.studentId,
+      academicYearId: prismaRecipient.academicYearId,
+      startDate: prismaRecipient.startDate,
+      endDate: prismaRecipient.endDate,
+      notes: prismaRecipient.notes,
+      status: prismaRecipient.status,
+      createdAt: prismaRecipient.createdAt,
+      updatedAt: prismaRecipient.updatedAt,
+      student: prismaRecipient.student ? {
+        id: prismaRecipient.student.id,
+        nis: prismaRecipient.student.nis,
+        name: prismaRecipient.student.user?.name || '',
+        class: prismaRecipient.student.enrollments?.[0]?.class?.name || '-'
+      } : undefined,
+      academicYear: prismaRecipient.academicYear,
+      scholarship: prismaRecipient.scholarship
     };
   }
 }

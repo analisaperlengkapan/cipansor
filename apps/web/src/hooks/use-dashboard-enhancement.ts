@@ -2,110 +2,14 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { SharedPaginatedResponse } from "@cipansor/shared";
-
-// Define local types if they are not yet in shared, or re-export if they are.
-// Based on dashboard.service.ts return types.
-
-export interface DashboardOverview {
-  students: {
-    total: number;
-    active: number;
-    inactive: number;
-  };
-  teachers: {
-    total: number;
-  };
-  classes: {
-    total: number;
-  };
-  units: {
-    total: number;
-  };
-  attendance: {
-    rate: number;
-    total: number;
-    present: number;
-  };
-  tahfidz: {
-    totalRecords: number;
-    avgScore: number;
-    totalAyah: number;
-  };
-  murojaah: {
-    totalRecords: number;
-    avgQuality: number;
-    totalPages: number;
-  };
-  simaan: {
-    totalExams: number;
-    passedExams: number;
-    passRate: number;
-  };
-}
-
-export interface QuickStats {
-  activeStudents: number;
-  activeTeachers: number;
-  totalClasses: number;
-  todayAttendance: number;
-  todayMurojaah: number;
-}
-
-export interface MetricSnapshot {
-  id: string;
-  unitId?: string;
-  academicYearId?: string;
-  metricType: string;
-  metricValue: number;
-  metricData: any;
-  periodType: string;
-  periodDate: string;
-  createdAt: string;
-  unit?: { id: string; name: string };
-  academicYear?: { id: string; name: string };
-}
-
-export interface TrendData {
-  metricType: string;
-  periodType: string;
-  dataPoints: {
-    date: string;
-    value: number;
-    data: any;
-  }[];
-  summary: {
-    count: number;
-    min: number;
-    max: number;
-    avg: number;
-    trend: number;
-  };
-}
-
-export interface UnitComparison {
-  metricType: string;
-  period: {
-    start?: string;
-    end?: string;
-  };
-  comparisons: {
-    unit: {
-      id: string;
-      name: string;
-      type: string;
-    };
-    metrics: {
-      avg: number;
-      sum: number;
-      count: number;
-    };
-    stats: {
-      students: number;
-      teachers: number;
-    };
-  }[];
-}
+import {
+  SharedPaginatedResponse,
+  DashboardOverview,
+  QuickStats,
+  MetricSnapshot,
+  TrendData,
+  UnitComparison
+} from "@cipansor/shared";
 
 // Queries
 

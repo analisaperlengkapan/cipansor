@@ -1,25 +1,74 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Hoist mocks before imports
-vi.mock("../../../../../src/lib/prisma", () => ({
-  prisma: {
-    asset: {
-      findMany: vi.fn(),
-      count: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      groupBy: vi.fn(),
-      aggregate: vi.fn(),
-    },
-    assetCategory: {
-      findMany: vi.fn(),
-    },
-    assetMaintenance: {
-      count: vi.fn(),
-    },
-  },
+// 1. Setup mocks inside vi.hoisted to allow access in mock factory
+const mocks = vi.hoisted(() => ({
+  create: vi.fn(),
+  findMany: vi.fn(),
+  count: vi.fn(),
+  groupBy: vi.fn(),
+  aggregate: vi.fn(),
+  maintenanceCount: vi.fn(),
+  categoryFindMany: vi.fn(),
+  findUnique: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  disconnect: vi.fn(),
 }));
+
+// 2. Mock @prisma/client using a class for the constructor
+vi.mock('@prisma/client', () => {
+  return {
+    PrismaClient: class {
+      asset = {
+        findMany: mocks.findMany,
+        count: mocks.count,
+        findUnique: mocks.findUnique,
+        create: mocks.create,
+        update: mocks.update,
+        groupBy: mocks.groupBy,
+        aggregate: mocks.aggregate,
+      };
+      assetCategory = {
+        findMany: mocks.categoryFindMany,
+        create: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+        findUnique: vi.fn(),
+      };
+      assetMaintenance = {
+        count: mocks.maintenanceCount,
+        findMany: vi.fn(),
+        findUnique: vi.fn(),
+        create: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      };
+      $disconnect = mocks.disconnect;
+    },
+    // Mock Enums
+    AssetStatus: {
+      ACTIVE: 'ACTIVE',
+      MAINTENANCE: 'MAINTENANCE',
+      DAMAGED: 'DAMAGED',
+      DISPOSED: 'DISPOSED',
+    },
+    AssetCondition: {
+      EXCELLENT: 'EXCELLENT',
+      GOOD: 'GOOD',
+      FAIR: 'FAIR',
+      POOR: 'POOR',
+      BROKEN: 'BROKEN',
+    },
+  };
+});
+
+// 3. Mock the prisma lib instance to force usage of our mocked client
+vi.mock("../../../../../src/lib/prisma", async () => {
+  const { PrismaClient } = await import('@prisma/client');
+  return {
+    prisma: new PrismaClient(),
+  };
+});
 
 import {
   createItem,
@@ -52,8 +101,7 @@ describe("Inventory Service", () => {
         unit: { id: "unit-123", name: "Main Unit" },
       };
 
-      // Ensure mock is accessed correctly
-      vi.mocked(prisma.asset.create).mockResolvedValue(mockCreatedItem as any);
+      mocks.create.mockResolvedValue(mockCreatedItem);
 
       const result = await createItem(input);
 
@@ -76,8 +124,8 @@ describe("Inventory Service", () => {
       ];
       const mockTotal = 2;
 
-      vi.mocked(prisma.asset.findMany).mockResolvedValue(mockItems as any);
-      vi.mocked(prisma.asset.count).mockResolvedValue(mockTotal);
+      mocks.findMany.mockResolvedValue(mockItems);
+      mocks.count.mockResolvedValue(mockTotal);
 
       const result = await getItems({ page: 1, limit: 10 });
 
@@ -88,24 +136,21 @@ describe("Inventory Service", () => {
 
   describe("getInventoryStats", () => {
     it("should return stats", async () => {
-      vi.mocked(prisma.asset.count).mockResolvedValue(100);
+      mocks.count.mockResolvedValue(100);
 
-      const groupByMock = vi.mocked(prisma.asset.groupBy);
-      groupByMock.mockResolvedValueOnce([{ status: AssetStatus.ACTIVE, _count: 80 }] as any); // byStatus
-      groupByMock.mockResolvedValueOnce([{ condition: AssetCondition.GOOD, _count: 90 }] as any); // byCondition
-      groupByMock.mockResolvedValueOnce([{ categoryId: "cat-1", _count: 50 }] as any); // byCategory
+      mocks.groupBy
+        .mockResolvedValueOnce([{ status: AssetStatus.ACTIVE, _count: 80 }]) // byStatus
+        .mockResolvedValueOnce([{ condition: AssetCondition.GOOD, _count: 90 }]) // byCondition
+        .mockResolvedValueOnce([{ categoryId: "cat-1", _count: 50 }]); // byCategory
 
-      vi.mocked(prisma.assetMaintenance.count).mockResolvedValue(5);
+      mocks.maintenanceCount.mockResolvedValue(5);
 
-      // Helper to mock Decimal
-      class MockDecimal {
-        constructor(public val: number) {}
-        toNumber() { return this.val; }
-        toString() { return String(this.val); }
-      }
+      // Simplify the decimal mock to just satisfy the service logic which likely does Number(val) or similar
+      const mockDecimalValue = 1000000;
 
-      vi.mocked(prisma.asset.aggregate).mockResolvedValue({ _sum: { purchasePrice: new MockDecimal(1000000) } } as any);
-      vi.mocked(prisma.assetCategory.findMany).mockResolvedValue([{ id: "cat-1", name: "Electronics" }] as any);
+      mocks.aggregate.mockResolvedValue({ _sum: { purchasePrice: mockDecimalValue } });
+
+      mocks.categoryFindMany.mockResolvedValue([{ id: "cat-1", name: "Electronics" }]);
 
       const result = await getInventoryStats();
 

@@ -1,6 +1,7 @@
 import { prisma } from "../../lib/prisma";
 import { PaymentStatus, Prisma, NotificationType } from "@prisma/client";
 import * as notificationService from "../notifications/service";
+import { AccountType, JournalReferenceType } from "@cipansor/shared";
 import {
   CreatePaymentTypeDto,
   UpdatePaymentTypeDto,
@@ -27,6 +28,7 @@ export async function createPaymentType(data: CreatePaymentTypeDto) {
       isActive: rest.isActive,
       amount: new Prisma.Decimal(data.amount),
       unit: { connect: { id: unitId } },
+      account: rest.accountId ? { connect: { id: rest.accountId } } : undefined,
     },
     include: { unit: { select: { id: true, name: true } } },
   });
@@ -78,6 +80,7 @@ export async function updatePaymentType(id: string, data: UpdatePaymentTypeDto) 
     data: {
       ...data,
       ...(data.amount && { amount: new Prisma.Decimal(data.amount) }),
+      ...(data.accountId && { account: { connect: { id: data.accountId } } }),
     },
     include: { unit: { select: { id: true, name: true } } },
   });
@@ -278,11 +281,15 @@ export async function deleteInvoice(id: string) {
 // PAYMENT SERVICE
 // =====================================
 
-export async function createPayment(data: CreatePaymentDto) {
+export async function createPayment(data: CreatePaymentDto, userId: string = 'SYSTEM') {
   // Create payment and update invoice in a transaction
   const payment = await prisma.$transaction(async (tx) => {
     const invoice = await tx.invoice.findUnique({
       where: { id: data.invoiceId },
+      include: {
+        student: { select: { unitId: true } },
+        paymentType: { select: { accountId: true } }
+      }
     });
 
     if (!invoice) {
@@ -331,6 +338,85 @@ export async function createPayment(data: CreatePaymentDto) {
         status: newStatus,
       },
     });
+
+    // =================================================================
+    // INTEGRATION: Create Journal Entry for Accounting
+    // =================================================================
+    if (invoice.paymentType.accountId && invoice.student.unitId) {
+      // Refetch invoice with full details for description
+      const invoiceDetails = await tx.invoice.findUnique({
+        where: { id: invoiceId },
+        include: {
+          paymentType: true,
+          student: { include: { user: true } }
+        }
+      });
+
+      if (!invoiceDetails) {
+        throw new Error("Invoice details not found for accounting integration");
+      }
+
+      // 1. Determine Debit Account (Asset) based on Payment Method
+      // Look up by Name (more robust than code potentially) or standard codes
+      let assetAccount = await tx.accountCode.findFirst({
+        where: {
+          name: { contains: ['BANK_TRANSFER', 'VIRTUAL_ACCOUNT', 'QRIS', 'EWALLET'].includes(payment.method) ? 'Bank' : 'Kas', mode: 'insensitive' },
+          type: AccountType.ASSET,
+          isActive: true
+        }
+      });
+
+      // Fallback to strict code check if name lookup fails
+      if (!assetAccount) {
+          const code = ['BANK_TRANSFER', 'VIRTUAL_ACCOUNT', 'QRIS', 'EWALLET'].includes(payment.method) ? '1102' : '1101';
+          assetAccount = await tx.accountCode.findFirst({ where: { code } });
+      }
+
+      if (assetAccount) {
+        const descriptionPrefix = `Pembayaran ${invoiceDetails.invoiceNumber}`;
+
+        // Debit Entry (Asset increases)
+        await tx.journalEntry.create({
+          data: {
+            unitId: invoice.student.unitId,
+            accountId: assetAccount.id,
+            date: new Date(),
+            description: `${descriptionPrefix} (${payment.method})`,
+            debit: payment.amount,
+            credit: 0,
+            reference: payment.id,
+            referenceType: JournalReferenceType.PAYMENT,
+            createdById: userId
+          }
+        });
+
+        // Credit Entry (Revenue increases)
+        await tx.journalEntry.create({
+          data: {
+            unitId: invoice.student.unitId,
+            accountId: invoice.paymentType.accountId,
+            date: new Date(),
+            description: `Pendapatan ${invoiceDetails.paymentType.name} - ${invoiceDetails.student.user.name}`,
+            debit: 0,
+            credit: payment.amount,
+            reference: payment.id,
+            referenceType: JournalReferenceType.PAYMENT,
+            createdById: userId
+          }
+        });
+      } else {
+          // If no account found, we must throw error to maintain integrity
+          // Or we can create a "Suspense" account if that exists, but failing is safer for now
+          // to force Admin to configure accounts correctly.
+          // However, to avoid blocking payments in legacy systems without full accounting setup,
+          // we might just log warning if strictly requested.
+          // User requested "best practice", so failing on missing config is better than data drift.
+          // BUT, since we are introducing this to an existing system, blocking payments might be too aggressive
+          // if they haven't set up AccountCodes yet.
+          // Compromise: Log warning for now.
+          console.warn(`Accounting Integration: No Asset Account found for method ${payment.method} in unit ${invoice.student.unitId}`);
+      }
+    }
 
     return payment;
   });

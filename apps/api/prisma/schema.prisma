@@ -1127,8 +1127,10 @@ model PaymentType {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  unit     Unit      @relation(fields: [unitId], references: [id])
+  unit     Unit         @relation(fields: [unitId], references: [id])
   invoices Invoice[]
+  account  AccountCode? @relation(fields: [accountId], references: [id])
+  accountId String?     @map("account_id")
 
   @@unique([unitId, code])
   @@index([isActive])
@@ -4192,6 +4194,7 @@ model AccountCode {
   parent         AccountCode?   @relation("AccountHierarchy", fields: [parentId], references: [id])
   children       AccountCode[]  @relation("AccountHierarchy")
   journalEntries JournalEntry[]
+  paymentTypes   PaymentType[]
 
   @@index([type])
   @@map("account_codes")

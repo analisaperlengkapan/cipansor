@@ -1,11 +1,10 @@
 import { z } from "zod";
-
-const MedicalRecordType = z.enum(["CHECKUP", "ILLNESS", "INJURY", "FIRST_AID", "REFERRAL"]);
+import { MedicalRecordType } from "@cipansor/shared";
 
 // Medical Record schemas
 export const createMedicalRecordSchema = z.object({
   studentId: z.string().uuid(),
-  type: MedicalRecordType,
+  type: z.nativeEnum(MedicalRecordType),
   visitDate: z.coerce.date(),
   complaint: z.string().min(1),
   diagnosis: z.string().optional(),
@@ -14,6 +13,13 @@ export const createMedicalRecordSchema = z.object({
   notes: z.string().optional(),
   referredTo: z.string().optional(),
   followUpDate: z.coerce.date().optional(),
+  // Extended fields (optional as DB support is pending/custom)
+  status: z.string().optional(), // Using string for now as it maps to notes or future field
+  temperature: z.number().optional(),
+  bloodPressure: z.string().optional(),
+  heartRate: z.number().optional(),
+  weight: z.number().optional(),
+  height: z.number().optional(),
 });
 
 export const updateMedicalRecordSchema = createMedicalRecordSchema.partial().omit({ studentId: true });
@@ -22,7 +28,7 @@ export const queryMedicalRecordSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
   studentId: z.string().uuid().optional(),
-  type: MedicalRecordType.optional(),
+  type: z.nativeEnum(MedicalRecordType).optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
 });
@@ -68,12 +74,3 @@ export const queryMedicationUsageSchema = z.object({
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
 });
-
-export type CreateMedicalRecordInput = z.infer<typeof createMedicalRecordSchema>;
-export type UpdateMedicalRecordInput = z.infer<typeof updateMedicalRecordSchema>;
-export type QueryMedicalRecordInput = z.infer<typeof queryMedicalRecordSchema>;
-export type CreateMedicationInput = z.infer<typeof createMedicationSchema>;
-export type UpdateMedicationInput = z.infer<typeof updateMedicationSchema>;
-export type QueryMedicationInput = z.infer<typeof queryMedicationSchema>;
-export type CreateMedicationUsageInput = z.infer<typeof createMedicationUsageSchema>;
-export type QueryMedicationUsageInput = z.infer<typeof queryMedicationUsageSchema>;

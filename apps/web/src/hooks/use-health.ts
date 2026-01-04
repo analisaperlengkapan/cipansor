@@ -1,75 +1,53 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { PaginatedResponse } from '@/lib/api';
-
-// Types
-export type HealthRecordType = 'CHECKUP' | 'ILLNESS' | 'TREATMENT' | 'VACCINATION' | 'REFERRAL';
-export type HealthStatus = 'HEALTHY' | 'SICK' | 'RECOVERING' | 'HOSPITALIZED';
-
-export interface HealthRecord {
-  id: string;
-  studentId: string;
-  recordType: HealthRecordType;
-  date: string;
-  symptoms?: string;
-  diagnosis?: string;
-  treatment?: string;
-  medication?: string;
-  notes?: string;
-  status: HealthStatus;
-  followUpDate?: string;
-  referredTo?: string;
-  temperature?: number;
-  bloodPressure?: string;
-  heartRate?: number;
-  weight?: number;
-  height?: number;
-  recordedById: string;
-  createdAt: string;
-  updatedAt: string;
-  student?: {
-    id: string;
-    name: string;
-    nis: string;
-    gender: string;
-    birthDate?: string;
-    class?: { name: string };
-    unit?: { name: string };
-    dormitory?: { name: string };
-  };
-  recordedBy?: { name: string };
-  createdBy?: { name: string };
-}
+import api, { SharedPaginatedResponse } from '@/lib/api';
+import {
+  MedicalRecord,
+  MedicalRecordType,
+  HealthStatus,
+  CreateMedicalRecordInput,
+  UpdateMedicalRecordInput,
+  HealthStats,
+} from '@cipansor/shared';
 
 // Constants
-export const HEALTH_RECORD_TYPES: { value: HealthRecordType; label: string }[] = [
-  { value: 'CHECKUP', label: 'Pemeriksaan Rutin' },
-  { value: 'ILLNESS', label: 'Sakit' },
-  { value: 'TREATMENT', label: 'Perawatan' },
-  { value: 'VACCINATION', label: 'Vaksinasi' },
-  { value: 'REFERRAL', label: 'Rujukan' },
+export const HEALTH_RECORD_TYPES: { value: MedicalRecordType; label: string }[] = [
+  { value: MedicalRecordType.CHECKUP, label: 'Pemeriksaan Rutin' },
+  { value: MedicalRecordType.ILLNESS, label: 'Sakit' },
+  { value: MedicalRecordType.INJURY, label: 'Cedera' },
+  { value: MedicalRecordType.FIRST_AID, label: 'Pertolongan Pertama' },
+  { value: MedicalRecordType.REFERRAL, label: 'Rujukan' },
+  { value: MedicalRecordType.VACCINATION, label: 'Vaksinasi' },
 ];
 
-export const HEALTH_STATUSES: { value: HealthStatus; label: string; color: string }[] = [
-  { value: 'HEALTHY', label: 'Sehat', color: 'bg-green-100 text-green-800' },
-  { value: 'SICK', label: 'Sakit', color: 'bg-red-100 text-red-800' },
-  { value: 'RECOVERING', label: 'Pemulihan', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'HOSPITALIZED', label: 'Rawat Inap', color: 'bg-purple-100 text-purple-800' },
+export const HEALTH_STATUSES: { value: string; label: string; color: string }[] = [
+  { value: HealthStatus.HEALTHY, label: 'Sehat', color: 'bg-green-100 text-green-800' },
+  { value: HealthStatus.SICK, label: 'Sakit', color: 'bg-red-100 text-red-800' },
+  { value: HealthStatus.RECOVERING, label: 'Pemulihan', color: 'bg-yellow-100 text-yellow-800' },
+  { value: HealthStatus.HOSPITALIZED, label: 'Rawat Inap', color: 'bg-purple-100 text-purple-800' },
 ];
+
+// Helper to extract status from notes if needed, or use future field
+export function getRecordStatus(record: MedicalRecord): string {
+  if (record.status) return record.status;
+  // Fallback parsing from notes if status not direct field
+  if (record.notes?.includes('"status":"SICK"')) return HealthStatus.SICK;
+  return HealthStatus.HEALTHY;
+}
 
 // Health Records Hooks
 export function useHealthRecords(params?: {
   page?: number;
   limit?: number;
   studentId?: string;
-  recordType?: HealthRecordType;
-  status?: HealthStatus;
+  type?: MedicalRecordType;
+  status?: string;
   startDate?: string;
   endDate?: string;
 }) {
   return useQuery({
     queryKey: ['health-records', params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<HealthRecord>>('/health-records', { params });
+      const response = await api.get<SharedPaginatedResponse<MedicalRecord>>('/health/records', { params });
       return response.data;
     },
   });
@@ -79,8 +57,8 @@ export function useHealthRecord(id: string) {
   return useQuery({
     queryKey: ['health-records', id],
     queryFn: async () => {
-      const response = await api.get<HealthRecord>(`/health-records/${id}`);
-      return response.data;
+      const response = await api.get<{ success: boolean; data: MedicalRecord }>(`/health/records/${id}`);
+      return response.data.data;
     },
     enabled: !!id,
   });
@@ -90,8 +68,8 @@ export function useStudentHealthRecords(studentId: string) {
   return useQuery({
     queryKey: ['health-records', 'student', studentId],
     queryFn: async () => {
-      const response = await api.get<HealthRecord[]>(`/health-records/student/${studentId}`);
-      return response.data;
+      const response = await api.get<{ success: boolean; data: MedicalRecord[] }>(`/health/students/${studentId}/history`);
+      return response.data.data;
     },
     enabled: !!studentId,
   });
@@ -101,26 +79,9 @@ export function useCreateHealthRecord() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: {
-      studentId: string;
-      recordType: HealthRecordType;
-      date: string;
-      symptoms?: string;
-      diagnosis?: string;
-      treatment?: string;
-      medication?: string;
-      notes?: string;
-      status: HealthStatus;
-      followUpDate?: string;
-      referredTo?: string;
-      temperature?: number;
-      bloodPressure?: string;
-      heartRate?: number;
-      weight?: number;
-      height?: number;
-    }) => {
-      const response = await api.post<HealthRecord>('/health-records', data);
-      return response.data;
+    mutationFn: async (data: CreateMedicalRecordInput) => {
+      const response = await api.post<{ success: boolean; data: MedicalRecord }>('/health/records', data);
+      return response.data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['health-records'] });
@@ -137,26 +98,10 @@ export function useUpdateHealthRecord() {
       data,
     }: {
       id: string;
-      data: {
-        recordType?: HealthRecordType;
-        date?: string;
-        symptoms?: string;
-        diagnosis?: string;
-        treatment?: string;
-        medication?: string;
-        notes?: string;
-        status?: HealthStatus;
-        followUpDate?: string;
-        referredTo?: string;
-        temperature?: number;
-        bloodPressure?: string;
-        heartRate?: number;
-        weight?: number;
-        height?: number;
-      };
+      data: UpdateMedicalRecordInput;
     }) => {
-      const response = await api.put<HealthRecord>(`/health-records/${id}`, data);
-      return response.data;
+      const response = await api.put<{ success: boolean; data: MedicalRecord }>(`/health/records/${id}`, data);
+      return response.data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['health-records'] });
@@ -169,7 +114,7 @@ export function useDeleteHealthRecord() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/health-records/${id}`);
+      await api.delete(`/health/records/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['health-records'] });
@@ -177,41 +122,14 @@ export function useDeleteHealthRecord() {
   });
 }
 
-// Health Summary Hook
-export function useHealthSummary(params?: { startDate?: string; endDate?: string }) {
+// Health Stats Hook
+export function useHealthStats(unitId: string) {
   return useQuery({
-    queryKey: ['health-records', 'summary', params],
+    queryKey: ['health-stats', unitId],
     queryFn: async () => {
-      const response = await api.get<{
-        totalRecords: number;
-        byType: { recordType: HealthRecordType; count: number }[];
-        byStatus: { status: HealthStatus; count: number }[];
-        currentlySick: number;
-        needFollowUp: number;
-      }>('/health-records/summary', { params });
-      return response.data;
+      const response = await api.get<{ success: boolean; data: HealthStats }>(`/health/stats/${unitId}`);
+      return response.data.data;
     },
-  });
-}
-
-// Get students who need follow-up
-export function useHealthFollowUps() {
-  return useQuery({
-    queryKey: ['health-records', 'follow-ups'],
-    queryFn: async () => {
-      const response = await api.get<HealthRecord[]>('/health-records/follow-ups');
-      return response.data;
-    },
-  });
-}
-
-// Get currently sick students
-export function useCurrentlySickStudents() {
-  return useQuery({
-    queryKey: ['health-records', 'sick'],
-    queryFn: async () => {
-      const response = await api.get<HealthRecord[]>('/health-records/sick');
-      return response.data;
-    },
+    enabled: !!unitId,
   });
 }

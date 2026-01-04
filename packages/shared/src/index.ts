@@ -12,3 +12,4 @@ export * from './types/finance';
 export * from './types/assessment';
 export * from './types/inventory';
 export * from './types/paud';
+export * from './types/health';

@@ -146,7 +146,8 @@ export default function CreatePAUDAssessmentPage() {
         for (const file of files) {
           const formData = new FormData();
           formData.append('file', file);
-          formData.append('fileType', file.type.startsWith('image') ? 'image' : 'video');
+          // Use uppercase for fileType to match potential DB constraints/Enums
+          formData.append('fileType', file.type.startsWith('image') ? 'IMAGE' : 'VIDEO');
           await addEvidenceMutation.mutateAsync({
             assessmentId: result.id,
             data: formData,

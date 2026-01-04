@@ -172,11 +172,15 @@ async function findAllAssessments(
   } = query;
   const skip = (page - 1) * limit;
 
+  // Transform semester input to ensure it's a number if it's not already
+  // The schema already handles this, but for extra safety we check
+  const semesterValue = semester === 'GENAP' ? 2 : (semester === 'GANJIL' ? 1 : semester);
+
   const where: Prisma.PAUDDevelopmentAssessmentWhereInput = {
     ...(studentId && { studentId }),
     ...(unitId && { unitId }),
     ...(academicYearId && { academicYearId }),
-    ...(semester && { semester: semester === 'GENAP' ? 2 : 1 }), // Cast semester string to number
+    ...(semesterValue && { semester: Number(semesterValue) }),
     ...(aspect && { aspect: aspect }),
     ...(periodType && { periodType: periodType }),
     ...(achievementLevel && { achievementLevel: achievementLevel }),
@@ -447,11 +451,14 @@ async function findAllNarrativeReports(
   const { page, limit, studentId, unitId, academicYearId, semester, status } = query;
   const skip = (page - 1) * limit;
 
+  // Transform semester input to ensure it's a number
+  const semesterValue = semester === 'GENAP' ? 2 : (semester === 'GANJIL' ? 1 : semester);
+
   const where: Prisma.PAUDNarrativeReportWhereInput = {
     ...(studentId && { studentId }),
     ...(unitId && { unitId }),
     ...(academicYearId && { academicYearId }),
-    ...(semester && { semester: semester === 'GENAP' ? 2 : 1 }),
+    ...(semesterValue && { semester: Number(semesterValue) }),
     ...(status && { status }),
     // Filter by unit if not super admin
     ...(context.role !== 'SUPER_ADMIN' && context.unitId && { unitId: context.unitId }),
@@ -654,10 +661,13 @@ async function deleteNarrativeReport(id: string) {
 async function getStudentAssessmentSummary(query: AssessmentSummaryQuery) {
   const { studentId, academicYearId, semester } = query;
 
+  // Transform semester input to ensure it's a number
+  const semesterValue = semester === 'GENAP' ? 2 : (semester === 'GANJIL' ? 1 : semester);
+
   const where: Prisma.PAUDDevelopmentAssessmentWhereInput = {
     studentId,
     ...(academicYearId && { academicYearId }),
-    ...(semester && { semester: semester === 'GENAP' ? 2 : 1 }),
+    ...(semesterValue && { semester: Number(semesterValue) }),
   };
 
   // Get all assessments grouped by aspect
@@ -714,7 +724,7 @@ async function getStudentAssessmentSummary(query: AssessmentSummaryQuery) {
   return {
     studentId,
     academicYearId,
-    semester: semester === 'GENAP' ? 2 : 1,
+    semester: Number(semesterValue) || undefined,
     summary,
     totalAssessments: assessments.length,
   };
@@ -722,6 +732,9 @@ async function getStudentAssessmentSummary(query: AssessmentSummaryQuery) {
 
 async function getClassSummary(query: ClassSummaryQuery) {
   const { unitId, academicYearId, semester, aspect } = query;
+
+  // Transform semester input to ensure it's a number
+  const semesterValue = semester === 'GENAP' ? 2 : (semester === 'GANJIL' ? 1 : semester);
 
   // Get all students in the unit
   const students = await prisma.student.findMany({
@@ -737,7 +750,7 @@ async function getClassSummary(query: ClassSummaryQuery) {
   const where: Prisma.PAUDDevelopmentAssessmentWhereInput = {
     unitId,
     ...(academicYearId && { academicYearId }),
-    ...(semester && { semester: semester === 'GENAP' ? 2 : 1 }),
+    ...(semesterValue && { semester: Number(semesterValue) }),
     ...(aspect && { aspect: aspect }),
   };
 
@@ -779,7 +792,7 @@ async function getClassSummary(query: ClassSummaryQuery) {
   return {
     unitId,
     academicYearId,
-    semester: semester === 'GENAP' ? 2 : 1,
+    semester: Number(semesterValue) || undefined,
     aspect,
     totalStudents: students.length,
     totalAssessments: assessments.length,

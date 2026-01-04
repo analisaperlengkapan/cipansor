@@ -45,3 +45,20 @@ export enum MemorizationQuality {
   KURANG_LANCAR = 'KURANG_LANCAR',
   ULANG = 'ULANG',
 }
+
+// Book Status
+export enum BookStatus {
+  AVAILABLE = 'AVAILABLE',
+  BORROWED = 'BORROWED',
+  RESERVED = 'RESERVED',
+  MAINTENANCE = 'MAINTENANCE',
+  LOST = 'LOST',
+}
+
+// Borrowing Status
+export enum BorrowingStatus {
+  ACTIVE = 'ACTIVE',
+  RETURNED = 'RETURNED',
+  OVERDUE = 'OVERDUE',
+  LOST = 'LOST',
+}

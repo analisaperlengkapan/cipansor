@@ -13,36 +13,6 @@ import type {
   HealthStats,
 } from "@cipansor/shared";
 
-// Helper to unpack vitals from notes
-function unpackVitals(record: any): any {
-  let vitals = {};
-  if (record.notes && record.notes.includes('[VITALS]')) {
-    try {
-      const parts = record.notes.split('[VITALS]');
-      const jsonStr = parts[1].trim();
-      vitals = JSON.parse(jsonStr);
-      // Clean notes for display if desired, but here we keep original notes string minus the tag for 'notes' field?
-      // Or just return the raw string in 'notes' and populated fields in top level.
-      // Let's keep 'notes' as the user entered part (before the tag) for better UX.
-      record.notes = parts[0].trim();
-    } catch (e) {
-      // Ignore parse error
-    }
-  }
-  return { ...record, ...vitals };
-}
-
-// Helper to pack vitals into notes
-function packVitals(notes: string | undefined | null, vitals: Record<string, any>): string {
-  const existingNotes = notes ? notes.split('[VITALS]')[0].trim() : "";
-  const validVitals = Object.fromEntries(Object.entries(vitals).filter(([_, v]) => v !== undefined && v !== null));
-
-  if (Object.keys(validVitals).length === 0) return existingNotes;
-
-  const vitalsStr = JSON.stringify(validVitals);
-  return existingNotes ? `${existingNotes}\n\n[VITALS] ${vitalsStr}` : `[VITALS] ${vitalsStr}`;
-}
-
 // ==================== MEDICAL RECORD ====================
 
 export async function getMedicalRecords(query: QueryMedicalRecordInput & { status?: string }) {
@@ -55,10 +25,7 @@ export async function getMedicalRecords(query: QueryMedicalRecordInput & { statu
     ...(startDate && endDate && {
       visitDate: { gte: startDate, lte: endDate },
     }),
-    // Filtering by status (which is stored in notes) is inefficient but necessary without schema change
-    ...(status && {
-      notes: { contains: `"status":"${status}"` },
-    }),
+    ...(status && { status: status as unknown as import("@prisma/client").HealthStatus }),
   };
 
   const [data, total] = await Promise.all([
@@ -84,20 +51,17 @@ export async function getMedicalRecords(query: QueryMedicalRecordInput & { statu
 
   return {
     success: true,
-    data: data.map((record: any) => {
-      const unpacked = unpackVitals(record);
-      return {
-        ...unpacked,
-        student: record.student ? {
-          id: record.student.id,
-          nis: record.student.nis,
-          name: record.student.user.name,
-          user: record.student.user,
-          unit: record.student.unit,
-        } : undefined,
-        recordedBy: record.recordedBy,
-      };
-    }) as MedicalRecord[],
+    data: data.map((record: any) => ({
+      ...record,
+      student: record.student ? {
+        id: record.student.id,
+        nis: record.student.nis,
+        name: record.student.user.name,
+        user: record.student.user,
+        unit: record.student.unit,
+      } : undefined,
+      recordedBy: record.recordedBy,
+    })) as MedicalRecord[],
     meta: {
       pagination: {
         page,
@@ -129,10 +93,8 @@ export async function getMedicalRecordById(id: string) {
 
   if (!record) return null;
 
-  const unpacked = unpackVitals(record);
-
   return {
-    ...unpacked,
+    ...record,
     student: {
       id: record.student.id,
       nis: record.student.nis,
@@ -147,8 +109,6 @@ export async function getMedicalRecordById(id: string) {
 export async function createMedicalRecord(data: CreateMedicalRecordInput, recordedById: string) {
   const { status, temperature, bloodPressure, heartRate, weight, height, ...mainData } = data;
 
-  const notes = packVitals(mainData.notes, { status, temperature, bloodPressure, heartRate, weight, height });
-
   const record = await prisma.medicalRecord.create({
     data: {
       studentId: mainData.studentId,
@@ -158,9 +118,15 @@ export async function createMedicalRecord(data: CreateMedicalRecordInput, record
       diagnosis: mainData.diagnosis,
       treatment: mainData.treatment,
       prescription: mainData.prescription,
-      notes: notes,
+      notes: mainData.notes,
       referredTo: mainData.referredTo,
       followUpDate: mainData.followUpDate,
+      status: status as unknown as import("@prisma/client").HealthStatus,
+      temperature,
+      bloodPressure,
+      heartRate,
+      weight,
+      height,
       recordedById,
     },
     include: {
@@ -175,10 +141,8 @@ export async function createMedicalRecord(data: CreateMedicalRecordInput, record
     },
   });
 
-  const unpacked = unpackVitals(record);
-
   return {
-    ...unpacked,
+    ...record,
     student: {
       id: record.student.id,
       nis: record.student.nis,
@@ -191,35 +155,17 @@ export async function createMedicalRecord(data: CreateMedicalRecordInput, record
 export async function updateMedicalRecord(id: string, data: UpdateMedicalRecordInput) {
   const { status, temperature, bloodPressure, heartRate, weight, height, ...mainData } = data;
 
-  // Retrieve existing record to merge notes
-  const existing = await prisma.medicalRecord.findUnique({ where: { id } });
-  if (!existing) throw new Error("Record not found");
-
-  // Unpack existing vitals to merge with new ones
-  const existingVitals = unpackVitals(existing); // This unpacks into top level, but we want the vitals object
-
-  // Re-construct current vitals object from unpacked (simplification: extract known keys)
-  const currentVitals = {
-    status: existingVitals.status,
-    temperature: existingVitals.temperature,
-    bloodPressure: existingVitals.bloodPressure,
-    heartRate: existingVitals.heartRate,
-    weight: existingVitals.weight,
-    height: existingVitals.height,
-  };
-
-  const newVitals = { ...currentVitals, status, temperature, bloodPressure, heartRate, weight, height };
-
-  // Use new notes if provided, else keep existing (stripped of tag)
-  const baseNotes = mainData.notes !== undefined ? mainData.notes : existingVitals.notes;
-  const packedNotes = packVitals(baseNotes, newVitals);
-
   const record = await prisma.medicalRecord.update({
     where: { id },
     data: {
         ...mainData,
-        notes: packedNotes,
         type: mainData.type ? (mainData.type as unknown as import("@prisma/client").MedicalRecordType) : undefined,
+        status: status ? (status as unknown as import("@prisma/client").HealthStatus) : undefined,
+        temperature,
+        bloodPressure,
+        heartRate,
+        weight,
+        height,
     },
     include: {
       student: {
@@ -233,10 +179,8 @@ export async function updateMedicalRecord(id: string, data: UpdateMedicalRecordI
     },
   });
 
-  const unpacked = unpackVitals(record);
-
   return {
-    ...unpacked,
+    ...record,
     student: {
       id: record.student.id,
       nis: record.student.nis,
@@ -259,7 +203,7 @@ export async function getStudentMedicalHistory(studentId: string) {
     orderBy: { visitDate: "desc" },
   });
 
-  return records.map(unpackVitals) as unknown as MedicalRecord[];
+  return records as unknown as MedicalRecord[];
 }
 
 // ==================== MEDICATION ====================

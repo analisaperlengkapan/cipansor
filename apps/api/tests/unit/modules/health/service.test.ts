@@ -71,13 +71,15 @@ describe('Health Service', () => {
   });
 
   describe('getMedicalRecords', () => {
-    it('should return paginated medical records with unpacked vitals', async () => {
+    it('should return paginated medical records with vitals from DB columns', async () => {
       const mockData = [
         {
           id: '1',
           studentId: 'student-1',
           type: 'CHECKUP',
-          notes: 'Regular checkup\n\n[VITALS] {"temperature":37.5,"status":"HEALTHY"}',
+          notes: 'Regular checkup',
+          temperature: 37.5,
+          status: 'HEALTHY',
           student: {
             id: 'student-1',
             nis: '123',
@@ -97,9 +99,9 @@ describe('Health Service', () => {
       expect(result.data).toHaveLength(1);
       const record = result.data[0];
       expect(record.id).toBe('1');
-      expect(record.temperature).toBe(37.5); // Check unpacked value
-      expect(record.status).toBe('HEALTHY'); // Check unpacked value
-      expect(record.notes).toBe('Regular checkup'); // Check cleaned notes
+      expect(record.temperature).toBe(37.5); // Check value from DB
+      expect(record.status).toBe('HEALTHY'); // Check value from DB
+      expect(record.notes).toBe('Regular checkup');
 
       expect(mockMedicalRecord.findMany).toHaveBeenCalledWith(expect.objectContaining({
         skip: 0,
@@ -109,7 +111,7 @@ describe('Health Service', () => {
   });
 
   describe('createMedicalRecord', () => {
-    it('should create a medical record with packed vitals', async () => {
+    it('should create a medical record with vitals in columns', async () => {
       const input = {
         studentId: 'student-1',
         type: MedicalRecordType.CHECKUP,
@@ -126,7 +128,9 @@ describe('Health Service', () => {
         type: input.type,
         visitDate: input.visitDate,
         complaint: input.complaint,
-        notes: 'Patient looks pale\n\n[VITALS] {"status":"SICK","temperature":38.5}',
+        notes: 'Patient looks pale',
+        temperature: 38.5,
+        status: 'SICK',
         recordedById: 'staff-1',
         student: {
           id: 'student-1',
@@ -141,37 +145,32 @@ describe('Health Service', () => {
       const result = await service.createMedicalRecord(input as any, 'staff-1');
 
       expect(result.id).toBe('1');
-      expect(result.temperature).toBe(38.5); // Check unpacking on return
+      expect(result.temperature).toBe(38.5);
 
-      // Verify create arguments
+      // Verify create arguments use proper columns
       expect(mockMedicalRecord.create).toHaveBeenCalledWith(expect.objectContaining({
         data: expect.objectContaining({
           studentId: 'student-1',
           complaint: 'Fever',
-          recordedById: 'staff-1',
-          notes: expect.stringContaining('"temperature":38.5'),
+          temperature: 38.5,
+          status: 'SICK',
+          notes: 'Patient looks pale',
         }),
       }));
     });
   });
 
   describe('updateMedicalRecord', () => {
-    it('should update medical record and merge vitals', async () => {
-      const existingRecord = {
-        id: '1',
-        notes: 'Old notes\n\n[VITALS] {"temperature":38.0}',
-      };
-
-      mockMedicalRecord.findUnique.mockResolvedValue(existingRecord);
-
+    it('should update medical record vitals in columns', async () => {
       const updateInput = {
-        temperature: 37.0, // Updated vital
-        notes: 'New notes', // Updated notes
+        temperature: 37.0,
+        notes: 'New notes',
       };
 
       const mockUpdated = {
         id: '1',
-        notes: 'New notes\n\n[VITALS] {"temperature":37}',
+        notes: 'New notes',
+        temperature: 37.0,
         student: { id: 's1', user: { name: 'John' } },
       };
 
@@ -182,11 +181,12 @@ describe('Health Service', () => {
       expect(mockMedicalRecord.update).toHaveBeenCalledWith(expect.objectContaining({
         where: { id: '1' },
         data: expect.objectContaining({
-          notes: expect.stringContaining('"temperature":37'),
+          notes: 'New notes',
+          temperature: 37.0,
         })
       }));
 
-      expect(result.temperature).toBe(37);
+      expect(result.temperature).toBe(37.0);
     });
   });
 });

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MedicalRecordType } from "@cipansor/shared";
+import { MedicalRecordType, HealthStatus } from "@cipansor/shared";
 
 // Medical Record schemas
 export const createMedicalRecordSchema = z.object({
@@ -13,8 +13,9 @@ export const createMedicalRecordSchema = z.object({
   notes: z.string().optional(),
   referredTo: z.string().optional(),
   followUpDate: z.coerce.date().optional(),
-  // Extended fields (optional as DB support is pending/custom)
-  status: z.string().optional(), // Using string for now as it maps to notes or future field
+
+  // Extended fields
+  status: z.nativeEnum(HealthStatus).optional(),
   temperature: z.number().optional(),
   bloodPressure: z.string().optional(),
   heartRate: z.number().optional(),
@@ -31,6 +32,7 @@ export const queryMedicalRecordSchema = z.object({
   type: z.nativeEnum(MedicalRecordType).optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
+  status: z.nativeEnum(HealthStatus).optional(),
 });
 
 // Medication schemas
@@ -74,3 +76,12 @@ export const queryMedicationUsageSchema = z.object({
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
 });
+
+export type CreateMedicalRecordInput = z.infer<typeof createMedicalRecordSchema>;
+export type UpdateMedicalRecordInput = z.infer<typeof updateMedicalRecordSchema>;
+export type QueryMedicalRecordInput = z.infer<typeof queryMedicalRecordSchema>;
+export type CreateMedicationInput = z.infer<typeof createMedicationSchema>;
+export type UpdateMedicationInput = z.infer<typeof updateMedicationSchema>;
+export type QueryMedicationInput = z.infer<typeof queryMedicationSchema>;
+export type CreateMedicationUsageInput = z.infer<typeof createMedicationUsageSchema>;
+export type QueryMedicationUsageInput = z.infer<typeof queryMedicationUsageSchema>;

@@ -1,19 +1,23 @@
 import { prisma } from '@/lib/prisma';
-import { Prisma, PAUDAspect, PAUDAchievementLevel, PAUDReportPeriod } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import {
+  PAUDAspect,
+  PAUDAchievementLevel,
+  PAUDReportPeriod,
+  CreatePAUDIndicatorInput,
+  UpdatePAUDIndicatorInput,
+  CreatePAUDAssessmentInput,
+  UpdatePAUDAssessmentInput,
+  BulkCreatePAUDAssessmentInput,
+  CreatePAUDEvidenceInput,
+  CreatePAUDNarrativeReportInput,
+  UpdatePAUDNarrativeReportInput,
+  FinalizePAUDReportInput,
+} from '@cipansor/shared';
 import type {
   ListIndicatorsQuery,
-  CreateIndicatorInput,
-  UpdateIndicatorInput,
   ListAssessmentsQuery,
-  CreateAssessmentInput,
-  UpdateAssessmentInput,
-  BulkCreateAssessmentInput,
-  CreateEvidenceInput,
-  UpdateEvidenceInput,
   ListNarrativeReportsQuery,
-  CreateNarrativeReportInput,
-  UpdateNarrativeReportInput,
-  FinalizeReportInput,
   AssessmentSummaryQuery,
   ClassSummaryQuery,
 } from './paud-assessment.schema';
@@ -30,7 +34,7 @@ async function findAllIndicators(
   const skip = (page - 1) * limit;
 
   const where: Prisma.PAUDDevelopmentIndicatorWhereInput = {
-    ...(aspect && { aspect: aspect as PAUDAspect }),
+    ...(aspect && { aspect: aspect }),
     ...(ageGroupMin !== undefined && { ageGroupMin: { gte: ageGroupMin } }),
     ...(ageGroupMax !== undefined && { ageGroupMax: { lte: ageGroupMax } }),
     ...(isActive !== undefined && { isActive }),
@@ -79,7 +83,7 @@ async function findIndicatorById(id: string) {
   return indicator;
 }
 
-async function createIndicator(input: CreateIndicatorInput) {
+async function createIndicator(input: CreatePAUDIndicatorInput) {
   // Check for duplicate code
   const existing = await prisma.pAUDDevelopmentIndicator.findUnique({
     where: { code: input.code },
@@ -92,7 +96,7 @@ async function createIndicator(input: CreateIndicatorInput) {
   return prisma.pAUDDevelopmentIndicator.create({
     data: {
       unitId: input.unitId,
-      aspect: input.aspect as PAUDAspect,
+      aspect: input.aspect,
       code: input.code,
       name: input.name,
       description: input.description,
@@ -104,7 +108,7 @@ async function createIndicator(input: CreateIndicatorInput) {
   });
 }
 
-async function updateIndicator(id: string, input: UpdateIndicatorInput) {
+async function updateIndicator(id: string, input: UpdatePAUDIndicatorInput) {
   const existing = await prisma.pAUDDevelopmentIndicator.findUnique({
     where: { id },
   });
@@ -116,7 +120,7 @@ async function updateIndicator(id: string, input: UpdateIndicatorInput) {
   return prisma.pAUDDevelopmentIndicator.update({
     where: { id },
     data: {
-      ...(input.aspect && { aspect: input.aspect as PAUDAspect }),
+      ...(input.aspect && { aspect: input.aspect }),
       ...(input.name && { name: input.name }),
       ...(input.description !== undefined && { description: input.description }),
       ...(input.ageGroupMin !== undefined && { ageGroupMin: input.ageGroupMin }),
@@ -172,10 +176,10 @@ async function findAllAssessments(
     ...(studentId && { studentId }),
     ...(unitId && { unitId }),
     ...(academicYearId && { academicYearId }),
-    ...(semester && { semester }),
-    ...(aspect && { aspect: aspect as PAUDAspect }),
-    ...(periodType && { periodType: periodType as PAUDReportPeriod }),
-    ...(achievementLevel && { achievementLevel: achievementLevel as PAUDAchievementLevel }),
+    ...(semester && { semester: semester === 'GENAP' ? 2 : 1 }), // Cast semester string to number
+    ...(aspect && { aspect: aspect }),
+    ...(periodType && { periodType: periodType }),
+    ...(achievementLevel && { achievementLevel: achievementLevel }),
     ...(startDate && { periodDate: { gte: new Date(startDate) } }),
     ...(endDate && { periodDate: { lte: new Date(endDate) } }),
     // Filter by unit if not super admin
@@ -247,7 +251,7 @@ async function findAssessmentById(id: string) {
   return assessment;
 }
 
-async function createAssessment(input: CreateAssessmentInput, assessedById: string) {
+async function createAssessment(input: CreatePAUDAssessmentInput, assessedById: string) {
   // Validate student exists and belongs to unit
   const student = await prisma.student.findUnique({
     where: { id: input.studentId },
@@ -258,21 +262,24 @@ async function createAssessment(input: CreateAssessmentInput, assessedById: stri
     throw new Error('Student not found');
   }
 
-  if (student.unitId !== input.unitId) {
+  if (input.unitId && student.unitId !== input.unitId) {
     throw new Error('Student does not belong to this unit');
   }
+
+  // Ensure unitId is provided (either from input or student)
+  const unitId = input.unitId || student.unitId;
 
   return prisma.pAUDDevelopmentAssessment.create({
     data: {
       studentId: input.studentId,
-      unitId: input.unitId,
+      unitId: unitId,
       academicYearId: input.academicYearId,
       semester: input.semester,
-      periodType: input.periodType as PAUDReportPeriod,
-      periodDate: input.periodDate,
-      aspect: input.aspect as PAUDAspect,
+      periodType: input.periodType,
+      periodDate: new Date(input.periodDate),
+      aspect: input.aspect,
       indicatorId: input.indicatorId,
-      achievementLevel: input.achievementLevel as PAUDAchievementLevel,
+      achievementLevel: input.achievementLevel,
       narrativeText: input.narrativeText,
       teacherNotes: input.teacherNotes,
       recommendations: input.recommendations,
@@ -291,7 +298,7 @@ async function createAssessment(input: CreateAssessmentInput, assessedById: stri
   });
 }
 
-async function bulkCreateAssessments(input: BulkCreateAssessmentInput, assessedById: string) {
+async function bulkCreateAssessments(input: BulkCreatePAUDAssessmentInput, assessedById: string) {
   const { studentId, unitId, academicYearId, semester, periodType, periodDate, assessments } = input;
 
   // Validate student
@@ -317,11 +324,11 @@ async function bulkCreateAssessments(input: BulkCreateAssessmentInput, assessedB
           unitId,
           academicYearId,
           semester,
-          periodType: periodType as PAUDReportPeriod,
+          periodType: periodType,
           periodDate: new Date(periodDate),
-          aspect: assessment.aspect as PAUDAspect,
+          aspect: assessment.aspect,
           indicatorId: assessment.indicatorId,
-          achievementLevel: assessment.achievementLevel as PAUDAchievementLevel,
+          achievementLevel: assessment.achievementLevel,
           narrativeText: assessment.narrativeText,
           teacherNotes: assessment.teacherNotes,
           recommendations: assessment.recommendations,
@@ -337,7 +344,7 @@ async function bulkCreateAssessments(input: BulkCreateAssessmentInput, assessedB
   };
 }
 
-async function updateAssessment(id: string, input: UpdateAssessmentInput) {
+async function updateAssessment(id: string, input: UpdatePAUDAssessmentInput) {
   const existing = await prisma.pAUDDevelopmentAssessment.findUnique({
     where: { id },
   });
@@ -349,11 +356,11 @@ async function updateAssessment(id: string, input: UpdateAssessmentInput) {
   return prisma.pAUDDevelopmentAssessment.update({
     where: { id },
     data: {
-      ...(input.periodType && { periodType: input.periodType as PAUDReportPeriod }),
-      ...(input.periodDate && { periodDate: input.periodDate }),
-      ...(input.aspect && { aspect: input.aspect as PAUDAspect }),
+      ...(input.periodType && { periodType: input.periodType }),
+      ...(input.periodDate && { periodDate: new Date(input.periodDate) }),
+      ...(input.aspect && { aspect: input.aspect }),
       ...(input.indicatorId !== undefined && { indicatorId: input.indicatorId }),
-      ...(input.achievementLevel && { achievementLevel: input.achievementLevel as PAUDAchievementLevel }),
+      ...(input.achievementLevel && { achievementLevel: input.achievementLevel }),
       ...(input.narrativeText !== undefined && { narrativeText: input.narrativeText }),
       ...(input.teacherNotes !== undefined && { teacherNotes: input.teacherNotes }),
       ...(input.recommendations !== undefined && { recommendations: input.recommendations }),
@@ -394,7 +401,7 @@ async function deleteAssessment(id: string) {
 // EVIDENCE SERVICE
 // ============================================
 
-async function createEvidence(input: CreateEvidenceInput) {
+async function createEvidence(input: CreatePAUDEvidenceInput) {
   // Validate assessment exists
   const assessment = await prisma.pAUDDevelopmentAssessment.findUnique({
     where: { id: input.assessmentId },
@@ -444,7 +451,7 @@ async function findAllNarrativeReports(
     ...(studentId && { studentId }),
     ...(unitId && { unitId }),
     ...(academicYearId && { academicYearId }),
-    ...(semester && { semester }),
+    ...(semester && { semester: semester === 'GENAP' ? 2 : 1 }),
     ...(status && { status }),
     // Filter by unit if not super admin
     ...(context.role !== 'SUPER_ADMIN' && context.unitId && { unitId: context.unitId }),
@@ -509,7 +516,7 @@ async function findNarrativeReportById(id: string) {
   return report;
 }
 
-async function createNarrativeReport(input: CreateNarrativeReportInput, createdById: string) {
+async function createNarrativeReport(input: CreatePAUDNarrativeReportInput, createdById: string) {
   // Check for existing report
   const existing = await prisma.pAUDNarrativeReport.findUnique({
     where: {
@@ -558,7 +565,7 @@ async function createNarrativeReport(input: CreateNarrativeReportInput, createdB
   });
 }
 
-async function updateNarrativeReport(id: string, input: UpdateNarrativeReportInput) {
+async function updateNarrativeReport(id: string, input: UpdatePAUDNarrativeReportInput) {
   const existing = await prisma.pAUDNarrativeReport.findUnique({
     where: { id },
   });
@@ -593,7 +600,7 @@ async function updateNarrativeReport(id: string, input: UpdateNarrativeReportInp
   });
 }
 
-async function finalizeNarrativeReport(id: string, input: FinalizeReportInput) {
+async function finalizeNarrativeReport(id: string, input: FinalizePAUDReportInput) {
   const existing = await prisma.pAUDNarrativeReport.findUnique({
     where: { id },
   });
@@ -650,7 +657,7 @@ async function getStudentAssessmentSummary(query: AssessmentSummaryQuery) {
   const where: Prisma.PAUDDevelopmentAssessmentWhereInput = {
     studentId,
     ...(academicYearId && { academicYearId }),
-    ...(semester && { semester }),
+    ...(semester && { semester: semester === 'GENAP' ? 2 : 1 }),
   };
 
   // Get all assessments grouped by aspect
@@ -676,6 +683,7 @@ async function getStudentAssessmentSummary(query: AssessmentSummaryQuery) {
         aspectName: getAspectName(aspect),
         totalAssessments: 0,
         latestLevel: null,
+        latestDate: null,
         averageLevel: null,
         distribution: { BB: 0, MB: 0, BSH: 0, BSB: 0 },
       };
@@ -685,8 +693,8 @@ async function getStudentAssessmentSummary(query: AssessmentSummaryQuery) {
     const distribution = { BB: 0, MB: 0, BSH: 0, BSB: 0 };
     let levelSum = 0;
     aspectAssessments.forEach((a) => {
-      distribution[a.achievementLevel]++;
-      levelSum += achievementOrder[a.achievementLevel];
+      distribution[a.achievementLevel as PAUDAchievementLevel]++;
+      levelSum += achievementOrder[a.achievementLevel as PAUDAchievementLevel];
     });
 
     // Get latest assessment for this aspect
@@ -696,7 +704,7 @@ async function getStudentAssessmentSummary(query: AssessmentSummaryQuery) {
       aspect,
       aspectName: getAspectName(aspect),
       totalAssessments: total,
-      latestLevel: latest?.achievementLevel,
+      latestLevel: latest?.achievementLevel as PAUDAchievementLevel,
       latestDate: latest?.periodDate,
       averageLevel: levelSum / total,
       distribution,
@@ -706,7 +714,7 @@ async function getStudentAssessmentSummary(query: AssessmentSummaryQuery) {
   return {
     studentId,
     academicYearId,
-    semester,
+    semester: semester === 'GENAP' ? 2 : 1,
     summary,
     totalAssessments: assessments.length,
   };
@@ -729,8 +737,8 @@ async function getClassSummary(query: ClassSummaryQuery) {
   const where: Prisma.PAUDDevelopmentAssessmentWhereInput = {
     unitId,
     ...(academicYearId && { academicYearId }),
-    ...(semester && { semester }),
-    ...(aspect && { aspect: aspect as PAUDAspect }),
+    ...(semester && { semester: semester === 'GENAP' ? 2 : 1 }),
+    ...(aspect && { aspect: aspect }),
   };
 
   const assessments = await prisma.pAUDDevelopmentAssessment.findMany({
@@ -748,7 +756,7 @@ async function getClassSummary(query: ClassSummaryQuery) {
     const distribution = { BB: 0, MB: 0, BSH: 0, BSB: 0 };
     
     studentAssessments.forEach((a) => {
-      distribution[a.achievementLevel]++;
+      distribution[a.achievementLevel as PAUDAchievementLevel]++;
     });
 
     return {
@@ -765,13 +773,13 @@ async function getClassSummary(query: ClassSummaryQuery) {
   // Overall class distribution
   const classDistribution = { BB: 0, MB: 0, BSH: 0, BSB: 0 };
   assessments.forEach((a) => {
-    classDistribution[a.achievementLevel]++;
+    classDistribution[a.achievementLevel as PAUDAchievementLevel]++;
   });
 
   return {
     unitId,
     academicYearId,
-    semester,
+    semester: semester === 'GENAP' ? 2 : 1,
     aspect,
     totalStudents: students.length,
     totalAssessments: assessments.length,

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BookStatus, BorrowingStatus } from "@cipansor/shared";
 
 // Book Category schemas
 export const createBookCategorySchema = z.object({
@@ -35,7 +36,7 @@ export const queryBookSchema = z.object({
   unitId: z.string().uuid().optional(),
   categoryId: z.string().uuid().optional(),
   search: z.string().optional(),
-  status: z.enum(["AVAILABLE", "BORROWED", "RESERVED", "MAINTENANCE", "LOST"]).optional(),
+  status: z.nativeEnum(BookStatus).optional(),
 });
 
 // Borrowing schemas
@@ -57,7 +58,7 @@ export const queryBorrowingSchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(20),
   bookId: z.string().uuid().optional(),
   borrowerId: z.string().uuid().optional(),
-  status: z.enum(["ACTIVE", "RETURNED", "OVERDUE", "LOST"]).optional(),
+  status: z.nativeEnum(BorrowingStatus).optional(),
   overdue: z.coerce.boolean().optional(),
 });
 

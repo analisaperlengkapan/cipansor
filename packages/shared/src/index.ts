@@ -11,3 +11,4 @@ export * from './types/dashboard';
 export * from './types/finance';
 export * from './types/assessment';
 export * from './types/inventory';
+export * from './types/paud';

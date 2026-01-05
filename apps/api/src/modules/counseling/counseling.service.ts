@@ -41,8 +41,21 @@ export class CounselingService {
       where.OR = [
         { title: { contains: filters.search, mode: 'insensitive' } },
         { description: { contains: filters.search, mode: 'insensitive' } },
-        // Disabled nested search due to potential Prisma version mismatch or schema issues in environment
-        // { student: { name: { contains: filters.search, mode: 'insensitive' } } },
+        // Optimized search: Filter by Student Name and Counselor Name via User relation
+        {
+          student: {
+            user: {
+              name: { contains: filters.search, mode: 'insensitive' }
+            }
+          }
+        },
+        {
+          counselor: {
+            user: {
+              name: { contains: filters.search, mode: 'insensitive' }
+            }
+          }
+        }
       ];
     }
 
@@ -52,29 +65,38 @@ export class CounselingService {
       if (filters.endDate) where.scheduledAt.lte = new Date(filters.endDate);
     }
 
-    const sessions = await prisma.counselingSession.findMany({
-      where,
-      include: {
-        student: {
-          include: {
-            user: { select: { id: true, name: true } },
-            enrollments: {
-              where: { status: 'active' },
-              take: 1,
-              include: { class: { select: { id: true, name: true } } }
-            }
+    const page = filters.page || 1;
+    const limit = filters.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const [sessions, total] = await Promise.all([
+      prisma.counselingSession.findMany({
+        where,
+        include: {
+          student: {
+            include: {
+              user: { select: { id: true, name: true } },
+              enrollments: {
+                where: { status: 'active' },
+                take: 1,
+                include: { class: { select: { id: true, name: true } } }
+              }
+            },
           },
-        },
-        counselor: {
-          include: {
-            user: { select: { id: true, name: true } },
+          counselor: {
+            include: {
+              user: { select: { id: true, name: true } },
+            },
           },
+          unit: { select: { id: true, name: true } },
+          _count: { select: { notes: true, referrals: true } },
         },
-        unit: { select: { id: true, name: true } },
-        _count: { select: { notes: true, referrals: true } },
-      },
-      orderBy: { scheduledAt: 'desc' },
-    });
+        orderBy: { scheduledAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.counselingSession.count({ where }),
+    ]);
 
     const mappedSessions = sessions.map(s => ({
       ...s,
@@ -84,7 +106,7 @@ export class CounselingService {
       }
     }));
 
-    return mappedSessions as unknown as SharedCounselingSession[];
+    return { data: mappedSessions as unknown as SharedCounselingSession[], total };
   }
 
   /**

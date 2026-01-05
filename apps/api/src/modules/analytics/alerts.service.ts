@@ -128,14 +128,40 @@ async function checkAttendanceRule(rule: AlertRule): Promise<AlertTrigger[]> {
     });
 
     const triggers: AlertTrigger[] = [];
+    const studentIds = students.map(s => s.id);
+
+    if (studentIds.length === 0) return triggers;
+
+    // Optimization: Fix N+1 by grouping attendance by student and status
+    // We already have the total count from the student query (student._count.attendances)
+    // We just need the count of PRESENT attendances
+    const attendanceStats = await prisma.attendance.groupBy({
+        by: ['studentId', 'status'],
+        where: {
+            studentId: { in: studentIds },
+            date: { gte: thirtyDaysAgo },
+            status: AttendanceStatus.PRESENT
+        },
+        _count: { _all: true }
+    });
+
+    // Map for O(1) lookup: studentId -> count of PRESENT
+    const presentMap = new Map<string, number>();
+    attendanceStats.forEach(stat => {
+        // Since we filtered by PRESENT in the query, this count is the present count
+        const count = (stat._count as any)._all || (stat as any)._count || 0;
+        presentMap.set(stat.studentId, count);
+    });
 
     for (const student of students) {
-        const attendance = await prisma.attendance.findMany({
-            where: { studentId: student.id, date: { gte: thirtyDaysAgo } },
-        });
+        // student._count.attendances is the total number of attendance records in the last 30 days
+        // (as defined in the select clause of the student query)
+        const total = student._count.attendances || 0;
 
-        const total = attendance.length || 1;
-        const present = attendance.filter((a) => a.status === AttendanceStatus.PRESENT).length;
+        // If no attendance records, skip (or handle as 0%? usually undefined denominator)
+        if (total === 0) continue;
+
+        const present = presentMap.get(student.id) || 0;
         const rate = (present / total) * 100;
 
         if (compareValue(rate, rule.threshold, rule.operator)) {

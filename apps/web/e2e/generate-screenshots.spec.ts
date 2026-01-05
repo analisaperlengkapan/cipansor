@@ -18,6 +18,14 @@ const MOCK_USER = {
   }
 };
 
+const MOCK_AUTH_STORAGE = JSON.stringify({
+    state: {
+        user: MOCK_USER,
+        isAuthenticated: true
+    },
+    version: 0
+});
+
 const MOCK_DASHBOARD_STATS = {
   success: true,
   data: {
@@ -170,19 +178,20 @@ test.describe('Generate Screenshots', () => {
       });
 
       if (pageConfig.name !== 'login') {
-         // Add auth for non-login pages
-         await page.addInitScript((user) => {
+         // Add cookies for Server-side Middleware
+         await page.context().addCookies([
+             { name: 'accessToken', value: 'mock-token', url: 'http://localhost:3000' },
+             { name: 'auth-storage', value: MOCK_AUTH_STORAGE, url: 'http://localhost:3000' }
+         ]);
+
+         // Add localStorage for Client-side Store (Zustand)
+         await page.addInitScript((data) => {
              localStorage.setItem('accessToken', 'mock-token');
-             localStorage.setItem('auth-storage', JSON.stringify({
-                 state: {
-                     user: user,
-                     isAuthenticated: true
-                 },
-                 version: 0
-             }));
-         }, MOCK_USER);
+             localStorage.setItem('auth-storage', data);
+         }, MOCK_AUTH_STORAGE);
       } else {
-         // Ensure no auth for login page
+         // Clear cookies/storage for login page
+         await page.context().clearCookies();
          await page.addInitScript(() => {
              localStorage.clear();
          });

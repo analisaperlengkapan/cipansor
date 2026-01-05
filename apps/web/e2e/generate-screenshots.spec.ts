@@ -1,10 +1,8 @@
 import { test, expect, Page } from '@playwright/test';
 import * as path from 'path';
 
-// Adjusted path to point to root docs/images from apps/web
 const SCREENSHOT_DIR = path.join(process.cwd(), '../../docs/images');
 
-// Mock Data
 const MOCK_USER = {
   id: 'user-123',
   name: 'Admin Cipansor',
@@ -42,22 +40,33 @@ const MOCK_AUTH_STORAGE = JSON.stringify({
     version: 0
 });
 
-// Universal mock response that satisfies lists, stats, summaries
-const MOCK_UNIVERSAL_RESPONSE = {
+const MOCK_LEGACY_LIST = {
+    success: true,
+    data: [
+      { id: '1', name: 'Item 1' },
+      { id: '2', name: 'Item 2' }
+    ],
+    meta: { total: 2, page: 1, limit: 10, totalPages: 1 }
+};
+
+const MOCK_NEW_LIST = {
     success: true,
     data: {
-        // List response structure
-        data: [],
-        meta: { total: 0, page: 1, limit: 10, totalPages: 1 },
-
-        // Stats/Summary structure
-        summary: { total: 0, count: 0 },
-        stats: { total: 0, count: 0 },
-        totalRecords: 0,
-
-        // Fallback properties to prevent undefined access
-        length: 0,
+        data: [
+          { id: '1', name: 'Item 1' },
+          { id: '2', name: 'Item 2' }
+        ],
+        meta: { total: 2, page: 1, limit: 10, totalPages: 1 }
     }
+};
+
+const MOCK_STUDENTS_LIST = {
+    success: true,
+    data: [
+      { id: '1', name: 'Ahmad Fulan', nis: '12345', gender: 'MALE', status: 'ACTIVE', unit: { name: 'SMP IT' }, class: { name: '7A' } },
+      { id: '2', name: 'Siti Fulanah', nis: '12346', gender: 'FEMALE', status: 'ACTIVE', unit: { name: 'SMA IT' }, class: { name: '10B' } },
+    ],
+    meta: { total: 2, page: 1, limit: 10, totalPages: 1 }
 };
 
 const MOCK_DASHBOARD_STATS = {
@@ -85,108 +94,52 @@ const MOCK_DASHBOARD_STATS = {
   },
 };
 
-const MOCK_STUDENTS = {
-  success: true,
-  data: {
-    data: [
-      { id: '1', name: 'Ahmad Fulan', nis: '12345', gender: 'MALE', status: 'ACTIVE', unit: { name: 'SMP IT' }, class: { name: '7A' } },
-      { id: '2', name: 'Siti Fulanah', nis: '12346', gender: 'FEMALE', status: 'ACTIVE', unit: { name: 'SMA IT' }, class: { name: '10B' } },
-      { id: '3', name: 'Budi Santoso', nis: '12347', gender: 'MALE', status: 'ACTIVE', unit: { name: 'SD IT' }, class: { name: '5C' } },
-      { id: '4', name: 'Dewi Sartika', nis: '12348', gender: 'FEMALE', status: 'ACTIVE', unit: { name: 'TK' }, class: { name: 'B1' } },
-    ],
-    meta: { total: 4, page: 1, limit: 10, totalPages: 1 },
-  },
-};
-
-const MOCK_TAHFIDZ = {
-  success: true,
-  data: {
-    summary: { totalHafalan: 1200, averageHafalan: 5, targetAchieved: 85 },
-    recentRecords: [
-       { id: '1', student: { name: 'Ahmad Fulan' }, type: 'ZIYADAH', juz: 30, page: 1, surah: 'An-Naba', verses: '1-10', score: 90, date: new Date().toISOString() },
-       { id: '2', student: { name: 'Siti Fulanah' }, type: 'MUROJAAH', juz: 29, page: 2, surah: 'Al-Mulk', verses: '1-30', score: 85, date: new Date().toISOString() },
-    ],
-    dashboardStats: {
-        totalStudents: 150,
-        activeStudents: 145,
-        averageJuz: 3.5,
-        completed30Juz: 10,
-        recentActivity: []
-    }
-  },
-};
-
-const MOCK_FINANCE = {
-  success: true,
-  data: {
-    totalBilled: 50000000,
-    totalPaid: 35000000,
-    totalUnpaid: 15000000,
-    summary: { totalRevenue: 50000000, totalExpense: 20000000, netIncome: 30000000 },
-    transactions: [
-      { id: '1', type: 'INCOME', amount: 500000, description: 'SPP Bulan Ini - Ahmad', date: new Date().toISOString(), status: 'COMPLETED' },
-      { id: '2', type: 'EXPENSE', amount: 150000, description: 'Beli ATK', date: new Date().toISOString(), status: 'COMPLETED' },
-    ],
-  },
-};
-
-const MOCK_ATTENDANCE = {
-  success: true,
-  data: {
-    summary: { present: 400, sick: 5, permission: 2, alpha: 1 },
-    records: [
-       { id: '1', student: { name: 'Ahmad Fulan' }, status: 'PRESENT', date: new Date().toISOString(), time: '07:00' },
-       { id: '2', student: { name: 'Siti Fulanah' }, status: 'SICK', date: new Date().toISOString(), time: null },
-    ],
-    stats: [
-        { date: new Date().toISOString(), present: 40, sick: 1, excused: 1, absent: 0 }
-    ]
-  },
-};
-
 async function setupMocks(page: Page) {
-  // Catch-all for other API calls (Register FIRST)
+  // Catch-all: return NEW structure by default
   await page.route('**/api/**', async (route) => {
-      // console.log(`[CATCH-ALL] Handled unmocked request: ${route.request().url()}`);
-      await route.fulfill({ json: MOCK_UNIVERSAL_RESPONSE });
+      await route.fulfill({ json: MOCK_NEW_LIST });
   });
 
-  // Mock Auth
+  // Auth
   await page.route('**/api/auth/me', async (route) => {
-      await route.fulfill({ json: { success: true, data: MOCK_USER } });
+    await route.fulfill({ json: { success: true, data: MOCK_USER } });
   });
 
-  // Mock Health check for Online Status
+  // Health Status
   await page.route('**/api/health', async (route) => {
-      await route.fulfill({ status: 200 });
+    await route.fulfill({ status: 200 });
   });
 
-  // Mock Dashboard
+  // Dashboard
   await page.route('**/api/dashboard/**', async (route) => route.fulfill({ json: MOCK_DASHBOARD_STATS }));
   await page.route('**/api/analytics/**', async (route) => route.fulfill({ json: MOCK_DASHBOARD_STATS }));
 
-  // Students & Classes
-  await page.route('**/api/students*', async (route) => route.fulfill({ json: MOCK_STUDENTS }));
-  await page.route('**/api/classes*', async (route) => route.fulfill({ json: { success: true, data: { data: [], meta: { total: 0 } } } }));
+  // SHARED RESOURCES (Legacy)
+  await page.route('**/api/units*', async (route) => route.fulfill({ json: MOCK_LEGACY_LIST }));
+  await page.route('**/api/academic-years*', async (route) => route.fulfill({ json: MOCK_LEGACY_LIST }));
+  await page.route('**/api/curriculum/subjects*', async (route) => route.fulfill({ json: MOCK_LEGACY_LIST }));
 
-  // Tahfidz
-  await page.route('**/api/tahfidz*', async (route) => route.fulfill({ json: MOCK_TAHFIDZ }));
+  // LEGACY MODULES
+  await page.route('**/api/students*', async (route) => route.fulfill({ json: MOCK_STUDENTS_LIST }));
+  await page.route('**/api/classes*', async (route) => route.fulfill({ json: MOCK_LEGACY_LIST }));
+  await page.route('**/api/assessment/exams*', async (route) => route.fulfill({ json: MOCK_LEGACY_LIST }));
+  await page.route('**/api/assessment/grades*', async (route) => route.fulfill({ json: MOCK_LEGACY_LIST }));
+  await page.route('**/api/assessment/report-cards*', async (route) => route.fulfill({ json: MOCK_LEGACY_LIST }));
+
+  // NEW MODULES
+  await page.route('**/api/tahfidz*', async (route) => route.fulfill({ json: MOCK_NEW_LIST }));
+  await page.route('**/api/attendance*', async (route) => route.fulfill({ json: MOCK_NEW_LIST }));
+  await page.route('**/api/health/records*', async (route) => route.fulfill({ json: MOCK_NEW_LIST }));
+  await page.route('**/api/library*', async (route) => route.fulfill({ json: MOCK_NEW_LIST }));
+  await page.route('**/api/psb*', async (route) => route.fulfill({ json: MOCK_NEW_LIST }));
 
   // Finance
-  await page.route('**/api/finance*', async (route) => route.fulfill({ json: MOCK_FINANCE }));
-  await page.route('**/api/transactions*', async (route) => route.fulfill({ json: MOCK_FINANCE }));
-
-  // Attendance
-  await page.route('**/api/attendance*', async (route) => route.fulfill({ json: MOCK_ATTENDANCE }));
-
-  // Health
-  await page.route('**/api/health*', async (route) => route.fulfill({ json: MOCK_UNIVERSAL_RESPONSE }));
-
-  // Library
-  await page.route('**/api/library*', async (route) => route.fulfill({ json: MOCK_UNIVERSAL_RESPONSE }));
-
-  // PSB
-  await page.route('**/api/psb*', async (route) => route.fulfill({ json: MOCK_UNIVERSAL_RESPONSE }));
+  // Stats -> Object
+  await page.route('**/api/finance/stats', async (route) => route.fulfill({ json: MOCK_DASHBOARD_STATS }));
+  // Transactions -> New List
+  await page.route('**/api/finance/transactions*', async (route) => route.fulfill({ json: MOCK_NEW_LIST }));
+  // Root finance -> Legacy List (if using legacy hook)
+  await page.route('**/api/finance', async (route) => route.fulfill({ json: MOCK_LEGACY_LIST }));
 }
 
 const PAGES_TO_SCREENSHOT = [
@@ -209,8 +162,6 @@ test.describe('Generate Screenshots', () => {
 
   for (const pageConfig of PAGES_TO_SCREENSHOT) {
     test(`screenshot ${pageConfig.name}`, async ({ page }) => {
-      console.log(`Navigating to ${pageConfig.path}...`);
-
       await setupMocks(page);
 
       if (pageConfig.name !== 'login') {
@@ -242,7 +193,6 @@ test.describe('Generate Screenshots', () => {
 
       const screenshotPath = path.join(SCREENSHOT_DIR, `${pageConfig.name}.png`);
       await page.screenshot({ path: screenshotPath, fullPage: pageConfig.fullPage });
-      console.log(`Saved screenshot to ${screenshotPath}`);
     });
   }
 });

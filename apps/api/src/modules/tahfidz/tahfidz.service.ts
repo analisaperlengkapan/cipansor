@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 import { Errors } from '@/middleware/error';
 import { UserRole, TahfidzActivityType, Prisma } from '@prisma/client';
 import type {
@@ -145,9 +146,9 @@ export class TahfidzService {
     });
 
     // Check if student became Hafidz
-    await this.checkAndRegisterHafidz(input.studentId).catch(err => {
+    this.checkAndRegisterHafidz(input.studentId).catch(err => {
         // Log error but don't fail the request
-        console.error('Error checking hafidz status:', err);
+        logger.error('Error checking hafidz status:', err);
     });
 
     return record;
@@ -196,8 +197,8 @@ export class TahfidzService {
     });
 
     // Check if student became Hafidz
-    await this.checkAndRegisterHafidz(updated.studentId).catch(err => {
-        console.error('Error checking hafidz status:', err);
+    this.checkAndRegisterHafidz(updated.studentId).catch(err => {
+        logger.error('Error checking hafidz status:', err);
     });
 
     return updated;
@@ -684,9 +685,10 @@ export class TahfidzService {
             notes: 'Automatically registered by system upon completing 30 Juz',
           },
         });
+        logger.info(`Student ${studentId} registered as Hafidz automatically`);
       }
     } catch (error) {
-      console.error('Error in checkAndRegisterHafidz:', error);
+      logger.error('Error in checkAndRegisterHafidz:', error);
       // Do not throw, this is a background check
     }
   }

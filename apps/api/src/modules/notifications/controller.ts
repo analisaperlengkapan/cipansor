@@ -121,6 +121,20 @@ export async function sendNotification(req: Request, res: Response, next: NextFu
   }
 }
 
+const scheduleNotificationSchema = z.object({
+  scheduledAt: z.string().datetime(),
+});
+
+export async function scheduleNotification(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { scheduledAt } = scheduleNotificationSchema.parse(req.body);
+    const result = await service.scheduleNotification(req.params.id, new Date(scheduledAt));
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getStats(req: Request, res: Response, next: NextFunction) {
   try {
     const query = queryStatsSchema.parse(req.query);

@@ -510,14 +510,14 @@ export class TahfidzService {
       totalRecords,
       totalStudents: uniqueStudents.length,
       recordsByType: recordsByType.map((r) => ({
-        type: r.activityType as any, // Cast to any to satisfy Shared Type if mismatch exists
+        type: r.activityType,
         count: r._count._all,
       })),
       recordsByGrade,
       progressByJuz,
       monthlyActivity,
       topStudents: topStudentsWithJuz,
-      recentRecords: recentRecords as any[], // Cast to any[] to bypass strict shared type check against Prisma result
+      recentRecords: recentRecords as unknown as TahfidzRecord[],
     };
   }
 

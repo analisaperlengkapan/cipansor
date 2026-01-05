@@ -1,4 +1,4 @@
-import { Gender } from './enums';
+import { Gender, EnrollmentStatus } from './enums';
 
 export interface Class {
   id: string;
@@ -49,11 +49,11 @@ export interface ClassEnrollment {
   id: string;
   studentId: string;
   classId: string;
-  status: string; // 'active', etc.
+  status: EnrollmentStatus;
   student?: {
     id: string;
-    nis: string; // Required from DB
-    gender: Gender; // Required from DB
+    nis: string; // Student NIS
+    gender: Gender; // Student Gender
     name?: string; // Derived/Fallback
     user?: {
       id: string;
@@ -71,5 +71,15 @@ export interface ClassEnrollmentInput {
 export type EnrollStudentInput = ClassEnrollmentInput;
 
 export interface UpdateEnrollmentInput {
-  status: 'active' | 'completed' | 'transferred' | 'dropped';
+  status: EnrollmentStatus;
+}
+
+export interface ListClassesQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  unitId?: string;
+  academicYearId?: string;
+  grade?: number;
+  level?: string;
 }

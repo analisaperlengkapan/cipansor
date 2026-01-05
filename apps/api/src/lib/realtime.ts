@@ -111,10 +111,10 @@ export function initializeSocketIO(httpServer: HTTPServer): SocketIOServer {
                 // Extract unitId from channel name: dashboard:metrics:unit:xyz
                 const unitId = channel.split(':').pop();
                 const metrics = JSON.parse(message) as DashboardMetrics;
-                
+
                 // Broadcast to unit-specific dashboard room
                 io?.to(`dashboard:unit:${unitId}`).emit('metrics:update', metrics);
-                
+
                 logger.debug('Broadcasted unit metrics update', { unitId });
             }
         } catch (error) {
@@ -136,11 +136,11 @@ export function initializeSocketIO(httpServer: HTTPServer): SocketIOServer {
 
         try {
             const payload = verifyToken(token);
-            
+
             if (payload.type !== 'access') {
-                logger.warn('Invalid token type for WebSocket', { 
+                logger.warn('Invalid token type for WebSocket', {
                     socketId: socket.id,
-                    tokenType: payload.type 
+                    tokenType: payload.type
                 });
                 return null;
             }
@@ -232,7 +232,7 @@ export function initializeSocketIO(httpServer: HTTPServer): SocketIOServer {
             logger.info(`Socket ${socket.id} subscribed to dashboard updates`, {
                 unitId: options?.unitId || 'all'
             });
-            
+
             // Send current metrics immediately (filtered by unit if provided)
             try {
                 const metrics = await getCurrentDashboardMetrics(options?.unitId);
@@ -254,8 +254,8 @@ export function initializeSocketIO(httpServer: HTTPServer): SocketIOServer {
 
             // Verify user has access to this unit
             // For now, allow if user is in the same unit or has admin role
-            const hasAccess = socket.data.user?.unitId === unitId || 
-                             socket.data.user?.role === 'SUPER_ADMIN';
+            const hasAccess = socket.data.user?.unitId === unitId ||
+                socket.data.user?.role === 'SUPER_ADMIN';
 
             if (!hasAccess) {
                 socket.emit('error', {
@@ -458,7 +458,7 @@ export async function getCurrentDashboardMetrics(unitId?: string): Promise<Dashb
         // Build cache key
         const cacheKey = unitId ? `metrics:unit:${unitId}` : 'metrics:global';
         const CACHE_TTL = 60; // 60 seconds TTL
-        
+
         // Try to get from cache first
         if (redisPublisher) {
             try {
@@ -481,9 +481,9 @@ export async function getCurrentDashboardMetrics(unitId?: string): Promise<Dashb
             where: unitFilter
         });
         const activeStudents = await prisma.student.count({
-            where: { 
+            where: {
                 ...unitFilter,
-                status: 'ACTIVE' 
+                status: 'ACTIVE'
             }
         });
 
@@ -495,9 +495,9 @@ export async function getCurrentDashboardMetrics(unitId?: string): Promise<Dashb
         // Get today's attendance (filtered by unit if provided)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
+
         const todayAttendance = await prisma.attendance.count({
-            where: { 
+            where: {
                 date: { gte: today },
                 status: 'PRESENT',
                 ...(unitId ? {
@@ -506,8 +506,8 @@ export async function getCurrentDashboardMetrics(unitId?: string): Promise<Dashb
             }
         });
 
-        const attendanceRate = activeStudents > 0 
-            ? Math.round((todayAttendance / activeStudents) * 100) 
+        const attendanceRate = activeStudents > 0
+            ? Math.round((todayAttendance / activeStudents) * 100)
             : 0;
 
         // Get total hafidz count from tracking table
@@ -582,7 +582,7 @@ export async function getCurrentDashboardMetrics(unitId?: string): Promise<Dashb
  * @param unitId Optional unit ID for unit-specific metrics
  */
 export async function publishDashboardMetrics(
-    metrics: DashboardMetrics, 
+    metrics: DashboardMetrics,
     unitId?: string
 ): Promise<void> {
     if (!redisPublisher) {
@@ -599,8 +599,8 @@ export async function publishDashboardMetrics(
         // Publish to global channel
         const channel = unitId ? `dashboard:metrics:unit:${unitId}` : 'dashboard:metrics';
         await redisPublisher.publish(channel, JSON.stringify(metrics));
-        
-        logger.debug('Published dashboard metrics to Redis', { 
+
+        logger.debug('Published dashboard metrics to Redis', {
             channel,
             unitId: unitId || 'all'
         });
@@ -660,10 +660,10 @@ export async function invalidateDashboardCache(unitId?: string): Promise<void> {
 export async function warmDashboardCache(): Promise<void> {
     try {
         logger.info('Warming dashboard metrics cache...');
-        
+
         // Warm global metrics
         await getCurrentDashboardMetrics();
-        
+
         // Warm unit-specific metrics for all active units
         const activeUnits = await prisma.unit.findMany({
             where: { deletedAt: null },

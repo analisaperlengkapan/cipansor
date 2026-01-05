@@ -11,6 +11,9 @@ const MOCK_USER = {
   email: 'admin@cipansor.id',
   role: 'SUPER_ADMIN',
   avatar: 'https://ui.shadcn.com/avatars/01.png',
+  username: 'admin',
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
   unit: {
     id: 'unit-1',
     name: 'SMA IT Cipansor',
@@ -38,6 +41,24 @@ const MOCK_AUTH_STORAGE = JSON.stringify({
     },
     version: 0
 });
+
+// Universal mock response that satisfies lists, stats, summaries
+const MOCK_UNIVERSAL_RESPONSE = {
+    success: true,
+    data: {
+        // List response structure
+        data: [],
+        meta: { total: 0, page: 1, limit: 10, totalPages: 1 },
+
+        // Stats/Summary structure
+        summary: { total: 0, count: 0 },
+        stats: { total: 0, count: 0 },
+        totalRecords: 0,
+
+        // Fallback properties to prevent undefined access
+        length: 0,
+    }
+};
 
 const MOCK_DASHBOARD_STATS = {
   success: true,
@@ -124,14 +145,20 @@ const MOCK_ATTENDANCE = {
 };
 
 async function setupMocks(page: Page) {
+  // Catch-all for other API calls (Register FIRST)
+  await page.route('**/api/**', async (route) => {
+      // console.log(`[CATCH-ALL] Handled unmocked request: ${route.request().url()}`);
+      await route.fulfill({ json: MOCK_UNIVERSAL_RESPONSE });
+  });
+
   // Mock Auth
   await page.route('**/api/auth/me', async (route) => {
-    await route.fulfill({ json: { success: true, data: MOCK_USER } });
+      await route.fulfill({ json: { success: true, data: MOCK_USER } });
   });
 
   // Mock Health check for Online Status
   await page.route('**/api/health', async (route) => {
-    await route.fulfill({ status: 200 });
+      await route.fulfill({ status: 200 });
   });
 
   // Mock Dashboard
@@ -153,19 +180,13 @@ async function setupMocks(page: Page) {
   await page.route('**/api/attendance*', async (route) => route.fulfill({ json: MOCK_ATTENDANCE }));
 
   // Health
-  await page.route('**/api/health*', async (route) => route.fulfill({ json: { success: true, data: { data: [], meta: { total: 0, page: 1, limit: 10, totalPages: 0 } } } }));
+  await page.route('**/api/health*', async (route) => route.fulfill({ json: MOCK_UNIVERSAL_RESPONSE }));
 
   // Library
-  await page.route('**/api/library*', async (route) => route.fulfill({ json: { success: true, data: { data: [], meta: { total: 0, page: 1, limit: 10, totalPages: 0 }, summary: {} } } }));
+  await page.route('**/api/library*', async (route) => route.fulfill({ json: MOCK_UNIVERSAL_RESPONSE }));
 
   // PSB
-  await page.route('**/api/psb*', async (route) => route.fulfill({ json: { success: true, data: { data: [], meta: { total: 0, page: 1, limit: 10, totalPages: 0 }, stats: {} } } }));
-
-  // Catch-all for other API calls to prevent 404s/Connection Refused
-  await page.route('**/api/**', async (route) => {
-      // If not already handled, return empty success json
-      await route.fulfill({ json: { success: true, data: [] } });
-  });
+  await page.route('**/api/psb*', async (route) => route.fulfill({ json: MOCK_UNIVERSAL_RESPONSE }));
 }
 
 const PAGES_TO_SCREENSHOT = [
@@ -193,19 +214,15 @@ test.describe('Generate Screenshots', () => {
       await setupMocks(page);
 
       if (pageConfig.name !== 'login') {
-         // Add cookies for Server-side Middleware
          await page.context().addCookies([
              { name: 'accessToken', value: 'mock-token', url: 'http://localhost:3000' },
              { name: 'auth-storage', value: MOCK_AUTH_STORAGE, url: 'http://localhost:3000' }
          ]);
-
-         // Add localStorage for Client-side Store (Zustand)
          await page.addInitScript((data) => {
              localStorage.setItem('accessToken', 'mock-token');
              localStorage.setItem('auth-storage', data);
          }, MOCK_AUTH_STORAGE);
       } else {
-         // Clear cookies/storage for login page
          await page.context().clearCookies();
          await page.addInitScript(() => {
              localStorage.clear();
@@ -214,7 +231,6 @@ test.describe('Generate Screenshots', () => {
 
       await page.goto(pageConfig.path, { waitUntil: 'networkidle' });
 
-      // Hide Offline Banner safely using addStyleTag
       await page.addStyleTag({
           content: `
             div[role="alert"].bg-yellow-500 { display: none !important; }
@@ -222,7 +238,6 @@ test.describe('Generate Screenshots', () => {
           `
       });
 
-      // Additional wait for hydration
       await page.waitForTimeout(2000);
 
       const screenshotPath = path.join(SCREENSHOT_DIR, `${pageConfig.name}.png`);

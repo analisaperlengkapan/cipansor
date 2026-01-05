@@ -60,7 +60,8 @@ import {
   useIncomeExpenseReport,
   type AccountCode,
   type JournalEntry,
-  AccountType
+  AccountType,
+  FinanceReportPeriod
 } from "@/hooks/use-finance-enhancement";
 import { useUnits } from "@/hooks/use-units";
 
@@ -531,7 +532,7 @@ function ReportsTab() {
   const { data: incomeExpense, isLoading: incomeExpenseLoading } = useIncomeExpenseReport({
     startDate,
     endDate,
-    groupBy: "month",
+    groupBy: FinanceReportPeriod.MONTH,
   });
 
   return (

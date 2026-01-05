@@ -55,6 +55,11 @@ export enum PaymentCategory {
   OTHER = 'OTHER'
 }
 
+export enum FinanceReportPeriod {
+  DAY = 'day',
+  MONTH = 'month'
+}
+
 // Interfaces
 
 export interface AccountCode {

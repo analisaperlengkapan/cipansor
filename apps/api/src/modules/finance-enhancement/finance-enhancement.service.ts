@@ -15,7 +15,8 @@ import {
   IncomeExpenseReport,
   SharedPaginatedResponse,
   Pagination,
-  AccountType
+  AccountType,
+  FinanceReportPeriod
 } from '@cipansor/shared';
 import { Prisma } from '@prisma/client';
 
@@ -484,11 +485,11 @@ export class FinanceEnhancementService {
     unitId?: string;
     startDate: Date;
     endDate: Date;
-    groupBy?: 'day' | 'month';
+    groupBy?: FinanceReportPeriod | 'day' | 'month';
   }): Promise<IncomeExpenseReport> {
-    const { unitId, startDate, endDate, groupBy = 'month' } = params;
+    const { unitId, startDate, endDate, groupBy = FinanceReportPeriod.MONTH } = params;
 
-    const dateFormat = groupBy === 'month' ? 'YYYY-MM' : 'YYYY-MM-DD';
+    const dateFormat = groupBy === FinanceReportPeriod.MONTH ? 'YYYY-MM' : 'YYYY-MM-DD';
 
     // Optimization: Using Enum constants instead of hardcoded strings
     const results = await prisma.$queryRaw<Array<{ period: string, type: string, total: bigint }>>`

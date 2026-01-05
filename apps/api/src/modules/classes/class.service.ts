@@ -479,7 +479,7 @@ export class ClassService {
       where: {
         classId,
         status: 'active',
-        student: { deletedAt: null }
+        student: { deletedAt: null },
       },
       include: {
         student: {
@@ -506,7 +506,13 @@ export class ClassService {
       },
     });
 
-    return enrollments as unknown as ClassEnrollment[];
+    return enrollments.map((enrollment) => ({
+      ...enrollment,
+      student: {
+        ...enrollment.student,
+        name: enrollment.student.user.name,
+      },
+    })) as unknown as ClassEnrollment[];
   }
 }
 

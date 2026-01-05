@@ -75,7 +75,15 @@ describe('Class Service', () => {
           },
       });
 
-      expect(result).toEqual(mockEnrollments);
+      expect(result).toEqual([
+        {
+          ...mockEnrollments[0],
+          student: {
+            ...mockEnrollments[0].student,
+            name: mockEnrollments[0].student.user.name,
+          },
+        },
+      ]);
     });
   });
 });

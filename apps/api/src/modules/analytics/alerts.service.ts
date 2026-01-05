@@ -9,9 +9,27 @@ import { NotificationType, AttendanceStatus } from '@prisma/client';
 import { logger } from '@/lib/logger';
 import type { AlertRule, AlertTrigger } from '@cipansor/shared';
 
-// Exporting from here for backward compatibility or local usage if needed,
-// but preferring shared types.
-export { AlertRule, AlertTrigger };
+export interface AlertRule {
+    id: string;
+    name: string;
+    type: 'attendance' | 'payment' | 'academic' | 'behavior';
+    threshold: number;
+    operator: 'lt' | 'lte' | 'gt' | 'gte' | 'eq';
+    action: 'notify' | 'email' | 'whatsapp' | 'all';
+    recipients: 'parent' | 'teacher' | 'admin' | 'all';
+    enabled: boolean;
+}
+
+export interface AlertTrigger {
+    ruleId: string;
+    studentId: string;
+    studentName: string;
+    value: number;
+    threshold: number;
+    message: string;
+    triggeredAt: string;
+    metadata?: Record<string, any>;
+}
 
 // Default alert rules
 const DEFAULT_RULES: AlertRule[] = [
@@ -296,8 +314,7 @@ async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
 
         for (const invoice of recentInvoices) {
             const stat = stats.find(s => s.payment_type_id === invoice.paymentTypeId);
-            // Ensure values are numbers before calculation (Prisma/PG might return strings for aggregations)
-            if (!stat || stat.stddev_val === null || stat.stddev_val === undefined) continue;
+            if (!stat) continue;
 
             const amount = Number(invoice.amount);
             const avg = Number(stat.avg_val);
@@ -317,9 +334,32 @@ async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
                         threshold: avg + (rule.threshold * stddev),
                         message: `Tagihan tidak wajar (Z-Score: ${zScore.toFixed(2)}) untuk ${invoice.student?.user?.name}. Jumlah: Rp ${amount}, Rata-rata: Rp ${avg.toFixed(0)}`,
                         triggeredAt: new Date().toISOString(),
+                        metadata: {
+                            type: 'outlier',
+                            invoiceId: invoice.id,
+                            zScore: zScore
+                        }
                     };
                     triggers.push(trigger);
                 }
+            } else if (Math.abs(amount - avg) > 100) {
+                // Special case: If stddev is 0 (all historical values are identical),
+                // any deviation > 100 (epsilon) is an anomaly (infinite Z-Score)
+                const trigger: AlertTrigger = {
+                    ruleId: rule.id,
+                    studentId: invoice.studentId,
+                    studentName: invoice.student?.user?.name || 'Unknown',
+                    value: amount,
+                    threshold: avg,
+                    message: `Tagihan tidak wajar (Z-Score: ∞) untuk ${invoice.student?.user?.name}. Jumlah: Rp ${amount}, Rata-rata: Rp ${avg.toFixed(0)}`,
+                    triggeredAt: new Date().toISOString(),
+                    metadata: {
+                        type: 'outlier',
+                        invoiceId: invoice.id,
+                        zScore: 'infinity'
+                    }
+                };
+                triggers.push(trigger);
             }
         }
 
@@ -435,6 +475,45 @@ async function sendAlertNotification(
     userId: string
 ): Promise<void> {
     try {
+        // Prevent duplicate alerts within 24 hours
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+        // Check if similar alert exists
+        // We use Prisma's JSON filtering capabilities if possible, or filter in code
+        // Since Prisma JSON filtering can be database specific, we'll fetch recent user notifications
+        // of type ALERT and filter in memory to be safe and database-agnostic enough for this context.
+        const recentAlerts = await prisma.notification.findMany({
+            where: {
+                userId,
+                type: NotificationType.ALERT,
+                createdAt: { gte: twentyFourHoursAgo },
+            },
+            select: { data: true }
+        });
+
+        const isDuplicate = recentAlerts.some(alert => {
+            const data = alert.data as any;
+            if (!data) return false;
+
+            // Match ruleId and studentId
+            if (data.ruleId !== rule.id || data.studentId !== trigger.studentId) return false;
+
+            // If metadata (like invoiceId) is present in trigger, check against existing
+            if (trigger.metadata && data.metadata) {
+                // Check if all keys in trigger.metadata match
+                return Object.keys(trigger.metadata).every(key =>
+                    data.metadata[key] === trigger.metadata![key]
+                );
+            }
+
+            return true;
+        });
+
+        if (isDuplicate) {
+            logger.info(`Skipping duplicate alert: ${rule.name} for ${trigger.studentName}`);
+            return;
+        }
+
         await createNotification({
             userId,
             title: `⚠️ ${rule.name}`,
@@ -443,6 +522,11 @@ async function sendAlertNotification(
             priority: 'HIGH',
             channels: ['IN_APP'],
             recipientType: 'INDIVIDUAL',
+            data: {
+                ruleId: rule.id,
+                studentId: trigger.studentId,
+                metadata: trigger.metadata
+            }
         });
         logger.info(`Alert sent: ${rule.name} for ${trigger.studentName}`);
     } catch (error) {

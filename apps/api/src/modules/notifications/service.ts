@@ -44,6 +44,10 @@ export async function getUserNotifications(userId: string, query: QueryNotificat
   const where: Prisma.NotificationWhereInput = {
     userId,
     ...(isRead !== undefined && { status: isRead ? NotificationStatus.READ : NotificationStatus.UNREAD }),
+    OR: [
+      { scheduledAt: null },
+      { scheduledAt: { lte: new Date() } }
+    ]
   };
 
   if (type) {
@@ -176,7 +180,9 @@ export async function createNotification(data: CreateNotificationInput) {
     data: {
       ...(data.data || {}),
       ...(originalType ? { originalType } : {}),
-    }
+    },
+    // Explicitly map scheduledAt if provided
+    scheduledAt: data.scheduledAt || null,
   };
 
   const notification = await prisma.notification.create({ data: createData });
@@ -239,6 +245,13 @@ export async function sendNotification(id: string) {
   });
 }
 
+export async function scheduleNotification(id: string, scheduledAt: Date) {
+  return prisma.notification.update({
+    where: { id },
+    data: { scheduledAt },
+  });
+}
+
 // ==================== STATS ====================
 
 export async function getNotificationStats(startDate?: Date, endDate?: Date) {
@@ -279,9 +292,14 @@ export async function getNotificationStats(startDate?: Date, endDate?: Date) {
 
 // ==================== TEMPLATES ====================
 
-export async function getTemplates(query: QueryTemplateInput) {
+export async function getTemplates(query: QueryTemplateInput, unitId?: string) {
+  const where: Prisma.SettingWhereInput = { key: "NOTIFICATION_TEMPLATES" };
+  if (unitId) {
+    where.unitId = unitId;
+  }
+
   const setting = await prisma.setting.findFirst({
-    where: { key: "NOTIFICATION_TEMPLATES" },
+    where,
   });
 
   let templates = (setting?.value as any[]) || [];
@@ -296,9 +314,14 @@ export async function getTemplates(query: QueryTemplateInput) {
   return templates;
 }
 
-export async function getTemplateById(id: string) {
+export async function getTemplateById(id: string, unitId?: string) {
+  const where: Prisma.SettingWhereInput = { key: "NOTIFICATION_TEMPLATES" };
+  if (unitId) {
+    where.unitId = unitId;
+  }
+
   const setting = await prisma.setting.findFirst({
-    where: { key: "NOTIFICATION_TEMPLATES" },
+    where,
   });
 
   const templates = (Array.isArray(setting?.value) ? setting.value : []) as unknown as NotificationTemplate[];

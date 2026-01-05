@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+  ExamType,
+  ExamStatus,
+  GradeType
+} from '@cipansor/shared';
 
 // Exam schemas
 export const createExamSchema = z.object({
@@ -7,7 +12,7 @@ export const createExamSchema = z.object({
   subjectId: z.string().uuid(),
   classId: z.string().uuid(),
   teacherId: z.string().uuid(),
-  type: z.enum(['DAILY_TEST', 'QUIZ', 'MIDTERM', 'FINAL', 'PRACTICAL', 'PROJECT', 'TAHFIDZ_TEST']),
+  type: z.nativeEnum(ExamType),
   title: z.string().min(3).max(200),
   description: z.string().optional(),
   scheduledAt: z.string().datetime(),
@@ -19,7 +24,7 @@ export const createExamSchema = z.object({
 });
 
 export const updateExamSchema = createExamSchema.partial().extend({
-  status: z.enum(['DRAFT', 'SCHEDULED', 'ONGOING', 'COMPLETED', 'GRADED']).optional(),
+  status: z.nativeEnum(ExamStatus).optional(),
 });
 
 export const examQuerySchema = z.object({
@@ -30,8 +35,8 @@ export const examQuerySchema = z.object({
   subjectId: z.string().uuid().optional(),
   classId: z.string().uuid().optional(),
   teacherId: z.string().uuid().optional(),
-  type: z.enum(['DAILY_TEST', 'QUIZ', 'MIDTERM', 'FINAL', 'PRACTICAL', 'PROJECT', 'TAHFIDZ_TEST']).optional(),
-  status: z.enum(['DRAFT', 'SCHEDULED', 'ONGOING', 'COMPLETED', 'GRADED']).optional(),
+  type: z.nativeEnum(ExamType).optional(),
+  status: z.nativeEnum(ExamStatus).optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
 });
@@ -42,7 +47,7 @@ export const createGradeSchema = z.object({
   subjectId: z.string().uuid(),
   examId: z.string().uuid().optional(),
   academicYearId: z.string().uuid(),
-  type: z.enum(['EXAM', 'ASSIGNMENT', 'PARTICIPATION', 'ATTENDANCE', 'PROJECT', 'TAHFIDZ']),
+  type: z.nativeEnum(GradeType),
   score: z.number().min(0).max(1000),
   maxScore: z.number().min(0).max(1000).default(100),
   notes: z.string().optional(),
@@ -55,7 +60,7 @@ export const bulkCreateGradesSchema = z.object({
   examId: z.string().uuid().optional(),
   subjectId: z.string().uuid(),
   academicYearId: z.string().uuid(),
-  type: z.enum(['EXAM', 'ASSIGNMENT', 'PARTICIPATION', 'ATTENDANCE', 'PROJECT', 'TAHFIDZ']),
+  type: z.nativeEnum(GradeType),
   maxScore: z.number().min(0).max(1000).default(100),
   gradedById: z.string().uuid(),
   grades: z.array(
@@ -74,7 +79,7 @@ export const gradeQuerySchema = z.object({
   subjectId: z.string().uuid().optional(),
   examId: z.string().uuid().optional(),
   academicYearId: z.string().uuid().optional(),
-  type: z.enum(['EXAM', 'ASSIGNMENT', 'PARTICIPATION', 'ATTENDANCE', 'PROJECT', 'TAHFIDZ']).optional(),
+  type: z.nativeEnum(GradeType).optional(),
 });
 
 // Report Card schemas
@@ -101,16 +106,7 @@ export const reportCardQuerySchema = z.object({
   isPublished: z.coerce.boolean().optional(),
 });
 
-// Types
-export type CreateExamInput = z.infer<typeof createExamSchema>;
-export type UpdateExamInput = z.infer<typeof updateExamSchema>;
+// Types (Query types are specific to API filtering, so they stay here or could be moved to shared if reused in frontend hooks)
 export type ExamQuery = z.infer<typeof examQuerySchema>;
-
-export type CreateGradeInput = z.infer<typeof createGradeSchema>;
-export type UpdateGradeInput = z.infer<typeof updateGradeSchema>;
-export type BulkCreateGradesInput = z.infer<typeof bulkCreateGradesSchema>;
 export type GradeQuery = z.infer<typeof gradeQuerySchema>;
-
-export type CreateReportCardInput = z.infer<typeof createReportCardSchema>;
-export type UpdateReportCardInput = z.infer<typeof updateReportCardSchema>;
 export type ReportCardQuery = z.infer<typeof reportCardQuerySchema>;

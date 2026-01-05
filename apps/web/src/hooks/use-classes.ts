@@ -1,33 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { PaginatedResponse, ApiResponse } from '@/lib/api';
-
-export interface Class {
-  id: string;
-  name: string;
-  grade: number;
-  section?: string;
-  schedule?: string;
-  maxStudents?: number;
-  academicYearId: string;
-  academicYear?: {
-    id: string;
-    name: string;
-    isActive: boolean;
-  };
-  unitId: string;
-  unit?: {
-    id: string;
-    name: string;
-  };
-  homeroomTeacherId?: string;
-  homeroomTeacher?: {
-    id: string;
-    name: string;
-  };
-  studentCount?: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { Class, CreateClassInput, UpdateClassInput, ClassEnrollment } from '@cipansor/shared';
 
 export interface ClassListParams {
   page?: number;
@@ -38,36 +11,15 @@ export interface ClassListParams {
   academicYearId?: string;
 }
 
-export interface CreateClassData {
-  name: string;
-  grade: number;
-  section?: string;
-  schedule?: string;
-  maxStudents?: number;
-  academicYearId: string;
-  unitId: string;
-  homeroomTeacherId?: string;
-}
-
-export interface UpdateClassData extends Partial<CreateClassData> { }
-
-export interface Enrollment {
-  id: string;
-  studentId: string;
-  student: {
-    id: string;
-    nis: string;
-    name: string;
-    gender: string;
-  };
-  classId: string;
-  enrolledAt: string;
-}
+// Ensure the local type usage aligns with shared type or just use shared type directly.
+// The shared 'Class' type is what we want.
+// We remove the local 'Class', 'CreateClassData', 'UpdateClassData', 'Enrollment' interfaces.
 
 export function useClasses(params: ClassListParams = {}) {
   return useQuery({
     queryKey: ['classes', params],
     queryFn: async () => {
+      // The API returns PaginatedResponse<Class> where Class is the shared type
       const response = await api.get<PaginatedResponse<Class>>('/classes', { params });
       return response.data;
     },
@@ -90,7 +42,7 @@ export function useClassEnrollments(classId: string) {
   return useQuery({
     queryKey: ['classes', classId, 'enrollments'],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Enrollment[]>>(`/classes/${classId}/enrollments`);
+      const response = await api.get<ApiResponse<ClassEnrollment[]>>(`/classes/${classId}/enrollments`);
       return response.data.data;
     },
     enabled: !!classId,
@@ -101,7 +53,7 @@ export function useCreateClass() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: CreateClassData) => {
+    mutationFn: async (data: CreateClassInput) => {
       const response = await api.post<ApiResponse<Class>>('/classes', data);
       return response.data.data;
     },
@@ -115,7 +67,7 @@ export function useUpdateClass() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateClassData }) => {
+    mutationFn: async ({ id, data }: { id: string; data: UpdateClassInput }) => {
       const response = await api.put<ApiResponse<Class>>(`/classes/${id}`, data);
       return response.data.data;
     },
@@ -144,7 +96,8 @@ export function useEnrollStudent() {
 
   return useMutation({
     mutationFn: async ({ classId, studentId }: { classId: string; studentId: string }) => {
-      const response = await api.post<ApiResponse<Enrollment>>(`/classes/${classId}/enrollments`, {
+      // The API expects { studentId } as body.
+      const response = await api.post<ApiResponse<ClassEnrollment>>(`/classes/${classId}/enrollments`, {
         studentId,
       });
       return response.data.data;

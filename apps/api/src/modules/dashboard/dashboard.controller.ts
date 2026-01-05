@@ -7,7 +7,7 @@ import { Request, Response } from 'express';
 import { logger } from '@/lib/logger';
 import { getCurrentDashboardMetrics } from '@/lib/realtime';
 import { prisma } from '@/lib/prisma';
-import type { DashboardMetrics, DashboardAlert } from '@/lib/realtime';
+import type { DashboardMetrics, DashboardAlert } from '@cipansor/shared';
 import {
     DashboardStats,
     AttendanceStats,

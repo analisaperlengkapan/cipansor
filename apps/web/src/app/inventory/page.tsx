@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -36,52 +36,61 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { toast } from 'sonner';
 import {
   useInventoryItems,
+  useInventoryCategories,
   useDeleteInventoryItem,
   useInventorySummary,
-  ITEM_CATEGORIES,
-  ITEM_CONDITIONS,
-  ITEM_STATUSES,
-  ItemCategory,
-  ItemCondition,
-  ItemStatus,
+  AssetCondition,
+  AssetStatus,
 } from '@/hooks/use-inventory';
 
-function getConditionBadge(condition: ItemCondition) {
-  const condInfo = ITEM_CONDITIONS.find((c) => c.value === condition);
+function getConditionBadge(condition: AssetCondition) {
+  const colorMap: Record<AssetCondition, string> = {
+    [AssetCondition.EXCELLENT]: 'bg-green-100 text-green-800',
+    [AssetCondition.GOOD]: 'bg-blue-100 text-blue-800',
+    [AssetCondition.FAIR]: 'bg-yellow-100 text-yellow-800',
+    [AssetCondition.POOR]: 'bg-orange-100 text-orange-800',
+    [AssetCondition.BROKEN]: 'bg-red-100 text-red-800',
+  };
+
   return (
-    <Badge variant="outline" className={condInfo?.color}>
-      {condInfo?.label || condition}
+    <Badge variant="outline" className={colorMap[condition] || 'bg-gray-100'}>
+      {condition}
     </Badge>
   );
 }
 
-function getStatusBadge(status: ItemStatus) {
-  const statusInfo = ITEM_STATUSES.find((s) => s.value === status);
+function getStatusBadge(status: AssetStatus) {
+  const colorMap: Record<AssetStatus, string> = {
+    [AssetStatus.ACTIVE]: 'bg-green-100 text-green-800',
+    [AssetStatus.MAINTENANCE]: 'bg-yellow-100 text-yellow-800',
+    [AssetStatus.DAMAGED]: 'bg-red-100 text-red-800',
+    [AssetStatus.DISPOSED]: 'bg-gray-100 text-gray-800',
+  };
+
   return (
-    <Badge variant="outline" className={statusInfo?.color}>
-      {statusInfo?.label || status}
+    <Badge variant="outline" className={colorMap[status] || 'bg-gray-100'}>
+      {status}
     </Badge>
   );
-}
-
-function getCategoryLabel(category: ItemCategory) {
-  return ITEM_CATEGORIES.find((c) => c.value === category)?.label || category;
 }
 
 export default function InventoryPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [categoryId, setCategoryId] = useState<string>('all');
   const [conditionFilter, setConditionFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const { data: inventoryData, isLoading } = useInventoryItems({
     page,
     limit: 10,
     search: search || undefined,
-    category: categoryFilter !== 'all' ? (categoryFilter as ItemCategory) : undefined,
-    condition: conditionFilter !== 'all' ? (conditionFilter as ItemCondition) : undefined,
+    categoryId: categoryId !== 'all' ? categoryId : undefined,
+    condition: conditionFilter !== 'all' ? (conditionFilter as AssetCondition) : undefined,
+    status: statusFilter !== 'all' ? (statusFilter as AssetStatus) : undefined,
   });
 
+  const { data: categories } = useInventoryCategories();
   const { data: summaryData } = useInventorySummary();
   const deleteMutation = useDeleteInventoryItem();
 
@@ -108,13 +117,13 @@ export default function InventoryPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Inventaris</h1>
-          <p className="text-muted-foreground">Kelola data inventaris pesantren</p>
+          <h1 className="text-3xl font-bold tracking-tight">Inventaris (Aset)</h1>
+          <p className="text-muted-foreground">Kelola data aset dan inventaris pesantren</p>
         </div>
         <Button asChild>
           <Link href="/inventory/new">
             <Plus className="mr-2 h-4 w-4" />
-            Tambah Barang
+            Tambah Aset
           </Link>
         </Button>
       </div>
@@ -123,7 +132,7 @@ export default function InventoryPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Item</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Aset</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -132,30 +141,35 @@ export default function InventoryPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Kuantitas</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summaryData?.totalQuantity || 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Nilai</CardTitle>
+            <CardTitle className="text-sm font-medium">Status Aktif</CardTitle>
+            <div className="h-4 w-4 rounded-full bg-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(summaryData?.totalValue)}
+               {summaryData?.byStatus?.find(s => s.status === AssetStatus.ACTIVE)?.count || 0}
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tersedia</CardTitle>
+            <CardTitle className="text-sm font-medium">Perlu Maintenance</CardTitle>
+             <div className="h-4 w-4 rounded-full bg-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {summaryData?.byStatus?.find((s) => s.status === 'AVAILABLE')?.count || 0}
+            <div className="text-2xl font-bold">
+                {summaryData?.recentMaintenances || 0}
+            </div>
+             <p className="text-xs text-muted-foreground">30 hari terakhir</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Nilai Aset</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(summaryData?.totalValue)}
             </div>
           </CardContent>
         </Card>
@@ -166,36 +180,52 @@ export default function InventoryPage() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Cari nama/kode..."
+            placeholder="Cari nama, kode, brand..."
             className="pl-10"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter className="h-4 w-4 text-muted-foreground hidden sm:block" />
+
+          <Select value={categoryId} onValueChange={setCategoryId}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Kategori" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Kategori</SelectItem>
-              {ITEM_CATEGORIES.map((cat) => (
-                <SelectItem key={cat.value} value={cat.value}>
-                  {cat.label}
+              {categories?.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={conditionFilter} onValueChange={setConditionFilter}>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Status</SelectItem>
+              {Object.values(AssetStatus).map((status) => (
+                <SelectItem key={status} value={status}>
+                  {status}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+           <Select value={conditionFilter} onValueChange={setConditionFilter}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Kondisi" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Kondisi</SelectItem>
-              {ITEM_CONDITIONS.map((cond) => (
-                <SelectItem key={cond.value} value={cond.value}>
-                  {cond.label}
+              {Object.values(AssetCondition).map((cond) => (
+                <SelectItem key={cond} value={cond}>
+                  {cond}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -215,7 +245,7 @@ export default function InventoryPage() {
               <Package className="h-12 w-12 text-muted-foreground" />
               <p className="mt-4 text-muted-foreground">Belum ada data inventaris</p>
               <Button asChild className="mt-4">
-                <Link href="/inventory/new">Tambah Barang Baru</Link>
+                <Link href="/inventory/new">Tambah Aset Baru</Link>
               </Button>
             </div>
           ) : (
@@ -225,10 +255,9 @@ export default function InventoryPage() {
                   <TableHead>Kode</TableHead>
                   <TableHead>Nama</TableHead>
                   <TableHead>Kategori</TableHead>
-                  <TableHead>Jumlah</TableHead>
+                  <TableHead>Lokasi</TableHead>
                   <TableHead>Kondisi</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Lokasi</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -236,12 +265,14 @@ export default function InventoryPage() {
                 {inventoryData?.data.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-mono text-sm">{item.code}</TableCell>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>{getCategoryLabel(item.category)}</TableCell>
-                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell>
+                        <div className="font-medium">{item.name}</div>
+                        {item.brand && <div className="text-xs text-muted-foreground">{item.brand} {item.model}</div>}
+                    </TableCell>
+                    <TableCell>{item.category?.name || '-'}</TableCell>
+                    <TableCell>{item.location || '-'}</TableCell>
                     <TableCell>{getConditionBadge(item.condition)}</TableCell>
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
-                    <TableCell>{item.location || '-'}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button variant="ghost" size="icon" asChild>
@@ -255,8 +286,8 @@ export default function InventoryPage() {
                           </Link>
                         </Button>
                         <ConfirmDialog
-                          title="Hapus Inventaris"
-                          description="Apakah Anda yakin ingin menghapus data inventaris ini?"
+                          title="Hapus Aset"
+                          description="Apakah Anda yakin ingin menghapus data aset ini? Data yang dihapus tidak dapat dikembalikan."
                           onConfirm={() => handleDelete(item.id)}
                           loading={deleteMutation.isPending}
                         >

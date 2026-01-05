@@ -44,14 +44,14 @@ export default function StudentsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data, isLoading } = useStudents({
     page,
     limit: pageSize,
     search: search || undefined,
-    status: statusFilter || undefined,
+    status: statusFilter === 'ALL' ? undefined : statusFilter,
     unitId: user?.role !== 'SUPER_ADMIN' ? user?.unitId : undefined,
   });
 
@@ -191,7 +191,7 @@ export default function StudentsPage() {
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Status</SelectItem>
+              <SelectItem value="ALL">All Status</SelectItem>
               <SelectItem value="ACTIVE">Active</SelectItem>
               <SelectItem value="INACTIVE">Inactive</SelectItem>
               <SelectItem value="GRADUATED">Graduated</SelectItem>

@@ -29,29 +29,28 @@ import {
 import { toast } from 'sonner';
 import {
   useCreateInventoryItem,
-  ITEM_CATEGORIES,
-  ITEM_CONDITIONS,
-  ITEM_STATUSES,
-  ItemCategory,
-  ItemCondition,
-  ItemStatus,
+  useInventoryCategories,
+  AssetCondition,
+  AssetStatus,
 } from '@/hooks/use-inventory';
 import { useUnits } from '@/hooks/use-units';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi'),
   code: z.string().min(1, 'Kode wajib diisi'),
-  category: z.string().min(1, 'Kategori wajib dipilih'),
+  categoryId: z.string().uuid('Kategori wajib dipilih'),
   description: z.string().optional(),
-  quantity: z.coerce.number().min(1, 'Jumlah minimal 1'),
-  condition: z.string().min(1, 'Kondisi wajib dipilih'),
-  status: z.string(),
+  condition: z.nativeEnum(AssetCondition),
+  status: z.nativeEnum(AssetStatus),
   location: z.string().optional(),
-  unitId: z.string().optional(),
+  unitId: z.string().uuid('Unit wajib dipilih'),
   purchaseDate: z.string().optional(),
   purchasePrice: z.coerce.number().optional(),
   warrantyExpiry: z.string().optional(),
   notes: z.string().optional(),
+  brand: z.string().optional(),
+  model: z.string().optional(),
+  serialNumber: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -60,23 +59,26 @@ export default function NewInventoryPage() {
   const router = useRouter();
   const createMutation = useCreateInventoryItem();
   const { data: units } = useUnits();
+  const { data: categories } = useInventoryCategories();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       code: '',
-      category: '',
+      categoryId: '',
       description: '',
-      quantity: 1,
-      condition: 'GOOD',
-      status: 'AVAILABLE',
+      condition: AssetCondition.GOOD,
+      status: AssetStatus.ACTIVE,
       location: '',
       unitId: '',
       purchaseDate: '',
       purchasePrice: undefined,
       warrantyExpiry: '',
       notes: '',
+      brand: '',
+      model: '',
+      serialNumber: '',
     },
   });
 
@@ -84,16 +86,15 @@ export default function NewInventoryPage() {
     try {
       await createMutation.mutateAsync({
         ...data,
-        category: data.category as ItemCategory,
-        condition: data.condition as ItemCondition,
-        status: data.status as ItemStatus,
         description: data.description || undefined,
         location: data.location || undefined,
-        unitId: data.unitId || undefined,
-        purchaseDate: data.purchaseDate || undefined,
+        purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : undefined,
         purchasePrice: data.purchasePrice || undefined,
-        warrantyExpiry: data.warrantyExpiry || undefined,
+        warrantyExpiry: data.warrantyExpiry ? new Date(data.warrantyExpiry) : undefined,
         notes: data.notes || undefined,
+        brand: data.brand || undefined,
+        model: data.model || undefined,
+        serialNumber: data.serialNumber || undefined,
       });
       toast.success('Inventaris berhasil ditambahkan');
       router.push('/inventory');
@@ -112,8 +113,8 @@ export default function NewInventoryPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tambah Inventaris</h1>
-          <p className="text-muted-foreground">Tambahkan barang baru ke inventaris</p>
+          <h1 className="text-3xl font-bold tracking-tight">Tambah Aset</h1>
+          <p className="text-muted-foreground">Tambahkan aset baru ke inventaris</p>
         </div>
       </div>
 
@@ -133,7 +134,7 @@ export default function NewInventoryPage() {
                     name="code"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Kode Barang</FormLabel>
+                        <FormLabel>Kode Aset</FormLabel>
                         <FormControl>
                           <Input placeholder="INV-001" {...field} />
                         </FormControl>
@@ -144,12 +145,12 @@ export default function NewInventoryPage() {
 
                   <FormField
                     control={form.control}
-                    name="quantity"
+                    name="serialNumber"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Jumlah</FormLabel>
+                        <FormLabel>Serial Number</FormLabel>
                         <FormControl>
-                          <Input type="number" min={1} {...field} />
+                          <Input placeholder="SN123456" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -162,7 +163,7 @@ export default function NewInventoryPage() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nama Barang</FormLabel>
+                      <FormLabel>Nama Aset</FormLabel>
                       <FormControl>
                         <Input placeholder="Laptop ASUS" {...field} />
                       </FormControl>
@@ -171,9 +172,38 @@ export default function NewInventoryPage() {
                   )}
                 />
 
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="brand"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Brand</FormLabel>
+                        <FormControl>
+                          <Input placeholder="ASUS" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="model"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Model</FormLabel>
+                        <FormControl>
+                          <Input placeholder="X441" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
-                  name="category"
+                  name="categoryId"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Kategori</FormLabel>
@@ -184,9 +214,9 @@ export default function NewInventoryPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {ITEM_CATEGORIES.map((cat) => (
-                            <SelectItem key={cat.value} value={cat.value}>
-                              {cat.label}
+                          {categories?.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -228,9 +258,9 @@ export default function NewInventoryPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {ITEM_CONDITIONS.map((cond) => (
-                              <SelectItem key={cond.value} value={cond.value}>
-                                {cond.label}
+                            {Object.values(AssetCondition).map((cond) => (
+                              <SelectItem key={cond} value={cond}>
+                                {cond}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -253,9 +283,9 @@ export default function NewInventoryPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {ITEM_STATUSES.map((status) => (
-                              <SelectItem key={status.value} value={status.value}>
-                                {status.label}
+                            {Object.values(AssetStatus).map((status) => (
+                              <SelectItem key={status} value={status}>
+                                {status}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -294,7 +324,7 @@ export default function NewInventoryPage() {
                   name="unitId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Unit (Opsional)</FormLabel>
+                      <FormLabel>Unit</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -309,7 +339,7 @@ export default function NewInventoryPage() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormDescription>Unit yang menggunakan barang ini</FormDescription>
+                      <FormDescription>Unit yang memiliki aset ini</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

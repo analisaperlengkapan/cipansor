@@ -36,22 +36,37 @@ Sistem ini menggabungkan manajemen akademik sekolah formal dengan manajemen kepe
 
 ## 💻 Antarmuka
 
-Berikut adalah tampilan antarmuka dari sistem Cipansor:
+Berikut adalah tampilan antarmuka dari sistem Cipansor yang mencakup berbagai modul terintegrasi:
 
-### Halaman Login
-Halaman masuk yang aman untuk Admin, Guru, Staff, Santri, dan Wali Santri.
+### Halaman Login & Dashboard
+| Login | Dashboard Utama |
+|-------|----------------|
+| ![Halaman Login](docs/images/login.png) | ![Dashboard Utama](docs/images/dashboard.png) |
 
-![Halaman Login](docs/images/login.png)
+### Manajemen Akademik
+| Data Siswa | Kelas & Rombel |
+|------------|----------------|
+| ![Manajemen Siswa](docs/images/students.png) | ![Manajemen Kelas](docs/images/classes.png) |
 
-### Dashboard Utama
-Ringkasan data penting dan statistik untuk pemantauan cepat.
+### Kepesantrenan & Tahfidz
+| Dashboard Tahfidz | Absensi Santri |
+|-------------------|----------------|
+| ![Progress Tahfidz](docs/images/tahfidz.png) | ![Absensi Kehadiran](docs/images/attendance.png) |
 
-![Dashboard Utama](docs/images/dashboard.png)
+### Keuangan & Pembayaran
+| Laporan Keuangan | Penerimaan Santri Baru (PSB) |
+|------------------|------------------------------|
+| ![Keuangan & SPP](docs/images/finance.png) | ![Pendaftaran PSB](docs/images/psb.png) |
 
-### Landing Page
-Halaman depan untuk informasi umum.
+### Penilaian & Laporan
+| Rapor & Nilai | Pengaturan Aplikasi |
+|---------------|---------------------|
+| ![Penilaian Akademik](docs/images/assessment.png) | ![Pengaturan Sistem](docs/images/settings.png) |
 
-![Landing Page](docs/images/landing.png)
+### Fasilitas Pendukung
+| Perpustakaan | Kesehatan (UKS) |
+|--------------|-----------------|
+| ![Perpustakaan Digital](docs/images/library.png) | ![Rekam Medis Santri](docs/images/health.png) |
 
 ---
 

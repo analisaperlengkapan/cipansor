@@ -1,43 +1,92 @@
-import { prisma } from '@/lib/prisma';
-import { Errors } from '@/middleware/error';
-import { UserRole, Prisma } from '@prisma/client';
-import type {
-  ListClassesQuery,
+import { PrismaClient, Prisma } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
+import { Errors } from '../../middleware/error';
+import {
   CreateClassInput,
   UpdateClassInput,
-  EnrollStudentInput,
+  ClassEnrollmentInput,
   UpdateEnrollmentInput,
-} from './class.schema';
+  Class,
+  ClassEnrollment,
+  EnrollStudentInput,
+  EnrollmentStatus,
+  Gender,
+  ListClassesQuery
+} from '@cipansor/shared';
+
+// Helper to safely cast DB status to EnrollmentStatus
+function toEnrollmentStatus(status: string): EnrollmentStatus {
+  // Since we defined the Enum values as lowercase strings matching the DB,
+  // we can cast directly if valid, otherwise fallback or error.
+  // Assuming strict adherence:
+  if (Object.values(EnrollmentStatus).includes(status as EnrollmentStatus)) {
+    return status as EnrollmentStatus;
+  }
+  // Default fallback if unknown status in DB (should not happen with strict schema)
+  return EnrollmentStatus.ACTIVE;
+}
+
+// Helper to map Prisma result to ClassEnrollment
+function mapToClassEnrollment(
+  data: {
+    id: string;
+    studentId: string;
+    classId: string;
+    status: string; // Prisma type usually string or Enum
+    createdAt: Date;
+    student: {
+      id: string;
+      nis: string;
+      gender: string; // Prisma Gender Enum is usually uppercase
+      user: {
+        id: string;
+        name: string;
+        email?: string | null;
+      };
+    };
+  }
+): ClassEnrollment {
+  return {
+    id: data.id,
+    studentId: data.studentId,
+    classId: data.classId,
+    status: toEnrollmentStatus(data.status),
+    enrolledAt: data.createdAt,
+    student: {
+      id: data.student.id,
+      nis: data.student.nis,
+      gender: data.student.gender as Gender, // Assumes Prisma Gender matches Shared Gender (MALE/FEMALE)
+      name: data.student.user.name,
+      user: {
+        id: data.student.user.id,
+        name: data.student.user.name,
+      }
+    }
+  };
+}
 
 export class ClassService {
   /**
-   * Get all classes with pagination
+   * Get all classes with pagination and filters
    */
-  async findAll(query: ListClassesQuery, currentUser: { role: UserRole; unitId: string | null }) {
-    const { page, limit, search, unitId, academicYearId, level } = query;
+  async findAll(query: ListClassesQuery) {
+    const { page = 1, limit = 10, search, unitId, academicYearId, grade, level } = query;
     const skip = (page - 1) * limit;
 
     const where: Prisma.ClassWhereInput = {
       deletedAt: null,
+      unitId,
+      academicYearId,
     };
 
-    // Filter by unit
-    if (currentUser.role !== UserRole.SUPER_ADMIN) {
-      where.unitId = currentUser.unitId || 'none';
-    } else if (unitId) {
-      where.unitId = unitId;
-    }
-
-    if (academicYearId) {
-      where.academicYearId = academicYearId;
+    if (search) {
+      where.name = { contains: search, mode: 'insensitive' };
     }
 
     if (level) {
       where.level = level;
-    }
-
-    if (search) {
-      where.name = { contains: search, mode: 'insensitive' };
+    } else if (grade) {
+      where.level = String(grade);
     }
 
     const [classes, total] = await Promise.all([
@@ -45,22 +94,18 @@ export class ClassService {
         where,
         skip,
         take: limit,
-        orderBy: [{ level: 'asc' }, { name: 'asc' }],
+        orderBy: { name: 'asc' },
         include: {
           unit: {
             select: {
               id: true,
               name: true,
-              type: true,
             },
           },
           academicYear: {
             select: {
               id: true,
               name: true,
-              startDate: true,
-              endDate: true,
-              isActive: true,
             },
           },
           homeroomTeacher: {
@@ -84,8 +129,23 @@ export class ClassService {
       prisma.class.count({ where }),
     ]);
 
+    const mappedClasses = classes.map(c => ({
+      ...c,
+      grade: parseInt(c.level) || 0,
+      studentCount: c._count.enrollments,
+      homeroomTeacher: c.homeroomTeacher ? {
+          id: c.homeroomTeacher.id,
+          user: c.homeroomTeacher.user
+      } : null,
+      unit: {
+          id: c.unit.id,
+          name: c.unit.name
+      },
+    })) as unknown as Class[];
+
     return {
-      classes,
+      classes: mappedClasses, // Legacy property name
+      data: mappedClasses, // Standard property name
       pagination: {
         page,
         limit,
@@ -98,12 +158,16 @@ export class ClassService {
   /**
    * Get class by ID
    */
-  async findById(id: string) {
-    const classData = await prisma.class.findFirst({
-      where: { id, deletedAt: null },
+  async findById(id: string): Promise<Class> {
+    const classData = await prisma.class.findUnique({
+      where: { id },
       include: {
-        unit: true,
-        academicYear: true,
+        unit: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         homeroomTeacher: {
           include: {
             user: {
@@ -115,21 +179,10 @@ export class ClassService {
             },
           },
         },
-        enrollments: {
-          where: { status: 'active' },
-          include: {
-            student: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                  },
-                },
-              },
+        _count: {
+            select: {
+              enrollments: true,
             },
-          },
         },
       },
     });
@@ -138,14 +191,25 @@ export class ClassService {
       throw Errors.notFound('Class');
     }
 
-    return classData;
+    return {
+        ...classData,
+        grade: parseInt(classData.level) || 0,
+        studentCount: classData._count.enrollments,
+        homeroomTeacher: classData.homeroomTeacher ? {
+            id: classData.homeroomTeacher.id,
+            user: classData.homeroomTeacher.user
+        } : null,
+        unit: {
+            id: classData.unit.id,
+            name: classData.unit.name
+        },
+    } as unknown as Class;
   }
 
   /**
    * Create new class
    */
   async create(input: CreateClassInput) {
-    // Check unit exists
     const unit = await prisma.unit.findFirst({
       where: { id: input.unitId, deletedAt: null },
     });
@@ -154,7 +218,6 @@ export class ClassService {
       throw Errors.notFound('Unit');
     }
 
-    // Check academic year exists
     const academicYear = await prisma.academicYear.findFirst({
       where: { id: input.academicYearId, deletedAt: null },
     });
@@ -163,7 +226,6 @@ export class ClassService {
       throw Errors.notFound('Academic Year');
     }
 
-    // Check class name uniqueness within unit and academic year
     const existing = await prisma.class.findFirst({
       where: {
         name: input.name,
@@ -177,7 +239,6 @@ export class ClassService {
       throw Errors.conflict('Class with this name already exists for this unit and academic year');
     }
 
-    // Verify homeroom teacher if provided
     if (input.homeroomTeacherId) {
       const teacher = await prisma.teacher.findFirst({
         where: { id: input.homeroomTeacherId, unitId: input.unitId },
@@ -187,13 +248,15 @@ export class ClassService {
       }
     }
 
+    const capacity = input.capacity ?? 30;
+
     const classData = await prisma.class.create({
       data: {
         name: input.name,
         unitId: input.unitId,
         academicYearId: input.academicYearId,
         level: input.level,
-        capacity: input.capacity,
+        capacity,
         homeroomTeacherId: input.homeroomTeacherId,
       },
       include: {
@@ -227,7 +290,6 @@ export class ClassService {
       throw Errors.notFound('Class');
     }
 
-    // Check name uniqueness if changing
     if (input.name && input.name !== classData.name) {
       const existing = await prisma.class.findFirst({
         where: {
@@ -243,7 +305,6 @@ export class ClassService {
       }
     }
 
-    // Verify homeroom teacher if changing
     if (input.homeroomTeacherId) {
       const teacher = await prisma.teacher.findFirst({
         where: { id: input.homeroomTeacherId, unitId: classData.unitId },
@@ -253,7 +314,6 @@ export class ClassService {
       }
     }
 
-    // Build update data
     const updateData: Prisma.ClassUpdateInput = {};
     if (input.name !== undefined) updateData.name = input.name;
     if (input.level !== undefined) updateData.level = input.level;
@@ -298,7 +358,6 @@ export class ClassService {
       throw Errors.notFound('Class');
     }
 
-    // Check if class has active enrollments
     const activeEnrollments = await prisma.classEnrollment.count({
       where: { classId: id, status: 'active' },
     });
@@ -318,7 +377,7 @@ export class ClassService {
   /**
    * Enroll student in class
    */
-  async enrollStudent(classId: string, input: EnrollStudentInput) {
+  async enrollStudent(classId: string, input: EnrollStudentInput): Promise<ClassEnrollment> {
     const classData = await prisma.class.findFirst({
       where: { id: classId, deletedAt: null },
       include: {
@@ -330,7 +389,6 @@ export class ClassService {
       throw Errors.notFound('Class');
     }
 
-    // Check capacity
     if (classData._count.enrollments >= classData.capacity) {
       throw Errors.badRequest('Class is at full capacity');
     }
@@ -343,7 +401,6 @@ export class ClassService {
       throw Errors.notFound('Student');
     }
 
-    // Check if already enrolled
     const existingEnrollment = await prisma.classEnrollment.findFirst({
       where: {
         studentId: input.studentId,
@@ -364,16 +421,19 @@ export class ClassService {
       },
       include: {
         student: {
-          include: {
+          select: {
+            id: true,
+            nis: true,
+            gender: true,
             user: {
-              select: { id: true, name: true },
+              select: { id: true, name: true, email: true },
             },
           },
         },
       },
     });
 
-    return enrollment;
+    return mapToClassEnrollment(enrollment);
   }
 
   /**
@@ -413,6 +473,50 @@ export class ClassService {
     });
 
     return { message: 'Student removed from class' };
+  }
+
+  /**
+   * Get enrollments for a class
+   */
+  async getEnrollments(classId: string): Promise<ClassEnrollment[]> {
+    const enrollments = await prisma.classEnrollment.findMany({
+      where: {
+        classId,
+        status: 'active',
+        student: { deletedAt: null },
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            nis: true,
+            gender: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        student: {
+          user: {
+            name: 'asc',
+          },
+        },
+      },
+    });
+
+    return enrollments.map((enrollment) => ({
+      ...enrollment,
+      student: {
+        ...enrollment.student,
+        name: enrollment.student.user.name,
+      },
+    })) as unknown as ClassEnrollment[];
   }
 }
 

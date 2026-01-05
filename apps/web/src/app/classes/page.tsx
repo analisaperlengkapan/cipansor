@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { MainLayout } from '@/components/layout';
 import { PageHeader, DataTable, SearchInput, ConfirmDialog } from '@/components/shared';
-import { useClasses, useDeleteClass, Class } from '@/hooks/use-classes';
+import { useClasses, useDeleteClass } from '@/hooks/use-classes';
+import { Class } from '@cipansor/shared';
 import { useUnits } from '@/hooks/use-units';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,8 +33,8 @@ export default function ClassesPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState('');
-  const [gradeFilter, setGradeFilter] = useState<string>('');
-  const [unitFilter, setUnitFilter] = useState<string>('');
+  const [gradeFilter, setGradeFilter] = useState<string>('ALL');
+  const [unitFilter, setUnitFilter] = useState<string>('ALL');
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: units } = useUnits();
@@ -41,8 +42,8 @@ export default function ClassesPage() {
     page,
     limit: pageSize,
     search: search || undefined,
-    grade: gradeFilter ? Number(gradeFilter) : undefined,
-    unitId: unitFilter || (user?.role !== 'SUPER_ADMIN' ? user?.unitId : undefined),
+    grade: gradeFilter !== 'ALL' ? Number(gradeFilter) : undefined,
+    unitId: unitFilter !== 'ALL' ? unitFilter : (user?.role !== 'SUPER_ADMIN' ? user?.unitId : undefined),
   });
 
   const deleteMutation = useDeleteClass();
@@ -101,7 +102,7 @@ export default function ClassesPage() {
       accessorKey: 'homeroomTeacher',
       header: 'Homeroom Teacher',
       cell: ({ row }) => (
-        <span className="text-sm">{row.original.homeroomTeacher?.name || '-'}</span>
+        <span className="text-sm">{row.original.homeroomTeacher?.user.name || '-'}</span>
       ),
     },
     {
@@ -172,7 +173,7 @@ export default function ClassesPage() {
               <SelectValue placeholder="All Grades" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Grades</SelectItem>
+              <SelectItem value="ALL">All Grades</SelectItem>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((grade) => (
                 <SelectItem key={grade} value={String(grade)}>
                   Grade {grade}
@@ -186,7 +187,7 @@ export default function ClassesPage() {
                 <SelectValue placeholder="All Units" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Units</SelectItem>
+                <SelectItem value="ALL">All Units</SelectItem>
                 {units?.map((unit) => (
                   <SelectItem key={unit.id} value={unit.id}>
                     {unit.name}

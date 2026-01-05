@@ -297,6 +297,7 @@ export const dailyReportService = {
             academicYearId: data.academicYearId,
             reportDate,
             unitType: unit.type as UnitType,
+            arrivalTime: report.arrivalTime,
             mood: report.morningMood as DailyMood | undefined,
             healthStatus: report.healthNotes,
             hadBreakfast: report.breakfastConsumption === 'FULL' || report.breakfastConsumption === 'HALF',
@@ -512,35 +513,48 @@ export const dailyReportService = {
   },
 
   async getClassDailySummary(query: ClassDailySummaryQuery) {
-    const { unitId, academicYearId, date } = query;
+    const { unitId, classId, academicYearId, date } = query;
 
     const targetDate = date ? new Date(date) : new Date();
     targetDate.setHours(0, 0, 0, 0);
     const nextDay = new Date(targetDate);
     nextDay.setDate(nextDay.getDate() + 1);
 
-    // Get students in unit
+    // Get students in unit or class
     const studentsWhere: Prisma.StudentWhereInput = {
       unitId,
       status: 'ACTIVE',
     };
 
-    const [students, reports] = await Promise.all([
-      prisma.student.findMany({
-        where: studentsWhere,
-        select: { id: true, nisn: true, user: { select: { name: true } } },
-      }),
-      prisma.dailyStudentReport.findMany({
-        where: {
-          unitId,
-          academicYearId,
-          reportDate: { gte: targetDate, lt: nextDay },
+    if (classId) {
+      studentsWhere.enrollments = {
+        some: {
+          classId,
+          status: 'active',
         },
-        include: {
-          student: { select: { id: true, nisn: true, user: { select: { name: true } } } },
-        },
-      }),
-    ]);
+      };
+    }
+
+    // Filter reports by students found (which respects classId)
+    // We fetch students first to know who SHOULD have a report
+    const students = await prisma.student.findMany({
+      where: studentsWhere,
+      select: { id: true, nisn: true, user: { select: { name: true } } },
+    });
+
+    const studentIds = students.map((s) => s.id);
+
+    const reports = await prisma.dailyStudentReport.findMany({
+      where: {
+        unitId,
+        academicYearId,
+        studentId: { in: studentIds },
+        reportDate: { gte: targetDate, lt: nextDay },
+      },
+      include: {
+        student: { select: { id: true, nisn: true, user: { select: { name: true } } } },
+      },
+    });
 
     // Map reports by student
     const reportMap = new Map(reports.map((r) => [r.studentId, r]));

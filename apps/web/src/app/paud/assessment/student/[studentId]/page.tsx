@@ -10,6 +10,8 @@ import {
   ASPECT_LABELS,
   ACHIEVEMENT_LABELS,
   ACHIEVEMENT_COLORS,
+  StudentProgressSummary,
+  PAUDAchievementLevel,
 } from '@/hooks/use-paud-assessment';
 import { useStudent } from '@/hooks/use-students';
 import { useAcademicYears } from '@/hooks/use-academic-years';
@@ -44,7 +46,7 @@ import { PAUDRadarChart } from '@/components/paud';
 
 const ASPECT_ORDER: PAUDAspect[] = ['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI'];
 
-const achievementToProgress = {
+const achievementToProgress: Record<string, number> = {
   BB: 25,
   MB: 50,
   BSH: 75,
@@ -95,6 +97,13 @@ export default function StudentProgressDashboardPage() {
       </MainLayout>
     );
   }
+
+  // Find latest assessment date from summary array
+  const lastAssessmentDate = summary?.summary?.reduce((latest: Date | null, item) => {
+    if (!item.latestDate) return latest;
+    const date = new Date(item.latestDate);
+    return !latest || date > latest ? date : latest;
+  }, null);
 
   return (
     <MainLayout>
@@ -155,9 +164,9 @@ export default function StudentProgressDashboardPage() {
               <div className="text-center md:text-right">
                 <p className="text-sm text-muted-foreground">Total Penilaian</p>
                 <p className="text-3xl font-bold">{summary?.totalAssessments || 0}</p>
-                {summary?.lastAssessmentDate && (
+                {lastAssessmentDate && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Terakhir: {format(new Date(summary.lastAssessmentDate), 'dd MMM yyyy', { locale: idLocale })}
+                    Terakhir: {format(lastAssessmentDate, 'dd MMM yyyy', { locale: idLocale })}
                   </p>
                 )}
               </div>
@@ -178,28 +187,10 @@ export default function StudentProgressDashboardPage() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            {/* Radar Chart Visualization */}
-            {summary?.aspects && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Visualisasi Perkembangan 6 Aspek</CardTitle>
-                  <CardDescription>
-                    Grafik radar menampilkan capaian perkembangan siswa di semua aspek
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <PAUDRadarChart 
-                    data={summary.aspects} 
-                    studentName={student?.name}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
             {/* Aspect Progress Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {ASPECT_ORDER.map((aspect) => {
-                const aspectData = summary?.aspects?.[aspect];
+                const aspectData = summary?.summary?.find(s => s.aspect === aspect);
                 const progressValue = aspectData?.latestLevel
                   ? achievementToProgress[aspectData.latestLevel]
                   : 0;
@@ -209,7 +200,6 @@ export default function StudentProgressDashboardPage() {
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-sm font-medium">{aspect}</CardTitle>
-                        <TrendIcon trend={aspectData?.progressTrend || 'NONE'} />
                       </div>
                       <CardDescription>{ASPECT_LABELS[aspect]}</CardDescription>
                     </CardHeader>
@@ -232,7 +222,7 @@ export default function StudentProgressDashboardPage() {
                         </div>
                         <Progress value={progressValue} className="h-2" />
                         <p className="text-xs text-muted-foreground">
-                          {aspectData?.assessmentCount || 0} penilaian
+                          {aspectData?.totalAssessments || 0} penilaian
                         </p>
                       </div>
                     </CardContent>
@@ -253,7 +243,7 @@ export default function StudentProgressDashboardPage() {
                       <Badge
                         className={cn(
                           'w-12 justify-center',
-                          ACHIEVEMENT_COLORS[key as keyof typeof ACHIEVEMENT_COLORS]
+                          ACHIEVEMENT_COLORS[key as PAUDAchievementLevel]
                         )}
                       >
                         {key}

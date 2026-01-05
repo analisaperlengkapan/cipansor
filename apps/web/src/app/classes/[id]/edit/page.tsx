@@ -35,13 +35,11 @@ import { useClass, useUpdateClass } from '@/hooks/use-classes';
 
 const classSchema = z.object({
   name: z.string().min(1, 'Nama kelas wajib diisi'),
-  grade: z.coerce.number().min(1, 'Tingkat minimal 1').max(12, 'Tingkat maksimal 12'),
-  section: z.string().optional(),
+  level: z.string().min(1, 'Level wajib diisi'), // Maps to grade/level
   unitId: z.string().min(1, 'Unit wajib dipilih'),
   academicYearId: z.string().min(1, 'Tahun ajaran wajib dipilih'),
   homeroomTeacherId: z.string().optional(),
-  schedule: z.string().optional(),
-  maxStudents: z.coerce.number().min(1, 'Kapasitas minimal 1').optional(),
+  capacity: z.coerce.number().min(1, 'Kapasitas minimal 1').optional(),
 });
 
 type ClassFormData = z.infer<typeof classSchema>;
@@ -77,13 +75,11 @@ export default function EditClassPage() {
     if (classData) {
       reset({
         name: classData.name,
-        grade: classData.grade,
-        section: classData.section || '',
+        level: classData.level || String(classData.grade),
         unitId: classData.unitId,
         academicYearId: classData.academicYearId,
         homeroomTeacherId: classData.homeroomTeacherId || '',
-        schedule: classData.schedule || '',
-        maxStudents: classData.maxStudents || undefined,
+        capacity: classData.capacity || undefined,
       });
     }
   }, [classData, reset]);
@@ -94,10 +90,8 @@ export default function EditClassPage() {
         id: classId,
         data: {
           ...data,
-          section: data.section || undefined,
-          homeroomTeacherId: data.homeroomTeacherId || undefined,
-          schedule: data.schedule || undefined,
-          maxStudents: data.maxStudents || undefined,
+          homeroomTeacherId: data.homeroomTeacherId || undefined, // Send undefined if empty string, or let it be handled
+          capacity: data.capacity || 30, // Default fallback
         },
       });
       toast.success('Kelas berhasil diperbarui');
@@ -178,57 +172,29 @@ export default function EditClassPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="grade">Tingkat *</Label>
+                    <Label htmlFor="level">Tingkat *</Label>
                     <Input
-                      id="grade"
-                      type="number"
-                      min={1}
-                      max={12}
+                      id="level"
                       placeholder="7"
-                      {...register('grade')}
+                      {...register('level')}
                     />
-                    {errors.grade && (
-                      <p className="text-sm text-destructive">{errors.grade.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="section">Bagian/Rombel</Label>
-                    <Input
-                      id="section"
-                      placeholder="A, B, IPA 1"
-                      {...register('section')}
-                    />
-                    {errors.section && (
-                      <p className="text-sm text-destructive">{errors.section.message}</p>
+                    {errors.level && (
+                      <p className="text-sm text-destructive">{errors.level.message}</p>
                     )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="maxStudents">Kapasitas Maksimal</Label>
+                  <Label htmlFor="capacity">Kapasitas Maksimal</Label>
                   <Input
-                    id="maxStudents"
+                    id="capacity"
                     type="number"
                     min={1}
                     placeholder="30"
-                    {...register('maxStudents')}
+                    {...register('capacity')}
                   />
-                  {errors.maxStudents && (
-                    <p className="text-sm text-destructive">{errors.maxStudents.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="schedule">Jadwal</Label>
-                  <Textarea
-                    id="schedule"
-                    placeholder="Senin-Jumat, 07:00-14:00"
-                    rows={3}
-                    {...register('schedule')}
-                  />
-                  {errors.schedule && (
-                    <p className="text-sm text-destructive">{errors.schedule.message}</p>
+                  {errors.capacity && (
+                    <p className="text-sm text-destructive">{errors.capacity.message}</p>
                   )}
                 </div>
               </CardContent>

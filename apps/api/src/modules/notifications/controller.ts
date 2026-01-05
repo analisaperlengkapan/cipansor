@@ -160,6 +160,9 @@ export async function getTemplates(req: Request, res: Response, next: NextFuncti
   }
 }
 
+/**
+ * Get notification template by ID
+ */
 export async function getTemplateById(req: Request, res: Response, next: NextFunction) {
   try {
     const unitId = (req as any).user?.unitId;

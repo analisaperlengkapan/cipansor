@@ -62,14 +62,14 @@ function getRecordTypeLabel(type: HealthRecordType) {
 
 export default function HealthPage() {
   const [page, setPage] = useState(1);
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
   const { data: healthData, isLoading } = useHealthRecords({
     page,
     limit: 10,
-    recordType: typeFilter !== 'all' ? (typeFilter as HealthRecordType) : undefined,
-    status: statusFilter !== 'all' ? (statusFilter as HealthStatus) : undefined,
+    recordType: typeFilter !== 'ALL' ? (typeFilter as HealthRecordType) : undefined,
+    status: statusFilter !== 'ALL' ? (statusFilter as HealthStatus) : undefined,
   });
 
   const { data: summaryData } = useHealthSummary();
@@ -155,7 +155,7 @@ export default function HealthPage() {
               <SelectValue placeholder="Jenis Rekam" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Semua Jenis</SelectItem>
+              <SelectItem value="ALL">Semua Jenis</SelectItem>
               {HEALTH_RECORD_TYPES.map((type) => (
                 <SelectItem key={type.value} value={type.value}>
                   {type.label}
@@ -169,7 +169,7 @@ export default function HealthPage() {
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Semua Status</SelectItem>
+            <SelectItem value="ALL">Semua Status</SelectItem>
             {HEALTH_STATUSES.map((status) => (
               <SelectItem key={status.value} value={status.value}>
                 {status.label}

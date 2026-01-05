@@ -119,6 +119,7 @@ export const bulkCreateDailyReportsSchema = z.object({
   reportDate: z.string().datetime(),
   reports: z.array(z.object({
     studentId: z.string().uuid(),
+    arrivalTime: z.string().optional().nullable(),
     morningMood: DailyMoodEnum.optional().nullable(),
     afternoonMood: DailyMoodEnum.optional().nullable(),
     healthNotes: z.string().max(500).optional().nullable(),

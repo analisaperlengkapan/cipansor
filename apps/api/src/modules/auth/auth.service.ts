@@ -76,6 +76,11 @@ export class AuthService {
       this.getActiveAcademicYearId(),
     ]);
 
+    // Get active academic year
+    const academicYear = await prisma.academicYear.findFirst({
+      where: { isActive: true },
+    });
+
     // Return user without password
     const { passwordHash, ...userWithoutPassword } = user;
 
@@ -245,6 +250,11 @@ export class AuthService {
     if (!user) {
       throw Errors.notFound('User');
     }
+
+    // Get active academic year
+    const academicYear = await prisma.academicYear.findFirst({
+      where: { isActive: true },
+    });
 
     const { passwordHash, ...userWithoutPassword } = user;
 

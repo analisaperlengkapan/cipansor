@@ -45,6 +45,10 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
 
+  if (typeof window !== 'undefined') {
+    console.log('Sidebar rendering, user:', JSON.stringify(user));
+  }
+
   // Get active role from userRoles
   const userRoles = user?.userRoles as UserRole[] | undefined;
   const activeRole = userRoles?.find(r => r.isPrimary) || userRoles?.[0];
@@ -103,7 +107,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         {!collapsed && user && (
           <div className="mb-4 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-medium">
-              {user.name.charAt(0).toUpperCase()}
+              {user.name?.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 overflow-hidden">
               <p className="truncate text-sm font-medium">{user.name}</p>

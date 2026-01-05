@@ -103,8 +103,8 @@ export function useNotification(id: string) {
   return useQuery({
     queryKey: ['notification', id],
     queryFn: async () => {
-      // NOTE: This might need an admin specific endpoint if /notifications/:id checks ownership
-      // For now assume admins can access any notification via ID if they have permission
+      // Confirmed: Backend enforces ownership check OR admin role.
+      // Admins can access any notification via this endpoint.
       const response = await api.get(`/notifications/${id}`);
       return response.data.data as AppNotification;
     },
@@ -157,7 +157,6 @@ export function useScheduleNotification() {
 
   return useMutation({
     mutationFn: async ({ id, scheduledAt }: { id: string; scheduledAt: string }) => {
-      // NOTE: Endpoint might need implementation in API
       const response = await api.post(`/notifications/${id}/schedule`, { scheduledAt });
       return response.data.data;
     },

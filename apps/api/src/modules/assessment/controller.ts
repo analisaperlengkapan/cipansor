@@ -232,13 +232,26 @@ export async function deleteReportCard(req: Request, res: Response, next: NextFu
 export async function generateReportCard(req: Request, res: Response, next: NextFunction) {
   try {
     const { studentId, classId, academicYearId, semester } = req.body;
-    const reportCard = await assessmentService.generateReportCard(
-      studentId,
-      classId,
-      academicYearId,
-      parseInt(semester)
-    );
-    res.json({ success: true, data: reportCard });
+
+    if (studentId) {
+      const reportCard = await assessmentService.generateReportCard(
+        studentId,
+        classId,
+        academicYearId,
+        parseInt(semester)
+      );
+      res.json({ success: true, data: reportCard });
+    } else if (classId) {
+      // Bulk generation for class
+      const reportCards = await assessmentService.generateClassReportCards(
+        classId,
+        academicYearId,
+        parseInt(semester)
+      );
+      res.json({ success: true, data: reportCards });
+    } else {
+      res.status(400).json({ success: false, error: 'Either studentId or classId is required' });
+    }
   } catch (error) {
     next(error);
   }

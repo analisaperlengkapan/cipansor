@@ -14,7 +14,7 @@ export enum UnitType {
   SD_IT = 'SD_IT',
   SMP_IT = 'SMP_IT',
   SMA_QURAN = 'SMA_QURAN',
-  TK_QURAN = 'TK_QURAN', // Added to match likely Prisma schema if divergent
+  TK_QURAN = 'TK_QURAN',
   OTHER = 'OTHER',
 }
 
@@ -36,7 +36,7 @@ export enum AttendanceStatus {
   ABSENT = 'ABSENT',
   LATE = 'LATE',
   SICK = 'SICK',
-  EXCUSED = 'EXCUSED', // Prisma uses EXCUSED, Shared used PERMISSION. Aligned to Prisma.
+  EXCUSED = 'EXCUSED',
 }
 
 // Memorization Quality
@@ -44,4 +44,29 @@ export enum MemorizationQuality {
   LANCAR = 'LANCAR',
   KURANG_LANCAR = 'KURANG_LANCAR',
   ULANG = 'ULANG',
+}
+
+// Book Status
+export enum BookStatus {
+  AVAILABLE = 'AVAILABLE',
+  BORROWED = 'BORROWED',
+  RESERVED = 'RESERVED',
+  MAINTENANCE = 'MAINTENANCE',
+  LOST = 'LOST',
+}
+
+// Borrowing Status
+export enum BorrowingStatus {
+  ACTIVE = 'ACTIVE',
+  RETURNED = 'RETURNED',
+  OVERDUE = 'OVERDUE',
+  LOST = 'LOST',
+}
+
+// Enrollment Status
+export enum EnrollmentStatus {
+  ACTIVE = 'active',
+  COMPLETED = 'completed',
+  TRANSFERRED = 'transferred',
+  DROPPED = 'dropped',
 }

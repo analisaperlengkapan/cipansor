@@ -9,6 +9,7 @@ import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import { verifyToken, JwtPayload } from '@/lib/jwt';
 import Redis from 'ioredis';
+import type { DashboardMetrics, DashboardAlert } from '@cipansor/shared';
 
 // Event types
 export interface LiveEvent {
@@ -48,42 +49,7 @@ let io: SocketIOServer | null = null;
 let redisPublisher: Redis | null = null;
 let redisSubscriber: Redis | null = null;
 
-/**
- * Dashboard metrics interface
- */
-export interface DashboardMetrics {
-    students: {
-        total: number;
-        active: number;
-        change: number;
-    };
-    teachers: {
-        total: number;
-    };
-    attendance: {
-        rate: number;
-        present: number;
-        total: number;
-    };
-    tahfidz: {
-        totalHafidz: number;
-        avgQuality: number;
-    };
-    timestamp: string;
-}
-
-/**
- * Alert interface
- */
-export interface DashboardAlert {
-    id: string;
-    title: string;
-    message: string;
-    severity: 'INFO' | 'WARNING' | 'CRITICAL';
-    timestamp: string;
-    unitId?: string;
-    unitName?: string;
-}
+export type { DashboardMetrics, DashboardAlert };
 
 /**
  * Initialize Socket.IO server
@@ -544,14 +510,10 @@ export async function getCurrentDashboardMetrics(unitId?: string): Promise<Dashb
             ? Math.round((todayAttendance / activeStudents) * 100) 
             : 0;
 
-        // Get tahfidz stats - simplified count of hafidz records
-        // Note: This is a simplified metric. For accurate hafidz count,
-        // consider implementing a computed field or separate tracking table
-        const recentHafidzActivity = await prisma.tahfidzRecord.count({
+        // Get total hafidz count from tracking table
+        // This is accurate as it counts students who completed 30 Juz
+        const totalHafidz = await prisma.hafidzStudent.count({
             where: {
-                activityType: 'TASMI', // Setoran hafalan
-                juz: 30, // Completed Juz 30
-                recordedAt: { gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) }, // Last year
                 ...(unitId ? {
                     student: { unitId }
                 } : {})
@@ -583,7 +545,7 @@ export async function getCurrentDashboardMetrics(unitId?: string): Promise<Dashb
                 total: activeStudents
             },
             tahfidz: {
-                totalHafidz: recentHafidzActivity, // Approximate count based on Juz 30 completions
+                totalHafidz: totalHafidz,
                 avgQuality: Number(avgQuality._avg.qualityScore || 0)
             },
             timestamp: new Date().toISOString()

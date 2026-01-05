@@ -1,9 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { DailyReport } from '@cipansor/shared';
+import type {
+  DailyReport,
+  CreateDailyReportInput,
+  UpdateDailyReportInput,
+  BulkCreateDailyReportsInput,
+  DailyMood
+} from '@cipansor/shared';
 
-// Types
-export { type DailyReport };
+// Export types for components
+export type { DailyReport, CreateDailyReportInput, UpdateDailyReportInput, BulkCreateDailyReportsInput, DailyMood };
 
 export interface DailyReportFilters {
   page?: number;
@@ -16,60 +22,6 @@ export interface DailyReportFilters {
   dateTo?: string;
   attendanceStatus?: string;
   unitId?: string;
-}
-
-export interface CreateDailyReportData {
-  studentId: string;
-  unitId: string;
-  academicYearId: string;
-  reportDate: string;
-  morningMood?: string;
-  afternoonMood?: string;
-  healthNotes?: string;
-  temperature?: number;
-  breakfastConsumption?: string;
-  lunchConsumption?: string;
-  snackConsumption?: string;
-  napDurationMinutes?: number;
-  napQuality?: string;
-  bathroomCount?: number;
-  toiletingNotes?: string;
-  activitiesSummary?: string;
-  learningAchievements?: string;
-  specialMoments?: string;
-  ibadahNotes?: string;
-  doaPractice?: string;
-  surahPractice?: string;
-  socialInteraction?: string;
-  behaviorNotes?: string;
-  parentNotes?: string;
-  homeworkSuggestion?: string;
-  photoUrls?: string[];
-}
-
-export interface UpdateDailyReportData extends Partial<CreateDailyReportData> {
-  parentNotes?: string;
-}
-
-export interface BulkCheckInData {
-  classId: string;
-  date: string;
-  students: {
-    studentId: string;
-    checkInTime: string;
-    attendanceStatus: string;
-    moodStatus?: string;
-    healthStatus?: string;
-  }[];
-}
-
-export interface BulkCheckOutData {
-  classId: string;
-  date: string;
-  students: {
-    studentId: string;
-    checkOutTime: string;
-  }[];
 }
 
 // Query Keys
@@ -105,6 +57,21 @@ export function useDailyReports(filters: DailyReportFilters = {}) {
   });
 }
 
+// Bulk Create daily reports
+export function useBulkCreateDailyReports() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: BulkCreateDailyReportsInput) => {
+      const response = await apiClient.post('/daily-report/bulk', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: dailyReportKeys.all });
+    },
+  });
+}
+
 // Get single daily report
 export function useDailyReport(id: string) {
   return useQuery({
@@ -126,6 +93,7 @@ export function useStudentDailyReports(
     queryKey: dailyReportKeys.byStudent(studentId, filters),
     queryFn: async () => {
       const params = new URLSearchParams();
+      params.append('studentId', studentId);
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value !== undefined && value !== '') {
@@ -133,8 +101,9 @@ export function useStudentDailyReports(
           }
         });
       }
+      // Use the standard list endpoint which supports filtering by studentId
       const response = await apiClient.get(
-        `/daily-report/student/${studentId}?${params.toString()}`
+        `/daily-report?${params.toString()}`
       );
       return response.data;
     },
@@ -142,12 +111,13 @@ export function useStudentDailyReports(
   });
 }
 
-// Get daily reports by class for a specific date
+// Get daily reports by class for a specific date (Summary)
 export function useClassDailyReports(classId: string, date: string) {
   return useQuery({
     queryKey: dailyReportKeys.byClass(classId, date),
     queryFn: async () => {
-      const response = await apiClient.get(`/daily-report/class/${classId}?date=${date}`);
+      // Use the correctly structured summary endpoint
+      const response = await apiClient.get(`/daily-report/summary/class?classId=${classId}&date=${date}`);
       return response.data;
     },
     enabled: !!classId && !!date,
@@ -171,7 +141,7 @@ export function useCreateDailyReport() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: CreateDailyReportData) => {
+    mutationFn: async (data: CreateDailyReportInput) => {
       const response = await apiClient.post('/daily-report', data);
       return response.data;
     },
@@ -186,7 +156,7 @@ export function useUpdateDailyReport() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateDailyReportData }) => {
+    mutationFn: async ({ id, data }: { id: string; data: UpdateDailyReportInput }) => {
       const response = await apiClient.put(`/daily-report/${id}`, data);
       return response.data;
     },
@@ -208,38 +178,6 @@ export function useDeleteDailyReport() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: dailyReportKeys.all });
-    },
-  });
-}
-
-// Bulk check-in
-export function useBulkCheckIn() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: BulkCheckInData) => {
-      const response = await apiClient.post('/daily-report/bulk-check-in', data);
-      return response.data;
-    },
-    onSuccess: (_, { classId, date }) => {
-      queryClient.invalidateQueries({ queryKey: dailyReportKeys.byClass(classId, date) });
-      queryClient.invalidateQueries({ queryKey: dailyReportKeys.lists() });
-    },
-  });
-}
-
-// Bulk check-out
-export function useBulkCheckOut() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: BulkCheckOutData) => {
-      const response = await apiClient.post('/daily-report/bulk-check-out', data);
-      return response.data;
-    },
-    onSuccess: (_, { classId, date }) => {
-      queryClient.invalidateQueries({ queryKey: dailyReportKeys.byClass(classId, date) });
-      queryClient.invalidateQueries({ queryKey: dailyReportKeys.lists() });
     },
   });
 }
@@ -288,8 +226,12 @@ export function useAddParentNotes() {
 
   return useMutation({
     mutationFn: async ({ reportId, notes }: { reportId: string; notes: string }) => {
-      const response = await apiClient.patch(`/daily-report/${reportId}/parent-notes`, {
-        parentNotes: notes,
+      // Assuming 'confirm' endpoint handles parent interaction as per controller audit,
+      // or using generic update if 'confirm' is just for read status.
+      // Based on controller, we have: POST /:id/confirm
+      const response = await apiClient.post(`/daily-report/${reportId}/confirm`, {
+        isConfirmed: true,
+        parentFeedback: notes,
       });
       return response.data;
     },

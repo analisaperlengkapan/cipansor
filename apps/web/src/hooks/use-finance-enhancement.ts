@@ -2,138 +2,51 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import {
+  AccountCode,
+  JournalEntry,
+  Scholarship,
+  ScholarshipRecipient,
+  PaymentComponent,
+  TrialBalanceReport,
+  IncomeExpenseReport,
+  AccountType,
+  ScholarshipSource,
+  ScholarshipType,
+  PaymentCategory, // Mapped from PaymentComponentCategory
+  SharedPaginatedResponse,
+  FinanceReportPeriod
+} from "@cipansor/shared";
 
-// ==================== TYPES ====================
+// Re-export types
+export type {
+  AccountCode,
+  JournalEntry,
+  Scholarship,
+  ScholarshipRecipient,
+  PaymentComponent,
+  TrialBalanceReport,
+  IncomeExpenseReport,
+  // Values/Enums must be exported as values too if used as such
+};
 
-export type AccountCodeType = "ASSET" | "LIABILITY" | "EQUITY" | "REVENUE" | "EXPENSE";
+// Re-export values (Enums)
+export {
+  AccountType,
+  ScholarshipSource,
+  ScholarshipType,
+  PaymentCategory,
+  FinanceReportPeriod
+};
 
-export interface AccountCode {
-  id: string;
-  code: string;
-  name: string;
-  type: AccountCodeType;
-  parentId?: string | null;
-  isActive: boolean;
-  parent?: { id: string; code: string; name: string } | null;
-  children?: { id: string; code: string; name: string }[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface JournalEntry {
-  id: string;
-  unitId?: string;
-  accountId: string;
-  date: string;
-  description: string;
-  debit: number;
-  credit: number;
-  reference?: string;
-  referenceType?: string;
-  unit?: { id: string; name: string };
-  account?: { id: string; code: string; name: string; type: AccountCodeType };
-  createdBy?: { id: string; name: string };
-  createdAt: string;
-}
-
-export type ScholarshipSource = "INTERNAL" | "GOVERNMENT" | "COMPANY" | "FOUNDATION" | "OTHER";
-export type ScholarshipType = "FULL" | "PARTIAL" | "SPECIFIC";
-export type ScholarshipRecipientStatus = "ACTIVE" | "SUSPENDED" | "ENDED";
-
-export interface Scholarship {
-  id: string;
-  name: string;
-  description?: string;
-  source: ScholarshipSource;
-  type: ScholarshipType;
-  quota?: number;
-  requirements?: string;
-  startDate: string;
-  endDate?: string;
-  unitId?: string;
-  isActive: boolean;
-  unit?: { id: string; name: string };
-  _count?: { recipients: number; discounts: number };
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ScholarshipRecipient {
-  id: string;
-  scholarshipId: string;
-  studentId: string;
-  academicYearId: string;
-  status: ScholarshipRecipientStatus;
-  startDate: string;
-  endDate?: string;
-  notes?: string;
-  scholarship?: { name: string };
-  student?: {
-    id: string;
-    nis: string;
-    name: string;
-    class?: string;
-  };
-  academicYear?: { name: string };
-  createdAt: string;
-}
-
-export type PaymentComponentCategory = 
-  | "SPP"
-  | "REGISTRATION"
-  | "UNIFORM"
-  | "BOOKS"
-  | "ACTIVITY"
-  | "EXAM"
-  | "BUILDING"
-  | "OTHER";
-
-export interface PaymentComponent {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
-  category: PaymentComponentCategory;
-  amount: number;
-  unitId?: string;
-  isActive: boolean;
-  unit?: { id: string; name: string };
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface TrialBalanceReport {
-  period: { startDate: string; endDate: string };
-  accounts: {
-    code: string;
-    name: string;
-    type: string;
-    debit: number;
-    credit: number;
-  }[];
-  totals: { debit: number; credit: number };
-  isBalanced: boolean;
-}
-
-export interface IncomeExpenseReport {
-  period: { startDate: string; endDate: string };
-  summary: {
-    totalIncome: number;
-    totalExpense: number;
-    netIncome: number;
-  };
-  breakdown: {
-    period: string;
-    income: number;
-    expense: number;
-    net: number;
-  }[];
-}
+// Aliases to match local names if they differed significantly, or just use shared
+export type AccountCodeType = AccountType;
+export type PaymentComponentCategory = PaymentCategory;
 
 // ==================== ACCOUNT CODES ====================
 
 interface AccountCodeFilters {
-  type?: AccountCodeType;
+  type?: AccountType;
   isActive?: boolean;
   search?: string;
   page?: number;
@@ -151,10 +64,11 @@ export function useAccountCodes(filters: AccountCodeFilters = {}) {
       if (filters.page) params.append("page", String(filters.page));
       if (filters.limit) params.append("limit", String(filters.limit));
 
-      const response = await api.get(`/finance-enhancement/account-codes?${params}`);
-      return response.data as {
-        data: AccountCode[];
-        pagination: { page: number; limit: number; total: number; totalPages: number };
+      const response = await api.get<SharedPaginatedResponse<AccountCode>>(`/finance-enhancement/account-codes?${params}`);
+      const result = response.data;
+      return {
+        data: result.data,
+        pagination: result.meta.pagination
       };
     },
   });
@@ -166,7 +80,7 @@ export function useCreateAccountCode() {
     mutationFn: async (data: {
       code: string;
       name: string;
-      type: AccountCodeType;
+      type: AccountType;
       parentId?: string;
       isActive?: boolean;
     }) => {
@@ -188,7 +102,7 @@ export function useUpdateAccountCode() {
     }: {
       id: string;
       name?: string;
-      type?: AccountCodeType;
+      type?: AccountType;
       parentId?: string | null;
       isActive?: boolean;
     }) => {
@@ -226,10 +140,11 @@ export function useJournalEntries(filters: JournalEntryFilters = {}) {
       if (filters.page) params.append("page", String(filters.page));
       if (filters.limit) params.append("limit", String(filters.limit));
 
-      const response = await api.get(`/finance-enhancement/journal-entries?${params}`);
-      return response.data as {
-        data: JournalEntry[];
-        pagination: { page: number; limit: number; total: number; totalPages: number };
+      const response = await api.get<SharedPaginatedResponse<JournalEntry>>(`/finance-enhancement/journal-entries?${params}`);
+      const result = response.data;
+      return {
+        data: result.data,
+        pagination: result.meta.pagination
       };
     },
   });
@@ -239,8 +154,8 @@ export function useJournalEntry(id: string) {
   return useQuery({
     queryKey: ["journal-entry", id],
     queryFn: async () => {
-      const response = await api.get(`/finance-enhancement/journal-entries/${id}`);
-      return response.data.data as JournalEntry;
+      const response = await api.get<{ data: JournalEntry }>(`/finance-enhancement/journal-entries/${id}`);
+      return response.data.data;
     },
     enabled: !!id,
   });
@@ -291,10 +206,11 @@ export function useScholarships(filters: ScholarshipFilters = {}) {
       if (filters.page) params.append("page", String(filters.page));
       if (filters.limit) params.append("limit", String(filters.limit));
 
-      const response = await api.get(`/finance-enhancement/scholarships?${params}`);
-      return response.data as {
-        data: Scholarship[];
-        pagination: { page: number; limit: number; total: number; totalPages: number };
+      const response = await api.get<SharedPaginatedResponse<Scholarship>>(`/finance-enhancement/scholarships?${params}`);
+      const result = response.data;
+      return {
+        data: result.data,
+        pagination: result.meta.pagination
       };
     },
   });
@@ -304,8 +220,8 @@ export function useScholarship(id: string) {
   return useQuery({
     queryKey: ["scholarship", id],
     queryFn: async () => {
-      const response = await api.get(`/finance-enhancement/scholarships/${id}`);
-      return response.data.data as Scholarship;
+      const response = await api.get<{ data: Scholarship }>(`/finance-enhancement/scholarships/${id}`);
+      return response.data.data;
     },
     enabled: !!id,
   });
@@ -320,10 +236,11 @@ export function useScholarshipRecipients(scholarshipId: string, filters: { statu
       if (filters.page) params.append("page", String(filters.page));
       if (filters.limit) params.append("limit", String(filters.limit));
 
-      const response = await api.get(`/finance-enhancement/scholarships/${scholarshipId}/recipients?${params}`);
-      return response.data as {
-        data: ScholarshipRecipient[];
-        pagination: { page: number; limit: number; total: number; totalPages: number };
+      const response = await api.get<SharedPaginatedResponse<ScholarshipRecipient>>(`/finance-enhancement/scholarships/${scholarshipId}/recipients?${params}`);
+      const result = response.data;
+      return {
+        data: result.data,
+        pagination: result.meta.pagination
       };
     },
     enabled: !!scholarshipId,
@@ -378,7 +295,7 @@ export function useAssignScholarship() {
 
 interface PaymentComponentFilters {
   unitId?: string;
-  category?: PaymentComponentCategory;
+  category?: PaymentCategory;
   isActive?: boolean;
   page?: number;
   limit?: number;
@@ -395,10 +312,11 @@ export function usePaymentComponents(filters: PaymentComponentFilters = {}) {
       if (filters.page) params.append("page", String(filters.page));
       if (filters.limit) params.append("limit", String(filters.limit));
 
-      const response = await api.get(`/finance-enhancement/payment-components?${params}`);
-      return response.data as {
-        data: PaymentComponent[];
-        pagination: { page: number; limit: number; total: number; totalPages: number };
+      const response = await api.get<SharedPaginatedResponse<PaymentComponent>>(`/finance-enhancement/payment-components?${params}`);
+      const result = response.data;
+      return {
+        data: result.data,
+        pagination: result.meta.pagination
       };
     },
   });
@@ -411,7 +329,7 @@ export function useCreatePaymentComponent() {
       code: string;
       name: string;
       description?: string;
-      category: PaymentComponentCategory;
+      category: PaymentCategory;
       amount: number;
       unitId?: string;
       isActive?: boolean;
@@ -436,8 +354,8 @@ export function useTrialBalanceReport(filters: { unitId?: string; startDate: str
       params.append("startDate", filters.startDate);
       params.append("endDate", filters.endDate);
 
-      const response = await api.get(`/finance-enhancement/reports/trial-balance?${params}`);
-      return response.data.data as TrialBalanceReport;
+      const response = await api.get<{ data: TrialBalanceReport }>(`/finance-enhancement/reports/trial-balance?${params}`);
+      return response.data.data;
     },
     enabled: !!filters.startDate && !!filters.endDate,
   });
@@ -447,7 +365,7 @@ export function useIncomeExpenseReport(filters: {
   unitId?: string; 
   startDate: string; 
   endDate: string; 
-  groupBy?: "month" | "day" 
+  groupBy?: FinanceReportPeriod | "month" | "day"
 }) {
   return useQuery({
     queryKey: ["income-expense-report", filters],
@@ -458,8 +376,8 @@ export function useIncomeExpenseReport(filters: {
       params.append("endDate", filters.endDate);
       if (filters.groupBy) params.append("groupBy", filters.groupBy);
 
-      const response = await api.get(`/finance-enhancement/reports/income-expense?${params}`);
-      return response.data.data as IncomeExpenseReport;
+      const response = await api.get<{ data: IncomeExpenseReport }>(`/finance-enhancement/reports/income-expense?${params}`);
+      return response.data.data;
     },
     enabled: !!filters.startDate && !!filters.endDate,
   });

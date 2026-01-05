@@ -91,6 +91,7 @@ export interface BulkCreateDailyReportsInput {
   reportDate: string;
   reports: Array<{
     studentId: string;
+    arrivalTime?: string;
     morningMood?: DailyMood;
     healthNotes?: string;
     breakfastConsumption?: string;

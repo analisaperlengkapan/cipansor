@@ -219,3 +219,24 @@ export interface DashboardSummary {
     completedHafidz: number;
   };
 }
+
+export interface AlertRule {
+    id: string;
+    name: string;
+    type: 'attendance' | 'payment' | 'academic' | 'behavior';
+    threshold: number;
+    operator: 'lt' | 'lte' | 'gt' | 'gte' | 'eq';
+    action: 'notify' | 'email' | 'whatsapp' | 'all';
+    recipients: 'parent' | 'teacher' | 'admin' | 'all';
+    enabled: boolean;
+}
+
+export interface AlertTrigger {
+    ruleId: string;
+    studentId: string;
+    studentName: string;
+    value: number;
+    threshold: number;
+    message: string;
+    triggeredAt: string;
+}

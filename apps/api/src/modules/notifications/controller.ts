@@ -16,6 +16,10 @@ import { Errors } from "../../middleware/error";
 import { whatsAppService } from "./whatsapp.service";
 import { notificationScheduler } from "./scheduler.service";
 import { z } from "zod";
+import { UserRole } from "@prisma/client";
+
+// Constants
+const ADMIN_ROLES = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
 
 // ==================== NOTIFICATION ====================
 
@@ -48,8 +52,7 @@ export async function getNotificationById(req: Request, res: Response, next: Nex
 
     // Security check: User must be the owner OR have admin privileges
     const userRole = (req as any).user?.role;
-    const adminRoles = ['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN'];
-    const isAdmin = adminRoles.includes(userRole);
+    const isAdmin = ADMIN_ROLES.includes(userRole);
 
     if (notification.userId !== req.user!.sub && !isAdmin) {
        throw Errors.forbidden("You do not have permission to view this notification");
@@ -102,8 +105,7 @@ export async function markAllAsRead(req: Request, res: Response, next: NextFunct
 export async function deleteNotification(req: Request, res: Response, next: NextFunction) {
   try {
     const userRole = (req as any).user?.role;
-    const adminRoles = ['SUPER_ADMIN', 'UNIT_ADMIN', 'YAYASAN_ADMIN'];
-    const isAdmin = adminRoles.includes(userRole);
+    const isAdmin = ADMIN_ROLES.includes(userRole);
 
     await service.deleteNotification(req.params.id, req.user!.sub, isAdmin);
     res.json({ success: true, message: "Notification deleted" });
@@ -116,6 +118,20 @@ export async function sendNotification(req: Request, res: Response, next: NextFu
   try {
     await service.sendNotification(req.params.id);
     res.json({ success: true, message: "Notification queued for sending" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+const scheduleNotificationSchema = z.object({
+  scheduledAt: z.string().datetime(),
+});
+
+export async function scheduleNotification(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { scheduledAt } = scheduleNotificationSchema.parse(req.body);
+    const result = await service.scheduleNotification(req.params.id, new Date(scheduledAt));
+    res.json({ success: true, data: result });
   } catch (error) {
     next(error);
   }
@@ -136,7 +152,8 @@ export async function getStats(req: Request, res: Response, next: NextFunction) 
 export async function getTemplates(req: Request, res: Response, next: NextFunction) {
   try {
     const query = queryTemplateSchema.parse(req.query);
-    const result = await service.getTemplates(query);
+    const unitId = (req as any).user?.unitId;
+    const result = await service.getTemplates(query, unitId);
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -145,7 +162,8 @@ export async function getTemplates(req: Request, res: Response, next: NextFuncti
 
 export async function getTemplateById(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await service.getTemplateById(req.params.id);
+    const unitId = (req as any).user?.unitId;
+    const result = await service.getTemplateById(req.params.id, unitId);
     if (!result) {
       throw Errors.notFound("Template not found");
     }

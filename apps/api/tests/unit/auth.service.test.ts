@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UserRole } from '@prisma/client';
 
 // Use vi.hoisted to define mocks that will be available in vi.mock factories
-const { mockPrisma, mockComparePassword, mockHashPassword, mockGenerateTokenPair, mockVerifyToken, mockGetExpirationDate } = vi.hoisted(() => {
+const { mockPrisma, mockComparePassword, mockHashPassword, mockGenerateTokenPair, mockVerifyToken, mockGetExpirationDate, mockUserRole } = vi.hoisted(() => {
     return {
         mockPrisma: {
             user: {
@@ -32,12 +32,24 @@ const { mockPrisma, mockComparePassword, mockHashPassword, mockGenerateTokenPair
         }),
         mockVerifyToken: vi.fn(),
         mockGetExpirationDate: vi.fn().mockReturnValue(new Date(Date.now() + 86400000)),
+        mockUserRole: {
+            SUPER_ADMIN: 'SUPER_ADMIN',
+            UNIT_ADMIN: 'UNIT_ADMIN',
+            TEACHER: 'TEACHER',
+            STAFF: 'STAFF',
+            STUDENT: 'STUDENT',
+            PARENT: 'PARENT',
+        },
     };
 });
 
 // Mock modules after hoisted definitions
 vi.mock('@/lib/prisma', () => ({
     prisma: mockPrisma,
+}));
+
+vi.mock('@prisma/client', () => ({
+    UserRole: mockUserRole,
 }));
 
 vi.mock('@/lib/password', () => ({
@@ -116,6 +128,7 @@ describe('AuthService', () => {
 
         it('should successfully login with valid credentials', async () => {
             mockPrisma.user.findFirst.mockResolvedValue(mockUser);
+            mockPrisma.academicYear.findFirst.mockResolvedValue({ id: 'ay-1' });
             mockComparePassword.mockResolvedValue(true);
             mockPrisma.refreshToken.create.mockResolvedValue({});
             mockPrisma.user.update.mockResolvedValue(mockUser);
@@ -126,6 +139,7 @@ describe('AuthService', () => {
             expect(result).toHaveProperty('accessToken');
             expect(result).toHaveProperty('refreshToken');
             expect(result.user.email).toBe('test@example.com');
+            expect(result.user).toHaveProperty('academicYearId', 'ay-1');
             expect(result.user).not.toHaveProperty('passwordHash');
         });
 
@@ -295,10 +309,12 @@ describe('AuthService', () => {
                 userRoles: [],
             };
             mockPrisma.user.findFirst.mockResolvedValue(mockUser);
+            mockPrisma.academicYear.findFirst.mockResolvedValue({ id: 'ay-1' });
 
             const result = await authService.getCurrentUser('user-1');
 
             expect(result).toHaveProperty('email');
+            expect(result).toHaveProperty('academicYearId', 'ay-1');
             expect(result).not.toHaveProperty('passwordHash');
         });
 

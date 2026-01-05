@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { createNotification } from '@/modules/notifications/service';
 import { NotificationType, AttendanceStatus } from '@prisma/client';
 import { logger } from '@/lib/logger';
+import type { AlertRule, AlertTrigger } from '@cipansor/shared';
 
 export interface AlertRule {
     id: string;
@@ -27,6 +28,7 @@ export interface AlertTrigger {
     threshold: number;
     message: string;
     triggeredAt: string;
+    metadata?: Record<string, any>;
 }
 
 // Default alert rules
@@ -237,17 +239,16 @@ async function checkOverdueInvoices(rule: AlertRule): Promise<AlertTrigger[]> {
  */
 async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
     const triggers: AlertTrigger[] = [];
-    // Optimization: Restrict anomaly check window to last 24 hours to reduce alert spam and improving performance
+    // Optimization: Restrict anomaly check window to last 24 hours to reduce alert spam and improve performance
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     try {
         // 1. Check for Duplicate Invoices (Potential double billing)
         // Same student, same payment type, same amount, same period (if applicable), created recently
-        // Optimization: Use Prisma's groupBy which is efficient
         const potentialDuplicates = await prisma.invoice.groupBy({
             by: ['studentId', 'paymentTypeId', 'amount', 'period'],
             where: {
-                createdAt: { gte: oneDayAgo },
+                createdAt: { gte: oneDayAgo }, // Restrict to last 24h
                 status: { not: 'CANCELLED' }
             },
             having: {
@@ -258,31 +259,38 @@ async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
             }
         });
 
-        for (const dup of potentialDuplicates) {
-            // Fetch student name for the alert
-            const student = await prisma.student.findUnique({
-                where: { id: dup.studentId },
-                include: { user: { select: { name: true, id: true } } }
+        // Optimization: Fix N+1 problem by fetching all affected students in one query
+        const studentIds = potentialDuplicates.map(d => d.studentId);
+
+        if (studentIds.length > 0) {
+            const students = await prisma.student.findMany({
+                where: { id: { in: studentIds } },
+                include: { user: { select: { id: true, name: true } } }
             });
 
-            if (!student) continue;
+            for (const dup of potentialDuplicates) {
+                const student = students.find(s => s.id === dup.studentId);
+                if (!student) continue;
 
-            const trigger: AlertTrigger = {
-                ruleId: rule.id,
-                studentId: dup.studentId,
-                studentName: student.user?.name || 'Unknown',
-                value: dup._count._all,
-                threshold: 1,
-                message: `Terdeteksi ${dup._count._all} tagihan duplikat untuk ${student.user?.name || 'Unknown'} (Rp ${Number(dup.amount)})`,
-                triggeredAt: new Date().toISOString(),
-            };
-            triggers.push(trigger);
+                const count = dup._count._all;
+
+                const trigger: AlertTrigger = {
+                    ruleId: rule.id,
+                    studentId: dup.studentId,
+                    studentName: student.user?.name || 'Unknown',
+                    value: count,
+                    threshold: 1,
+                    message: `Terdeteksi ${count} tagihan duplikat untuk ${student.user?.name || 'Unknown'} (Rp ${Number(dup.amount)})`,
+                    triggeredAt: new Date().toISOString(),
+                };
+                triggers.push(trigger);
+            }
         }
 
         // 2. Check for Statistical Outliers (Unusually high amounts)
         // Best Practice: Calculate statistics over a longer period (1 year) to establish a reliable baseline
         // Use raw query for efficient STDDEV calculation as Prisma doesn't support it natively yet
-        const stats = await prisma.$queryRaw<Array<{ payment_type_id: string; avg_val: number; stddev_val: number }>>`
+        const stats = await prisma.$queryRaw<Array<{ payment_type_id: string; avg_val: number | string; stddev_val: number | string }>>`
             SELECT
                 "payment_type_id",
                 AVG(amount) as avg_val,
@@ -296,7 +304,7 @@ async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
         // Check recent invoices against these stats
         const recentInvoices = await prisma.invoice.findMany({
             where: {
-                createdAt: { gte: oneDayAgo },
+                createdAt: { gte: oneDayAgo }, // Restrict to last 24h
                 status: { not: 'CANCELLED' }
             },
             include: {
@@ -306,7 +314,7 @@ async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
 
         for (const invoice of recentInvoices) {
             const stat = stats.find(s => s.payment_type_id === invoice.paymentTypeId);
-            if (!stat || !stat.stddev_val) continue;
+            if (!stat) continue;
 
             const amount = Number(invoice.amount);
             const avg = Number(stat.avg_val);
@@ -326,9 +334,32 @@ async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
                         threshold: avg + (rule.threshold * stddev),
                         message: `Tagihan tidak wajar (Z-Score: ${zScore.toFixed(2)}) untuk ${invoice.student?.user?.name}. Jumlah: Rp ${amount}, Rata-rata: Rp ${avg.toFixed(0)}`,
                         triggeredAt: new Date().toISOString(),
+                        metadata: {
+                            type: 'outlier',
+                            invoiceId: invoice.id,
+                            zScore: zScore
+                        }
                     };
                     triggers.push(trigger);
                 }
+            } else if (Math.abs(amount - avg) > 100) {
+                // Special case: If stddev is 0 (all historical values are identical),
+                // any deviation > 100 (epsilon) is an anomaly (infinite Z-Score)
+                const trigger: AlertTrigger = {
+                    ruleId: rule.id,
+                    studentId: invoice.studentId,
+                    studentName: invoice.student?.user?.name || 'Unknown',
+                    value: amount,
+                    threshold: avg,
+                    message: `Tagihan tidak wajar (Z-Score: ∞) untuk ${invoice.student?.user?.name}. Jumlah: Rp ${amount}, Rata-rata: Rp ${avg.toFixed(0)}`,
+                    triggeredAt: new Date().toISOString(),
+                    metadata: {
+                        type: 'outlier',
+                        invoiceId: invoice.id,
+                        zScore: 'infinity'
+                    }
+                };
+                triggers.push(trigger);
             }
         }
 
@@ -444,6 +475,45 @@ async function sendAlertNotification(
     userId: string
 ): Promise<void> {
     try {
+        // Prevent duplicate alerts within 24 hours
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+        // Check if similar alert exists
+        // We use Prisma's JSON filtering capabilities if possible, or filter in code
+        // Since Prisma JSON filtering can be database specific, we'll fetch recent user notifications
+        // of type ALERT and filter in memory to be safe and database-agnostic enough for this context.
+        const recentAlerts = await prisma.notification.findMany({
+            where: {
+                userId,
+                type: NotificationType.ALERT,
+                createdAt: { gte: twentyFourHoursAgo },
+            },
+            select: { data: true }
+        });
+
+        const isDuplicate = recentAlerts.some(alert => {
+            const data = alert.data as any;
+            if (!data) return false;
+
+            // Match ruleId and studentId
+            if (data.ruleId !== rule.id || data.studentId !== trigger.studentId) return false;
+
+            // If metadata (like invoiceId) is present in trigger, check against existing
+            if (trigger.metadata && data.metadata) {
+                // Check if all keys in trigger.metadata match
+                return Object.keys(trigger.metadata).every(key =>
+                    data.metadata[key] === trigger.metadata![key]
+                );
+            }
+
+            return true;
+        });
+
+        if (isDuplicate) {
+            logger.info(`Skipping duplicate alert: ${rule.name} for ${trigger.studentName}`);
+            return;
+        }
+
         await createNotification({
             userId,
             title: `⚠️ ${rule.name}`,
@@ -452,6 +522,11 @@ async function sendAlertNotification(
             priority: 'HIGH',
             channels: ['IN_APP'],
             recipientType: 'INDIVIDUAL',
+            data: {
+                ruleId: rule.id,
+                studentId: trigger.studentId,
+                metadata: trigger.metadata
+            }
         });
         logger.info(`Alert sent: ${rule.name} for ${trigger.studentName}`);
     } catch (error) {

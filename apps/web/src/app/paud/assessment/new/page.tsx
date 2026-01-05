@@ -52,6 +52,7 @@ import { ImagePlus, X, CheckCircle2 } from 'lucide-react';
 const formSchema = z.object({
   studentId: z.string().min(1, 'Pilih siswa'),
   academicYearId: z.string().min(1, 'Pilih tahun ajaran'),
+  semester: z.number().min(1).max(2).default(1),
   aspect: z.enum(['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI'], {
     required_error: 'Pilih aspek perkembangan',
   }),
@@ -101,6 +102,7 @@ export default function CreatePAUDAssessmentPage() {
     defaultValues: {
       periodType: 'HARIAN',
       periodDate: new Date(),
+      semester: 1,
     },
   });
 
@@ -139,12 +141,13 @@ export default function CreatePAUDAssessmentPage() {
         periodDate: format(values.periodDate, 'yyyy-MM-dd'),
       });
 
-      // Upload evidence if any
+      // Upload evidences if any
       if (files.length > 0) {
         for (const file of files) {
           const formData = new FormData();
           formData.append('file', file);
-          formData.append('fileType', file.type.startsWith('image/') ? 'IMAGE' : 'VIDEO');
+          // Use uppercase for fileType to match potential DB constraints/Enums
+          formData.append('fileType', file.type.startsWith('image') ? 'IMAGE' : 'VIDEO');
           await addEvidenceMutation.mutateAsync({
             assessmentId: result.id,
             data: formData,
@@ -154,130 +157,116 @@ export default function CreatePAUDAssessmentPage() {
 
       toast.success('Penilaian berhasil disimpan');
       router.push('/paud/assessment');
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Gagal menyimpan penilaian';
-      toast.error(message);
+    } catch (error) {
+      toast.error('Gagal menyimpan penilaian');
     }
   };
 
   const nextStep = async () => {
-    let fieldsToValidate: (keyof FormValues)[] = [];
-    if (step === 1) fieldsToValidate = ['studentId', 'academicYearId', 'periodType', 'periodDate'];
-    if (step === 2) fieldsToValidate = ['aspect', 'achievementLevel'];
-    if (step === 3) fieldsToValidate = ['indicatorId', 'narrativeText', 'teacherNotes', 'recommendations'];
+    const fields = [
+      ['studentId', 'academicYearId', 'periodType', 'periodDate', 'semester'],
+      ['aspect', 'achievementLevel'],
+      ['narrativeText', 'teacherNotes', 'recommendations'],
+      [],
+    ][step - 1];
 
-    const isValid = await form.trigger(fieldsToValidate);
-    if (isValid) setStep((prev) => prev + 1);
+    const isValid = await form.trigger(fields as any);
+    if (isValid) setStep((s) => s + 1);
   };
 
-  const prevStep = () => setStep((prev) => prev - 1);
-
-  // Get active academic year as default
-  const activeYear = academicYears?.data?.find((y) => y.isActive);
-  if (activeYear && !form.getValues('academicYearId')) {
-    form.setValue('academicYearId', activeYear.id);
-  }
+  const prevStep = () => setStep((s) => s - 1);
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="max-w-3xl mx-auto space-y-6">
         <PageHeader
-          title="Tambah Penilaian TK Qur'an"
-          description="Catat perkembangan anak berdasarkan 6 aspek perkembangan"
-          actions={
-            <Button variant="outline" onClick={() => router.back()}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Kembali
-            </Button>
-          }
+          title="Tambah Penilaian Baru"
+          description="Isi form untuk mencatat perkembangan anak"
+          showBackButton
         />
 
-        <div className="max-w-4xl mx-auto space-y-4">
+        {/* Progress Bar */}
+        <div className="space-y-2">
           <Progress value={(step / 4) * 100} className="h-2" />
-          <div className="flex justify-between text-xs text-muted-foreground font-medium px-1">
-            <span>Siswa & Periode</span>
-            <span>Aspek & Capaian</span>
-            <span>Detail & Narasi</span>
-            <span>Bukti & Review</span>
+          <div className="flex justify-between text-xs text-muted-foreground px-1">
+            <span className={step >= 1 ? 'text-primary font-medium' : ''}>1. Data Dasar</span>
+            <span className={step >= 2 ? 'text-primary font-medium' : ''}>2. Capaian</span>
+            <span className={step >= 3 ? 'text-primary font-medium' : ''}>3. Narasi</span>
+            <span className={step >= 4 ? 'text-primary font-medium' : ''}>4. Bukti</span>
           </div>
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-4xl mx-auto">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {step === 1 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Langkah 1: Informasi Siswa & Periode</CardTitle>
+                  <CardTitle>Langkah 1: Identitas & Waktu</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="studentId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Siswa *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Pilih siswa" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {loadingStudents ? (
-                              <div className="p-2 text-center text-muted-foreground">
-                                <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
-                                Memuat...
-                              </div>
-                            ) : (
-                              students?.data?.map((student) => (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="studentId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Pilih Siswa</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih siswa" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {students?.data?.map((student) => (
                                 <SelectItem key={student.id} value={student.id}>
                                   {student.name} ({student.nis})
                                 </SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="academicYearId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tahun Ajaran *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Pilih tahun ajaran" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {academicYears?.data?.map((year) => (
-                              <SelectItem key={year.id} value={year.id}>
-                                {year.name} {year.isActive && '(Aktif)'}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={form.control}
+                      name="academicYearId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tahun Ajaran</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih tahun ajaran" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {academicYears?.data?.map((year) => (
+                                <SelectItem key={year.id} value={year.id}>
+                                  {year.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid gap-4 md:grid-cols-2">
                     <FormField
                       control={form.control}
                       name="periodType"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Tipe Periode *</FormLabel>
+                          <FormLabel>Jenis Periode</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Pilih tipe" />
+                                <SelectValue placeholder="Pilih periode" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -297,22 +286,22 @@ export default function CreatePAUDAssessmentPage() {
                       control={form.control}
                       name="periodDate"
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tanggal *</FormLabel>
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Tanggal Penilaian</FormLabel>
                           <Popover>
                             <PopoverTrigger asChild>
                               <FormControl>
                                 <Button
-                                  variant="outline"
+                                  variant={'outline'}
                                   className={cn(
-                                    'w-full pl-3 text-left font-normal',
+                                    'pl-3 text-left font-normal',
                                     !field.value && 'text-muted-foreground'
                                   )}
                                 >
                                   {field.value ? (
-                                    format(field.value, 'dd/MM/yyyy', { locale: idLocale })
+                                    format(field.value, 'PPP', { locale: idLocale })
                                   ) : (
-                                    'Pilih tanggal'
+                                    <span>Pilih tanggal</span>
                                   )}
                                   <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                 </Button>
@@ -323,7 +312,9 @@ export default function CreatePAUDAssessmentPage() {
                                 mode="single"
                                 selected={field.value}
                                 onSelect={field.onChange}
-                                disabled={(date) => date > new Date()}
+                                disabled={(date) =>
+                                  date > new Date() || date < new Date('1900-01-01')
+                                }
                                 initialFocus
                               />
                             </PopoverContent>
@@ -340,7 +331,7 @@ export default function CreatePAUDAssessmentPage() {
             {step === 2 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Langkah 2: Aspek & Tingkat Capaian</CardTitle>
+                  <CardTitle>Langkah 2: Aspek & Capaian</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <FormField
@@ -348,24 +339,21 @@ export default function CreatePAUDAssessmentPage() {
                     name="aspect"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Aspek Perkembangan *</FormLabel>
+                        <FormLabel>Aspek Perkembangan</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Pilih aspek" />
+                              <SelectValue placeholder="Pilih aspek perkembangan" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {Object.entries(ASPECT_LABELS).map(([value, label]) => (
                               <SelectItem key={value} value={value}>
-                                {value} - {label}
+                                {label}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <FormDescription>
-                          6 aspek perkembangan sesuai Permendikbud 137/2014
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -375,13 +363,13 @@ export default function CreatePAUDAssessmentPage() {
                     control={form.control}
                     name="achievementLevel"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tingkat Capaian *</FormLabel>
+                      <FormItem className="space-y-3">
+                        <FormLabel>Tingkat Capaian</FormLabel>
                         <FormControl>
                           <RadioGroup
                             onValueChange={field.onChange}
-                            value={field.value}
-                            className="grid grid-cols-2 md:grid-cols-4 gap-4"
+                            defaultValue={field.value}
+                            className="grid grid-cols-2 gap-4"
                           >
                             {ACHIEVEMENT_OPTIONS.map((option) => (
                               <div key={option.value}>
@@ -393,8 +381,8 @@ export default function CreatePAUDAssessmentPage() {
                                 <label
                                   htmlFor={option.value}
                                   className={cn(
-                                    'flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-accent transition-all cursor-pointer h-full',
-                                    option.color
+                                    'flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary transition-all cursor-pointer h-full',
+                                    field.value === option.value && option.color.replace('border-', 'border-') + ' bg-accent'
                                   )}
                                 >
                                   <span className="text-2xl font-bold">{option.value}</span>

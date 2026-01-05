@@ -3,11 +3,9 @@ import { asyncHandler } from '@/middleware/error';
 import { classService } from './class.service';
 import type {
   ListClassesQuery,
-  CreateClassInput,
-  UpdateClassInput,
-  EnrollStudentInput,
   UpdateEnrollmentInput,
 } from './class.schema';
+import { CreateClassInput, UpdateClassInput, EnrollStudentInput } from '@cipansor/shared'; // Correct import
 
 /**
  * List classes
@@ -83,6 +81,21 @@ export const remove = asyncHandler(async (req: Request, res: Response) => {
   res.json({
     success: true,
     data: result,
+  });
+});
+
+/**
+ * Get class enrollments
+ * GET /api/classes/:id/enrollments
+ * Used by useClassEnrollments hook
+ */
+export const getEnrollments = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const enrollments = await classService.getEnrollments(id);
+
+  res.json({
+    success: true,
+    data: enrollments,
   });
 });
 

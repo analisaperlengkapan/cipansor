@@ -32,12 +32,12 @@ router.use(authenticate);
  *         name: type
  *         schema:
  *           type: string
- *           enum: [DAILY, MIDTERM, FINAL, PRACTICE]
+ *           enum: [DAILY_TEST, QUIZ, MIDTERM, FINAL, PRACTICAL, PROJECT, TAHFIDZ_TEST]
  *       - in: query
  *         name: status
  *         schema:
  *           type: string
- *           enum: [DRAFT, SCHEDULED, ONGOING, COMPLETED, CANCELLED]
+ *           enum: [DRAFT, SCHEDULED, ONGOING, COMPLETED, GRADED]
  *       - in: query
  *         name: page
  *         schema:
@@ -87,14 +87,14 @@ router.get('/exams/:id', controller.getExamById);
  *           schema:
  *             type: object
  *             required:
- *               - name
+ *               - title
  *               - subjectId
  *               - classId
  *               - type
  *               - maxScore
- *               - date
+ *               - scheduledAt
  *             properties:
- *               name:
+ *               title:
  *                 type: string
  *               subjectId:
  *                 type: string
@@ -102,10 +102,10 @@ router.get('/exams/:id', controller.getExamById);
  *                 type: string
  *               type:
  *                 type: string
- *                 enum: [DAILY, MIDTERM, FINAL, PRACTICE]
+ *                 enum: [DAILY_TEST, QUIZ, MIDTERM, FINAL, PRACTICAL, PROJECT, TAHFIDZ_TEST]
  *               maxScore:
  *                 type: number
- *               date:
+ *               scheduledAt:
  *                 type: string
  *                 format: date-time
  *               duration:
@@ -184,7 +184,7 @@ router.delete('/exams/:id', controller.deleteExam);
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [SCHEDULED, ONGOING, COMPLETED, CANCELLED]
+ *                 enum: [SCHEDULED, ONGOING, COMPLETED, GRADED]
  *     responses:
  *       200:
  *         description: Exam status updated
@@ -193,7 +193,7 @@ router.patch('/exams/:id/status', controller.updateExamStatus);
 
 /**
  * @swagger
- * /api/assessment/exams/{examId}/grades:
+ * /api/assessment/grades/exam/{examId}:
  *   get:
  *     summary: Get grades for an exam
  *     tags: [Assessment]
@@ -209,7 +209,7 @@ router.patch('/exams/:id/status', controller.updateExamStatus);
  *       200:
  *         description: List of grades for the exam
  */
-router.get('/exams/:examId/grades', controller.getExamGrades);
+router.get('/grades/exam/:examId', controller.getExamGrades);
 
 // ==================== GRADES ====================
 
@@ -376,7 +376,7 @@ router.delete('/grades/:id', controller.deleteGrade);
 
 /**
  * @swagger
- * /api/assessment/students/{studentId}/grades:
+ * /api/assessment/grades/student/{studentId}:
  *   get:
  *     summary: Get student grades
  *     tags: [Assessment]
@@ -400,7 +400,7 @@ router.delete('/grades/:id', controller.deleteGrade);
  *       200:
  *         description: Student's grades
  */
-router.get('/students/:studentId/grades', controller.getStudentGrades);
+router.get('/grades/student/:studentId', controller.getStudentGrades);
 
 // ==================== REPORT CARDS ====================
 
@@ -579,7 +579,7 @@ router.delete('/report-cards/:id', controller.deleteReportCard);
  *       200:
  *         description: Report card published
  */
-router.post('/report-cards/:id/publish', controller.publishReportCard);
+router.patch('/report-cards/:id/publish', controller.publishReportCard);
 
 // ==================== SKHUN & TRANSKRIP ====================
 

@@ -14,7 +14,8 @@ import {
   ScholarshipSource,
   ScholarshipType,
   PaymentCategory, // Mapped from PaymentComponentCategory
-  SharedPaginatedResponse
+  SharedPaginatedResponse,
+  FinanceReportPeriod
 } from "@cipansor/shared";
 
 // Re-export types
@@ -34,7 +35,8 @@ export {
   AccountType,
   ScholarshipSource,
   ScholarshipType,
-  PaymentCategory
+  PaymentCategory,
+  FinanceReportPeriod
 };
 
 // Aliases to match local names if they differed significantly, or just use shared
@@ -363,7 +365,7 @@ export function useIncomeExpenseReport(filters: {
   unitId?: string; 
   startDate: string; 
   endDate: string; 
-  groupBy?: "month" | "day" 
+  groupBy?: FinanceReportPeriod | "month" | "day"
 }) {
   return useQuery({
     queryKey: ["income-expense-report", filters],

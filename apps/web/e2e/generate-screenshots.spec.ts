@@ -125,7 +125,7 @@ async function setupMocks(page: Page) {
   await page.route('**/api/dashboard/**', async (route) => route.fulfill({ json: MOCK_DASHBOARD_STATS }));
   await page.route('**/api/analytics/**', async (route) => route.fulfill({ json: MOCK_DASHBOARD_STATS }));
 
-  // Students
+  // Students & Classes
   await page.route('**/api/students*', async (route) => route.fulfill({ json: MOCK_STUDENTS }));
   await page.route('**/api/classes*', async (route) => route.fulfill({ json: { success: true, data: { data: [], meta: { total: 0 } } } }));
 
@@ -141,6 +141,18 @@ async function setupMocks(page: Page) {
 
   // Health
   await page.route('**/api/health*', async (route) => route.fulfill({ json: { success: true, data: { data: [], meta: { total: 0 } } } }));
+
+  // Library
+  await page.route('**/api/library*', async (route) => route.fulfill({ json: { success: true, data: { data: [], meta: { total: 0 }, summary: {} } } }));
+
+  // PSB
+  await page.route('**/api/psb*', async (route) => route.fulfill({ json: { success: true, data: { data: [], meta: { total: 0 }, stats: {} } } }));
+
+  // Catch-all for other API calls to prevent 404s/Connection Refused
+  await page.route('**/api/**', async (route) => {
+      // If not already handled, return empty success json
+      await route.fulfill({ json: { success: true, data: [] } });
+  });
 }
 
 const PAGES_TO_SCREENSHOT = [
@@ -167,16 +179,6 @@ test.describe('Generate Screenshots', () => {
 
       await setupMocks(page);
 
-      // Hide Offline Banner
-      await page.addInitScript(() => {
-        const style = document.createElement('style');
-        style.innerHTML = `
-            div[role="alert"].bg-yellow-500 { display: none !important; }
-            .fixed.bottom-4.right-4 { display: none !important; }
-        `;
-        document.head.appendChild(style);
-      });
-
       if (pageConfig.name !== 'login') {
          // Add cookies for Server-side Middleware
          await page.context().addCookies([
@@ -198,6 +200,14 @@ test.describe('Generate Screenshots', () => {
       }
 
       await page.goto(pageConfig.path, { waitUntil: 'networkidle' });
+
+      // Hide Offline Banner safely using addStyleTag
+      await page.addStyleTag({
+          content: `
+            div[role="alert"].bg-yellow-500 { display: none !important; }
+            .fixed.bottom-4.right-4 { display: none !important; }
+          `
+      });
 
       // Additional wait for hydration
       await page.waitForTimeout(2000);

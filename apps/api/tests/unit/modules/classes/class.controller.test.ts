@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Request, Response } from 'express';
 import * as controller from '../../../../src/modules/classes/class.controller';
 import { classService } from '../../../../src/modules/classes/class.service';
-import { Gender } from '@prisma/client';
+import { Gender } from '@cipansor/shared';
 
 // Mock dependencies
 vi.mock('../../../../src/modules/classes/class.service', () => ({
@@ -79,16 +79,16 @@ describe('Class Controller', () => {
     });
 
     it('should handle errors', async () => {
-        req.params = { id: 'class-id' };
-        const error = new Error('Database error');
-        (classService.getEnrollments as any).mockRejectedValue(error);
+      req.params = { id: 'class-id' };
+      const error = new Error('Database error');
+      (classService.getEnrollments as any).mockRejectedValue(error);
 
-        await controller.getEnrollments(req as Request, res as Response, next);
+      await controller.getEnrollments(req as Request, res as Response, next);
 
-        // Wait for async handler to catch error
-        await new Promise(resolve => setTimeout(resolve, 10));
+      // Wait for async handler to catch error
+      await new Promise(resolve => setTimeout(resolve, 10));
 
-        expect(next).toHaveBeenCalledWith(error);
-      });
+      expect(next).toHaveBeenCalledWith(error);
+    });
   });
 });

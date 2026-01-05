@@ -68,20 +68,20 @@ export default function LibraryPage() {
   const [booksPage, setBooksPage] = useState(1);
   const [borrowsPage, setBorrowsPage] = useState(1);
   const [bookSearch, setBookSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
   const { data: booksData, isLoading: booksLoading } = useBooks({
     page: booksPage,
     limit: 10,
     search: bookSearch || undefined,
-    category: categoryFilter !== 'all' ? (categoryFilter as BookCategory) : undefined,
+    category: categoryFilter !== 'ALL' ? (categoryFilter as BookCategory) : undefined,
   });
 
   const { data: borrowsData, isLoading: borrowsLoading } = useBorrows({
     page: borrowsPage,
     limit: 10,
-    status: statusFilter !== 'all' ? (statusFilter as BorrowStatus) : undefined,
+    status: statusFilter !== 'ALL' ? (statusFilter as BorrowStatus) : undefined,
   });
 
   const { data: summaryData } = useLibrarySummary();
@@ -207,7 +207,7 @@ export default function LibraryPage() {
                   <SelectValue placeholder="Kategori" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Kategori</SelectItem>
+                  <SelectItem value="ALL">Semua Kategori</SelectItem>
                   {BOOK_CATEGORIES.map((cat) => (
                     <SelectItem key={cat.value} value={cat.value}>
                       {cat.label}
@@ -310,7 +310,7 @@ export default function LibraryPage() {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Semua Status</SelectItem>
+                <SelectItem value="ALL">Semua Status</SelectItem>
                 {BORROW_STATUSES.map((status) => (
                   <SelectItem key={status.value} value={status.value}>
                     {status.label}

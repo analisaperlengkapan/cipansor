@@ -51,18 +51,18 @@ export default function AssessmentPage() {
   const [activeTab, setActiveTab] = useState('assessments');
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<AssessmentType | 'ALL'>('ALL');
-  const [classFilter, setClassFilter] = useState<string>('');
-  const [subjectFilter, setSubjectFilter] = useState<string>('');
+  const [classFilter, setClassFilter] = useState<string>('ALL');
+  const [subjectFilter, setSubjectFilter] = useState<string>('ALL');
   const [semesterFilter, setSemesterFilter] = useState<string>('1');
 
   const { data: assessments, isLoading: loadingAssessments } = useAssessments({
     type: typeFilter !== 'ALL' ? typeFilter : undefined,
-    classId: classFilter || undefined,
-    subjectId: subjectFilter || undefined,
+    classId: classFilter === 'ALL' ? undefined : classFilter,
+    subjectId: subjectFilter === 'ALL' ? undefined : subjectFilter,
     semester: semesterFilter ? parseInt(semesterFilter) : undefined,
   });
   const { data: reportCards, isLoading: loadingReportCards } = useReportCards({
-    classId: classFilter || undefined,
+    classId: classFilter === 'ALL' ? undefined : classFilter,
     semester: semesterFilter ? parseInt(semesterFilter) : undefined,
   });
   const { data: classes } = useClasses();
@@ -196,7 +196,7 @@ export default function AssessmentPage() {
                       <SelectValue placeholder="Semua Kelas" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Semua Kelas</SelectItem>
+                      <SelectItem value="ALL">Semua Kelas</SelectItem>
                       {classes?.data?.map((cls) => (
                         <SelectItem key={cls.id} value={cls.id}>
                           {cls.name}
@@ -209,7 +209,7 @@ export default function AssessmentPage() {
                       <SelectValue placeholder="Semua Mapel" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Semua Mapel</SelectItem>
+                      <SelectItem value="ALL">Semua Mapel</SelectItem>
                       {subjects?.map((subject) => (
                         <SelectItem key={subject.id} value={subject.id}>
                           {subject.name}

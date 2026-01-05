@@ -55,20 +55,20 @@ function formatCurrency(amount: number) {
 export default function FinancePage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [billType, setBillType] = useState<BillType | ''>('');
-  const [status, setStatus] = useState<BillStatus | ''>('');
-  const [academicYearId, setAcademicYearId] = useState<string>('');
+  const [billType, setBillType] = useState<BillType | 'ALL'>('ALL');
+  const [status, setStatus] = useState<BillStatus | 'ALL'>('ALL');
+  const [academicYearId, setAcademicYearId] = useState<string>('ACTIVE');
   const limit = 20;
 
   const { data: activeYear } = useActiveAcademicYear();
-  const selectedYearId = academicYearId || activeYear?.id;
+  const selectedYearId = academicYearId === 'ACTIVE' ? activeYear?.id : academicYearId;
 
   const { data: billsData, isLoading } = useBills({
     page,
     limit,
     academicYearId: selectedYearId,
-    billType: billType || undefined,
-    status: status || undefined,
+    billType: billType === 'ALL' ? undefined : billType,
+    status: status === 'ALL' ? undefined : status,
   });
 
   const { data: summary } = useFinancialSummary(selectedYearId);
@@ -208,7 +208,7 @@ export default function FinancePage() {
                     <SelectValue placeholder="Tahun Ajaran" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tahun Aktif</SelectItem>
+                    <SelectItem value="ACTIVE">Tahun Aktif</SelectItem>
                     {academicYears?.data.map((year) => (
                       <SelectItem key={year.id} value={year.id}>
                         {year.name}
@@ -219,13 +219,13 @@ export default function FinancePage() {
 
                 <Select
                   value={billType}
-                  onValueChange={(v) => setBillType(v as BillType | '')}
+                  onValueChange={(v) => setBillType(v as BillType | 'ALL')}
                 >
                   <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="Jenis Tagihan" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Jenis</SelectItem>
+                    <SelectItem value="ALL">Semua Jenis</SelectItem>
                     {BILL_TYPES.map((type) => (
                       <SelectItem key={type.value} value={type.value}>
                         {type.label}
@@ -236,13 +236,13 @@ export default function FinancePage() {
 
                 <Select
                   value={status}
-                  onValueChange={(v) => setStatus(v as BillStatus | '')}
+                  onValueChange={(v) => setStatus(v as BillStatus | 'ALL')}
                 >
                   <SelectTrigger className="w-full sm:w-40">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Status</SelectItem>
+                    <SelectItem value="ALL">Semua Status</SelectItem>
                     {BILL_STATUSES.map((s) => (
                       <SelectItem key={s.value} value={s.value}>
                         {s.label}

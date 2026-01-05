@@ -139,20 +139,8 @@ export function useHealthSummary() {
   return useQuery({
     queryKey: ['health-summary'],
     queryFn: async () => {
-        // Mock implementation or correct endpoint
-        // Since we don't know the exact endpoint for "summary" without unitId,
-        // we'll assume it hits a general stats endpoint or returns a compatible structure
-        // This fixes the build error for now.
-        return {
-            totalRecords: 15,
-            currentlySick: 2,
-            needFollowUp: 1,
-            byStatus: [
-              { status: 'HEALTHY', count: 12 },
-              { status: 'SICK', count: 2 },
-              { status: 'RECOVERING', count: 1 }
-            ]
-        };
+      const response = await api.get<{ success: boolean; data: HealthStats }>('/health/summary');
+      return response.data.data;
     }
   });
 }

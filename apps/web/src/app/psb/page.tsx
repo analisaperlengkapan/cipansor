@@ -52,7 +52,7 @@ export default function PSBPage() {
   const [activeTab, setActiveTab] = useState('registrations');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<RegistrationStatus | 'ALL'>('ALL');
-  const [periodFilter, setPeriodFilter] = useState<string>('');
+  const [periodFilter, setPeriodFilter] = useState<string>('ALL');
 
   const { data: registrationsData, isLoading } = useRegistrations({
     search: search || undefined,

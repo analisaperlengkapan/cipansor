@@ -844,6 +844,7 @@ model Student {
   // Tahfidz Enhancement relations
   murojaahRecords             MurojaahRecord[]
   simaanExams                 SimaanExam[]
+  hafidzStudent               HafidzStudent?
   // Health & Growth relations
   growthRecords               GrowthRecord[]
   immunizationRecords         ImmunizationRecord[]
@@ -962,6 +963,22 @@ model TahfidzTarget {
 
   @@unique([studentId, academicYearId])
   @@map("tahfidz_targets")
+}
+
+/// HafidzStudent - Siswa yang telah menyelesaikan hafalan 30 Juz
+model HafidzStudent {
+  id          String   @id @default(uuid())
+  studentId   String   @unique @map("student_id")
+  completedAt DateTime @default(now()) @map("completed_at")
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([completedAt])
+  @@map("hafidz_students")
 }
 
 // =====================================
@@ -1760,6 +1777,7 @@ model Notification {
   status    NotificationStatus @default(UNREAD)
   readAt    DateTime?          @map("read_at")
   data      Json?              @map("data") // Additional data for extended types
+  scheduledAt DateTime?        @map("scheduled_at")
   createdAt DateTime           @default(now()) @map("created_at")
 
   // Relations
@@ -1768,6 +1786,7 @@ model Notification {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@index([scheduledAt])
   @@map("notifications")
 }
 

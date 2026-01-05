@@ -556,10 +556,10 @@ export async function generateReportCard(studentId: string, classId: string, aca
   });
 
   const attendanceSummary = {
-    present: attendance.find((a) => a.status === 'PRESENT')?._count || 0,
+    present: (attendance.find((a) => a.status === 'PRESENT')?._count || 0) + (attendance.find((a) => a.status === 'LATE')?._count || 0),
     absent: attendance.find((a) => a.status === 'ABSENT')?._count || 0,
     sick: attendance.find((a) => a.status === 'SICK')?._count || 0,
-    excused: attendance.find((a) => a.status === 'EXCUSED')?._count || 0, // Mapped from database status
+    excused: attendance.find((a) => a.status === 'EXCUSED')?._count || 0,
   };
 
   const tahfidzSummary = tahfidzRecord

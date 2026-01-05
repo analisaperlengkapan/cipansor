@@ -13,6 +13,9 @@ import {
   Calendar as CalendarIcon,
   Filter,
   BarChart3,
+  Users,
+  BookmarkCheck,
+  CheckCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -51,6 +54,7 @@ import {
 } from '@/components/ui/popover';
 import {
   useTahfidzRecords,
+  useTahfidzDashboard,
   useDeleteTahfidz,
   TAHFIDZ_TYPES,
   TAHFIDZ_GRADES,
@@ -66,6 +70,9 @@ export default function TahfidzPage() {
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Fetch dashboard stats for accurate summary
+  const { data: dashboardStats, isLoading: isStatsLoading } = useTahfidzDashboard();
 
   // Hook now uses the standardized API which returns PaginatedResponse
   // The structure change from flat meta to meta.pagination is handled here
@@ -131,18 +138,61 @@ export default function TahfidzPage() {
         </Button>
       </div>
 
-      {/* Stats Cards - Removed or Refactored */}
-      {/* Note: Stats calculation from PaginatedResponse might be inaccurate if it's just based on current page.
-           Ideally, stats should come from a separate API call or the dashboard.
-           For now, we keep the simple count from the pagination metadata. */}
+      {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4 mb-6">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Total Catatan</span>
+              <span className="text-sm text-muted-foreground">Total Setoran</span>
             </div>
-            <p className="text-2xl font-bold">{pagination?.total || 0}</p>
+            <p className="text-2xl font-bold">
+              {isStatsLoading ? '...' : dashboardStats?.totalRecords || 0}
+            </p>
+            <p className="text-xs text-muted-foreground">Tahun ini</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Santri Aktif</span>
+            </div>
+            <p className="text-2xl font-bold">
+              {isStatsLoading ? '...' : dashboardStats?.totalStudents || 0}
+            </p>
+            <p className="text-xs text-muted-foreground">Menghafal tahun ini</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <BookmarkCheck className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Hafalan Baru</span>
+            </div>
+            <p className="text-2xl font-bold">
+              {isStatsLoading
+                ? '...'
+                : dashboardStats?.recordsByType?.find((r) => r.type === 'ZIYADAH')?.count || 0}
+            </p>
+            <p className="text-xs text-muted-foreground">Ziyadah</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Murajaah</span>
+            </div>
+            <p className="text-2xl font-bold">
+              {isStatsLoading
+                ? '...'
+                : dashboardStats?.recordsByType?.find((r) => r.type === 'MUROJAAH')?.count || 0}
+            </p>
+            <p className="text-xs text-muted-foreground">Pengulangan</p>
           </CardContent>
         </Card>
       </div>
@@ -157,12 +207,15 @@ export default function TahfidzPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4">
-            <Select value={type} onValueChange={setType}>
+            <Select
+              value={type || 'ALL'}
+              onValueChange={(val) => setType(val === 'ALL' ? '' : val)}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Semua Tipe" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Tipe</SelectItem>
+                <SelectItem value="ALL">Semua Tipe</SelectItem>
                 {TAHFIDZ_TYPES.map((t) => (
                   <SelectItem key={t.value} value={t.value}>
                     {t.label}

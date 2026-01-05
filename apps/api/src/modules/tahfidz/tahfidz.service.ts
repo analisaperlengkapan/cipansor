@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 import { Errors } from '@/middleware/error';
 import { UserRole, TahfidzActivityType, Prisma } from '@prisma/client';
 import type {
@@ -144,6 +145,12 @@ export class TahfidzService {
       },
     });
 
+    // Check if student became Hafidz
+    this.checkAndRegisterHafidz(input.studentId).catch(err => {
+        // Log error but don't fail the request
+        logger.error('Error checking hafidz status:', err);
+    });
+
     return record;
   }
 
@@ -187,6 +194,11 @@ export class TahfidzService {
           },
         },
       },
+    });
+
+    // Check if student became Hafidz
+    this.checkAndRegisterHafidz(updated.studentId).catch(err => {
+        logger.error('Error checking hafidz status:', err);
     });
 
     return updated;
@@ -510,14 +522,14 @@ export class TahfidzService {
       totalRecords,
       totalStudents: uniqueStudents.length,
       recordsByType: recordsByType.map((r) => ({
-        type: r.activityType as any, // Cast to any to satisfy Shared Type if mismatch exists
+        type: r.activityType,
         count: r._count._all,
       })),
       recordsByGrade,
       progressByJuz,
       monthlyActivity,
       topStudents: topStudentsWithJuz,
-      recentRecords: recentRecords as any[], // Cast to any[] to bypass strict shared type check against Prisma result
+      recentRecords: recentRecords as unknown as TahfidzRecord[],
     };
   }
 
@@ -639,6 +651,46 @@ export class TahfidzService {
        }
     }
     throw new Error('Failed to generate unique certificate number after multiple retries');
+  }
+
+  /**
+   * Check and register student as Hafidz if they completed 30 Juz
+   */
+  private async checkAndRegisterHafidz(studentId: string) {
+    try {
+      // 1. Check if already registered
+      const exists = await prisma.hafidzStudent.findUnique({
+        where: { studentId },
+      });
+      if (exists) return;
+
+      // 2. Count completed Juz
+      // Distinct juz where score >= 60 and activity is ASSESSMENT or TASMI
+      const completedJuzList = await prisma.tahfidzRecord.findMany({
+        where: {
+          studentId,
+          activityType: { in: ['ASSESSMENT', 'TASMI'] },
+          score: { gte: 60 }
+        },
+        select: { juz: true },
+        distinct: ['juz'],
+      });
+
+      if (completedJuzList.length >= 30) {
+        // 3. Register as Hafidz
+        await prisma.hafidzStudent.create({
+          data: {
+            studentId,
+            completedAt: new Date(),
+            notes: 'Automatically registered by system upon completing 30 Juz',
+          },
+        });
+        logger.info(`Student ${studentId} registered as Hafidz automatically`);
+      }
+    } catch (error) {
+      logger.error('Error in checkAndRegisterHafidz:', error);
+      // Do not throw, this is a background check
+    }
   }
 }
 

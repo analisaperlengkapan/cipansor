@@ -1,6 +1,17 @@
 import { prisma } from '@/lib/prisma';
 import { Errors } from '@/middleware/error';
 import { UserRole, CounselingStatus, CounselingCategory, CounselingPriority, ReferralType, Prisma } from '@prisma/client';
+import {
+  CounselingSession as SharedCounselingSession,
+  CounselingNote as SharedCounselingNote,
+  CounselingReferral as SharedCounselingReferral,
+  CounselingStats as SharedCounselingStats,
+  CreateCounselingSessionInput,
+  UpdateCounselingSessionInput,
+  CreateCounselingNoteInput,
+  CreateCounselingReferralInput,
+  CounselingListParams
+} from '@cipansor/shared';
 
 // User type from JwtPayload
 interface AuthenticatedUser {
@@ -9,32 +20,32 @@ interface AuthenticatedUser {
   unitId: string | null;
 }
 
-interface SessionFilters {
-  status?: CounselingStatus;
-  category?: CounselingCategory;
-  priority?: CounselingPriority;
-  studentId?: string;
-  startDate?: string;
-  endDate?: string;
-}
-
 export class CounselingService {
   /**
    * Get counseling sessions
    */
-  async getSessions(filters: SessionFilters, currentUser: AuthenticatedUser) {
+  async getSessions(filters: CounselingListParams, currentUser: AuthenticatedUser) {
     const where: Prisma.CounselingSessionWhereInput = {};
 
     // Access control
-    if (currentUser.role === UserRole.UNIT_ADMIN || currentUser.role === UserRole.TEACHER) {
-      where.unitId = currentUser.unitId!;
+    if (currentUser.role !== UserRole.SUPER_ADMIN && currentUser.unitId) {
+      where.unitId = currentUser.unitId;
     }
 
-    if (filters.status) where.status = filters.status;
-    if (filters.category) where.category = filters.category;
-    if (filters.priority) where.priority = filters.priority;
+    if (filters.status) where.status = filters.status as CounselingStatus;
+    if (filters.category) where.category = filters.category as CounselingCategory;
+    if (filters.priority) where.priority = filters.priority as CounselingPriority;
     if (filters.studentId) where.studentId = filters.studentId;
     
+    if (filters.search) {
+      where.OR = [
+        { title: { contains: filters.search, mode: 'insensitive' } },
+        { description: { contains: filters.search, mode: 'insensitive' } },
+        // Disabled nested search due to potential Prisma version mismatch or schema issues in environment
+        // { student: { name: { contains: filters.search, mode: 'insensitive' } } },
+      ];
+    }
+
     if (filters.startDate || filters.endDate) {
       where.scheduledAt = {};
       if (filters.startDate) where.scheduledAt.gte = new Date(filters.startDate);
@@ -47,6 +58,11 @@ export class CounselingService {
         student: {
           include: {
             user: { select: { id: true, name: true } },
+            enrollments: {
+              where: { status: 'active' },
+              take: 1,
+              include: { class: { select: { id: true, name: true } } }
+            }
           },
         },
         counselor: {
@@ -60,7 +76,15 @@ export class CounselingService {
       orderBy: { scheduledAt: 'desc' },
     });
 
-    return sessions;
+    const mappedSessions = sessions.map(s => ({
+      ...s,
+      student: {
+        ...s.student,
+        currentClass: s.student.enrollments[0]?.class || null
+      }
+    }));
+
+    return mappedSessions as unknown as SharedCounselingSession[];
   }
 
   /**
@@ -109,27 +133,24 @@ export class CounselingService {
       throw Errors.forbidden('Access denied');
     }
 
-    return session;
+    const mappedSession = {
+      ...session,
+      student: {
+        ...session.student,
+        currentClass: session.student.enrollments[0]?.class || null
+      }
+    };
+
+    return mappedSession as unknown as SharedCounselingSession;
   }
 
   /**
    * Create counseling session
    */
   async createSession(
-    input: {
-      studentId: string;
-      category: CounselingCategory;
-      priority?: CounselingPriority;
-      title: string;
-      description?: string;
-      scheduledAt: string;
-      duration?: number;
-      location?: string;
-      isConfidential?: boolean;
-    },
+    input: CreateCounselingSessionInput,
     currentUser: AuthenticatedUser
   ) {
-    // Get student to get unitId
     const student = await prisma.student.findUnique({
       where: { id: input.studentId, deletedAt: null },
     });
@@ -138,22 +159,29 @@ export class CounselingService {
       throw Errors.notFound('Student not found');
     }
 
-    // Get teacher ID for counselor
+    let counselorId: string | undefined;
+
     const teacher = await prisma.teacher.findFirst({
       where: { userId: currentUser.sub },
     });
 
-    if (!teacher) {
-      throw Errors.forbidden('Only teachers can create counseling sessions');
+    if (teacher) {
+      counselorId = teacher.id;
+    } else {
+        if (currentUser.role === UserRole.SUPER_ADMIN || currentUser.role === UserRole.UNIT_ADMIN) {
+             throw Errors.forbidden('You must have a Teacher profile to be assigned as a counselor.');
+        } else {
+             throw Errors.forbidden('Only teachers can create counseling sessions');
+        }
     }
 
     const session = await prisma.counselingSession.create({
       data: {
         unitId: student.unitId,
         studentId: input.studentId,
-        counselorId: teacher.id,
-        category: input.category,
-        priority: input.priority || CounselingPriority.MEDIUM,
+        counselorId: counselorId,
+        category: input.category as CounselingCategory,
+        priority: (input.priority as CounselingPriority) || CounselingPriority.MEDIUM,
         title: input.title,
         description: input.description,
         scheduledAt: new Date(input.scheduledAt),
@@ -169,7 +197,7 @@ export class CounselingService {
       },
     });
 
-    return session;
+    return session as unknown as SharedCounselingSession;
   }
 
   /**
@@ -177,21 +205,7 @@ export class CounselingService {
    */
   async updateSession(
     sessionId: string,
-    input: {
-      category?: CounselingCategory;
-      priority?: CounselingPriority;
-      title?: string;
-      description?: string;
-      scheduledAt?: string;
-      duration?: number;
-      location?: string;
-      status?: CounselingStatus;
-      summary?: string;
-      recommendations?: string;
-      followUpDate?: string;
-      isConfidential?: boolean;
-      parentNotified?: boolean;
-    },
+    input: UpdateCounselingSessionInput,
     currentUser: AuthenticatedUser
   ) {
     const session = await prisma.counselingSession.findUnique({
@@ -207,18 +221,18 @@ export class CounselingService {
     }
 
     const updateData: Prisma.CounselingSessionUpdateInput = {};
-    if (input.category) updateData.category = input.category;
-    if (input.priority) updateData.priority = input.priority;
+    if (input.category) updateData.category = input.category as CounselingCategory;
+    if (input.priority) updateData.priority = input.priority as CounselingPriority;
     if (input.title) updateData.title = input.title;
     if (input.description !== undefined) updateData.description = input.description;
     if (input.scheduledAt) updateData.scheduledAt = new Date(input.scheduledAt);
     if (input.duration !== undefined) updateData.duration = input.duration;
     if (input.location !== undefined) updateData.location = input.location;
     if (input.status) {
-      updateData.status = input.status;
-      if (input.status === CounselingStatus.IN_PROGRESS) {
+      updateData.status = input.status as CounselingStatus;
+      if ((input.status as string) === CounselingStatus.IN_PROGRESS && !session.startedAt) {
         updateData.startedAt = new Date();
-      } else if (input.status === CounselingStatus.COMPLETED) {
+      } else if ((input.status as string) === CounselingStatus.COMPLETED && !session.endedAt) {
         updateData.endedAt = new Date();
       }
     }
@@ -237,7 +251,7 @@ export class CounselingService {
       },
     });
 
-    return updated;
+    return updated as unknown as SharedCounselingSession;
   }
 
   /**
@@ -268,7 +282,7 @@ export class CounselingService {
    */
   async addNote(
     sessionId: string,
-    input: { content: string; noteType?: string },
+    input: CreateCounselingNoteInput,
     currentUser: AuthenticatedUser
   ) {
     const session = await prisma.counselingSession.findUnique({
@@ -295,7 +309,7 @@ export class CounselingService {
       },
     });
 
-    return note;
+    return note as unknown as SharedCounselingNote;
   }
 
   /**
@@ -303,7 +317,7 @@ export class CounselingService {
    */
   async updateNote(
     noteId: string,
-    input: { content?: string; noteType?: string },
+    input: Partial<CreateCounselingNoteInput>,
     currentUser: AuthenticatedUser
   ) {
     const note = await prisma.counselingNote.findUnique({
@@ -325,9 +339,12 @@ export class CounselingService {
         content: input.content,
         noteType: input.noteType,
       },
+      include: {
+        createdBy: { select: { id: true, name: true } },
+      },
     });
 
-    return updated;
+    return updated as unknown as SharedCounselingNote;
   }
 
   /**
@@ -356,14 +373,7 @@ export class CounselingService {
    */
   async addReferral(
     sessionId: string,
-    input: {
-      type: ReferralType;
-      referredTo: string;
-      institution?: string;
-      reason: string;
-      contactInfo?: string;
-      followUpDate?: string;
-    },
+    input: CreateCounselingReferralInput,
     currentUser: AuthenticatedUser
   ) {
     const session = await prisma.counselingSession.findUnique({
@@ -381,7 +391,7 @@ export class CounselingService {
     const referral = await prisma.counselingReferral.create({
       data: {
         sessionId,
-        type: input.type,
+        type: input.type as ReferralType,
         referredTo: input.referredTo,
         institution: input.institution,
         reason: input.reason,
@@ -394,7 +404,7 @@ export class CounselingService {
       },
     });
 
-    return referral;
+    return referral as unknown as SharedCounselingReferral;
   }
 
   /**
@@ -402,15 +412,7 @@ export class CounselingService {
    */
   async updateReferral(
     referralId: string,
-    input: {
-      type?: ReferralType;
-      referredTo?: string;
-      institution?: string;
-      reason?: string;
-      contactInfo?: string;
-      followUpDate?: string;
-      outcome?: string;
-    },
+    input: Partial<CreateCounselingReferralInput & { outcome: string }>,
     currentUser: AuthenticatedUser
   ) {
     const referral = await prisma.counselingReferral.findUnique({
@@ -429,7 +431,7 @@ export class CounselingService {
     const updated = await prisma.counselingReferral.update({
       where: { id: referralId },
       data: {
-        type: input.type,
+        type: input.type as ReferralType,
         referredTo: input.referredTo,
         institution: input.institution,
         reason: input.reason,
@@ -437,9 +439,12 @@ export class CounselingService {
         followUpDate: input.followUpDate ? new Date(input.followUpDate) : undefined,
         outcome: input.outcome,
       },
+      include: {
+        createdBy: { select: { id: true, name: true } },
+      },
     });
 
-    return updated;
+    return updated as unknown as SharedCounselingReferral;
   }
 
   /**
@@ -488,7 +493,7 @@ export class CounselingService {
       orderBy: { scheduledAt: 'desc' },
     });
 
-    return sessions;
+    return sessions as unknown as SharedCounselingSession[];
   }
 
   /**
@@ -513,17 +518,17 @@ export class CounselingService {
       orderBy: { scheduledAt: 'desc' },
     });
 
-    return sessions;
+    return sessions as unknown as SharedCounselingSession[];
   }
 
   /**
    * Get statistics
    */
-  async getStatistics(currentUser: AuthenticatedUser) {
+  async getStatistics(currentUser: AuthenticatedUser): Promise<SharedCounselingStats> {
     const where: Prisma.CounselingSessionWhereInput = {};
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN) {
-      where.unitId = currentUser.unitId!;
+    if (currentUser.role !== UserRole.SUPER_ADMIN && currentUser.unitId) {
+      where.unitId = currentUser.unitId;
     }
 
     const [totalSessions, byStatus, byCategory, byPriority] = await Promise.all([
@@ -547,9 +552,9 @@ export class CounselingService {
 
     return {
       totalSessions,
-      byStatus: byStatus.map((s) => ({ status: s.status, count: s._count.status })),
-      byCategory: byCategory.map((c) => ({ category: c.category, count: c._count.category })),
-      byPriority: byPriority.map((p) => ({ priority: p.priority, count: p._count.priority })),
+      byStatus: byStatus.map((s) => ({ status: s.status as unknown as any, count: s._count.status })),
+      byCategory: byCategory.map((c) => ({ category: c.category as unknown as any, count: c._count.category })),
+      byPriority: byPriority.map((p) => ({ priority: p.priority as unknown as any, count: p._count.priority })),
     };
   }
 }

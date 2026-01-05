@@ -12,7 +12,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useStudents, Student } from '@/hooks/use-students';
 import { useStudentTahfidzProgress, useTahfidzRecords, SURAH_LIST } from '@/hooks/use-tahfidz';
-import { useStudentGrades, useReportCards, ReportCard } from '@/hooks/use-assessment';
+import { useReportCards, useStudentGrades } from '@/hooks/use-assessment';
+import { ReportCard } from '@cipansor/shared';
 import { useUnits } from '@/hooks/use-units';
 import { useClasses } from '@/hooks/use-classes';
 import { useAcademicYears } from '@/hooks/use-academic-years';
@@ -78,6 +79,10 @@ export default function StudentTranscriptPage() {
 
   const handleSelectStudent = (student: Student) => {
     setSelectedStudent(student);
+  };
+
+  const getStudentInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
   const handlePrint = () => {
@@ -240,7 +245,7 @@ export default function StudentTranscriptPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {rc.subjects?.map((subj, sIdx) => (
+                    {rc.subjects?.map((subj: any, sIdx: number) => (
                       <tr key={subj.subjectId || sIdx}>
                         <td className="text-center">{sIdx + 1}</td>
                         <td>{subj.subject?.name || subj.subjectName}</td>
@@ -252,14 +257,14 @@ export default function StudentTranscriptPage() {
                     ))}
                     <tr className="font-bold" style={{ backgroundColor: '#f3f4f6' }}>
                       <td colSpan={4} className="text-right">Rata-rata</td>
-                      <td className="text-center">{rc.averageScore.toFixed(1)}</td>
-                      <td className="text-center">{getGradeLetter(rc.averageScore)}</td>
+                        <td className="text-center">{(rc.averageScore || 0).toFixed(1)}</td>
+                        <td className="text-center">{getGradeLetter(rc.averageScore || 0)}</td>
                     </tr>
                     {rc.rank && (
                       <tr>
                         <td colSpan={4} className="text-right">Peringkat</td>
                         <td colSpan={2} className="text-center font-semibold">
-                          {rc.rank} dari {rc.totalStudents} siswa
+                            {rc.rank} dari {rc.details?.length || 0} siswa
                         </td>
                       </tr>
                     )}
@@ -563,7 +568,7 @@ export default function StudentTranscriptPage() {
                                 <p className="text-xs text-muted-foreground">Rata-rata</p>
                                 <p className="text-xl font-bold">
                                   {studentReportCards.length > 0
-                                    ? (studentReportCards.reduce((sum: number, rc: ReportCard) => sum + rc.averageScore, 0) / studentReportCards.length).toFixed(1)
+                    ? (studentReportCards.reduce((sum: number, rc: ReportCard) => sum + (rc.averageScore || 0), 0) / studentReportCards.length).toFixed(1)
                                     : '-'}
                                 </p>
                               </div>
@@ -617,18 +622,18 @@ export default function StudentTranscriptPage() {
                                       <Badge variant="outline">Rank #{rc.rank}</Badge>
                                     )}
                                     <Badge className={
-                                      rc.averageScore >= 80 ? 'bg-green-100 text-green-800' :
-                                      rc.averageScore >= 70 ? 'bg-blue-100 text-blue-800' :
+                                      (rc.averageScore || 0) >= 80 ? 'bg-green-100 text-green-800' :
+                                      (rc.averageScore || 0) >= 70 ? 'bg-blue-100 text-blue-800' :
                                       'bg-amber-100 text-amber-800'
                                     }>
-                                      {rc.averageScore.toFixed(1)} ({getGradeLetter(rc.averageScore)})
+                                      {(rc.averageScore || 0).toFixed(1)} ({getGradeLetter(rc.averageScore || 0)})
                                     </Badge>
                                   </div>
                                 </div>
                               </CardHeader>
                               <CardContent>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                                  {rc.subjects?.slice(0, 8).map((subj, idx) => (
+                                  {rc.subjects?.slice(0, 8).map((subj: any, idx: number) => (
                                     <div key={idx} className="p-2 bg-muted rounded-lg text-sm">
                                       <p className="truncate font-medium">{subj.subject?.name || subj.subjectName}</p>
                                       <p className="text-muted-foreground">

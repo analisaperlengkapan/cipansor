@@ -100,6 +100,9 @@ export function useExams(params?: {
   });
 }
 
+// Alias for backward compatibility or clarity
+export const useAssessments = useExams;
+
 export function useExam(id: string) {
   return useQuery({
     queryKey: ['exam', id],

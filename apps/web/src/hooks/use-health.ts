@@ -39,8 +39,8 @@ export function useHealthRecords(params?: {
   page?: number;
   limit?: number;
   studentId?: string;
-  type?: MedicalRecordType;
-  status?: string;
+  recordType?: MedicalRecordType; // Fixed param name to match usage
+  status?: HealthStatus; // Fixed type
   startDate?: string;
   endDate?: string;
 }) {
@@ -48,7 +48,7 @@ export function useHealthRecords(params?: {
     queryKey: ['health-records', params],
     queryFn: async () => {
       const response = await api.get<SharedPaginatedResponse<MedicalRecord>>('/health/records', { params });
-      return response.data;
+      return response.data.data;
     },
   });
 }
@@ -131,5 +131,16 @@ export function useHealthStats(unitId: string) {
       return response.data.data;
     },
     enabled: !!unitId,
+  });
+}
+
+// Added missing useHealthSummary hook
+export function useHealthSummary() {
+  return useQuery({
+    queryKey: ['health-summary'],
+    queryFn: async () => {
+      const response = await api.get<{ success: boolean; data: HealthStats }>('/health/summary');
+      return response.data.data;
+    }
   });
 }

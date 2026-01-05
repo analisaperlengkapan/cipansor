@@ -55,20 +55,20 @@ import { cn } from '@/lib/utils';
 export default function AttendancePage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [classId, setClassId] = useState<string>('');
-  const [status, setStatus] = useState<string>('');
+  const [classId, setClassId] = useState<string>('ALL');
+  const [status, setStatus] = useState<string>('ALL');
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [unitId, setUnitId] = useState<string>('');
+  const [unitId, setUnitId] = useState<string>('ALL');
 
   const { data: units } = useUnits();
-  const { data: classesData } = useClasses({ unitId: unitId || undefined });
+  const { data: classesData } = useClasses({ unitId: unitId === 'ALL' ? undefined : unitId });
   const classes = classesData?.data || [];
 
   const { data: attendanceData, isLoading } = useAttendances({
     page,
     limit: pageSize,
-    classId: classId || undefined,
-    status: (status as AttendanceStatus) || undefined,
+    classId: classId === 'ALL' ? undefined : classId,
+    status: status === 'ALL' ? undefined : (status as AttendanceStatus),
     date: date ? format(date, 'yyyy-MM-dd') : undefined,
   });
 
@@ -197,12 +197,12 @@ export default function AttendancePage() {
               </PopoverContent>
             </Popover>
 
-            <Select value={unitId} onValueChange={(v) => { setUnitId(v); setClassId(''); }}>
+            <Select value={unitId} onValueChange={(v) => { setUnitId(v); setClassId('ALL'); }}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Semua Unit" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Unit</SelectItem>
+                <SelectItem value="ALL">Semua Unit</SelectItem>
                 {units?.map((unit) => (
                   <SelectItem key={unit.id} value={unit.id}>
                     {unit.name}
@@ -216,7 +216,7 @@ export default function AttendancePage() {
                 <SelectValue placeholder="Semua Kelas" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Kelas</SelectItem>
+                <SelectItem value="ALL">Semua Kelas</SelectItem>
                 {classes.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}
@@ -230,7 +230,7 @@ export default function AttendancePage() {
                 <SelectValue placeholder="Semua Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Status</SelectItem>
+                <SelectItem value="ALL">Semua Status</SelectItem>
                 {ATTENDANCE_STATUSES.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     {s.label}

@@ -165,7 +165,10 @@ export const getStudentMonthlySummary = asyncHandler(async (req: Request, res: R
  * GET /api/daily-report/summary/class
  */
 export const getClassDailySummary = asyncHandler(async (req: Request, res: Response) => {
+  // Extract classId explicitly if it's not in validatedQuery or needs specific handling
+  // validation middleware should handle this, but ensures it's passed
   const query = (res.locals.validatedQuery || req.query) as ClassDailySummaryQuery;
+
   const summary = await dailyReportService.getClassDailySummary(query);
 
   res.json({

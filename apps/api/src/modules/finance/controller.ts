@@ -169,7 +169,8 @@ export async function deleteInvoice(req: Request, res: Response, next: NextFunct
 export async function createPayment(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createPaymentSchema.parse(req.body);
-    const payment = await financeService.createPayment(data);
+    const userId = req.user?.id || 'SYSTEM';
+    const payment = await financeService.createPayment(data, userId);
     res.status(201).json({
       success: true,
       message: "Payment recorded successfully",

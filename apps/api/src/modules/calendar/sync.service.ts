@@ -4,6 +4,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 interface CalendarEvent {
     id: string;
@@ -89,13 +90,61 @@ function escapeICalText(text: string): string {
  */
 export async function getAcademicEvents(
     unitId?: string,
-    _startDate?: Date,
-    _endDate?: Date
+    startDate?: Date,
+    endDate?: Date
 ): Promise<CalendarEvent[]> {
-    // Note: Academic events feature not yet implemented in database schema
-    // Return empty array for now - will be populated when AcademicEvent model is added
     console.info(`getAcademicEvents called for unit: ${unitId || 'all'}`);
-    return [];
+
+    const where: Prisma.CalendarEventWhereInput = {
+        deletedAt: null,
+    };
+
+    if (unitId) {
+        where.OR = [
+            { unitId: unitId },
+            { unitId: null, isPublic: true },
+        ];
+    } else {
+        where.unitId = null;
+    }
+
+    if (startDate && endDate) {
+        // Find events that overlap with the requested range
+        where.AND = [
+            { startDate: { lte: endDate } },
+            {
+                OR: [
+                    { endDate: { gte: startDate } },
+                    { endDate: null, startDate: { gte: startDate } },
+                ],
+            },
+        ];
+    } else if (startDate) {
+        // Events happening after or overlapping with startDate (open-ended)
+        where.OR = [
+            { endDate: { gte: startDate } },
+            { endDate: null, startDate: { gte: startDate } },
+        ];
+    } else if (endDate) {
+        // Events starting before or on endDate
+        where.startDate = { lte: endDate };
+    }
+
+    const events = await prisma.calendarEvent.findMany({
+        where,
+        orderBy: { startDate: 'asc' },
+    });
+
+    return events.map((event) => ({
+        id: event.id,
+        title: event.title,
+        description: event.description || undefined,
+        location: event.location || undefined,
+        startDate: event.startDate,
+        endDate: event.endDate || event.startDate,
+        allDay: event.isAllDay,
+        category: mapEventCategory(event.eventType),
+    }));
 }
 
 /**

@@ -1,11 +1,10 @@
 import { z } from "zod";
-
-const MedicalRecordType = z.enum(["CHECKUP", "ILLNESS", "INJURY", "FIRST_AID", "REFERRAL"]);
+import { MedicalRecordType, HealthStatus } from "@cipansor/shared";
 
 // Medical Record schemas
 export const createMedicalRecordSchema = z.object({
   studentId: z.string().uuid(),
-  type: MedicalRecordType,
+  type: z.nativeEnum(MedicalRecordType),
   visitDate: z.coerce.date(),
   complaint: z.string().min(1),
   diagnosis: z.string().optional(),
@@ -14,6 +13,14 @@ export const createMedicalRecordSchema = z.object({
   notes: z.string().optional(),
   referredTo: z.string().optional(),
   followUpDate: z.coerce.date().optional(),
+
+  // Extended fields
+  status: z.nativeEnum(HealthStatus).optional(),
+  temperature: z.number().optional(),
+  bloodPressure: z.string().optional(),
+  heartRate: z.number().optional(),
+  weight: z.number().optional(),
+  height: z.number().optional(),
 });
 
 export const updateMedicalRecordSchema = createMedicalRecordSchema.partial().omit({ studentId: true });
@@ -22,9 +29,10 @@ export const queryMedicalRecordSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
   studentId: z.string().uuid().optional(),
-  type: MedicalRecordType.optional(),
+  type: z.nativeEnum(MedicalRecordType).optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
+  status: z.nativeEnum(HealthStatus).optional(),
 });
 
 // Medication schemas

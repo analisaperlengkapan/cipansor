@@ -844,6 +844,7 @@ model Student {
   // Tahfidz Enhancement relations
   murojaahRecords             MurojaahRecord[]
   simaanExams                 SimaanExam[]
+  hafidzStudent               HafidzStudent?
   // Health & Growth relations
   growthRecords               GrowthRecord[]
   immunizationRecords         ImmunizationRecord[]
@@ -962,6 +963,22 @@ model TahfidzTarget {
 
   @@unique([studentId, academicYearId])
   @@map("tahfidz_targets")
+}
+
+/// HafidzStudent - Siswa yang telah menyelesaikan hafalan 30 Juz
+model HafidzStudent {
+  id          String   @id @default(uuid())
+  studentId   String   @unique @map("student_id")
+  completedAt DateTime @default(now()) @map("completed_at")
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([completedAt])
+  @@map("hafidz_students")
 }
 
 // =====================================
@@ -1127,8 +1144,10 @@ model PaymentType {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  unit     Unit      @relation(fields: [unitId], references: [id])
+  unit     Unit         @relation(fields: [unitId], references: [id])
   invoices Invoice[]
+  account  AccountCode? @relation(fields: [accountId], references: [id])
+  accountId String?     @map("account_id")
 
   @@unique([unitId, code])
   @@index([isActive])
@@ -1607,6 +1626,14 @@ enum MedicalRecordType {
   INJURY // Cedera
   FIRST_AID // Pertolongan pertama
   REFERRAL // Rujukan
+  VACCINATION // Vaksinasi
+}
+
+enum HealthStatus {
+  HEALTHY
+  SICK
+  RECOVERING
+  HOSPITALIZED
 }
 
 /// MedicalRecord - Rekam Medis
@@ -1623,6 +1650,15 @@ model MedicalRecord {
   referredTo   String?           @map("referred_to") // Rumah sakit/klinik rujukan
   recordedById String            @map("recorded_by_id")
   followUpDate DateTime?         @map("follow_up_date")
+
+  // Vitals & Extended Data
+  status        HealthStatus?    @default(HEALTHY)
+  temperature   Float?           // Suhu tubuh (C)
+  bloodPressure String?          @map("blood_pressure") // Tekanan darah (mmHg)
+  heartRate     Int?             @map("heart_rate") // Denyut nadi (bpm)
+  weight        Float?           // Berat badan (kg)
+  height        Float?           // Tinggi badan (cm)
+
   createdAt    DateTime          @default(now()) @map("created_at")
   updatedAt    DateTime          @updatedAt @map("updated_at")
 
@@ -1633,6 +1669,7 @@ model MedicalRecord {
   @@index([studentId])
   @@index([visitDate])
   @@index([type])
+  @@index([status])
   @@map("medical_records")
 }
 
@@ -1740,6 +1777,7 @@ model Notification {
   status    NotificationStatus @default(UNREAD)
   readAt    DateTime?          @map("read_at")
   data      Json?              @map("data") // Additional data for extended types
+  scheduledAt DateTime?        @map("scheduled_at")
   createdAt DateTime           @default(now()) @map("created_at")
 
   // Relations
@@ -1748,6 +1786,7 @@ model Notification {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@index([scheduledAt])
   @@map("notifications")
 }
 
@@ -4192,6 +4231,7 @@ model AccountCode {
   parent         AccountCode?   @relation("AccountHierarchy", fields: [parentId], references: [id])
   children       AccountCode[]  @relation("AccountHierarchy")
   journalEntries JournalEntry[]
+  paymentTypes   PaymentType[]
 
   @@index([type])
   @@map("account_codes")

@@ -40,6 +40,7 @@ import { id as idLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/auth';
 import { cn } from '@/lib/utils';
+import { PAUDReportPeriod } from '@cipansor/shared';
 
 const PERIOD_TYPES = [
   { value: 'HARIAN', label: 'Harian' },

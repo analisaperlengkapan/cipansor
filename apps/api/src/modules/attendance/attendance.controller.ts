@@ -80,12 +80,15 @@ export const bulkCreate = asyncHandler(async (req: Request, res: Response<ApiRes
 
 /**
  * Update attendance
- * PUT /api/attendance/:id
+ * PATCH /api/attendance/:id
  */
 export const update = asyncHandler(async (req: Request, res: Response<ApiResponse<Attendance>>) => {
   const { id } = req.params;
   const input: UpdateAttendanceInput = req.body;
-  const attendance = await attendanceService.update(id, input);
+  const attendance = await attendanceService.update(id, input, {
+    role: req.user!.role,
+    unitId: req.user!.unitId,
+  });
 
   res.json({
     success: true,
@@ -99,7 +102,10 @@ export const update = asyncHandler(async (req: Request, res: Response<ApiRespons
  */
 export const remove = asyncHandler(async (req: Request, res: Response<ApiResponse<{ message: string }>>) => {
   const { id } = req.params;
-  const result = await attendanceService.delete(id);
+  const result = await attendanceService.delete(id, {
+    role: req.user!.role,
+    unitId: req.user!.unitId,
+  });
 
   res.json({
     success: true,

@@ -1,12 +1,12 @@
 'use client';
 
-import { use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -29,63 +29,60 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import {
-  useInventoryItem,
   useUpdateInventoryItem,
-  ITEM_CATEGORIES,
-  ITEM_CONDITIONS,
-  ITEM_STATUSES,
-  ItemCategory,
-  ItemCondition,
-  ItemStatus,
+  useInventoryItem,
+  useInventoryCategories,
+  AssetCondition,
+  AssetStatus,
 } from '@/hooks/use-inventory';
 import { useUnits } from '@/hooks/use-units';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi'),
   code: z.string().min(1, 'Kode wajib diisi'),
-  category: z.string().min(1, 'Kategori wajib dipilih'),
+  categoryId: z.string().uuid('Kategori wajib dipilih'),
   description: z.string().optional(),
-  quantity: z.coerce.number().min(1, 'Jumlah minimal 1'),
-  condition: z.string().min(1, 'Kondisi wajib dipilih'),
-  status: z.string(),
+  condition: z.nativeEnum(AssetCondition),
+  status: z.nativeEnum(AssetStatus),
   location: z.string().optional(),
-  unitId: z.string().optional(),
+  unitId: z.string().uuid('Unit wajib dipilih'),
   purchaseDate: z.string().optional(),
   purchasePrice: z.coerce.number().optional(),
   warrantyExpiry: z.string().optional(),
   notes: z.string().optional(),
+  brand: z.string().optional(),
+  model: z.string().optional(),
+  serialNumber: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
-
-export default function EditInventoryPage({ params }: PageProps) {
-  const { id: itemId } = use(params);
+export default function EditInventoryPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-
-  const { data: item, isLoading } = useInventoryItem(itemId);
+  const itemId = params.id;
   const updateMutation = useUpdateInventoryItem();
+  const { data: item, isLoading } = useInventoryItem(itemId);
   const { data: units } = useUnits();
+  const { data: categories } = useInventoryCategories();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       code: '',
-      category: '',
+      categoryId: '',
       description: '',
-      quantity: 1,
-      condition: '',
-      status: '',
+      condition: AssetCondition.GOOD,
+      status: AssetStatus.ACTIVE,
       location: '',
       unitId: '',
       purchaseDate: '',
       purchasePrice: undefined,
       warrantyExpiry: '',
       notes: '',
+      brand: '',
+      model: '',
+      serialNumber: '',
     },
   });
 
@@ -94,21 +91,19 @@ export default function EditInventoryPage({ params }: PageProps) {
       form.reset({
         name: item.name,
         code: item.code,
-        category: item.category,
-        description: item.description || '',
-        quantity: item.quantity,
+        categoryId: item.categoryId || '',
+        description: item.notes || '', // Map notes/description appropriately if separate
         condition: item.condition,
         status: item.status,
         location: item.location || '',
-        unitId: item.unitId || '',
-        purchaseDate: item.purchaseDate
-          ? new Date(item.purchaseDate).toISOString().split('T')[0]
-          : '',
-        purchasePrice: item.purchasePrice || undefined,
-        warrantyExpiry: item.warrantyExpiry
-          ? new Date(item.warrantyExpiry).toISOString().split('T')[0]
-          : '',
+        unitId: item.unitId,
+        purchaseDate: item.purchaseDate ? new Date(item.purchaseDate).toISOString().split('T')[0] : '',
+        purchasePrice: item.purchasePrice ? Number(item.purchasePrice) : undefined,
+        warrantyExpiry: item.warrantyExpiry ? new Date(item.warrantyExpiry).toISOString().split('T')[0] : '',
         notes: item.notes || '',
+        brand: item.brand || '',
+        model: item.model || '',
+        serialNumber: item.serialNumber || '',
       });
     }
   }, [item, form]);
@@ -119,16 +114,15 @@ export default function EditInventoryPage({ params }: PageProps) {
         id: itemId,
         data: {
           ...data,
-          category: data.category as ItemCategory,
-          condition: data.condition as ItemCondition,
-          status: data.status as ItemStatus,
           description: data.description || undefined,
           location: data.location || undefined,
-          unitId: data.unitId || undefined,
-          purchaseDate: data.purchaseDate || undefined,
+          purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : undefined,
           purchasePrice: data.purchasePrice || undefined,
-          warrantyExpiry: data.warrantyExpiry || undefined,
+          warrantyExpiry: data.warrantyExpiry ? new Date(data.warrantyExpiry) : undefined,
           notes: data.notes || undefined,
+          brand: data.brand || undefined,
+          model: data.model || undefined,
+          serialNumber: data.serialNumber || undefined,
         },
       });
       toast.success('Inventaris berhasil diperbarui');
@@ -141,17 +135,17 @@ export default function EditInventoryPage({ params }: PageProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
   }
 
   if (!item) {
     return (
-      <div className="text-center py-12">
-        <h2 className="text-lg font-medium">Inventaris tidak ditemukan</h2>
-        <Button className="mt-4" onClick={() => router.back()}>
-          Kembali
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-muted-foreground">Data inventaris tidak ditemukan</p>
+        <Button asChild className="mt-4">
+          <Link href="/inventory">Kembali ke Daftar</Link>
         </Button>
       </div>
     );
@@ -161,12 +155,14 @@ export default function EditInventoryPage({ params }: PageProps) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4" />
+        <Button variant="ghost" size="icon" asChild>
+          <Link href={`/inventory/${itemId}`}>
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Edit Inventaris</h1>
-          <p className="text-muted-foreground">{item.name}</p>
+          <h1 className="text-3xl font-bold tracking-tight">Edit Aset</h1>
+          <p className="text-muted-foreground">Perbarui data aset inventaris</p>
         </div>
       </div>
 
@@ -186,7 +182,7 @@ export default function EditInventoryPage({ params }: PageProps) {
                     name="code"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Kode Barang</FormLabel>
+                        <FormLabel>Kode Aset</FormLabel>
                         <FormControl>
                           <Input placeholder="INV-001" {...field} />
                         </FormControl>
@@ -197,12 +193,12 @@ export default function EditInventoryPage({ params }: PageProps) {
 
                   <FormField
                     control={form.control}
-                    name="quantity"
+                    name="serialNumber"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Jumlah</FormLabel>
+                        <FormLabel>Serial Number</FormLabel>
                         <FormControl>
-                          <Input type="number" min={1} {...field} />
+                          <Input placeholder="SN123456" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -215,7 +211,7 @@ export default function EditInventoryPage({ params }: PageProps) {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nama Barang</FormLabel>
+                      <FormLabel>Nama Aset</FormLabel>
                       <FormControl>
                         <Input placeholder="Laptop ASUS" {...field} />
                       </FormControl>
@@ -224,9 +220,38 @@ export default function EditInventoryPage({ params }: PageProps) {
                   )}
                 />
 
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="brand"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Brand</FormLabel>
+                        <FormControl>
+                          <Input placeholder="ASUS" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="model"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Model</FormLabel>
+                        <FormControl>
+                          <Input placeholder="X441" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
-                  name="category"
+                  name="categoryId"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Kategori</FormLabel>
@@ -237,9 +262,9 @@ export default function EditInventoryPage({ params }: PageProps) {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {ITEM_CATEGORIES.map((cat) => (
-                            <SelectItem key={cat.value} value={cat.value}>
-                              {cat.label}
+                          {categories?.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -254,7 +279,7 @@ export default function EditInventoryPage({ params }: PageProps) {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Deskripsi</FormLabel>
+                      <FormLabel>Deskripsi (Opsional)</FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Deskripsi lengkap barang..."
@@ -281,9 +306,9 @@ export default function EditInventoryPage({ params }: PageProps) {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {ITEM_CONDITIONS.map((cond) => (
-                              <SelectItem key={cond.value} value={cond.value}>
-                                {cond.label}
+                            {Object.values(AssetCondition).map((cond) => (
+                              <SelectItem key={cond} value={cond}>
+                                {cond}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -306,9 +331,9 @@ export default function EditInventoryPage({ params }: PageProps) {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {ITEM_STATUSES.map((status) => (
-                              <SelectItem key={status.value} value={status.value}>
-                                {status.label}
+                            {Object.values(AssetStatus).map((status) => (
+                              <SelectItem key={status} value={status}>
+                                {status}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -333,7 +358,7 @@ export default function EditInventoryPage({ params }: PageProps) {
                   name="location"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Lokasi</FormLabel>
+                      <FormLabel>Lokasi (Opsional)</FormLabel>
                       <FormControl>
                         <Input placeholder="Ruang Kantor Lt. 1" {...field} />
                       </FormControl>
@@ -355,7 +380,6 @@ export default function EditInventoryPage({ params }: PageProps) {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Tidak ada</SelectItem>
                           {units?.map((unit) => (
                             <SelectItem key={unit.id} value={unit.id}>
                               {unit.name}
@@ -363,7 +387,7 @@ export default function EditInventoryPage({ params }: PageProps) {
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormDescription>Unit yang menggunakan barang ini</FormDescription>
+                      <FormDescription>Unit yang memiliki aset ini</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -375,7 +399,7 @@ export default function EditInventoryPage({ params }: PageProps) {
                     name="purchaseDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tanggal Beli</FormLabel>
+                        <FormLabel>Tanggal Beli (Opsional)</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
                         </FormControl>
@@ -389,7 +413,7 @@ export default function EditInventoryPage({ params }: PageProps) {
                     name="purchasePrice"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Harga Beli</FormLabel>
+                        <FormLabel>Harga Beli (Opsional)</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -409,7 +433,7 @@ export default function EditInventoryPage({ params }: PageProps) {
                   name="warrantyExpiry"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Garansi Sampai</FormLabel>
+                      <FormLabel>Garansi Sampai (Opsional)</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
                       </FormControl>
@@ -423,7 +447,7 @@ export default function EditInventoryPage({ params }: PageProps) {
                   name="notes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Catatan</FormLabel>
+                      <FormLabel>Catatan (Opsional)</FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Catatan tambahan..."
@@ -441,18 +465,11 @@ export default function EditInventoryPage({ params }: PageProps) {
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-4">
-            <Button variant="outline" onClick={() => router.back()}>
-              Batal
+            <Button variant="outline" asChild>
+              <Link href={`/inventory/${itemId}`}>Batal</Link>
             </Button>
             <Button type="submit" disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Menyimpan...
-                </>
-              ) : (
-                'Simpan Perubahan'
-              )}
+              {updateMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
             </Button>
           </div>
         </form>

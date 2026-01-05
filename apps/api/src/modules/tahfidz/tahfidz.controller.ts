@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { tahfidzService } from './tahfidz.service';
 import { TahfidzMapper } from './tahfidz.mapper';
-import type { ListTahfidzQuery } from './tahfidz.schema';
-import type { TahfidzRecord, TahfidzDashboardStats, TahfidzStudentSummary, CreateTahfidzInput, UpdateTahfidzInput } from '@cipansor/shared';
+import type { ListTahfidzQuery, GenerateCertificateInput } from './tahfidz.schema';
+import type { TahfidzRecord, TahfidzDashboardStats, TahfidzStudentSummary, CreateTahfidzInput, UpdateTahfidzInput, DigitalCertificate } from '@cipansor/shared';
 import type { PaginatedResponse, ApiResponse } from '@cipansor/shared';
 
 /**
@@ -133,3 +133,26 @@ export const getDashboardStats = asyncHandler(async (req: Request, res: Response
  * Export getDashboardStats as getDashboard for backward compatibility or routing consistency
  */
 export const getDashboard = getDashboardStats;
+
+/**
+ * Generate certificate
+ * POST /api/tahfidz/certificates
+ */
+export const generateCertificate = asyncHandler(async (req: Request, res: Response<ApiResponse<DigitalCertificate>>) => {
+  const input: GenerateCertificateInput = req.body;
+  const cert = await tahfidzService.generateCertificate(input, req.user!.sub);
+
+  // Cast Prisma result to Shared DigitalCertificate type (date handling)
+  const safeCert: DigitalCertificate = {
+    ...cert,
+    issueDate: cert.issueDate.toISOString(),
+    createdAt: cert.createdAt.toISOString(),
+    updatedAt: cert.updatedAt.toISOString(),
+    grade: cert.grade || undefined,
+  } as unknown as DigitalCertificate;
+
+  res.status(201).json({
+    success: true,
+    data: safeCert,
+  });
+});

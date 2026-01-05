@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CreateClassInput, UpdateClassInput, ClassEnrollmentInput } from '@cipansor/shared';
 
 // Query params
 export const listClassesQuerySchema = z.object({
@@ -11,22 +12,24 @@ export const listClassesQuerySchema = z.object({
 });
 
 // Create class
-export const createClassSchema = z.object({
+export const createClassSchema: z.ZodType<CreateClassInput> = z.object({
   name: z.string().min(1, 'Class name is required'),
   unitId: z.string().uuid('Invalid unit ID'),
   academicYearId: z.string().uuid('Invalid academic year ID'),
   level: z.string().min(1, 'Level is required'), // e.g., "1", "2", "VII", "VIII"
   capacity: z.number().int().min(1).max(100).default(30),
-  homeroomTeacherId: z.string().uuid().optional(),
+  homeroomTeacherId: z.string().uuid().optional().nullable(),
 });
 
 // Update class
-export const updateClassSchema = z.object({
+export const updateClassSchema: z.ZodType<UpdateClassInput> = z.object({
   name: z.string().min(1).optional(),
   level: z.string().min(1).optional(),
   capacity: z.number().int().min(1).max(100).optional(),
   homeroomTeacherId: z.string().uuid().optional().nullable(),
-});
+}).partial();
+// Actually, UpdateClassInput extends Partial<CreateClassInput>, so we should allow partial here.
+// The .partial() call makes everything optional, which matches UpdateClassInput.
 
 // ID param
 export const classIdParamSchema = z.object({
@@ -34,7 +37,7 @@ export const classIdParamSchema = z.object({
 });
 
 // Enrollment schemas
-export const enrollStudentSchema = z.object({
+export const enrollStudentSchema: z.ZodType<ClassEnrollmentInput> = z.object({
   studentId: z.string().uuid('Invalid student ID'),
 });
 
@@ -42,9 +45,7 @@ export const updateEnrollmentSchema = z.object({
   status: z.enum(['active', 'completed', 'transferred', 'dropped']),
 });
 
-// Types
+// Types - Re-export shared types for local convenience if needed, or just use shared.
 export type ListClassesQuery = z.infer<typeof listClassesQuerySchema>;
-export type CreateClassInput = z.infer<typeof createClassSchema>;
-export type UpdateClassInput = z.infer<typeof updateClassSchema>;
-export type EnrollStudentInput = z.infer<typeof enrollStudentSchema>;
 export type UpdateEnrollmentInput = z.infer<typeof updateEnrollmentSchema>;
+// CreateClassInput, UpdateClassInput are now from shared.

@@ -182,6 +182,27 @@ router.delete('/:id', isAdmin, validateParams(classIdParamSchema), controller.re
 /**
  * @swagger
  * /api/classes/{id}/enrollments:
+ *   get:
+ *     summary: Get class enrollments
+ *     tags: [Classes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: List of enrollments
+ */
+router.get('/:id/enrollments', validateParams(classIdParamSchema), controller.getEnrollments);
+
+/**
+ * @swagger
+ * /api/classes/{id}/enrollments:
  *   post:
  *     summary: Enroll student in class (Admin only)
  *     tags: [Classes]

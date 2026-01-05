@@ -1079,7 +1079,8 @@ function isYayasanRole(roleCode: string): boolean {
   return YAYASAN_ROLES.includes(roleCode);
 }
 
-function isKepalaSekolahRole(roleCode: string): boolean {
+function isPrincipalRole(roleCode: string): boolean {
+  if (!roleCode || typeof roleCode !== 'string') return false;
   return roleCode.includes('KEPALA_SEKOLAH');
 }
 
@@ -1095,6 +1096,8 @@ export interface ActiveRole {
  * Uses the new RoleCode-based system
  */
 export function getNavigationForRoleCode(roleCode: string): NavGroup[] {
+  if (!roleCode) return [];
+
   // Super Admin gets full admin navigation
   if (roleCode === 'SUPER_ADMIN') {
     return adminNavigation;
@@ -1106,7 +1109,7 @@ export function getNavigationForRoleCode(roleCode: string): NavGroup[] {
   }
   
   // Kepala Sekolah gets kepala sekolah navigation
-  if (isKepalaSekolahRole(roleCode)) {
+  if (isPrincipalRole(roleCode)) {
     return kepalaSekolahNavigation;
   }
   
@@ -1203,5 +1206,5 @@ export {
   isStudentRole,
   isParentRole,
   isYayasanRole,
-  isKepalaSekolahRole,
+  isPrincipalRole,
 };

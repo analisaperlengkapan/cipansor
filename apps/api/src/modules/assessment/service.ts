@@ -1,34 +1,41 @@
 import { prisma } from '@/lib/prisma';
 import { Decimal } from '@prisma/client/runtime/library';
-import type {
+import {
+  SharedPaginatedResponse,
+  Exam,
+  ExamType,
+  ExamStatus,
   CreateExamInput,
   UpdateExamInput,
-  ExamQuery,
+  Grade,
+  GradeType,
   CreateGradeInput,
   UpdateGradeInput,
   BulkCreateGradesInput,
-  GradeQuery,
+  ReportCard,
   CreateReportCardInput,
   UpdateReportCardInput,
-  ReportCardQuery,
-} from './schema';
+  ReportCardDetail
+} from '@cipansor/shared';
+import { Prisma } from '@prisma/client';
+import type { ExamQuery, GradeQuery, ReportCardQuery } from './schema';
 
 // =====================================
 // EXAM SERVICES
 // =====================================
 
-export async function getExams(query: ExamQuery) {
+export async function getExams(query: ExamQuery): Promise<SharedPaginatedResponse<Exam>> {
   const { page, limit, unitId, academicYearId, subjectId, classId, teacherId, type, status, startDate, endDate } = query;
   const skip = (page - 1) * limit;
 
-  const where: any = {};
+  const where: Prisma.ExamWhereInput = {};
   if (unitId) where.unitId = unitId;
   if (academicYearId) where.academicYearId = academicYearId;
   if (subjectId) where.subjectId = subjectId;
   if (classId) where.classId = classId;
   if (teacherId) where.teacherId = teacherId;
-  if (type) where.type = type;
-  if (status) where.status = status;
+  if (type) where.type = type as any; // Cast to Prisma enum
+  if (status) where.status = status as any; // Cast to Prisma enum
   if (startDate || endDate) {
     where.scheduledAt = {};
     if (startDate) where.scheduledAt.gte = new Date(startDate);
@@ -52,18 +59,21 @@ export async function getExams(query: ExamQuery) {
   ]);
 
   return {
-    data: exams,
+    success: true,
+    data: exams.map(mapToExam),
     meta: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     },
   };
 }
 
-export async function getExamById(id: string) {
-  return prisma.exam.findUnique({
+export async function getExamById(id: string): Promise<Exam | null> {
+  const exam = await prisma.exam.findUnique({
     where: { id },
     include: {
       unit: { select: { id: true, name: true } },
@@ -79,55 +89,80 @@ export async function getExamById(id: string) {
       },
     },
   });
+
+  if (!exam) return null;
+  return mapToExam(exam);
 }
 
-export async function createExam(data: CreateExamInput) {
-  return prisma.exam.create({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createExam(data: CreateExamInput): Promise<Exam> {
+  const exam = await prisma.exam.create({
     data: {
-      ...data,
+      unitId: data.unitId,
+      academicYearId: data.academicYearId,
+      subjectId: data.subjectId,
+      classId: data.classId,
+      teacherId: data.teacherId,
+      type: data.type as any, // Prisma enum
+      title: data.title,
+      description: data.description,
       scheduledAt: new Date(data.scheduledAt),
-      maxScore: new Decimal(data.maxScore),
-      passingScore: new Decimal(data.passingScore),
-      weight: new Decimal(data.weight),
-      status: 'SCHEDULED',
-    } as any,
+      duration: data.duration ?? 60,
+      maxScore: new Decimal(data.maxScore ?? 100),
+      passingScore: new Decimal(data.passingScore ?? 70),
+      weight: new Decimal(data.weight ?? 1),
+      instructions: data.instructions,
+      status: 'SCHEDULED' as any, // Default status
+    },
     include: {
       subject: { select: { id: true, name: true, code: true } },
-      class: { select: { id: true, name: true } },
+      class: { select: { id: true, name: true, level: true } },
       teacher: { include: { user: { select: { id: true, name: true } } } },
     },
   });
+
+  return mapToExam(exam);
 }
 
-export async function updateExam(id: string, data: UpdateExamInput) {
-  const updateData: any = { ...data };
+export async function updateExam(id: string, data: UpdateExamInput): Promise<Exam> {
+  const updateData: Prisma.ExamUpdateInput = {};
+
+  if (data.title) updateData.title = data.title;
+  if (data.description !== undefined) updateData.description = data.description;
   if (data.scheduledAt) updateData.scheduledAt = new Date(data.scheduledAt);
+  if (data.duration !== undefined) updateData.duration = data.duration;
   if (data.maxScore !== undefined) updateData.maxScore = new Decimal(data.maxScore);
   if (data.passingScore !== undefined) updateData.passingScore = new Decimal(data.passingScore);
   if (data.weight !== undefined) updateData.weight = new Decimal(data.weight);
+  if (data.instructions !== undefined) updateData.instructions = data.instructions;
+  if (data.status) updateData.status = data.status as any;
+  if (data.type) updateData.type = data.type as any;
 
-  return prisma.exam.update({
+  const exam = await prisma.exam.update({
     where: { id },
     data: updateData,
     include: {
       subject: { select: { id: true, name: true, code: true } },
-      class: { select: { id: true, name: true } },
+      class: { select: { id: true, name: true, level: true } },
+      teacher: { include: { user: { select: { id: true, name: true } } } },
     },
   });
+
+  return mapToExam(exam);
 }
 
-export async function deleteExam(id: string) {
-  // First delete all grades for this exam
+export async function deleteExam(id: string): Promise<Exam> {
+  // First delete all grades for this exam to ensure referential integrity
   await prisma.grade.deleteMany({ where: { examId: id } });
-  return prisma.exam.delete({ where: { id } });
+  const exam = await prisma.exam.delete({ where: { id } });
+  return mapToExam(exam);
 }
 
-export async function updateExamStatus(id: string, status: string) {
-  return prisma.exam.update({
+export async function updateExamStatus(id: string, status: string): Promise<Exam> {
+  const exam = await prisma.exam.update({
     where: { id },
     data: { status: status as any },
   });
+  return mapToExam(exam);
 }
 
 // =====================================
@@ -142,16 +177,16 @@ function calculateLetterGrade(percentage: number): string {
   return 'E';
 }
 
-export async function getGrades(query: GradeQuery) {
+export async function getGrades(query: GradeQuery): Promise<SharedPaginatedResponse<Grade>> {
   const { page, limit, studentId, subjectId, examId, academicYearId, type } = query;
   const skip = (page - 1) * limit;
 
-  const where: any = {};
+  const where: Prisma.GradeWhereInput = {};
   if (studentId) where.studentId = studentId;
   if (subjectId) where.subjectId = subjectId;
   if (examId) where.examId = examId;
   if (academicYearId) where.academicYearId = academicYearId;
-  if (type) where.type = type;
+  if (type) where.type = type as any;
 
   const [grades, total] = await Promise.all([
     prisma.grade.findMany({
@@ -170,18 +205,21 @@ export async function getGrades(query: GradeQuery) {
   ]);
 
   return {
-    data: grades,
+    success: true,
+    data: grades.map(mapToGrade),
     meta: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     },
   };
 }
 
-export async function getGradeById(id: string) {
-  return prisma.grade.findUnique({
+export async function getGradeById(id: string): Promise<Grade | null> {
+  const grade = await prisma.grade.findUnique({
     where: { id },
     include: {
       student: { include: { user: { select: { id: true, name: true } } } },
@@ -190,68 +228,93 @@ export async function getGradeById(id: string) {
       gradedBy: { select: { id: true, name: true } },
     },
   });
+
+  if (!grade) return null;
+  return mapToGrade(grade);
 }
 
-export async function createGrade(data: CreateGradeInput) {
-  const percentage = (data.score / data.maxScore) * 100;
+export async function createGrade(data: CreateGradeInput): Promise<Grade> {
+  const percentage = (data.score / (data.maxScore ?? 100)) * 100;
   const letterGrade = calculateLetterGrade(percentage);
 
-  return prisma.grade.create({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const grade = await prisma.grade.create({
     data: {
-      ...data,
+      studentId: data.studentId,
+      subjectId: data.subjectId,
+      examId: data.examId,
+      academicYearId: data.academicYearId,
+      type: data.type as any,
       score: new Decimal(data.score),
-      maxScore: new Decimal(data.maxScore),
+      maxScore: new Decimal(data.maxScore ?? 100),
       percentage: new Decimal(percentage),
       letterGrade,
-    } as any,
+      notes: data.notes,
+      gradedById: data.gradedById,
+    },
     include: {
       student: { include: { user: { select: { id: true, name: true } } } },
-      subject: { select: { id: true, name: true } },
+      subject: { select: { id: true, name: true, code: true } },
+      exam: { select: { id: true, title: true, type: true } },
+      gradedBy: { select: { id: true, name: true } },
     },
   });
+
+  return mapToGrade(grade);
 }
 
-export async function updateGrade(id: string, data: UpdateGradeInput) {
-  const updateData: any = { ...data };
+export async function updateGrade(id: string, data: UpdateGradeInput): Promise<Grade> {
+  const updateData: Prisma.GradeUpdateInput = {};
+
+  if (data.notes !== undefined) updateData.notes = data.notes;
   
-  if (data.score !== undefined && data.maxScore !== undefined) {
-    const percentage = (data.score / data.maxScore) * 100;
-    updateData.score = new Decimal(data.score);
-    updateData.maxScore = new Decimal(data.maxScore);
+  // If scores change, we need to recalculate percentage and letter grade
+  if (data.score !== undefined || data.maxScore !== undefined) {
+    const existingGrade = await prisma.grade.findUnique({ where: { id } });
+    if (!existingGrade) throw new Error('Grade not found');
+
+    const score = data.score !== undefined ? data.score : Number(existingGrade.score);
+    const maxScore = data.maxScore !== undefined ? data.maxScore : Number(existingGrade.maxScore);
+
+    const percentage = (score / maxScore) * 100;
+
+    updateData.score = new Decimal(score);
+    updateData.maxScore = new Decimal(maxScore);
     updateData.percentage = new Decimal(percentage);
     updateData.letterGrade = calculateLetterGrade(percentage);
-  } else if (data.score !== undefined) {
-    updateData.score = new Decimal(data.score);
-  } else if (data.maxScore !== undefined) {
-    updateData.maxScore = new Decimal(data.maxScore);
   }
 
-  return prisma.grade.update({
+  const grade = await prisma.grade.update({
     where: { id },
     data: updateData,
     include: {
       student: { include: { user: { select: { id: true, name: true } } } },
-      subject: { select: { id: true, name: true } },
+      subject: { select: { id: true, name: true, code: true } },
+      exam: { select: { id: true, title: true, type: true } },
+      gradedBy: { select: { id: true, name: true } },
     },
   });
+
+  return mapToGrade(grade);
 }
 
-export async function deleteGrade(id: string) {
-  return prisma.grade.delete({ where: { id } });
+export async function deleteGrade(id: string): Promise<Grade> {
+  const grade = await prisma.grade.delete({ where: { id } });
+  return mapToGrade(grade);
 }
 
-export async function bulkCreateGrades(data: BulkCreateGradesInput) {
+export async function bulkCreateGrades(data: BulkCreateGradesInput): Promise<number> {
   const grades = data.grades.map((g) => {
-    const percentage = (g.score / data.maxScore) * 100;
+    const maxScore = data.maxScore ?? 100;
+    const percentage = (g.score / maxScore) * 100;
+
     return {
       studentId: g.studentId,
       subjectId: data.subjectId,
       examId: data.examId,
       academicYearId: data.academicYearId,
-      type: data.type,
+      type: data.type as any,
       score: new Decimal(g.score),
-      maxScore: new Decimal(data.maxScore),
+      maxScore: new Decimal(maxScore),
       percentage: new Decimal(percentage),
       letterGrade: calculateLetterGrade(percentage),
       notes: g.notes,
@@ -259,47 +322,55 @@ export async function bulkCreateGrades(data: BulkCreateGradesInput) {
     };
   });
 
-  return prisma.grade.createMany({ data: grades as any });
+  const result = await prisma.grade.createMany({ data: grades });
+  return result.count;
 }
 
-export async function getStudentGrades(studentId: string, academicYearId?: string) {
-  const where: any = { studentId };
+export async function getStudentGrades(studentId: string, academicYearId?: string): Promise<Grade[]> {
+  const where: Prisma.GradeWhereInput = { studentId };
   if (academicYearId) where.academicYearId = academicYearId;
 
-  return prisma.grade.findMany({
+  const grades = await prisma.grade.findMany({
     where,
     include: {
       subject: { select: { id: true, name: true, code: true } },
       exam: { select: { id: true, title: true, type: true } },
+      gradedBy: { select: { id: true, name: true } }
     },
     orderBy: [{ subjectId: 'asc' }, { gradedAt: 'desc' }],
   });
+
+  return grades.map(mapToGrade);
 }
 
-export async function getExamGrades(examId: string) {
-  return prisma.grade.findMany({
+export async function getExamGrades(examId: string): Promise<Grade[]> {
+  const grades = await prisma.grade.findMany({
     where: { examId },
     include: {
       student: {
         include: {
           user: { select: { id: true, name: true } },
         },
-        select: { id: true, nis: true, userId: false, user: true } as any,
       },
+      subject: { select: { id: true, name: true, code: true } },
+      exam: { select: { id: true, title: true, type: true } },
+      gradedBy: { select: { id: true, name: true } }
     },
     orderBy: { score: 'desc' },
   });
+
+  return grades.map(mapToGrade);
 }
 
 // =====================================
 // REPORT CARD SERVICES
 // =====================================
 
-export async function getReportCards(query: ReportCardQuery) {
+export async function getReportCards(query: ReportCardQuery): Promise<SharedPaginatedResponse<ReportCard>> {
   const { page, limit, studentId, classId, academicYearId, semester, isPublished } = query;
   const skip = (page - 1) * limit;
 
-  const where: any = {};
+  const where: Prisma.ReportCardWhereInput = {};
   if (studentId) where.studentId = studentId;
   if (classId) where.classId = classId;
   if (academicYearId) where.academicYearId = academicYearId;
@@ -323,18 +394,21 @@ export async function getReportCards(query: ReportCardQuery) {
   ]);
 
   return {
-    data: reportCards,
+    success: true,
+    data: reportCards.map(mapToReportCard),
     meta: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     },
   };
 }
 
-export async function getReportCardById(id: string) {
-  return prisma.reportCard.findUnique({
+export async function getReportCardById(id: string): Promise<ReportCard | null> {
+  const reportCard = await prisma.reportCard.findUnique({
     where: { id },
     include: {
       student: { include: { user: { select: { id: true, name: true } } } },
@@ -343,175 +417,356 @@ export async function getReportCardById(id: string) {
       details: { orderBy: { subjectName: 'asc' } },
     },
   });
+
+  if (!reportCard) return null;
+  return mapToReportCard(reportCard);
 }
 
-export async function createReportCard(data: CreateReportCardInput) {
-  return prisma.reportCard.create({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data: data as any,
+export async function createReportCard(data: CreateReportCardInput): Promise<ReportCard> {
+  const reportCard = await prisma.reportCard.create({
+    data: {
+      studentId: data.studentId,
+      classId: data.classId,
+      academicYearId: data.academicYearId,
+      semester: data.semester,
+      teacherNotes: data.teacherNotes,
+      principalNotes: data.principalNotes,
+    },
     include: {
       student: { include: { user: { select: { id: true, name: true } } } },
-      class: { select: { id: true, name: true } },
+      class: { select: { id: true, name: true, level: true } },
+      academicYear: { select: { id: true, name: true } },
     },
   });
+
+  return mapToReportCard(reportCard);
 }
 
-export async function updateReportCard(id: string, data: UpdateReportCardInput) {
-  const updateData: any = { ...data };
+export async function updateReportCard(id: string, data: UpdateReportCardInput): Promise<ReportCard> {
+  const updateData: Prisma.ReportCardUpdateInput = {};
+
+  if (data.teacherNotes !== undefined) updateData.teacherNotes = data.teacherNotes;
+  if (data.principalNotes !== undefined) updateData.principalNotes = data.principalNotes;
+
   if (data.isPublished) {
+    updateData.isPublished = true;
     updateData.publishedAt = new Date();
+  } else if (data.isPublished === false) {
+    updateData.isPublished = false;
+    updateData.publishedAt = null;
   }
 
-  return prisma.reportCard.update({
+  const reportCard = await prisma.reportCard.update({
     where: { id },
     data: updateData,
     include: {
       student: { include: { user: { select: { id: true, name: true } } } },
-      class: { select: { id: true, name: true } },
+      class: { select: { id: true, name: true, level: true } },
+      academicYear: { select: { id: true, name: true } },
       details: true,
     },
   });
+
+  return mapToReportCard(reportCard);
 }
 
-export async function deleteReportCard(id: string) {
+export async function deleteReportCard(id: string): Promise<ReportCard> {
   // Delete details first
   await prisma.reportCardDetail.deleteMany({ where: { reportCardId: id } });
-  return prisma.reportCard.delete({ where: { id } });
+  const reportCard = await prisma.reportCard.delete({ where: { id } });
+  return mapToReportCard(reportCard);
 }
 
-export async function generateReportCard(studentId: string, classId: string, academicYearId: string, semester: number) {
-  // Get all grades for this student in this academic year
-  const grades = await prisma.grade.findMany({
-    where: { studentId, academicYearId },
-    include: { subject: true },
-  });
+export async function generateReportCard(studentId: string, classId: string, academicYearId: string, semester: number): Promise<ReportCard | null> {
+  // Optimization: Use Promise.all to fetch data concurrently
+  // Optimization: Use database aggregation instead of in-memory loop for subject averages
 
-  // Group grades by subject
-  const gradesBySubject = grades.reduce((acc: any, grade) => {
-    if (!acc[grade.subjectId]) {
-      acc[grade.subjectId] = {
-        subjectName: grade.subject.name,
-        grades: [],
-      };
-    }
-    acc[grade.subjectId].grades.push(grade);
-    return acc;
-  }, {});
+  // Execute independent queries concurrently
+  const [subjectAggregates, attendance, tahfidzRecord, totalAyahResult] = await Promise.all([
+    // 1. Calculate Averages per Subject using Raw SQL for performance
+    // We need to group by subject and calculate averages for Daily, Midterm, Final
+    // Then average those components
+    prisma.$queryRaw<Array<{
+      subject_id: string;
+      subject_name: string;
+      avg_daily: number | null;
+      avg_midterm: number | null;
+      avg_final: number | null;
+    }>>`
+      SELECT
+        s.id as subject_id,
+        s.name as subject_name,
+        AVG(CASE WHEN e.type = 'DAILY_TEST' THEN g.percentage END) as avg_daily,
+        AVG(CASE WHEN e.type = 'MIDTERM' THEN g.percentage END) as avg_midterm,
+        AVG(CASE WHEN e.type = 'FINAL' THEN g.percentage END) as avg_final
+      FROM "grades" g
+      JOIN "exams" e ON g.exam_id = e.id
+      JOIN "subjects" s ON g.subject_id = s.id
+      WHERE g.student_id = ${studentId}
+        AND g.academic_year_id = ${academicYearId}
+        AND g.type = 'EXAM'
+      GROUP BY s.id, s.name
+    `,
 
-  // Calculate averages per subject
-  const details = Object.values(gradesBySubject).map((subjectData: any) => {
-    const dailyGrades = subjectData.grades.filter((g: any) => g.type === 'EXAM' && g.exam?.type === 'DAILY_TEST');
-    const midtermGrades = subjectData.grades.filter((g: any) => g.exam?.type === 'MIDTERM');
-    const finalGrades = subjectData.grades.filter((g: any) => g.exam?.type === 'FINAL');
+    // 2. Fetch Attendance Summary
+    // Use count with CASE inside aggregation or Prisma GroupBy
+    prisma.attendance.groupBy({
+      by: ['status'],
+      where: {
+        studentId,
+        class: { academicYearId } // Filter by class associated with academic year? Or just academicYearId on attendance?
+      },
+      _count: true,
+    }),
 
-    const avgDaily = dailyGrades.length
-      ? dailyGrades.reduce((sum: number, g: any) => sum + Number(g.percentage), 0) / dailyGrades.length
+    // 3. Fetch Tahfidz Summary
+    // Optimized: Use single query to get latest record
+    prisma.tahfidzRecord.findFirst({
+      where: { studentId },
+      orderBy: { juz: 'desc' },
+    }),
+
+    // Optimized: Calculate total ayah with aggregation
+    prisma.tahfidzRecord.aggregate({
+      where: { studentId, activityType: 'ZIYADAH' },
+      _sum: { totalAyah: true },
+    })
+  ]);
+
+  const details = subjectAggregates.map(sub => {
+    const daily = sub.avg_daily ? Number(sub.avg_daily) : null;
+    const midterm = sub.avg_midterm ? Number(sub.avg_midterm) : null;
+    const final = sub.avg_final ? Number(sub.avg_final) : null;
+
+    // Calculate weighted average (simple average for now, but could be weighted)
+    // Formula: Average of available components
+    const components = [daily, midterm, final].filter(c => c !== null) as number[];
+    const avgScore = components.length > 0
+      ? components.reduce((a, b) => a + b, 0) / components.length
       : null;
-    const avgMidterm = midtermGrades.length
-      ? midtermGrades.reduce((sum: number, g: any) => sum + Number(g.percentage), 0) / midtermGrades.length
-      : null;
-    const avgFinal = finalGrades.length
-      ? finalGrades.reduce((sum: number, g: any) => sum + Number(g.percentage), 0) / finalGrades.length
-      : null;
-
-    const allScores = [avgDaily, avgMidterm, avgFinal].filter((s) => s !== null);
-    const avgScore = allScores.length ? allScores.reduce((a, b) => a! + b!, 0)! / allScores.length : null;
 
     return {
-      subjectName: subjectData.subjectName,
-      dailyScore: avgDaily ? new Decimal(avgDaily) : null,
-      midtermScore: avgMidterm ? new Decimal(avgMidterm) : null,
-      finalScore: avgFinal ? new Decimal(avgFinal) : null,
+      subjectName: sub.subject_name,
+      dailyScore: daily ? new Decimal(daily) : null,
+      midtermScore: midterm ? new Decimal(midterm) : null,
+      finalScore: final ? new Decimal(final) : null,
       averageScore: avgScore ? new Decimal(avgScore) : null,
       letterGrade: avgScore ? calculateLetterGrade(avgScore) : null,
     };
   });
 
-  // Get attendance
-  const attendance = await prisma.attendance.groupBy({
-    by: ['status'],
-    where: { studentId, class: { academicYearId } },
-    _count: true,
-  });
-
   const attendanceSummary = {
-    present: attendance.find((a) => a.status === 'PRESENT')?._count || 0,
+    present: (attendance.find((a) => a.status === 'PRESENT')?._count || 0) + (attendance.find((a) => a.status === 'LATE')?._count || 0),
     absent: attendance.find((a) => a.status === 'ABSENT')?._count || 0,
     sick: attendance.find((a) => a.status === 'SICK')?._count || 0,
     excused: attendance.find((a) => a.status === 'EXCUSED')?._count || 0,
   };
 
-  // Get tahfidz summary
-  const tahfidz = await prisma.tahfidzRecord.findMany({
-    where: { studentId },
-    orderBy: { juz: 'desc' },
-    take: 1,
-  });
-
-  const tahfidzSummary = tahfidz.length
+  const tahfidzSummary = tahfidzRecord
     ? {
-        lastJuz: tahfidz[0].juz,
-        lastSurah: tahfidz[0].surahName,
-        totalAyah: await prisma.tahfidzRecord.aggregate({
-          where: { studentId, activityType: 'ZIYADAH' },
-          _sum: { totalAyah: true },
-        }).then((r) => r._sum.totalAyah || 0),
+        lastJuz: tahfidzRecord.juz,
+        lastSurah: tahfidzRecord.surahName,
+        totalAyah: totalAyahResult._sum.totalAyah || 0,
       }
+    : undefined; // Prisma JSON needs null/undefined handling carefully
+
+  // 4. Calculate Overall Average
+  const validSubjects = details.filter(d => d.averageScore !== null);
+  const overallAverage = validSubjects.length > 0
+    ? validSubjects.reduce((sum, d) => sum + Number(d.averageScore), 0) / validSubjects.length
     : null;
 
-  // Calculate overall average and rank
-  const overallAverage = details.length
-    ? details
-        .filter((d) => d.averageScore !== null)
-        .reduce((sum, d) => sum + Number(d.averageScore), 0) / details.filter((d) => d.averageScore !== null).length
-    : null;
-
-  // Create or update report card
-  const reportCard = await prisma.reportCard.upsert({
-    where: {
-      studentId_classId_academicYearId_semester: {
+  // 5. Upsert Report Card
+  // Transaction to ensure atomicity
+  const reportCard = await prisma.$transaction(async (tx) => {
+    // Upsert Report Card Header
+    const rc = await tx.reportCard.upsert({
+      where: {
+        studentId_classId_academicYearId_semester: {
+          studentId,
+          classId,
+          academicYearId,
+          semester,
+        },
+      },
+      create: {
         studentId,
         classId,
         academicYearId,
         semester,
+        averageScore: overallAverage ? new Decimal(overallAverage) : null,
+        attendance: attendanceSummary,
+        tahfidzSummary: tahfidzSummary ?? Prisma.JsonNull,
+        // Create details inline
+        details: {
+          create: details.map(d => ({
+            subjectName: d.subjectName,
+            dailyScore: d.dailyScore,
+            midtermScore: d.midtermScore,
+            finalScore: d.finalScore,
+            averageScore: d.averageScore,
+            letterGrade: d.letterGrade
+          }))
+        }
       },
-    },
-    create: {
-      studentId,
-      classId,
-      academicYearId,
-      semester,
-      averageScore: overallAverage ? new Decimal(overallAverage) : null,
-      attendance: attendanceSummary,
-      tahfidzSummary: tahfidzSummary ?? undefined,
-      details: { create: details as any },
-    },
-    update: {
-      averageScore: overallAverage ? new Decimal(overallAverage) : null,
-      attendance: attendanceSummary,
-      tahfidzSummary: tahfidzSummary ?? undefined,
-    },
-    include: {
-      student: { include: { user: { select: { id: true, name: true } } } },
-      class: { select: { id: true, name: true } },
-      details: true,
-    },
+      update: {
+        averageScore: overallAverage ? new Decimal(overallAverage) : null,
+        attendance: attendanceSummary,
+        tahfidzSummary: tahfidzSummary ?? Prisma.JsonNull,
+        updatedAt: new Date()
+      },
+      include: {
+        student: { include: { user: { select: { id: true, name: true } } } },
+        class: { select: { id: true, name: true, level: true } },
+        academicYear: { select: { id: true, name: true } },
+      },
+    });
+
+    // If it was an update, we need to replace details
+    // We can't know if it was create or update easily with upsert return
+    // So we just delete and recreate details for this ID (except if we just created it, but this is safe)
+    // Actually, upsert `create` handles creation. `update` doesn't handle nested delete-create well in one go without deleteMany.
+    // So we run deleteMany and createMany for the details separately if we are in update path.
+    // However, since we can't distinguish, a common pattern is to always replace details.
+
+    await tx.reportCardDetail.deleteMany({ where: { reportCardId: rc.id } });
+    await tx.reportCardDetail.createMany({
+      data: details.map(d => ({
+        reportCardId: rc.id,
+        subjectName: d.subjectName,
+        dailyScore: d.dailyScore,
+        midtermScore: d.midtermScore,
+        finalScore: d.finalScore,
+        averageScore: d.averageScore,
+        letterGrade: d.letterGrade
+      }))
+    });
+
+    return rc;
   });
 
-  // Update details if exists
-  if (reportCard.id && details.length) {
-    await prisma.reportCardDetail.deleteMany({ where: { reportCardId: reportCard.id } });
-    await prisma.reportCardDetail.createMany({
-      data: details.map((d) => ({ ...d, reportCardId: reportCard.id })) as any,
-    });
-  }
-
+  // Re-fetch with details to return full object
   return getReportCardById(reportCard.id);
 }
 
-export async function publishReportCard(id: string) {
-  return prisma.reportCard.update({
+export async function generateClassReportCards(classId: string, academicYearId: string, semester: number): Promise<ReportCard[]> {
+  // Get all active students in class
+  const enrollments = await prisma.classEnrollment.findMany({
+    where: { classId, status: 'active' },
+    select: { studentId: true }
+  });
+
+  // Generate for each student concurrently
+  // Using Promise.all is efficient for typical class sizes (30-40)
+  const results = await Promise.all(
+    enrollments.map(e => generateReportCard(e.studentId, classId, academicYearId, semester))
+  );
+
+  return results.filter((r): r is ReportCard => r !== null);
+}
+
+export async function publishReportCard(id: string): Promise<ReportCard> {
+  const reportCard = await prisma.reportCard.update({
     where: { id },
     data: { isPublished: true, publishedAt: new Date() },
   });
+  return mapToReportCard(reportCard);
+}
+
+// =====================================
+// MAPPERS
+// =====================================
+
+function mapToExam(data: any): Exam {
+  return {
+    id: data.id,
+    unitId: data.unitId,
+    academicYearId: data.academicYearId,
+    subjectId: data.subjectId,
+    classId: data.classId,
+    teacherId: data.teacherId,
+    type: data.type as ExamType,
+    title: data.title,
+    description: data.description ?? undefined,
+    scheduledAt: data.scheduledAt,
+    duration: data.duration,
+    maxScore: Number(data.maxScore),
+    passingScore: Number(data.passingScore),
+    weight: Number(data.weight),
+    instructions: data.instructions ?? undefined,
+    status: data.status as ExamStatus,
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
+
+    subject: data.subject,
+    class: data.class,
+    teacher: data.teacher,
+    academicYear: data.academicYear,
+    grades: data.grades ? data.grades.map(mapToGrade) : undefined,
+    _count: data._count
+  };
+}
+
+function mapToGrade(data: any): Grade {
+  return {
+    id: data.id,
+    studentId: data.studentId,
+    subjectId: data.subjectId,
+    examId: data.examId,
+    academicYearId: data.academicYearId,
+    type: data.type as GradeType,
+    score: Number(data.score),
+    maxScore: Number(data.maxScore),
+    percentage: Number(data.percentage),
+    letterGrade: data.letterGrade,
+    notes: data.notes ?? undefined,
+    gradedById: data.gradedById,
+    gradedAt: data.gradedAt,
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
+
+    student: data.student,
+    subject: data.subject,
+    exam: data.exam ? {
+      id: data.exam.id,
+      title: data.exam.title,
+      type: data.exam.type as ExamType
+    } : undefined,
+    gradedBy: data.gradedBy
+  };
+}
+
+function mapToReportCard(data: any): ReportCard {
+  return {
+    id: data.id,
+    studentId: data.studentId,
+    classId: data.classId,
+    academicYearId: data.academicYearId,
+    semester: data.semester,
+    averageScore: data.averageScore ? Number(data.averageScore) : null,
+    rank: data.rank,
+    attendance: data.attendance as any, // Typed in shared
+    tahfidzSummary: data.tahfidzSummary as any,
+    teacherNotes: data.teacherNotes ?? undefined,
+    principalNotes: data.principalNotes ?? undefined,
+    isPublished: data.isPublished,
+    publishedAt: data.publishedAt,
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
+
+    student: data.student,
+    class: data.class,
+    academicYear: data.academicYear,
+    details: data.details ? data.details.map((d: any) => ({
+      id: d.id,
+      reportCardId: d.reportCardId,
+      subjectName: d.subjectName,
+      dailyScore: d.dailyScore ? Number(d.dailyScore) : null,
+      midtermScore: d.midtermScore ? Number(d.midtermScore) : null,
+      finalScore: d.finalScore ? Number(d.finalScore) : null,
+      averageScore: d.averageScore ? Number(d.averageScore) : null,
+      letterGrade: d.letterGrade,
+      comments: d.comments ?? undefined
+    })) : undefined
+  };
 }

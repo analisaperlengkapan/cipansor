@@ -2,14 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { MainLayout } from '@/components/layout';
 import { PageHeader } from '@/components/shared';
-import { useBulkCheckIn } from '@/hooks/use-daily-report';
+import { useBulkCreateDailyReports, DailyMood, BulkCreateDailyReportsInput } from '@/hooks/use-daily-report';
 import { useClasses } from '@/hooks/use-classes';
 import { useStudents } from '@/hooks/use-students';
+import { useAcademicYears } from '@/hooks/use-academic-years';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,59 +20,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   ArrowLeft,
   CalendarIcon,
-  Clock,
   CheckCircle,
   Loader2,
   Users,
   Info,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, set, parse } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/auth';
 import { cn } from '@/lib/utils';
-
-const ATTENDANCE_OPTIONS = [
-  { value: 'PRESENT', label: 'Hadir', color: 'text-green-600' },
-  { value: 'LATE', label: 'Terlambat', color: 'text-yellow-600' },
-  { value: 'SICK', label: 'Sakit', color: 'text-orange-600' },
-  { value: 'EXCUSED', label: 'Izin', color: 'text-blue-600' },
-  { value: 'ABSENT', label: 'Alpha', color: 'text-red-600' },
-];
-
-const MOOD_OPTIONS = [
-  { value: 'HAPPY', label: '😊 Senang' },
-  { value: 'EXCITED', label: '🤩 Antusias' },
-  { value: 'NEUTRAL', label: '😐 Biasa' },
-  { value: 'TIRED', label: '😴 Lelah' },
-  { value: 'SAD', label: '😢 Sedih' },
-];
-
-const HEALTH_OPTIONS = [
-  { value: 'HEALTHY', label: 'Sehat' },
-  { value: 'SICK', label: 'Sakit' },
-  { value: 'RECOVERING', label: 'Pemulihan' },
-  { value: 'NEED_ATTENTION', label: 'Perlu Perhatian' },
-];
+import { MOOD_OPTIONS, HEALTH_OPTIONS, ATTENDANCE_OPTIONS } from '../constants';
 
 interface StudentCheckIn {
   studentId: string;
   studentName: string;
   photoUrl?: string;
   selected: boolean;
-  checkInTime: string;
-  attendanceStatus: string;
-  moodStatus: string;
-  healthStatus: string;
+  checkInTime: string; // mapped to arrivalTime
+  moodStatus: DailyMood; // mapped to morningMood
+  healthStatus: string; // mapped to healthNotes
 }
 
 export default function BulkCheckInPage() {
@@ -87,13 +59,17 @@ export default function BulkCheckInPage() {
   const [selectAll, setSelectAll] = useState(false);
 
   const { data: classes } = useClasses({ unitId: user?.unitId });
+  // Need academic year for creation
+  const { data: academicYears } = useAcademicYears({ isActive: true });
+  const activeAcademicYear = academicYears?.data?.[0];
+
   const { data: studentData, isLoading: studentsLoading } = useStudents({
     classId: classId || undefined,
     unitId: user?.unitId,
     limit: 100,
   });
 
-  const bulkCheckInMutation = useBulkCheckIn();
+  const bulkCreateMutation = useBulkCreateDailyReports();
 
   // Update students list when class changes
   const handleClassChange = (newClassId: string) => {
@@ -112,9 +88,8 @@ export default function BulkCheckInPage() {
           photoUrl: student.photoUrl,
           selected: true,
           checkInTime: defaultCheckInTime,
-          attendanceStatus: 'PRESENT',
           moodStatus: 'HAPPY',
-          healthStatus: 'HEALTHY',
+          healthStatus: 'Sehat',
         }))
       );
       setSelectAll(true);
@@ -127,7 +102,6 @@ export default function BulkCheckInPage() {
       prev.map((s) => ({
         ...s,
         selected: checked,
-        attendanceStatus: checked ? 'PRESENT' : s.attendanceStatus,
       }))
     );
   };
@@ -140,10 +114,6 @@ export default function BulkCheckInPage() {
     setStudents((prev) =>
       prev.map((s) => {
         if (s.studentId === studentId) {
-          // If attendance is not PRESENT or LATE, uncheck the student
-          if (field === 'attendanceStatus' && !['PRESENT', 'LATE'].includes(value as string)) {
-            return { ...s, [field]: value, selected: false } as StudentCheckIn;
-          }
           return { ...s, [field]: value } as StudentCheckIn;
         }
         return s;
@@ -161,6 +131,11 @@ export default function BulkCheckInPage() {
   };
 
   const handleSubmit = async () => {
+    if (!user?.unitId || !activeAcademicYear?.id) {
+      toast.error('Data unit atau tahun ajaran tidak ditemukan');
+      return;
+    }
+
     const selectedStudents = students.filter((s) => s.selected);
 
     if (selectedStudents.length === 0) {
@@ -169,22 +144,43 @@ export default function BulkCheckInPage() {
     }
 
     try {
-      await bulkCheckInMutation.mutateAsync({
-        classId,
-        date: format(date, 'yyyy-MM-dd'),
-        students: selectedStudents.map((s) => ({
-          studentId: s.studentId,
-          checkInTime: s.checkInTime,
-          attendanceStatus: s.attendanceStatus,
-          moodStatus: s.moodStatus,
-          healthStatus: s.healthStatus,
-        })),
-      });
+      const payload: BulkCreateDailyReportsInput = {
+        unitId: user.unitId,
+        academicYearId: activeAcademicYear.id,
+        reportDate: date.toISOString(),
+        reports: selectedStudents.map((s) => {
+          // Construct full ISO datetime for arrivalTime
+          let arrivalTime: string | undefined = undefined;
+          if (s.checkInTime) {
+            const timeParts = s.checkInTime.split(':');
+            if (timeParts.length === 2) {
+              const checkInDate = set(date, {
+                hours: parseInt(timeParts[0], 10),
+                minutes: parseInt(timeParts[1], 10),
+                seconds: 0,
+                milliseconds: 0,
+              });
+              arrivalTime = checkInDate.toISOString();
+            }
+          }
+
+          return {
+            studentId: s.studentId,
+            arrivalTime: arrivalTime,
+            morningMood: s.moodStatus,
+            healthNotes: s.healthStatus,
+            // Other fields optional as per shared type
+          };
+        }),
+      };
+
+      await bulkCreateMutation.mutateAsync(payload);
 
       toast.success(`${selectedStudents.length} siswa berhasil check-in`);
       router.push('/paud/daily-reports');
-    } catch {
+    } catch (error) {
       toast.error('Gagal melakukan bulk check-in');
+      console.error(error);
     }
   };
 
@@ -297,7 +293,7 @@ export default function BulkCheckInPage() {
                     checked={selectAll}
                     onCheckedChange={handleSelectAll}
                   />
-                  <Label htmlFor="select-all">Pilih Semua (Hadir)</Label>
+                  <Label htmlFor="select-all">Pilih Semua</Label>
                 </div>
               </div>
             </CardHeader>
@@ -341,30 +337,8 @@ export default function BulkCheckInPage() {
                           </div>
 
                           {/* Status Inputs */}
-                          <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 ml-4">
-                            {/* Attendance Status */}
-                            <div className="space-y-2">
-                              <Label className="text-xs">Kehadiran</Label>
-                              <Select
-                                value={student.attendanceStatus}
-                                onValueChange={(v) =>
-                                  handleStudentChange(student.studentId, 'attendanceStatus', v)
-                                }
-                              >
-                                <SelectTrigger className="h-9">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {ATTENDANCE_OPTIONS.map((opt) => (
-                                    <SelectItem key={opt.value} value={opt.value}>
-                                      <span className={opt.color}>{opt.label}</span>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
+                          <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4 ml-4">
 
-                            {/* Check-in Time */}
                             {student.selected && (
                               <>
                                 <div className="space-y-2">
@@ -389,7 +363,7 @@ export default function BulkCheckInPage() {
                                   <Select
                                     value={student.moodStatus}
                                     onValueChange={(v) =>
-                                      handleStudentChange(student.studentId, 'moodStatus', v)
+                                      handleStudentChange(student.studentId, 'moodStatus', v as DailyMood)
                                     }
                                   >
                                     <SelectTrigger className="h-9">
@@ -445,10 +419,10 @@ export default function BulkCheckInPage() {
                 </div>
                 <Button
                   onClick={handleSubmit}
-                  disabled={selectedCount === 0 || bulkCheckInMutation.isPending}
+                  disabled={selectedCount === 0 || bulkCreateMutation.isPending}
                   size="lg"
                 >
-                  {bulkCheckInMutation.isPending ? (
+                  {bulkCreateMutation.isPending ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <CheckCircle className="mr-2 h-4 w-4" />

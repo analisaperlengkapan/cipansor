@@ -1,8 +1,10 @@
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 import { Errors } from '@/middleware/error';
 import { UserRole, TahfidzActivityType, Prisma } from '@prisma/client';
 import type {
   ListTahfidzQuery,
+  GenerateCertificateInput,
 } from './tahfidz.schema';
 import type { CreateTahfidzInput, UpdateTahfidzInput, TahfidzStudentSummary, TahfidzDashboardStats } from '@cipansor/shared';
 
@@ -143,6 +145,12 @@ export class TahfidzService {
       },
     });
 
+    // Check if student became Hafidz
+    this.checkAndRegisterHafidz(input.studentId).catch(err => {
+        // Log error but don't fail the request
+        logger.error('Error checking hafidz status:', err);
+    });
+
     return record;
   }
 
@@ -186,6 +194,11 @@ export class TahfidzService {
           },
         },
       },
+    });
+
+    // Check if student became Hafidz
+    this.checkAndRegisterHafidz(updated.studentId).catch(err => {
+        logger.error('Error checking hafidz status:', err);
     });
 
     return updated;
@@ -509,15 +522,175 @@ export class TahfidzService {
       totalRecords,
       totalStudents: uniqueStudents.length,
       recordsByType: recordsByType.map((r) => ({
-        type: r.activityType as any, // Cast to any to satisfy Shared Type if mismatch exists
+        type: r.activityType,
         count: r._count._all,
       })),
       recordsByGrade,
       progressByJuz,
       monthlyActivity,
       topStudents: topStudentsWithJuz,
-      recentRecords: recentRecords as any[], // Cast to any[] to bypass strict shared type check against Prisma result
+      recentRecords: recentRecords as unknown as TahfidzRecord[],
     };
+  }
+
+  /**
+   * Generate or retrieve certificate
+   */
+  async generateCertificate(input: GenerateCertificateInput, createdById: string) {
+    const { studentId, certificateType, issueDate = new Date() } = input;
+    const date = new Date(issueDate);
+
+    // Check if certificate already exists
+    const existing = await prisma.digitalCertificate.findFirst({
+      where: {
+        studentId,
+        certificateType,
+      },
+      include: {
+        student: true,
+      }
+    });
+
+    if (existing) {
+      // Update details if needed (e.g. reprint with corrections), but keep number
+       const updated = await prisma.digitalCertificate.update({
+        where: { id: existing.id },
+        data: {
+            grade: input.grade,
+            signatoryName: input.musyrifName || existing.signatoryName,
+            description: input.notes,
+            // We could store more details in description or dedicated fields if model allowed
+        },
+        include: {
+          student: true,
+        }
+       });
+       return updated;
+    }
+
+    // Generate new Number
+    // Format: [SEQ]/[TYPE]/CPN/[MM]/[YYYY]
+    // SEQ resets every month
+
+    // Determine the TYPE code
+    let typeCode = 'TAHFIDZ';
+    if (certificateType === 'TAHFIDZ_JUZ_AMMA') typeCode = 'JUZ30';
+    else if (certificateType === 'TAHFIDZ_5_JUZ') typeCode = '5JUZ';
+    else if (certificateType === 'TAHFIDZ_10_JUZ') typeCode = '10JUZ';
+    else if (certificateType === 'TAHFIDZ_30_JUZ') typeCode = '30JUZ';
+    else if (certificateType === 'SANAD_QIRAAH') typeCode = 'QIRAAH';
+
+    // Get month and year for formatting
+    const month = date.getMonth() + 1; // 1-12
+    const year = date.getFullYear();
+    const monthStr = month.toString().padStart(2, '0');
+
+    // Retry logic for sequence generation
+    let retries = 0;
+    const maxRetries = 5;
+
+    while (retries < maxRetries) {
+       try {
+         // Optimized: Find the latest certificate number for this month/year pattern
+         const pattern = `%/${typeCode}/CPN/${monthStr}/${year}`;
+         const latestCert = await prisma.digitalCertificate.findFirst({
+             where: {
+                 certificateNumber: {
+                     endsWith: `/${typeCode}/CPN/${monthStr}/${year}`
+                 }
+             },
+             orderBy: {
+                 certificateNumber: 'desc'
+             },
+             select: {
+                 certificateNumber: true
+             }
+         });
+
+         let nextSeq = 1;
+         if (latestCert) {
+             const parts = latestCert.certificateNumber.split('/');
+             const lastSeq = parseInt(parts[0], 10);
+             if (!isNaN(lastSeq)) {
+                 nextSeq = lastSeq + 1 + retries; // Add retries to jump over gaps/collisions in loop
+             }
+         }
+
+         const seq = nextSeq.toString().padStart(3, '0');
+         const certificateNumber = `${seq}/${typeCode}/CPN/${monthStr}/${year}`;
+
+         // Generate generic placeholder values for required fields
+         const cert = await prisma.digitalCertificate.create({
+            data: {
+                studentId,
+                certificateType,
+                certificateNumber,
+                title: 'Sertifikat Tahfidz',
+                grade: input.grade,
+                issueDate: date,
+                qrCode: crypto.randomUUID(), // Placeholder unique QR code
+                verificationUrl: `https://cipansor.com/verify/${crypto.randomUUID()}`, // Placeholder
+                signatoryName: input.musyrifName || 'Administrator',
+                signatoryTitle: 'Musyrif Tahfidz',
+                description: input.notes,
+                createdById,
+            },
+            include: {
+              student: true,
+            }
+         });
+
+         return cert;
+
+       } catch (e: any) {
+         if (e.code === 'P2002') { // Unique constraint failed
+            retries++;
+            continue;
+         }
+         throw e;
+       }
+    }
+    throw new Error('Failed to generate unique certificate number after multiple retries');
+  }
+
+  /**
+   * Check and register student as Hafidz if they completed 30 Juz
+   */
+  private async checkAndRegisterHafidz(studentId: string) {
+    try {
+      // 1. Check if already registered
+      const exists = await prisma.hafidzStudent.findUnique({
+        where: { studentId },
+      });
+      if (exists) return;
+
+      // 2. Count completed Juz
+      // Distinct juz where score >= 60 and activity is ASSESSMENT or TASMI
+      const completedJuzList = await prisma.tahfidzRecord.findMany({
+        where: {
+          studentId,
+          activityType: { in: ['ASSESSMENT', 'TASMI'] },
+          score: { gte: 60 }
+        },
+        select: { juz: true },
+        distinct: ['juz'],
+      });
+
+      if (completedJuzList.length >= 30) {
+        // 3. Register as Hafidz
+        await prisma.hafidzStudent.create({
+          data: {
+            studentId,
+            completedAt: new Date(),
+            notes: 'Automatically registered by system upon completing 30 Juz',
+          },
+        });
+        logger.info(`Student ${studentId} registered as Hafidz automatically`);
+      }
+    } catch (error) {
+      logger.error('Error in checkAndRegisterHafidz:', error);
+      // Do not throw, this is a background check
+    }
   }
 }
 

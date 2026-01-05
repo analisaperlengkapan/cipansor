@@ -1,0 +1,186 @@
+export enum ExamType {
+  DAILY_TEST = 'DAILY_TEST',
+  QUIZ = 'QUIZ',
+  MIDTERM = 'MIDTERM',
+  FINAL = 'FINAL',
+  PRACTICAL = 'PRACTICAL',
+  PROJECT = 'PROJECT',
+  TAHFIDZ_TEST = 'TAHFIDZ_TEST'
+}
+
+export enum ExamStatus {
+  DRAFT = 'DRAFT',
+  SCHEDULED = 'SCHEDULED',
+  ONGOING = 'ONGOING',
+  COMPLETED = 'COMPLETED',
+  GRADED = 'GRADED'
+}
+
+export enum GradeType {
+  EXAM = 'EXAM',
+  ASSIGNMENT = 'ASSIGNMENT',
+  PARTICIPATION = 'PARTICIPATION',
+  ATTENDANCE = 'ATTENDANCE',
+  PROJECT = 'PROJECT',
+  TAHFIDZ = 'TAHFIDZ'
+}
+
+export interface Exam {
+  id: string;
+  unitId: string;
+  academicYearId: string;
+  subjectId: string;
+  classId: string;
+  teacherId: string;
+  type: ExamType;
+  title: string;
+  description?: string;
+  scheduledAt: Date | string;
+  duration: number;
+  maxScore: number;
+  passingScore: number;
+  weight: number;
+  instructions?: string;
+  status: ExamStatus;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+
+  // Relations
+  subject?: { id: string; name: string; code: string };
+  class?: { id: string; name: string; level: string };
+  teacher?: { id: string; user: { id: string; name: string | null } };
+  academicYear?: { id: string; name: string };
+  grades?: Grade[];
+  _count?: { grades: number };
+}
+
+export interface CreateExamInput {
+  unitId: string;
+  academicYearId: string;
+  subjectId: string;
+  classId: string;
+  teacherId: string;
+  type: ExamType | string;
+  title: string;
+  description?: string;
+  scheduledAt: string | Date;
+  duration?: number;
+  maxScore?: number;
+  passingScore?: number;
+  weight?: number;
+  instructions?: string;
+}
+
+export interface UpdateExamInput extends Partial<CreateExamInput> {
+  status?: ExamStatus | string;
+}
+
+export interface Grade {
+  id: string;
+  studentId: string;
+  subjectId: string;
+  examId?: string | null;
+  academicYearId: string;
+  type: GradeType;
+  score: number;
+  maxScore: number;
+  percentage: number;
+  letterGrade: string;
+  notes?: string;
+  gradedById: string;
+  gradedAt: Date | string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+
+  // Relations
+  student?: { id: string; nis: string | null; user?: { id: string; name: string | null } };
+  subject?: { id: string; name: string; code: string };
+  exam?: { id: string; title: string; type: ExamType };
+  gradedBy?: { id: string; name: string | null };
+}
+
+export interface CreateGradeInput {
+  studentId: string;
+  subjectId: string;
+  examId?: string;
+  academicYearId: string;
+  type: GradeType | string;
+  score: number;
+  maxScore?: number;
+  notes?: string;
+  gradedById: string;
+}
+
+export interface UpdateGradeInput extends Partial<CreateGradeInput> {}
+
+export interface BulkCreateGradesInput {
+  examId?: string;
+  subjectId: string;
+  academicYearId: string;
+  type: GradeType | string;
+  maxScore?: number;
+  gradedById: string;
+  grades: {
+    studentId: string;
+    score: number;
+    notes?: string;
+  }[];
+}
+
+export interface ReportCardDetail {
+  id: string;
+  reportCardId: string;
+  subjectName: string;
+  dailyScore?: number | null;
+  midtermScore?: number | null;
+  finalScore?: number | null;
+  averageScore?: number | null;
+  letterGrade?: string | null;
+  comments?: string;
+}
+
+export interface ReportCard {
+  id: string;
+  studentId: string;
+  classId: string;
+  academicYearId: string;
+  semester: number;
+  averageScore?: number | null;
+  rank?: number | null;
+  attendance?: {
+    present: number;
+    absent: number;
+    sick: number;
+    excused: number;
+  };
+  tahfidzSummary?: {
+    lastJuz: number;
+    lastSurah: string;
+    totalAyah: number;
+  };
+  teacherNotes?: string;
+  principalNotes?: string;
+  isPublished: boolean;
+  publishedAt?: Date | string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+
+  // Relations
+  student?: { id: string; user?: { id: string; name: string | null } };
+  class?: { id: string; name: string; level: string };
+  academicYear?: { id: string; name: string };
+  details?: ReportCardDetail[];
+}
+
+export interface CreateReportCardInput {
+  studentId: string;
+  classId: string;
+  academicYearId: string;
+  semester: number;
+  teacherNotes?: string;
+  principalNotes?: string;
+}
+
+export interface UpdateReportCardInput extends Partial<CreateReportCardInput> {
+  isPublished?: boolean;
+}

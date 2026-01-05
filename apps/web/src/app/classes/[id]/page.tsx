@@ -4,7 +4,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout';
 import { PageHeader, ConfirmDialog, DataTable } from '@/components/shared';
-import { useClass, useClassEnrollments, useUnenrollStudent, Enrollment } from '@/hooks/use-classes';
+import { useClass, useClassEnrollments, useUnenrollStudent } from '@/hooks/use-classes';
+import { ClassEnrollment } from '@cipansor/shared';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -43,22 +44,22 @@ export default function ClassDetailPage() {
     }
   };
 
-  const enrollmentColumns: ColumnDef<Enrollment>[] = [
+  const enrollmentColumns: ColumnDef<ClassEnrollment>[] = [
     {
       accessorKey: 'student.nis',
       header: 'NIS',
       cell: ({ row }) => (
-        <span className="font-mono text-sm">{row.original.student.nis}</span>
+        <span className="font-mono text-sm">{row.original.student?.nis || '-'}</span>
       ),
     },
     {
-      accessorKey: 'student.name',
+      accessorKey: 'student.user.name',
       header: 'Name',
       cell: ({ row }) => (
         <div>
-          <p className="font-medium">{row.original.student.name}</p>
+          <p className="font-medium">{row.original.student?.user?.name || row.original.student?.name}</p>
           <p className="text-xs text-muted-foreground">
-            {row.original.student.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}
+            {row.original.student?.gender === 'MALE' ? 'Laki-laki' : row.original.student?.gender === 'FEMALE' ? 'Perempuan' : '-'}
           </p>
         </div>
       ),
@@ -190,7 +191,7 @@ export default function ClassDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm">
-                    {classData.homeroomTeacher?.name || 'No homeroom teacher assigned'}
+                    {classData.homeroomTeacher?.user.name || 'No homeroom teacher assigned'}
                   </p>
                 </CardContent>
               </Card>

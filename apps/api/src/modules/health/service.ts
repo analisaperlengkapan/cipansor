@@ -9,20 +9,23 @@ import type {
   QueryMedicationInput,
   CreateMedicationUsageInput,
   QueryMedicationUsageInput,
-} from "./schema";
+  MedicalRecord,
+  HealthStats,
+} from "@cipansor/shared";
 
 // ==================== MEDICAL RECORD ====================
 
-export async function getMedicalRecords(query: QueryMedicalRecordInput) {
-  const { page, limit, studentId, type, startDate, endDate } = query;
+export async function getMedicalRecords(query: QueryMedicalRecordInput & { status?: string }) {
+  const { page = 1, limit = 20, studentId, type, startDate, endDate, status } = query;
   const skip = (page - 1) * limit;
 
   const where: Prisma.MedicalRecordWhereInput = {
     ...(studentId && { studentId }),
-    ...(type && { type }),
+    ...(type && { type: type as unknown as import("@prisma/client").MedicalRecordType }),
     ...(startDate && endDate && {
       visitDate: { gte: startDate, lte: endDate },
     }),
+    ...(status && { status: status as unknown as import("@prisma/client").HealthStatus }),
   };
 
   const [data, total] = await Promise.all([
@@ -47,18 +50,31 @@ export async function getMedicalRecords(query: QueryMedicalRecordInput) {
   ]);
 
   return {
-    data,
+    success: true,
+    data: data.map((record: any) => ({
+      ...record,
+      student: record.student ? {
+        id: record.student.id,
+        nis: record.student.nis,
+        name: record.student.user.name,
+        user: record.student.user,
+        unit: record.student.unit,
+      } : undefined,
+      recordedBy: record.recordedBy,
+    })) as MedicalRecord[],
     meta: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     },
   };
 }
 
 export async function getMedicalRecordById(id: string) {
-  return prisma.medicalRecord.findUnique({
+  const record = await prisma.medicalRecord.findUnique({
     where: { id },
     include: {
       student: {
@@ -74,15 +90,45 @@ export async function getMedicalRecordById(id: string) {
       recordedBy: { select: { id: true, name: true } },
     },
   });
+
+  if (!record) return null;
+
+  return {
+    ...record,
+    student: {
+      id: record.student.id,
+      nis: record.student.nis,
+      name: record.student.user.name,
+      user: record.student.user,
+      unit: record.student.unit,
+    },
+    recordedBy: record.recordedBy,
+  } as unknown as MedicalRecord;
 }
 
 export async function createMedicalRecord(data: CreateMedicalRecordInput, recordedById: string) {
-  return prisma.medicalRecord.create({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { status, temperature, bloodPressure, heartRate, weight, height, ...mainData } = data;
+
+  const record = await prisma.medicalRecord.create({
     data: {
-      ...data,
+      studentId: mainData.studentId,
+      type: mainData.type as unknown as import("@prisma/client").MedicalRecordType,
+      visitDate: mainData.visitDate,
+      complaint: mainData.complaint,
+      diagnosis: mainData.diagnosis,
+      treatment: mainData.treatment,
+      prescription: mainData.prescription,
+      notes: mainData.notes,
+      referredTo: mainData.referredTo,
+      followUpDate: mainData.followUpDate,
+      status: status as unknown as import("@prisma/client").HealthStatus,
+      temperature,
+      bloodPressure,
+      heartRate,
+      weight,
+      height,
       recordedById,
-    } as any,
+    },
     include: {
       student: {
         select: {
@@ -94,12 +140,33 @@ export async function createMedicalRecord(data: CreateMedicalRecordInput, record
       recordedBy: { select: { id: true, name: true } },
     },
   });
+
+  return {
+    ...record,
+    student: {
+      id: record.student.id,
+      nis: record.student.nis,
+      name: record.student.user.name,
+      user: record.student.user,
+    },
+  } as unknown as MedicalRecord;
 }
 
 export async function updateMedicalRecord(id: string, data: UpdateMedicalRecordInput) {
-  return prisma.medicalRecord.update({
+  const { status, temperature, bloodPressure, heartRate, weight, height, ...mainData } = data;
+
+  const record = await prisma.medicalRecord.update({
     where: { id },
-    data,
+    data: {
+        ...mainData,
+        type: mainData.type ? (mainData.type as unknown as import("@prisma/client").MedicalRecordType) : undefined,
+        status: status ? (status as unknown as import("@prisma/client").HealthStatus) : undefined,
+        temperature,
+        bloodPressure,
+        heartRate,
+        weight,
+        height,
+    },
     include: {
       student: {
         select: {
@@ -111,6 +178,16 @@ export async function updateMedicalRecord(id: string, data: UpdateMedicalRecordI
       recordedBy: { select: { id: true, name: true } },
     },
   });
+
+  return {
+    ...record,
+    student: {
+      id: record.student.id,
+      nis: record.student.nis,
+      name: record.student.user.name,
+      user: record.student.user,
+    },
+  } as unknown as MedicalRecord;
 }
 
 export async function deleteMedicalRecord(id: string) {
@@ -118,23 +195,23 @@ export async function deleteMedicalRecord(id: string) {
 }
 
 export async function getStudentMedicalHistory(studentId: string) {
-  return prisma.medicalRecord.findMany({
+  const records = await prisma.medicalRecord.findMany({
     where: { studentId },
     include: {
       recordedBy: { select: { id: true, name: true } },
     },
     orderBy: { visitDate: "desc" },
   });
+
+  return records as unknown as MedicalRecord[];
 }
 
 // ==================== MEDICATION ====================
 
 export async function getMedications(query: QueryMedicationInput) {
-  const { page, limit, unitId, search, lowStock, expired } = query;
+  const { page = 1, limit = 20, unitId, search, lowStock, expired } = query;
   const skip = (page - 1) * limit;
 
-  // For lowStock, we need to use raw query or filter after fetch
-  // Simple approach: use a reasonable threshold or get medications with quantity <= minStock
   const where: Prisma.MedicationWhereInput = {
     ...(unitId && { unitId }),
     ...(search && {
@@ -162,19 +239,21 @@ export async function getMedications(query: QueryMedicationInput) {
     prisma.medication.count({ where }),
   ]);
 
-  // Filter by lowStock if requested (quantity <= minStock)
   if (lowStock) {
     data = data.filter((m) => m.quantity <= m.minStock);
     total = data.length;
   }
 
   return {
-    data,
+    success: true,
+    data: data,
     meta: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     },
   };
 }
@@ -203,8 +282,18 @@ export async function getMedicationById(id: string) {
 
 export async function createMedication(data: CreateMedicationInput) {
   return prisma.medication.create({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data: data as any,
+    data: {
+      unitId: data.unitId,
+      name: data.name,
+      genericName: data.genericName,
+      type: data.type,
+      dosageForm: data.dosageForm,
+      quantity: data.quantity ?? 0,
+      minStock: data.minStock ?? 10,
+      expiryDate: data.expiryDate,
+      supplier: data.supplier,
+      notes: data.notes,
+    },
     include: {
       unit: { select: { id: true, name: true } },
     },
@@ -235,7 +324,7 @@ export async function addMedicationStock(id: string, quantity: number) {
 // ==================== MEDICATION USAGE LOG ====================
 
 export async function getMedicationUsageLogs(query: QueryMedicationUsageInput) {
-  const { page, limit, medicationId, studentId, startDate, endDate } = query;
+  const { page = 1, limit = 20, medicationId, studentId, startDate, endDate } = query;
   const skip = (page - 1) * limit;
 
   const where: Prisma.MedicationUsageLogWhereInput = {
@@ -267,31 +356,37 @@ export async function getMedicationUsageLogs(query: QueryMedicationUsageInput) {
   ]);
 
   return {
-    data,
+    success: true,
+    data: data.map((log: any) => ({
+      ...log,
+      student: log.student ? { id: log.student.id, user: log.student.user } : null,
+    })),
     meta: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     },
   };
 }
 
 export async function createMedicationUsage(data: CreateMedicationUsageInput, givenById: string) {
-  // Check medication stock
   const medication = await prisma.medication.findUnique({ where: { id: data.medicationId } });
   if (!medication || medication.quantity < data.quantity) {
     throw new Error("Insufficient medication stock");
   }
 
-  // Create usage log and decrement stock
   return prisma.$transaction(async (tx) => {
     const usage = await tx.medicationUsageLog.create({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data: {
-        ...data,
+        medicationId: data.medicationId,
+        studentId: data.studentId,
+        quantity: data.quantity,
+        reason: data.reason,
         givenById,
-      } as any,
+      },
       include: {
         medication: { select: { id: true, name: true } },
         student: {
@@ -315,7 +410,7 @@ export async function createMedicationUsage(data: CreateMedicationUsageInput, gi
 
 // ==================== STATISTICS ====================
 
-export async function getHealthStats(unitId: string) {
+export async function getHealthStats(unitId: string): Promise<HealthStats> {
   const today = new Date();
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
@@ -348,8 +443,7 @@ export async function getHealthStats(unitId: string) {
     }),
   ]);
 
-  // Calculate low stock medications
-  const lowStockMedications = medications.filter((m: { quantity: number; minStock: number }) => m.quantity <= m.minStock).length;
+  const lowStockMedications = medications.filter((m) => m.quantity <= m.minStock).length;
 
   return {
     medications: {
@@ -358,8 +452,8 @@ export async function getHealthStats(unitId: string) {
       expired: expiredMedications,
     },
     thisMonthRecords,
-    recordsByType: recordsByType.map((r: { type: string; _count: number }) => ({
-      type: r.type,
+    recordsByType: recordsByType.map((r) => ({
+      type: r.type as unknown as import("@cipansor/shared").MedicalRecordType,
       count: r._count,
     })),
   };

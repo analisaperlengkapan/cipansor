@@ -4,8 +4,11 @@ test.describe('Tahfidz Dashboard (Murojaah Analytics)', () => {
     test.beforeEach(async ({ page }) => {
         // Login as admin
         await page.goto('/login');
-        await page.getByLabel(/email/i).fill('superadmin@cipansor.id');
-        await page.getByLabel(/password|kata sandi/i).fill('SuperAdmin123!');
+        const email = process.env.TEST_USER_EMAIL || 'superadmin@cipansor.id';
+        const password = process.env.TEST_USER_PASSWORD || 'SuperAdmin123!';
+
+        await page.getByLabel(/email/i).fill(email);
+        await page.getByLabel(/password|kata sandi/i).fill(password);
         await page.getByRole('button', { name: /sign in|masuk|login/i }).click();
 
         // Wait for potential error message or redirect
@@ -53,18 +56,20 @@ test.describe('Tahfidz Dashboard (Murojaah Analytics)', () => {
         await expect(page.getByRole('heading', { name: /dashboard tahfidz/i })).toBeVisible({ timeout: 10000 });
         await expect(page.getByText(/total catatan/i)).toBeVisible({ timeout: 10000 });
 
-        // shadcn Select uses button-based dropdown, click on the trigger button
-        const unitSelect = page.locator('[data-slot="select-trigger"]').first();
-        if (await unitSelect.isVisible({ timeout: 5000 })) {
-            await unitSelect.click();
+        // shadcn Select uses button-based dropdown
+        // Using more specific locator by finding the trigger that contains "Semua Unit" or the Unit Name
+        // Since initial state is "Semua Unit", we look for that.
+        const unitSelect = page.locator('button[role="combobox"]').filter({ hasText: /semua unit|unit/i }).first();
 
-            // Wait for dropdown to appear and select an option
-            await page.waitForTimeout(500);
-            const firstOption = page.locator('[data-slot="select-item"]').nth(1);
-            if (await firstOption.isVisible({ timeout: 3000 })) {
-                await firstOption.click();
-            }
-        }
+        // Wait for select trigger to be ready and click it
+        await expect(unitSelect).toBeVisible({ timeout: 5000 });
+        await unitSelect.click();
+
+        // Wait for dropdown options to appear and select the second option (first real unit)
+        // nth(0) is "Semua Unit", nth(1) is the first unit
+        const firstOption = page.getByRole('option').nth(1);
+        await expect(firstOption).toBeVisible();
+        await firstOption.click();
 
         // Wait for the data to reload (loading state might appear)
         await expect(page.locator('.animate-spin')).not.toBeVisible({ timeout: 10000 });

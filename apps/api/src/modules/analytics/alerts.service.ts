@@ -221,7 +221,7 @@ async function checkOverdueInvoices(rule: AlertRule): Promise<AlertTrigger[]> {
  */
 async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
     const triggers: AlertTrigger[] = [];
-    // Optimization: Restrict anomaly check window to last 24 hours to reduce alert spam and improving performance
+    // Optimization: Restrict anomaly check window to last 24 hours to reduce alert spam and improve performance
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     try {
@@ -230,7 +230,7 @@ async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
         const potentialDuplicates = await prisma.invoice.groupBy({
             by: ['studentId', 'paymentTypeId', 'amount', 'period'],
             where: {
-                createdAt: { gte: oneDayAgo },
+                createdAt: { gte: oneDayAgo }, // Restrict to last 24h
                 status: { not: 'CANCELLED' }
             },
             having: {
@@ -286,7 +286,7 @@ async function checkFinanceAnomalies(rule: AlertRule): Promise<AlertTrigger[]> {
         // Check recent invoices against these stats
         const recentInvoices = await prisma.invoice.findMany({
             where: {
-                createdAt: { gte: oneDayAgo },
+                createdAt: { gte: oneDayAgo }, // Restrict to last 24h
                 status: { not: 'CANCELLED' }
             },
             include: {

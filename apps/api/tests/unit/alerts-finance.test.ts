@@ -59,6 +59,43 @@ vi.mock('../../src/lib/logger', () => ({
 describe('Finance Anomaly Detection', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it('should restrict anomaly checks to the last 24 hours', async () => {
+        const now = new Date('2023-10-27T12:00:00Z');
+        vi.setSystemTime(now);
+        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+        // Mock return values to prevent crashes
+        (prisma.$queryRaw as any).mockResolvedValue([]);
+        (prisma.invoice.groupBy as any).mockResolvedValue([]);
+        (prisma.invoice.findMany as any).mockResolvedValue([]);
+        (prisma.student.findMany as any).mockResolvedValue([]);
+        (prisma.grade.findMany as any).mockResolvedValue([]);
+        (prisma.violation.groupBy as any).mockResolvedValue([]);
+        (prisma.attendance.findMany as any).mockResolvedValue([]);
+
+        await checkAndTriggerAlerts();
+
+        // Verify duplicates check uses 24h window
+        expect(prisma.invoice.groupBy).toHaveBeenCalledWith(expect.objectContaining({
+            where: expect.objectContaining({
+                createdAt: { gte: oneDayAgo }
+            })
+        }));
+
+        // Verify outliers check uses 24h window
+        // Note: findMany is called for other rules too, so we look for the one with oneDayAgo
+        expect(prisma.invoice.findMany).toHaveBeenCalledWith(expect.objectContaining({
+            where: expect.objectContaining({
+                createdAt: { gte: oneDayAgo }
+            })
+        }));
     });
 
     it('should detect statistical outliers (z-score > 2)', async () => {
@@ -104,6 +141,7 @@ describe('Finance Anomaly Detection', () => {
         (prisma.student.findMany as any).mockResolvedValue([]);
         (prisma.grade.findMany as any).mockResolvedValue([]);
         (prisma.violation.groupBy as any).mockResolvedValue([]);
+        (prisma.attendance.findMany as any).mockResolvedValue([]);
 
         const triggers = await checkAndTriggerAlerts();
 
@@ -150,6 +188,7 @@ describe('Finance Anomaly Detection', () => {
         // Mock other rules data to return empty
         (prisma.grade.findMany as any).mockResolvedValue([]);
         (prisma.violation.groupBy as any).mockResolvedValue([]);
+        (prisma.attendance.findMany as any).mockResolvedValue([]);
 
         const triggers = await checkAndTriggerAlerts();
 

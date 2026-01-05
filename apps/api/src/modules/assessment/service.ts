@@ -649,6 +649,22 @@ export async function generateReportCard(studentId: string, classId: string, aca
   return getReportCardById(reportCard.id);
 }
 
+export async function generateClassReportCards(classId: string, academicYearId: string, semester: number): Promise<ReportCard[]> {
+  // Get all active students in class
+  const enrollments = await prisma.classEnrollment.findMany({
+    where: { classId, status: 'active' },
+    select: { studentId: true }
+  });
+
+  // Generate for each student concurrently
+  // Using Promise.all is efficient for typical class sizes (30-40)
+  const results = await Promise.all(
+    enrollments.map(e => generateReportCard(e.studentId, classId, academicYearId, semester))
+  );
+
+  return results.filter((r): r is ReportCard => r !== null);
+}
+
 export async function publishReportCard(id: string): Promise<ReportCard> {
   const reportCard = await prisma.reportCard.update({
     where: { id },

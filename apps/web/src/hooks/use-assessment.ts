@@ -339,6 +339,29 @@ export function useGenerateReportCard() {
   });
 }
 
+export function useGenerateReportCards() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      classId: string;
+      academicYearId: string;
+      semester: number;
+      options?: {
+        includeAttendance: boolean;
+        includeTahfidz: boolean;
+        includeExtracurricular: boolean;
+      };
+    }) => {
+      const response = await api.post('/assessment/report-cards/generate', data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['report-cards'] });
+    },
+  });
+}
+
 export function usePublishReportCard() {
   const queryClient = useQueryClient();
 

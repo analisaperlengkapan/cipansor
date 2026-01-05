@@ -1769,6 +1769,7 @@ model Notification {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@index([scheduledAt])
   @@map("notifications")
 }
 

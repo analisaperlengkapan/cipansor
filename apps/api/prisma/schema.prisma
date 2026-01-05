@@ -1609,6 +1609,14 @@ enum MedicalRecordType {
   INJURY // Cedera
   FIRST_AID // Pertolongan pertama
   REFERRAL // Rujukan
+  VACCINATION // Vaksinasi
+}
+
+enum HealthStatus {
+  HEALTHY
+  SICK
+  RECOVERING
+  HOSPITALIZED
 }
 
 /// MedicalRecord - Rekam Medis
@@ -1625,6 +1633,15 @@ model MedicalRecord {
   referredTo   String?           @map("referred_to") // Rumah sakit/klinik rujukan
   recordedById String            @map("recorded_by_id")
   followUpDate DateTime?         @map("follow_up_date")
+
+  // Vitals & Extended Data
+  status        HealthStatus?    @default(HEALTHY)
+  temperature   Float?           // Suhu tubuh (C)
+  bloodPressure String?          @map("blood_pressure") // Tekanan darah (mmHg)
+  heartRate     Int?             @map("heart_rate") // Denyut nadi (bpm)
+  weight        Float?           // Berat badan (kg)
+  height        Float?           // Tinggi badan (cm)
+
   createdAt    DateTime          @default(now()) @map("created_at")
   updatedAt    DateTime          @updatedAt @map("updated_at")
 
@@ -1635,6 +1652,7 @@ model MedicalRecord {
   @@index([studentId])
   @@index([visitDate])
   @@index([type])
+  @@index([status])
   @@map("medical_records")
 }
 

@@ -493,27 +493,48 @@ export async function generateReportCard(studentId: string, classId: string, aca
   // Subject -> "subjects"
   // This matches my previous assumption.
 
-  const subjectAggregates = await prisma.$queryRaw<Array<{
-    subject_id: string;
-    subject_name: string;
-    avg_daily: number | null;
-    avg_midterm: number | null;
-    avg_final: number | null;
-  }>>`
-    SELECT
-      s.id as subject_id,
-      s.name as subject_name,
-      AVG(CASE WHEN e.type = 'DAILY_TEST' THEN g.percentage END) as avg_daily,
-      AVG(CASE WHEN e.type = 'MIDTERM' THEN g.percentage END) as avg_midterm,
-      AVG(CASE WHEN e.type = 'FINAL' THEN g.percentage END) as avg_final
-    FROM "grades" g
-    JOIN "exams" e ON g.exam_id = e.id
-    JOIN "subjects" s ON g.subject_id = s.id
-    WHERE g.student_id = ${studentId}
-      AND g.academic_year_id = ${academicYearId}
-      AND g.type = 'EXAM'
-    GROUP BY s.id, s.name
-  `;
+  const [subjectAggregates, attendance, tahfidzRecord, totalAyahResult] = await Promise.all([
+    prisma.$queryRaw<Array<{
+      subject_id: string;
+      subject_name: string;
+      avg_daily: number | null;
+      avg_midterm: number | null;
+      avg_final: number | null;
+    }>>`
+      SELECT
+        s.id as subject_id,
+        s.name as subject_name,
+        AVG(CASE WHEN e.type = 'DAILY_TEST' THEN g.percentage END) as avg_daily,
+        AVG(CASE WHEN e.type = 'MIDTERM' THEN g.percentage END) as avg_midterm,
+        AVG(CASE WHEN e.type = 'FINAL' THEN g.percentage END) as avg_final
+      FROM "grades" g
+      JOIN "exams" e ON g.exam_id = e.id
+      JOIN "subjects" s ON g.subject_id = s.id
+      WHERE g.student_id = ${studentId}
+        AND g.academic_year_id = ${academicYearId}
+        AND g.type = 'EXAM'
+      GROUP BY s.id, s.name
+    `,
+    prisma.attendance.groupBy({
+      by: ['status'],
+      where: {
+        studentId,
+        class: { academicYearId } // Filter by class associated with academic year? Or just academicYearId on attendance?
+        // Assuming attendance is linked to class or academic year.
+        // If attendance table has academicYearId, better to use that.
+        // Based on previous code: class: { academicYearId }
+      },
+      _count: true,
+    }),
+    prisma.tahfidzRecord.findFirst({
+      where: { studentId },
+      orderBy: { juz: 'desc' },
+    }),
+    prisma.tahfidzRecord.aggregate({
+      where: { studentId, activityType: 'ZIYADAH' },
+      _sum: { totalAyah: true },
+    })
+  ]);
 
   const details = subjectAggregates.map(sub => {
     const daily = sub.avg_daily ? Number(sub.avg_daily) : null;
@@ -537,39 +558,12 @@ export async function generateReportCard(studentId: string, classId: string, aca
     };
   });
 
-  // 2. Fetch Attendance Summary
-  // Use count with CASE inside aggregation or Prisma GroupBy
-  const attendance = await prisma.attendance.groupBy({
-    by: ['status'],
-    where: {
-      studentId,
-      class: { academicYearId } // Filter by class associated with academic year? Or just academicYearId on attendance?
-      // Assuming attendance is linked to class or academic year.
-      // If attendance table has academicYearId, better to use that.
-      // Based on previous code: class: { academicYearId }
-    },
-    _count: true,
-  });
-
   const attendanceSummary = {
     present: attendance.find((a) => a.status === 'PRESENT')?._count || 0,
     absent: attendance.find((a) => a.status === 'ABSENT')?._count || 0,
     sick: attendance.find((a) => a.status === 'SICK')?._count || 0,
     excused: attendance.find((a) => a.status === 'EXCUSED')?._count || 0, // Mapped from database status
   };
-
-  // 3. Fetch Tahfidz Summary
-  // Optimized: Use single query to get latest record
-  const tahfidzRecord = await prisma.tahfidzRecord.findFirst({
-    where: { studentId },
-    orderBy: { juz: 'desc' },
-  });
-
-  // Optimized: Calculate total ayah with aggregation
-  const totalAyahResult = await prisma.tahfidzRecord.aggregate({
-    where: { studentId, activityType: 'ZIYADAH' },
-    _sum: { totalAyah: true },
-  });
 
   const tahfidzSummary = tahfidzRecord
     ? {

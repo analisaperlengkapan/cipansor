@@ -25,30 +25,20 @@ test.describe('Tahfidz Dashboard (Murojaah Analytics)', () => {
         // Wait for network to settle ensuring tokens are saved
         await page.waitForLoadState('networkidle');
 
-        // Debug: Log localStorage contents
-        const token = await page.evaluate(() => localStorage.getItem('accessToken'));
-        console.log('Access Token after login:', token ? 'Present' : 'Missing');
-
         // Navigate to Tahfidz Dashboard
         await page.goto('/tahfidz/dashboard');
         await page.waitForLoadState('networkidle');
-
-        // Debug: Log localStorage after navigation
-        const tokenAfterNav = await page.evaluate(() => localStorage.getItem('accessToken'));
-        console.log('Access Token after navigation:', tokenAfterNav ? 'Present' : 'Missing');
     });
 
     test('should display dashboard components', async ({ page }) => {
         // Page is already at /tahfidz/dashboard from beforeEach
         // Verify we're on the tahfidz dashboard page
-        console.log('URL at test start:', page.url());
         await expect(page).toHaveURL(/tahfidz\/dashboard/, { timeout: 5000 });
 
         // Wait for loading spinner to disappear
         await expect(page.locator('.animate-spin')).not.toBeVisible({ timeout: 15000 });
 
         // Check header
-        console.log('Current URL before heading check:', page.url());
         await expect(page.getByRole('heading', { name: /dashboard tahfidz/i })).toBeVisible({ timeout: 10000 });
 
         // Check summary cards

@@ -1080,7 +1080,7 @@ function isYayasanRole(roleCode: string): boolean {
 }
 
 function isKepalaSekolahRole(roleCode: string): boolean {
-  return roleCode.includes('KEPALA_SEKOLAH');
+  return roleCode?.includes('KEPALA_SEKOLAH');
 }
 
 export interface ActiveRole {

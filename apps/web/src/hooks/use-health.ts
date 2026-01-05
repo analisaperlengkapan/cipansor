@@ -48,7 +48,7 @@ export function useHealthRecords(params?: {
     queryKey: ['health-records', params],
     queryFn: async () => {
       const response = await api.get<SharedPaginatedResponse<MedicalRecord>>('/health/records', { params });
-      return response.data;
+      return response.data.data;
     },
   });
 }

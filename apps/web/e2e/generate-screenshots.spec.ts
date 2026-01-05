@@ -15,7 +15,20 @@ const MOCK_USER = {
     id: 'unit-1',
     name: 'SMA IT Cipansor',
     type: 'SMA_IT'
-  }
+  },
+  userRoles: [
+      {
+          id: 'ur-1',
+          isPrimary: true,
+          role: {
+              id: 'r-1',
+              code: 'SUPER_ADMIN',
+              name: 'Super Admin',
+              realm: 'GLOBAL'
+          },
+          unit: null
+      }
+  ]
 };
 
 const MOCK_AUTH_STORAGE = JSON.stringify({
@@ -140,13 +153,13 @@ async function setupMocks(page: Page) {
   await page.route('**/api/attendance*', async (route) => route.fulfill({ json: MOCK_ATTENDANCE }));
 
   // Health
-  await page.route('**/api/health*', async (route) => route.fulfill({ json: { success: true, data: { data: [], meta: { total: 0 } } } }));
+  await page.route('**/api/health*', async (route) => route.fulfill({ json: { success: true, data: { data: [], meta: { total: 0, page: 1, limit: 10, totalPages: 0 } } } }));
 
   // Library
-  await page.route('**/api/library*', async (route) => route.fulfill({ json: { success: true, data: { data: [], meta: { total: 0 }, summary: {} } } }));
+  await page.route('**/api/library*', async (route) => route.fulfill({ json: { success: true, data: { data: [], meta: { total: 0, page: 1, limit: 10, totalPages: 0 }, summary: {} } } }));
 
   // PSB
-  await page.route('**/api/psb*', async (route) => route.fulfill({ json: { success: true, data: { data: [], meta: { total: 0 }, stats: {} } } }));
+  await page.route('**/api/psb*', async (route) => route.fulfill({ json: { success: true, data: { data: [], meta: { total: 0, page: 1, limit: 10, totalPages: 0 }, stats: {} } } }));
 
   // Catch-all for other API calls to prevent 404s/Connection Refused
   await page.route('**/api/**', async (route) => {

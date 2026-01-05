@@ -8,6 +8,7 @@ import {
   listTahfidzQuerySchema,
   tahfidzIdParamSchema,
   studentIdParamSchema,
+  generateCertificateSchema,
 } from './tahfidz.schema';
 
 const router = Router();
@@ -93,6 +94,31 @@ router.get('/', validateQuery(listTahfidzQuerySchema), controller.list);
  */
 // Dashboard stats (before :id to avoid conflict)
 router.get('/dashboard', controller.getDashboard);
+
+/**
+ * @swagger
+ * /api/tahfidz/certificates:
+ *   post:
+ *     summary: Generate certificate
+ *     tags: [Tahfidz]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - studentId
+ *               - certificateType
+ *     responses:
+ *       201:
+ *         description: Certificate generated
+ *       401:
+ *         description: Unauthorized
+ */
+router.post('/certificates', validate(generateCertificateSchema), controller.generateCertificate);
 
 /**
  * @swagger

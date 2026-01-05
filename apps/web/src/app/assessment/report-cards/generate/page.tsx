@@ -244,7 +244,7 @@ export default function GenerateReportCardsPage() {
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Wali Kelas</dt>
                       <dd className="font-medium">
-                        {selectedClass.homeroomTeacher?.name ?? '-'}
+                        {selectedClass.homeroomTeacher?.user.name ?? '-'}
                       </dd>
                     </div>
                     <div className="flex justify-between">

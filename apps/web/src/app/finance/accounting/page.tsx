@@ -59,18 +59,19 @@ import {
   useTrialBalanceReport,
   useIncomeExpenseReport,
   type AccountCode,
-  type AccountCodeType,
   type JournalEntry,
+  AccountType,
+  FinanceReportPeriod
 } from "@/hooks/use-finance-enhancement";
 import { useUnits } from "@/hooks/use-units";
 
 // Account type labels and colors
-const ACCOUNT_TYPES: { value: AccountCodeType; label: string; color: string }[] = [
-  { value: "ASSET", label: "Aset", color: "bg-blue-500" },
-  { value: "LIABILITY", label: "Kewajiban", color: "bg-red-500" },
-  { value: "EQUITY", label: "Modal", color: "bg-purple-500" },
-  { value: "REVENUE", label: "Pendapatan", color: "bg-green-500" },
-  { value: "EXPENSE", label: "Beban", color: "bg-orange-500" },
+const ACCOUNT_TYPES: { value: AccountType; label: string; color: string }[] = [
+  { value: AccountType.ASSET, label: "Aset", color: "bg-blue-500" },
+  { value: AccountType.LIABILITY, label: "Kewajiban", color: "bg-red-500" },
+  { value: AccountType.EQUITY, label: "Modal", color: "bg-purple-500" },
+  { value: AccountType.REVENUE, label: "Pendapatan", color: "bg-green-500" },
+  { value: AccountType.EXPENSE, label: "Beban", color: "bg-orange-500" },
 ];
 
 function formatCurrency(amount: number): string {
@@ -85,7 +86,7 @@ function formatCurrency(amount: number): string {
 // Account Codes Tab
 function AccountCodesTab() {
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<AccountCodeType | "ALL">("ALL");
+  const [typeFilter, setTypeFilter] = useState<AccountType | "ALL">("ALL");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const { data: accountCodesData, isLoading, refetch } = useAccountCodes({
@@ -101,7 +102,7 @@ function AccountCodesTab() {
       await createAccountCode.mutateAsync({
         code: formData.get("code") as string,
         name: formData.get("name") as string,
-        type: formData.get("type") as AccountCodeType,
+        type: formData.get("type") as unknown as AccountType,
         parentId: formData.get("parentId") as string || undefined,
         isActive: true,
       });
@@ -113,7 +114,7 @@ function AccountCodesTab() {
     }
   };
 
-  const getAccountTypeBadge = (type: AccountCodeType) => {
+  const getAccountTypeBadge = (type: AccountType) => {
     const accountType = ACCOUNT_TYPES.find(t => t.value === type);
     return (
       <Badge variant="outline" className={`${accountType?.color} text-white border-0`}>
@@ -135,7 +136,7 @@ function AccountCodesTab() {
             className="pl-10"
           />
         </div>
-        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as AccountCodeType | "ALL")}>
+        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as AccountType | "ALL")}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter tipe" />
           </SelectTrigger>
@@ -251,7 +252,7 @@ function AccountCodesTab() {
                   <TableRow key={account.id}>
                     <TableCell className="font-mono font-medium">{account.code}</TableCell>
                     <TableCell>{account.name}</TableCell>
-                    <TableCell>{getAccountTypeBadge(account.type)}</TableCell>
+                    <TableCell>{getAccountTypeBadge(account.type as AccountType)}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {account.parent ? `${account.parent.code} - ${account.parent.name}` : "-"}
                     </TableCell>
@@ -531,7 +532,7 @@ function ReportsTab() {
   const { data: incomeExpense, isLoading: incomeExpenseLoading } = useIncomeExpenseReport({
     startDate,
     endDate,
-    groupBy: "month",
+    groupBy: FinanceReportPeriod.MONTH,
   });
 
   return (

@@ -153,6 +153,38 @@ router.delete("/templates/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_AD
 
 router.post("/:id/send", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.sendNotification);
 
+/**
+ * @swagger
+ * /api/notifications/{id}/schedule:
+ *   post:
+ *     summary: Schedule a notification
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - scheduledAt
+ *             properties:
+ *               scheduledAt:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       200:
+ *         description: Notification scheduled
+ */
+router.post("/:id/schedule", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.scheduleNotification);
+
 router.post("/read-all", controller.markAllAsRead);
 
 // ==================== ANNOUNCEMENTS ====================

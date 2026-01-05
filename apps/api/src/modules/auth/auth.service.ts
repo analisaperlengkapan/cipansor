@@ -65,16 +65,30 @@ export class AuthService {
     });
 
     // Update last login
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
+    const [_, __, activeAcademicYearId] = await Promise.all([
+      prisma.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+      }),
+      // Store refresh token is already awaited before this, can't easily parallelize because tokens depend on user
+      // But we can parallelize the update and the academic year fetch
+      Promise.resolve(), // placeholder to keep structure or I can just await the academic year
+      this.getActiveAcademicYearId(),
+    ]);
+
+    // Get active academic year
+    const academicYear = await prisma.academicYear.findFirst({
+      where: { isActive: true },
     });
 
     // Return user without password
     const { passwordHash, ...userWithoutPassword } = user;
 
     return {
-      user: userWithoutPassword,
+      user: {
+        ...userWithoutPassword,
+        academicYearId: activeAcademicYearId,
+      },
       ...tokens,
     };
   }
@@ -119,7 +133,13 @@ export class AuthService {
 
     // Return without password
     const { passwordHash: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+
+    const activeAcademicYearId = await this.getActiveAcademicYearId();
+
+    return {
+      ...userWithoutPassword,
+      academicYearId: activeAcademicYearId,
+    };
   }
 
   /**
@@ -205,31 +225,54 @@ export class AuthService {
    * Get current user
    */
   async getCurrentUser(userId: string) {
-    const user = await prisma.user.findFirst({
-      where: {
-        id: userId,
-        deletedAt: null,
-      },
-      include: {
-        unit: true,
-        student: true,
-        userRoles: {
-          where: { isActive: true },
-          include: {
-            role: true,
-            unit: true,
-          },
-          orderBy: { isPrimary: 'desc' },
+    const [user, activeAcademicYearId] = await Promise.all([
+      prisma.user.findFirst({
+        where: {
+          id: userId,
+          deletedAt: null,
         },
-      },
-    });
+        include: {
+          unit: true,
+          student: true,
+          userRoles: {
+            where: { isActive: true },
+            include: {
+              role: true,
+              unit: true,
+            },
+            orderBy: { isPrimary: 'desc' },
+          },
+        },
+      }),
+      this.getActiveAcademicYearId(),
+    ]);
 
     if (!user) {
       throw Errors.notFound('User');
     }
 
+    // Get active academic year
+    const academicYear = await prisma.academicYear.findFirst({
+      where: { isActive: true },
+    });
+
     const { passwordHash, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+
+    return {
+      ...userWithoutPassword,
+      academicYearId: activeAcademicYearId,
+    };
+  }
+
+  /**
+   * Helper to get active academic year ID
+   */
+  private async getActiveAcademicYearId(): Promise<string | undefined> {
+    const activeAcademicYear = await prisma.academicYear.findFirst({
+      where: { isActive: true, deletedAt: null },
+      select: { id: true },
+    });
+    return activeAcademicYear?.id;
   }
 
   /**

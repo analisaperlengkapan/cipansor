@@ -52,12 +52,12 @@ export default function PSBPage() {
   const [activeTab, setActiveTab] = useState('registrations');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<RegistrationStatus | 'ALL'>('ALL');
-  const [periodFilter, setPeriodFilter] = useState<string>('');
+  const [periodFilter, setPeriodFilter] = useState<string>('ALL');
 
   const { data: registrationsData, isLoading } = useRegistrations({
     search: search || undefined,
     status: statusFilter !== 'ALL' ? statusFilter : undefined,
-    periodId: periodFilter || undefined,
+    periodId: (periodFilter && periodFilter !== 'ALL') ? periodFilter : undefined,
   });
   const { data: stats } = useRegistrationStats(periodFilter || undefined);
   const { data: periods } = useRegistrationPeriods();
@@ -199,7 +199,7 @@ export default function PSBPage() {
                       <SelectValue placeholder="Semua Periode" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Semua Periode</SelectItem>
+                      <SelectItem value="ALL">Semua Periode</SelectItem>
                       {periods?.map((period) => (
                         <SelectItem key={period.id} value={period.id}>
                           {period.name}

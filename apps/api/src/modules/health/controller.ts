@@ -11,14 +11,19 @@ import {
   queryMedicationUsageSchema,
 } from "./schema";
 import { Errors } from "../../middleware/error";
+import { MedicalRecordType } from "@cipansor/shared";
 
 // ==================== MEDICAL RECORD ====================
 
 export async function getMedicalRecords(req: Request, res: Response, next: NextFunction) {
   try {
     const query = queryMedicalRecordSchema.parse(req.query);
-    const result = await service.getMedicalRecords(query);
-    res.json({ success: true, ...result });
+    const result = await service.getMedicalRecords({
+      ...query,
+      // Pass optional status filter if present
+      status: req.query.status as string
+    });
+    res.json(result);
   } catch (error) {
     next(error);
   }
@@ -80,7 +85,7 @@ export async function getMedications(req: Request, res: Response, next: NextFunc
   try {
     const query = queryMedicationSchema.parse(req.query);
     const result = await service.getMedications(query);
-    res.json({ success: true, ...result });
+    res.json(result);
   } catch (error) {
     next(error);
   }
@@ -146,7 +151,7 @@ export async function getMedicationUsageLogs(req: Request, res: Response, next: 
   try {
     const query = queryMedicationUsageSchema.parse(req.query);
     const result = await service.getMedicationUsageLogs(query);
-    res.json({ success: true, ...result });
+    res.json(result);
   } catch (error) {
     next(error);
   }

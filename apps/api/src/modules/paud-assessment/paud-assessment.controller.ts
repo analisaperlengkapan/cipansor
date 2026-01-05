@@ -1,19 +1,21 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { paudAssessmentService } from './paud-assessment.service';
+import {
+  CreatePAUDIndicatorInput,
+  UpdatePAUDIndicatorInput,
+  CreatePAUDAssessmentInput,
+  UpdatePAUDAssessmentInput,
+  BulkCreatePAUDAssessmentInput,
+  CreatePAUDEvidenceInput,
+  CreatePAUDNarrativeReportInput,
+  UpdatePAUDNarrativeReportInput,
+  FinalizePAUDReportInput,
+} from '@cipansor/shared';
 import type {
   ListIndicatorsQuery,
-  CreateIndicatorInput,
-  UpdateIndicatorInput,
   ListAssessmentsQuery,
-  CreateAssessmentInput,
-  UpdateAssessmentInput,
-  BulkCreateAssessmentInput,
-  CreateEvidenceInput,
   ListNarrativeReportsQuery,
-  CreateNarrativeReportInput,
-  UpdateNarrativeReportInput,
-  FinalizeReportInput,
   AssessmentSummaryQuery,
   ClassSummaryQuery,
 } from './paud-assessment.schema';
@@ -61,7 +63,7 @@ export const getIndicatorById = asyncHandler(async (req: Request, res: Response)
  * POST /api/paud-assessment/indicators
  */
 export const createIndicator = asyncHandler(async (req: Request, res: Response) => {
-  const input: CreateIndicatorInput = req.body;
+  const input: CreatePAUDIndicatorInput = req.body;
   const indicator = await paudAssessmentService.createIndicator(input);
 
   res.status(201).json({
@@ -76,7 +78,7 @@ export const createIndicator = asyncHandler(async (req: Request, res: Response) 
  */
 export const updateIndicator = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const input: UpdateIndicatorInput = req.body;
+  const input: UpdatePAUDIndicatorInput = req.body;
   const indicator = await paudAssessmentService.updateIndicator(id, input);
 
   res.json({
@@ -142,7 +144,7 @@ export const getAssessmentById = asyncHandler(async (req: Request, res: Response
  * POST /api/paud-assessment/assessments
  */
 export const createAssessment = asyncHandler(async (req: Request, res: Response) => {
-  const input: CreateAssessmentInput = req.body;
+  const input: CreatePAUDAssessmentInput = req.body;
   const assessment = await paudAssessmentService.createAssessment(input, req.user!.sub);
 
   res.status(201).json({
@@ -156,7 +158,7 @@ export const createAssessment = asyncHandler(async (req: Request, res: Response)
  * POST /api/paud-assessment/assessments/bulk
  */
 export const bulkCreateAssessments = asyncHandler(async (req: Request, res: Response) => {
-  const input: BulkCreateAssessmentInput = req.body;
+  const input: BulkCreatePAUDAssessmentInput = req.body;
   const result = await paudAssessmentService.bulkCreateAssessments(input, req.user!.sub);
 
   res.status(201).json({
@@ -171,7 +173,7 @@ export const bulkCreateAssessments = asyncHandler(async (req: Request, res: Resp
  */
 export const updateAssessment = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const input: UpdateAssessmentInput = req.body;
+  const input: UpdatePAUDAssessmentInput = req.body;
   const assessment = await paudAssessmentService.updateAssessment(id, input);
 
   res.json({
@@ -203,7 +205,7 @@ export const deleteAssessment = asyncHandler(async (req: Request, res: Response)
  * POST /api/paud-assessment/evidences
  */
 export const createEvidence = asyncHandler(async (req: Request, res: Response) => {
-  const input: CreateEvidenceInput = req.body;
+  const input: CreatePAUDEvidenceInput = req.body;
   const evidence = await paudAssessmentService.createEvidence(input);
 
   res.status(201).json({
@@ -269,7 +271,7 @@ export const getNarrativeReportById = asyncHandler(async (req: Request, res: Res
  * POST /api/paud-assessment/reports
  */
 export const createNarrativeReport = asyncHandler(async (req: Request, res: Response) => {
-  const input: CreateNarrativeReportInput = req.body;
+  const input: CreatePAUDNarrativeReportInput = req.body;
   const report = await paudAssessmentService.createNarrativeReport(input, req.user!.sub);
 
   res.status(201).json({
@@ -284,7 +286,7 @@ export const createNarrativeReport = asyncHandler(async (req: Request, res: Resp
  */
 export const updateNarrativeReport = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const input: UpdateNarrativeReportInput = req.body;
+  const input: UpdatePAUDNarrativeReportInput = req.body;
   const report = await paudAssessmentService.updateNarrativeReport(id, input);
 
   res.json({
@@ -299,7 +301,7 @@ export const updateNarrativeReport = asyncHandler(async (req: Request, res: Resp
  */
 export const finalizeNarrativeReport = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const input: FinalizeReportInput = req.body;
+  const input: FinalizePAUDReportInput = req.body;
   const report = await paudAssessmentService.finalizeNarrativeReport(id, input);
 
   res.json({

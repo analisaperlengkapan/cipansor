@@ -1,13 +1,35 @@
 import { z } from 'zod';
+import {
+  PAUDAspect,
+  PAUDAchievementLevel,
+  PAUDReportPeriod,
+} from '@cipansor/shared';
 
 // PAUD Aspect enum
-export const PAUDAspectEnum = z.enum(['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI']);
+export const PAUDAspectEnum = z.nativeEnum({
+  NAM: 'NAM',
+  FM: 'FM',
+  KOG: 'KOG',
+  BHS: 'BHS',
+  SE: 'SE',
+  SNI: 'SNI',
+} as const);
 
 // Achievement Level enum
-export const PAUDAchievementLevelEnum = z.enum(['BB', 'MB', 'BSH', 'BSB']);
+export const PAUDAchievementLevelEnum = z.nativeEnum({
+  BB: 'BB',
+  MB: 'MB',
+  BSH: 'BSH',
+  BSB: 'BSB',
+} as const);
 
 // Report Period enum  
-export const PAUDReportPeriodEnum = z.enum(['HARIAN', 'MINGGUAN', 'BULANAN', 'SEMESTER']);
+export const PAUDReportPeriodEnum = z.nativeEnum({
+  HARIAN: 'HARIAN',
+  MINGGUAN: 'MINGGUAN',
+  BULANAN: 'BULANAN',
+  SEMESTER: 'SEMESTER',
+} as const);
 
 // ============================================
 // PAUD Development Indicator Schemas
@@ -58,7 +80,11 @@ export const listAssessmentsQuerySchema = z.object({
   studentId: z.string().uuid().optional(),
   unitId: z.string().uuid().optional(),
   academicYearId: z.string().uuid().optional(),
-  semester: z.enum(['GANJIL', 'GENAP']).optional(),
+  semester: z.union([z.literal('GANJIL'), z.literal('GENAP'), z.coerce.number()]).optional().transform(v => {
+    if (v === 'GANJIL') return 1;
+    if (v === 'GENAP') return 2;
+    return v;
+  }),
   aspect: PAUDAspectEnum.optional(),
   periodType: PAUDReportPeriodEnum.optional(),
   startDate: z.string().optional(), // ISO date string
@@ -70,7 +96,7 @@ export const createAssessmentSchema = z.object({
   studentId: z.string().uuid('Invalid student ID'),
   unitId: z.string().uuid('Invalid unit ID'),
   academicYearId: z.string().uuid('Invalid academic year ID'),
-  semester: z.enum(['GANJIL', 'GENAP']).optional().nullable(),
+  semester: z.number().int().min(1).max(2),
   periodType: PAUDReportPeriodEnum,
   periodDate: z.coerce.date(),
   aspect: PAUDAspectEnum,
@@ -96,7 +122,7 @@ export const bulkCreateAssessmentSchema = z.object({
   studentId: z.string().uuid('Invalid student ID'),
   unitId: z.string().uuid('Invalid unit ID'),
   academicYearId: z.string().uuid('Invalid academic year ID'),
-  semester: z.enum(['GANJIL', 'GENAP']).optional().nullable(),
+  semester: z.number().int().min(1).max(2),
   periodType: PAUDReportPeriodEnum,
   periodDate: z.coerce.date(),
   assessments: z.array(z.object({
@@ -135,7 +161,11 @@ export const listNarrativeReportsQuerySchema = z.object({
   studentId: z.string().uuid().optional(),
   unitId: z.string().uuid().optional(),
   academicYearId: z.string().uuid().optional(),
-  semester: z.enum(['GANJIL', 'GENAP']).optional(),
+  semester: z.union([z.literal('GANJIL'), z.literal('GENAP'), z.coerce.number()]).optional().transform(v => {
+    if (v === 'GANJIL') return 1;
+    if (v === 'GENAP') return 2;
+    return v;
+  }),
   status: z.enum(['DRAFT', 'FINALIZED', 'PRINTED']).optional(),
 });
 
@@ -143,7 +173,7 @@ export const createNarrativeReportSchema = z.object({
   studentId: z.string().uuid('Invalid student ID'),
   unitId: z.string().uuid('Invalid unit ID'),
   academicYearId: z.string().uuid('Invalid academic year ID'),
-  semester: z.enum(['GANJIL', 'GENAP']),
+  semester: z.number().int().min(1).max(2),
   narrativeNAM: z.string().max(5000).optional().nullable(),
   narrativeFM: z.string().max(5000).optional().nullable(),
   narrativeKOG: z.string().max(5000).optional().nullable(),
@@ -201,13 +231,21 @@ export const studentIdParamSchema = z.object({
 export const assessmentSummaryQuerySchema = z.object({
   studentId: z.string().uuid('Invalid student ID'),
   academicYearId: z.string().uuid().optional(),
-  semester: z.enum(['GANJIL', 'GENAP']).optional(),
+  semester: z.union([z.literal('GANJIL'), z.literal('GENAP'), z.coerce.number()]).optional().transform(v => {
+    if (v === 'GANJIL') return 1;
+    if (v === 'GENAP') return 2;
+    return v;
+  }),
 });
 
 export const classSummaryQuerySchema = z.object({
   unitId: z.string().uuid('Invalid unit ID'),
   academicYearId: z.string().uuid().optional(),
-  semester: z.enum(['GANJIL', 'GENAP']).optional(),
+  semester: z.union([z.literal('GANJIL'), z.literal('GENAP'), z.coerce.number()]).optional().transform(v => {
+    if (v === 'GANJIL') return 1;
+    if (v === 'GENAP') return 2;
+    return v;
+  }),
   aspect: PAUDAspectEnum.optional(),
 });
 
@@ -215,26 +253,22 @@ export const classSummaryQuerySchema = z.object({
 // Type Exports
 // ============================================
 
-export type PAUDAspect = z.infer<typeof PAUDAspectEnum>;
-export type PAUDAchievementLevel = z.infer<typeof PAUDAchievementLevelEnum>;
-export type PAUDReportPeriod = z.infer<typeof PAUDReportPeriodEnum>;
-
 export type ListIndicatorsQuery = z.infer<typeof listIndicatorsQuerySchema>;
-export type CreateIndicatorInput = z.infer<typeof createIndicatorSchema>;
-export type UpdateIndicatorInput = z.infer<typeof updateIndicatorSchema>;
+// export type CreateIndicatorInput = z.infer<typeof createIndicatorSchema>; // Use shared type
+// export type UpdateIndicatorInput = z.infer<typeof updateIndicatorSchema>; // Use shared type
 
 export type ListAssessmentsQuery = z.infer<typeof listAssessmentsQuerySchema>;
-export type CreateAssessmentInput = z.infer<typeof createAssessmentSchema>;
-export type UpdateAssessmentInput = z.infer<typeof updateAssessmentSchema>;
-export type BulkCreateAssessmentInput = z.infer<typeof bulkCreateAssessmentSchema>;
+// export type CreateAssessmentInput = z.infer<typeof createAssessmentSchema>; // Use shared type
+// export type UpdateAssessmentInput = z.infer<typeof updateAssessmentSchema>; // Use shared type
+// export type BulkCreateAssessmentInput = z.infer<typeof bulkCreateAssessmentSchema>; // Use shared type
 
-export type CreateEvidenceInput = z.infer<typeof createEvidenceSchema>;
-export type UpdateEvidenceInput = z.infer<typeof updateEvidenceSchema>;
+// export type CreateEvidenceInput = z.infer<typeof createEvidenceSchema>; // Use shared type
+// export type UpdateEvidenceInput = z.infer<typeof updateEvidenceSchema>; // Use shared type
 
 export type ListNarrativeReportsQuery = z.infer<typeof listNarrativeReportsQuerySchema>;
-export type CreateNarrativeReportInput = z.infer<typeof createNarrativeReportSchema>;
-export type UpdateNarrativeReportInput = z.infer<typeof updateNarrativeReportSchema>;
-export type FinalizeReportInput = z.infer<typeof finalizeReportSchema>;
+// export type CreateNarrativeReportInput = z.infer<typeof createNarrativeReportSchema>; // Use shared type
+// export type UpdateNarrativeReportInput = z.infer<typeof updateNarrativeReportSchema>; // Use shared type
+// export type FinalizeReportInput = z.infer<typeof finalizeReportSchema>; // Use shared type
 
 export type AssessmentSummaryQuery = z.infer<typeof assessmentSummaryQuerySchema>;
 export type ClassSummaryQuery = z.infer<typeof classSummaryQuerySchema>;

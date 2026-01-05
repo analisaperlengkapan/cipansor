@@ -231,7 +231,7 @@ router.post('/bulk', isAdmin, validate(bulkAttendanceSchema), controller.bulkCre
 /**
  * @swagger
  * /api/attendance/{id}:
- *   put:
+ *   patch:
  *     summary: Update attendance (Admin/Teacher)
  *     tags: [Attendance]
  *     security:
@@ -258,7 +258,7 @@ router.post('/bulk', isAdmin, validate(bulkAttendanceSchema), controller.bulkCre
  *       200:
  *         description: Attendance updated
  */
-router.put('/:id', isAdmin, validateParams(attendanceIdParamSchema), validate(updateAttendanceSchema), controller.update);
+router.patch('/:id', isAdmin, validateParams(attendanceIdParamSchema), validate(updateAttendanceSchema), controller.update);
 
 /**
  * @swagger

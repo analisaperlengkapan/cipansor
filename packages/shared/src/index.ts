@@ -14,3 +14,4 @@ export * from './types/inventory';
 export * from './types/paud';
 export * from './types/health';
 export * from './types/counseling';
+export * from './types/calendar';

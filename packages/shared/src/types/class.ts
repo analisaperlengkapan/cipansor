@@ -52,8 +52,8 @@ export interface ClassEnrollment {
   status: string; // 'active', etc.
   student?: {
     id: string;
-    nis: string; // Required from DB
-    gender: Gender; // Required from DB
+    nis: string; // Student NIS
+    gender: Gender; // Student Gender
     name?: string; // Derived/Fallback
     user?: {
       id: string;

@@ -481,19 +481,11 @@ export async function generateReportCard(studentId: string, classId: string, aca
   // Optimization: Use Promise.all to fetch data concurrently
   // Optimization: Use database aggregation instead of in-memory loop for subject averages
 
-  // 1. Calculate Averages per Subject using Raw SQL for performance
-  // We need to group by subject and calculate averages for Daily, Midterm, Final
-  // Then average those components
-
-  // Use Prisma.sql for safer table name injection if possible, but strict raw query requires standard SQL
-  // In Prisma, raw queries on table names usually require knowing the mapped name.
-  // Based on schema.prisma, the mapped names are:
-  // Grade -> "grades"
-  // Exam -> "exams"
-  // Subject -> "subjects"
-  // This matches my previous assumption.
-
+  // Execute independent queries concurrently
   const [subjectAggregates, attendance, tahfidzRecord, totalAyahResult] = await Promise.all([
+    // 1. Calculate Averages per Subject using Raw SQL for performance
+    // We need to group by subject and calculate averages for Daily, Midterm, Final
+    // Then average those components
     prisma.$queryRaw<Array<{
       subject_id: string;
       subject_name: string;
@@ -515,21 +507,26 @@ export async function generateReportCard(studentId: string, classId: string, aca
         AND g.type = 'EXAM'
       GROUP BY s.id, s.name
     `,
+
+    // 2. Fetch Attendance Summary
+    // Use count with CASE inside aggregation or Prisma GroupBy
     prisma.attendance.groupBy({
       by: ['status'],
       where: {
         studentId,
         class: { academicYearId } // Filter by class associated with academic year? Or just academicYearId on attendance?
-        // Assuming attendance is linked to class or academic year.
-        // If attendance table has academicYearId, better to use that.
-        // Based on previous code: class: { academicYearId }
       },
       _count: true,
     }),
+
+    // 3. Fetch Tahfidz Summary
+    // Optimized: Use single query to get latest record
     prisma.tahfidzRecord.findFirst({
       where: { studentId },
       orderBy: { juz: 'desc' },
     }),
+
+    // Optimized: Calculate total ayah with aggregation
     prisma.tahfidzRecord.aggregate({
       where: { studentId, activityType: 'ZIYADAH' },
       _sum: { totalAyah: true },
@@ -650,6 +647,22 @@ export async function generateReportCard(studentId: string, classId: string, aca
 
   // Re-fetch with details to return full object
   return getReportCardById(reportCard.id);
+}
+
+export async function generateClassReportCards(classId: string, academicYearId: string, semester: number): Promise<ReportCard[]> {
+  // Get all active students in class
+  const enrollments = await prisma.classEnrollment.findMany({
+    where: { classId, status: 'active' },
+    select: { studentId: true }
+  });
+
+  // Generate for each student concurrently
+  // Using Promise.all is efficient for typical class sizes (30-40)
+  const results = await Promise.all(
+    enrollments.map(e => generateReportCard(e.studentId, classId, academicYearId, semester))
+  );
+
+  return results.filter((r): r is ReportCard => r !== null);
 }
 
 export async function publishReportCard(id: string): Promise<ReportCard> {

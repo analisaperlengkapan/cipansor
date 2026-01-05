@@ -1777,6 +1777,7 @@ model Notification {
   status    NotificationStatus @default(UNREAD)
   readAt    DateTime?          @map("read_at")
   data      Json?              @map("data") // Additional data for extended types
+  scheduledAt DateTime?        @map("scheduled_at")
   createdAt DateTime           @default(now()) @map("created_at")
 
   // Relations
@@ -1785,6 +1786,7 @@ model Notification {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@index([scheduledAt])
   @@map("notifications")
 }
 

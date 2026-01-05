@@ -157,7 +157,6 @@ export function useScheduleNotification() {
 
   return useMutation({
     mutationFn: async ({ id, scheduledAt }: { id: string; scheduledAt: string }) => {
-      // NOTE: Endpoint might need implementation in API
       const response = await api.post(`/notifications/${id}/schedule`, { scheduledAt });
       return response.data.data;
     },

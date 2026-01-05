@@ -44,6 +44,10 @@ export async function getUserNotifications(userId: string, query: QueryNotificat
   const where: Prisma.NotificationWhereInput = {
     userId,
     ...(isRead !== undefined && { status: isRead ? NotificationStatus.READ : NotificationStatus.UNREAD }),
+    OR: [
+      { scheduledAt: null },
+      { scheduledAt: { lte: new Date() } }
+    ]
   };
 
   if (type) {
@@ -176,7 +180,9 @@ export async function createNotification(data: CreateNotificationInput) {
     data: {
       ...(data.data || {}),
       ...(originalType ? { originalType } : {}),
-    }
+    },
+    // Explicitly map scheduledAt if provided
+    scheduledAt: data.scheduledAt || null,
   };
 
   const notification = await prisma.notification.create({ data: createData });
@@ -236,6 +242,13 @@ export async function sendNotification(id: string) {
   return prisma.notification.update({
     where: { id },
     data: { createdAt: new Date() },
+  });
+}
+
+export async function scheduleNotification(id: string, scheduledAt: Date) {
+  return prisma.notification.update({
+    where: { id },
+    data: { scheduledAt },
   });
 }
 

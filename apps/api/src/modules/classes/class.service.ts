@@ -1,40 +1,92 @@
-import { prisma } from '@/lib/prisma';
-import { Errors } from '@/middleware/error';
-import { UserRole, Prisma } from '@prisma/client';
-import type {
-  ListClassesQuery,
-} from './class.schema';
-import { CreateClassInput, UpdateClassInput, ClassEnrollmentInput, UpdateEnrollmentInput, Class, ClassEnrollment, EnrollStudentInput } from '@cipansor/shared';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
+import { Errors } from '../../middleware/error';
+import {
+  CreateClassInput,
+  UpdateClassInput,
+  ClassEnrollmentInput,
+  UpdateEnrollmentInput,
+  Class,
+  ClassEnrollment,
+  EnrollStudentInput,
+  EnrollmentStatus,
+  Gender,
+  ListClassesQuery
+} from '@cipansor/shared';
+
+// Helper to safely cast DB status to EnrollmentStatus
+function toEnrollmentStatus(status: string): EnrollmentStatus {
+  // Since we defined the Enum values as lowercase strings matching the DB,
+  // we can cast directly if valid, otherwise fallback or error.
+  // Assuming strict adherence:
+  if (Object.values(EnrollmentStatus).includes(status as EnrollmentStatus)) {
+    return status as EnrollmentStatus;
+  }
+  // Default fallback if unknown status in DB (should not happen with strict schema)
+  return EnrollmentStatus.ACTIVE;
+}
+
+// Helper to map Prisma result to ClassEnrollment
+function mapToClassEnrollment(
+  data: {
+    id: string;
+    studentId: string;
+    classId: string;
+    status: string; // Prisma type usually string or Enum
+    createdAt: Date;
+    student: {
+      id: string;
+      nis: string;
+      gender: string; // Prisma Gender Enum is usually uppercase
+      user: {
+        id: string;
+        name: string;
+        email?: string | null;
+      };
+    };
+  }
+): ClassEnrollment {
+  return {
+    id: data.id,
+    studentId: data.studentId,
+    classId: data.classId,
+    status: toEnrollmentStatus(data.status),
+    enrolledAt: data.createdAt,
+    student: {
+      id: data.student.id,
+      nis: data.student.nis,
+      gender: data.student.gender as Gender, // Assumes Prisma Gender matches Shared Gender (MALE/FEMALE)
+      name: data.student.user.name,
+      user: {
+        id: data.student.user.id,
+        name: data.student.user.name,
+      }
+    }
+  };
+}
 
 export class ClassService {
   /**
-   * Get all classes with pagination
+   * Get all classes with pagination and filters
    */
-  async findAll(query: ListClassesQuery, currentUser: { role: UserRole; unitId: string | null }) {
-    const { page, limit, search, unitId, academicYearId, level } = query;
+  async findAll(query: ListClassesQuery) {
+    const { page = 1, limit = 10, search, unitId, academicYearId, grade, level } = query;
     const skip = (page - 1) * limit;
 
     const where: Prisma.ClassWhereInput = {
       deletedAt: null,
+      unitId,
+      academicYearId,
     };
 
-    // Filter by unit
-    if (currentUser.role !== UserRole.SUPER_ADMIN) {
-      where.unitId = currentUser.unitId || 'none';
-    } else if (unitId) {
-      where.unitId = unitId;
-    }
-
-    if (academicYearId) {
-      where.academicYearId = academicYearId;
+    if (search) {
+      where.name = { contains: search, mode: 'insensitive' };
     }
 
     if (level) {
       where.level = level;
-    }
-
-    if (search) {
-      where.name = { contains: search, mode: 'insensitive' };
+    } else if (grade) {
+      where.level = String(grade);
     }
 
     const [classes, total] = await Promise.all([
@@ -42,22 +94,18 @@ export class ClassService {
         where,
         skip,
         take: limit,
-        orderBy: [{ level: 'asc' }, { name: 'asc' }],
+        orderBy: { name: 'asc' },
         include: {
           unit: {
             select: {
               id: true,
               name: true,
-              type: true,
             },
           },
           academicYear: {
             select: {
               id: true,
               name: true,
-              startDate: true,
-              endDate: true,
-              isActive: true,
             },
           },
           homeroomTeacher: {
@@ -81,22 +129,23 @@ export class ClassService {
       prisma.class.count({ where }),
     ]);
 
-    // Map to Shared Type if necessary, or ensure structure matches.
-    // The shared 'Class' type has 'grade' (number) and 'level' (string).
-    // The DB has 'level'. We should probably map 'grade' if the FE expects it,
-    // but looking at `use-classes.ts` in the *original* file, it had `grade: number`.
-    // My shared type has both. I will map level to grade (parse int) just in case.
-
     const mappedClasses = classes.map(c => ({
       ...c,
-      grade: parseInt(c.level) || 0, // Best effort mapping
+      grade: parseInt(c.level) || 0,
       studentCount: c._count.enrollments,
-      // Ensure unit matches expected shape (optional fields)
-      unit: c.unit ? { id: c.unit.id, name: c.unit.name } : undefined, // Shared type is simpler
+      homeroomTeacher: c.homeroomTeacher ? {
+          id: c.homeroomTeacher.id,
+          user: c.homeroomTeacher.user
+      } : null,
+      unit: {
+          id: c.unit.id,
+          name: c.unit.name
+      },
     })) as unknown as Class[];
 
     return {
-      classes: mappedClasses,
+      classes: mappedClasses, // Legacy property name
+      data: mappedClasses, // Standard property name
       pagination: {
         page,
         limit,
@@ -110,11 +159,15 @@ export class ClassService {
    * Get class by ID
    */
   async findById(id: string): Promise<Class> {
-    const classData = await prisma.class.findFirst({
-      where: { id, deletedAt: null },
+    const classData = await prisma.class.findUnique({
+      where: { id },
       include: {
-        unit: true,
-        academicYear: true,
+        unit: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         homeroomTeacher: {
           include: {
             user: {
@@ -122,25 +175,6 @@ export class ClassService {
                 id: true,
                 name: true,
                 email: true,
-              },
-            },
-          },
-        },
-        enrollments: {
-          where: { status: 'active' },
-          include: {
-            student: {
-              select: {
-                id: true,
-                nis: true,
-                gender: true,
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                  },
-                },
               },
             },
           },
@@ -161,27 +195,14 @@ export class ClassService {
         ...classData,
         grade: parseInt(classData.level) || 0,
         studentCount: classData._count.enrollments,
-        // The shared type expects homeroomTeacher to have { id, user: { id, name, email } }
-        // The query returns exactly that structure.
         homeroomTeacher: classData.homeroomTeacher ? {
             id: classData.homeroomTeacher.id,
             user: classData.homeroomTeacher.user
         } : null,
-        // The shared type for Class includes basic unit info
         unit: {
             id: classData.unit.id,
             name: classData.unit.name
         },
-        // We need to cast because 'enrollments' in shared type Class might be different or excluded
-        // The shared type 'Class' definition I created earlier didn't explicitly include 'enrollments' array
-        // but it did include '_count'.
-        // Wait, looking at my `class.ts` creation:
-        // interface Class { ... _count?: { enrollments: number }; studentCount?: number; ... }
-        // It did NOT include `enrollments: ClassEnrollment[]`.
-        // However, the `findById` in the *original* controller returned `data` which *might* have had enrollments if the FE expected it.
-        // The original `use-classes.ts` had `useClassEnrollments` as a separate hook.
-        // `useClass` just fetched the class.
-        // So `findById` returning the class object is correct.
     } as unknown as Class;
   }
 
@@ -189,7 +210,6 @@ export class ClassService {
    * Create new class
    */
   async create(input: CreateClassInput) {
-    // Check unit exists
     const unit = await prisma.unit.findFirst({
       where: { id: input.unitId, deletedAt: null },
     });
@@ -198,7 +218,6 @@ export class ClassService {
       throw Errors.notFound('Unit');
     }
 
-    // Check academic year exists
     const academicYear = await prisma.academicYear.findFirst({
       where: { id: input.academicYearId, deletedAt: null },
     });
@@ -207,7 +226,6 @@ export class ClassService {
       throw Errors.notFound('Academic Year');
     }
 
-    // Check class name uniqueness within unit and academic year
     const existing = await prisma.class.findFirst({
       where: {
         name: input.name,
@@ -221,7 +239,6 @@ export class ClassService {
       throw Errors.conflict('Class with this name already exists for this unit and academic year');
     }
 
-    // Verify homeroom teacher if provided
     if (input.homeroomTeacherId) {
       const teacher = await prisma.teacher.findFirst({
         where: { id: input.homeroomTeacherId, unitId: input.unitId },
@@ -231,7 +248,6 @@ export class ClassService {
       }
     }
 
-    // Set default capacity if not provided
     const capacity = input.capacity ?? 30;
 
     const classData = await prisma.class.create({
@@ -274,7 +290,6 @@ export class ClassService {
       throw Errors.notFound('Class');
     }
 
-    // Check name uniqueness if changing
     if (input.name && input.name !== classData.name) {
       const existing = await prisma.class.findFirst({
         where: {
@@ -290,7 +305,6 @@ export class ClassService {
       }
     }
 
-    // Verify homeroom teacher if changing
     if (input.homeroomTeacherId) {
       const teacher = await prisma.teacher.findFirst({
         where: { id: input.homeroomTeacherId, unitId: classData.unitId },
@@ -300,7 +314,6 @@ export class ClassService {
       }
     }
 
-    // Build update data
     const updateData: Prisma.ClassUpdateInput = {};
     if (input.name !== undefined) updateData.name = input.name;
     if (input.level !== undefined) updateData.level = input.level;
@@ -345,7 +358,6 @@ export class ClassService {
       throw Errors.notFound('Class');
     }
 
-    // Check if class has active enrollments
     const activeEnrollments = await prisma.classEnrollment.count({
       where: { classId: id, status: 'active' },
     });
@@ -377,7 +389,6 @@ export class ClassService {
       throw Errors.notFound('Class');
     }
 
-    // Check capacity
     if (classData._count.enrollments >= classData.capacity) {
       throw Errors.badRequest('Class is at full capacity');
     }
@@ -390,7 +401,6 @@ export class ClassService {
       throw Errors.notFound('Student');
     }
 
-    // Check if already enrolled
     const existingEnrollment = await prisma.classEnrollment.findFirst({
       where: {
         studentId: input.studentId,
@@ -416,14 +426,14 @@ export class ClassService {
             nis: true,
             gender: true,
             user: {
-              select: { id: true, name: true },
+              select: { id: true, name: true, email: true },
             },
           },
         },
       },
     });
 
-    return enrollment as unknown as ClassEnrollment;
+    return mapToClassEnrollment(enrollment);
   }
 
   /**
@@ -438,15 +448,9 @@ export class ClassService {
       throw Errors.notFound('Enrollment');
     }
 
-    // Use Prisma.ClassEnrollmentUpdateInput to be safe, or just object
-    // Cast input.status to the correct Enum from @prisma/client if needed
-    // But since UpdateEnrollmentInput.status is string, and DB is enum...
-    // The shared type should match the DB enum ideally.
-    // Assuming 'active' | 'completed' etc match.
-
     const updated = await prisma.classEnrollment.update({
       where: { id: enrollment.id },
-      data: { status: input.status as any }, // Cast to any or correct Enum type
+      data: { status: input.status },
     });
 
     return updated;

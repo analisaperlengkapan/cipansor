@@ -45,19 +45,6 @@ export default function ClassDetailPage() {
   };
 
   const enrollmentColumns: ColumnDef<ClassEnrollment>[] = [
-    // NIS might not be in shared type yet, let's check class.ts or just handle safe access
-    // The shared type 'ClassEnrollment' has nested 'student: { id, name, user: { id, name } }'
-    // It doesn't seem to expose 'nis' or 'gender' directly unless I add them to shared 'ClassEnrollment'
-    // I should probably fix the shared type to include these if the UI needs them.
-    // But for now I'll focus on property access fixes based on what IS in shared type.
-    // Wait, row.original.student might be just { id, name } if I didn't verify backend.
-    // The backend `findById` returns `student` with `include: { user: ... }`.
-    // The shared type I created earlier:
-    // student?: { id: string; name?: string; user?: { id: string; name: string; }; };
-    // It does NOT include NIS or Gender. This is a GAP.
-    // I should fix shared type OR just use safe access and ignore NIS for now to fix build.
-    // I'll assume name is available via `user.name` or `name` (which I mapped?)
-
     {
       accessorKey: 'student.nis',
       header: 'NIS',

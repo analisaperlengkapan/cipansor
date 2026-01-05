@@ -86,12 +86,11 @@ export default function NewInventoryPage() {
     try {
       await createMutation.mutateAsync({
         ...data,
-        description: data.description || undefined,
         location: data.location || undefined,
         purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : undefined,
         purchasePrice: data.purchasePrice || undefined,
         warrantyExpiry: data.warrantyExpiry ? new Date(data.warrantyExpiry) : undefined,
-        notes: data.notes || undefined,
+        notes: data.notes || data.description || undefined,
         brand: data.brand || undefined,
         model: data.model || undefined,
         serialNumber: data.serialNumber || undefined,

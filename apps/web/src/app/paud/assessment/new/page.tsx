@@ -52,7 +52,7 @@ import { ImagePlus, X, CheckCircle2 } from 'lucide-react';
 const formSchema = z.object({
   studentId: z.string().min(1, 'Pilih siswa'),
   academicYearId: z.string().min(1, 'Pilih tahun ajaran'),
-  semester: z.number().min(1).max(2).default(1),
+  semester: z.coerce.number().min(1).max(2),
   aspect: z.enum(['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI'], {
     required_error: 'Pilih aspek perkembangan',
   }),
@@ -182,7 +182,7 @@ export default function CreatePAUDAssessmentPage() {
         <PageHeader
           title="Tambah Penilaian Baru"
           description="Isi form untuk mencatat perkembangan anak"
-          showBackButton
+          backHref="/paud/assessment"
         />
 
         {/* Progress Bar */}
@@ -319,6 +319,28 @@ export default function CreatePAUDAssessmentPage() {
                               />
                             </PopoverContent>
                           </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="semester"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Semester *</FormLabel>
+                          <Select onValueChange={(val) => field.onChange(parseInt(val))} value={field.value?.toString()}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih semester" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="1">Semester 1 (Ganjil)</SelectItem>
+                              <SelectItem value="2">Semester 2 (Genap)</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}

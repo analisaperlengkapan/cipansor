@@ -3,11 +3,15 @@ import api, { SharedPaginatedResponse } from '@/lib/api';
 import {
   MedicalRecord,
   MedicalRecordType,
+  MedicalRecordType as HealthRecordType,
   HealthStatus,
   CreateMedicalRecordInput,
   UpdateMedicalRecordInput,
   HealthStats,
 } from '@cipansor/shared';
+
+export type { MedicalRecord };
+export { HealthStatus, MedicalRecordType as HealthRecordType };
 
 // Constants
 export const HEALTH_RECORD_TYPES: { value: MedicalRecordType; label: string }[] = [
@@ -48,7 +52,7 @@ export function useHealthRecords(params?: {
     queryKey: ['health-records', params],
     queryFn: async () => {
       const response = await api.get<SharedPaginatedResponse<MedicalRecord>>('/health/records', { params });
-      return response.data.data;
+      return response.data;
     },
   });
 }

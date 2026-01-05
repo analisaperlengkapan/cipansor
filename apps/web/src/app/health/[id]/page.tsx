@@ -88,7 +88,7 @@ export default function HealthDetailPage({ params }: PageProps) {
         id: recordId,
         data: {
           status: newStatus,
-          notes: statusNotes ? `${record?.notes || ''}\n\n[${format(new Date(), 'dd/MM/yyyy HH:mm')}] ${statusNotes}` : record?.notes,
+          notes: statusNotes ? `${record?.notes || ''}\n\n[${format(new Date(), 'dd/MM/yyyy HH:mm')}] ${statusNotes}` : (record?.notes ?? undefined),
         },
       });
       toast.success('Status berhasil diperbarui');
@@ -145,7 +145,7 @@ export default function HealthDetailPage({ params }: PageProps) {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Detail Rekam Kesehatan</h1>
               <p className="text-muted-foreground">
-                {format(new Date(record.date), 'EEEE, dd MMMM yyyy', { locale: id })}
+                {format(new Date(record.visitDate), 'EEEE, dd MMMM yyyy', { locale: id })}
               </p>
             </div>
           </div>
@@ -236,31 +236,15 @@ export default function HealthDetailPage({ params }: PageProps) {
                   <User className="h-8 w-8 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">{record.student?.name}</h3>
+                  <h3 className="font-semibold">{record.student?.user?.name || record.student?.name}</h3>
                   <p className="text-sm text-muted-foreground">{record.student?.nis}</p>
                 </div>
               </div>
               <Separator className="my-4" />
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Kelas</span>
-                  <span>{record.student?.class?.name ?? '-'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Asrama</span>
-                  <span>{record.student?.dormitory?.name ?? '-'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tanggal Lahir</span>
-                  <span>
-                    {record.student?.birthDate
-                      ? format(new Date(record.student.birthDate), 'dd MMM yyyy', { locale: id })
-                      : '-'}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Jenis Kelamin</span>
-                  <span>{record.student?.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}</span>
+                  <span className="text-muted-foreground">Unit</span>
+                  <span>{record.student?.unit?.name ?? '-'}</span>
                 </div>
               </div>
             </CardContent>
@@ -276,21 +260,21 @@ export default function HealthDetailPage({ params }: PageProps) {
                     Rekam Kesehatan
                   </CardTitle>
                   <CardDescription>
-                    Jenis: {getRecordTypeLabel(record.recordType)}
+                    Jenis: {getRecordTypeLabel(record.type)}
                   </CardDescription>
                 </div>
-                {getStatusBadge(record.status)}
+                {getStatusBadge(record.status || HealthStatus.HEALTHY)}
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Symptoms */}
-              {record.symptoms && (
+              {record.complaint && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <AlertCircle className="h-4 w-4 text-yellow-500" />
                     Keluhan / Gejala
                   </div>
-                  <p className="text-sm bg-yellow-50 p-3 rounded-lg">{record.symptoms}</p>
+                  <p className="text-sm bg-yellow-50 p-3 rounded-lg">{record.complaint}</p>
                 </div>
               )}
 
@@ -336,7 +320,7 @@ export default function HealthDetailPage({ params }: PageProps) {
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">
-                      {format(new Date(record.date), 'dd MMMM yyyy', { locale: id })}
+                      {format(new Date(record.visitDate), 'dd MMMM yyyy', { locale: id })}
                     </span>
                   </div>
                 </div>
@@ -357,10 +341,10 @@ export default function HealthDetailPage({ params }: PageProps) {
                     <span className="font-medium">{record.referredTo}</span>
                   </div>
                 )}
-                {record.createdBy && (
+                {record.recordedBy && (
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Dicatat oleh</p>
-                    <span className="font-medium">{record.createdBy?.name ?? '-'}</span>
+                    <span className="font-medium">{record.recordedBy?.name ?? '-'}</span>
                   </div>
                 )}
               </div>

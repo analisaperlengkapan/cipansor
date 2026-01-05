@@ -90,6 +90,7 @@ export function useExams(params?: {
   status?: ExamStatus;
   startDate?: string;
   endDate?: string;
+  semester?: number;
 }) {
   return useQuery({
     queryKey: ['exams', params],
@@ -102,6 +103,11 @@ export function useExams(params?: {
 
 // Alias for backward compatibility or clarity
 export const useAssessments = useExams;
+export const useAssessment = useExam;
+export const useCreateAssessment = useCreateExam;
+export const useUpdateAssessment = useUpdateExam;
+export const useDeleteAssessment = useDeleteExam;
+export const useSubmitGrades = useBulkCreateGrades;
 
 export function useExam(id: string) {
   return useQuery({
@@ -168,6 +174,23 @@ export function useDeleteExam() {
     },
   });
 }
+
+export function usePublishExam() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.patch(`/assessment/exams/${id}/publish`);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exams'] });
+    },
+  });
+}
+
+export type AssessmentType = ExamType;
+export const usePublishAssessment = usePublishExam;
 
 // Grade queries
 export function useGrades(params: {
@@ -372,6 +395,19 @@ export function usePublishReportCard() {
     mutationFn: async (id: string) => {
       const response = await api.patch(`/assessment/report-cards/${id}/publish`);
       return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['report-cards'] });
+    },
+  });
+}
+
+export function usePublishReportCards() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      await Promise.all(ids.map((id) => api.patch(`/assessment/report-cards/${id}/publish`)));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['report-cards'] });

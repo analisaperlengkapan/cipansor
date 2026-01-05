@@ -44,12 +44,12 @@ export default function AssessmentGradesPage() {
   const assessmentId = params.id as string;
 
   const { data: assessment, isLoading: loadingAssessment } = useAssessment(assessmentId);
-  const { data: grades, isLoading: loadingGrades } = useGrades(assessmentId);
+  const { data: grades, isLoading: loadingGrades } = useGrades({ examId: assessmentId });
   const submitGrades = useSubmitGrades();
 
   const [gradeEntries, setGradeEntries] = useState<Map<string, GradeEntry>>(new Map());
   const [hasChanges, setHasChanges] = useState(false);
-  
+
   // Track initialization to prevent re-setting entries
   const initializedRef = useRef(false);
   const lastGradesLengthRef = useRef(0);
@@ -57,13 +57,13 @@ export default function AssessmentGradesPage() {
   // Initialize grade entries from fetched grades
   useEffect(() => {
     if (!grades || grades.length === 0) return;
-    
+
     // Only initialize if grades data changed
     if (grades.length === lastGradesLengthRef.current && initializedRef.current) return;
-    
+
     lastGradesLengthRef.current = grades.length;
     initializedRef.current = true;
-    
+
     const entries = new Map<string, GradeEntry>();
     grades.forEach((grade) => {
       entries.set(grade.studentId, {
@@ -117,7 +117,11 @@ export default function AssessmentGradesPage() {
 
     try {
       await submitGrades.mutateAsync({
-        assessmentId,
+        examId: assessmentId,
+        subjectId: assessment.subjectId,
+        academicYearId: assessment.academicYearId,
+        type: 'EXAM',
+        gradedById: assessment.teacherId,
         grades: gradesToSubmit,
       });
       toast.success('Nilai berhasil disimpan');
@@ -178,9 +182,9 @@ export default function AssessmentGradesPage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Input Nilai</h1>
+              <h1 className="text-3xl font-bold tracking-tight">{assessment.title}</h1>
               <p className="text-muted-foreground">
-                {assessment.name} • {assessment.class?.name} • {assessment.subject?.name}
+                {assessment.title} • {assessment.class?.name} • {assessment.subject?.name}
               </p>
             </div>
           </div>
@@ -313,7 +317,7 @@ export default function AssessmentGradesPage() {
                           {grade.student?.nis}
                         </TableCell>
                         <TableCell className="font-medium">
-                          {grade.student?.name}
+                          {grade.student?.user?.name}
                         </TableCell>
                         <TableCell>
                           <Input

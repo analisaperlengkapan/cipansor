@@ -92,14 +92,14 @@ export default function EditHealthRecordPage({ params }: PageProps) {
   useEffect(() => {
     if (record) {
       form.reset({
-        recordType: record.recordType,
-        date: record.date ? new Date(record.date).toISOString().split('T')[0] : '',
-        symptoms: record.symptoms || '',
+        recordType: record.type,
+        date: record.visitDate ? new Date(record.visitDate).toISOString().split('T')[0] : '',
+        symptoms: record.complaint || '',
         diagnosis: record.diagnosis || '',
         treatment: record.treatment || '',
-        medication: record.medication || '',
+        medication: record.prescription || '',
         notes: record.notes || '',
-        status: record.status,
+        status: record.status || '',
         followUpDate: record.followUpDate
           ? new Date(record.followUpDate).toISOString().split('T')[0]
           : '',
@@ -118,12 +118,12 @@ export default function EditHealthRecordPage({ params }: PageProps) {
       await updateMutation.mutateAsync({
         id: recordId,
         data: {
-          recordType: data.recordType as HealthRecordType,
-          date: data.date,
-          symptoms: data.symptoms || undefined,
+          type: data.recordType as HealthRecordType,
+          visitDate: data.date,
+          complaint: data.symptoms || undefined,
           diagnosis: data.diagnosis || undefined,
           treatment: data.treatment || undefined,
-          medication: data.medication || undefined,
+          prescription: data.medication || undefined,
           notes: data.notes || undefined,
           status: data.status as HealthStatus,
           followUpDate: data.followUpDate || undefined,

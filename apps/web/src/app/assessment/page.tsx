@@ -27,6 +27,7 @@ import {
   useReportCards,
   ASSESSMENT_TYPES,
   ASSESSMENT_TYPE_LABELS,
+  ExamType,
   type AssessmentType,
 } from '@/hooks';
 import { useClasses, useAcademicYears, useSubjects } from '@/hooks';
@@ -70,18 +71,18 @@ export default function AssessmentPage() {
   const { data: subjects } = useSubjects();
 
   const activeAcademicYear = academicYears?.data?.find((ay) => ay.isActive);
-  const publishedAssessments = assessments?.filter(a => a.isPublished).length ?? 0;
-  const draftAssessments = assessments?.filter(a => !a.isPublished).length ?? 0;
+  const publishedAssessments = assessments?.filter(a => a.status !== 'DRAFT').length ?? 0;
+  const draftAssessments = assessments?.filter(a => a.status === 'DRAFT').length ?? 0;
 
   const getAssessmentTypeBadge = (type: AssessmentType) => {
     const colors: Record<AssessmentType, string> = {
-      DAILY: 'bg-gray-100 text-gray-800',
-      WEEKLY: 'bg-blue-100 text-blue-800',
-      MIDTERM: 'bg-purple-100 text-purple-800',
-      FINAL: 'bg-red-100 text-red-800',
-      PRACTICAL: 'bg-green-100 text-green-800',
-      PROJECT: 'bg-yellow-100 text-yellow-800',
-      QUIZ: 'bg-pink-100 text-pink-800',
+      [ExamType.DAILY_TEST]: 'bg-gray-100 text-gray-800',
+      [ExamType.MIDTERM]: 'bg-purple-100 text-purple-800',
+      [ExamType.FINAL]: 'bg-red-100 text-red-800',
+      [ExamType.PRACTICAL]: 'bg-green-100 text-green-800',
+      [ExamType.PROJECT]: 'bg-yellow-100 text-yellow-800',
+      [ExamType.QUIZ]: 'bg-pink-100 text-pink-800',
+      [ExamType.TAHFIDZ_TEST]: 'bg-teal-100 text-teal-800',
     };
     return <Badge className={colors[type]}>{ASSESSMENT_TYPE_LABELS[type]}</Badge>;
   };
@@ -272,7 +273,7 @@ export default function AssessmentPage() {
                       <TableRow key={assessment.id}>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{assessment.name}</p>
+                            <p className="font-medium">{assessment.title}</p>
                             {assessment.description && (
                               <p className="text-sm text-muted-foreground truncate max-w-[200px]">
                                 {assessment.description}
@@ -284,12 +285,12 @@ export default function AssessmentPage() {
                         <TableCell>{assessment.subject?.name ?? '-'}</TableCell>
                         <TableCell>{getAssessmentTypeBadge(assessment.type)}</TableCell>
                         <TableCell>
-                          {format(new Date(assessment.date), 'd MMM yyyy', { locale: id })}
+                          {format(new Date(assessment.scheduledAt), 'd MMM yyyy', { locale: id })}
                         </TableCell>
                         <TableCell>{assessment.maxScore}</TableCell>
                         <TableCell>
-                          <Badge variant={assessment.isPublished ? 'default' : 'secondary'}>
-                            {assessment.isPublished ? 'Dipublikasikan' : 'Draft'}
+                          <Badge variant={assessment.status !== 'DRAFT' ? 'default' : 'secondary'}>
+                            {assessment.status !== 'DRAFT' ? 'Dipublikasikan' : 'Draft'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -383,19 +384,19 @@ export default function AssessmentPage() {
                           {report.student?.nis}
                         </TableCell>
                         <TableCell className="font-medium">
-                          {report.student?.name}
+                          {report.student?.user?.name || '-'}
                         </TableCell>
                         <TableCell>{report.class?.name}</TableCell>
                         <TableCell>Semester {report.semester}</TableCell>
                         <TableCell>
                           <span className="font-semibold">
-                            {report.averageScore.toFixed(1)}
+                            {report.averageScore?.toFixed(1) ?? '-'}
                           </span>
                         </TableCell>
                         <TableCell>
                           {report.rank ? (
                             <Badge variant="outline">
-                              #{report.rank} dari {report.totalStudents}
+                              #{report.rank}
                             </Badge>
                           ) : (
                             '-'
@@ -476,7 +477,7 @@ export default function AssessmentPage() {
                   <div className="space-y-6">
                     <div className="text-center">
                       <div className="text-4xl font-bold">
-                        {assessments?.length ? 
+                        {assessments?.length ?
                           Math.round((publishedAssessments / assessments.length) * 100) : 0}%
                       </div>
                       <p className="text-sm text-muted-foreground">Sudah dipublikasikan</p>

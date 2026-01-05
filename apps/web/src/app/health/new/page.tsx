@@ -93,14 +93,15 @@ export default function NewHealthRecordPage() {
   const onSubmit = async (data: FormData) => {
     try {
       await createMutation.mutateAsync({
-        ...data,
-        recordType: data.recordType as HealthRecordType,
-        status: data.status as HealthStatus,
-        symptoms: data.symptoms || undefined,
+        studentId: data.studentId,
+        type: data.recordType as HealthRecordType,
+        visitDate: data.date,
+        complaint: data.symptoms || '',
         diagnosis: data.diagnosis || undefined,
         treatment: data.treatment || undefined,
-        medication: data.medication || undefined,
+        prescription: data.medication || undefined,
         notes: data.notes || undefined,
+        status: data.status as HealthStatus,
         followUpDate: data.followUpDate || undefined,
       });
       toast.success('Rekam kesehatan berhasil dibuat');

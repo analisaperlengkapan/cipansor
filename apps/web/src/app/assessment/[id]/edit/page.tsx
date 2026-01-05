@@ -37,15 +37,17 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 
 const assessmentSchema = z.object({
-  name: z.string().min(1, 'Nama penilaian wajib diisi'),
-  type: z.enum(['DAILY', 'WEEKLY', 'MIDTERM', 'FINAL', 'PRACTICAL', 'PROJECT', 'QUIZ'], {
+  title: z.string().min(1, 'Nama penilaian wajib diisi'),
+  type: z.enum(['DAILY_TEST', 'MIDTERM', 'FINAL', 'PRACTICAL', 'PROJECT', 'QUIZ', 'TAHFIDZ_TEST'], {
     required_error: 'Tipe penilaian wajib dipilih',
   }),
   classId: z.string().min(1, 'Kelas wajib dipilih'),
   subjectId: z.string().min(1, 'Mata pelajaran wajib dipilih'),
   academicYearId: z.string().min(1, 'Tahun ajaran wajib dipilih'),
   semester: z.coerce.number().min(1).max(2, 'Semester harus 1 atau 2'),
-  date: z.string().min(1, 'Tanggal wajib diisi'),
+  scheduledAt: z.string({
+    required_error: 'Tanggal wajib diisi',
+  }),
   maxScore: z.coerce.number().min(1, 'Nilai maksimal minimal 1').max(100, 'Nilai maksimal tidak boleh lebih dari 100'),
   passingScore: z.coerce.number().min(0).max(100).optional(),
   weight: z.coerce.number().min(0.1).max(10).optional(),
@@ -69,13 +71,13 @@ export default function EditAssessmentPage() {
   const form = useForm<AssessmentFormData>({
     resolver: zodResolver(assessmentSchema),
     defaultValues: {
-      name: '',
+      title: '',
       type: undefined,
       classId: '',
       subjectId: '',
       academicYearId: '',
       semester: 1,
-      date: '',
+      scheduledAt: '',
       maxScore: 100,
       passingScore: 70,
       weight: 1,
@@ -86,13 +88,13 @@ export default function EditAssessmentPage() {
   useEffect(() => {
     if (assessment) {
       form.reset({
-        name: assessment.name,
-        type: assessment.type,
+        title: assessment.title,
+        type: assessment.type as any,
         classId: assessment.classId,
         subjectId: assessment.subjectId,
         academicYearId: assessment.academicYearId,
         semester: assessment.semester,
-        date: new Date(assessment.date).toISOString().split('T')[0],
+        scheduledAt: new Date(assessment.scheduledAt).toISOString().split('T')[0],
         maxScore: assessment.maxScore,
         passingScore: assessment.passingScore ?? 70,
         weight: assessment.weight ?? 1,
@@ -107,7 +109,7 @@ export default function EditAssessmentPage() {
         id: assessmentId,
         data: {
           ...data,
-          date: new Date(data.date).toISOString(),
+          scheduledAt: new Date(data.scheduledAt).toISOString(),
         },
       });
       toast.success('Penilaian berhasil diperbarui');
@@ -152,13 +154,13 @@ export default function EditAssessmentPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Edit Penilaian</h1>
             <p className="text-muted-foreground">
-              Perbarui data penilaian {assessment.name}
+              Perbarui data penilaian {assessment.title}
             </p>
           </div>
         </div>
 
-        {assessment.isPublished && (
-          <div className="flex items-center gap-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        {assessment.status !== 'DRAFT' && (
+          <div className="flex items-center gap-2 p-4 bg-yellow-50 border border-green-200 rounded-lg">
             <AlertCircle className="h-5 w-5 text-yellow-600" />
             <span className="text-yellow-800">
               Penilaian sudah dipublikasikan. Beberapa perubahan mungkin tidak akan berpengaruh pada nilai yang sudah diterima.
@@ -178,7 +180,7 @@ export default function EditAssessmentPage() {
                 <CardContent className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="name"
+                    name="title"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Nama Penilaian</FormLabel>
@@ -217,7 +219,7 @@ export default function EditAssessmentPage() {
 
                   <FormField
                     control={form.control}
-                    name="date"
+                    name="scheduledAt"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tanggal Pelaksanaan</FormLabel>

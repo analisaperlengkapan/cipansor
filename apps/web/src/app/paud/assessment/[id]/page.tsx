@@ -220,9 +220,6 @@ export default function PAUDAssessmentDetailPage() {
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground mb-1">Indikator</h4>
                   <p className="text-sm">{assessment.indicator.name}</p>
-                  {assessment.indicator.description && (
-                    <p className="text-xs text-muted-foreground mt-1">{assessment.indicator.description}</p>
-                  )}
                 </div>
               )}
 

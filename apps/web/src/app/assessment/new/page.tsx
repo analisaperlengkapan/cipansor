@@ -26,8 +26,12 @@ import {
   useCreateAssessment,
   ASSESSMENT_TYPES,
   ASSESSMENT_TYPE_LABELS,
+  useClasses,
+  useSubjects,
+  useAcademicYears,
+  ExamType,
 } from '@/hooks';
-import { useClasses, useSubjects, useAcademicYears } from '@/hooks';
+import { useAuthStore } from '@/stores/auth';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -35,15 +39,17 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 
 const assessmentSchema = z.object({
-  name: z.string().min(1, 'Nama penilaian wajib diisi'),
-  type: z.enum(['DAILY', 'WEEKLY', 'MIDTERM', 'FINAL', 'PRACTICAL', 'PROJECT', 'QUIZ'], {
+  title: z.string().min(1, 'Nama penilaian wajib diisi'),
+  type: z.enum(['DAILY_TEST', 'MIDTERM', 'FINAL', 'PRACTICAL', 'PROJECT', 'QUIZ', 'TAHFIDZ_TEST'], {
     required_error: 'Tipe penilaian wajib dipilih',
   }),
   classId: z.string().min(1, 'Kelas wajib dipilih'),
   subjectId: z.string().min(1, 'Mata pelajaran wajib dipilih'),
   academicYearId: z.string().min(1, 'Tahun ajaran wajib dipilih'),
   semester: z.coerce.number().min(1).max(2, 'Semester harus 1 atau 2'),
-  date: z.string().min(1, 'Tanggal wajib diisi'),
+  scheduledAt: z.string({
+    required_error: 'Tanggal wajib diisi',
+  }),
   maxScore: z.coerce.number().min(1, 'Nilai maksimal minimal 1').max(100, 'Nilai maksimal tidak boleh lebih dari 100'),
   passingScore: z.coerce.number().min(0).max(100).optional(),
   weight: z.coerce.number().min(0.1).max(10).optional(),
@@ -54,6 +60,7 @@ type AssessmentFormData = z.infer<typeof assessmentSchema>;
 
 export default function NewAssessmentPage() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const createAssessment = useCreateAssessment();
 
   const { data: classes } = useClasses();
@@ -65,13 +72,13 @@ export default function NewAssessmentPage() {
   const form = useForm<AssessmentFormData>({
     resolver: zodResolver(assessmentSchema),
     defaultValues: {
-      name: '',
+      title: '',
       type: undefined,
       classId: '',
       subjectId: '',
       academicYearId: activeAcademicYear?.id ?? '',
       semester: 1,
-      date: new Date().toISOString().split('T')[0],
+      scheduledAt: new Date().toISOString().split('T')[0],
       maxScore: 100,
       passingScore: 70,
       weight: 1,
@@ -80,10 +87,17 @@ export default function NewAssessmentPage() {
   });
 
   const onSubmit = async (data: AssessmentFormData) => {
+    if (!user) {
+      toast.error('Sesi berakhir, silakan login kembali');
+      return;
+    }
+
     try {
       await createAssessment.mutateAsync({
         ...data,
-        date: new Date(data.date).toISOString(),
+        unitId: user.unitId || '',
+        teacherId: user.id,
+        scheduledAt: new Date(data.scheduledAt).toISOString(),
       });
       toast.success('Penilaian berhasil dibuat');
       router.push('/assessment');
@@ -120,7 +134,7 @@ export default function NewAssessmentPage() {
                 <CardContent className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="name"
+                    name="title"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Nama Penilaian</FormLabel>
@@ -159,7 +173,7 @@ export default function NewAssessmentPage() {
 
                   <FormField
                     control={form.control}
-                    name="date"
+                    name="scheduledAt"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tanggal Pelaksanaan</FormLabel>

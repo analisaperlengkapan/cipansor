@@ -32,6 +32,7 @@ import {
   useDeleteAssessment,
   usePublishAssessment,
   ASSESSMENT_TYPE_LABELS,
+  ExamType,
   type AssessmentType,
 } from '@/hooks';
 import {
@@ -64,7 +65,7 @@ export default function AssessmentDetailPage() {
   const [activeTab, setActiveTab] = useState('grades');
 
   const { data: assessment, isLoading } = useAssessment(assessmentId);
-  const { data: grades, isLoading: loadingGrades } = useGrades(assessmentId);
+  const { data: grades, isLoading: loadingGrades } = useGrades({ examId: assessmentId });
   const deleteAssessment = useDeleteAssessment();
   const publishAssessment = usePublishAssessment();
 
@@ -113,13 +114,13 @@ export default function AssessmentDetailPage() {
 
   const getAssessmentTypeBadge = (type: AssessmentType) => {
     const colors: Record<AssessmentType, string> = {
-      DAILY: 'bg-gray-100 text-gray-800',
-      WEEKLY: 'bg-blue-100 text-blue-800',
-      MIDTERM: 'bg-purple-100 text-purple-800',
-      FINAL: 'bg-red-100 text-red-800',
-      PRACTICAL: 'bg-green-100 text-green-800',
-      PROJECT: 'bg-yellow-100 text-yellow-800',
-      QUIZ: 'bg-pink-100 text-pink-800',
+      [ExamType.DAILY_TEST]: 'bg-gray-100 text-gray-800',
+      [ExamType.MIDTERM]: 'bg-purple-100 text-purple-800',
+      [ExamType.FINAL]: 'bg-red-100 text-red-800',
+      [ExamType.PRACTICAL]: 'bg-green-100 text-green-800',
+      [ExamType.PROJECT]: 'bg-yellow-100 text-yellow-800',
+      [ExamType.QUIZ]: 'bg-pink-100 text-pink-800',
+      [ExamType.TAHFIDZ_TEST]: 'bg-teal-100 text-teal-800',
     };
     return <Badge className={colors[type]}>{ASSESSMENT_TYPE_LABELS[type]}</Badge>;
   };
@@ -127,15 +128,15 @@ export default function AssessmentDetailPage() {
   // Calculate statistics from grades
   const stats = grades?.length
     ? {
-        totalStudents: grades.length,
-        graded: grades.filter((g) => g.score !== null).length,
-        average:
-          grades.filter((g) => g.score !== null).reduce((sum, g) => sum + (g.score ?? 0), 0) /
-          grades.filter((g) => g.score !== null).length || 0,
-        highest: Math.max(...grades.filter((g) => g.score !== null).map((g) => g.score ?? 0)),
-        lowest: Math.min(...grades.filter((g) => g.score !== null).map((g) => g.score ?? 0)),
-        passed: grades.filter((g) => (g.score ?? 0) >= (assessment.passingScore ?? 70)).length,
-      }
+      totalStudents: grades.length,
+      graded: grades.filter((g) => g.score !== null).length,
+      average:
+        grades.filter((g) => g.score !== null).reduce((sum, g) => sum + (g.score ?? 0), 0) /
+        grades.filter((g) => g.score !== null).length || 0,
+      highest: Math.max(...grades.filter((g) => g.score !== null).map((g) => g.score ?? 0)),
+      lowest: Math.min(...grades.filter((g) => g.score !== null).map((g) => g.score ?? 0)),
+      passed: grades.filter((g) => (g.score ?? 0) >= (assessment.passingScore ?? 70)).length,
+    }
     : null;
 
   const getGradeColor = (score: number | null) => {
@@ -164,7 +165,7 @@ export default function AssessmentDetailPage() {
             </Button>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-3xl font-bold tracking-tight">{assessment.name}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{assessment.title}</h1>
                 {getAssessmentTypeBadge(assessment.type)}
               </div>
               <p className="text-muted-foreground">
@@ -173,7 +174,7 @@ export default function AssessmentDetailPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            {!assessment.isPublished && (
+            {assessment.status === 'DRAFT' && (
               <Button variant="outline" onClick={handlePublish} disabled={publishAssessment.isPending}>
                 {publishAssessment.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -197,7 +198,7 @@ export default function AssessmentDetailPage() {
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" disabled={assessment.isPublished}>
+                <Button variant="destructive" disabled={assessment.status !== 'DRAFT'}>
                   <Trash2 className="mr-2 h-4 w-4" />
                   Hapus
                 </Button>
@@ -220,7 +221,7 @@ export default function AssessmentDetailPage() {
         </div>
 
         {/* Status Banner */}
-        {assessment.isPublished ? (
+        {assessment.status !== 'DRAFT' ? (
           <div className="flex items-center gap-2 p-4 bg-green-50 border border-green-200 rounded-lg">
             <CheckCircle className="h-5 w-5 text-green-600" />
             <span className="text-green-800">Penilaian ini sudah dipublikasikan dan nilai dapat dilihat oleh santri</span>
@@ -241,10 +242,10 @@ export default function AssessmentDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {format(new Date(assessment.date), 'd MMM', { locale: idLocale })}
+                {format(new Date(assessment.scheduledAt), 'd MMM', { locale: idLocale })}
               </div>
               <p className="text-xs text-muted-foreground">
-                {format(new Date(assessment.date), 'EEEE, yyyy', { locale: idLocale })}
+                {format(new Date(assessment.scheduledAt), 'EEEE, yyyy', { locale: idLocale })}
               </p>
             </CardContent>
           </Card>
@@ -332,7 +333,7 @@ export default function AssessmentDetailPage() {
                         <TableRow key={grade.id}>
                           <TableCell className="text-muted-foreground">{index + 1}</TableCell>
                           <TableCell className="font-mono text-sm">{grade.student?.nis}</TableCell>
-                          <TableCell className="font-medium">{grade.student?.name}</TableCell>
+                          <TableCell className="font-medium">{grade.student?.user?.name}</TableCell>
                           <TableCell className={`text-center ${getGradeColor(grade.score)}`}>
                             {grade.score !== null ? grade.score : '-'}
                           </TableCell>
@@ -459,7 +460,7 @@ export default function AssessmentDetailPage() {
                 <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <dt className="text-sm font-medium text-muted-foreground">Nama Penilaian</dt>
-                    <dd className="text-lg">{assessment.name}</dd>
+                    <dd className="text-lg">{assessment.title}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-muted-foreground">Tipe</dt>
@@ -476,7 +477,7 @@ export default function AssessmentDetailPage() {
                   <div>
                     <dt className="text-sm font-medium text-muted-foreground">Tanggal</dt>
                     <dd className="text-lg">
-                      {format(new Date(assessment.date), 'd MMMM yyyy', { locale: idLocale })}
+                      {format(new Date(assessment.scheduledAt), 'd MMMM yyyy', { locale: idLocale })}
                     </dd>
                   </div>
                   <div>
@@ -498,8 +499,8 @@ export default function AssessmentDetailPage() {
                   <div>
                     <dt className="text-sm font-medium text-muted-foreground">Status</dt>
                     <dd>
-                      <Badge variant={assessment.isPublished ? 'default' : 'secondary'}>
-                        {assessment.isPublished ? 'Dipublikasikan' : 'Draft'}
+                      <Badge variant={assessment.status !== 'DRAFT' ? 'default' : 'secondary'}>
+                        {assessment.status !== 'DRAFT' ? 'Dipublikasikan' : 'Draft'}
                       </Badge>
                     </dd>
                   </div>

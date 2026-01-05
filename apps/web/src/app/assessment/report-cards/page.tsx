@@ -62,7 +62,7 @@ export default function ReportCardsPage() {
     if (search) {
       const searchLower = search.toLowerCase();
       return (
-        report.student?.name?.toLowerCase().includes(searchLower) ||
+        report.student?.user?.name?.toLowerCase().includes(searchLower) ||
         report.student?.nis?.toLowerCase().includes(searchLower)
       );
     }
@@ -186,7 +186,7 @@ export default function ReportCardsPage() {
               <div className="text-2xl font-bold">
                 {reportCards?.length
                   ? (
-                      reportCards.reduce((sum, r) => sum + r.averageScore, 0) / reportCards.length
+                      reportCards.reduce((sum, r) => sum + (r.averageScore ?? 0), 0) / reportCards.length
                     ).toFixed(1)
                   : '-'}
               </div>
@@ -281,20 +281,20 @@ export default function ReportCardsPage() {
                     <TableCell className="font-mono text-sm">
                       {report.student?.nis}
                     </TableCell>
-                    <TableCell className="font-medium">{report.student?.name}</TableCell>
+                    <TableCell className="font-medium">{report.student?.user?.name || '-'}</TableCell>
                     <TableCell>{report.class?.name}</TableCell>
                     <TableCell>Semester {report.semester}</TableCell>
                     <TableCell className="text-center">
                       <span
                         className={`font-semibold ${
-                          report.averageScore >= 80
+                          (report.averageScore ?? 0) >= 80
                             ? 'text-green-600'
-                            : report.averageScore >= 70
+                            : (report.averageScore ?? 0) >= 70
                             ? 'text-blue-600'
                             : 'text-red-600'
                         }`}
                       >
-                        {report.averageScore.toFixed(1)}
+                        {report.averageScore?.toFixed(1) ?? '-'}
                       </span>
                     </TableCell>
                     <TableCell className="text-center">

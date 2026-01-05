@@ -174,7 +174,7 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Deskripsi</p>
-              <p className="mt-1 whitespace-pre-wrap">{item.notes || item.description || '-'}</p>
+              <p className="mt-1 whitespace-pre-wrap">{item.notes || '-'}</p>
             </div>
           </CardContent>
         </Card>

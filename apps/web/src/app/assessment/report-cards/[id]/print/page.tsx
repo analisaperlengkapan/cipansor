@@ -85,7 +85,7 @@ export default function PrintReportCardPage() {
             </Button>
             <div>
               <h1 className="font-bold">Preview Cetak Rapor</h1>
-              <p className="text-sm text-muted-foreground">{reportCard.student?.name}</p>
+              <p className="text-sm text-muted-foreground">{reportCard.student?.user?.name || '-'}</p>
             </div>
           </div>
           <Button onClick={handlePrint}>
@@ -116,7 +116,7 @@ export default function PrintReportCardPage() {
             <div className="space-y-2">
               <div className="flex">
                 <span className="w-32 text-sm">Nama</span>
-                <span className="text-sm">: <strong>{reportCard.student?.name}</strong></span>
+                <span className="text-sm">: <strong>{reportCard.student?.user?.name || '-'}</strong></span>
               </div>
               <div className="flex">
                 <span className="w-32 text-sm">NIS</span>
@@ -166,14 +166,14 @@ export default function PrintReportCardPage() {
                     <td className="border border-black p-2 text-center">70</td>
                     <td className="border border-black p-2 text-center">{(subject.knowledgeScore ?? 0).toFixed(0)}</td>
                     <td className="border border-black p-2 text-center">{(subject.skillScore ?? 0).toFixed(0)}</td>
-                    <td className="border border-black p-2 text-center font-semibold">{subject.finalScore.toFixed(0)}</td>
-                    <td className="border border-black p-2 text-center font-bold">{getGradeLetter(subject.finalScore)}</td>
+                    <td className="border border-black p-2 text-center font-semibold">{subject.finalScore?.toFixed(0) ?? '-'}</td>
+                    <td className="border border-black p-2 text-center font-bold">{getGradeLetter(subject.finalScore ?? 0)}</td>
                   </tr>
                 ))}
                 <tr className="bg-gray-100 font-bold">
                   <td colSpan={5} className="border border-black p-2 text-right">Rata-rata</td>
-                  <td className="border border-black p-2 text-center">{reportCard.averageScore.toFixed(1)}</td>
-                  <td className="border border-black p-2 text-center">{getGradeLetter(reportCard.averageScore)}</td>
+                  <td className="border border-black p-2 text-center">{reportCard.averageScore?.toFixed(1) ?? '-'}</td>
+                  <td className="border border-black p-2 text-center">{getGradeLetter(reportCard.averageScore ?? 0)}</td>
                 </tr>
               </tbody>
             </table>
@@ -218,7 +218,7 @@ export default function PrintReportCardPage() {
                 <tr>
                   <td className="border border-black p-2">Nilai Rata-rata</td>
                   <td className="border border-black p-2 font-semibold">
-                    {reportCard.averageScore.toFixed(2)} ({getGradeDescription(reportCard.averageScore)})
+                    {reportCard.averageScore?.toFixed(2) ?? '-'} ({getGradeDescription(reportCard.averageScore ?? 0)})
                   </td>
                 </tr>
               </tbody>

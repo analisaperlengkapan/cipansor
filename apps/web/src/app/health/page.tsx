@@ -104,43 +104,43 @@ export default function HealthPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Rekam</CardTitle>
+            <CardTitle className="text-sm font-medium">Rekam Bulan Ini</CardTitle>
             <Heart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summaryData?.totalRecords || 0}</div>
+            <div className="text-2xl font-bold">{summaryData?.thisMonthRecords || 0}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sedang Sakit</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-500" />
+            <CardTitle className="text-sm font-medium">Persediaan Obat</CardTitle>
+            <AlertCircle className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {summaryData?.currentlySick || 0}
+            <div className="text-2xl font-bold text-blue-600">
+              {summaryData?.medications.total || 0}
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Perlu Follow-Up</CardTitle>
+            <CardTitle className="text-sm font-medium">Obat Menipis</CardTitle>
             <CalendarClock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">
-              {summaryData?.needFollowUp || 0}
+              {summaryData?.medications.lowStock || 0}
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pemulihan</CardTitle>
-            <Activity className="h-4 w-4 text-green-500" />
+            <CardTitle className="text-sm font-medium">Sakit</CardTitle>
+            <Activity className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {summaryData?.byStatus?.find((s) => s.status === 'RECOVERING')?.count || 0}
+            <div className="text-2xl font-bold text-red-600">
+              {summaryData?.recordsByType?.find((s) => s.type === 'ILLNESS' as any)?.count || 0}
             </div>
           </CardContent>
         </Card>
@@ -186,7 +186,7 @@ export default function HealthPage() {
             <div className="flex items-center justify-center py-12">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
-          ) : healthData?.data.length === 0 ? (
+          ) : healthData?.data?.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <Heart className="h-12 w-12 text-muted-foreground" />
               <p className="mt-4 text-muted-foreground">Belum ada data kesehatan</p>
@@ -207,22 +207,22 @@ export default function HealthPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {healthData?.data.map((record) => (
+                {healthData?.data?.map((record) => (
                   <TableRow key={record.id}>
                     <TableCell>
-                      {format(new Date(record.date), 'dd MMM yyyy', { locale: localeId })}
+                      {format(new Date(record.visitDate), 'dd MMM yyyy', { locale: localeId })}
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{record.student?.name}</p>
+                        <p className="font-medium">{record.student?.user?.name || record.student?.name}</p>
                         <p className="text-sm text-muted-foreground">{record.student?.nis}</p>
                       </div>
                     </TableCell>
-                    <TableCell>{getRecordTypeLabel(record.recordType)}</TableCell>
+                    <TableCell>{getRecordTypeLabel(record.type)}</TableCell>
                     <TableCell className="max-w-[200px] truncate">
-                      {record.diagnosis || record.symptoms || '-'}
+                      {record.diagnosis || record.complaint || '-'}
                     </TableCell>
-                    <TableCell>{getStatusBadge(record.status)}</TableCell>
+                    <TableCell>{getStatusBadge(record.status || HealthStatus.HEALTHY)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button variant="ghost" size="icon" asChild>
@@ -251,12 +251,12 @@ export default function HealthPage() {
       </Card>
 
       {/* Pagination */}
-      {healthData && healthData.meta.totalPages > 1 && (
+      {healthData && healthData.meta.pagination.totalPages > 1 && (
         <Pagination
           page={page}
-          totalPages={healthData.meta.totalPages}
-          pageSize={healthData.meta.limit}
-          total={healthData.meta.total}
+          totalPages={healthData.meta.pagination.totalPages}
+          pageSize={healthData.meta.pagination.limit}
+          total={healthData.meta.pagination.total}
           onPageChange={setPage}
         />
       )}

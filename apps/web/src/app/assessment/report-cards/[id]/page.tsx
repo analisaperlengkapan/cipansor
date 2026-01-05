@@ -68,11 +68,7 @@ export default function ReportCardDetailPage() {
   const handlePublish = async () => {
     if (!reportCard) return;
     try {
-      await publishReportCards.mutateAsync({
-        classId: reportCard.classId,
-        academicYearId: reportCard.academicYearId,
-        semester: reportCard.semester,
-      });
+      await publishReportCards.mutateAsync([reportCardId]);
       toast.success('Rapor berhasil dipublikasikan');
     } catch (error) {
       toast.error('Gagal mempublikasikan rapor');
@@ -160,7 +156,7 @@ export default function ReportCardDetailPage() {
               <dl className="space-y-3 text-sm">
                 <div>
                   <dt className="text-muted-foreground">Nama</dt>
-                  <dd className="font-medium text-lg">{reportCard.student?.name}</dd>
+                  <dd className="font-medium text-lg">{reportCard.student?.user?.name || '-'}</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">NIS</dt>
@@ -224,8 +220,8 @@ export default function ReportCardDetailPage() {
               <div className="text-center space-y-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Rata-rata</p>
-                  <p className={`text-4xl font-bold ${getGradeColor(reportCard.averageScore)}`}>
-                    {reportCard.averageScore.toFixed(1)}
+                  <p className={`text-4xl font-bold ${getGradeColor(reportCard.averageScore ?? 0)}`}>
+                    {reportCard.averageScore?.toFixed(1) ?? '-'}
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -237,8 +233,8 @@ export default function ReportCardDetailPage() {
                   </div>
                   <div className="p-3 bg-muted rounded-lg">
                     <p className="text-xs text-muted-foreground">Grade</p>
-                    <p className={`text-xl font-bold ${getGradeColor(reportCard.averageScore)}`}>
-                      {getGradeLetter(reportCard.averageScore)}
+                    <p className={`text-xl font-bold ${getGradeColor(reportCard.averageScore ?? 0)}`}>
+                      {getGradeLetter(reportCard.averageScore ?? 0)}
                     </p>
                   </div>
                 </div>
@@ -281,11 +277,11 @@ export default function ReportCardDetailPage() {
                       <TableCell className={`text-center ${getGradeColor(subject.skillScore ?? 0)}`}>
                         {(subject.skillScore ?? 0).toFixed(0)}
                       </TableCell>
-                      <TableCell className={`text-center font-bold ${getGradeColor(subject.finalScore)}`}>
-                        {subject.finalScore.toFixed(0)}
+                      <TableCell className={`text-center font-bold ${getGradeColor(subject.finalScore ?? 0)}`}>
+                        {subject.finalScore?.toFixed(0) ?? '-'}
                       </TableCell>
-                      <TableCell className={`text-center font-bold ${getGradeColor(subject.finalScore)}`}>
-                        {getGradeLetter(subject.finalScore)}
+                      <TableCell className={`text-center font-bold ${getGradeColor(subject.finalScore ?? 0)}`}>
+                        {getGradeLetter(subject.finalScore ?? 0)}
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">
                         {subject.notes ?? '-'}

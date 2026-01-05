@@ -206,7 +206,7 @@ export default function PrintReportCardMerdekaPage() {
           </Button>
           <div>
             <p className="font-semibold">Preview Rapor Kurikulum Merdeka</p>
-            <p className="text-sm text-muted-foreground">{reportCard.student?.name}</p>
+            <p className="text-sm text-muted-foreground">{reportCard.student?.user?.name || '-'}</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -290,7 +290,7 @@ export default function PrintReportCardMerdekaPage() {
                 <div className="space-y-0.5">
                   <div className="flex">
                     <span className="w-28 text-gray-600">Nama Lengkap</span>
-                    <span className="font-semibold">: {reportCard.student?.name}</span>
+                    <span className="font-semibold">: {reportCard.student?.user?.name || '-'}</span>
                   </div>
                   <div className="flex">
                     <span className="w-28 text-gray-600">NIS / NISN</span>
@@ -353,13 +353,13 @@ export default function PrintReportCardMerdekaPage() {
                   </tr>
                   {reportCard.subjects?.slice(0, 6).map((subject, index) => {
                     const subjectName = subject.subject?.name ?? subject.subjectName ?? '';
-                    const capaian = getCapaianLabel(subject.finalScore);
+                    const capaian = getCapaianLabel(subject.finalScore ?? 0);
                     return (
                       <tr key={subject.id ?? index}>
                         <td className="border border-gray-400 p-1 text-center">{index + 1}</td>
                         <td className="border border-gray-400 p-1">{subjectName}</td>
                         <td className="border border-gray-400 p-1 text-center font-semibold">
-                          {subject.finalScore.toFixed(0)}
+                          {subject.finalScore?.toFixed(0) ?? '-'}
                         </td>
                         <td className="border border-gray-400 p-1 text-center">
                           <span
@@ -372,7 +372,7 @@ export default function PrintReportCardMerdekaPage() {
                         </td>
                         <td className="border border-gray-400 p-1 text-xs leading-tight">
                           {subject.notes ||
-                            getCapaianKompetensi(subjectName, subject.finalScore)}
+                            getCapaianKompetensi(subjectName, subject.finalScore ?? 0)}
                         </td>
                       </tr>
                     );
@@ -391,7 +391,7 @@ export default function PrintReportCardMerdekaPage() {
                       </tr>
                       {reportCard.subjects.slice(6).map((subject, index) => {
                         const subjectName = subject.subject?.name ?? subject.subjectName ?? '';
-                        const capaian = getCapaianLabel(subject.finalScore);
+                        const capaian = getCapaianLabel(subject.finalScore ?? 0);
                         return (
                           <tr key={subject.id ?? `b-${index}`}>
                             <td className="border border-gray-400 p-1 text-center">
@@ -399,7 +399,7 @@ export default function PrintReportCardMerdekaPage() {
                             </td>
                             <td className="border border-gray-400 p-1">{subjectName}</td>
                             <td className="border border-gray-400 p-1 text-center font-semibold">
-                              {subject.finalScore.toFixed(0)}
+                              {subject.finalScore?.toFixed(0) ?? '-'}
                             </td>
                             <td className="border border-gray-400 p-1 text-center">
                               <span
@@ -412,7 +412,7 @@ export default function PrintReportCardMerdekaPage() {
                             </td>
                             <td className="border border-gray-400 p-1 text-xs leading-tight">
                               {subject.notes ||
-                                getCapaianKompetensi(subjectName, subject.finalScore)}
+                                getCapaianKompetensi(subjectName, subject.finalScore ?? 0)}
                             </td>
                           </tr>
                         );

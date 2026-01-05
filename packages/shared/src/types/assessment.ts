@@ -34,6 +34,7 @@ export interface Exam {
   teacherId: string;
   type: ExamType;
   title: string;
+  semester: number;
   description?: string;
   scheduledAt: Date | string;
   duration: number;
@@ -62,6 +63,7 @@ export interface CreateExamInput {
   teacherId: string;
   type: ExamType | string;
   title: string;
+  semester: number;
   description?: string;
   scheduledAt: string | Date;
   duration?: number;
@@ -111,7 +113,7 @@ export interface CreateGradeInput {
   gradedById: string;
 }
 
-export interface UpdateGradeInput extends Partial<CreateGradeInput> {}
+export interface UpdateGradeInput extends Partial<CreateGradeInput> { }
 
 export interface BulkCreateGradesInput {
   examId?: string;
@@ -130,13 +132,18 @@ export interface BulkCreateGradesInput {
 export interface ReportCardDetail {
   id: string;
   reportCardId: string;
+  subjectId?: string;
   subjectName: string;
+  subject?: { id: string; name: string };
+  knowledgeScore?: number | null;
+  skillScore?: number | null;
   dailyScore?: number | null;
   midtermScore?: number | null;
   finalScore?: number | null;
   averageScore?: number | null;
   letterGrade?: string | null;
   comments?: string;
+  notes?: string;
 }
 
 export interface ReportCard {
@@ -147,11 +154,13 @@ export interface ReportCard {
   semester: number;
   averageScore?: number | null;
   rank?: number | null;
+  totalStudents?: number | null;
   attendance?: {
     present: number;
     absent: number;
     sick: number;
     excused: number;
+    permitted?: number;
   };
   tahfidzSummary?: {
     lastJuz: number;
@@ -162,14 +171,16 @@ export interface ReportCard {
   principalNotes?: string;
   isPublished: boolean;
   publishedAt?: Date | string | null;
+  printedAt?: Date | string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
 
   // Relations
-  student?: { id: string; user?: { id: string; name: string | null } };
-  class?: { id: string; name: string; level: string };
+  student?: { id: string; nis: string | null; nisn?: string | null; user?: { id: string; name: string | null } };
+  class?: { id: string; name: string; level: string; teacher?: { id: string; name: string | null } };
   academicYear?: { id: string; name: string };
   details?: ReportCardDetail[];
+  subjects?: ReportCardDetail[];
 }
 
 export interface CreateReportCardInput {

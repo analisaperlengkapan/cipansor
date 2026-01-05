@@ -5,15 +5,17 @@ import * as path from 'path';
 const SCREENSHOT_DIR = path.join(process.cwd(), '../../docs/images');
 
 // Mock Data
-const MOCK_SESSION = {
-  user: {
-    id: 'user-123',
-    name: 'Admin Cipansor',
-    email: 'admin@cipansor.id',
-    role: 'SUPER_ADMIN',
-    image: 'https://ui.shadcn.com/avatars/01.png',
-  },
-  expires: '2099-01-01T00:00:00.000Z',
+const MOCK_USER = {
+  id: 'user-123',
+  name: 'Admin Cipansor',
+  email: 'admin@cipansor.id',
+  role: 'SUPER_ADMIN',
+  avatar: 'https://ui.shadcn.com/avatars/01.png',
+  unit: {
+    id: 'unit-1',
+    name: 'SMA IT Cipansor',
+    type: 'SMA_IT'
+  }
 };
 
 const MOCK_DASHBOARD_STATS = {
@@ -25,6 +27,9 @@ const MOCK_DASHBOARD_STATS = {
     activeStudents: 448,
     attendanceRate: 98.5,
     averageGrade: 85.4,
+    studentsGrowth: 5.2,
+    totalUnits: 4,
+    activeAcademicYear: { name: '2023/2024', startDate: '2023-07-01', endDate: '2024-06-30' },
     financialSummary: {
       income: 150000000,
       expense: 45000000,
@@ -59,12 +64,22 @@ const MOCK_TAHFIDZ = {
        { id: '1', student: { name: 'Ahmad Fulan' }, type: 'ZIYADAH', juz: 30, page: 1, surah: 'An-Naba', verses: '1-10', score: 90, date: new Date().toISOString() },
        { id: '2', student: { name: 'Siti Fulanah' }, type: 'MUROJAAH', juz: 29, page: 2, surah: 'Al-Mulk', verses: '1-30', score: 85, date: new Date().toISOString() },
     ],
+    dashboardStats: {
+        totalStudents: 150,
+        activeStudents: 145,
+        averageJuz: 3.5,
+        completed30Juz: 10,
+        recentActivity: []
+    }
   },
 };
 
 const MOCK_FINANCE = {
   success: true,
   data: {
+    totalBilled: 50000000,
+    totalPaid: 35000000,
+    totalUnpaid: 15000000,
     summary: { totalRevenue: 50000000, totalExpense: 20000000, netIncome: 30000000 },
     transactions: [
       { id: '1', type: 'INCOME', amount: 500000, description: 'SPP Bulan Ini - Ahmad', date: new Date().toISOString(), status: 'COMPLETED' },
@@ -81,25 +96,30 @@ const MOCK_ATTENDANCE = {
        { id: '1', student: { name: 'Ahmad Fulan' }, status: 'PRESENT', date: new Date().toISOString(), time: '07:00' },
        { id: '2', student: { name: 'Siti Fulanah' }, status: 'SICK', date: new Date().toISOString(), time: null },
     ],
+    stats: [
+        { date: new Date().toISOString(), present: 40, sick: 1, excused: 1, absent: 0 }
+    ]
   },
 };
 
 async function setupMocks(page: Page) {
-  // Mock Auth Session
-  await page.route('/api/auth/session', async (route) => {
-    await route.fulfill({ json: MOCK_SESSION });
+  // Mock Auth
+  await page.route('**/api/auth/me', async (route) => {
+    await route.fulfill({ json: { success: true, data: MOCK_USER } });
   });
 
-  // Mock Common API endpoints
-  // Note: These URLs are guesses based on standard conventions.
-  // If the app uses different endpoints, the screenshot might show loading states, but often headers/layout will still render.
+  // Mock Health check for Online Status
+  await page.route('**/api/health', async (route) => {
+    await route.fulfill({ status: 200 });
+  });
 
-  // Dashboard
+  // Mock Dashboard
   await page.route('**/api/dashboard/**', async (route) => route.fulfill({ json: MOCK_DASHBOARD_STATS }));
   await page.route('**/api/analytics/**', async (route) => route.fulfill({ json: MOCK_DASHBOARD_STATS }));
 
   // Students
   await page.route('**/api/students*', async (route) => route.fulfill({ json: MOCK_STUDENTS }));
+  await page.route('**/api/classes*', async (route) => route.fulfill({ json: { success: true, data: { data: [], meta: { total: 0 } } } }));
 
   // Tahfidz
   await page.route('**/api/tahfidz*', async (route) => route.fulfill({ json: MOCK_TAHFIDZ }));
@@ -110,11 +130,14 @@ async function setupMocks(page: Page) {
 
   // Attendance
   await page.route('**/api/attendance*', async (route) => route.fulfill({ json: MOCK_ATTENDANCE }));
+
+  // Health
+  await page.route('**/api/health*', async (route) => route.fulfill({ json: { success: true, data: { data: [], meta: { total: 0 } } } }));
 }
 
 const PAGES_TO_SCREENSHOT = [
   { path: '/login', name: 'login', fullPage: true },
-  { path: '/dashboard', name: 'dashboard', fullPage: false }, // Dashboard usually fits or has scroll
+  { path: '/dashboard', name: 'dashboard', fullPage: false },
   { path: '/students', name: 'students', fullPage: true },
   { path: '/tahfidz', name: 'tahfidz', fullPage: true },
   { path: '/finance', name: 'finance', fullPage: true },
@@ -128,25 +151,47 @@ const PAGES_TO_SCREENSHOT = [
 ];
 
 test.describe('Generate Screenshots', () => {
-  test.beforeEach(async ({ page }) => {
-     // Set a nice desktop viewport
-     await page.setViewportSize({ width: 1440, height: 900 });
-     await setupMocks(page);
-  });
+  test.use({ viewport: { width: 1440, height: 900 } });
 
   for (const pageConfig of PAGES_TO_SCREENSHOT) {
     test(`screenshot ${pageConfig.name}`, async ({ page }) => {
       console.log(`Navigating to ${pageConfig.path}...`);
 
-      if (pageConfig.path === '/login') {
-         // Ensure we are logged out for login page
-         await page.route('/api/auth/session', async (route) => route.fulfill({ json: {} }));
+      await setupMocks(page);
+
+      // Hide Offline Banner
+      await page.addInitScript(() => {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            div[role="alert"].bg-yellow-500 { display: none !important; }
+            .fixed.bottom-4.right-4 { display: none !important; }
+        `;
+        document.head.appendChild(style);
+      });
+
+      if (pageConfig.name !== 'login') {
+         // Add auth for non-login pages
+         await page.addInitScript((user) => {
+             localStorage.setItem('accessToken', 'mock-token');
+             localStorage.setItem('auth-storage', JSON.stringify({
+                 state: {
+                     user: user,
+                     isAuthenticated: true
+                 },
+                 version: 0
+             }));
+         }, MOCK_USER);
+      } else {
+         // Ensure no auth for login page
+         await page.addInitScript(() => {
+             localStorage.clear();
+         });
       }
 
       await page.goto(pageConfig.path, { waitUntil: 'networkidle' });
 
-      // Wait a bit for animations
-      await page.waitForTimeout(1000);
+      // Additional wait for hydration
+      await page.waitForTimeout(2000);
 
       const screenshotPath = path.join(SCREENSHOT_DIR, `${pageConfig.name}.png`);
       await page.screenshot({ path: screenshotPath, fullPage: pageConfig.fullPage });

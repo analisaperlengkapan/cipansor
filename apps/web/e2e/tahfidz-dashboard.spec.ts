@@ -2,17 +2,6 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Tahfidz Dashboard (Murojaah Analytics)', () => {
     test.beforeEach(async ({ page }) => {
-        // Monitor console and network
-        page.on('console', msg => console.log('BROWSER LOG:', msg.text()));
-        page.on('response', response => {
-            if (response.url().includes('/auth/login') && response.status() !== 200) {
-                console.log('LOGIN FAILED:', response.status(), response.statusText());
-            }
-            if (response.url().includes('/auth/me')) {
-                console.log('AUTH ME RESPONSE:', response.status(), response.statusText());
-            }
-        });
-
         // Login as admin
         await page.goto('/login');
         await page.getByLabel(/email/i).fill('superadmin@cipansor.id');

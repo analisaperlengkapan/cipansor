@@ -87,6 +87,7 @@ export const remove = asyncHandler(async (req: Request, res: Response) => {
 /**
  * Get class enrollments
  * GET /api/classes/:id/enrollments
+ * Used by useClassEnrollments hook
  */
 export const getEnrollments = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;

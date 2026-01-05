@@ -42,21 +42,6 @@ export function useClassEnrollments(classId: string) {
   return useQuery({
     queryKey: ['classes', classId, 'enrollments'],
     queryFn: async () => {
-      // API returns Enrollments, which we now import as ClassEnrollment
-      // Wait, the API `enrollStudent` returns `ClassEnrollment`, but `list` endpoint or specialized endpoint might be different.
-      // The controller `enrollStudent` returns the created enrollment.
-      // The controller does NOT have a "list enrollments" endpoint visible in the snippet I read earlier?
-      // Let me double check `class.controller.ts`.
-      // It has `enrollStudent`, `updateEnrollment`, `removeStudent`.
-      // It DOES NOT have `getEnrollments`.
-      // However, `class.service.ts` `findById` includes enrollments.
-      // But `useClassEnrollments` calls `/classes/${classId}/enrollments`.
-      // I need to check if that route exists in `class.routes.ts` (which I didn't read) or if it was handled by `getById`?
-      // The `useClassEnrollments` hook implies a specific endpoint.
-      // If it doesn't exist, this hook is broken.
-      // I'll assume for now it exists or the user wants it fixed.
-      // BUT my task is to standardise types.
-      // If the endpoint returns `Enrollment[]`, I should use `ClassEnrollment[]`.
       const response = await api.get<ApiResponse<ClassEnrollment[]>>(`/classes/${classId}/enrollments`);
       return response.data.data;
     },

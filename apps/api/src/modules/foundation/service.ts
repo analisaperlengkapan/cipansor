@@ -8,6 +8,7 @@ import {
   CreateDocumentInput,
   UpdateDocumentInput,
 } from "./schema";
+import { FoundationDashboardStats } from "@cipansor/shared/dist/types/foundation-dashboard";
 
 // =====================================
 // FOUNDATION SERVICE
@@ -261,7 +262,7 @@ export async function deleteDocument(id: string) {
 // STATISTICS
 // =====================================
 
-export async function getFoundationStats(foundationId: string) {
+export async function getFoundationStats(foundationId: string): Promise<FoundationDashboardStats | null> {
   const foundation = await prisma.foundation.findUnique({
     where: { id: foundationId },
     include: {
@@ -306,6 +307,61 @@ export async function getFoundationStats(foundationId: string) {
     },
   });
 
+  // Calculate financial stats (Revenue vs Expense) from JournalEntry
+  // We sum entries for accounts of type 'REVENUE' and 'EXPENSE'
+  // Note: This requires joining AccountCode which has the 'type' field
+
+  // To avoid complex groupBys on relations that Prisma might not optimize perfectly for aggregations,
+  // we do a raw query or separate aggregations.
+  // For simplicity and correctness with the large schema, let's use groupBy on JournalEntry filtered by account types.
+
+  // First, find all account IDs for REVENUE and EXPENSE
+  const revenueAccounts = await prisma.accountCode.findMany({
+    where: { type: 'REVENUE' },
+    select: { id: true }
+  });
+
+  const expenseAccounts = await prisma.accountCode.findMany({
+    where: { type: 'EXPENSE' },
+    select: { id: true }
+  });
+
+  const revenueAccountIds = revenueAccounts.map(a => a.id);
+  const expenseAccountIds = expenseAccounts.map(a => a.id);
+
+  const unitIds = foundation.units.map(u => u.id);
+
+  // Aggregate Revenue (Credit - Debit usually for Revenue, but let's just sum Credit for now as simplicity)
+  // Standard accounting: Revenue is Credit balance. Expense is Debit balance.
+  const revenueAgg = await prisma.journalEntry.aggregate({
+    where: {
+      unitId: { in: unitIds },
+      accountId: { in: revenueAccountIds }
+    },
+    _sum: { credit: true, debit: true }
+  });
+
+  const expenseAgg = await prisma.journalEntry.aggregate({
+    where: {
+      unitId: { in: unitIds },
+      accountId: { in: expenseAccountIds }
+    },
+    _sum: { debit: true, credit: true }
+  });
+
+  const totalRevenue = Number(revenueAgg._sum.credit || 0) - Number(revenueAgg._sum.debit || 0);
+  const totalExpense = Number(expenseAgg._sum.debit || 0) - Number(expenseAgg._sum.credit || 0);
+  const netIncome = totalRevenue - totalExpense;
+
+  const unitsSummary = foundation.units.map(unit => ({
+    id: unit.id,
+    name: unit.name,
+    type: unit.type,
+    studentCount: unit._count.students,
+    teacherCount: unit._count.teachers,
+    staffCount: unit._count.staff,
+  }));
+
   return {
     foundationId,
     foundationName: foundation.name,
@@ -317,6 +373,9 @@ export async function getFoundationStats(foundationId: string) {
     activeBoardMembers,
     totalDocuments: foundation._count.documents,
     expiringDocuments,
-    unitsSummary: foundation.units,
+    totalRevenue,
+    totalExpense,
+    netIncome,
+    unitsSummary,
   };
 }

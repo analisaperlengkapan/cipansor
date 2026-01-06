@@ -36,100 +36,116 @@ Sistem ini menggabungkan manajemen akademik sekolah formal dengan manajemen kepe
 
 ## 💻 Antarmuka
 
-Cipansor menyediakan antarmuka modern yang responsif untuk berbagai peran dan unit pendidikan.
+Cipansor menyediakan antarmuka modern yang responsif dan terorganisir berdasarkan modul fungsional.
 
-### 1. Pusat Kendali Yayasan (Global)
-Kelola seluruh ekosistem pesantren dalam satu dashboard terpusat.
+### 1. Dashboard Eksekutif & Unit
+Pusat kendali utama untuk memantau statistik dan kinerja seluruh unit pendidikan.
 
-| Dashboard Global | Profil Yayasan |
-|-----------------|----------------|
-| ![Dashboard Global](docs/images/dashboard-global.png) | ![Yayasan](docs/images/foundation.png) |
+| Dashboard Global | Dashboard SMA Al-Qur'an |
+|------------------|-------------------------|
+| ![Dashboard Global](docs/images/dashboard-global.png) | ![Dashboard SMA](docs/images/dashboard-sma.png) |
 
-| Unit Pendidikan | Manajemen User |
-|-----------------|----------------|
-| ![Unit Pendidikan](docs/images/units.png) | ![Daftar Pengguna](docs/images/users.png) |
+| Dashboard SMP IT | Dashboard SD IT |
+|------------------|-----------------|
+| ![Dashboard SMP](docs/images/dashboard-smp.png) | ![Dashboard SD](docs/images/dashboard-sd.png) |
 
-### 2. Dashboard Unit Pendidikan
-Tampilan khusus yang disesuaikan untuk kebutuhan tiap jenjang pendidikan.
+| Dashboard PAUD/TK | Login System |
+|-------------------|--------------|
+| ![Dashboard PAUD](docs/images/dashboard-paud.png) | ![Login](docs/images/login.png) |
 
-| Dashboard SMA Al-Qur'an | Dashboard PAUD/TK |
-|-------------------------|-------------------|
-| ![Dashboard SMA](docs/images/dashboard-sma.png) | ![Dashboard PAUD](docs/images/dashboard-paud.png) |
+### 2. Manajemen Yayasan (Foundation)
+Pengelolaan sumber daya yayasan secara terpusat.
 
+| Profil & Legalitas | Manajemen Unit |
+|--------------------|----------------|
+| ![Yayasan](docs/images/foundation.png) | ![Unit Pendidikan](docs/images/units.png) |
 
-| Dashboard SD IT | Dashboard SMP IT |
-|-----------------|------------------|
-| ![Dashboard SD](docs/images/dashboard-sd.png) | ![Dashboard SMP](docs/images/dashboard-smp.png) |
-
-### 3. Modul Akademik & KBM
-Administrasi sekolah, kelas, siswa, dan pembelajaran terintegrasi.
-
-| Data Siswa | Kelas & Rombel | Jadwal Pelajaran |
-|------------|----------------|------------------|
-| ![Manajemen Siswa](docs/images/students.png) | ![Daftar Kelas](docs/images/classes.png) | ![Jadwal](docs/images/schedule.png) |
-
-| Kurikulum | Tahun Ajaran | Sertifikat |
-|-----------|--------------|------------|
-| ![Kurikulum](docs/images/curriculum.png) | ![Tahun Ajaran](docs/images/academic-years.png) | ![Sertifikat](docs/images/certificates.png) |
-
-
-| Absensi Kehadiran | Penilaian & Kurikulum |
-|-------------------|-----------------------|
-| ![Rekap Absensi](docs/images/attendance.png) | ![Penilaian](docs/images/assessment.png) |
-
-| Penilaian Khusus PAUD | Pengaturan Sistem |
-|-----------------------|-------------------|
-| ![Rapor PAUD](docs/images/paud-list.png) | ![Konfigurasi](docs/images/settings.png) |
-
-### 4. Kepesantrenan & Tahfidz
-Fitur khusus untuk mendukung program unggulan dan kedisiplinan santri.
-
-| Dashboard Tahfidz | Jurnal Ibadah |
-|-------------------|---------------|
-| ![Hafalan Quran](docs/images/tahfidz.png) | ![Monitoring Ibadah](docs/images/ibadah.png) |
-
-| Rapor Pesantren | |
-|-----------------|---|
-| ![Rapor Pesantren](docs/images/rapor-pesantren.png) | |
-
-| Asrama Santri | Catatan Pelanggaran |
-|---------------|---------------------|
-| ![Kamar Santri](docs/images/dormitories.png) | ![Pelanggaran](docs/images/violations.png) |
-
-| Layanan Kesehatan (UKS) | |
-|--------------------------|---|
-| ![Rekam Medis](docs/images/health.png) | ![Bimbingan Konseling](docs/images/counseling.png) | ![Ekstrakurikuler](docs/images/extracurricular.png) |
-| *Layanan Kesehatan* | *Bimbingan Konseling* | *Kegiatan Ekstrakurikuler* |
-
-### 5. Administrasi, Keuangan & PSB
-Pengelolaan sumber daya yayasan yang akuntabel dan transparan.
-
-| Keuangan & SPP | Kepegawaian (HR) |
+| Manajemen User | Kepegawaian (HR) |
 |----------------|------------------|
-| ![Laporan Keuangan](docs/images/finance.png) | ![Data Pegawai](docs/images/hr.png) |
+| ![User Management](docs/images/users.png) | ![Data Pegawai](docs/images/hr.png) |
 
-| Inventaris Aset | PSB Online |
-|-----------------|------------|
-| ![Aset Yayasan](docs/images/inventory.png) | ![Penerimaan Santri](docs/images/psb.png) |
+| Detail Pegawai | Keuangan Yayasan |
+|----------------|------------------|
+| ![Detail Pegawai](docs/images/employee-detail.png) | ![Keuangan](docs/images/finance.png) |
 
-| Manajemen Fasilitas | |
-|---------------------|---|
-| ![Fasilitas](docs/images/facilities.png) | |
+### 3. Akademik & Pembelajaran
+Sistem administrasi sekolah yang komprehensif.
 
-### 6. Portal & Akses lainnya
+| Data Siswa | Detail Siswa |
+|------------|--------------|
+| ![Manajemen Siswa](docs/images/students.png) | ![Profil Siswa](docs/images/student-detail.png) |
 
-| Perpustakaan | Portal Orang Tua |
-|--------------|-------------------|
-| ![Katalog Buku](docs/images/library.png) | |
+| Manajemen Kelas | Jadwal Pelajaran |
+|-----------------|------------------|
+| ![Kelas](docs/images/classes.png) | ![Jadwal](docs/images/schedule.png) |
 
-| **Portal Orang Tua** | **Data Anak** | **Keuangan** |
-|:---:|:---:|:---:|
-| ![Parent Portal](docs/images/parent-portal.png) | ![Anak](docs/images/parent-children.png) | ![Keuangan](docs/images/parent-finance.png) |
-| *Dashboard Wali Murid* | *Monitoring Progres Anak* | *Info Tagihan & Pembayaran* |
+| Kurikulum | Tahun Ajaran |
+|-----------|--------------|
+| ![Kurikulum](docs/images/curriculum.png) | ![Tahun Ajaran](docs/images/academic-years.png) |
 
-| Halaman Login | |
-|---------------|---|
-| ![Login Page](docs/images/login.png) | |
+| Absensi | Penilaian (Rapor) |
+|---------|-------------------|
+| ![Kehadiran](docs/images/attendance.png) | ![Penilaian](docs/images/assessment.png) |
+
+| Sertifikat & Ijazah | Rapor PAUD |
+|---------------------|------------|
+| ![Sertifikat](docs/images/certificates.png) | ![Rapor PAUD](docs/images/paud-list.png) |
+
+### 4. Kepesantrenan (Boarding System)
+Fitur unggulan untuk manajemen pendidikan Islam berasrama.
+
+| Dashboard Tahfidz | Monitoring Ibadah |
+|-------------------|-------------------|
+| ![Tahfidz](docs/images/tahfidz.png) | ![Jurnal Ibadah](docs/images/ibadah.png) |
+
+| Rapor Pesantren | Asrama Santri |
+|-----------------|---------------|
+| ![Rapor Pesantren](docs/images/rapor-pesantren.png) | ![Asrama](docs/images/dormitories.png) |
+
+| Pelanggaran (Kedisiplinan) | Konseling |
+|----------------------------|-----------|
+| ![Pelanggaran](docs/images/violations.png) | ![Bimbingan Konseling](docs/images/counseling.png) |
+
+### 5. Fasilitas & Layanan Pendukung
+Modul pendukung operasional harian.
+
+| Kesehatan (UKS) | Perpustakaan |
+|-----------------|--------------|
+| ![UKS](docs/images/health.png) | ![Perpustakaan](docs/images/library.png) |
+
+| Fasilitas & Sarana | Inventaris & Aset |
+|--------------------|-------------------|
+| ![Fasilitas](docs/images/facilities.png) | ![Inventaris](docs/images/inventory.png) |
+
+| Ekstrakurikuler | Alumni |
+|-----------------|--------|
+| ![Ekstrakurikuler](docs/images/extracurricular.png) | ![Alumni](docs/images/alumni.png) |
+
+| Penerimaan Santri Baru (PSB) | |
+|------------------------------|---|
+| ![PSB](docs/images/psb.png) | |
+
+### 6. Portal Wali Santri
+Akses khusus bagi orang tua untuk memantau perkembangan anak.
+
+| Dashboard Wali Murid | Data & Progres Anak |
+|----------------------|---------------------|
+| ![Parent Portal](docs/images/hack-portal.png) | ![Data Anak](docs/images/hack-children.png) |
+
+| Info Keuangan & Tagihan | |
+|-------------------------|---|
+| ![Keuangan Orang Tua](docs/images/hack-finance.png) | |
+
+### 7. Pengaturan & Personalisasi
+Konfigurasi sistem yang fleksibel.
+
+| Profil Pengguna | Pengaturan Tampilan |
+|-----------------|---------------------|
+| ![Profil](docs/images/settings-profile.png) | ![Tampilan](docs/images/settings-appearance.png) |
+
+| Keamanan Akun | Konfigurasi Umum |
+|---------------|------------------|
+| ![Keamanan](docs/images/settings-users.png) | ![Pengaturan Umum](docs/images/settings.png) |
 
 ---
 

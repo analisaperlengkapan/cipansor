@@ -84,20 +84,6 @@ test.describe('Generate Screenshots Expanded', () => {
       ])) });
 
       // HR & EMPLOYEES - Deep mock for tables
-      if (url.includes('/api/hr/employees')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
-        { 
-          id: 'e1', 
-          nip: '198501012010011001', 
-          fullName: 'Ust. Dr. Hamzah, M.Pd.', 
-          position: 'Kepala Sekolah', 
-          status: 'ACTIVE', 
-          unit: { id: 'unit-sma', name: 'SMA Al-Qur\'an' }, 
-          employeeType: 'PERMANENT', 
-          joinDate: mockDate, 
-          email: 'hamzah@cipansor.id' 
-        }
-      ])) });
-      if (url.includes('/api/hr/departments')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse([{ id: 'd1', name: 'Divisi Kurikulum', code: 'KUR' }, { id: 'd2', name: 'Divisi Kesantrian', code: 'KSN' }])) });
       if (url.includes('/api/hr/employees/e1')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ 
           id: 'e1', 
           nip: '198501012010011001', 
@@ -111,6 +97,20 @@ test.describe('Generate Screenshots Expanded', () => {
           phoneNumber: '081234567890',
           address: 'Jl. Pesantren No. 1'
       })) });
+
+      if (url.includes('/api/hr/employees')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { 
+          id: 'e1', 
+          nip: '198501012010011001', 
+          fullName: 'Ust. Dr. Hamzah, M.Pd.', 
+          position: 'Kepala Sekolah', 
+          status: 'ACTIVE', 
+          unit: { id: 'unit-sma', name: 'SMA Al-Qur\'an' }, 
+          employeeType: 'PERMANENT', 
+          joinDate: mockDate, 
+          email: 'hamzah@cipansor.id' 
+        }
+      ])) });
 
       if (url.includes('/api/hr/leaves')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
         {

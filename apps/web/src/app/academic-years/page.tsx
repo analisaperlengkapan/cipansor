@@ -49,7 +49,7 @@ export default function AcademicYearsPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [unitId, setUnitId] = useState<string>('');
+  const [unitId, setUnitId] = useState<string>('ALL');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [activateId, setActivateId] = useState<string | null>(null);
 
@@ -57,7 +57,7 @@ export default function AcademicYearsPage() {
   const { data: academicYearsData, isLoading } = useAcademicYears({
     page,
     limit: pageSize,
-    unitId: unitId || undefined,
+    unitId: unitId !== 'ALL' ? unitId : undefined,
   });
 
   const deleteAcademicYear = useDeleteAcademicYear();
@@ -113,7 +113,7 @@ export default function AcademicYearsPage() {
                 <SelectValue placeholder="Semua Unit" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Unit</SelectItem>
+                <SelectItem value="ALL">Semua Unit</SelectItem>
                 {units?.map((unit) => (
                   <SelectItem key={unit.id} value={unit.id}>
                     {unit.name}
@@ -122,8 +122,8 @@ export default function AcademicYearsPage() {
               </SelectContent>
             </Select>
 
-            {unitId && (
-              <Button variant="ghost" onClick={() => setUnitId('')}>
+            {unitId !== 'ALL' && (
+              <Button variant="ghost" onClick={() => setUnitId('ALL')}>
                 Reset
               </Button>
             )}

@@ -98,6 +98,20 @@ test.describe('Generate Screenshots Expanded', () => {
         }
       ])) });
       if (url.includes('/api/hr/departments')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse([{ id: 'd1', name: 'Divisi Kurikulum', code: 'KUR' }, { id: 'd2', name: 'Divisi Kesantrian', code: 'KSN' }])) });
+      if (url.includes('/api/hr/employees/e1')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ 
+          id: 'e1', 
+          nip: '198501012010011001', 
+          fullName: 'Ust. Dr. Hamzah, M.Pd.', 
+          position: 'Kepala Sekolah', 
+          status: 'ACTIVE', 
+          unit: { id: 'unit-sma', name: 'SMA Al-Qur\'an' }, 
+          employeeType: 'PERMANENT', 
+          joinDate: mockDate, 
+          email: 'hamzah@cipansor.id',
+          phoneNumber: '081234567890',
+          address: 'Jl. Pesantren No. 1'
+      })) });
+
       if (url.includes('/api/hr/leaves')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
         {
           id: 'l1',
@@ -196,6 +210,7 @@ test.describe('Generate Screenshots Expanded', () => {
       if (url.includes('/api/psb/stats')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ total: 156, enrolled: 85, accepted: 110, byStatus: { SUBMITTED: 20, INTERVIEW: 15, ACCEPTED: 110, REJECTED: 11 } })) });
       if (url.includes('/api/auth/me')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse(mockUser)) });
       if (url.includes('/api/academic-years')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([{ id: 'ay1', name: '2024/2025', isActive: true, startDate, endDate }])) });
+      if (url.includes('/api/students/s1')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ id: 's1', name: 'Ahmad Fauzi', nis: '12345', status: 'ACTIVE', currentClass: { name: 'X IPA 1' }, unit: { name: 'SMA' }, enrollmentDate: mockDate, user: { name: 'Ahmad Fauzi' }, gender: 'MALE', birthPlace: 'Tasikmalaya', birthDate: '2008-01-01' })) });
       if (url.includes('/api/students')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([{ id: 's1', name: 'Ahmad Fauzi', nis: '12345', status: 'ACTIVE', currentClass: { name: 'X IPA 1' }, enrollmentDate: mockDate, user: { name: 'Ahmad Fauzi' } }])) });
       if (url.includes('/api/tahfidz/dashboard')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ totalRecords: 2840, totalStudents: 450, avgQuality: 'MUMTAZ' })) });
       if (url.includes('/api/psb/registrations')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([{ id: 'p1', registrationNumber: 'REG-2024-001', fullName: 'Calon Santri Baru', status: 'SUBMITTED', createdAt: mockDate }])) });
@@ -261,6 +276,23 @@ test.describe('Generate Screenshots Expanded', () => {
     { name: 'inventory', url: '/inventory' },
     { name: 'psb', url: '/psb' },
     { name: 'settings', url: '/settings' },
+    // New Academic & Pesantren Features
+    { name: 'curriculum', url: '/curriculum', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'academic-years', url: '/academic-years', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'schedule', url: '/schedule', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'certificates', url: '/certificates', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'counseling', url: '/counseling', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'extracurricular', url: '/extracurricular', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'facilities', url: '/facilities', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'rapor-pesantren', url: '/rapor-pesantren', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'alumni', url: '/alumni', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'student-detail', url: '/students/s1', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'employee-detail', url: '/hr/employees/e1', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'profile', url: '/profile', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'settings-users', url: '/settings?tab=users', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'settings-profile', url: '/settings?tab=profile', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'settings-appearance', url: '/settings?tab=appearance', roleId: 'ur-1', unitId: 'unit-sma' },
+
     // Use /dashboard for parent-portal to avoid redirect loops, we will DOM-hack it to look like parent portal
     { name: 'hack-portal', url: '/dashboard', roleId: 'ur-1', unitId: 'unit-sma' }, 
     { name: 'hack-children', url: '/dashboard', roleId: 'ur-1', unitId: 'unit-sma' },
@@ -355,16 +387,17 @@ test.describe('Generate Screenshots Expanded', () => {
 
       // 2. Dynamic Interception for /api/auth/me to reflect the current unit/role
       await page.route('**/api/auth/me', route => {
-        // Force standard admin user to match localStorage injection
-        // We will mock the name visually later
         const isParent = false; 
+        const currentUnitId = pageInfo.unitId || 'unit-sma';
+        const currentUnitName = unitNames[currentUnitId] || 'SMA Al-Qur\'an Cipansor';
+        
         const mockUserConfig = {
           id: isParent ? 'parent-1' : 'user-123',
           name: isParent ? 'Bapak Ahmad' : 'Dr. Ahmad Fauzi, M.Pd.',
           email: isParent ? 'parent@example.com' : 'admin@cipansor.id',
           role: 'SUPER_ADMIN',
-          unitId: 'unit-sma',
-          unit: { id: 'unit-sma', name: 'SMA Al-Qur\'an Cipansor' },
+          unitId: currentUnitId,
+          unit: { id: currentUnitId, name: currentUnitName },
           userRoles: [
             { id: 'ur-1', isPrimary: true, role: { id: 'r-1', code: 'SUPER_ADMIN', name: 'Super Admin', realm: 'GLOBAL' } }
           ],
@@ -573,6 +606,9 @@ test.describe('Generate Screenshots Expanded', () => {
           await page.waitForTimeout(1000);
       }
       
+      // Handle Settings Tabs - Auto-handled by URL params now in the app
+      // if (pageInfo.name.startsWith('settings-')) { ... }
+
       await page.addStyleTag({ content: `div[role="alert"], #sonner-toaster, .toaster { display: none !important; }` });
       await page.screenshot({ path: `${screenshotsDir}/${pageInfo.name}.png`, fullPage: true });
       

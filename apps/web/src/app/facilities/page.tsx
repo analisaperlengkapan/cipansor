@@ -84,9 +84,9 @@ export default function FacilitiesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   
   // Filter states
-  const [selectedUnit, setSelectedUnit] = useState<string>('');
-  const [selectedLand, setSelectedLand] = useState<string>('');
-  const [selectedBuilding, setSelectedBuilding] = useState<string>('');
+  const [selectedUnit, setSelectedUnit] = useState<string>('ALL');
+  const [selectedLand, setSelectedLand] = useState<string>('ALL');
+  const [selectedBuilding, setSelectedBuilding] = useState<string>('ALL');
   
   // Dialog states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -137,18 +137,18 @@ export default function FacilitiesPage() {
   
   // Data hooks
   const { data: units } = useUnits();
-  const { data: lands, isLoading: loadingLands } = useLands({ search: searchQuery, unitId: selectedUnit || undefined });
+  const { data: lands, isLoading: loadingLands } = useLands({ search: searchQuery, unitId: selectedUnit !== 'ALL' ? selectedUnit : undefined });
   const { data: buildings, isLoading: loadingBuildings } = useBuildings({ 
     search: searchQuery, 
-    unitId: selectedUnit || undefined,
-    landId: selectedLand || undefined 
+    unitId: selectedUnit !== 'ALL' ? selectedUnit : undefined,
+    landId: selectedLand !== 'ALL' ? selectedLand : undefined 
   });
   const { data: roomTypes, isLoading: loadingRoomTypes } = useRoomTypes();
   const { data: rooms, isLoading: loadingRooms } = useRooms({ 
     search: searchQuery, 
-    buildingId: selectedBuilding || undefined 
+    buildingId: selectedBuilding !== 'ALL' ? selectedBuilding : undefined 
   });
-  const { data: summary } = useFacilitySummary(selectedUnit || undefined);
+  const { data: summary } = useFacilitySummary(selectedUnit !== 'ALL' ? selectedUnit : undefined);
   
   // Mutations
   const createLand = useCreateLand();
@@ -657,7 +657,7 @@ export default function FacilitiesPage() {
                   <SelectValue placeholder="Filter Unit" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Semua Unit</SelectItem>
+                  <SelectItem value="ALL">Semua Unit</SelectItem>
                   {units?.map((unit) => (
                     <SelectItem key={unit.id} value={unit.id}>
                       {unit.name}
@@ -1051,7 +1051,7 @@ export default function FacilitiesPage() {
                     <SelectValue placeholder="Filter by Tanah" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Tanah</SelectItem>
+                    <SelectItem value="ALL">Semua Tanah</SelectItem>
                     {lands?.map((land) => (
                       <SelectItem key={land.id} value={land.id}>
                         {land.name}
@@ -1074,7 +1074,7 @@ export default function FacilitiesPage() {
                     <SelectValue placeholder="Filter by Gedung" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Gedung</SelectItem>
+                    <SelectItem value="ALL">Semua Gedung</SelectItem>
                     {buildings?.map((building) => (
                       <SelectItem key={building.id} value={building.id}>
                         {building.name}

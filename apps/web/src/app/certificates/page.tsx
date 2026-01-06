@@ -80,13 +80,13 @@ const CertificateTypeIcon = ({ type }: { type: string }) => {
 export default function CertificatesPage() {
   const router = useRouter();
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>('');
+  const [typeFilter, setTypeFilter] = useState<string>('ALL');
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useCertificates({
     page,
     limit: 20,
-    certificateType: typeFilter || undefined,
+    certificateType: typeFilter === 'ALL' ? undefined : typeFilter,
   });
 
   const columns: ColumnDef<DigitalCertificate>[] = [
@@ -246,7 +246,7 @@ export default function CertificatesPage() {
               <SelectValue placeholder="Semua tipe" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua tipe</SelectItem>
+              <SelectItem value="ALL">Semua tipe</SelectItem>
               <SelectItem value="IJAZAH">Ijazah</SelectItem>
               <SelectItem value="STTB">STTB</SelectItem>
               <SelectItem value="TAHFIDZ">Sertifikat Tahfidz</SelectItem>

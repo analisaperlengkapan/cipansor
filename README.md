@@ -64,9 +64,14 @@ Tampilan khusus yang disesuaikan untuk kebutuhan tiap jenjang pendidikan.
 ### 3. Modul Akademik & KBM
 Administrasi sekolah, kelas, siswa, dan pembelajaran terintegrasi.
 
-| Data Siswa | Kelas & Rombel |
-|------------|----------------|
-| ![Manajemen Siswa](docs/images/students.png) | ![Daftar Kelas](docs/images/classes.png) |
+| Data Siswa | Kelas & Rombel | Jadwal Pelajaran |
+|------------|----------------|------------------|
+| ![Manajemen Siswa](docs/images/students.png) | ![Daftar Kelas](docs/images/classes.png) | ![Jadwal](docs/images/schedule.png) |
+
+| Kurikulum | Tahun Ajaran | Sertifikat |
+|-----------|--------------|------------|
+| ![Kurikulum](docs/images/curriculum.png) | ![Tahun Ajaran](docs/images/academic-years.png) | ![Sertifikat](docs/images/certificates.png) |
+
 
 | Absensi Kehadiran | Penilaian & Kurikulum |
 |-------------------|-----------------------|
@@ -83,13 +88,18 @@ Fitur khusus untuk mendukung program unggulan dan kedisiplinan santri.
 |-------------------|---------------|
 | ![Hafalan Quran](docs/images/tahfidz.png) | ![Monitoring Ibadah](docs/images/ibadah.png) |
 
+| Rapor Pesantren | |
+|-----------------|---|
+| ![Rapor Pesantren](docs/images/rapor-pesantren.png) | |
+
 | Asrama Santri | Catatan Pelanggaran |
 |---------------|---------------------|
 | ![Kamar Santri](docs/images/dormitories.png) | ![Pelanggaran](docs/images/violations.png) |
 
 | Layanan Kesehatan (UKS) | |
 |--------------------------|---|
-| ![Rekam Medis](docs/images/health.png) | |
+| ![Rekam Medis](docs/images/health.png) | ![Bimbingan Konseling](docs/images/counseling.png) | ![Ekstrakurikuler](docs/images/extracurricular.png) |
+| *Layanan Kesehatan* | *Bimbingan Konseling* | *Kegiatan Ekstrakurikuler* |
 
 ### 5. Administrasi, Keuangan & PSB
 Pengelolaan sumber daya yayasan yang akuntabel dan transparan.
@@ -102,11 +112,20 @@ Pengelolaan sumber daya yayasan yang akuntabel dan transparan.
 |-----------------|------------|
 | ![Aset Yayasan](docs/images/inventory.png) | ![Penerimaan Santri](docs/images/psb.png) |
 
+| Manajemen Fasilitas | |
+|---------------------|---|
+| ![Fasilitas](docs/images/facilities.png) | |
+
 ### 6. Portal & Akses lainnya
 
 | Perpustakaan | Portal Orang Tua |
 |--------------|-------------------|
-| ![Katalog Buku](docs/images/library.png) | ![Portal Wali](docs/images/parent-portal.png) |
+| ![Katalog Buku](docs/images/library.png) | |
+
+| **Portal Orang Tua** | **Data Anak** | **Keuangan** |
+|:---:|:---:|:---:|
+| ![Parent Portal](docs/images/parent-portal.png) | ![Anak](docs/images/parent-children.png) | ![Keuangan](docs/images/parent-finance.png) |
+| *Dashboard Wali Murid* | *Monitoring Progres Anak* | *Info Tagihan & Pembayaran* |
 
 | Halaman Login | |
 |---------------|---|

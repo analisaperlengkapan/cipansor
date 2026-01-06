@@ -43,11 +43,11 @@ export default function RaporPesantrenPage() {
   const router = useRouter();
 
   // Filters
-  const [unitId, setUnitId] = useState<string>('');
-  const [classId, setClassId] = useState<string>('');
-  const [academicYearId, setAcademicYearId] = useState<string>('');
-  const [semester, setSemester] = useState<string>('');
-  const [status, setStatus] = useState<string>('');
+  const [unitId, setUnitId] = useState<string>('ALL');
+  const [classId, setClassId] = useState<string>('ALL');
+  const [academicYearId, setAcademicYearId] = useState<string>('ALL');
+  const [semester, setSemester] = useState<string>('ALL');
+  const [status, setStatus] = useState<string>('ALL');
   const [page, setPage] = useState(1);
 
   // Delete dialog
@@ -55,15 +55,15 @@ export default function RaporPesantrenPage() {
 
   // Queries
   const { data: unitsData } = useUnits();
-  const { data: classesData } = useClasses({ unitId: unitId || undefined });
+  const { data: classesData } = useClasses({ unitId: unitId !== 'ALL' ? unitId : undefined });
   const { data: academicYearsData } = useAcademicYears();
 
   const { data: raporData, isLoading, refetch } = useRaporList({
-    unitId: unitId || undefined,
-    classId: classId || undefined,
-    academicYearId: academicYearId || undefined,
-    semester: semester ? parseInt(semester) : undefined,
-    status: status || undefined,
+    unitId: unitId !== 'ALL' ? unitId : undefined,
+    classId: classId !== 'ALL' ? classId : undefined,
+    academicYearId: academicYearId !== 'ALL' ? academicYearId : undefined,
+    semester: semester !== 'ALL' ? parseInt(semester) : undefined,
+    status: status !== 'ALL' ? status : undefined,
     page,
     limit: PAGE_SIZE,
   });
@@ -218,7 +218,7 @@ export default function RaporPesantrenPage() {
                     <SelectValue placeholder="Pilih Unit" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Unit</SelectItem>
+                    <SelectItem value="ALL">Semua Unit</SelectItem>
                     {units.map((unit) => (
                       <SelectItem key={unit.id} value={unit.id}>
                         {unit.name}
@@ -232,7 +232,7 @@ export default function RaporPesantrenPage() {
                     <SelectValue placeholder="Pilih Kelas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Kelas</SelectItem>
+                    <SelectItem value="ALL">Semua Kelas</SelectItem>
                     {classes.map((cls) => (
                       <SelectItem key={cls.id} value={cls.id}>
                         {cls.name}
@@ -246,7 +246,7 @@ export default function RaporPesantrenPage() {
                     <SelectValue placeholder="Tahun Ajaran" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua</SelectItem>
+                    <SelectItem value="ALL">Semua</SelectItem>
                     {academicYears.map((year) => (
                       <SelectItem key={year.id} value={year.id}>
                         {year.name}
@@ -260,7 +260,7 @@ export default function RaporPesantrenPage() {
                     <SelectValue placeholder="Semester" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua</SelectItem>
+                    <SelectItem value="ALL">Semua</SelectItem>
                     <SelectItem value="1">Semester 1</SelectItem>
                     <SelectItem value="2">Semester 2</SelectItem>
                   </SelectContent>
@@ -271,7 +271,7 @@ export default function RaporPesantrenPage() {
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Status</SelectItem>
+                    <SelectItem value="ALL">Semua Status</SelectItem>
                     <SelectItem value="DRAFT">Draft</SelectItem>
                     <SelectItem value="FINAL">Final</SelectItem>
                     <SelectItem value="PUBLISHED">Terpublikasi</SelectItem>
@@ -389,7 +389,7 @@ export default function RaporPesantrenPage() {
                       <SelectValue placeholder="Semua Kelas" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Semua Kelas</SelectItem>
+                    <SelectItem value="ALL">Semua Kelas</SelectItem>
                       {classes.map((cls) => (
                         <SelectItem key={cls.id} value={cls.id}>
                           {cls.name}

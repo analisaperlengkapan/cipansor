@@ -53,19 +53,19 @@ export default function CurriculumPage() {
   const [activeTab, setActiveTab] = useState('subjects');
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<SubjectType | 'ALL'>('ALL');
-  const [unitFilter, setUnitFilter] = useState<string>('');
-  const [classFilter, setClassFilter] = useState<string>('');
+  const [unitFilter, setUnitFilter] = useState<string>('ALL');
+  const [classFilter, setClassFilter] = useState<string>('ALL');
 
   const { data: subjects, isLoading: loadingSubjects } = useSubjects({
     search: search || undefined,
     type: typeFilter !== 'ALL' ? typeFilter : undefined,
-    unitId: unitFilter || undefined,
+    unitId: unitFilter !== 'ALL' ? unitFilter : undefined,
   });
   const { data: curriculums, isLoading: loadingCurriculums } = useCurriculums({
-    unitId: unitFilter || undefined,
+    unitId: unitFilter !== 'ALL' ? unitFilter : undefined,
   });
   const { data: schedules, isLoading: loadingSchedules } = useSchedules({
-    classId: classFilter || undefined,
+    classId: classFilter !== 'ALL' ? classFilter : undefined,
   });
   const { data: assignments } = useTeacherAssignments();
   const { data: units } = useUnits();
@@ -186,7 +186,7 @@ export default function CurriculumPage() {
                       <SelectValue placeholder="Semua Unit" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Semua Unit</SelectItem>
+                      <SelectItem value="ALL">Semua Unit</SelectItem>
                       {units?.map((unit) => (
                         <SelectItem key={unit.id} value={unit.id}>
                           {unit.name}
@@ -300,7 +300,7 @@ export default function CurriculumPage() {
                   <SelectValue placeholder="Semua Unit" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Semua Unit</SelectItem>
+                  <SelectItem value="ALL">Semua Unit</SelectItem>
                   {units?.map((unit) => (
                     <SelectItem key={unit.id} value={unit.id}>
                       {unit.name}
@@ -390,7 +390,7 @@ export default function CurriculumPage() {
                     <SelectValue placeholder="Pilih Kelas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Kelas</SelectItem>
+                    <SelectItem value="ALL">Semua Kelas</SelectItem>
                     {classes?.data?.map((cls) => (
                       <SelectItem key={cls.id} value={cls.id}>
                         {cls.name}

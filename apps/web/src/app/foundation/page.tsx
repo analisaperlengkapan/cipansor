@@ -64,15 +64,17 @@ import {
   Save,
   Eye,
   AlertTriangle,
+  LayoutDashboard,
 } from 'lucide-react';
 import { format, isPast, isBefore, addMonths } from 'date-fns';
 import { id } from 'date-fns/locale';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { FoundationDashboard } from './_components/foundation-dashboard';
 
 export default function FoundationPage() {
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [isEditing, setIsEditing] = useState(false);
 
   const { data: foundation, isLoading } = useFoundation();
@@ -152,6 +154,10 @@ export default function FoundationPage() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <LayoutDashboard className="h-4 w-4" />
+              Dashboard
+            </TabsTrigger>
             <TabsTrigger value="info" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               Informasi
@@ -165,6 +171,11 @@ export default function FoundationPage() {
               Pengurus
             </TabsTrigger>
           </TabsList>
+
+          {/* Dashboard Tab */}
+          <TabsContent value="dashboard">
+            <FoundationDashboard />
+          </TabsContent>
 
           {/* Foundation Info Tab */}
           <TabsContent value="info" className="space-y-6">

@@ -224,3 +224,55 @@ export interface UnitComparison {
     };
   }[];
 }
+
+// ============================================
+// Foundation Dashboard Types
+// ============================================
+
+export interface FoundationDashboardStats {
+  foundationId: string;
+  foundationName: string;
+
+  // High level counts
+  totalUnits: number;
+  totalStudents: number;
+  totalTeachers: number;
+  totalStaff: number;
+  totalBoardMembers: number;
+  activeBoardMembers: number;
+  totalDocuments: number;
+  expiringDocuments: number;
+
+  // Distributions
+  unitsSummary: {
+    id: string;
+    name: string;
+    type: string;
+    _count: {
+      students: number;
+      teachers: number;
+      staff: number;
+    }
+  }[];
+
+  // Financial (Aggregated)
+  financialSummary: {
+    totalRevenue: number;
+    totalExpense: number;
+    netIncome: number;
+    period: string; // e.g. "Last 30 Days"
+  };
+
+  // Unit Comparisons (for charts)
+  studentsByUnit: {
+    unitId: string;
+    unitName: string;
+    count: number;
+  }[];
+
+  staffByUnit: {
+    unitId: string;
+    unitName: string;
+    count: number;
+  }[];
+}

@@ -260,12 +260,12 @@ export default function IbadahPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-4">
-                <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+                <Select value={selectedUnit || 'all'} onValueChange={(val) => setSelectedUnit(val === 'all' ? '' : val)}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Pilih Unit" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Unit</SelectItem>
+                    <SelectItem value="all">Semua Unit</SelectItem>
                     {units.map((unit) => (
                       <SelectItem key={unit.id} value={unit.id}>
                         {unit.name}
@@ -274,12 +274,12 @@ export default function IbadahPage() {
                   </SelectContent>
                 </Select>
 
-                <Select value={category} onValueChange={setCategory}>
+                <Select value={category || 'all'} onValueChange={(val) => setCategory(val === 'all' ? '' : val)}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Kategori" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Kategori</SelectItem>
+                    <SelectItem value="all">Semua Kategori</SelectItem>
                     {IBADAH_CATEGORIES.map((cat) => (
                       <SelectItem key={cat.value} value={cat.value}>
                         {cat.icon} {cat.label}
@@ -288,12 +288,12 @@ export default function IbadahPage() {
                   </SelectContent>
                 </Select>
 
-                <Select value={verificationStatus} onValueChange={setVerificationStatus}>
+                <Select value={verificationStatus || 'all'} onValueChange={(val) => setVerificationStatus(val === 'all' ? '' : val)}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Status</SelectItem>
+                    <SelectItem value="all">Semua Status</SelectItem>
                     {VERIFICATION_STATUSES.map((status) => (
                       <SelectItem key={status.value} value={status.value}>
                         {status.label}
@@ -468,12 +468,12 @@ export default function IbadahPage() {
         {/* Targets Tab */}
         <TabsContent value="targets" className="space-y-4">
           <div className="flex justify-between items-center">
-            <Select value={category} onValueChange={setCategory}>
+            <Select value={category || 'all'} onValueChange={(val) => setCategory(val === 'all' ? '' : val)}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter Kategori" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Kategori</SelectItem>
+                <SelectItem value="all">Semua Kategori</SelectItem>
                 {IBADAH_CATEGORIES.map((cat) => (
                   <SelectItem key={cat.value} value={cat.value}>
                     {cat.icon} {cat.label}

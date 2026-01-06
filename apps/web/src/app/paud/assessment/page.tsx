@@ -1,4 +1,5 @@
 'use client';
+// Force HMR Rebuild
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -221,12 +222,12 @@ export default function PAUDAssessmentListPage() {
             onChange={setSearch}
           />
 
-          <Select value={aspectFilter} onValueChange={setAspectFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Semua Aspek" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Semua Aspek</SelectItem>
+            <Select value={aspectFilter || 'all'} onValueChange={(val) => setAspectFilter(val === 'all' ? '' : val)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Semua Aspek" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Aspek</SelectItem>
               {Object.entries(ASPECT_LABELS).map(([value, label]) => (
                 <SelectItem key={value} value={value}>
                   {label}
@@ -235,12 +236,12 @@ export default function PAUDAssessmentListPage() {
             </SelectContent>
           </Select>
 
-          <Select value={achievementFilter} onValueChange={setAchievementFilter}>
+          <Select value={achievementFilter || 'all'} onValueChange={(val) => setAchievementFilter(val === 'all' ? '' : val)}>
             <SelectTrigger>
               <SelectValue placeholder="Semua Capaian" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Capaian</SelectItem>
+              <SelectItem value="all">Semua Capaian</SelectItem>
               {Object.entries(ACHIEVEMENT_LABELS).map(([value, label]) => (
                 <SelectItem key={value} value={value}>
                   {value} - {label}
@@ -249,12 +250,12 @@ export default function PAUDAssessmentListPage() {
             </SelectContent>
           </Select>
 
-          <Select value={periodTypeFilter} onValueChange={setPeriodTypeFilter}>
+          <Select value={periodTypeFilter || 'all'} onValueChange={(val) => setPeriodTypeFilter(val === 'all' ? '' : val)}>
             <SelectTrigger>
               <SelectValue placeholder="Semua Periode" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Periode</SelectItem>
+              <SelectItem value="all">Semua Periode</SelectItem>
               {PERIOD_TYPES.map((type) => (
                 <SelectItem key={type.value} value={type.value}>
                   {type.label}
@@ -263,12 +264,12 @@ export default function PAUDAssessmentListPage() {
             </SelectContent>
           </Select>
 
-          <Select value={classFilter} onValueChange={setClassFilter}>
+          <Select value={classFilter || 'all'} onValueChange={(val) => setClassFilter(val === 'all' ? '' : val)}>
             <SelectTrigger>
               <SelectValue placeholder="Semua Kelas" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Kelas</SelectItem>
+              <SelectItem value="all">Semua Kelas</SelectItem>
               {classes?.data?.map((cls) => (
                 <SelectItem key={cls.id} value={cls.id}>
                   {cls.name}
@@ -277,12 +278,12 @@ export default function PAUDAssessmentListPage() {
             </SelectContent>
           </Select>
 
-          <Select value={academicYearFilter} onValueChange={setAcademicYearFilter}>
+          <Select value={academicYearFilter || 'all'} onValueChange={(val) => setAcademicYearFilter(val === 'all' ? '' : val)}>
             <SelectTrigger>
               <SelectValue placeholder="Semua Tahun Ajaran" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Tahun Ajaran</SelectItem>
+              <SelectItem value="all">Semua Tahun Ajaran</SelectItem>
               {academicYears?.data?.map((year) => (
                 <SelectItem key={year.id} value={year.id}>
                   {year.name}

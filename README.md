@@ -38,35 +38,63 @@ Sistem ini menggabungkan manajemen akademik sekolah formal dengan manajemen kepe
 
 Berikut adalah tampilan antarmuka dari sistem Cipansor yang mencakup berbagai modul terintegrasi:
 
-### Halaman Login & Dashboard
-| Login | Dashboard Utama |
-|-------|----------------|
-| ![Halaman Login](docs/images/login.png) | ![Dashboard Utama](docs/images/dashboard.png) |
+### 1. Manajemen Utama
+Kelola yayasan, unit pendidikan, dan pengguna sistem dalam satu pusat kendali.
 
-### Manajemen Akademik
+| Dashboard Utama | Profil Yayasan |
+|-----------------|----------------|
+| ![Dashboard](docs/images/dashboard.png) | ![Yayasan](docs/images/foundation.png) |
+
+| Unit Pendidikan | Manajemen User |
+|-----------------|----------------|
+| ![Unit Pendidikan](docs/images/units.png) | ![Daftar Pengguna](docs/images/users.png) |
+
+### 2. Akademik & KBM
+Administrasi sekolah, kelas, siswa, dan pembelajaran.
+
 | Data Siswa | Kelas & Rombel |
 |------------|----------------|
-| ![Manajemen Siswa](docs/images/students.png) | ![Manajemen Kelas](docs/images/classes.png) |
+| ![Manajemen Siswa](docs/images/students.png) | ![Daftar Kelas](docs/images/classes.png) |
 
-### Kepesantrenan & Tahfidz
-| Dashboard Tahfidz | Absensi Santri |
-|-------------------|----------------|
-| ![Progress Tahfidz](docs/images/tahfidz.png) | ![Absensi Kehadiran](docs/images/attendance.png) |
+| Absensi Kehadiran | Penilaian & Rapor |
+|-------------------|-------------------|
+| ![Rekap Absensi](docs/images/attendance.png) | ![Penilaian](docs/images/assessment.png) |
 
-### Keuangan & Pembayaran
-| Laporan Keuangan | Penerimaan Santri Baru (PSB) |
-|------------------|------------------------------|
-| ![Keuangan & SPP](docs/images/finance.png) | ![Pendaftaran PSB](docs/images/psb.png) |
+| Penilaian PAUD | |
+|----------------|---|
+| ![Rapor PAUD](docs/images/paud.png) | |
 
-### Penilaian & Laporan
-| Rapor & Nilai | Pengaturan Aplikasi |
-|---------------|---------------------|
-| ![Penilaian Akademik](docs/images/assessment.png) | ![Pengaturan Sistem](docs/images/settings.png) |
+### 3. Kepesantrenan & Tahfidz
+Fitur khusus untuk mendukung program unggulan pesantren.
 
-### Fasilitas Pendukung
-| Perpustakaan | Kesehatan (UKS) |
-|--------------|-----------------|
-| ![Perpustakaan Digital](docs/images/library.png) | ![Rekam Medis Santri](docs/images/health.png) |
+| Dashboard Tahfidz | Jurnal Ibadah |
+|-------------------|---------------|
+| ![Hafalan Quran](docs/images/tahfidz.png) | ![Monitoring Ibadah](docs/images/ibadah.png) |
+
+| Asrama Santri | Pelanggaran |
+|---------------|-------------|
+| ![Kamar Santri](docs/images/dormitories.png) | ![Catatan Pelanggaran](docs/images/violations.png) |
+
+| Kesehatan (UKS) | |
+|-----------------|---|
+| ![Rekam Medis](docs/images/health.png) | |
+
+### 4. Administrasi & Keuangan
+Pengelolaan sumber daya yayasan yang transparan.
+
+| Keuangan & SPP | Kepegawaian (HR) |
+|----------------|------------------|
+| ![Laporan Keuangan](docs/images/finance.png) | ![Data Pegawai](docs/images/hr.png) |
+
+| Inventaris Aset | PSB Online |
+|-----------------|------------|
+| ![Aset Yayasan](docs/images/inventory.png) | ![Penerimaan Santri](docs/images/psb.png) |
+
+### 5. Fasilitas Lainnya
+
+| Perpustakaan | Pengaturan |
+|--------------|------------|
+| ![Katalog Buku](docs/images/library.png) | ![Konfigurasi](docs/images/settings.png) |
 
 ---
 

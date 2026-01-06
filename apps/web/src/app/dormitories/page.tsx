@@ -86,12 +86,12 @@ export default function DormitoriesPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 sm:flex-row">
-            <Select value={unitId} onValueChange={setUnitId}>
+            <Select value={unitId} onValueChange={(v) => setUnitId(v === 'ALL' ? '' : v)}>
               <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Semua Unit" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Unit</SelectItem>
+                <SelectItem value="ALL">Semua Unit</SelectItem>
                 {unitsData?.map((unit) => (
                   <SelectItem key={unit.id} value={unit.id}>
                     {unit.name}
@@ -100,12 +100,12 @@ export default function DormitoriesPage() {
               </SelectContent>
             </Select>
 
-            <Select value={type} onValueChange={(v) => setType(v as DormitoryType | '')}>
+            <Select value={type} onValueChange={(v) => setType(v === 'ALL' ? '' : v as DormitoryType)}>
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Semua Tipe" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Tipe</SelectItem>
+                <SelectItem value="ALL">Semua Tipe</SelectItem>
                 {DORMITORY_TYPES.map((t) => (
                   <SelectItem key={t.value} value={t.value}>
                     {t.label}

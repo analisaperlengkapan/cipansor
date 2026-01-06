@@ -204,12 +204,12 @@ export default function HRPage() {
                       className="pl-9"
                     />
                   </div>
-                  <Select value={unitFilter} onValueChange={setUnitFilter}>
+                  <Select value={unitFilter} onValueChange={(v) => setUnitFilter(v === 'ALL' ? '' : v)}>
                     <SelectTrigger className="w-full md:w-[180px]">
                       <SelectValue placeholder="Semua Unit" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Semua Unit</SelectItem>
+                      <SelectItem value="ALL">Semua Unit</SelectItem>
                       {units?.map((unit) => (
                         <SelectItem key={unit.id} value={unit.id}>
                           {unit.name}

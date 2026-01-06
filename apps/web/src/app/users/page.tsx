@@ -38,7 +38,7 @@ import { cn } from '@/lib/utils';
 
 // Realm filter options
 const realmOptions = [
-  { value: '', label: 'All Realms' },
+  { value: 'ALL', label: 'All Realms' },
   { value: 'GLOBAL', label: 'Global' },
   { value: 'YAYASAN', label: 'Yayasan' },
   { value: 'TK_QURAN', label: 'TK Qur\'an' },
@@ -286,7 +286,7 @@ export default function UsersPage() {
               onChange={setSearch}
             />
           </div>
-          <Select value={realmFilter} onValueChange={setRealmFilter}>
+          <Select value={realmFilter} onValueChange={(v) => setRealmFilter(v === 'ALL' ? '' : v)}>
             <SelectTrigger className="w-full md:w-44">
               <SelectValue placeholder="All Realms" />
             </SelectTrigger>
@@ -299,12 +299,12 @@ export default function UsersPage() {
             </SelectContent>
           </Select>
           {isSuperAdmin && (
-            <Select value={unitFilter} onValueChange={setUnitFilter}>
+            <Select value={unitFilter} onValueChange={(v) => setUnitFilter(v === 'ALL' ? '' : v)}>
               <SelectTrigger className="w-full md:w-48">
                 <SelectValue placeholder="All Units" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Units</SelectItem>
+                <SelectItem value="ALL">All Units</SelectItem>
                 {units?.map((unit) => (
                   <SelectItem key={unit.id} value={unit.id}>
                     {unit.name}

@@ -12,6 +12,12 @@ import {
   updateReportCardSchema,
   reportCardQuerySchema,
 } from './schema';
+import {
+  CreateExamInput,
+  CreateGradeInput,
+  BulkCreateGradesInput,
+  CreateReportCardInput
+} from '@cipansor/shared';
 
 // =====================================
 // EXAM CONTROLLERS
@@ -21,7 +27,7 @@ export async function getExams(req: Request, res: Response, next: NextFunction) 
   try {
     const query = examQuerySchema.parse(req.query);
     const result = await assessmentService.getExams(query);
-    res.json({ success: true, ...result });
+    res.json(result);
   } catch (error) {
     next(error);
   }
@@ -43,7 +49,7 @@ export async function getExamById(req: Request, res: Response, next: NextFunctio
 export async function createExam(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createExamSchema.parse(req.body);
-    const exam = await assessmentService.createExam(data);
+    const exam = await assessmentService.createExam(data as CreateExamInput);
     res.status(201).json({ success: true, data: exam });
   } catch (error) {
     next(error);
@@ -90,7 +96,7 @@ export async function getGrades(req: Request, res: Response, next: NextFunction)
   try {
     const query = gradeQuerySchema.parse(req.query);
     const result = await assessmentService.getGrades(query);
-    res.json({ success: true, ...result });
+    res.json(result);
   } catch (error) {
     next(error);
   }
@@ -112,7 +118,7 @@ export async function getGradeById(req: Request, res: Response, next: NextFuncti
 export async function createGrade(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createGradeSchema.parse(req.body);
-    const grade = await assessmentService.createGrade(data);
+    const grade = await assessmentService.createGrade(data as CreateGradeInput);
     res.status(201).json({ success: true, data: grade });
   } catch (error) {
     next(error);
@@ -143,8 +149,8 @@ export async function deleteGrade(req: Request, res: Response, next: NextFunctio
 export async function bulkCreateGrades(req: Request, res: Response, next: NextFunction) {
   try {
     const data = bulkCreateGradesSchema.parse(req.body);
-    const result = await assessmentService.bulkCreateGrades(data);
-    res.status(201).json({ success: true, data: { count: result.count } });
+    const result = await assessmentService.bulkCreateGrades(data as BulkCreateGradesInput);
+    res.status(201).json({ success: true, data: { count: result } });
   } catch (error) {
     next(error);
   }
@@ -179,7 +185,7 @@ export async function getReportCards(req: Request, res: Response, next: NextFunc
   try {
     const query = reportCardQuerySchema.parse(req.query);
     const result = await assessmentService.getReportCards(query);
-    res.json({ success: true, ...result });
+    res.json(result);
   } catch (error) {
     next(error);
   }
@@ -201,7 +207,7 @@ export async function getReportCardById(req: Request, res: Response, next: NextF
 export async function createReportCard(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createReportCardSchema.parse(req.body);
-    const reportCard = await assessmentService.createReportCard(data);
+    const reportCard = await assessmentService.createReportCard(data as CreateReportCardInput);
     res.status(201).json({ success: true, data: reportCard });
   } catch (error) {
     next(error);

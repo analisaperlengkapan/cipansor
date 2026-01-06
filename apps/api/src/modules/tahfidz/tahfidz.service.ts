@@ -6,7 +6,7 @@ import type {
   ListTahfidzQuery,
   GenerateCertificateInput,
 } from './tahfidz.schema';
-import type { CreateTahfidzInput, UpdateTahfidzInput, TahfidzStudentSummary, TahfidzDashboardStats } from '@cipansor/shared';
+import type { CreateTahfidzInput, UpdateTahfidzInput, TahfidzStudentSummary, TahfidzDashboardStats, TahfidzRecord } from '@cipansor/shared';
 
 export class TahfidzService {
   /**

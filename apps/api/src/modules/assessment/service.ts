@@ -687,6 +687,7 @@ function mapToExam(data: any): Exam {
     teacherId: data.teacherId,
     type: data.type as ExamType,
     title: data.title,
+    semester: data.semester,
     description: data.description ?? undefined,
     scheduledAt: data.scheduledAt,
     duration: data.duration,

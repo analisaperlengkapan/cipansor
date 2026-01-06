@@ -1,11 +1,8 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { classService } from './class.service';
-import type {
-  ListClassesQuery,
-  UpdateEnrollmentInput,
-} from './class.schema';
-import { CreateClassInput, UpdateClassInput, EnrollStudentInput } from '@cipansor/shared'; // Correct import
+import type { ListClassesQuery } from './class.schema';
+import { CreateClassInput, UpdateClassInput, EnrollStudentInput, UpdateEnrollmentInput } from '@cipansor/shared';
 
 /**
  * List classes
@@ -13,10 +10,7 @@ import { CreateClassInput, UpdateClassInput, EnrollStudentInput } from '@cipanso
  */
 export const list = asyncHandler(async (req: Request, res: Response) => {
   const query = (res.locals.validatedQuery || req.query) as ListClassesQuery;
-  const result = await classService.findAll(query, {
-    role: req.user!.role,
-    unitId: req.user!.unitId,
-  });
+  const result = await classService.findAll(query);
 
   res.json({
     success: true,

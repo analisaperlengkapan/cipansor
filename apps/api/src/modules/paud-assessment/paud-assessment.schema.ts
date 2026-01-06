@@ -80,11 +80,7 @@ export const listAssessmentsQuerySchema = z.object({
   studentId: z.string().uuid().optional(),
   unitId: z.string().uuid().optional(),
   academicYearId: z.string().uuid().optional(),
-  semester: z.union([z.literal('GANJIL'), z.literal('GENAP'), z.coerce.number()]).optional().transform(v => {
-    if (v === 'GANJIL') return 1;
-    if (v === 'GENAP') return 2;
-    return v;
-  }),
+  semester: z.enum(['GANJIL', 'GENAP']).optional(),
   aspect: PAUDAspectEnum.optional(),
   periodType: PAUDReportPeriodEnum.optional(),
   startDate: z.string().optional(), // ISO date string
@@ -96,7 +92,7 @@ export const createAssessmentSchema = z.object({
   studentId: z.string().uuid('Invalid student ID'),
   unitId: z.string().uuid('Invalid unit ID'),
   academicYearId: z.string().uuid('Invalid academic year ID'),
-  semester: z.number().int().min(1).max(2),
+  semester: z.enum(['GANJIL', 'GENAP']),
   periodType: PAUDReportPeriodEnum,
   periodDate: z.coerce.date(),
   aspect: PAUDAspectEnum,
@@ -122,7 +118,7 @@ export const bulkCreateAssessmentSchema = z.object({
   studentId: z.string().uuid('Invalid student ID'),
   unitId: z.string().uuid('Invalid unit ID'),
   academicYearId: z.string().uuid('Invalid academic year ID'),
-  semester: z.number().int().min(1).max(2),
+  semester: z.enum(['GANJIL', 'GENAP']),
   periodType: PAUDReportPeriodEnum,
   periodDate: z.coerce.date(),
   assessments: z.array(z.object({
@@ -161,11 +157,7 @@ export const listNarrativeReportsQuerySchema = z.object({
   studentId: z.string().uuid().optional(),
   unitId: z.string().uuid().optional(),
   academicYearId: z.string().uuid().optional(),
-  semester: z.union([z.literal('GANJIL'), z.literal('GENAP'), z.coerce.number()]).optional().transform(v => {
-    if (v === 'GANJIL') return 1;
-    if (v === 'GENAP') return 2;
-    return v;
-  }),
+  semester: z.enum(['GANJIL', 'GENAP']).optional(),
   status: z.enum(['DRAFT', 'FINALIZED', 'PRINTED']).optional(),
 });
 
@@ -173,7 +165,7 @@ export const createNarrativeReportSchema = z.object({
   studentId: z.string().uuid('Invalid student ID'),
   unitId: z.string().uuid('Invalid unit ID'),
   academicYearId: z.string().uuid('Invalid academic year ID'),
-  semester: z.number().int().min(1).max(2),
+  semester: z.enum(['GANJIL', 'GENAP']),
   narrativeNAM: z.string().max(5000).optional().nullable(),
   narrativeFM: z.string().max(5000).optional().nullable(),
   narrativeKOG: z.string().max(5000).optional().nullable(),
@@ -231,21 +223,13 @@ export const studentIdParamSchema = z.object({
 export const assessmentSummaryQuerySchema = z.object({
   studentId: z.string().uuid('Invalid student ID'),
   academicYearId: z.string().uuid().optional(),
-  semester: z.union([z.literal('GANJIL'), z.literal('GENAP'), z.coerce.number()]).optional().transform(v => {
-    if (v === 'GANJIL') return 1;
-    if (v === 'GENAP') return 2;
-    return v;
-  }),
+  semester: z.enum(['GANJIL', 'GENAP']).optional(),
 });
 
 export const classSummaryQuerySchema = z.object({
   unitId: z.string().uuid('Invalid unit ID'),
   academicYearId: z.string().uuid().optional(),
-  semester: z.union([z.literal('GANJIL'), z.literal('GENAP'), z.coerce.number()]).optional().transform(v => {
-    if (v === 'GANJIL') return 1;
-    if (v === 'GENAP') return 2;
-    return v;
-  }),
+  semester: z.enum(['GANJIL', 'GENAP']).optional(),
   aspect: PAUDAspectEnum.optional(),
 });
 

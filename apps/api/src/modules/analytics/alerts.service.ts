@@ -7,7 +7,6 @@ import { prisma } from '@/lib/prisma';
 import { createNotification } from '@/modules/notifications/service';
 import { NotificationType, AttendanceStatus } from '@prisma/client';
 import { logger } from '@/lib/logger';
-import type { AlertRule, AlertTrigger } from '@cipansor/shared';
 
 export interface AlertRule {
     id: string;

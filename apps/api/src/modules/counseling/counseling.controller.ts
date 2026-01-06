@@ -11,7 +11,7 @@ import {
 } from '@cipansor/shared';
 
 export class CounselingController {
-  async getSessions(req: Request, res: Response<ApiResponse<CounselingSession[]>>, next: NextFunction) {
+  async getSessions(req: Request, res: Response, next: NextFunction) {
     try {
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const filters: CounselingListParams = {
@@ -26,8 +26,8 @@ export class CounselingController {
         limit: req.query.limit ? Number(req.query.limit) : undefined,
       };
 
-      const sessions = await counselingService.getSessions(filters, user);
-      res.json({ success: true, data: sessions });
+      const result = await counselingService.getSessions(filters, user);
+      res.json({ success: true, data: result.data, total: result.total });
     } catch (error) {
       next(error);
     }

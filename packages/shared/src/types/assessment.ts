@@ -34,7 +34,7 @@ export interface Exam {
   teacherId: string;
   type: ExamType;
   title: string;
-  semester: number;
+  semester?: number;
   description?: string;
   scheduledAt: Date | string;
   duration: number;
@@ -63,7 +63,7 @@ export interface CreateExamInput {
   teacherId: string;
   type: ExamType | string;
   title: string;
-  semester: number;
+  semester?: number;
   description?: string;
   scheduledAt: string | Date;
   duration?: number;

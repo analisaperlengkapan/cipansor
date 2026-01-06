@@ -11,7 +11,12 @@ import {
   queryMedicationUsageSchema,
 } from "./schema";
 import { Errors } from "../../middleware/error";
-import { MedicalRecordType } from "@cipansor/shared";
+import { 
+  MedicalRecordType, 
+  CreateMedicalRecordInput,
+  CreateMedicationInput,
+  CreateMedicationUsageInput 
+} from "@cipansor/shared";
 
 // ==================== MEDICAL RECORD ====================
 
@@ -44,7 +49,7 @@ export async function getMedicalRecordById(req: Request, res: Response, next: Ne
 export async function createMedicalRecord(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createMedicalRecordSchema.parse(req.body);
-    const record = await service.createMedicalRecord(data, req.user!.sub);
+    const record = await service.createMedicalRecord(data as CreateMedicalRecordInput, req.user!.sub);
     res.status(201).json({ success: true, data: record });
   } catch (error) {
     next(error);
@@ -106,7 +111,7 @@ export async function getMedicationById(req: Request, res: Response, next: NextF
 export async function createMedication(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createMedicationSchema.parse(req.body);
-    const medication = await service.createMedication(data);
+    const medication = await service.createMedication(data as CreateMedicationInput);
     res.status(201).json({ success: true, data: medication });
   } catch (error) {
     next(error);
@@ -160,7 +165,7 @@ export async function getMedicationUsageLogs(req: Request, res: Response, next: 
 export async function createMedicationUsage(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createMedicationUsageSchema.parse(req.body);
-    const usage = await service.createMedicationUsage(data, req.user!.sub);
+    const usage = await service.createMedicationUsage(data as CreateMedicationUsageInput, req.user!.sub);
     res.status(201).json({ success: true, data: usage });
   } catch (error) {
     next(error);

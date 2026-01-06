@@ -33,7 +33,7 @@ export interface PAUDAssessment {
   studentId: string;
   unitId?: string;
   academicYearId: string;
-  semester: number;
+  semester: string;
   periodType: PAUDReportPeriod;
   periodDate: Date | string;
   aspect: PAUDAspect;
@@ -82,7 +82,7 @@ export interface PAUDNarrativeReport {
   studentId: string;
   unitId: string;
   academicYearId: string;
-  semester: number;
+  semester: string;
   narrativeNAM?: string | null;
   narrativeFM?: string | null;
   narrativeKOG?: string | null;
@@ -125,7 +125,7 @@ export interface PAUDNarrativeReport {
 export interface StudentProgressSummary {
   studentId: string;
   academicYearId?: string;
-  semester?: number;
+  semester?: string;
   student: {
     id: string;
     nis: string;
@@ -147,7 +147,7 @@ export interface StudentProgressSummary {
 export interface ClassProgressSummary {
   unitId: string;
   academicYearId?: string;
-  semester?: number;
+  semester?: string;
   aspect?: PAUDAspect;
   totalStudents: number;
   totalAssessments: number;
@@ -183,7 +183,7 @@ export interface CreatePAUDAssessmentInput {
   studentId: string;
   unitId?: string;
   academicYearId: string;
-  semester: number;
+  semester: string;
   periodType: PAUDReportPeriod;
   periodDate: Date | string;
   aspect: PAUDAspect;
@@ -200,7 +200,7 @@ export interface BulkCreatePAUDAssessmentInput {
   studentId: string;
   unitId: string;
   academicYearId: string;
-  semester: number;
+  semester: string;
   periodType: PAUDReportPeriod;
   periodDate: Date | string;
   assessments: Array<{
@@ -225,7 +225,7 @@ export interface CreatePAUDNarrativeReportInput {
   studentId: string;
   unitId: string;
   academicYearId: string;
-  semester: number;
+  semester: string;
   narrativeNAM?: string;
   narrativeFM?: string;
   narrativeKOG?: string;

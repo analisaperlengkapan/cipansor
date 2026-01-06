@@ -14,6 +14,7 @@ export const createExamSchema = z.object({
   teacherId: z.string().uuid(),
   type: z.nativeEnum(ExamType),
   title: z.string().min(3).max(200),
+  semester: z.number().int().min(1).max(2).optional(),
   description: z.string().optional(),
   scheduledAt: z.string().datetime(),
   duration: z.number().int().min(5).max(240).default(60),

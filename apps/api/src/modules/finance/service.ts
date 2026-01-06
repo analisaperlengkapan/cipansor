@@ -75,12 +75,13 @@ export async function getPaymentTypeById(id: string) {
 }
 
 export async function updatePaymentType(id: string, data: UpdatePaymentTypeDto) {
+  const { accountId, ...restData } = data;
   return prisma.paymentType.update({
     where: { id },
     data: {
-      ...data,
-      ...(data.amount && { amount: new Prisma.Decimal(data.amount) }),
-      ...(data.accountId && { account: { connect: { id: data.accountId } } }),
+      ...restData,
+      ...(restData.amount && { amount: new Prisma.Decimal(restData.amount) }),
+      ...(accountId && { account: { connect: { id: accountId } } }),
     },
     include: { unit: { select: { id: true, name: true } } },
   });

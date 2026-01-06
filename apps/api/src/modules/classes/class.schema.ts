@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CreateClassInput, UpdateClassInput, ClassEnrollmentInput } from '@cipansor/shared';
+import { CreateClassInput, UpdateClassInput, ClassEnrollmentInput, EnrollmentStatus } from '@cipansor/shared';
 
 // Query params
 export const listClassesQuerySchema = z.object({
@@ -12,7 +12,7 @@ export const listClassesQuerySchema = z.object({
 });
 
 // Create class
-export const createClassSchema: z.ZodType<CreateClassInput> = z.object({
+export const createClassSchema = z.object({
   name: z.string().min(1, 'Class name is required'),
   unitId: z.string().uuid('Invalid unit ID'),
   academicYearId: z.string().uuid('Invalid academic year ID'),
@@ -37,12 +37,12 @@ export const classIdParamSchema = z.object({
 });
 
 // Enrollment schemas
-export const enrollStudentSchema: z.ZodType<ClassEnrollmentInput> = z.object({
+export const enrollStudentSchema = z.object({
   studentId: z.string().uuid('Invalid student ID'),
 });
 
 export const updateEnrollmentSchema = z.object({
-  status: z.enum(['active', 'completed', 'transferred', 'dropped']),
+  status: z.nativeEnum(EnrollmentStatus),
 });
 
 // Types - Re-export shared types for local convenience if needed, or just use shared.

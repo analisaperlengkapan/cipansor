@@ -53,7 +53,7 @@ import { Progress } from '@/components/ui/progress';
 const formSchema = z.object({
     studentId: z.string().min(1, 'Pilih siswa'),
     academicYearId: z.string().min(1, 'Pilih tahun ajaran'),
-    semester: z.coerce.number().min(1).max(2),
+    semester: z.enum(['GANJIL', 'GENAP']),
     aspect: z.enum(['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI'], {
         required_error: 'Pilih aspek perkembangan',
     }),
@@ -128,7 +128,7 @@ export default function EditPAUDAssessmentPage() {
             form.reset({
                 studentId: assessment.studentId,
                 academicYearId: assessment.academicYearId,
-                semester: assessment.semester,
+                semester: assessment.semester as 'GANJIL' | 'GENAP',
                 aspect: assessment.aspect,
                 indicatorId: assessment.indicatorId || undefined,
                 periodType: assessment.periodType,
@@ -381,15 +381,15 @@ export default function EditPAUDAssessmentPage() {
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>Semester *</FormLabel>
-                                                    <Select onValueChange={(val) => field.onChange(parseInt(val))} value={field.value?.toString()}>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
                                                         <FormControl>
                                                             <SelectTrigger>
                                                                 <SelectValue placeholder="Pilih semester" />
                                                             </SelectTrigger>
                                                         </FormControl>
                                                         <SelectContent>
-                                                            <SelectItem value="1">Semester 1 (Ganjil)</SelectItem>
-                                                            <SelectItem value="2">Semester 2 (Genap)</SelectItem>
+                                                            <SelectItem value="GANJIL">Semester 1 (Ganjil)</SelectItem>
+                                                            <SelectItem value="GENAP">Semester 2 (Genap)</SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                     <FormMessage />

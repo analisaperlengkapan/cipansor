@@ -7,7 +7,10 @@ import {
   useDashboardStats,
   useAttendanceStats,
   useFinanceStats,
+  useViolationRewardStats,
 } from '@/hooks';
+import { useStudents } from '@/hooks/use-students';
+import { useHealthSummary } from '@/hooks/use-health';
 import {
   Users,
   GraduationCap,
@@ -21,6 +24,8 @@ import {
   AlertTriangle,
   Award,
   Heart,
+  Stethoscope,
+  Pill,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -39,6 +44,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { useMemo } from 'react';
 
 const CHART_COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
@@ -47,6 +53,53 @@ export default function DashboardPage() {
   const { data: stats, isLoading } = useDashboardStats();
   const { data: attendanceData } = useAttendanceStats();
   const { data: financeData } = useFinanceStats();
+  
+  // New hooks for enhanced dashboard
+  const { data: violationData } = useViolationRewardStats({ period: 'month' });
+  const { data: healthData } = useHealthSummary();
+  const { data: recentStudents } = useStudents({ limit: 5, status: 'ACTIVE' }); // Assume default sort is filtered by new/active
+
+  // Combine activity feed
+  const activities = useMemo(() => {
+    const allActivities = [
+      ...(recentStudents?.data?.map(s => ({
+        id: s.id,
+        title: 'Santri Baru',
+        description: `${s.name} bergabung di ${s.currentClass?.name || 'sekolah'}`,
+        time: s.createdAt,
+        type: 'student',
+        rawTime: new Date(s.createdAt).getTime(),
+      })) || []),
+      ...(violationData?.recentViolations?.map(v => ({
+        id: v.id,
+        title: 'Pelanggaran',
+        description: `${v.studentName} - ${v.type} (${v.points} poin)`,
+        time: v.date,
+        type: 'violation',
+        rawTime: new Date(v.date).getTime(),
+      })) || []),
+      ...(violationData?.recentRewards?.map(r => ({
+        id: r.id,
+        title: 'Penghargaan',
+        description: `${r.studentName} - ${r.type} (${r.points} poin)`,
+        time: r.date,
+        type: 'reward',
+        rawTime: new Date(r.date).getTime(),
+      })) || []),
+      ...(financeData?.recentPayments?.map(p => ({
+        id: p.id,
+        title: 'Pembayaran',
+        description: `${p.studentName} membayar Rp ${p.amount.toLocaleString('id-ID')}`,
+        time: p.date,
+        type: 'finance',
+        rawTime: new Date(p.date).getTime(),
+      })) || []),
+    ];
+
+    return allActivities
+      .sort((a, b) => b.rawTime - a.rawTime)
+      .slice(0, 5);
+  }, [recentStudents, violationData, financeData]);
 
   return (
     <MainLayout>
@@ -116,7 +169,9 @@ export default function DashboardPage() {
               <AlertTriangle className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">-</div>
+              <div className="text-2xl font-bold text-red-600">
+                {violationData?.totalViolations ?? '-'}
+              </div>
               <p className="text-xs text-muted-foreground">Bulan ini</p>
             </CardContent>
           </Card>
@@ -126,7 +181,9 @@ export default function DashboardPage() {
               <Award className="h-4 w-4 text-yellow-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">-</div>
+              <div className="text-2xl font-bold">
+                {violationData?.totalRewards ?? '-'}
+              </div>
               <p className="text-xs text-muted-foreground">Bulan ini</p>
             </CardContent>
           </Card>
@@ -207,7 +264,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Recent Activity */}
+          {/* Recent Activity (Dynamic) */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -218,36 +275,21 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <ActivityItem
-                  title="Santri baru terdaftar"
-                  description="Ahmad Fauzi bergabung di Kelas 7A"
-                  time="2 jam lalu"
-                  type="student"
-                />
-                <ActivityItem
-                  title="Kehadiran dicatat"
-                  description="Kehadiran Kelas 8B sudah direkam"
-                  time="3 jam lalu"
-                  type="attendance"
-                />
-                <ActivityItem
-                  title="Progress Tahfidz"
-                  description="5 santri menyelesaikan Juz 30"
-                  time="5 jam lalu"
-                  type="tahfidz"
-                />
-                <ActivityItem
-                  title="Pembayaran diterima"
-                  description="SPP bulan ini dari 15 santri"
-                  time="6 jam lalu"
-                  type="finance"
-                />
-                <ActivityItem
-                  title="Izin disetujui"
-                  description="3 izin pulang telah disetujui"
-                  time="8 jam lalu"
-                  type="attendance"
-                />
+                {activities.length > 0 ? (
+                  activities.map((activity) => (
+                    <ActivityItem
+                      key={`${activity.type}-${activity.id}`}
+                      title={activity.title}
+                      description={activity.description}
+                      time={format(new Date(activity.time), 'HH:mm', { locale: id })}
+                      type={activity.type}
+                    />
+                  ))
+                ) : (
+                  <div className="text-center text-sm text-muted-foreground py-4">
+                    Belum ada aktivitas
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -353,32 +395,47 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Additional Info Row */}
+        {/* Additional Info Row - Health & AY */}
         <div className="grid gap-4 md:grid-cols-2">
-          {/* Health Summary */}
+          {/* Health Summary (Connected) */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Heart className="h-5 w-5" />
-                Kesehatan Santri
+                Kesehatan Santri (Bulan Ini)
               </CardTitle>
-              <CardDescription>Ringkasan kondisi kesehatan</CardDescription>
+              <CardDescription>Ringkasan pemeriksaan kesehatan</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-green-600">-</div>
-                  <div className="text-xs text-muted-foreground">Sehat</div>
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <Stethoscope className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium">Total Periksa</span>
+                  </div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {healthData?.thisMonthRecords ?? '-'}
+                  </div>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold text-yellow-600">-</div>
-                  <div className="text-xs text-muted-foreground">Sakit</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-red-600">-</div>
-                  <div className="text-xs text-muted-foreground">Darurat</div>
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <Pill className="h-4 w-4 text-red-600" />
+                    <span className="text-sm font-medium">Sakit/Obat</span>
+                  </div>
+                  <div className="text-2xl font-bold text-red-600">
+                    {healthData?.recordsByType?.find(r => r.type === 'ILLNESS')?.count ?? 0}
+                  </div>
                 </div>
               </div>
+              
+              {(healthData?.medications?.lowStock ?? 0) > 0 && (
+                <div className="mt-4 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                  <span className="text-xs text-yellow-700 dark:text-yellow-400">
+                    {healthData?.medications?.lowStock} obat stok menipis
+                  </span>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -393,12 +450,12 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               {stats?.activeAcademicYear ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b">
                     <span className="text-sm text-muted-foreground">Nama</span>
                     <span className="font-semibold">{stats.activeAcademicYear.name}</span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between pb-2 border-b">
                     <span className="text-sm text-muted-foreground">Mulai</span>
                     <span className="font-semibold">
                       {format(new Date(stats.activeAcademicYear.startDate), 'd MMM yyyy', { locale: id })}

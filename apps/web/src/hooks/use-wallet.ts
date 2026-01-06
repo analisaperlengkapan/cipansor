@@ -8,6 +8,7 @@ export interface Wallet {
   id: string;
   studentId: string;
   balance: number;
+  spendingLimit?: number; // Daily spending limit
   lastTopUp?: string;
   lastTransaction?: string;
   isActive: boolean;
@@ -327,6 +328,32 @@ export function useRefundWallet() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Gagal melakukan refund');
+    },
+  });
+}
+
+// =============== Limit Settings ===============
+
+export interface UpdateLimitData {
+  studentId: string;
+  limit: number;
+}
+
+export function useUpdateWalletLimit() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: UpdateLimitData) => {
+      const response = await api.put<ApiResponse<Wallet>>(`/wallet/limit`, data);
+      return response.data.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: walletKeys.all });
+      queryClient.invalidateQueries({ queryKey: walletKeys.detail(variables.studentId) });
+      toast.success('Limit belanja berhasil diperbarui');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Gagal memperbarui limit');
     },
   });
 }

@@ -281,6 +281,8 @@ export async function updateRegistrantStatus(id: string, data: UpdateRegistrantS
 export async function enrollRegistrant(registrantId: string, studentData: {
   nis: string;
   nisn?: string;
+  classId?: string;
+  roomId?: string;
 }) {
   const registrant = await prisma.registrant.findUnique({
     where: { id: registrantId },
@@ -324,6 +326,30 @@ export async function enrollRegistrant(registrantId: string, studentData: {
         entryYear: new Date().getFullYear(),
       },
     });
+
+    // Enroll in class if provided
+    if (studentData.classId) {
+      // Deactivate any existing enrollments for this class/academic year if needed, but this is new student
+      await tx.classEnrollment.create({
+        data: {
+            studentId: student.id,
+            classId: studentData.classId,
+            status: "active",
+        }
+      });
+    }
+
+    // Assign to room if provided
+    if (studentData.roomId) {
+        await tx.roomAssignment.create({
+            data: {
+                studentId: student.id,
+                roomId: studentData.roomId,
+                isActive: true,
+                assignedAt: new Date(),
+            }
+        });
+    }
 
     // Update registrant status
     await tx.registrant.update({

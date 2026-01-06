@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { Errors } from '@/middleware/error';
 import { UserRole, Prisma, AttendanceStatus as PrismaAttendanceStatus } from '@prisma/client';
+import { eventBus } from '@/lib/event-bus';
 import {
   AttendanceStatus,
   CreateAttendanceInput,
@@ -200,10 +201,25 @@ export class AttendanceService {
         student: {
           include: {
             user: { select: { id: true, name: true } },
+            unit: { select: { id: true, name: true } },
           },
         },
         class: { select: { id: true, name: true } },
       },
+    });
+
+    // Emit event for cross-module integration
+    eventBus.emit('attendance:created', {
+      id: attendance.id,
+      studentId: attendance.studentId,
+      studentName: attendance.student.user?.name || 'Unknown',
+      classId: attendance.classId,
+      className: attendance.class?.name || '',
+      unitId: attendance.student.unitId,
+      unitName: attendance.student.unit?.name || '',
+      status: attendance.status as any,
+      date: attendance.date,
+      recordedById
     });
 
     return this.mapToShared(attendance);

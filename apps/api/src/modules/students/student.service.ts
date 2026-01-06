@@ -186,9 +186,10 @@ export class StudentService {
       throw Errors.conflict('NIS already exists');
     }
 
-    // Check if email exists
+    // Check if email exists (if provided)
+    const emailToCheck = input.email || `${input.nis}@student.cipansor.local`;
     const existingEmail = await prisma.user.findFirst({
-      where: { email: input.email },
+      where: { email: emailToCheck },
     });
 
     if (existingEmail) {
@@ -196,6 +197,10 @@ export class StudentService {
     }
 
     // Check unit exists
+    if (!input.unitId) {
+      throw Errors.badRequest('Unit ID is required');
+    }
+    
     const unit = await prisma.unit.findFirst({
       where: { id: input.unitId, deletedAt: null },
     });
@@ -203,6 +208,11 @@ export class StudentService {
     if (!unit) {
       throw Errors.notFound('Unit');
     }
+    
+    const unitId = input.unitId; // TypeScript narrowing
+    
+    // Generate email if not provided
+    const email = input.email || `${input.nis}@student.cipansor.local`;
 
     // Hash password
     const passwordHash = await hashPassword(input.password);
@@ -213,10 +223,10 @@ export class StudentService {
       const user = await tx.user.create({
         data: {
           name: input.name,
-          email: input.email,
+          email,
           passwordHash,
           role: UserRole.STUDENT,
-          unitId: input.unitId,
+          unitId,
           isActive: true,
         },
       });
@@ -225,7 +235,7 @@ export class StudentService {
       const student = await tx.student.create({
         data: {
           userId: user.id,
-          unitId: input.unitId,
+          unitId,
           nis: input.nis,
           nisn: input.nisn,
           gender: input.gender as Gender,
@@ -256,7 +266,7 @@ export class StudentService {
       // Enroll in class if provided
       if (input.classId) {
         const classExists = await tx.class.findFirst({
-          where: { id: input.classId, deletedAt: null, unitId: input.unitId },
+          where: { id: input.classId, deletedAt: null, unitId },
         });
 
         if (classExists) {

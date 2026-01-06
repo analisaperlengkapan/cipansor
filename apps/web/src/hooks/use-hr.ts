@@ -860,6 +860,107 @@ export function useDeleteSalaryComponent() {
 }
 
 // ============================================
+// STAFF ATTENDANCE
+// ============================================
+
+export enum StaffAttendanceStatus {
+  PRESENT = 'PRESENT',
+  ABSENT = 'ABSENT',
+  LATE = 'LATE',
+  LEAVE = 'LEAVE',
+  SICK = 'SICK',
+}
+
+export const STAFF_ATTENDANCE_STATUS_LABELS: Record<StaffAttendanceStatus, string> = {
+  PRESENT: 'Hadir',
+  ABSENT: 'Alpa',
+  LATE: 'Terlambat',
+  LEAVE: 'Izin/Cuti',
+  SICK: 'Sakit',
+};
+
+export interface StaffAttendance {
+  id: string;
+  staffId: string;
+  staff?: {
+    id: string;
+    fullName: string;
+    unitId?: string;
+    unit?: { id: string; name: string };
+  };
+  date: string;
+  status: StaffAttendanceStatus;
+  checkIn?: string;
+  checkOut?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function useStaffAttendances(params?: {
+  staffId?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}) {
+  return useQuery({
+    queryKey: ['staff-attendances', params],
+    queryFn: async () => {
+      const response = await api.get('/hr/attendance', { params });
+      return response.data as {
+        data: StaffAttendance[];
+        meta: { total: number; page: number; limit: number; totalPages: number };
+      };
+    },
+  });
+}
+
+export function useCreateStaffAttendance() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: Partial<StaffAttendance>) => {
+      const response = await api.post('/hr/attendance', data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff-attendances'] });
+    },
+  });
+}
+
+export function useBulkStaffAttendance() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      date: string;
+      records: { staffId: string; status: StaffAttendanceStatus; notes?: string }[];
+    }) => {
+      const response = await api.post('/hr/attendance/bulk', data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff-attendances'] });
+    },
+  });
+}
+
+export function useStaffAttendanceSummary(staffId: string, month: number, year: number) {
+  return useQuery({
+    queryKey: ['staff-attendance-summary', staffId, month, year],
+    queryFn: async () => {
+      const response = await api.get(`/hr/staff/${staffId}/attendance/summary`, {
+        params: { month, year },
+      });
+      return response.data.data;
+    },
+    enabled: !!staffId,
+  });
+}
+
+// ============================================
 // PAYROLL PERIODS
 // ============================================
 

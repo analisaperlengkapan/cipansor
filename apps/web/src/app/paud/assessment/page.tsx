@@ -42,6 +42,8 @@ import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/auth';
 import { cn } from '@/lib/utils';
 import { PAUDReportPeriod } from '@cipansor/shared';
+import { Label } from '@/components/ui/label';
+import { X } from 'lucide-react';
 
 const PERIOD_TYPES = [
   { value: 'HARIAN', label: 'Harian' },
@@ -215,116 +217,162 @@ export default function PAUDAssessmentListPage() {
         />
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <SearchInput
             placeholder="Cari nama siswa atau NIS..."
             value={search}
             onChange={setSearch}
+            className="w-full md:w-[300px]"
           />
 
-            <Select value={aspectFilter || 'all'} onValueChange={(val) => setAspectFilter(val === 'all' ? '' : val)}>
-              <SelectTrigger>
+          <div className="flex flex-wrap items-center gap-2">
+             {/* Primary Filters */}
+             <Select value={aspectFilter || 'all'} onValueChange={(val) => setAspectFilter(val === 'all' ? '' : val)}>
+              <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Semua Aspek" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Aspek</SelectItem>
-              {Object.entries(ASPECT_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                {Object.entries(ASPECT_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Select value={achievementFilter || 'all'} onValueChange={(val) => setAchievementFilter(val === 'all' ? '' : val)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Semua Capaian" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Capaian</SelectItem>
-              {Object.entries(ACHIEVEMENT_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {value} - {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            {/* Advanced Filters Popover */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="border-dashed">
+                   <CalendarIcon className="mr-2 h-4 w-4" />
+                   Filter Lanjutan
+                   {(achievementFilter || periodTypeFilter || classFilter || academicYearFilter || startDate || endDate) && (
+                      <Badge variant="secondary" className="ml-2 px-1 h-5">{
+                        [achievementFilter, periodTypeFilter, classFilter, academicYearFilter, startDate, endDate].filter(Boolean).length
+                      }</Badge>
+                   )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[320px] p-4" align="start">
+                 <div className="space-y-4">
+                    <h4 className="font-medium leading-none">Filter Lanjutan</h4>
+                    
+                    <div className="grid gap-2">
+                       <Label className="text-xs">Capaian</Label>
+                       <Select value={achievementFilter || 'all'} onValueChange={(val) => setAchievementFilter(val === 'all' ? '' : val)}>
+                        <SelectTrigger className="h-8">
+                          <SelectValue placeholder="Semua Capaian" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Semua Capaian</SelectItem>
+                          {Object.entries(ACHIEVEMENT_LABELS).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {value} - {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-          <Select value={periodTypeFilter || 'all'} onValueChange={(val) => setPeriodTypeFilter(val === 'all' ? '' : val)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Semua Periode" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Periode</SelectItem>
-              {PERIOD_TYPES.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  {type.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                    <div className="grid gap-2">
+                       <Label className="text-xs">Periode</Label>
+                       <Select value={periodTypeFilter || 'all'} onValueChange={(val) => setPeriodTypeFilter(val === 'all' ? '' : val)}>
+                        <SelectTrigger className="h-8">
+                          <SelectValue placeholder="Semua Periode" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Semua Periode</SelectItem>
+                          {PERIOD_TYPES.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>
+                              {type.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-          <Select value={classFilter || 'all'} onValueChange={(val) => setClassFilter(val === 'all' ? '' : val)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Semua Kelas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Kelas</SelectItem>
-              {classes?.data?.map((cls) => (
-                <SelectItem key={cls.id} value={cls.id}>
-                  {cls.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                    <div className="grid gap-2">
+                       <Label className="text-xs">Kelas</Label>
+                       <Select value={classFilter || 'all'} onValueChange={(val) => setClassFilter(val === 'all' ? '' : val)}>
+                        <SelectTrigger className="h-8">
+                          <SelectValue placeholder="Semua Kelas" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Semua Kelas</SelectItem>
+                          {classes?.data?.map((cls) => (
+                            <SelectItem key={cls.id} value={cls.id}>
+                              {cls.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-          <Select value={academicYearFilter || 'all'} onValueChange={(val) => setAcademicYearFilter(val === 'all' ? '' : val)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Semua Tahun Ajaran" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Tahun Ajaran</SelectItem>
-              {academicYears?.data?.map((year) => (
-                <SelectItem key={year.id} value={year.id}>
-                  {year.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                    <div className="grid gap-2">
+                        <Label className="text-xs">Tanggal Mulai</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" className="h-8 justify-start text-left font-normal w-full">
+                                <CalendarIcon className="mr-2 h-3 w-3" />
+                                {startDate ? format(startDate, 'dd/MM/yyyy') : 'Dari Tanggal'}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={startDate}
+                                onSelect={setStartDate}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                    </div>
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {startDate ? format(startDate, 'dd/MM/yyyy') : 'Dari Tanggal'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={startDate}
-                onSelect={setStartDate}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+                    <div className="grid gap-2">
+                        <Label className="text-xs">Tanggal Akhir</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" className="h-8 justify-start text-left font-normal w-full">
+                                <CalendarIcon className="mr-2 h-3 w-3" />
+                                {endDate ? format(endDate, 'dd/MM/yyyy') : 'Sampai Tanggal'}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={endDate}
+                                onSelect={setEndDate}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                    </div>
+                 </div>
+              </PopoverContent>
+            </Popover>
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {endDate ? format(endDate, 'dd/MM/yyyy') : 'Sampai Tanggal'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={endDate}
-                onSelect={setEndDate}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+            {/* Clear Filters Button */}
+            {(achievementFilter || periodTypeFilter || classFilter || academicYearFilter || startDate || endDate || aspectFilter || search) && (
+                <Button 
+                   variant="ghost" 
+                   size="icon"
+                   onClick={() => {
+                       setSearch('');
+                       setAspectFilter('');
+                       setAchievementFilter('');
+                       setPeriodTypeFilter('');
+                       setClassFilter('');
+                       setAcademicYearFilter('');
+                       setStartDate(undefined);
+                       setEndDate(undefined);
+                   }}
+                   title="Reset Filter"
+                >
+                    <X className="h-4 w-4" />
+                </Button>
+            )}
+          </div>
         </div>
 
         {/* Data Table */}

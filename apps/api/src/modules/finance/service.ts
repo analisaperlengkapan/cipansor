@@ -1,6 +1,7 @@
 import { prisma } from "../../lib/prisma";
 import { PaymentStatus, Prisma, NotificationType } from "@prisma/client";
 import * as notificationService from "../notifications/service";
+import { eventBus } from "@/lib/event-bus";
 import { AccountType, JournalReferenceType } from "@cipansor/shared";
 import {
   CreatePaymentTypeDto,
@@ -428,6 +429,32 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
     });
   } catch (error) {
     console.error("Failed to send payment notification:", error);
+  }
+
+  // Emit event for cross-module integration (dashboard real-time updates)
+  try {
+    // We need to fetch student unit info for the event
+    const studentWithUnit = await prisma.student.findUnique({
+      where: { id: payment.invoice.studentId },
+      include: { unit: { select: { id: true, name: true } } }
+    });
+
+    if (studentWithUnit) {
+      eventBus.emit('finance:payment-received', {
+        id: payment.id,
+        invoiceId: payment.invoiceId,
+        studentId: payment.invoice.studentId,
+        studentName: payment.invoice.student.user.name,
+        unitId: studentWithUnit.unitId,
+        unitName: studentWithUnit.unit?.name || '',
+        amount: payment.amount.toNumber(),
+        paymentMethod: payment.method,
+        paidAt: payment.paidAt || new Date(),
+        processedById: 'SYSTEM'
+      });
+    }
+  } catch (error) {
+    console.error("Failed to emit payment event:", error);
   }
 
   return payment;

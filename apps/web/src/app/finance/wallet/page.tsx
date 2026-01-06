@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useUpdateWalletLimit } from '@/hooks/use-wallet';
 import {
   Card,
   CardContent,
@@ -52,18 +53,21 @@ import {
   CreditCard,
   Users,
   DollarSign,
+  Settings,
+  ShieldAlert,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Types
 interface WalletData {
   id: string;
-  studentId: string;
+  studentId: string; // Ensure studentId is part of the interface
   studentName: string;
   studentNis: string;
   unitName?: string;
   className?: string;
   balance: number;
+  spendingLimit?: number;
   lastTopUp?: string;
   createdAt: string;
 }
@@ -204,6 +208,10 @@ export default function WalletPage() {
   });
   const [transactionFilter, setTransactionFilter] = useState('');
 
+  const [limitDialogOpen, setLimitDialogOpen] = useState(false);
+  const [limitForm, setLimitForm] = useState({ limit: '' });
+  const updateLimit = useUpdateWalletLimit();
+
   // Queries
   const { data: walletsData, isLoading: walletsLoading } = useQuery({
     queryKey: ['wallets', search],
@@ -250,6 +258,28 @@ export default function WalletPage() {
   const openTopUpDialog = (wallet: WalletData) => {
     setSelectedWallet(wallet);
     setTopUpDialogOpen(true);
+  };
+
+
+  const handleUpdateLimit = async () => {
+    if (!selectedWallet || !limitForm.limit) return;
+    try {
+      await updateLimit.mutateAsync({
+        studentId: selectedWallet.studentId,
+        limit: Number(limitForm.limit),
+      });
+      setLimitDialogOpen(false);
+      setSelectedWallet(null);
+      setLimitForm({ limit: '' });
+    } catch (error) {
+      // toast handled by hook
+    }
+  };
+
+  const openLimitDialog = (wallet: WalletData) => {
+    setSelectedWallet(wallet);
+    setLimitForm({ limit: wallet.spendingLimit?.toString() || '' });
+    setLimitDialogOpen(true);
   };
 
   // Stats cards data
@@ -430,13 +460,21 @@ export default function WalletPage() {
                         <TableCell className="font-medium">{wallet.studentName}</TableCell>
                         <TableCell>{wallet.className || '-'}</TableCell>
                         <TableCell className="text-right">
-                          <span
-                            className={`font-semibold ${
-                              wallet.balance < 50000 ? 'text-red-600' : 'text-green-600'
-                            }`}
-                          >
-                            {formatRupiah(wallet.balance)}
-                          </span>
+                          <div className="flex flex-col items-end">
+                            <span
+                              className={`font-semibold ${
+                                wallet.balance < 50000 ? 'text-red-600' : 'text-green-600'
+                              }`}
+                            >
+                              {formatRupiah(wallet.balance)}
+                            </span>
+                            {wallet.spendingLimit && (
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <ShieldAlert className="h-3 w-3" />
+                                Limit: {formatRupiah(wallet.spendingLimit)}/hari
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           {wallet.lastTopUp ? formatDate(wallet.lastTopUp) : '-'}
@@ -448,6 +486,14 @@ export default function WalletPage() {
                           >
                             <Plus className="h-4 w-4 mr-1" />
                             Top Up
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="ml-2"
+                            onClick={() => openLimitDialog(wallet)}
+                          >
+                            <Settings className="h-4 w-4" />
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -649,6 +695,46 @@ export default function WalletPage() {
               )}
               Top Up
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Limit Dialog */}
+      <Dialog open={limitDialogOpen} onOpenChange={setLimitDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Atur Limit Belanja Harian</DialogTitle>
+            <DialogDescription>
+              Batasi pengeluaran harian untuk {selectedWallet?.studentName}.
+              Set ke 0 untuk menghapus limit.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+             <div className="space-y-2">
+                <Label>Limit Harian (Rp)</Label>
+                <Input
+                  type="number"
+                  placeholder="Contoh: 20000"
+                  value={limitForm.limit}
+                  onChange={(e) => setLimitForm({ limit: e.target.value })}
+                />
+             </div>
+             <div className="flex gap-2">
+                {[10000, 20000, 50000].map((val) => (
+                  <Button
+                    key={val}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLimitForm({ limit: val.toString() })}
+                  >
+                    {formatRupiah(val)}
+                  </Button>
+                ))}
+             </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLimitDialogOpen(false)}>Batal</Button>
+            <Button onClick={handleUpdateLimit} disabled={updateLimit.isPending}>Simpan</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

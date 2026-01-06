@@ -30,6 +30,8 @@ export function useAcademicYears(params: AcademicYearParams = {}) {
       const response = await api.get<PaginatedResponse<AcademicYear>>('/academic-years', { params });
       return response.data;
     },
+    staleTime: 60 * 60 * 1000, // 1 hour
+
   });
 }
 

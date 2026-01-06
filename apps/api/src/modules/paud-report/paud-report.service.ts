@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { Prisma, PAUDAspect, PAUDAchievementLevel } from '@prisma/client';
+import { Errors } from '@/middleware/error';
+import { Prisma, PAUDAspect, PAUDAchievementLevel, UserRole } from '@prisma/client';
 import type {
   ListReportsQuery,
   CreateReportInput,
@@ -33,6 +34,30 @@ const ACHIEVEMENT_DESCRIPTIONS: Record<PAUDAchievementLevel, string> = {
 
 // Minimum assessments required per aspect to auto-generate narrative
 const MIN_ASSESSMENTS_PER_ASPECT = 3;
+
+type ReportAccessContext = { role: UserRole; unitId: string | null; userId: string };
+
+async function assertCanAccessStudent(studentId: string, unitId: string, context: ReportAccessContext) {
+  if (context.role === UserRole.SUPER_ADMIN) return;
+
+  if (context.role === UserRole.PARENT) {
+    const link = await prisma.studentParent.findUnique({
+      where: {
+        studentId_parentId: {
+          studentId,
+          parentId: context.userId,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!link) throw Errors.forbidden('Access denied');
+    return;
+  }
+
+  if (!context.unitId) throw Errors.forbidden('Access denied');
+  if (unitId !== context.unitId) throw Errors.forbidden('Access denied');
+}
 
 // ============================================
 // LIST REPORTS
@@ -111,7 +136,15 @@ export async function findAllReports(
 // GET REPORT BY ID
 // ============================================
 
-export async function findReportById(id: string) {
+export async function findReportById(id: string, context: ReportAccessContext) {
+  const reportForAccess = await prisma.pAUDNarrativeReport.findUnique({
+    where: { id },
+    select: { id: true, studentId: true, unitId: true },
+  });
+
+  if (!reportForAccess) throw Errors.notFound('Report');
+  await assertCanAccessStudent(reportForAccess.studentId, reportForAccess.unitId, context);
+
   const report = await prisma.pAUDNarrativeReport.findUnique({
     where: { id },
     include: {
@@ -142,10 +175,7 @@ export async function findReportById(id: string) {
     },
   });
 
-  if (!report) {
-    throw new Error('Report not found');
-  }
-
+  if (!report) throw Errors.notFound('Report');
   return report;
 }
 
@@ -155,7 +185,7 @@ export async function findReportById(id: string) {
 
 export async function createReport(
   input: CreateReportInput,
-  context: { userId: string }
+  context: ReportAccessContext
 ) {
   // Validate student exists
   const student = await prisma.student.findUnique({
@@ -164,7 +194,12 @@ export async function createReport(
   });
 
   if (!student) {
-    throw new Error('Student not found');
+    throw Errors.notFound('Student');
+  }
+
+  await assertCanAccessStudent(student.id, student.unitId, context);
+  if (input.unitId !== student.unitId) {
+    throw Errors.badRequest('Student unit mismatch');
   }
 
   // Check for duplicate (same student, academic year, semester)
@@ -179,7 +214,7 @@ export async function createReport(
   });
 
   if (existing) {
-    throw new Error('Report already exists for this student in this semester. Use update instead.');
+    throw Errors.conflict('Report already exists for this student in this semester. Use update instead.');
   }
 
   // Validate academic year
@@ -188,7 +223,7 @@ export async function createReport(
   });
 
   if (!academicYear) {
-    throw new Error('Academic year not found');
+    throw Errors.notFound('Academic year');
   }
 
   return prisma.pAUDNarrativeReport.create({
@@ -228,19 +263,21 @@ export async function createReport(
 export async function updateReport(
   id: string,
   input: UpdateReportInput,
-  _context: { userId: string }
+  context: ReportAccessContext
 ) {
   const report = await prisma.pAUDNarrativeReport.findUnique({
     where: { id },
-    select: { id: true, status: true },
+    select: { id: true, status: true, studentId: true, unitId: true },
   });
 
   if (!report) {
-    throw new Error('Report not found');
+    throw Errors.notFound('Report');
   }
 
+  await assertCanAccessStudent(report.studentId, report.unitId, context);
+
   if (report.status === 'FINALIZED' || report.status === 'PRINTED') {
-    throw new Error('Cannot update a finalized or printed report');
+    throw Errors.badRequest('Cannot update a finalized or printed report');
   }
 
   return prisma.pAUDNarrativeReport.update({
@@ -262,18 +299,20 @@ export async function updateReport(
 // DELETE REPORT
 // ============================================
 
-export async function deleteReport(id: string) {
+export async function deleteReport(id: string, context: ReportAccessContext) {
   const report = await prisma.pAUDNarrativeReport.findUnique({
     where: { id },
-    select: { id: true, status: true },
+    select: { id: true, status: true, studentId: true, unitId: true },
   });
 
   if (!report) {
-    throw new Error('Report not found');
+    throw Errors.notFound('Report');
   }
 
+  await assertCanAccessStudent(report.studentId, report.unitId, context);
+
   if (report.status === 'FINALIZED' || report.status === 'PRINTED') {
-    throw new Error('Cannot delete a finalized or printed report');
+    throw Errors.badRequest('Cannot delete a finalized or printed report');
   }
 
   // Delete photos first (cascade should handle, but explicit is safer)
@@ -288,7 +327,7 @@ export async function deleteReport(id: string) {
 
 export async function generateReportFromAssessments(
   input: GenerateReportInput,
-  context: { userId: string }
+  context: ReportAccessContext
 ) {
   const { studentId, unitId, academicYearId, semester, regenerate } = input;
 
@@ -305,13 +344,11 @@ export async function generateReportFromAssessments(
   });
 
   if (existing && !regenerate) {
-    throw new Error(
-      'Report already exists. Set regenerate=true to overwrite draft, or update existing report.'
-    );
+    throw Errors.conflict('Report already exists. Set regenerate=true to overwrite draft, or update existing report.');
   }
 
   if (existing && existing.status !== 'DRAFT') {
-    throw new Error('Cannot regenerate a finalized or printed report');
+    throw Errors.badRequest('Cannot regenerate a finalized or printed report');
   }
 
   // Validate student
@@ -321,7 +358,12 @@ export async function generateReportFromAssessments(
   });
 
   if (!student) {
-    throw new Error('Student not found');
+    throw Errors.notFound('Student');
+  }
+
+  await assertCanAccessStudent(student.id, student.unitId, context);
+  if (unitId !== student.unitId) {
+    throw Errors.badRequest('Student unit mismatch');
   }
 
   // Get semester dates from academic year
@@ -331,7 +373,7 @@ export async function generateReportFromAssessments(
   });
 
   if (!academicYear) {
-    throw new Error('Academic year not found');
+    throw Errors.notFound('Academic year');
   }
 
   // Calculate semester period
@@ -359,7 +401,7 @@ export async function generateReportFromAssessments(
   });
 
   if (assessments.length === 0) {
-    throw new Error('No assessments found for this student in this semester');
+    throw Errors.badRequest('No assessments found for this student in this semester');
   }
 
   // Group assessments by aspect
@@ -426,7 +468,7 @@ export async function generateReportFromAssessments(
 
 export async function bulkGenerateReports(
   input: BulkGenerateReportInput,
-  context: { userId: string }
+  context: ReportAccessContext
 ) {
   const { classId, unitId, academicYearId, semester, regenerate } = input;
 
@@ -443,7 +485,7 @@ export async function bulkGenerateReports(
   });
 
   if (enrollments.length === 0) {
-    throw new Error('No active students found in this class');
+    throw Errors.badRequest('No active students found in this class');
   }
 
   const results = {
@@ -499,19 +541,21 @@ export async function bulkGenerateReports(
 export async function finalizeReport(
   id: string,
   input: FinalizeReportInput,
-  _context: { userId: string }
+  context: ReportAccessContext
 ) {
   const report = await prisma.pAUDNarrativeReport.findUnique({
     where: { id },
-    select: { id: true, status: true },
+    select: { id: true, status: true, studentId: true, unitId: true },
   });
 
   if (!report) {
-    throw new Error('Report not found');
+    throw Errors.notFound('Report');
   }
 
+  await assertCanAccessStudent(report.studentId, report.unitId, context);
+
   if (report.status === 'FINALIZED' || report.status === 'PRINTED') {
-    throw new Error('Report is already finalized');
+    throw Errors.badRequest('Report is already finalized');
   }
 
   return prisma.pAUDNarrativeReport.update({
@@ -534,18 +578,20 @@ export async function finalizeReport(
 // MARK AS PRINTED
 // ============================================
 
-export async function markAsPrinted(id: string) {
+export async function markAsPrinted(id: string, context: ReportAccessContext) {
   const report = await prisma.pAUDNarrativeReport.findUnique({
     where: { id },
-    select: { id: true, status: true },
+    select: { id: true, status: true, studentId: true, unitId: true },
   });
 
   if (!report) {
-    throw new Error('Report not found');
+    throw Errors.notFound('Report');
   }
 
+  await assertCanAccessStudent(report.studentId, report.unitId, context);
+
   if (report.status === 'DRAFT') {
-    throw new Error('Cannot print a draft report. Finalize it first.');
+    throw Errors.badRequest('Cannot print a draft report. Finalize it first.');
   }
 
   return prisma.pAUDNarrativeReport.update({
@@ -564,19 +610,21 @@ export async function markAsPrinted(id: string) {
 export async function addPhoto(
   reportId: string,
   input: AddPhotoInput,
-  _context: { userId: string }
+  context: ReportAccessContext
 ) {
   const report = await prisma.pAUDNarrativeReport.findUnique({
     where: { id: reportId },
-    select: { id: true, status: true },
+    select: { id: true, status: true, studentId: true, unitId: true },
   });
 
   if (!report) {
-    throw new Error('Report not found');
+    throw Errors.notFound('Report');
   }
 
+  await assertCanAccessStudent(report.studentId, report.unitId, context);
+
   if (report.status === 'FINALIZED' || report.status === 'PRINTED') {
-    throw new Error('Cannot add photos to a finalized or printed report');
+    throw Errors.badRequest('Cannot add photos to a finalized or printed report');
   }
 
   // Check max photos (limit to 10)
@@ -585,7 +633,7 @@ export async function addPhoto(
   });
 
   if (photoCount >= 10) {
-    throw new Error('Maximum 10 photos allowed per report');
+    throw Errors.badRequest('Maximum 10 photos allowed per report');
   }
 
   return prisma.pAUDReportPhoto.create({
@@ -598,20 +646,22 @@ export async function addPhoto(
   });
 }
 
-export async function updatePhoto(photoId: string, input: UpdatePhotoInput) {
+export async function updatePhoto(photoId: string, input: UpdatePhotoInput, context: ReportAccessContext) {
   const photo = await prisma.pAUDReportPhoto.findUnique({
     where: { id: photoId },
     include: {
-      report: { select: { status: true } },
+      report: { select: { status: true, studentId: true, unitId: true } },
     },
   });
 
   if (!photo) {
-    throw new Error('Photo not found');
+    throw Errors.notFound('Photo');
   }
 
+  await assertCanAccessStudent(photo.report.studentId, photo.report.unitId, context);
+
   if (photo.report.status === 'FINALIZED' || photo.report.status === 'PRINTED') {
-    throw new Error('Cannot update photos in a finalized or printed report');
+    throw Errors.badRequest('Cannot update photos in a finalized or printed report');
   }
 
   return prisma.pAUDReportPhoto.update({
@@ -620,20 +670,22 @@ export async function updatePhoto(photoId: string, input: UpdatePhotoInput) {
   });
 }
 
-export async function deletePhoto(photoId: string) {
+export async function deletePhoto(photoId: string, context: ReportAccessContext) {
   const photo = await prisma.pAUDReportPhoto.findUnique({
     where: { id: photoId },
     include: {
-      report: { select: { status: true } },
+      report: { select: { status: true, studentId: true, unitId: true } },
     },
   });
 
   if (!photo) {
-    throw new Error('Photo not found');
+    throw Errors.notFound('Photo');
   }
 
+  await assertCanAccessStudent(photo.report.studentId, photo.report.unitId, context);
+
   if (photo.report.status === 'FINALIZED' || photo.report.status === 'PRINTED') {
-    throw new Error('Cannot delete photos from a finalized or printed report');
+    throw Errors.badRequest('Cannot delete photos from a finalized or printed report');
   }
 
   return prisma.pAUDReportPhoto.delete({ where: { id: photoId } });

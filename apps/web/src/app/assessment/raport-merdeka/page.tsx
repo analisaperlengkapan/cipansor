@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { MainLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,9 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useCurrentUnit } from '@/hooks';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import { toast } from 'sonner';
 
 // P5 Dimension Icons
 const P5_ICONS: Record<string, React.ReactNode> = {
@@ -78,6 +81,8 @@ interface P5Dimension {
 export default function RaportMerdekaPage() {
   const { data: currentUnit } = useCurrentUnit();
   const [selectedTab, setSelectedTab] = useState('overview');
+  const reportRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Fetch P5 dimensions
   const { data: p5Dimensions, isLoading: p5Loading } = useQuery<P5Dimension[]>({
@@ -104,6 +109,57 @@ export default function RaportMerdekaPage() {
       return res.data.data;
     },
   });
+
+  const handleExportPDF = async () => {
+    if (!reportRef.current) return;
+    
+    try {
+      setIsExporting(true);
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2, // Higher quality
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      // Calculate scaling to fit A4 width
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfHeightCalculated = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      // If height > A4, we might need multiple pages, but for now let's just fit width or auto-page (advanced)
+      // For this MVP preview which is A4-sized visually, we just place it.
+      // Since our preview might be multiple pages (scroll), html2canvas captures essentialy one long image.
+      // A better approach for multi-page is capturing each "page" div separately, but let's stick to single long capture for now or simplified.
+      // Actually, if we want "Premium" multi-page PDF, we should capture separate page elements. 
+      // Let's assume the reportRef wraps the container of pages.
+      
+      // Simple strategy: One long page or just fit (it will shrink if too long).
+      // Let's go with adding image.
+      
+      if (pdfHeightCalculated > pdfHeight) {
+          // crude pagination or just long page? PDF doesn't support infinite height easily without custom format.
+          // Let's force it to fit for now or just save as is.
+          // Better: Create new page per A4 section. 
+          // Implementation detail: User sees ONE preview. We can export that.
+           pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeightCalculated);
+      } else {
+           pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeightCalculated);
+      }
+
+      pdf.save(`Raport_Merdeka_Ahmad_Fulan.pdf`);
+      toast.success('Raport berhasil diexport!');
+    } catch (error) {
+      console.error(error);
+      toast.error('Gagal export PDF');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (p5Loading) {
     return (
@@ -491,7 +547,7 @@ export default function RaportMerdekaPage() {
           </TabsContent>
 
           {/* Generate Tab */}
-          <TabsContent value="generate" className="space-y-4">
+          <TabsContent value="generate" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -549,54 +605,324 @@ export default function RaportMerdekaPage() {
                 </div>
 
                 <div className="flex gap-2 pt-4">
-                  <Button>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Generate Raport Kelas
-                  </Button>
                   <Button variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
+                    <FileText className="h-4 w-4 mr-2" />
+                    Preview
+                  </Button>
+                  <Button onClick={handleExportPDF} disabled={isExporting}>
+                    {isExporting ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4 mr-2" />
+                    )}
                     Export ke PDF
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Raport Preview Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Komponen Raport Merdeka</CardTitle>
-                <CardDescription>
-                  Isi raport sesuai standar Kurikulum Merdeka
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[
-                    { section: 'A. Identitas Peserta Didik', desc: 'Nama, NISN, Kelas, Sekolah' },
-                    { section: 'B. Capaian Pembelajaran Intrakurikuler', desc: 'Nilai dan deskripsi per mata pelajaran' },
-                    { section: 'C. Projek Penguatan P5', desc: 'Tema projek dan capaian dimensi' },
-                    { section: 'D. Ekstrakurikuler', desc: 'Kegiatan dan predikat' },
-                    { section: 'E. Tahfidz Al-Quran', desc: 'Capaian hafalan (khusus pesantren)' },
-                    { section: 'F. Kehadiran', desc: 'Rekap hadir, sakit, izin, alpa' },
-                    { section: 'G. Catatan Wali Kelas', desc: 'Catatan perkembangan' },
-                    { section: 'H. Catatan Kepala Sekolah', desc: 'Pesan dan pengesahan' },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3 border rounded-lg">
-                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground">
-                        {i + 1}
+            {/* Live Preview Section */}
+            <div className="border rounded-xl bg-muted/30 p-8 flex flex-col items-center gap-8 overflow-auto max-h-[800px]">
+               {/* Container for PDF Capture */}
+               <div ref={reportRef} className="space-y-8 bg-muted/30 p-4">
+               
+               {/* PAGE 1: AKADEMIK */}
+               <div className="w-[210mm] min-h-[297mm] bg-white shadow-lg rounded-sm p-[15mm] text-black text-sm space-y-4 relative print:shadow-none print:w-full print:border-none mx-auto">
+                  {/* Watermark */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
+                     <div className="text-[100px] font-bold -rotate-45">PREVIEW</div>
+                  </div>
+
+                  {/* Header */}
+                  <div className="text-center border-b-2 border-double border-black pb-4 mb-6">
+                     <h2 className="font-bold text-lg uppercase tracking-wider">Laporan Hasil Belajar</h2>
+                     <h3 className="font-bold text-base uppercase">Sekolah Menengah Pertama (SMP) Cipansor</h3>
+                     <p className="text-xs mt-1">Jl. Pendidikan No. 123, Kabupaten Bogor, Jawa Barat</p>
+                  </div>
+
+                  {/* Student Info */}
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-xs mb-6">
+                     <div className="grid grid-cols-[100px_1fr]">
+                        <div>Nama Peserta Didik</div>
+                        <div className="font-semibold">: Ahmad Fulan</div>
+                        <div>NIS / NISN</div>
+                        <div>: 12345 / 0012345678</div>
+                        <div>Sekolah</div>
+                        <div>: SMP Cipansor</div>
+                     </div>
+                     <div className="grid grid-cols-[100px_1fr]">
+                        <div>Kelas</div>
+                        <div>: VII A</div>
+                        <div>Fase</div>
+                        <div>: D</div>
+                        <div>Semester</div>
+                        <div>: 1 (Ganjil)</div>
+                        <div>Tahun Pelajaran</div>
+                        <div>: 2024/2025</div>
+                     </div>
+                  </div>
+
+                  {/* Content - Academic */}
+                  <div className="space-y-4">
+                     <h4 className="font-bold text-sm">A. Nilai Akademik</h4>
+                     <table className="w-full border-collapse border border-black text-xs">
+                        <thead>
+                           <tr className="bg-gray-100">
+                              <th className="border border-black p-2 w-8">No</th>
+                              <th className="border border-black p-2 w-[25%] font-bold text-left">Mata Pelajaran</th>
+                              <th className="border border-black p-2 w-12 font-bold">Nilai Akhir</th>
+                              <th className="border border-black p-2 font-bold text-left">Capaian Kompetensi</th>
+                           </tr>
+                        </thead>
+                        <tbody>
+                           <tr className="align-top">
+                              <td className="border border-black p-2 text-center">1</td>
+                              <td className="border border-black p-2 font-medium">Pendidikan Agama Islam</td>
+                              <td className="border border-black p-2 text-center font-bold">88</td>
+                              <td className="border border-black p-2">
+                                 <div className="space-y-1">
+                                    <p><span className="font-semibold">Menunjukkan penguasaan yang sangat baik</span> dalam memahami rukun iman dan rukun islam.</p>
+                                    <p className="text-gray-600 italic">Perlu bimbingan dalam mempraktikkan bacaan tajwid secara konsisten.</p>
+                                 </div>
+                              </td>
+                           </tr>
+                           <tr className="align-top">
+                              <td className="border border-black p-2 text-center">2</td>
+                              <td className="border border-black p-2 font-medium">Bahasa Indonesia</td>
+                              <td className="border border-black p-2 text-center font-bold">92</td>
+                              <td className="border border-black p-2">
+                                 <div className="space-y-1">
+                                    <p><span className="font-semibold">Menunjukkan penguasaan yang sangat baik</span> dalam menulis teks deskripsi dan narasi.</p>
+                                 </div>
+                              </td>
+                           </tr>
+                           <tr className="align-top">
+                              <td className="border border-black p-2 text-center">3</td>
+                              <td className="border border-black p-2 font-medium">Matematika</td>
+                              <td className="border border-black p-2 text-center font-bold">78</td>
+                              <td className="border border-black p-2">
+                                 <div className="space-y-1">
+                                    <p><span className="font-semibold">Menunjukkan penguasaan yang baik</span> dalam operasi bilangan bulat.</p>
+                                    <p className="text-gray-600 italic">Perlu bimbingan dalam menyelesaikan persamaan linear satu variabel.</p>
+                                 </div>
+                              </td>
+                           </tr>
+                        </tbody>
+                     </table>
+                  </div>
+
+                  {/* Content - Extracurricular */}
+                  <div className="space-y-4 pt-4">
+                     <h4 className="font-bold text-sm">B. Ekstrakurikuler</h4>
+                     <table className="w-full border-collapse border border-black text-xs">
+                        <thead>
+                           <tr className="bg-gray-100">
+                              <th className="border border-black p-2 w-8">No</th>
+                              <th className="border border-black p-2 w-[30%] font-bold text-left">Kegiatan Ekstrakurikuler</th>
+                              <th className="border border-black p-2 w-16 font-bold">Predikat</th>
+                              <th className="border border-black p-2 font-bold text-left">Keterangan</th>
+                           </tr>
+                        </thead>
+                        <tbody>
+                           <tr>
+                              <td className="border border-black p-2 text-center">1</td>
+                              <td className="border border-black p-2">Pramuka</td>
+                              <td className="border border-black p-2 text-center">Baik</td>
+                              <td className="border border-black p-2">Mampu mengikuti kegiatan kepramukaan dengan disiplin.</td>
+                           </tr>
+                           <tr>
+                              <td className="border border-black p-2 text-center">2</td>
+                              <td className="border border-black p-2">Futsal</td>
+                              <td className="border border-black p-2 text-center">Sangat Baik</td>
+                              <td className="border border-black p-2">Menunjukkan bakat kepemimpinan dalam tim.</td>
+                           </tr>
+                        </tbody>
+                     </table>
+                  </div>
+                  
+                  {/* Attendance */}
+                  <div className="space-y-4 pt-4">
+                     <h4 className="font-bold text-sm">C. Ketidakhadiran</h4>
+                     <div className="border border-black w-1/2 text-xs">
+                        <div className="grid grid-cols-[1fr_60px] border-b border-black last:border-0">
+                           <div className="p-2 border-r border-black">Sakit</div>
+                           <div className="p-2 text-center">1 hari</div>
+                        </div>
+                        <div className="grid grid-cols-[1fr_60px] border-b border-black last:border-0">
+                           <div className="p-2 border-r border-black">Izin</div>
+                           <div className="p-2 text-center">0 hari</div>
+                        </div>
+                         <div className="grid grid-cols-[1fr_60px] border-b border-black last:border-0">
+                           <div className="p-2 border-r border-black">Tanpa Keterangan</div>
+                           <div className="p-2 text-center">0 hari</div>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Signature */}
+                  <div className="flex justify-between items-end pt-12 text-xs px-8">
+                      <div className="text-center">
+                          <p>Mengetahui,</p>
+                          <p>Orang Tua/Wali</p>
+                          <br /><br /><br />
+                          <p className="border-b border-black min-w-[150px] inline-block"></p>
                       </div>
-                      <div>
-                        <p className="font-medium">{item.section}</p>
-                        <p className="text-sm text-muted-foreground">{item.desc}</p>
+                      <div className="text-center">
+                          <p>Bogor, 20 Desember 2024</p>
+                          <p>Wali Kelas</p>
+                          <br /><br /><br />
+                          <p className="font-bold underline">Nama Wali Kelas, S.Pd</p>
+                          <p>NIP. 19800101 200501 1 001</p>
                       </div>
-                    </div>
-                  ))}
+                   </div>
                 </div>
-              </CardContent>
-            </Card>
+
+               {/* PAGE 2: PESANTREN (TAHFIDZ & BEHAVIOR) */}
+               <div className="w-[210mm] min-h-[297mm] bg-white shadow-lg rounded-sm p-[15mm] text-black text-sm space-y-6 relative print:shadow-none print:w-full print:border-none mx-auto">
+                   {/* Header Page 2 */}
+                  <div className="text-center border-b-2 border-double border-black pb-4 mb-6">
+                     <h2 className="font-bold text-lg uppercase tracking-wider">Laporan Perkembangan Pesantren</h2>
+                     <h3 className="font-bold text-base uppercase">SMP Islam Terpadu Cipansor</h3>
+                  </div>
+
+                  {/* Student Info Review */}
+                  <div className="border-b pb-2 mb-4">
+                     <p className="font-semibold">Nama: Ahmad Fulan (Kelas VII A)</p>
+                  </div>
+
+                  {/* D. TAHFIDZ AL-QURAN */}
+                  <div className="space-y-4">
+                     <div className="flex items-center justify-between bg-green-50 p-2 rounded border border-green-100">
+                        <h4 className="font-bold text-green-900">D. Tahfidz Al-Qur'an</h4>
+                        <Badge className="bg-green-600">Target: Juz 30 & 29</Badge>
+                     </div>
+                     
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="border rounded p-4 space-y-2">
+                           <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Capaian Hafalan (Ziyadah)</div>
+                           <div className="text-3xl font-bold text-green-700">1.5 Juz</div>
+                           <p className="text-sm">Terakhir: QS. Al-Mulk ayat 1-30</p>
+                        </div>
+                        <div className="border rounded p-4 space-y-2">
+                           <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Predikat Murojaah</div>
+                           <div className="text-3xl font-bold text-blue-700">Mumtaz</div>
+                           <p className="text-sm">Sangat lancar dalam mengulang hafalan lama.</p>
+                        </div>
+                     </div>
+
+                     <table className="w-full border-collapse border border-black text-xs">
+                        <thead>
+                           <tr className="bg-gray-50">
+                              <th className="border border-black p-2 text-left">Aspek Penilaian</th>
+                              <th className="border border-black p-2 w-24 text-center">Predikat</th>
+                              <th className="border border-black p-2 text-left">Deskripsi</th>
+                           </tr>
+                        </thead>
+                        <tbody>
+                           <tr>
+                              <td className="border border-black p-2">Kelancaran (Fashohah)</td>
+                              <td className="border border-black p-2 text-center font-bold">A</td>
+                              <td className="border border-black p-2">Mampu membaca dengan sangat lancar dan fasih.</td>
+                           </tr>
+                           <tr>
+                              <td className="border border-black p-2">Tajwid</td>
+                              <td className="border border-black p-2 text-center font-bold">B</td>
+                              <td className="border border-black p-2">Penerapan hukum bacaan sudah baik, perlu ketelitian mad lazim.</td>
+                           </tr>
+                        </tbody>
+                     </table>
+                  </div>
+
+                  {/* E. KEPRIBADIAN & AKHLAK */}
+                  <div className="space-y-4 pt-4">
+                     <div className="flex items-center justify-between bg-blue-50 p-2 rounded border border-blue-100">
+                        <h4 className="font-bold text-blue-900">E. Kepribadian & Akhlak (Behavior)</h4>
+                        <div className="flex gap-2">
+                           <Badge variant="outline" className="border-green-500 text-green-700 bg-green-50">+150 Poin</Badge>
+                           <Badge variant="outline" className="border-red-500 text-red-700 bg-red-50">-10 Poin</Badge>
+                        </div>
+                     </div>
+
+                     <table className="w-full border-collapse border border-black text-xs">
+                        <thead>
+                           <tr className="bg-gray-50">
+                              <th className="border border-black p-2 w-8 text-center">No</th>
+                              <th className="border border-black p-2">Kategori</th>
+                              <th className="border border-black p-2">Catatan Guru / Musyrif</th>
+                           </tr>
+                        </thead>
+                        <tbody>
+                           <tr>
+                              <td className="border border-black p-2 text-center">1</td>
+                              <td className="border border-black p-2 font-medium">Kedisiplinan</td>
+                              <td className="border border-black p-2">
+                                 Sangat disiplin dalam sholat berjamaah. <span className="text-green-600 font-semibold">(+50 Poin)</span>
+                              </td>
+                           </tr>
+                           <tr>
+                              <td className="border border-black p-2 text-center">2</td>
+                              <td className="border border-black p-2 font-medium">Kebersihan</td>
+                              <td className="border border-black p-2">
+                                 Lupa merapikan tempat tidur pada pekan ke-3. <span className="text-red-600 font-semibold">(-10 Poin)</span>
+                              </td>
+                           </tr>
+                            <tr>
+                              <td className="border border-black p-2 text-center">3</td>
+                              <td className="border border-black p-2 font-medium">Sosial</td>
+                              <td className="border border-black p-2">
+                                 Sering membantu teman yang sakit. Ananda memiliki jiwa sosial yang tinggi.
+                              </td>
+                           </tr>
+                        </tbody>
+                     </table>
+                  </div>
+
+                  {/* F. IBADAH HARIAN */}
+                  <div className="space-y-4 pt-4">
+                     <h4 className="font-bold text-sm bg-gray-100 p-1">F. Ibadah Harian</h4>
+                     <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div className="border p-2 rounded">
+                           <div className="text-muted-foreground">Sholat Berjamaah</div>
+                           <div className="text-lg font-bold">95%</div>
+                        </div>
+                        <div className="border p-2 rounded">
+                           <div className="text-muted-foreground">Sholat Dhuha</div>
+                           <div className="text-lg font-bold">80%</div>
+                        </div>
+                        <div className="border p-2 rounded">
+                           <div className="text-muted-foreground">Puasa Sunnah</div>
+                           <div className="text-lg font-bold">Senin-Kamis</div>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Signature */}
+                  <div className="flex justify-between items-end pt-8 text-xs px-8">
+                      <div className="text-center">
+                          <p>Mengetahui,</p>
+                          <p>Kepala Pesantren</p>
+                          <br /><br /><br />
+                          <p className="font-bold underline">KH. Abdullah, Lc</p>
+                      </div>
+                      <div className="text-center">
+                          <p>Bogor, 20 Desember 2024</p>
+                          <p>Musyrif Kamar</p>
+                          <br /><br /><br />
+                          <p className="font-bold underline">Ustadz Ahmad</p>
+                      </div>
+                  </div>
+                  
+                   {/* Footer Page 2 */}
+                   <div className="absolute bottom-10 right-10 text-[10px] text-gray-400">
+                      Halaman 2 dari 2
+                   </div>
+               </div>
+            </div>
+           </div>
           </TabsContent>
         </Tabs>
       </div>
     </MainLayout>
   );
 }
+

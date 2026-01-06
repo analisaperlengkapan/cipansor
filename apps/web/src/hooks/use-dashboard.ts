@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { dashboardService } from '@/services';
 import api from '@/lib/api';
 import {
   DashboardNotification,
@@ -10,14 +11,11 @@ import {
   DashboardMetricsResponse
 } from '@cipansor/shared';
 
-// Dashboard Hooks
-export function useDashboardStats() {
+// Dashboard Hooks - Using Service Layer
+export function useDashboardStats(params?: { unitId?: string }) {
   return useQuery({
-    queryKey: ['dashboard', 'stats'],
-    queryFn: async () => {
-      const response = await api.get<DashboardStats>('/dashboard/stats');
-      return response.data;
-    },
+    queryKey: ['dashboard', 'stats', params?.unitId],
+    queryFn: () => dashboardService.getStats(params),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -25,53 +23,36 @@ export function useDashboardStats() {
 export function useDashboardMetrics(unitId?: string) {
   return useQuery({
     queryKey: ['dashboard', 'metrics', unitId],
-    queryFn: async () => {
-      const response = await api.get<DashboardMetricsResponse>('/dashboard/metrics', {
-        params: { unitId }
-      });
-      return response.data;
-    },
+    queryFn: () => dashboardService.getMetrics({ unitId }),
     refetchInterval: 60000, // Refresh every minute
   });
 }
 
-export function useAttendanceStats(params?: { startDate?: string; endDate?: string }) {
+export function useAttendanceStats(params?: { startDate?: string; endDate?: string; unitId?: string }) {
   return useQuery({
     queryKey: ['dashboard', 'attendance', params],
-    queryFn: async () => {
-      const response = await api.get<AttendanceStats[]>('/dashboard/attendance', { params });
-      return response.data;
-    },
+    queryFn: () => dashboardService.getAttendanceStats(params),
   });
 }
 
-export function useFinanceStats(params?: { period?: 'week' | 'month' | 'year' }) {
+export function useFinanceStats(params?: { period?: 'week' | 'month' | 'year'; unitId?: string }) {
   return useQuery({
     queryKey: ['dashboard', 'finance', params],
-    queryFn: async () => {
-      const response = await api.get<FinanceStats>('/dashboard/finance', { params });
-      return response.data;
-    },
+    queryFn: () => dashboardService.getFinanceStats(params),
   });
 }
 
-export function useTahfidzStats(params?: { period?: 'week' | 'month' | 'year' }) {
+export function useTahfidzStats(params?: { period?: 'week' | 'month' | 'year'; unitId?: string }) {
   return useQuery({
     queryKey: ['dashboard', 'tahfidz', params],
-    queryFn: async () => {
-      const response = await api.get<TahfidzStats>('/dashboard/tahfidz', { params });
-      return response.data;
-    },
+    queryFn: () => dashboardService.getTahfidzStats(params),
   });
 }
 
-export function useViolationRewardStats(params?: { period?: 'week' | 'month' | 'year' }) {
+export function useViolationRewardStats(params?: { period?: 'week' | 'month' | 'year'; unitId?: string }) {
   return useQuery({
     queryKey: ['dashboard', 'violation-reward', params],
-    queryFn: async () => {
-      const response = await api.get<ViolationRewardStats>('/dashboard/violation-reward', { params });
-      return response.data;
-    },
+    queryFn: () => dashboardService.getViolationRewardStats(params),
   });
 }
 

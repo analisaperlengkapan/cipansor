@@ -12,6 +12,8 @@ interface MainLayoutProps {
   showSidebar?: boolean;
 }
 
+import { PageTransition } from './page-transition';
+
 export function MainLayout({ children, allowedRoles, showSidebar = true }: MainLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -40,9 +42,11 @@ export function MainLayout({ children, allowedRoles, showSidebar = true }: MainL
         <div className="flex flex-1 flex-col overflow-hidden">
           <Header onMenuClick={showSidebar ? () => setMobileOpen(true) : undefined} />
           <main className="flex-1 overflow-auto bg-muted/30 p-4 lg:p-6 premium-gradient">
-            <div className="mx-auto max-w-7xl animate-in fade-in duration-500">
-              {children}
-            </div>
+            <PageTransition>
+              <div className="mx-auto max-w-7xl">
+                {children}
+              </div>
+            </PageTransition>
           </main>
         </div>
       </div>

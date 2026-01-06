@@ -31,22 +31,13 @@ import { toast } from 'sonner';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
-const studentSchema = z.object({
-  nis: z.string().min(1, 'NIS is required'),
-  name: z.string().min(1, 'Name is required'),
-  gender: z.enum(['MALE', 'FEMALE'], { required_error: 'Gender is required' }),
-  birthDate: z.string().min(1, 'Birth date is required'),
-  birthPlace: z.string().min(1, 'Birth place is required'),
-  address: z.string().min(1, 'Address is required'),
-  phone: z.string().optional(),
-  email: z.string().email().optional().or(z.literal('')),
-  parentName: z.string().min(1, 'Parent name is required'),
-  parentPhone: z.string().min(1, 'Parent phone is required'),
-  unitId: z.string().min(1, 'Unit is required'),
-  enrollmentDate: z.string().optional(),
-});
+import { createStudentSchema, type CreateStudentInput } from '@cipansor/shared';
 
-type StudentForm = z.infer<typeof studentSchema>;
+// Use strict validation from shared
+// We can extend here if needed for UI-specific validaton (e.g. terms acceptance)
+const studentSchema = createStudentSchema;
+
+type StudentForm = CreateStudentInput;
 
 export default function NewStudentPage() {
   const router = useRouter();
@@ -61,10 +52,10 @@ export default function NewStudentPage() {
     watch,
     formState: { errors },
   } = useForm<StudentForm>({
-    resolver: zodResolver(studentSchema),
+    resolver: zodResolver(studentSchema) as any,
     defaultValues: {
       unitId: user?.role !== 'SUPER_ADMIN' ? user?.unitId : '',
-      enrollmentDate: new Date().toISOString().split('T')[0],
+      enrollmentDate: new Date().toISOString().split('T')[0] as any,
     },
   });
 
@@ -72,6 +63,8 @@ export default function NewStudentPage() {
     try {
       await createMutation.mutateAsync({
         ...data,
+        birthDate: data.birthDate instanceof Date ? data.birthDate.toISOString() : data.birthDate,
+        enrollmentDate: data.enrollmentDate instanceof Date ? data.enrollmentDate.toISOString() : data.enrollmentDate,
         email: data.email || undefined,
         phone: data.phone || undefined,
       });

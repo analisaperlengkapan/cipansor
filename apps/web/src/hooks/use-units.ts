@@ -35,7 +35,7 @@ export function useUnits(params?: UseUnitsParams) {
       const response = await api.get<ApiResponse<Unit[]>>('/units', { params });
       return response.data.data;
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 60 * 60 * 1000, // 1 hour
   });
 }
 
@@ -53,7 +53,7 @@ export function useCurrentUnit() {
       return response.data.data;
     },
     enabled: !!unitId,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 60 * 60 * 1000, // 1 hour
   });
 }
 

@@ -37,27 +37,49 @@ export interface TahfidzStats {
   totalMemorized: number;
   averageJuz: number;
   topStudents: {
-    id: string;
-    name: string;
-    totalJuz: number;
-    totalAyat: number;
+    id?: string;
+    studentId?: string;
+    name?: string;
+    studentName?: string;
+    unitName?: string;
+    totalJuz?: number;
+    juzCount?: number;
+    totalAyat?: number;
+    totalAyah?: number;
+    surahCount?: number;
   }[];
   monthlyProgress: {
     month: string;
-    totalAyat: number;
+    totalAyat?: number;
+    ayahCount?: number;
+    studentCount?: number;
   }[];
 }
 
 export interface ViolationRewardStats {
   totalViolations: number;
   totalRewards: number;
-  violationsByCategory: {
+  violationsByCategory?: {
     category: string;
     count: number;
   }[];
-  rewardsByCategory: {
+  rewardsByCategory?: {
     category: string;
     count: number;
+  }[];
+  recentViolations?: {
+    id: string;
+    studentName: string;
+    type: string;
+    points: number;
+    date: string;
+  }[];
+  recentRewards?: {
+    id: string;
+    studentName: string;
+    type: string;
+    points: number;
+    date: string;
   }[];
 }
 

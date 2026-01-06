@@ -32,7 +32,10 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   RefreshCw,
+  Plus,
+  ShieldAlert,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Child {
   id: string;
@@ -87,6 +90,7 @@ interface WalletData {
     description?: string;
     createdAt: string;
   }>;
+  spendingLimit?: number;
 }
 
 export default function FinancePage() {
@@ -147,6 +151,7 @@ export default function FinancePage() {
           setWallet({
             id: res.data.data.id,
             balance: res.data.data.balance,
+            spendingLimit: res.data.data.spendingLimit,
             transactions: txRes.data.data || [],
           });
         }
@@ -445,6 +450,46 @@ export default function FinancePage() {
                         <p className="text-blue-200 text-xs mt-2">
                           Dapat digunakan untuk pembayaran di kantin, laundry, dll
                         </p>
+                        <div className="mt-4 flex gap-3">
+                           <Button 
+                             className="bg-white text-blue-600 hover:bg-blue-50"
+                             onClick={() => toast.info('Fitur Top Up Online akan segera hadir. Silakan Top Up melalui Admin/Kasir.')}
+                           >
+                             <Plus className="h-4 w-4 mr-2" />
+                             Top Up Saldo
+                           </Button>
+                        </div>
+                      </div>
+
+                      {/* Limit & Alerts */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         {wallet.spendingLimit ? (
+                           <div className="p-4 border rounded-lg bg-slate-50 flex items-center gap-3">
+                              <ShieldAlert className="h-8 w-8 text-orange-500" />
+                              <div>
+                                <p className="text-sm font-medium">Limit Belanja Harian</p>
+                                <p className="text-lg font-bold">{formatCurrency(wallet.spendingLimit)}</p>
+                              </div>
+                           </div>
+                         ) : (
+                           <div className="p-4 border rounded-lg bg-slate-50 flex items-center gap-3">
+                              <CheckCircle className="h-8 w-8 text-green-500" />
+                              <div>
+                                <p className="text-sm font-medium">Limit Belanja</p>
+                                <p className="text-sm text-muted-foreground">Tidak ada batasan</p>
+                              </div>
+                           </div>
+                         )}
+                         
+                         {wallet.balance < 20000 && (
+                            <div className="p-4 border rounded-lg bg-red-50 flex items-center gap-3">
+                              <AlertTriangle className="h-8 w-8 text-red-500" />
+                              <div>
+                                <p className="text-sm font-medium text-red-700">Saldo Menipis</p>
+                                <p className="text-xs text-red-600">Segera lakukan Top Up agar santri dapat berbelanja.</p>
+                              </div>
+                            </div>
+                         )}
                       </div>
 
                       {/* Transactions */}

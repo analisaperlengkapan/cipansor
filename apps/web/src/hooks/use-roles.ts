@@ -21,6 +21,7 @@ export function useRoles(realm?: string) {
       const response = await rolesApi.getAllRoles(realm);
       return response.data.data;
     },
+    staleTime: 60 * 60 * 1000, // 1 hour
   });
 }
 
@@ -33,6 +34,7 @@ export function useRole(id: string) {
       return response.data.data;
     },
     enabled: !!id,
+    staleTime: 60 * 60 * 1000, // 1 hour
   });
 }
 
@@ -44,6 +46,7 @@ export function useMyRoles() {
       const response = await rolesApi.getMyRoles();
       return response.data.data;
     },
+    staleTime: 60 * 60 * 1000, // 1 hour
   });
 }
 
@@ -56,6 +59,7 @@ export function useUserRoles(userId: string) {
       return response.data.data;
     },
     enabled: !!userId,
+    staleTime: 60 * 60 * 1000, // 1 hour
   });
 }
 

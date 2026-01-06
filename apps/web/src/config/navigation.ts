@@ -794,6 +794,11 @@ const adminNavigation: NavGroup[] = [
         icon: Clock,
       },
       {
+        title: 'Staff Attendance',
+        href: '/hr/attendance',
+        icon: ClipboardCheck,
+      },
+      {
         title: 'PKG Guru',
         href: '/pkg',
         icon: ClipboardPenLine,
@@ -803,6 +808,16 @@ const adminNavigation: NavGroup[] = [
   {
     title: 'Operations',
     items: [
+      {
+        title: 'Facilities',
+        href: '/facilities',
+        icon: Building2,
+      },
+      {
+        title: 'Inventory (Asset)',
+        href: '/inventory',
+        icon: Package,
+      },
       {
         title: 'Library',
         href: '/library',

@@ -18,6 +18,7 @@ import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import { initializeScheduler, stopScheduler } from '@/jobs';
 import { initializeSocketIO, closeRealtimeConnections } from '@/lib/realtime';
+import { initializeEventBus } from '@/lib/event-bus';
 import { createServer } from 'http';
 
 const PORT = config.port;
@@ -35,6 +36,10 @@ async function bootstrap() {
     // Initialize Socket.IO
     initializeSocketIO(httpServer);
     logger.info('Real-time server initialized');
+
+    // Initialize cross-module event bus
+    initializeEventBus();
+    logger.info('Event bus initialized');
 
     // Start server
     httpServer.listen(PORT, () => {

@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { Errors } from '@/middleware/error';
 import { UserRole, TahfidzActivityType, Prisma } from '@prisma/client';
+import { eventBus } from '@/lib/event-bus';
 import type {
   ListTahfidzQuery,
   GenerateCertificateInput,
@@ -140,9 +141,29 @@ export class TahfidzService {
         student: {
           include: {
             user: { select: { id: true, name: true } },
+            unit: { select: { id: true, name: true } },
           },
         },
       },
+    });
+
+    // Emit event for cross-module integration
+    eventBus.emit('tahfidz:created', {
+      id: record.id,
+      studentId: record.studentId,
+      studentName: record.student.user?.name || 'Unknown',
+      unitId: record.student.unitId,
+      unitName: record.student.unit?.name || '',
+      activityType: record.activityType as 'ZIYADAH' | 'MUROJAAH' | 'TASMI',
+      surahName: record.surahName,
+      surahNumber: record.surahNumber,
+      ayahStart: record.ayahStart,
+      ayahEnd: record.ayahEnd,
+      totalAyah: record.totalAyah,
+      juz: record.juz || undefined,
+      score: record.score || undefined,
+      recordedById,
+      recordedAt: record.recordedAt
     });
 
     // Check if student became Hafidz

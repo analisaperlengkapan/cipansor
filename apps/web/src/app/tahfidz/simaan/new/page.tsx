@@ -83,7 +83,7 @@ export default function CreateSimaanPage() {
     unitId: user?.unitId,
     limit: 100,
   });
-  const { data: teachers } = useTeachers(user?.unitId);
+  const { data: teachers } = useTeachers({ unitId: user?.unitId });
 
   const createMutation = useCreateSimaan();
 

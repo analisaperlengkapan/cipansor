@@ -40,7 +40,7 @@ export default defineConfig({
         ['json', { outputFile: 'test-results/results.json' }],
         ['junit', { outputFile: 'test-results/junit.xml' }],
         ['list'], // Console output
-        ...(process.env.CI ? [['github']] : []), // GitHub Actions annotations
+        ...(process.env.CI ? [['github', {}] as const] : []), // GitHub Actions annotations
     ],
     
     /* Shared settings for all projects */

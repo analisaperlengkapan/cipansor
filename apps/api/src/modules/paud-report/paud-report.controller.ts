@@ -41,7 +41,13 @@ export const listReports = asyncHandler(async (req: Request, res: Response) => {
 
 export const getReportById = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const report = await PAUDReportService.findReportById(id);
+  const context = {
+    role: req.user!.role,
+    unitId: req.user!.unitId || null,
+    userId: req.user!.sub,
+  };
+
+  const report = await PAUDReportService.findReportById(id, context);
 
   res.json({
     success: true,
@@ -55,7 +61,7 @@ export const getReportById = asyncHandler(async (req: Request, res: Response) =>
 
 export const createReport = asyncHandler(async (req: Request, res: Response) => {
   const input = req.body as CreateReportInput;
-  const context = { userId: req.user!.sub };
+  const context = { role: req.user!.role, unitId: req.user!.unitId || null, userId: req.user!.sub };
 
   const report = await PAUDReportService.createReport(input, context);
 
@@ -72,7 +78,7 @@ export const createReport = asyncHandler(async (req: Request, res: Response) => 
 export const updateReport = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const input = req.body as UpdateReportInput;
-  const context = { userId: req.user!.sub };
+  const context = { role: req.user!.role, unitId: req.user!.unitId || null, userId: req.user!.sub };
 
   const report = await PAUDReportService.updateReport(id, input, context);
 
@@ -88,7 +94,8 @@ export const updateReport = asyncHandler(async (req: Request, res: Response) => 
 
 export const deleteReport = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  await PAUDReportService.deleteReport(id);
+  const context = { role: req.user!.role, unitId: req.user!.unitId || null, userId: req.user!.sub };
+  await PAUDReportService.deleteReport(id, context);
 
   res.json({
     success: true,
@@ -102,7 +109,7 @@ export const deleteReport = asyncHandler(async (req: Request, res: Response) => 
 
 export const generateReport = asyncHandler(async (req: Request, res: Response) => {
   const input = req.body as GenerateReportInput;
-  const context = { userId: req.user!.sub };
+  const context = { role: req.user!.role, unitId: req.user!.unitId || null, userId: req.user!.sub };
 
   const report = await PAUDReportService.generateReportFromAssessments(input, context);
 
@@ -118,7 +125,7 @@ export const generateReport = asyncHandler(async (req: Request, res: Response) =
 
 export const bulkGenerateReports = asyncHandler(async (req: Request, res: Response) => {
   const input = req.body as BulkGenerateReportInput;
-  const context = { userId: req.user!.sub };
+  const context = { role: req.user!.role, unitId: req.user!.unitId || null, userId: req.user!.sub };
 
   const result = await PAUDReportService.bulkGenerateReports(input, context);
 
@@ -135,7 +142,7 @@ export const bulkGenerateReports = asyncHandler(async (req: Request, res: Respon
 export const finalizeReport = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const input = req.body as FinalizeReportInput;
-  const context = { userId: req.user!.sub };
+  const context = { role: req.user!.role, unitId: req.user!.unitId || null, userId: req.user!.sub };
 
   const report = await PAUDReportService.finalizeReport(id, input, context);
 
@@ -151,7 +158,8 @@ export const finalizeReport = asyncHandler(async (req: Request, res: Response) =
 
 export const markAsPrinted = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const report = await PAUDReportService.markAsPrinted(id);
+  const context = { role: req.user!.role, unitId: req.user!.unitId || null, userId: req.user!.sub };
+  const report = await PAUDReportService.markAsPrinted(id, context);
 
   res.json({
     success: true,
@@ -166,7 +174,7 @@ export const markAsPrinted = asyncHandler(async (req: Request, res: Response) =>
 export const addPhoto = asyncHandler(async (req: Request, res: Response) => {
   const { id: reportId } = req.params;
   const input = req.body as AddPhotoInput;
-  const context = { userId: req.user!.sub };
+  const context = { role: req.user!.role, unitId: req.user!.unitId || null, userId: req.user!.sub };
 
   const photo = await PAUDReportService.addPhoto(reportId, input, context);
 
@@ -184,7 +192,8 @@ export const updatePhoto = asyncHandler(async (req: Request, res: Response) => {
   const { photoId } = req.params;
   const input = req.body as UpdatePhotoInput;
 
-  const photo = await PAUDReportService.updatePhoto(photoId, input);
+  const context = { role: req.user!.role, unitId: req.user!.unitId || null, userId: req.user!.sub };
+  const photo = await PAUDReportService.updatePhoto(photoId, input, context);
 
   res.json({
     success: true,
@@ -198,7 +207,8 @@ export const updatePhoto = asyncHandler(async (req: Request, res: Response) => {
 
 export const deletePhoto = asyncHandler(async (req: Request, res: Response) => {
   const { photoId } = req.params;
-  await PAUDReportService.deletePhoto(photoId);
+  const context = { role: req.user!.role, unitId: req.user!.unitId || null, userId: req.user!.sub };
+  await PAUDReportService.deletePhoto(photoId, context);
 
   res.json({
     success: true,
@@ -212,7 +222,12 @@ export const deletePhoto = asyncHandler(async (req: Request, res: Response) => {
 
 export const getReportPdf = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const report = await PAUDReportService.findReportById(id);
+  const context = {
+    role: req.user!.role,
+    unitId: req.user!.unitId || null,
+    userId: req.user!.sub,
+  };
+  const report = await PAUDReportService.findReportById(id, context);
 
   // For now, return HTML that can be printed to PDF
   // In production, this would use puppeteer or a PDF service

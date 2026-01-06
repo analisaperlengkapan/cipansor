@@ -47,12 +47,12 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { useAddEvidence } from '@/hooks/use-paud-assessment';
-import { ImagePlus, X, CheckCircle2 } from 'lucide-react';
+import { ImagePlus, X, CheckCircle2, Star, Activity, Lightbulb, MessageCircle, HeartHandshake, Palette, FileText } from 'lucide-react';
 
 const formSchema = z.object({
   studentId: z.string().min(1, 'Pilih siswa'),
   academicYearId: z.string().min(1, 'Pilih tahun ajaran'),
-  semester: z.coerce.number().min(1).max(2),
+  semester: z.enum(['GANJIL', 'GENAP']),
   aspect: z.enum(['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI'], {
     required_error: 'Pilih aspek perkembangan',
   }),
@@ -102,7 +102,7 @@ export default function CreatePAUDAssessmentPage() {
     defaultValues: {
       periodType: 'HARIAN',
       periodDate: new Date(),
-      semester: 1,
+      semester: 'GANJIL',
     },
   });
 
@@ -330,15 +330,15 @@ export default function CreatePAUDAssessmentPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Semester *</FormLabel>
-                          <Select onValueChange={(val) => field.onChange(parseInt(val))} value={field.value?.toString()}>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Pilih semester" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="1">Semester 1 (Ganjil)</SelectItem>
-                              <SelectItem value="2">Semester 2 (Genap)</SelectItem>
+                              <SelectItem value="GANJIL">Semester 1 (Ganjil)</SelectItem>
+                              <SelectItem value="GENAP">Semester 2 (Genap)</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -355,27 +355,53 @@ export default function CreatePAUDAssessmentPage() {
                 <CardHeader>
                   <CardTitle>Langkah 2: Aspek & Capaian</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-8">
                   <FormField
                     control={form.control}
                     name="aspect"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="space-y-3">
                         <FormLabel>Aspek Perkembangan</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Pilih aspek perkembangan" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {Object.entries(ASPECT_LABELS).map(([value, label]) => (
-                              <SelectItem key={value} value={value}>
-                                {label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="grid grid-cols-2 md:grid-cols-3 gap-4"
+                          >
+                            {Object.entries(ASPECT_LABELS).map(([value, label]) => {
+                                // Dynamic icon selection based on aspect
+                                let Icon = FileText; // Default
+                                if (value === 'NAM') Icon = Star;
+                                if (value === 'FM') Icon = Activity; // or PersonStanding if available
+                                if (value === 'KOG') Icon = Lightbulb;
+                                if (value === 'BHS') Icon = MessageCircle;
+                                if (value === 'SE') Icon = HeartHandshake;
+                                if (value === 'SNI') Icon = Palette;
+
+                                return (
+                                  <div key={value}>
+                                    <RadioGroupItem
+                                      value={value}
+                                      id={`aspect-${value}`}
+                                      className="peer sr-only"
+                                    />
+                                    <label
+                                      htmlFor={`aspect-${value}`}
+                                      className={cn(
+                                        'flex flex-col items-center justify-center rounded-xl border-2 border-muted bg-card p-4 hover:bg-accent/50 hover:border-primary/50 transition-all cursor-pointer h-full gap-3 text-center peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 peer-data-[state=checked]:text-primary shadow-sm hover:shadow-md',
+                                        field.value === value && 'ring-2 ring-primary ring-offset-2'
+                                      )}
+                                    >
+                                      <div className={cn("p-2 rounded-full bg-muted peer-data-[state=checked]:bg-primary/20", field.value === value && "bg-primary/20")}>
+                                          <Icon className="h-6 w-6" />
+                                      </div>
+                                      <span className="text-sm font-semibold">{label}</span>
+                                    </label>
+                                  </div>
+                                )
+                            })}
+                          </RadioGroup>
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -391,7 +417,7 @@ export default function CreatePAUDAssessmentPage() {
                           <RadioGroup
                             onValueChange={field.onChange}
                             defaultValue={field.value}
-                            className="grid grid-cols-2 gap-4"
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
                           >
                             {ACHIEVEMENT_OPTIONS.map((option) => (
                               <div key={option.value}>
@@ -403,17 +429,28 @@ export default function CreatePAUDAssessmentPage() {
                                 <label
                                   htmlFor={option.value}
                                   className={cn(
-                                    'flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary transition-all cursor-pointer h-full',
-                                    field.value === option.value && option.color.replace('border-', 'border-') + ' bg-accent'
+                                    'flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-card p-4 hover:scale-[1.02] transition-all cursor-pointer h-full relative overflow-hidden group shadow-sm hover:shadow-md',
+                                    'peer-data-[state=checked]:border-primary peer-data-[state=checked]:shadow-lg',
+                                    field.value === option.value && option.color.replace('border-', 'border-') + ' bg-accent/20'
                                   )}
                                 >
-                                  <span className="text-2xl font-bold">{option.value}</span>
-                                  <span className="text-[10px] text-center font-medium uppercase mt-2">
+                                  {/* Color Indicator Strip */}
+                                  <div className={cn("absolute top-0 left-0 w-full h-1.5", option.color.replace('border-', 'bg-'))} />
+                                  
+                                  <div className="mt-2 text-3xl font-bold tracking-tight">{option.value}</div>
+                                  <div className="text-xs font-semibold uppercase text-muted-foreground mt-1 text-center">
                                     {option.label}
-                                  </span>
-                                  <span className="text-[9px] text-center text-muted-foreground leading-tight mt-1">
+                                  </div>
+                                  <p className="text-[10px] text-center text-muted-foreground leading-tight mt-3 px-2">
                                     {option.description}
-                                  </span>
+                                  </p>
+                                  
+                                  {/* Checkmark for active state */}
+                                  {field.value === option.value && (
+                                     <div className="absolute top-2 right-2 text-primary animate-in zoom-in duration-300">
+                                        <CheckCircle2 className="w-4 h-4" />
+                                     </div>
+                                  )}
                                 </label>
                               </div>
                             ))}

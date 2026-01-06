@@ -12,6 +12,8 @@ import {
   Trash2,
   Eye,
   Pencil,
+  Calendar,
+  Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ColumnDef } from '@tanstack/react-table';
@@ -920,11 +922,123 @@ export default function KurikulumMerdekaPage() {
             </TabsContent>
             
             <TabsContent value="p5">
-              <DataTable
-                columns={projectColumns}
-                data={projects || []}
-                isLoading={loadingProjects}
-              />
+              {loadingProjects ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-[200px] rounded-xl bg-muted animate-pulse" />
+                  ))}
+                </div>
+              ) : projects.length > 0 ? (
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {projects.map((project) => {
+                    const statusData = PROJECT_STATUSES.find(s => s.value === project.status);
+                    const themeName = project.theme?.name || '-';
+                    const startDate = project.startDate ? new Date(project.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '-';
+                    const endDate = project.endDate ? new Date(project.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+                    
+                    return (
+                      <div 
+                        key={project.id} 
+                        className="group relative flex flex-col justify-between rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/50"
+                      >
+                         <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => router.push(`/curriculum/merdeka/p5/${project.id}`)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive"
+                              onClick={() => setDeleteId(project.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                         </div>
+
+                         <div className="space-y-4">
+                            <div>
+                               <div className="mb-2 flex items-center justify-between">
+                                  <Badge variant="outline" className="line-clamp-1 max-w-[70%]">
+                                     {project.unit?.name}
+                                  </Badge>
+                                  <Badge className={statusData?.color}>
+                                     {statusData?.label}
+                                  </Badge>
+                               </div>
+                               <h3 className="font-semibold text-lg leading-tight group-hover:text-primary transition-colors">
+                                  {project.title}
+                               </h3>
+                               <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                  {project.description}
+                               </p>
+                            </div>
+
+                            <div className="space-y-2">
+                               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                  Tema
+                               </div>
+                               <div className="flex items-center gap-2 text-sm font-medium">
+                                  <Leaf className="h-4 w-4 text-green-600" />
+                                  <span className="line-clamp-1">{themeName}</span>
+                               </div>
+                            </div>
+
+                            <div className="space-y-2">
+                               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                  Dimensi ({project.dimensions?.length || 0})
+                               </div>
+                               <div className="flex flex-wrap gap-1.5">
+                                  {project.dimensions?.slice(0, 3).map((dim) => (
+                                     <Badge key={dim} variant="secondary" className="text-[10px] px-1.5 h-5">
+                                        {P5_DIMENSIONS.find(d => d.value === dim)?.label || dim}
+                                     </Badge>
+                                  ))}
+                                  {(project.dimensions?.length || 0) > 3 && (
+                                     <Badge variant="secondary" className="text-[10px] px-1.5 h-5">
+                                        +{(project.dimensions?.length || 0) - 3}
+                                     </Badge>
+                                  )}
+                               </div>
+                            </div>
+                         </div>
+
+                         <div className="mt-6 pt-4 border-t flex items-center justify-between text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1.5">
+                               <Calendar className="h-3.5 w-3.5" />
+                               <span>{startDate} - {endDate}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5" title="Jumlah Siswa">
+                               <Users className="h-3.5 w-3.5" />
+                               <span>{project._count?.assessments || 0}</span>
+                            </div>
+                         </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="rounded-full bg-muted/50 p-4 mb-4">
+                     <Leaf className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-semibold text-lg">Belum ada Proyek P5</h3>
+                  <p className="text-muted-foreground max-w-sm mt-1 mb-6">
+                    Mulai buat proyek penguatan profil pelajar pancasila untuk unit ini.
+                  </p>
+                  <Button onClick={() => {
+                    setActiveTab('p5');
+                    setIsAddDialogOpen(true);
+                  }}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Buat Proyek Baru
+                  </Button>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>

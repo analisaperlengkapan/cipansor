@@ -41,7 +41,7 @@ import {
   type RegistrationStatus,
 } from '@/hooks';
 import { useClasses } from '@/hooks';
-import { useDormitories } from '@/hooks';
+import { useDormitories, useDormitoryRooms } from '@/hooks';
 import {
   ArrowLeft,
   User,
@@ -76,6 +76,13 @@ export default function PSBDetailPage() {
   const { data: classes } = useClasses();
   const { data: dormitories } = useDormitories();
 
+  // Form states for enrollment
+  const [selectedClassId, setSelectedClassId] = useState('');
+  const [selectedDormitoryId, setSelectedDormitoryId] = useState('');
+  const [selectedRoomId, setSelectedRoomId] = useState('');
+
+  const { data: rooms } = useDormitoryRooms(selectedDormitoryId && selectedDormitoryId !== 'none' ? selectedDormitoryId : '');
+
   // Mutations
   const scheduleTestMutation = useScheduleTest();
   const recordTestMutation = useRecordTestResult();
@@ -104,8 +111,6 @@ export default function PSBDetailPage() {
   const [interviewScore, setInterviewScore] = useState('');
   const [interviewNotes, setInterviewNotes] = useState('');
   const [rejectReason, setRejectReason] = useState('');
-  const [selectedClassId, setSelectedClassId] = useState('');
-  const [selectedDormitoryId, setSelectedDormitoryId] = useState('');
 
   if (isLoading) {
     return (
@@ -220,7 +225,7 @@ export default function PSBDetailPage() {
       await enrollMutation.mutateAsync({
         id,
         classId: selectedClassId,
-        dormitoryId: selectedDormitoryId || undefined,
+        roomId: selectedRoomId || undefined,
       });
       toast.success('Pendaftar berhasil didaftarkan sebagai santri');
       setEnrollOpen(false);
@@ -957,12 +962,15 @@ export default function PSBDetailPage() {
             </div>
             <div className="space-y-2">
               <Label>Asrama (Opsional)</Label>
-              <Select value={selectedDormitoryId} onValueChange={setSelectedDormitoryId}>
+              <Select value={selectedDormitoryId} onValueChange={(val) => {
+                setSelectedDormitoryId(val);
+                setSelectedRoomId(''); // Reset room when dormitory changes
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih asrama" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tidak memilih asrama</SelectItem>
+                  <SelectItem value="none">Tidak memilih asrama</SelectItem>
                   {dormitories?.data?.map((dorm) => (
                     <SelectItem key={dorm.id} value={dorm.id}>
                       {dorm.name}
@@ -971,6 +979,27 @@ export default function PSBDetailPage() {
                 </SelectContent>
               </Select>
             </div>
+            
+            {selectedDormitoryId && selectedDormitoryId !== 'none' && (
+              <div className="space-y-2">
+                <Label>Kamar</Label>
+                <Select value={selectedRoomId} onValueChange={setSelectedRoomId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih kamar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {!rooms?.length && (
+                         <SelectItem value="empty" disabled>Tidak ada kamar tersedia</SelectItem>
+                    )}
+                    {rooms?.map((room) => (
+                      <SelectItem key={room.id} value={room.id}>
+                        {room.name} (Lantai {room.floor}) - Sisa {room.capacity - (room.currentOccupancy || 0)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEnrollOpen(false)}>

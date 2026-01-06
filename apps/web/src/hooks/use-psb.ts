@@ -478,15 +478,15 @@ export function useEnrollRegistration() {
     mutationFn: async ({
       id,
       classId,
-      dormitoryId,
+      roomId,
     }: {
       id: string;
       classId: string;
-      dormitoryId?: string;
+      roomId?: string;
     }) => {
       const response = await api.post(`/psb/registrations/${id}/enroll`, {
         classId,
-        dormitoryId,
+        roomId,
       });
       return response.data.data;
     },

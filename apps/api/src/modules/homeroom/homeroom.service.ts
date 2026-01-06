@@ -14,8 +14,14 @@ export class HomeroomService {
    * Get classes where user is homeroom teacher
    */
   async getMyClasses(currentUser: AuthenticatedUser) {
+    const unitIdFilter = currentUser.role === UserRole.SUPER_ADMIN ? undefined : currentUser.unitId;
+
     const teacher = await prisma.teacher.findFirst({
-      where: { userId: currentUser.sub },
+      where: {
+        userId: currentUser.sub,
+        deletedAt: null,
+        ...(unitIdFilter ? { unitId: unitIdFilter } : {}),
+      },
     });
 
     if (!teacher) {
@@ -42,7 +48,17 @@ export class HomeroomService {
    * Get class dashboard
    */
   async getClassDashboard(classId: string, currentUser: AuthenticatedUser) {
-    const classData = await prisma.class.findUnique({
+    const classForAccess = await prisma.class.findFirst({
+      where: { id: classId, deletedAt: null },
+      select: { id: true, unitId: true },
+    });
+
+    if (!classForAccess) throw Errors.notFound('Class not found');
+    if (currentUser.role !== UserRole.SUPER_ADMIN && classForAccess.unitId !== currentUser.unitId) {
+      throw Errors.forbidden('Access denied');
+    }
+
+    const classData = await prisma.class.findFirst({
       where: { id: classId, deletedAt: null },
       include: {
         unit: true,
@@ -65,11 +81,6 @@ export class HomeroomService {
 
     if (!classData) {
       throw Errors.notFound('Class not found');
-    }
-
-    // Check access
-    if (currentUser.role !== UserRole.SUPER_ADMIN && classData.unitId !== currentUser.unitId) {
-      throw Errors.forbidden('Access denied');
     }
 
     // Get attendance summary for current month
@@ -101,7 +112,7 @@ export class HomeroomService {
    * Get students in homeroom class
    */
   async getHomeroomStudents(classId: string, currentUser: AuthenticatedUser) {
-    const classData = await prisma.class.findUnique({
+    const classData = await prisma.class.findFirst({
       where: { id: classId, deletedAt: null },
     });
 
@@ -132,7 +143,7 @@ export class HomeroomService {
    * Get attendance summary for class
    */
   async getAttendanceSummary(classId: string, startDate: string, endDate: string, currentUser: AuthenticatedUser) {
-    const classData = await prisma.class.findUnique({
+    const classData = await prisma.class.findFirst({
       where: { id: classId, deletedAt: null },
     });
 
@@ -160,7 +171,17 @@ export class HomeroomService {
    * Get academic monitoring
    */
   async getAcademicMonitoring(classId: string, currentUser: AuthenticatedUser) {
-    const classData = await prisma.class.findUnique({
+    const classForAccess = await prisma.class.findFirst({
+      where: { id: classId, deletedAt: null },
+      select: { id: true, unitId: true },
+    });
+
+    if (!classForAccess) throw Errors.notFound('Class not found');
+    if (currentUser.role !== UserRole.SUPER_ADMIN && classForAccess.unitId !== currentUser.unitId) {
+      throw Errors.forbidden('Access denied');
+    }
+
+    const classData = await prisma.class.findFirst({
       where: { id: classId, deletedAt: null },
       include: {
         enrollments: {
@@ -184,10 +205,6 @@ export class HomeroomService {
       throw Errors.notFound('Class not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && classData.unitId !== currentUser.unitId) {
-      throw Errors.forbidden('Access denied');
-    }
-
     return {
       classId,
       students: classData.enrollments.map((e) => ({
@@ -202,7 +219,17 @@ export class HomeroomService {
    * Get student detail
    */
   async getStudentDetail(studentId: string, currentUser: AuthenticatedUser) {
-    const student = await prisma.student.findUnique({
+    const studentForAccess = await prisma.student.findFirst({
+      where: { id: studentId, deletedAt: null },
+      select: { id: true, unitId: true },
+    });
+
+    if (!studentForAccess) throw Errors.notFound('Student not found');
+    if (currentUser.role !== UserRole.SUPER_ADMIN && studentForAccess.unitId !== currentUser.unitId) {
+      throw Errors.forbidden('Access denied');
+    }
+
+    const student = await prisma.student.findFirst({
       where: { id: studentId, deletedAt: null },
       include: {
         user: true,
@@ -226,10 +253,6 @@ export class HomeroomService {
       throw Errors.notFound('Student not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && student.unitId !== currentUser.unitId) {
-      throw Errors.forbidden('Access denied');
-    }
-
     return student;
   }
 
@@ -237,7 +260,7 @@ export class HomeroomService {
    * Get student notes - using violations/rewards as notes system
    */
   async getStudentNotes(studentId: string, currentUser: AuthenticatedUser) {
-    const student = await prisma.student.findUnique({
+    const student = await prisma.student.findFirst({
       where: { id: studentId, deletedAt: null },
     });
 
@@ -275,7 +298,7 @@ export class HomeroomService {
     input: { studentId: string; type: 'POSITIVE' | 'NEGATIVE'; title: string; description?: string; category?: string },
     currentUser: AuthenticatedUser
   ) {
-    const student = await prisma.student.findUnique({
+    const student = await prisma.student.findFirst({
       where: { id: input.studentId, deletedAt: null },
     });
 
@@ -376,8 +399,28 @@ export class HomeroomService {
    */
   async deleteStudentNote(noteId: string, noteType: 'violation' | 'reward', currentUser: AuthenticatedUser) {
     if (noteType === 'violation') {
+      const violation = await prisma.violation.findUnique({
+        where: { id: noteId },
+        include: { student: { select: { unitId: true } } },
+      });
+
+      if (!violation) throw Errors.notFound('Note not found');
+      if (currentUser.role !== UserRole.SUPER_ADMIN && violation.student.unitId !== currentUser.unitId) {
+        throw Errors.forbidden('Access denied');
+      }
+
       await prisma.violation.delete({ where: { id: noteId } });
     } else {
+      const reward = await prisma.reward.findUnique({
+        where: { id: noteId },
+        include: { student: { select: { unitId: true } } },
+      });
+
+      if (!reward) throw Errors.notFound('Note not found');
+      if (currentUser.role !== UserRole.SUPER_ADMIN && reward.student.unitId !== currentUser.unitId) {
+        throw Errors.forbidden('Access denied');
+      }
+
       await prisma.reward.delete({ where: { id: noteId } });
     }
     return { success: true };
@@ -387,7 +430,7 @@ export class HomeroomService {
    * Get behavior records
    */
   async getBehaviorRecords(classId: string, currentUser: AuthenticatedUser) {
-    const classData = await prisma.class.findUnique({
+    const classData = await prisma.class.findFirst({
       where: { id: classId, deletedAt: null },
     });
 

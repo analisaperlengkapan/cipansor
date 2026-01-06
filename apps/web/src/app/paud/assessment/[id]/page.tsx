@@ -89,7 +89,7 @@ export default function PAUDAssessmentDetailPage() {
       <div className="space-y-6">
         <PageHeader
           title="Detail Penilaian"
-          description={`Penilaian ${ASPECT_LABELS[assessment.aspect]} - ${format(new Date(assessment.periodDate), 'dd MMMM yyyy', { locale: idLocale })}`}
+          description="Laporan Perkembangan Anak"
           actions={
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => router.back()}>
@@ -126,189 +126,166 @@ export default function PAUDAssessmentDetailPage() {
           }
         />
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Student Info Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Informasi Siswa
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                {assessment.student?.photoUrl ? (
-                  <img
-                    src={assessment.student.photoUrl}
-                    alt=""
-                    className="w-16 h-16 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-                    <span className="text-xl font-bold text-muted-foreground">
-                      {assessment.student?.user?.name?.[0] || '?'}
-                    </span>
-                  </div>
-                )}
-                <div>
-                  <h3 className="font-semibold text-lg">{assessment.student?.user?.name}</h3>
-                  <p className="text-sm text-muted-foreground">NIS: {assessment.student?.nis}</p>
-                </div>
+        {/* Certificate / Report Card Container */}
+        <div className="max-w-4xl mx-auto">
+           <div className="bg-background border rounded-xl shadow-sm overflow-hidden relative print:shadow-none print:border-none">
+              {/* Decorative Header */}
+              <div className="h-32 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border-b relative">
+                 <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10" />
+                 <div className="absolute -bottom-12 left-8 md:search-left-8 flex items-end">
+                    <div className="relative">
+                       {assessment.student?.photoUrl ? (
+                          <img
+                            src={assessment.student.photoUrl}
+                            alt=""
+                            className="w-24 h-24 rounded-xl object-cover border-4 border-background shadow-md"
+                          />
+                        ) : (
+                          <div className="w-24 h-24 rounded-xl bg-muted flex items-center justify-center border-4 border-background shadow-md">
+                            <span className="text-3xl font-bold text-muted-foreground">
+                              {assessment.student?.user?.name?.[0] || '?'}
+                            </span>
+                          </div>
+                        )}
+                    </div>
+                    <div className="mb-2 ml-4">
+                       <h2 className="text-2xl font-bold">{assessment.student?.user?.name}</h2>
+                       <p className="text-muted-foreground">NIS: {assessment.student?.nis}</p>
+                    </div>
+                 </div>
+                 
+                 {/* Stamp / Badge */}
+                 <div className="absolute top-6 right-8 rotate-[15deg] opacity-90 hidden md:block">
+                    <div className={cn(
+                        "w-32 h-32 rounded-full border-4 flex flex-col items-center justify-center shadow-lg backdrop-blur-sm",
+                        ACHIEVEMENT_COLORS[assessment.achievementLevel],
+                        "border-current text-current bg-background/50"
+                    )}>
+                        <span className="text-4xl font-black tracking-tighter">{assessment.achievementLevel}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest mt-1">Capaian</span>
+                    </div>
+                 </div>
               </div>
 
-              <Separator />
+              <div className="p-8 pt-16 space-y-8">
+                 {/* Meta Info Grid */}
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 p-6 bg-muted/30 rounded-lg border">
+                    <div>
+                       <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Tahun Ajaran</div>
+                       <div className="font-medium">{assessment.academicYear?.name}</div>
+                    </div>
+                    <div>
+                       <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Semester</div>
+                       <div className="font-medium capitalize">{assessment.periodType.toLowerCase()}</div>
+                    </div>
+                    <div>
+                       <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Tanggal</div>
+                       <div className="font-medium">{format(new Date(assessment.periodDate), 'dd MMMM yyyy', { locale: idLocale })}</div>
+                    </div>
+                    <div>
+                       <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Guru Penilai</div>
+                       <div className="font-medium">{assessment.assessedBy?.name || '-'}</div>
+                    </div>
+                 </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Tahun Ajaran</span>
-                  <span className="text-sm font-medium">{assessment.academicYear?.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Periode</span>
-                  <span className="text-sm font-medium capitalize">{assessment.periodType.toLowerCase()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Tanggal</span>
-                  <span className="text-sm font-medium">
-                    {format(new Date(assessment.periodDate), 'dd/MM/yyyy')}
-                  </span>
-                </div>
-              </div>
+                 <Separator />
 
-              <Separator />
+                 {/* Main Content */}
+                 <div className="space-y-8">
+                    <section>
+                       <div className="flex items-center gap-3 mb-4">
+                          <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                             <BookOpen className="w-5 h-5" />
+                          </div>
+                          <div>
+                             <h3 className="font-bold text-lg">{ASPECT_LABELS[assessment.aspect]}</h3>
+                             {assessment.indicator && (
+                                <p className="text-sm text-muted-foreground">{assessment.indicator.name}</p>
+                             )}
+                          </div>
+                       </div>
+                       
+                       <div className="bg-card border rounded-lg p-6 shadow-sm">
+                          <h4 className="font-medium mb-3 flex items-center gap-2">
+                             <User className="w-4 h-4 text-muted-foreground" />
+                             Deskripsi Perkembangan
+                          </h4>
+                          <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                             {assessment.narrativeText || "Tidak ada deskripsi."}
+                          </p>
+                       </div>
+                    </section>
 
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => router.push(`/paud/assessment/student/${assessment.studentId}`)}
-              >
-                Lihat Progress Siswa
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Assessment Details */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5" />
-                Detail Penilaian
-              </CardTitle>
-              <CardDescription>
-                Aspek: {ASPECT_LABELS[assessment.aspect]}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Achievement Level */}
-              <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-                <div>
-                  <p className="text-sm text-muted-foreground">Tingkat Capaian</p>
-                  <p className="text-lg font-semibold">{ACHIEVEMENT_LABELS[assessment.achievementLevel]}</p>
-                </div>
-                <Badge
-                  className={cn(
-                    'text-lg px-4 py-2',
-                    ACHIEVEMENT_COLORS[assessment.achievementLevel]
-                  )}
-                >
-                  {assessment.achievementLevel}
-                </Badge>
-              </div>
-
-              {/* Indicator */}
-              {assessment.indicator && (
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Indikator</h4>
-                  <p className="text-sm">{assessment.indicator.name}</p>
-                </div>
-              )}
-
-              {/* Narrative */}
-              {assessment.narrativeText && (
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Deskripsi Perkembangan</h4>
-                  <p className="text-sm whitespace-pre-wrap">{assessment.narrativeText}</p>
-                </div>
-              )}
-
-              {/* Teacher Notes */}
-              {assessment.teacherNotes && (
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Catatan Guru</h4>
-                  <p className="text-sm whitespace-pre-wrap">{assessment.teacherNotes}</p>
-                </div>
-              )}
-
-              {/* Recommendations */}
-              {assessment.recommendations && (
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Rekomendasi untuk Orang Tua</h4>
-                  <p className="text-sm whitespace-pre-wrap">{assessment.recommendations}</p>
-                </div>
-              )}
-
-              {/* Assessor */}
-              <div className="pt-4 border-t">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Dinilai oleh</span>
-                  <span className="font-medium">{assessment.assessedBy?.name || '-'}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm mt-1">
-                  <span className="text-muted-foreground">Terakhir diperbarui</span>
-                  <span>{format(new Date(assessment.updatedAt), 'dd/MM/yyyy HH:mm')}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Evidences */}
-        {assessment.evidences && assessment.evidences.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Image className="h-5 w-5" />
-                Bukti / Dokumentasi
-              </CardTitle>
-              <CardDescription>
-                {assessment.evidences.length} file dokumentasi
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {assessment.evidences.map((evidence) => (
-                  <div key={evidence.id} className="relative group">
-                    <a
-                      href={evidence.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block"
-                    >
-                      {evidence.fileType.startsWith('image/') ? (
-                        <img
-                          src={evidence.fileUrl}
-                          alt={evidence.caption || 'Evidence'}
-                          className="w-full h-32 object-cover rounded-lg border hover:opacity-90 transition-opacity"
-                        />
-                      ) : (
-                        <div className="w-full h-32 bg-muted rounded-lg border flex items-center justify-center">
-                          <span className="text-sm text-muted-foreground">
-                            {evidence.fileType.split('/')[1]?.toUpperCase() || 'FILE'}
-                          </span>
-                        </div>
-                      )}
-                    </a>
-                    {evidence.caption && (
-                      <p className="text-xs text-muted-foreground mt-1 truncate">
-                        {evidence.caption}
-                      </p>
+                    {(assessment.teacherNotes || assessment.recommendations) && (
+                       <div className="grid md:grid-cols-2 gap-6">
+                          {assessment.teacherNotes && (
+                             <section className="bg-orange-50/50 border border-orange-100 rounded-lg p-6">
+                                <h4 className="font-medium mb-3 text-orange-800 flex items-center gap-2">
+                                   <Pencil className="w-4 h-4" />
+                                   Catatan Guru
+                                </h4>
+                                <p className="text-sm text-orange-900/80 leading-relaxed whitespace-pre-wrap">
+                                   {assessment.teacherNotes}
+                                </p>
+                             </section>
+                          )}
+                          
+                          {assessment.recommendations && (
+                             <section className="bg-blue-50/50 border border-blue-100 rounded-lg p-6">
+                                <h4 className="font-medium mb-3 text-blue-800 flex items-center gap-2">
+                                   <ArrowLeft className="w-4 h-4 rotate-45" />
+                                   Rekomendasi
+                                </h4>
+                                <p className="text-sm text-blue-900/80 leading-relaxed whitespace-pre-wrap">
+                                   {assessment.recommendations}
+                                </p>
+                             </section>
+                          )}
+                       </div>
                     )}
-                  </div>
-                ))}
+                 </div>
+
+                 {/* Evidence Section */}
+                 {assessment.evidences && assessment.evidences.length > 0 && (
+                    <>
+                       <Separator />
+                       <section>
+                          <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                             <Image className="w-5 h-5" />
+                             Dokumentasi Kegiatan
+                          </h3>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                             {assessment.evidences.map((evidence) => (
+                                <a
+                                   key={evidence.id}
+                                   href={evidence.fileUrl}
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   className="group relative aspect-square rounded-lg overflow-hidden border bg-muted"
+                                >
+                                   {evidence.fileType.startsWith('image/') ? (
+                                      <img
+                                         src={evidence.fileUrl}
+                                         alt={evidence.caption || 'Evidence'}
+                                         className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                      />
+                                   ) : (
+                                      <div className="w-full h-full flex items-center justify-center flex-col gap-2">
+                                         <span className="text-xs font-medium text-muted-foreground uppercase">{evidence.fileType.split('/')[1]}</span>
+                                      </div>
+                                   )}
+                                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <p className="text-white text-xs truncate">{evidence.caption || 'Bukti'}</p>
+                                   </div>
+                                </a>
+                             ))}
+                          </div>
+                       </section>
+                    </>
+                 )}
               </div>
-            </CardContent>
-          </Card>
-        )}
+           </div>
+        </div>
       </div>
     </MainLayout>
   );

@@ -25,6 +25,9 @@ const mockPrisma = vi.hoisted(() => ({
   student: {
     findUnique: vi.fn(),
   },
+  studentParent: {
+    findUnique: vi.fn(),
+  },
   academicYear: {
     findUnique: vi.fn(),
   },
@@ -49,6 +52,8 @@ vi.mock('@/lib/prisma', () => ({
 
 // Import service after mocking
 import * as paudReportService from '@/modules/paud-report/paud-report.service';
+
+const teacherContext = { role: 'TEACHER', unitId: 'unit-1', userId: 'teacher-1' } as any;
 
 describe('PAUD Report Service - List Reports', () => {
   beforeEach(() => {
@@ -131,9 +136,11 @@ describe('PAUD Report Service - CRUD Operations', () => {
         status: 'DRAFT',
       };
 
-      mockPrisma.pAUDNarrativeReport.findUnique.mockResolvedValue(mockReport);
+      mockPrisma.pAUDNarrativeReport.findUnique
+        .mockResolvedValueOnce({ id: 'report-1', studentId: 'student-1', unitId: 'unit-1' })
+        .mockResolvedValueOnce(mockReport);
 
-      const result = await paudReportService.findReportById('report-1');
+      const result = await paudReportService.findReportById('report-1', teacherContext);
 
       expect(result).toEqual(mockReport);
       expect(mockPrisma.pAUDNarrativeReport.findUnique).toHaveBeenCalledWith({
@@ -145,7 +152,7 @@ describe('PAUD Report Service - CRUD Operations', () => {
     it('should throw error if report not found', async () => {
       mockPrisma.pAUDNarrativeReport.findUnique.mockResolvedValue(null);
 
-      await expect(paudReportService.findReportById('report-1')).rejects.toThrow(
+      await expect(paudReportService.findReportById('report-1', teacherContext)).rejects.toThrow(
         'Report not found'
       );
     });
@@ -171,7 +178,7 @@ describe('PAUD Report Service - CRUD Operations', () => {
       mockPrisma.unit.findUnique.mockResolvedValue(mockUnit);
       mockPrisma.pAUDNarrativeReport.create.mockResolvedValue(mockCreated);
 
-      const result = await paudReportService.createReport(input, 'teacher-1');
+      const result = await paudReportService.createReport(input as any, teacherContext);
 
       expect(result).toEqual(mockCreated);
       expect(mockPrisma.student.findUnique).toHaveBeenCalledWith({
@@ -187,7 +194,7 @@ describe('PAUD Report Service - CRUD Operations', () => {
       await expect(
         paudReportService.createReport(
           { studentId: 'student-1', unitId: 'unit-1', academicYearId: 'year-1', semester: 1 },
-          'teacher-1'
+          teacherContext
         )
       ).rejects.toThrow('Student not found');
     });
@@ -195,15 +202,17 @@ describe('PAUD Report Service - CRUD Operations', () => {
 
   describe('updateReport', () => {
     it('should update existing report', async () => {
-      const mockExisting = { id: 'report-1', status: 'DRAFT' };
+      const mockExisting = { id: 'report-1', status: 'DRAFT', studentId: 'student-1', unitId: 'unit-1' };
       const mockUpdated = { id: 'report-1', narrativeNAM: 'Updated' };
 
       mockPrisma.pAUDNarrativeReport.findUnique.mockResolvedValue(mockExisting);
       mockPrisma.pAUDNarrativeReport.update.mockResolvedValue(mockUpdated);
 
-      const result = await paudReportService.updateReport('report-1', {
-        narrativeNAM: 'Updated',
-      });
+      const result = await paudReportService.updateReport(
+        'report-1',
+        { narrativeNAM: 'Updated' } as any,
+        teacherContext
+      );
 
       expect(result).toEqual(mockUpdated);
       expect(mockPrisma.pAUDNarrativeReport.update).toHaveBeenCalled();
@@ -213,20 +222,20 @@ describe('PAUD Report Service - CRUD Operations', () => {
       mockPrisma.pAUDNarrativeReport.findUnique.mockResolvedValue(null);
 
       await expect(
-        paudReportService.updateReport('report-1', { narrativeNAM: 'Updated' })
+        paudReportService.updateReport('report-1', { narrativeNAM: 'Updated' } as any, teacherContext)
       ).rejects.toThrow('Report not found');
     });
   });
 
   describe('deleteReport', () => {
     it('should delete report', async () => {
-      const mockReport = { id: 'report-1', status: 'DRAFT' };
+      const mockReport = { id: 'report-1', status: 'DRAFT', studentId: 'student-1', unitId: 'unit-1' };
 
       mockPrisma.pAUDNarrativeReport.findUnique.mockResolvedValue(mockReport);
       mockPrisma.pAUDReportPhoto.deleteMany.mockResolvedValue({ count: 0 });
       mockPrisma.pAUDNarrativeReport.delete.mockResolvedValue(mockReport);
 
-      const result = await paudReportService.deleteReport('report-1');
+      const result = await paudReportService.deleteReport('report-1', teacherContext);
 
       expect(result).toEqual(mockReport);
       expect(mockPrisma.pAUDReportPhoto.deleteMany).toHaveBeenCalledWith({
@@ -240,7 +249,7 @@ describe('PAUD Report Service - CRUD Operations', () => {
     it('should throw error if report not found', async () => {
       mockPrisma.pAUDNarrativeReport.findUnique.mockResolvedValue(null);
 
-      await expect(paudReportService.deleteReport('report-1')).rejects.toThrow(
+      await expect(paudReportService.deleteReport('report-1', teacherContext)).rejects.toThrow(
         'Report not found'
       );
     });
@@ -261,7 +270,7 @@ describe('PAUD Report Service - Report Generation', () => {
         semester: 1,
       };
 
-      const mockStudent = { id: 'student-1', unitId: 'unit-1' };
+      const mockStudent = { id: 'student-1', unitId: 'unit-1', user: { name: 'Student 1' } };
       const mockAcademicYear = { id: 'year-1' };
       const mockUnit = { id: 'unit-1' };
       
@@ -286,7 +295,7 @@ describe('PAUD Report Service - Report Generation', () => {
       mockPrisma.dailyStudentReport.findMany.mockResolvedValue([]);
       mockPrisma.pAUDNarrativeReport.create.mockResolvedValue(mockCreated);
 
-      const result = await paudReportService.generateReportFromAssessments(input, 'teacher-1');
+      const result = await paudReportService.generateReportFromAssessments(input as any, teacherContext);
 
       expect(result).toBeDefined();
       expect(mockPrisma.pAUDDevelopmentAssessment.findMany).toHaveBeenCalled();
@@ -310,7 +319,7 @@ describe('PAUD Report Service - Report Generation', () => {
 
       mockPrisma.classEnrollment.findMany.mockResolvedValue(mockEnrollments);
       
-      const result = await paudReportService.bulkGenerateReports(input, { userId: 'teacher-1' });
+      const result = await paudReportService.bulkGenerateReports(input as any, teacherContext);
 
       // Should return results structure
       expect(result).toHaveProperty('success');
@@ -333,16 +342,20 @@ describe('PAUD Report Service - Workflow', () => {
 
   describe('finalizeReport', () => {
     it('should finalize report and set status to FINALIZED', async () => {
-      const mockExisting = { id: 'report-1', status: 'DRAFT' };
+      const mockExisting = { id: 'report-1', status: 'DRAFT', studentId: 'student-1', unitId: 'unit-1' };
       const mockFinalized = { id: 'report-1', status: 'FINALIZED', finalizedAt: new Date() };
 
       mockPrisma.pAUDNarrativeReport.findUnique.mockResolvedValue(mockExisting);
       mockPrisma.pAUDNarrativeReport.update.mockResolvedValue(mockFinalized);
 
-      const result = await paudReportService.finalizeReport('report-1', {
-        teacherSignature: 'signature-url',
-        principalSignature: 'signature-url',
-      });
+      const result = await paudReportService.finalizeReport(
+        'report-1',
+        {
+          teacherSignature: 'signature-url',
+          principalSignature: 'signature-url',
+        } as any,
+        teacherContext
+      );
 
       expect(result.status).toBe('FINALIZED');
       expect(mockPrisma.pAUDNarrativeReport.update).toHaveBeenCalled();
@@ -352,23 +365,24 @@ describe('PAUD Report Service - Workflow', () => {
       mockPrisma.pAUDNarrativeReport.findUnique.mockResolvedValue(null);
 
       await expect(
-        paudReportService.finalizeReport('report-1', {
-          teacherSignature: 'url',
-          principalSignature: 'url',
-        })
+        paudReportService.finalizeReport(
+          'report-1',
+          { teacherSignature: 'url', principalSignature: 'url' } as any,
+          teacherContext
+        )
       ).rejects.toThrow('Report not found');
     });
   });
 
   describe('markAsPrinted', () => {
     it('should mark report as printed', async () => {
-      const mockExisting = { id: 'report-1', status: 'FINALIZED' };
+      const mockExisting = { id: 'report-1', status: 'FINALIZED', studentId: 'student-1', unitId: 'unit-1' };
       const mockPrinted = { id: 'report-1', status: 'PRINTED', printedAt: new Date(), isPrinted: true };
 
       mockPrisma.pAUDNarrativeReport.findUnique.mockResolvedValue(mockExisting);
       mockPrisma.pAUDNarrativeReport.update.mockResolvedValue(mockPrinted);
 
-      const result = await paudReportService.markAsPrinted('report-1');
+      const result = await paudReportService.markAsPrinted('report-1', teacherContext);
 
       expect(result.status).toBe('PRINTED');
       expect(mockPrisma.pAUDNarrativeReport.update).toHaveBeenCalled();
@@ -383,7 +397,7 @@ describe('PAUD Report Service - Photos', () => {
 
   describe('addPhoto', () => {
     it('should add photo to report', async () => {
-      const mockReport = { id: 'report-1' };
+      const mockReport = { id: 'report-1', status: 'DRAFT', studentId: 'student-1', unitId: 'unit-1' };
       const mockPhoto = {
         id: 'photo-1',
         reportId: 'report-1',
@@ -396,11 +410,15 @@ describe('PAUD Report Service - Photos', () => {
       mockPrisma.pAUDReportPhoto.count.mockResolvedValue(5); // < 10 max
       mockPrisma.pAUDReportPhoto.create.mockResolvedValue(mockPhoto);
 
-      const result = await paudReportService.addPhoto('report-1', {
-        photoUrl: 'https://example.com/photo.jpg',
-        caption: 'Activity',
-        orderNumber: 1,
-      });
+      const result = await paudReportService.addPhoto(
+        'report-1',
+        {
+          photoUrl: 'https://example.com/photo.jpg',
+          caption: 'Activity',
+          orderNumber: 1,
+        } as any,
+        teacherContext
+      );
 
       expect(result).toEqual(mockPhoto);
       expect(mockPrisma.pAUDReportPhoto.count).toHaveBeenCalledWith({
@@ -418,10 +436,11 @@ describe('PAUD Report Service - Photos', () => {
       mockPrisma.pAUDNarrativeReport.findUnique.mockResolvedValue(null);
 
       await expect(
-        paudReportService.addPhoto('report-1', {
-          photoUrl: 'https://example.com/photo.jpg',
-          orderNumber: 1,
-        })
+        paudReportService.addPhoto(
+          'report-1',
+          { photoUrl: 'https://example.com/photo.jpg', orderNumber: 1 } as any,
+          teacherContext
+        )
       ).rejects.toThrow('Report not found');
     });
   });
@@ -431,14 +450,14 @@ describe('PAUD Report Service - Photos', () => {
       const mockExisting = {
         id: 'photo-1',
         caption: 'Old',
-        report: { status: 'DRAFT' },
+        report: { status: 'DRAFT', studentId: 'student-1', unitId: 'unit-1' },
       };
       const mockUpdated = { id: 'photo-1', caption: 'New' };
 
       mockPrisma.pAUDReportPhoto.findUnique.mockResolvedValue(mockExisting);
       mockPrisma.pAUDReportPhoto.update.mockResolvedValue(mockUpdated);
 
-      const result = await paudReportService.updatePhoto('photo-1', { caption: 'New' });
+      const result = await paudReportService.updatePhoto('photo-1', { caption: 'New' } as any, teacherContext);
 
       expect(result.caption).toBe('New');
       expect(mockPrisma.pAUDReportPhoto.update).toHaveBeenCalled();
@@ -448,7 +467,7 @@ describe('PAUD Report Service - Photos', () => {
       mockPrisma.pAUDReportPhoto.findUnique.mockResolvedValue(null);
 
       await expect(
-        paudReportService.updatePhoto('photo-1', { caption: 'New' })
+        paudReportService.updatePhoto('photo-1', { caption: 'New' } as any, teacherContext)
       ).rejects.toThrow('Photo not found');
     });
   });
@@ -457,13 +476,13 @@ describe('PAUD Report Service - Photos', () => {
     it('should delete photo', async () => {
       const mockPhoto = {
         id: 'photo-1',
-        report: { status: 'DRAFT' },
+        report: { status: 'DRAFT', studentId: 'student-1', unitId: 'unit-1' },
       };
 
       mockPrisma.pAUDReportPhoto.findUnique.mockResolvedValue(mockPhoto);
       mockPrisma.pAUDReportPhoto.delete.mockResolvedValue(mockPhoto);
 
-      const result = await paudReportService.deletePhoto('photo-1');
+      const result = await paudReportService.deletePhoto('photo-1', teacherContext);
 
       expect(result).toEqual(mockPhoto);
       expect(mockPrisma.pAUDReportPhoto.delete).toHaveBeenCalledWith({
@@ -474,7 +493,7 @@ describe('PAUD Report Service - Photos', () => {
     it('should throw error if photo not found', async () => {
       mockPrisma.pAUDReportPhoto.findUnique.mockResolvedValue(null);
 
-      await expect(paudReportService.deletePhoto('photo-1')).rejects.toThrow('Photo not found');
+      await expect(paudReportService.deletePhoto('photo-1', teacherContext)).rejects.toThrow('Photo not found');
     });
   });
 });

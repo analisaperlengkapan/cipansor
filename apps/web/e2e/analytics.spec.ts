@@ -1,19 +1,13 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth.fixture';
 
 /**
  * Analytics E2E Tests
  * Tests the analytics dashboard and related pages
+ * Uses authenticated fixtures for faster, more reliable tests
  */
 
 test.describe('Analytics Dashboard', () => {
-    test.beforeEach(async ({ page }) => {
-        // Login first
-        await page.goto('/login');
-        await page.getByLabel(/email/i).fill('admin@cipansor.com');
-        await page.getByLabel(/password|kata sandi/i).fill('admin123');
-        await page.getByRole('button', { name: /masuk|login/i }).click();
-        await expect(page).toHaveURL(/dashboard/, { timeout: 15000 });
-    });
+    test.use({ storageState: '.auth/superAdmin.json' });
 
     test('should navigate to analytics page', async ({ page }) => {
         await page.goto('/analytics');
@@ -62,14 +56,7 @@ test.describe('Analytics Dashboard', () => {
 });
 
 test.describe('Forecast Page', () => {
-    test.beforeEach(async ({ page }) => {
-        // Login first
-        await page.goto('/login');
-        await page.getByLabel(/email/i).fill('admin@cipansor.com');
-        await page.getByLabel(/password|kata sandi/i).fill('admin123');
-        await page.getByRole('button', { name: /masuk|login/i }).click();
-        await expect(page).toHaveURL(/dashboard/, { timeout: 15000 });
-    });
+    test.use({ storageState: '.auth/superAdmin.json' });
 
     test('should display forecast cards', async ({ page }) => {
         await page.goto('/analytics/forecast');
@@ -92,14 +79,7 @@ test.describe('Forecast Page', () => {
 });
 
 test.describe('Export Page', () => {
-    test.beforeEach(async ({ page }) => {
-        // Login first
-        await page.goto('/login');
-        await page.getByLabel(/email/i).fill('admin@cipansor.com');
-        await page.getByLabel(/password|kata sandi/i).fill('admin123');
-        await page.getByRole('button', { name: /masuk|login/i }).click();
-        await expect(page).toHaveURL(/dashboard/, { timeout: 15000 });
-    });
+    test.use({ storageState: '.auth/superAdmin.json' });
 
     test('should display export options', async ({ page }) => {
         await page.goto('/analytics/export');

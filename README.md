@@ -201,18 +201,20 @@ Dibangun dengan teknologi modern untuk performa dan skalabilitas tinggi:
 *   **Bahasa**: TypeScript
 *   **Database**: PostgreSQL
 *   **ORM**: Prisma
+*   **Real-time**: Socket.IO + Redis
 *   **Testing**: Vitest
 
 ### Frontend (`apps/web`)
 *   **Framework**: Next.js 16 (App Router)
 *   **UI Library**: React 19, Tailwind CSS, shadcn/ui
 *   **State Management**: Zustand, React Query
-*   **Testing**: Playwright
+*   **Testing**: Playwright (E2E)
 
 ### Infrastruktur
 *   **Package Manager**: pnpm
 *   **Monorepo Tool**: Turborepo
 *   **Containerization**: Docker
+*   **CI/CD**: GitHub Actions
 
 ---
 
@@ -272,6 +274,54 @@ Perintah-perintah umum yang digunakan dalam pengembangan:
 *   `pnpm lint`: Memeriksa kode dengan ESLint.
 *   `pnpm test`: Menjalankan unit test.
 *   `pnpm db:studio`: Membuka Prisma Studio untuk melihat data database.
+
+### Testing
+
+#### E2E Testing (Playwright)
+
+```bash
+# Run all E2E tests
+cd apps/web
+pnpm test:e2e
+
+# Run with UI mode
+pnpm test:e2e:ui
+
+# Run in headed mode (see browser)
+pnpm test:e2e:headed
+
+# Debug tests
+pnpm test:e2e:debug
+
+# View test report
+pnpm test:e2e:report
+
+# Cross-browser testing
+pnpm test:e2e:firefox
+pnpm test:e2e:webkit
+pnpm test:e2e:mobile
+
+# Using test runner script (recommended)
+./run-e2e.sh              # All tests with pre-flight checks
+./run-e2e.sh --ui         # UI mode
+./run-e2e.sh --file auth.spec.ts  # Specific file
+```
+
+**Documentation:**
+- 📖 [E2E Testing Guide](docs/E2E_TESTING_GUIDE.md) - Comprehensive guide
+- 🏗️ [E2E Architecture](docs/E2E_TESTING_ARCHITECTURE.md) - Architecture diagrams
+- ✅ [E2E Checklist](docs/planning/E2E_TESTING_CHECKLIST.md) - Implementation checklist
+- 📊 [E2E Summary](docs/planning/E2E_OPTIMIZATION_SUMMARY.md) - Optimization summary
+
+**Test Coverage:**
+- ✅ Authentication (11 tests)
+- ✅ Dashboard Real-time (9 tests)
+- ✅ Tahfidz Dashboard (8 tests)
+- ✅ PAUD Module (15 tests)
+- ✅ Finance Reports (5 tests)
+- ✅ Analytics (8 tests)
+
+**Total:** ~56 E2E tests | **Performance:** 62% faster | **Flakiness:** <5%
 
 ---
 

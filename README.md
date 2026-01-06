@@ -36,51 +36,63 @@ Sistem ini menggabungkan manajemen akademik sekolah formal dengan manajemen kepe
 
 ## 💻 Antarmuka
 
-Berikut adalah tampilan antarmuka dari sistem Cipansor yang mencakup berbagai modul terintegrasi:
+Cipansor menyediakan antarmuka modern yang responsif untuk berbagai peran dan unit pendidikan.
 
-### 1. Manajemen Utama
-Kelola yayasan, unit pendidikan, dan pengguna sistem dalam satu pusat kendali.
+### 1. Pusat Kendali Yayasan (Global)
+Kelola seluruh ekosistem pesantren dalam satu dashboard terpusat.
 
-| Dashboard Utama | Profil Yayasan |
+| Dashboard Global | Profil Yayasan |
 |-----------------|----------------|
-| ![Dashboard](docs/images/dashboard.png) | ![Yayasan](docs/images/foundation.png) |
+| ![Dashboard Global](docs/images/dashboard-global.png) | ![Yayasan](docs/images/foundation.png) |
 
 | Unit Pendidikan | Manajemen User |
 |-----------------|----------------|
 | ![Unit Pendidikan](docs/images/units.png) | ![Daftar Pengguna](docs/images/users.png) |
 
-### 2. Akademik & KBM
-Administrasi sekolah, kelas, siswa, dan pembelajaran.
+### 2. Dashboard Unit Pendidikan
+Tampilan khusus yang disesuaikan untuk kebutuhan tiap jenjang pendidikan.
+
+| Dashboard SMA Al-Qur'an | Dashboard PAUD/TK |
+|-------------------------|-------------------|
+| ![Dashboard SMA](docs/images/dashboard-sma.png) | ![Dashboard PAUD](docs/images/dashboard-paud.png) |
+
+
+| Dashboard SD IT | Dashboard SMP IT |
+|-----------------|------------------|
+| ![Dashboard SD](docs/images/dashboard-sd.png) | ![Dashboard SMP](docs/images/dashboard-smp.png) |
+
+### 3. Modul Akademik & KBM
+Administrasi sekolah, kelas, siswa, dan pembelajaran terintegrasi.
 
 | Data Siswa | Kelas & Rombel |
 |------------|----------------|
 | ![Manajemen Siswa](docs/images/students.png) | ![Daftar Kelas](docs/images/classes.png) |
 
-| Absensi Kehadiran | Penilaian & Rapor |
-|-------------------|-------------------|
+| Absensi Kehadiran | Penilaian & Kurikulum |
+|-------------------|-----------------------|
 | ![Rekap Absensi](docs/images/attendance.png) | ![Penilaian](docs/images/assessment.png) |
 
-| Penilaian PAUD | |
-|----------------|---|
-| ![Rapor PAUD](docs/images/paud.png) | |
+| Penilaian Khusus PAUD | Pengaturan Sistem |
+|-----------------------|-------------------|
+| ![Rapor PAUD](docs/images/paud-list.png) | ![Konfigurasi](docs/images/settings.png) |
 
-### 3. Kepesantrenan & Tahfidz
-Fitur khusus untuk mendukung program unggulan pesantren.
+### 4. Kepesantrenan & Tahfidz
+Fitur khusus untuk mendukung program unggulan dan kedisiplinan santri.
 
 | Dashboard Tahfidz | Jurnal Ibadah |
 |-------------------|---------------|
 | ![Hafalan Quran](docs/images/tahfidz.png) | ![Monitoring Ibadah](docs/images/ibadah.png) |
 
-| Asrama Santri | Pelanggaran |
-|---------------|-------------|
-| ![Kamar Santri](docs/images/dormitories.png) | ![Catatan Pelanggaran](docs/images/violations.png) |
+| Asrama Santri | Catatan Pelanggaran |
+|---------------|---------------------|
+| ![Kamar Santri](docs/images/dormitories.png) | ![Pelanggaran](docs/images/violations.png) |
 
-| Kesehatan (UKS) | |
-|-----------------|---|
+| Layanan Kesehatan (UKS) | |
+|--------------------------|---|
 | ![Rekam Medis](docs/images/health.png) | |
 
-### 4. Administrasi & Keuangan
-Pengelolaan sumber daya yayasan yang transparan.
+### 5. Administrasi, Keuangan & PSB
+Pengelolaan sumber daya yayasan yang akuntabel dan transparan.
 
 | Keuangan & SPP | Kepegawaian (HR) |
 |----------------|------------------|
@@ -90,11 +102,15 @@ Pengelolaan sumber daya yayasan yang transparan.
 |-----------------|------------|
 | ![Aset Yayasan](docs/images/inventory.png) | ![Penerimaan Santri](docs/images/psb.png) |
 
-### 5. Fasilitas Lainnya
+### 6. Portal & Akses lainnya
 
-| Perpustakaan | Pengaturan |
-|--------------|------------|
-| ![Katalog Buku](docs/images/library.png) | ![Konfigurasi](docs/images/settings.png) |
+| Perpustakaan | Portal Orang Tua |
+|--------------|-------------------|
+| ![Katalog Buku](docs/images/library.png) | ![Portal Wali](docs/images/parent-portal.png) |
+
+| Halaman Login | |
+|---------------|---|
+| ![Login Page](docs/images/login.png) | |
 
 ---
 

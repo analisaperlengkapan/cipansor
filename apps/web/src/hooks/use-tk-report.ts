@@ -62,6 +62,21 @@ export interface TKNarrativeReport {
     name: string;
   };
   photos?: TKReportPhoto[];
+  // Integrated Summaries
+  tahfidzSummary?: {
+    lastSurah?: string;
+    lastJuz?: number;
+    lastAyah?: number;
+    activity?: string;
+  };
+  healthSummary?: {
+    weight?: number;
+    height?: number;
+    headCircumference?: number;
+    notes?: string;
+    bmiDescription?: string;
+  };
+  // Legacy fields (optional, for backward compatibility)
   height?: number;
   weight?: number;
   createdAt: string;

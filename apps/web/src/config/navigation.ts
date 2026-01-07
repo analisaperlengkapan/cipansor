@@ -46,6 +46,7 @@ import {
   ClipboardPenLine,
   FolderOpen,
   FileBarChart,
+  Activity,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -133,6 +134,11 @@ const teacherNavigation: NavGroup[] = [
         title: 'Absensi',
         href: '/attendance',
         icon: ClipboardCheck,
+      },
+      {
+        title: 'Mutabaah Yaumiyah',
+        href: '/daily-report',
+        icon: Activity,
       },
       {
         title: 'Portfolio Siswa',
@@ -396,6 +402,11 @@ const parentNavigation: NavGroup[] = [
         href: '/parent/permits',
         icon: FileText,
       },
+      {
+        title: 'Laporan Harian',
+        href: '/parent/daily-report',
+        icon: Activity,
+      },
     ],
   },
   {
@@ -647,6 +658,12 @@ const adminNavigation: NavGroup[] = [
         title: 'Raport Merdeka',
         href: '/assessment/raport-merdeka',
         icon: FileSpreadsheet,
+      },
+      {
+        title: 'Mutabaah Yaumiyah',
+        href: '/daily-report',
+        icon: Activity,
+        roleCodes: ['TKQ_ADMIN', 'SDIT_ADMIN', 'TKQ_KEPALA_SEKOLAH', 'SDIT_KEPALA_SEKOLAH'],
       },
       {
         title: 'Attendance',

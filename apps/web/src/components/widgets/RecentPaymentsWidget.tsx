@@ -45,6 +45,7 @@ export function RecentPaymentsWidget({ maxItems = 10 }: RecentPaymentsWidgetProp
     // Let's try to lazy init in useState if possible, but we can't because of time calculation (Date.now()) being impure.
     // So useEffect is the correct place for client-side only data to avoid hydration mismatch.
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         setPayments([
             {
                 invoiceId: '1',

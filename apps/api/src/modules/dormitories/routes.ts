@@ -13,7 +13,90 @@ const router = Router();
 
 router.use(authenticate);
 
-// ==================== DORMITORIES ====================
+// ==================== SPECIFIC ROUTES (Must be before dynamic /:id) ====================
+
+/**
+ * @swagger
+ * /api/dormitories/my-students:
+ *   get:
+ *     summary: Get students assigned to current Musyrif
+ *     tags: [Dormitories]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of students
+ */
+router.get("/my-students", authenticate, controller.getStudentsByMusyrif);
+
+/**
+ * @swagger
+ * /api/dormitories/rooms/list:
+ *   get:
+ *     summary: List rooms
+ *     tags: [Dormitories]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: dormitoryId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [AVAILABLE, FULL, MAINTENANCE]
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: List of rooms
+ */
+router.get("/rooms/list", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), validateQuery(queryRoomSchema), controller.getRooms);
+
+/**
+ * @swagger
+ * /api/dormitories/assignments/list:
+ *   get:
+ *     summary: List room assignments
+ *     tags: [Dormitories]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: roomId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: studentId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: isActive
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: List of room assignments
+ */
+router.get("/assignments/list", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), validateQuery(queryRoomAssignmentSchema), controller.getRoomAssignments);
+
+// ==================== DORMITORIES (General) ====================
 
 /**
  * @swagger
@@ -169,38 +252,6 @@ router.delete("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), cont
 
 /**
  * @swagger
- * /api/dormitories/rooms/list:
- *   get:
- *     summary: List rooms
- *     tags: [Dormitories]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: dormitoryId
- *         schema:
- *           type: string
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *           enum: [AVAILABLE, FULL, MAINTENANCE]
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: List of rooms
- */
-router.get("/rooms/list", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), validateQuery(queryRoomSchema), controller.getRooms);
-
-/**
- * @swagger
  * /api/dormitories/rooms:
  *   post:
  *     summary: Create room
@@ -313,41 +364,6 @@ router.put("/rooms/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), c
 router.delete("/rooms/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteRoom);
 
 // ==================== ROOM ASSIGNMENTS ====================
-
-/**
- * @swagger
- * /api/dormitories/assignments/list:
- *   get:
- *     summary: List room assignments
- *     tags: [Dormitories]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: roomId
- *         schema:
- *           type: string
- *       - in: query
- *         name: studentId
- *         schema:
- *           type: string
- *       - in: query
- *         name: isActive
- *         schema:
- *           type: boolean
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: List of room assignments
- */
-router.get("/assignments/list", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), validateQuery(queryRoomAssignmentSchema), controller.getRoomAssignments);
 
 /**
  * @swagger

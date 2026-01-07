@@ -1,339 +1,322 @@
 'use client';
 
 import { useState } from 'react';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRouter } from 'next/navigation';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Save, AlertCircle, Settings } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { 
-  Settings, 
-  Save,
-  RotateCcw,
-  BookOpen,
-  Star,
-  MessageSquare,
-  Users,
-  Award,
-  Heart,
-  AlertCircle,
-  CheckCircle2,
-  Info,
-} from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { LoadingSpinner } from '@/components/shared';
+import { api } from '@/lib/api';
+import { useAuthStore } from '@/stores/auth';
+import { MainLayout } from '@/components/layout/main-layout';
 
-// Rapor Pesantren component weights configuration
-interface WeightConfig {
-  id: string;
-  name: string;
-  nameAr: string;
-  icon: React.ReactNode;
-  weight: number;
-  minWeight: number;
-  maxWeight: number;
-  description: string;
-  subComponents?: { id: string; name: string; weight: number }[];
+interface RaporConfig {
+  unitId: string;
+  componentWeights: {
+    tahfidz: number;
+    ibadah: number;
+    muhadhoroh: number;
+    muhadatsah: number;
+    kitabProgress: number;
+    akhlak: number;
+  };
+  gradeThresholds: {
+    mumtaz: number;
+    jayyidJiddan: number;
+    jayyid: number;
+    maqbul: number;
+  };
+  includeAttendance: boolean;
+  includeViolations: boolean;
+  includeRewards: boolean;
 }
 
-const DEFAULT_WEIGHTS: WeightConfig[] = [
-  {
-    id: 'tahfidz',
-    name: 'Tahfidz Al-Quran',
-    nameAr: 'تحفيظ القرآن',
-    icon: <BookOpen className="h-5 w-5 text-green-600" />,
-    weight: 25,
-    minWeight: 10,
-    maxWeight: 40,
-    description: 'Hafalan Al-Quran meliputi simaan, murojaah, dan setoran harian',
-    subComponents: [
-      { id: 'simaan', name: 'Simaan', weight: 40 },
-      { id: 'murojaah', name: 'Murojaah', weight: 30 },
-      { id: 'setoran', name: 'Setoran Harian', weight: 30 },
-    ],
-  },
-  {
-    id: 'ibadah',
-    name: 'Ibadah',
-    nameAr: 'العبادة',
-    icon: <Star className="h-5 w-5 text-amber-600" />,
-    weight: 20,
-    minWeight: 10,
-    maxWeight: 30,
-    description: 'Sholat 5 waktu, sholat sunnah, tilawah, dan dzikir',
-    subComponents: [
-      { id: 'sholatWajib', name: 'Sholat Wajib', weight: 50 },
-      { id: 'sholatSunnah', name: 'Sholat Sunnah', weight: 25 },
-      { id: 'tilawahDzikir', name: 'Tilawah & Dzikir', weight: 25 },
-    ],
-  },
-  {
-    id: 'muhadhoroh',
-    name: 'Muhadhoroh',
-    nameAr: 'المحاضرة',
-    icon: <MessageSquare className="h-5 w-5 text-blue-600" />,
-    weight: 15,
-    minWeight: 5,
-    maxWeight: 25,
-    description: 'Kemampuan public speaking dan ceramah',
-  },
-  {
-    id: 'muhadatsah',
-    name: 'Muhadatsah',
-    nameAr: 'المحادثة',
-    icon: <Users className="h-5 w-5 text-purple-600" />,
-    weight: 15,
-    minWeight: 5,
-    maxWeight: 25,
-    description: 'Kemampuan percakapan bahasa Arab',
-  },
-  {
-    id: 'kitabProgress',
-    name: 'Kajian Kitab Kuning',
-    nameAr: 'دراسة الكتب',
-    icon: <Award className="h-5 w-5 text-indigo-600" />,
-    weight: 15,
-    minWeight: 5,
-    maxWeight: 25,
-    description: 'Kemajuan pembelajaran kitab klasik',
-  },
-  {
-    id: 'akhlak',
-    name: 'Akhlak & Perilaku',
-    nameAr: 'الأخلاق',
-    icon: <Heart className="h-5 w-5 text-rose-600" />,
-    weight: 10,
-    minWeight: 5,
-    maxWeight: 20,
-    description: 'Adab, pelanggaran, dan penghargaan',
-  },
-];
+export default function RaporConfigPage() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const unitId = user?.unitId;
 
-const GRADE_THRESHOLDS = [
-  { grade: 'Mumtaz (A)', min: 90, color: 'bg-green-500' },
-  { grade: 'Jayyid Jiddan (B)', min: 80, color: 'bg-blue-500' },
-  { grade: 'Jayyid (C)', min: 70, color: 'bg-yellow-500' },
-  { grade: 'Maqbul (D)', min: 60, color: 'bg-orange-500' },
-  { grade: 'Rasib (E)', min: 0, color: 'bg-red-500' },
-];
+  const [formData, setFormData] = useState<RaporConfig | null>(null);
 
-export default function RaporPesantrenConfigPage() {
-  const [weights, setWeights] = useState<WeightConfig[]>(DEFAULT_WEIGHTS);
-  const [showArabic, setShowArabic] = useState(true);
-  const [usePassingGrade, setUsePassingGrade] = useState(true);
-  const [passingGrade, setPassingGrade] = useState(60);
-  const [hasChanges, setHasChanges] = useState(false);
+  const { isLoading } = useQuery({
+    queryKey: ['rapor-pesantren', 'config', unitId],
+    queryFn: async () => {
+      if (!unitId) return null;
+      const res = await api.get(`/rapor-pesantren/config/${unitId}`);
+      return res.data.data as RaporConfig;
+    },
+    enabled: !!unitId,
+    onSuccess: (data) => {
+      if (data) setFormData(data);
+    },
+  });
 
-  const totalWeight = weights.reduce((sum, w) => sum + w.weight, 0);
-  const isValid = totalWeight === 100;
+  const mutation = useMutation({
+    mutationFn: async (data: RaporConfig) => {
+      const res = await api.put('/rapor-pesantren/config', data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rapor-pesantren', 'config'] });
+      toast.success('Konfigurasi rapor berhasil disimpan');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Terjadi kesalahan saat menyimpan konfigurasi');
+    },
+  });
 
-  const handleWeightChange = (id: string, newWeight: number) => {
-    setWeights((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, weight: newWeight } : w))
+  if (!unitId) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <p className="text-muted-foreground">Unit ID tidak ditemukan pada profil user.</p>
+      </div>
     );
-    setHasChanges(true);
+  }
+
+  if (isLoading || !formData) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  const handleWeightChange = (key: keyof RaporConfig['componentWeights'], value: string) => {
+    const numValue = parseInt(value) || 0;
+    setFormData(prev => prev ? ({
+      ...prev,
+      componentWeights: {
+        ...prev.componentWeights,
+        [key]: numValue,
+      }
+    }) : null);
   };
 
-  const handleReset = () => {
-    setWeights(DEFAULT_WEIGHTS);
-    setHasChanges(false);
-    toast.info('Bobot dikembalikan ke default');
+  const handleThresholdChange = (key: keyof RaporConfig['gradeThresholds'], value: string) => {
+    const numValue = parseInt(value) || 0;
+    setFormData(prev => prev ? ({
+      ...prev,
+      gradeThresholds: {
+        ...prev.gradeThresholds,
+        [key]: numValue,
+      }
+    }) : null);
   };
 
-  const handleSave = () => {
-    if (!isValid) {
-      toast.error('Total bobot harus 100%');
-      return;
-    }
-    // API call would go here
-    toast.success('Konfigurasi berhasil disimpan');
-    setHasChanges(false);
-  };
+  const totalWeight = Object.values(formData.componentWeights).reduce((a, b) => a + b, 0);
 
   return (
     <MainLayout allowedRoles={['SUPER_ADMIN', 'UNIT_ADMIN']}>
-      <div className="space-y-6">
-        <PageHeader
-          title="Konfigurasi Rapor Pesantren"
-          description="Atur bobot penilaian untuk setiap komponen rapor"
-          actions={
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleReset} disabled={!hasChanges}>
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Reset
-              </Button>
-              <Button onClick={handleSave} disabled={!isValid || !hasChanges}>
-                <Save className="mr-2 h-4 w-4" />
-                Simpan
-              </Button>
-            </div>
-          }
-        />
-
-        {/* Total Weight Indicator */}
-        <Card className={cn(
-          'transition-colors',
-          isValid ? 'border-green-300 bg-green-50/50' : 'border-red-300 bg-red-50/50'
-        )}>
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {isValid ? (
-                  <CheckCircle2 className="h-6 w-6 text-green-600" />
-                ) : (
-                  <AlertCircle className="h-6 w-6 text-red-600" />
-                )}
-                <div>
-                  <p className="font-medium">
-                    Total Bobot: <span className={isValid ? 'text-green-600' : 'text-red-600'}>{totalWeight}%</span>
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {isValid ? 'Konfigurasi valid' : `Selisih ${Math.abs(100 - totalWeight)}% dari 100%`}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Label>Tampilkan Arab</Label>
-                  <Switch checked={showArabic} onCheckedChange={setShowArabic} />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Weight Configuration */}
-        <div className="grid gap-4">
-          {weights.map((component) => (
-            <Card key={component.id}>
-              <CardContent className="pt-6">
-                <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                  <div className="flex items-center gap-3 min-w-[200px]">
-                    <div className="p-2 bg-muted rounded-lg">
-                      {component.icon}
-                    </div>
-                    <div>
-                      <p className="font-medium">{component.name}</p>
-                      {showArabic && (
-                        <p className="text-sm text-muted-foreground font-arabic">
-                          {component.nameAr}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex-1 space-y-2">
-                    <Slider
-                      value={[component.weight]}
-                      min={component.minWeight}
-                      max={component.maxWeight}
-                      step={1}
-                      onValueChange={([value]) => handleWeightChange(component.id, value)}
-                      className="flex-1"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {component.description}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <Badge variant="outline" className="text-lg px-3 py-1 min-w-[60px] justify-center">
-                      {component.weight}%
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* Sub-components */}
-                {component.subComponents && (
-                  <div className="mt-4 ml-12 grid gap-2 md:grid-cols-3">
-                    {component.subComponents.map((sub) => (
-                      <div key={sub.id} className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                        <span className="text-sm">{sub.name}</span>
-                        <Badge variant="secondary">{sub.weight}%</Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Settings className="w-6 h-6" />
+              Konfigurasi Rapor Pesantren
+            </h1>
+            <p className="text-muted-foreground">
+              Pengaturan bobot nilai dan standar kelulusan
+            </p>
+          </div>
+          <Button
+            onClick={() => mutation.mutate(formData)}
+            disabled={mutation.isPending || totalWeight !== 100}
+          >
+            {mutation.isPending ? <LoadingSpinner size="sm" className="mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+            Simpan Perubahan
+          </Button>
         </div>
 
-        {/* Grade Thresholds */}
+        <div className="grid md:grid-cols-2 gap-6">
+        {/* Bobot Penilaian */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Konfigurasi Predikat
-            </CardTitle>
+            <CardTitle>Bobot Penilaian (%)</CardTitle>
+            <CardDescription>
+              Total bobot harus 100%. Saat ini: <span className={totalWeight === 100 ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{totalWeight}%</span>
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4 mb-6">
-              <Switch
-                checked={usePassingGrade}
-                onCheckedChange={setUsePassingGrade}
-              />
-              <Label>Gunakan Passing Grade</Label>
-              {usePassingGrade && (
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    value={passingGrade}
-                    onChange={(e) => setPassingGrade(Number(e.target.value))}
-                    className="w-20"
-                  />
-                  <span className="text-sm text-muted-foreground">Nilai minimum lulus</span>
-                </div>
-              )}
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-5">
-              {GRADE_THRESHOLDS.map((threshold) => (
-                <div
-                  key={threshold.grade}
-                  className={cn(
-                    'p-4 rounded-lg text-center',
-                    threshold.color,
-                    'text-white'
-                  )}
-                >
-                  <p className="font-bold text-lg">{threshold.grade}</p>
-                  <p className="text-sm opacity-90">
-                    ≥ {threshold.min}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Info */}
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="py-4">
-            <div className="flex items-start gap-3">
-              <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-              <div className="text-sm text-blue-800">
-                <p className="font-medium mb-1">Catatan:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Perubahan konfigurasi akan berlaku untuk rapor yang baru dibuat</li>
-                  <li>Rapor yang sudah terbit tidak akan terpengaruh</li>
-                  <li>Sub-komponen memiliki bobot relatif terhadap komponen induk</li>
-                </ul>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Tahfidz (Hafalan & Murajaah)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={formData.componentWeights.tahfidz}
+                  onChange={(e) => handleWeightChange('tahfidz', e.target.value)}
+                />
+                <span className="text-muted-foreground w-8">%</span>
               </div>
             </div>
+
+            <div className="space-y-2">
+              <Label>Ibadah Harian</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={formData.componentWeights.ibadah}
+                  onChange={(e) => handleWeightChange('ibadah', e.target.value)}
+                />
+                <span className="text-muted-foreground w-8">%</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Muhadhoroh (Pidato)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={formData.componentWeights.muhadhoroh}
+                  onChange={(e) => handleWeightChange('muhadhoroh', e.target.value)}
+                />
+                <span className="text-muted-foreground w-8">%</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Muhadatsah (Bahasa)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={formData.componentWeights.muhadatsah}
+                  onChange={(e) => handleWeightChange('muhadatsah', e.target.value)}
+                />
+                <span className="text-muted-foreground w-8">%</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Kitab Kuning</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={formData.componentWeights.kitabProgress}
+                  onChange={(e) => handleWeightChange('kitabProgress', e.target.value)}
+                />
+                <span className="text-muted-foreground w-8">%</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Akhlak & Kedisiplinan</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={formData.componentWeights.akhlak}
+                  onChange={(e) => handleWeightChange('akhlak', e.target.value)}
+                />
+                <span className="text-muted-foreground w-8">%</span>
+              </div>
+            </div>
+
+            {totalWeight !== 100 && (
+              <div className="flex items-center gap-2 text-red-600 text-sm mt-4 p-2 bg-red-50 rounded">
+                <AlertCircle className="w-4 h-4" />
+                Total bobot harus 100%
+              </div>
+            )}
           </CardContent>
         </Card>
+
+        <div className="space-y-6">
+          {/* Batas Nilai / Predikat */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Standar Penilaian</CardTitle>
+              <CardDescription>Batas bawah nilai untuk setiap predikat</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-green-600">Mumtaz (Istimewa)</Label>
+                  <Input
+                    type="number"
+                    value={formData.gradeThresholds.mumtaz}
+                    onChange={(e) => handleThresholdChange('mumtaz', e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">Minimal nilai untuk Mumtaz</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-blue-600">Jayyid Jiddan (Sangat Baik)</Label>
+                  <Input
+                    type="number"
+                    value={formData.gradeThresholds.jayyidJiddan}
+                    onChange={(e) => handleThresholdChange('jayyidJiddan', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-yellow-600">Jayyid (Baik)</Label>
+                  <Input
+                    type="number"
+                    value={formData.gradeThresholds.jayyid}
+                    onChange={(e) => handleThresholdChange('jayyid', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-orange-600">Maqbul (Cukup)</Label>
+                  <Input
+                    type="number"
+                    value={formData.gradeThresholds.maqbul}
+                    onChange={(e) => handleThresholdChange('maqbul', e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">Di bawah ini dianggap Rasib (Kurang)</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Opsi Tambahan */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Opsi Laporan</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Tampilkan Kehadiran</Label>
+                  <p className="text-sm text-muted-foreground">Sertakan rekap kehadiran di rapor</p>
+                </div>
+                <Switch
+                  checked={formData.includeAttendance}
+                  onCheckedChange={(c) => setFormData(prev => prev ? ({ ...prev, includeAttendance: c }) : null)}
+                />
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Hitung Pelanggaran</Label>
+                  <p className="text-sm text-muted-foreground">Poin pelanggaran mengurangi nilai Akhlak</p>
+                </div>
+                <Switch
+                  checked={formData.includeViolations}
+                  onCheckedChange={(c) => setFormData(prev => prev ? ({ ...prev, includeViolations: c }) : null)}
+                />
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Hitung Penghargaan</Label>
+                  <p className="text-sm text-muted-foreground">Poin penghargaan menambah nilai Akhlak</p>
+                </div>
+                <Switch
+                  checked={formData.includeRewards}
+                  onCheckedChange={(c) => setFormData(prev => prev ? ({ ...prev, includeRewards: c }) : null)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+          </div>
+        </div>
       </div>
     </MainLayout>
   );

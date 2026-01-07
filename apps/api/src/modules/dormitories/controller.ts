@@ -31,6 +31,27 @@ export async function createDormitory(req: Request, res: Response, next: NextFun
   }
 }
 
+export async function getStudentsByMusyrif(req: Request, res: Response, next: NextFunction) {
+  try {
+    // Current user is guaranteed by authenticate middleware
+    // req.user is populated, but we can also use req.user.id if available on the type
+    // In this codebase, usually it's attached to req.user
+    // But since I don't see the type def, I'll cast it safely
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      throw Errors.unauthorized("User not authenticated");
+    }
+
+    const students = await dormitoryService.getStudentsByMusyrif(userId);
+    res.json({
+      success: true,
+      data: students,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getDormitories(req: Request, res: Response, next: NextFunction) {
   try {
     const query = queryDormitorySchema.parse(res.locals.validatedQuery || req.query);

@@ -49,7 +49,7 @@ const STATUS_CONFIG = {
 
 interface LiveAttendanceWidgetProps {
     maxItems?: number;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
     onNewEvent?: (event: AttendanceEvent) => void;
 }
 
@@ -93,6 +93,7 @@ export function LiveAttendanceWidget({
 
         // This sets state in effect which is flagged by lint, but it's empty dependency array so only runs once on mount.
         // To satisfy lint we can ignore it or restructure. Restructuring to ignore for now as it's a valid use case for client-side data fetch/init.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         setEvents(initialEvents);
 
         // Simulate real-time updates with polling
@@ -123,7 +124,7 @@ export function LiveAttendanceWidget({
             mounted = false;
             clearInterval(interval);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
     }, []);
 
     const getInitials = (name: string) => {

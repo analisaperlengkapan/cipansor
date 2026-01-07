@@ -21,6 +21,52 @@ const router = Router();
  *   description: Integrated Pesantren Report Card Management
  */
 
+// ==========================================
+// STATIC ROUTES (Must be before dynamic /:id)
+// ==========================================
+
+/**
+ * @swagger
+ * /api/rapor-pesantren/config/{unitId}:
+ *   get:
+ *     summary: Get rapor configuration for a unit
+ *     tags: [RaporPesantren]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/config/:unitId', authenticate, async (req, res, next) => {
+  try {
+    const config = await service.getRaporConfig(req.params.unitId);
+    res.json(ApiResponse.success(config));
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/rapor-pesantren/config:
+ *   put:
+ *     summary: Update rapor configuration
+ *     tags: [RaporPesantren]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.put(
+  '/config',
+  authenticate,
+  authorize('SUPER_ADMIN', 'UNIT_ADMIN'),
+  validate(raporConfigSchema),
+  async (req, res, next) => {
+    try {
+      const config = await service.saveRaporConfig(req.body);
+      res.json(ApiResponse.success(config, 'Configuration saved successfully'));
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 /**
  * @swagger
  * /api/rapor-pesantren/generate:
@@ -111,6 +157,10 @@ router.get('/', authenticate, async (req, res, next) => {
   }
 });
 
+// ==========================================
+// DYNAMIC ROUTES (Must be after static routes)
+// ==========================================
+
 /**
  * @swagger
  * /api/rapor-pesantren/{id}:
@@ -172,48 +222,6 @@ router.delete(
     try {
       await service.deleteRaporPesantren(req.params.id);
       res.json(ApiResponse.success(null, 'Rapor deleted successfully'));
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-/**
- * @swagger
- * /api/rapor-pesantren/config/{unitId}:
- *   get:
- *     summary: Get rapor configuration for a unit
- *     tags: [RaporPesantren]
- *     security:
- *       - bearerAuth: []
- */
-router.get('/config/:unitId', authenticate, async (req, res, next) => {
-  try {
-    const config = await service.getRaporConfig(req.params.unitId);
-    res.json(ApiResponse.success(config));
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * @swagger
- * /api/rapor-pesantren/config:
- *   put:
- *     summary: Update rapor configuration
- *     tags: [RaporPesantren]
- *     security:
- *       - bearerAuth: []
- */
-router.put(
-  '/config',
-  authenticate,
-  authorize('SUPER_ADMIN', 'UNIT_ADMIN'),
-  validate(raporConfigSchema),
-  async (req, res, next) => {
-    try {
-      const config = await service.saveRaporConfig(req.body);
-      res.json(ApiResponse.success(config, 'Configuration saved successfully'));
     } catch (error) {
       next(error);
     }

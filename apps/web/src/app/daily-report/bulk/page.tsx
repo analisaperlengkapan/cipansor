@@ -9,10 +9,10 @@ import {
   Loader2,
   Save,
   Calendar as CalendarIcon,
-  CheckCircle2,
   AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
+import api from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -32,7 +32,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -59,7 +58,7 @@ export default function BulkDailyReportPage() {
   const [reports, setReports] = useState<Record<string, StudentReportState>>({});
 
   // Fetch classes for selection
-  const { data: classesData, isLoading: isLoadingClasses } = useClasses({
+  const { data: classesData } = useClasses({
     unitId: user?.unitId,
   });
 
@@ -68,10 +67,8 @@ export default function BulkDailyReportPage() {
     queryKey: ["class-enrollments", classId],
     queryFn: async () => {
       if (!classId) return null;
-      const res = await fetch(`/api/classes/${classId}/enrollments`);
-      if (!res.ok) throw new Error("Failed to fetch students");
-      const json = await res.json();
-      return json.data; // Assuming response structure { data: Enrollment[] }
+      const res = await api.get(`/classes/${classId}/enrollments`);
+      return res.data.data;
     },
     enabled: !!classId,
   });
@@ -95,16 +92,8 @@ export default function BulkDailyReportPage() {
   // Mutation for bulk create
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await fetch("/api/daily-report/bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Failed to submit reports");
-      }
-      return res.json();
+      const res = await api.post("/daily-report/bulk", data);
+      return res.data;
     },
     onSuccess: (data) => {
       toast.success(`Berhasil menyimpan ${data.data.created} laporan.`);
@@ -114,7 +103,7 @@ export default function BulkDailyReportPage() {
       router.push("/daily-report"); // Redirect to list
     },
     onError: (error: any) => {
-      toast.error(error.message);
+      toast.error(error.response?.data?.message || error.message);
     },
   });
 
@@ -143,7 +132,7 @@ export default function BulkDailyReportPage() {
         napDurationMinutes: r.napDurationMinutes,
         parentNotes: r.notes, // Mapping notes to teacher/parent notes field
         // Defaults for required fields not in bulk view
-        healthNotes: "Sehat",
+        healthNotes: r.morningMood === 'SICK' ? 'Sakit' : 'Sehat',
         breakfastConsumption: "FULL",
         activitiesSummary: "Mengikuti kegiatan dengan baik",
         ibadahNotes: "-",

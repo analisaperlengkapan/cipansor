@@ -148,12 +148,52 @@ export class StudentService {
           orderBy: { recordedAt: 'desc' },
           take: 10,
         },
+        wallet: true,
+        roomAssignments: {
+          where: { isActive: true },
+          include: {
+            room: {
+              include: {
+                dormitory: true,
+              },
+            },
+          },
+          take: 1,
+        },
+        // We fetch a preview list, but calculate totals separately
+        violations: {
+          take: 5,
+          orderBy: { occurredAt: 'desc' },
+        },
+        medicalRecords: {
+          take: 5,
+          orderBy: { visitDate: 'desc' },
+        },
+        invoices: {
+          where: { status: { not: 'PAID' } },
+          include: {
+            paymentType: true,
+          },
+          take: 5,
+        }
       },
     });
 
     if (!student) {
       throw Errors.notFound('Student');
     }
+
+    // Parallel aggregation queries for accurate totals
+    const [violationStats, invoiceStats] = await Promise.all([
+      prisma.violation.aggregate({
+        where: { studentId: id },
+        _sum: { points: true },
+      }),
+      prisma.invoice.findMany({
+        where: { studentId: id, status: { not: 'PAID' } },
+        select: { amount: true, paidAmount: true }
+      }),
+    ]);
 
     // Find active enrollment for current class
     const currentEnrollment = student.enrollments.find(e => e.status === 'active');
@@ -167,9 +207,30 @@ export class StudentService {
         }
       : null;
 
+    // Calculate summaries from aggregation results
+    const totalViolationPoints = violationStats._sum.points || 0;
+    const unpaidInvoicesCount = invoiceStats.length;
+    const unpaidInvoicesTotal = invoiceStats.reduce((sum, inv) => sum + Number(inv.amount) - Number(inv.paidAmount), 0);
+
+    // Boarding info
+    const boarding = student.roomAssignments[0] ? {
+      dormitoryName: student.roomAssignments[0].room.dormitory.name,
+      roomName: student.roomAssignments[0].room.name,
+      assignedAt: student.roomAssignments[0].assignedAt,
+    } : null;
+
     return {
       ...student,
       currentClass,
+      summary: {
+        walletBalance: student.wallet ? Number(student.wallet.balance) : 0,
+        violationPoints: totalViolationPoints,
+        boarding,
+        unpaidInvoices: {
+          count: unpaidInvoicesCount,
+          total: unpaidInvoicesTotal,
+        }
+      }
     };
   }
 

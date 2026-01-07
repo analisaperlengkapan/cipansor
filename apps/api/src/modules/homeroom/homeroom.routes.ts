@@ -23,7 +23,14 @@ router.get(
 // CLASS ROUTES
 // ======================
 
-// GET /homeroom/class/:classId/dashboard - Get class dashboard
+// GET /homeroom/:classId/dashboard - Get class dashboard (Simplified route for frontend)
+router.get(
+  '/:classId/dashboard',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  homeroomController.getClassDashboard.bind(homeroomController)
+);
+
+// GET /homeroom/class/:classId/dashboard - Get class dashboard (Legacy/Alternative)
 router.get(
   '/class/:classId/dashboard',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),

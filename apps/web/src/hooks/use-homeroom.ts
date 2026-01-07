@@ -4,7 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { ApiResponse } from '@/lib/api';
 import { AttendanceStatus } from '@cipansor/shared';
 
-// Types
+// ======================
+// TYPES
+// ======================
+
 export interface HomeroomClass {
   id: string;
   name: string;
@@ -13,6 +16,8 @@ export interface HomeroomClass {
     id: string;
     year: string;
     semester: number;
+    name?: string;
+    isActive?: boolean;
   };
   unit: {
     id: string;
@@ -28,6 +33,7 @@ export interface HomeroomClass {
   };
   students: HomeroomStudent[];
   studentCount: number;
+  _count?: { enrollments: number };
 }
 
 export interface HomeroomStudent {
@@ -47,6 +53,7 @@ export interface HomeroomStudent {
   attendanceSummary?: HomeroomAttendanceSummary;
   academicSummary?: AcademicSummary;
   behaviorNotes?: BehaviorNote[];
+  user?: { name: string }; // Added for dashboard compatibility
 }
 
 export interface HomeroomAttendanceSummary {
@@ -122,7 +129,76 @@ export interface QuickAttendance {
   notes?: string;
 }
 
-// Get homeroom class
+// New Dashboard Types
+export interface UpcomingBirthday {
+  student: {
+    id: string;
+    name: string;
+    nis: string;
+  };
+  date: string;
+  daysUntil: number;
+}
+
+export interface RecentAchievement {
+  id: string;
+  type: 'REWARD' | 'TAHFIDZ';
+  student: {
+    id: string;
+    user: { name: string };
+  };
+  category: string;
+  description: string;
+  date: string;
+  points?: number;
+}
+
+export interface RecentViolation {
+  id: string;
+  student: {
+    id: string;
+    user: { name: string };
+  };
+  category: string;
+  description: string;
+  occurredAt: string;
+  points: number;
+  action?: string;
+}
+
+export interface DashboardSummary {
+  averageAttendance: number;
+  averageAcademicScore: number;
+  pendingBehaviorNotes: number;
+  recentViolations: RecentViolation[];
+  recentAchievements: RecentAchievement[];
+  upcomingBirthdays: UpcomingBirthday[];
+}
+
+export interface HomeroomDashboardData {
+  class: {
+    id: string;
+    name: string;
+    unit: { id: string; name: string };
+    academicYear: { id: string; name: string; isActive: boolean; year?: string; semester?: number };
+    homeroomTeacher: {
+      user: { name: string; email: string };
+    };
+  };
+  studentCount: number;
+  students: HomeroomStudent[];
+  attendanceSummary: {
+    status: string;
+    count: number;
+  }[];
+  dashboardSummary: DashboardSummary;
+}
+
+// ======================
+// HOOKS
+// ======================
+
+// Get homeroom class (Single)
 export function useHomeroomClass(classId?: string) {
   return useQuery<HomeroomClass>({
     queryKey: ['homeroom', 'class', classId],
@@ -134,7 +210,31 @@ export function useHomeroomClass(classId?: string) {
   });
 }
 
-// Get my homeroom class (for wali kelas)
+// Get all my homeroom classes (List)
+export function useHomeroomClasses() {
+  return useQuery({
+    queryKey: ['homeroom', 'my-classes'],
+    queryFn: async () => {
+      const { data } = await api.get<ApiResponse<HomeroomClass[]>>('/homeroom/my-classes');
+      return data.data;
+    },
+  });
+}
+
+// Get Dashboard Data
+export function useHomeroomDashboard(classId: string | undefined) {
+  return useQuery({
+    queryKey: ['homeroom', 'dashboard', classId],
+    queryFn: async () => {
+      if (!classId) throw new Error('Class ID is required');
+      const { data } = await api.get<ApiResponse<HomeroomDashboardData>>(`/homeroom/${classId}/dashboard`);
+      return data.data;
+    },
+    enabled: !!classId,
+  });
+}
+
+// Get my homeroom class (Legacy/Single Default)
 export function useMyHomeroomClass() {
   return useQuery<HomeroomClass>({
     queryKey: ['homeroom', 'my-class'],

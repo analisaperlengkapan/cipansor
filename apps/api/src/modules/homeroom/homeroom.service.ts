@@ -83,7 +83,9 @@ export class HomeroomService {
       throw Errors.notFound('Class not found');
     }
 
-    // Get attendance summary for current month
+    const studentIds = classData.enrollments.map((e) => e.studentId);
+
+    // 1. Attendance Summary (Current Month)
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -97,6 +99,133 @@ export class HomeroomService {
       _count: { status: true },
     });
 
+    const totalAttendance = attendanceSummary.reduce((acc, curr) => acc + curr._count.status, 0);
+    const presentCount = attendanceSummary.find((s) => s.status === 'PRESENT')?._count.status || 0;
+    const averageAttendance = totalAttendance > 0 ? Number(((presentCount / totalAttendance) * 100).toFixed(1)) : 0;
+
+    // 2. Academic Score Average (Current Academic Year)
+    const grades = await prisma.grade.findMany({
+      where: {
+        studentId: { in: studentIds },
+        academicYearId: classData.academicYearId,
+      },
+      select: { score: true },
+    });
+
+    const totalScore = grades.reduce((acc, curr) => acc + Number(curr.score), 0);
+    const averageAcademicScore = grades.length > 0 ? Number((totalScore / grades.length).toFixed(1)) : 0;
+
+    // 3. Recent Violations & Pending Notes
+    const recentViolations = await prisma.violation.findMany({
+      where: { studentId: { in: studentIds } },
+      include: {
+        student: { include: { user: { select: { name: true } } } },
+      },
+      orderBy: { occurredAt: 'desc' },
+      take: 5,
+    });
+
+    const pendingBehaviorNotes = await prisma.violation.count({
+      where: {
+        studentId: { in: studentIds },
+        OR: [
+          { action: null },
+          { action: '' }
+        ]
+      }
+    });
+
+    // 4. Recent Achievements (Rewards + Tahfidz Assessment)
+    const recentRewards = await prisma.reward.findMany({
+      where: { studentId: { in: studentIds } },
+      include: {
+        student: { include: { user: { select: { name: true } } } },
+      },
+      orderBy: { givenAt: 'desc' },
+      take: 5,
+    });
+
+    const recentTahfidz = await prisma.tahfidzRecord.findMany({
+      where: {
+        studentId: { in: studentIds },
+        activityType: 'ASSESSMENT', // Only milestones
+      },
+      include: {
+        student: { include: { user: { select: { name: true } } } },
+      },
+      orderBy: { recordedAt: 'desc' },
+      take: 5,
+    });
+
+    // Combine and sort achievements
+    const recentAchievements = [
+      ...recentRewards.map(r => ({
+        id: r.id,
+        type: 'REWARD',
+        student: r.student,
+        category: r.category,
+        description: r.description,
+        date: r.givenAt,
+        points: r.points
+      })),
+      ...recentTahfidz.map(t => ({
+        id: t.id,
+        type: 'TAHFIDZ',
+        student: t.student,
+        category: 'Tahfidz',
+        description: `Hafalan Surat ${t.surahName} (Juz ${t.juz})`,
+        date: t.recordedAt,
+        points: t.score // Use score as points for display
+      }))
+    ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 5);
+
+    // 5. Upcoming Birthdays (Next 30 days)
+    // Fetch all students birthdates and filter in memory
+    const studentsWithBirthdays = await prisma.student.findMany({
+      where: {
+        id: { in: studentIds },
+        birthDate: { not: undefined } // Ensure birthDate exists
+      },
+      select: {
+        id: true,
+        nis: true,
+        birthDate: true,
+        user: { select: { name: true } }
+      }
+    });
+
+    const today = new Date();
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(today.getDate() + 30);
+
+    const upcomingBirthdays = studentsWithBirthdays
+      .map(student => {
+        const dob = new Date(student.birthDate);
+        // Set current year to check upcoming
+        const nextBirthday = new Date(today.getFullYear(), dob.getMonth(), dob.getDate());
+
+        // If birthday has passed this year, check next year (though usually we only care about 'soon')
+        // For simple "upcoming in next 30 days", we handle year wrap around
+        if (nextBirthday < today) {
+           nextBirthday.setFullYear(today.getFullYear() + 1);
+        }
+
+        const diffTime = nextBirthday.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        return {
+          student: {
+            id: student.id,
+            name: student.user.name,
+            nis: student.nis
+          },
+          date: dob,
+          daysUntil: diffDays
+        };
+      })
+      .filter(item => item.daysUntil >= 0 && item.daysUntil <= 30)
+      .sort((a, b) => a.daysUntil - b.daysUntil);
+
     return {
       class: classData,
       studentCount: classData.enrollments.length,
@@ -105,6 +234,14 @@ export class HomeroomService {
         status: item.status,
         count: item._count.status,
       })),
+      dashboardSummary: {
+        averageAttendance,
+        averageAcademicScore,
+        pendingBehaviorNotes,
+        recentViolations,
+        recentAchievements,
+        upcomingBirthdays
+      }
     };
   }
 

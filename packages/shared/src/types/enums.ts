@@ -5,6 +5,7 @@ export enum UserRole {
   TEACHER = 'TEACHER',
   STUDENT = 'STUDENT',
   PARENT = 'PARENT',
+  STAFF = 'STAFF',
 }
 
 // Unit Types
@@ -28,6 +29,17 @@ export enum Gender {
 export enum Semester {
   ODD = 'ODD',
   EVEN = 'EVEN',
+}
+
+// Day of Week
+export enum DayOfWeek {
+  MONDAY = 'MONDAY',
+  TUESDAY = 'TUESDAY',
+  WEDNESDAY = 'WEDNESDAY',
+  THURSDAY = 'THURSDAY',
+  FRIDAY = 'FRIDAY',
+  SATURDAY = 'SATURDAY',
+  SUNDAY = 'SUNDAY',
 }
 
 // Attendance Status

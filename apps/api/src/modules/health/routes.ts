@@ -396,4 +396,69 @@ router.post("/usage", controller.createMedicationUsage);
  */
 router.get("/stats/:unitId", controller.getHealthStats);
 
+// ==================== GROWTH RECORDS ====================
+
+/**
+ * @swagger
+ * /api/health/growth:
+ *   post:
+ *     summary: Create growth record
+ *     tags: [Health]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - studentId
+ *               - unitId
+ *               - recordDate
+ *             properties:
+ *               studentId:
+ *                 type: string
+ *               unitId:
+ *                 type: string
+ *               recordDate:
+ *                 type: string
+ *                 format: date
+ *               weight:
+ *                 type: number
+ *               height:
+ *                 type: number
+ *               headCircumference:
+ *                 type: number
+ *               notes:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Growth record created
+ */
+router.post("/growth", controller.createGrowthRecord);
+
+/**
+ * @swagger
+ * /api/health/growth:
+ *   get:
+ *     summary: Get growth records
+ *     tags: [Health]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: studentId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: unitId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of growth records
+ */
+router.get("/growth", controller.getGrowthRecords);
+
 export default router;

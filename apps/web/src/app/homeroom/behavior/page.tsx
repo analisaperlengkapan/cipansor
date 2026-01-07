@@ -1,536 +1,23 @@
 'use client';
 
+import { useState } from 'react';
+import Link from 'next/link';
+import {
+  Plus,
+  ArrowLeft,
+  Search,
+  Filter,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Award,
+  Trash2,
+  Edit,
+  ChevronDown,
+  MessageCircle,
+  User
+} from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
-
-function BehaviorAnalytics({ notes }: { notes: BehaviorNote[] }) {
-  // 1. Violations by Category
-  const categoryData = notes
-    .filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.type))
-    .reduce((acc, curr) => {
-      const existing = acc.find(a => a.name === curr.category);
-      if (existing) { existing.value += 1; }
-      else { acc.push({ name: curr.category, value: 1 }); }
-      return acc;
-    }, [] as { name: string, value: number }[])
-    .sort((a, b) => b.value - a.value);
-
-  // 2. Top Violators
-  const studentNegativePoints = notes
-    .filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.type))
-    .reduce((acc, curr) => {
-       const existing = acc.find(a => a.name === curr.studentName);
-       if (existing) { existing.points += Math.abs(curr.points || 0); existing.count += 1; }
-       else { acc.push({ name: curr.studentName, points: Math.abs(curr.points || 0), count: 1 }); }
-       return acc;
-    }, [] as { name: string, points: number, count: number }[])
-    .sort((a, b) => b.points - a.points)
-    .slice(0, 5);
-
-  // 3. Positive vs Negative Trend (Simple count)
-  const pieData = [
-     { name: 'Positif', value: notes.filter(n => ['POSITIVE', 'ACHIEVEMENT'].includes(n.type)).length, color: '#22c55e' },
-     { name: 'Negatif', value: notes.filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.type)).length, color: '#ef4444' },
-  ];
-
-  return (
-    <div className="space-y-6">
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* CHART 1: PROBLEM AREAS */}
-          <Card>
-             <CardHeader>
-                <CardTitle>Problem Areas (Violations by Category)</CardTitle>
-                <CardDescription>Kategori pelanggaran terbanyak</CardDescription>
-             </CardHeader>
-             <CardContent className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                   <BarChart data={categoryData} layout="vertical" margin={{ left: 40 }}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                      <XAxis type="number" hide />
-                      <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} />
-                      <Tooltip />
-                      <Bar dataKey="value" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={20} />
-                   </BarChart>
-                </ResponsiveContainer>
-             </CardContent>
-          </Card>
-
-          {/* CHART 2: RATIO */}
-          <Card>
-             <CardHeader>
-                <CardTitle>Rasio Perilaku</CardTitle>
-                <CardDescription>Perbandingan catatan positif vs negatif</CardDescription>
-             </CardHeader>
-             <CardContent className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                   <PieChart>
-                      <Pie
-                         data={pieData}
-                         cx="50%"
-                         cy="50%"
-                         innerRadius={60}
-                         outerRadius={80}
-                         paddingAngle={5}
-                         dataKey="value"
-                      >
-                         {pieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                         ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend verticalAlign="bottom" height={36}/>
-                   </PieChart>
-                </ResponsiveContainer>
-             </CardContent>
-          </Card>
-       </div>
-
-       {/* TABLE: TOP VIOLATORS */}
-       <Card className="border-red-200 bg-red-50/10">
-          <CardHeader>
-             <CardTitle className="text-red-700 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                Perlu Perhatian Khusus (Top 5 Poin Negatif)
-             </CardTitle>
-          </CardHeader>
-          <CardContent>
-             <div className="space-y-4">
-                {studentNegativePoints.map((s, idx) => (
-                   <div key={idx} className="flex items-center justify-between border-b last:border-0 pb-2">
-                      <div className="flex items-center gap-3">
-                         <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center font-bold text-red-700">
-                            {idx + 1}
-                         </div>
-                         <span className="font-semibold">{s.name}</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                         <Badge variant="outline" className="bg-white">{s.count} Kasus</Badge>
-                         <span className="font-bold text-red-600">-{s.points} Poin</span>
-                      </div>
-                   </div>
-                ))}
-             </div>
-          </CardContent>
-       </Card>
-    </div>
-  )
-}
-
-export default function BehaviorNotesPage() {
-  const [notes, setNotes] = useState<BehaviorNote[]>(DEMO_NOTES);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<string>('all');
-  const [filterResolved, setFilterResolved] = useState<string>('all');
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('analytics'); // Default to Analytics for demo
-
-  // ... (Keep existing form logic) ...
-  const [newNote, setNewNote] = useState({
-    studentId: '',
-    type: 'POSITIVE' as NoteType,
-    category: '',
-    description: '',
-    points: '',
-    followUp: '',
-  });
-
-  const filteredNotes = notes.filter(note => {
-    const matchesSearch = 
-      note.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      note.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesType = filterType === 'all' || note.type === filterType;
-    const matchesResolved = 
-      filterResolved === 'all' || 
-      (filterResolved === 'resolved' && note.resolved) ||
-      (filterResolved === 'pending' && !note.resolved);
-
-    // Tab logic handled separately for 'analytics'
-    const matchesTab = 
-      activeTab === 'all' ||
-      activeTab === 'analytics' || 
-      (activeTab === 'positive' && ['POSITIVE', 'ACHIEVEMENT'].includes(note.type)) ||
-      (activeTab === 'negative' && ['NEGATIVE', 'VIOLATION'].includes(note.type)) ||
-      (activeTab === 'followup' && ['COUNSELING_NEEDED', 'PARENT_CONTACTED'].includes(note.type));
-
-    return matchesSearch && matchesType && matchesResolved && matchesTab;
-  });
-
-  const handleAddNote = () => {
-    if (!newNote.studentId || !newNote.category || !newNote.description) {
-      toast.error('Lengkapi data yang diperlukan');
-      return;
-    }
-
-    const student = STUDENTS.find(s => s.id === newNote.studentId);
-    if (!student) return;
-
-    const note: BehaviorNote = {
-      id: `bn${Date.now()}`,
-      studentId: newNote.studentId,
-      studentName: student.name,
-      studentNis: student.nis,
-      type: newNote.type,
-      category: newNote.category,
-      description: newNote.description,
-      date: new Date().toISOString().split('T')[0],
-      points: newNote.points ? parseInt(newNote.points) : undefined,
-      followUp: newNote.followUp || undefined,
-      resolved: ['POSITIVE', 'ACHIEVEMENT'].includes(newNote.type),
-      createdBy: 'Ustadzah Fatimah',
-    };
-
-    setNotes(prev => [note, ...prev]);
-    setIsAddDialogOpen(false);
-    setNewNote({
-      studentId: '',
-      type: 'POSITIVE',
-      category: '',
-      description: '',
-      points: '',
-      followUp: '',
-    });
-    toast.success('Catatan berhasil ditambahkan');
-  };
-
-  const handleResolve = (noteId: string) => {
-    setNotes(prev => prev.map(n => 
-      n.id === noteId 
-        ? { ...n, resolved: true, resolvedDate: new Date().toISOString().split('T')[0] }
-        : n
-    ));
-    toast.success('Catatan ditandai selesai');
-  };
-
-  const handleDelete = (noteId: string) => {
-    setNotes(prev => prev.filter(n => n.id !== noteId));
-    toast.success('Catatan dihapus');
-  };
-
-  const getSummary = () => ({
-    total: notes.length,
-    positive: notes.filter(n => ['POSITIVE', 'ACHIEVEMENT'].includes(n.type)).length,
-    negative: notes.filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.type)).length,
-    pending: notes.filter(n => !n.resolved).length,
-  });
-
-  const summary = getSummary();
-
-  return (
-    <div className="container mx-auto py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link href="/homeroom">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">Catatan Perilaku Siswa</h1>
-          <p className="text-muted-foreground">Kelas VII-A - SMP IT Al-Ikhlas</p>
-        </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Tambah Catatan
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-             {/* ... (Keep existing Dialog Content) ... */}
-             <DialogHeader>
-              <DialogTitle>Tambah Catatan Perilaku</DialogTitle>
-              <DialogDescription>
-                Catat prestasi, pelanggaran, atau catatan penting siswa
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Siswa</Label>
-                <Select
-                  value={newNote.studentId}
-                  onValueChange={(value) => setNewNote({ ...newNote, studentId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih siswa" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STUDENTS.map(student => (
-                      <SelectItem key={student.id} value={student.id}>
-                        {student.nis} - {student.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Jenis Catatan</Label>
-                <Select
-                  value={newNote.type}
-                  onValueChange={(value) => setNewNote({ ...newNote, type: value as NoteType })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(NOTE_TYPE_CONFIG).map(([key, config]) => (
-                      <SelectItem key={key} value={key}>
-                        <div className="flex items-center gap-2">
-                          {config.icon}
-                          {config.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Kategori</Label>
-                <Select
-                  value={newNote.category}
-                  onValueChange={(value) => setNewNote({ ...newNote, category: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih kategori" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map(cat => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Deskripsi</Label>
-                <Textarea
-                  placeholder="Jelaskan detail catatan..."
-                  value={newNote.description}
-                  onChange={(e) => setNewNote({ ...newNote, description: e.target.value })}
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Poin (opsional)</Label>
-                  <Input
-                    type="number"
-                    placeholder="Contoh: 10 atau -5"
-                    value={newNote.points}
-                    onChange={(e) => setNewNote({ ...newNote, points: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Tindak Lanjut (opsional)</Label>
-                <Textarea
-                  placeholder="Rencana tindak lanjut..."
-                  value={newNote.followUp}
-                  onChange={(e) => setNewNote({ ...newNote, followUp: e.target.value })}
-                  rows={2}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                Batal
-              </Button>
-              <Button onClick={handleAddNote}>Simpan</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        {/* ... (Keep existing Summary Cards) ... */}
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/20">
-                <Clock className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{summary.total}</p>
-                <p className="text-sm text-muted-foreground">Total Catatan</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/20">
-                <Award className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{summary.positive}</p>
-                <p className="text-sm text-muted-foreground">Positif/Prestasi</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-red-100 dark:bg-red-900/20">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{summary.negative}</p>
-                <p className="text-sm text-muted-foreground">Negatif/Pelanggaran</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-yellow-100 dark:bg-yellow-900/20">
-                <Clock className="h-5 w-5 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{summary.pending}</p>
-                <p className="text-sm text-muted-foreground">Perlu Tindak Lanjut</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Analytics & Lists Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex items-center justify-between">
-            <TabsList>
-            <TabsTrigger value="analytics">Analytics & Heatmap</TabsTrigger>
-            <TabsTrigger value="all">Semua ({notes.length})</TabsTrigger>
-            <TabsTrigger value="positive">Positif ({notes.filter(n => ['POSITIVE', 'ACHIEVEMENT'].includes(n.type)).length})</TabsTrigger>
-            <TabsTrigger value="negative">Negatif ({notes.filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.type)).length})</TabsTrigger>
-            <TabsTrigger value="followup">Tindak Lanjut ({notes.filter(n => ['COUNSELING_NEEDED', 'PARENT_CONTACTED'].includes(n.type)).length})</TabsTrigger>
-            </TabsList>
-
-             {/* Search only shows on list tabs */}
-             {activeTab !== 'analytics' && (
-                  <div className="relative w-[300px]">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                        placeholder="Cari siswa..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 h-9"
-                        />
-                  </div>
-             )}
-        </div>
-
-        <TabsContent value="analytics" className="mt-6">
-            <BehaviorAnalytics notes={notes} />
-        </TabsContent>
-
-        <TabsContent value={activeTab} className="mt-4">
-          {activeTab !== 'analytics' && (
-               filteredNotes.length === 0 ? (
-                    <Card>
-                    <CardContent className="py-12 text-center">
-                        <p className="text-muted-foreground">Tidak ada catatan ditemukan</p>
-                    </CardContent>
-                    </Card>
-                ) : (
-                    <div className="space-y-3">
-                    {filteredNotes.map(note => (
-                        <Card key={note.id} className={note.resolved ? 'opacity-75' : ''}>
-                        <CardContent className="py-4">
-                            <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-start gap-4">
-                                <Avatar className="h-10 w-10">
-                                <AvatarFallback>{note.studentName.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-medium">{note.studentName}</span>
-                                    <Badge variant="outline" className="text-xs">{note.studentNis}</Badge>
-                                    <Badge className={`text-xs ${NOTE_TYPE_CONFIG[note.type].color}`}>
-                                    <span className="flex items-center gap-1">
-                                        {NOTE_TYPE_CONFIG[note.type].icon}
-                                        {NOTE_TYPE_CONFIG[note.type].label}
-                                    </span>
-                                    </Badge>
-                                </div>
-                                <p className="text-sm">{note.description}</p>
-                                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                    <span>{note.category}</span>
-                                    <span>•</span>
-                                    <span>{new Date(note.date).toLocaleDateString('id-ID')}</span>
-                                    {note.points && (
-                                    <>
-                                        <span>•</span>
-                                        <span className={note.points > 0 ? 'text-green-600' : 'text-red-600'}>
-                                        {note.points > 0 ? '+' : ''}{note.points} poin
-                                        </span>
-                                    </>
-                                    )}
-                                    <span>•</span>
-                                    <span>oleh {note.createdBy}</span>
-                                </div>
-                                {note.followUp && (
-                                    <div className="mt-2 p-2 bg-muted rounded text-sm">
-                                    <strong>Tindak lanjut:</strong> {note.followUp}
-                                    </div>
-                                )}
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {note.resolved ? (
-                                <Badge variant="outline" className="text-green-600 border-green-600">
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    Selesai
-                                </Badge>
-                                ) : (
-                                <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    onClick={() => handleResolve(note.id)}
-                                >
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    Selesaikan
-                                </Button>
-                                )}
-                                <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                    <ChevronDown className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem>
-                                    <Edit className="h-4 w-4 mr-2" />
-                                    Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem 
-                                    className="text-red-600"
-                                    onClick={() => handleDelete(note.id)}
-                                    >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Hapus
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                            </div>
-                        </CardContent>
-                        </Card>
-                    ))}
-                    </div>
-                )
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-}
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -697,13 +184,126 @@ const STUDENTS = [
   { id: 's8', nis: '2024008', name: 'Siti Rahmawati' },
 ];
 
+function BehaviorAnalytics({ notes }: { notes: BehaviorNote[] }) {
+  // 1. Violations by Category
+  const categoryData = notes
+    .filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.type))
+    .reduce((acc, curr) => {
+      const existing = acc.find(a => a.name === curr.category);
+      if (existing) { existing.value += 1; }
+      else { acc.push({ name: curr.category, value: 1 }); }
+      return acc;
+    }, [] as { name: string, value: number }[])
+    .sort((a, b) => b.value - a.value);
+
+  // 2. Top Violators
+  const studentNegativePoints = notes
+    .filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.type))
+    .reduce((acc, curr) => {
+       const existing = acc.find(a => a.name === curr.studentName);
+       if (existing) { existing.points += Math.abs(curr.points || 0); existing.count += 1; }
+       else { acc.push({ name: curr.studentName, points: Math.abs(curr.points || 0), count: 1 }); }
+       return acc;
+    }, [] as { name: string, points: number, count: number }[])
+    .sort((a, b) => b.points - a.points)
+    .slice(0, 5);
+
+  // 3. Positive vs Negative Trend (Simple count)
+  const pieData = [
+     { name: 'Positif', value: notes.filter(n => ['POSITIVE', 'ACHIEVEMENT'].includes(n.type)).length, color: '#22c55e' },
+     { name: 'Negatif', value: notes.filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.type)).length, color: '#ef4444' },
+  ];
+
+  return (
+    <div className="space-y-6">
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* CHART 1: PROBLEM AREAS */}
+          <Card>
+             <CardHeader>
+                <CardTitle>Problem Areas (Violations by Category)</CardTitle>
+                <CardDescription>Kategori pelanggaran terbanyak</CardDescription>
+             </CardHeader>
+             <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                   <BarChart data={categoryData} layout="vertical" margin={{ left: 40 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} />
+                      <Tooltip />
+                      <Bar dataKey="value" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={20} />
+                   </BarChart>
+                </ResponsiveContainer>
+             </CardContent>
+          </Card>
+
+          {/* CHART 2: RATIO */}
+          <Card>
+             <CardHeader>
+                <CardTitle>Rasio Perilaku</CardTitle>
+                <CardDescription>Perbandingan catatan positif vs negatif</CardDescription>
+             </CardHeader>
+             <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                   <PieChart>
+                      <Pie
+                         data={pieData}
+                         cx="50%"
+                         cy="50%"
+                         innerRadius={60}
+                         outerRadius={80}
+                         paddingAngle={5}
+                         dataKey="value"
+                      >
+                         {pieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                         ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend verticalAlign="bottom" height={36}/>
+                   </PieChart>
+                </ResponsiveContainer>
+             </CardContent>
+          </Card>
+       </div>
+
+       {/* TABLE: TOP VIOLATORS */}
+       <Card className="border-red-200 bg-red-50/10">
+          <CardHeader>
+             <CardTitle className="text-red-700 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Perlu Perhatian Khusus (Top 5 Poin Negatif)
+             </CardTitle>
+          </CardHeader>
+          <CardContent>
+             <div className="space-y-4">
+                {studentNegativePoints.map((s, idx) => (
+                   <div key={idx} className="flex items-center justify-between border-b last:border-0 pb-2">
+                      <div className="flex items-center gap-3">
+                         <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center font-bold text-red-700">
+                            {idx + 1}
+                         </div>
+                         <span className="font-semibold">{s.name}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                         <Badge variant="outline" className="bg-white">{s.count} Kasus</Badge>
+                         <span className="font-bold text-red-600">-{s.points} Poin</span>
+                      </div>
+                   </div>
+                ))}
+             </div>
+          </CardContent>
+       </Card>
+    </div>
+  )
+}
+
 export default function BehaviorNotesPage() {
   const [notes, setNotes] = useState<BehaviorNote[]>(DEMO_NOTES);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterResolved, setFilterResolved] = useState<string>('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('analytics');
 
   // New note form state
   const [newNote, setNewNote] = useState({
@@ -726,8 +326,10 @@ export default function BehaviorNotesPage() {
       (filterResolved === 'resolved' && note.resolved) ||
       (filterResolved === 'pending' && !note.resolved);
 
+    // Tab logic
     const matchesTab = 
       activeTab === 'all' ||
+      activeTab === 'analytics' || 
       (activeTab === 'positive' && ['POSITIVE', 'ACHIEVEMENT'].includes(note.type)) ||
       (activeTab === 'negative' && ['NEGATIVE', 'VIOLATION'].includes(note.type)) ||
       (activeTab === 'followup' && ['COUNSELING_NEEDED', 'PARENT_CONTACTED'].includes(note.type));
@@ -979,140 +581,130 @@ export default function BehaviorNotesPage() {
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="flex-1 min-w-[200px]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Cari nama siswa atau deskripsi..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-            </div>
-            <div className="w-[180px]">
-              <Label className="text-xs">Status</Label>
-              <Select value={filterResolved} onValueChange={setFilterResolved}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua</SelectItem>
-                  <SelectItem value="pending">Belum Selesai</SelectItem>
-                  <SelectItem value="resolved">Selesai</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Notes List */}
+      {/* Analytics & Lists Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="all">Semua ({notes.length})</TabsTrigger>
-          <TabsTrigger value="positive">Positif ({notes.filter(n => ['POSITIVE', 'ACHIEVEMENT'].includes(n.type)).length})</TabsTrigger>
-          <TabsTrigger value="negative">Negatif ({notes.filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.type)).length})</TabsTrigger>
-          <TabsTrigger value="followup">Tindak Lanjut ({notes.filter(n => ['COUNSELING_NEEDED', 'PARENT_CONTACTED'].includes(n.type)).length})</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between">
+            <TabsList>
+            <TabsTrigger value="analytics">Analytics & Heatmap</TabsTrigger>
+            <TabsTrigger value="all">Semua ({notes.length})</TabsTrigger>
+            <TabsTrigger value="positive">Positif ({notes.filter(n => ['POSITIVE', 'ACHIEVEMENT'].includes(n.type)).length})</TabsTrigger>
+            <TabsTrigger value="negative">Negatif ({notes.filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.type)).length})</TabsTrigger>
+            <TabsTrigger value="followup">Tindak Lanjut ({notes.filter(n => ['COUNSELING_NEEDED', 'PARENT_CONTACTED'].includes(n.type)).length})</TabsTrigger>
+            </TabsList>
+
+             {/* Search only shows on list tabs */}
+             {activeTab !== 'analytics' && (
+                  <div className="relative w-[300px]">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                        placeholder="Cari siswa..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9 h-9"
+                        />
+                  </div>
+             )}
+        </div>
+
+        <TabsContent value="analytics" className="mt-6">
+            <BehaviorAnalytics notes={notes} />
+        </TabsContent>
 
         <TabsContent value={activeTab} className="mt-4">
-          {filteredNotes.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">Tidak ada catatan ditemukan</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {filteredNotes.map(note => (
-                <Card key={note.id} className={note.resolved ? 'opacity-75' : ''}>
-                  <CardContent className="py-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-4">
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback>{note.studentName.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{note.studentName}</span>
-                            <Badge variant="outline" className="text-xs">{note.studentNis}</Badge>
-                            <Badge className={`text-xs ${NOTE_TYPE_CONFIG[note.type].color}`}>
-                              <span className="flex items-center gap-1">
-                                {NOTE_TYPE_CONFIG[note.type].icon}
-                                {NOTE_TYPE_CONFIG[note.type].label}
-                              </span>
-                            </Badge>
-                          </div>
-                          <p className="text-sm">{note.description}</p>
-                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                            <span>{note.category}</span>
-                            <span>•</span>
-                            <span>{new Date(note.date).toLocaleDateString('id-ID')}</span>
-                            {note.points && (
-                              <>
-                                <span>•</span>
-                                <span className={note.points > 0 ? 'text-green-600' : 'text-red-600'}>
-                                  {note.points > 0 ? '+' : ''}{note.points} poin
-                                </span>
-                              </>
-                            )}
-                            <span>•</span>
-                            <span>oleh {note.createdBy}</span>
-                          </div>
-                          {note.followUp && (
-                            <div className="mt-2 p-2 bg-muted rounded text-sm">
-                              <strong>Tindak lanjut:</strong> {note.followUp}
+          {activeTab !== 'analytics' && (
+               filteredNotes.length === 0 ? (
+                    <Card>
+                    <CardContent className="py-12 text-center">
+                        <p className="text-muted-foreground">Tidak ada catatan ditemukan</p>
+                    </CardContent>
+                    </Card>
+                ) : (
+                    <div className="space-y-3">
+                    {filteredNotes.map(note => (
+                        <Card key={note.id} className={note.resolved ? 'opacity-75' : ''}>
+                        <CardContent className="py-4">
+                            <div className="flex items-start justify-between gap-4">
+                            <div className="flex items-start gap-4">
+                                <Avatar className="h-10 w-10">
+                                <AvatarFallback>{note.studentName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-medium">{note.studentName}</span>
+                                    <Badge variant="outline" className="text-xs">{note.studentNis}</Badge>
+                                    <Badge className={`text-xs ${NOTE_TYPE_CONFIG[note.type].color}`}>
+                                    <span className="flex items-center gap-1">
+                                        {NOTE_TYPE_CONFIG[note.type].icon}
+                                        {NOTE_TYPE_CONFIG[note.type].label}
+                                    </span>
+                                    </Badge>
+                                </div>
+                                <p className="text-sm">{note.description}</p>
+                                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                    <span>{note.category}</span>
+                                    <span>•</span>
+                                    <span>{new Date(note.date).toLocaleDateString('id-ID')}</span>
+                                    {note.points && (
+                                    <>
+                                        <span>•</span>
+                                        <span className={note.points > 0 ? 'text-green-600' : 'text-red-600'}>
+                                        {note.points > 0 ? '+' : ''}{note.points} poin
+                                        </span>
+                                    </>
+                                    )}
+                                    <span>•</span>
+                                    <span>oleh {note.createdBy}</span>
+                                </div>
+                                {note.followUp && (
+                                    <div className="mt-2 p-2 bg-muted rounded text-sm">
+                                    <strong>Tindak lanjut:</strong> {note.followUp}
+                                    </div>
+                                )}
+                                </div>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {note.resolved ? (
-                          <Badge variant="outline" className="text-green-600 border-green-600">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Selesai
-                          </Badge>
-                        ) : (
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleResolve(note.id)}
-                          >
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Selesaikan
-                          </Button>
-                        )}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <ChevronDown className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className="text-red-600"
-                              onClick={() => handleDelete(note.id)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Hapus
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                            <div className="flex items-center gap-2">
+                                {note.resolved ? (
+                                <Badge variant="outline" className="text-green-600 border-green-600">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Selesai
+                                </Badge>
+                                ) : (
+                                <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => handleResolve(note.id)}
+                                >
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Selesaikan
+                                </Button>
+                                )}
+                                <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                    <ChevronDown className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                    className="text-red-600"
+                                    onClick={() => handleDelete(note.id)}
+                                    >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Hapus
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                            </div>
+                        </CardContent>
+                        </Card>
+                    ))}
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                )
           )}
         </TabsContent>
       </Tabs>

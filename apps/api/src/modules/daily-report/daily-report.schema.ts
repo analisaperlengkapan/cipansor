@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // Daily Mood enum
-export const DailyMoodEnum = z.enum(['HAPPY', 'NEUTRAL', 'SAD', 'SICK', 'TIRED']);
+export const DailyMoodEnum = z.enum(['HAPPY', 'NEUTRAL', 'SAD', 'SICK', 'TIRED', 'EXCITED']);
 
 // Meal Consumption enum
 export const MealConsumptionEnum = z.enum(['FULL', 'HALF', 'QUARTER', 'NONE']);

@@ -44,6 +44,7 @@ import {
   ALUMNI_STATUS_LABELS,
   type AlumniStatus,
 } from '@/hooks';
+import { AlumniDashboard } from '@/components/alumni/alumni-dashboard';
 
 const statusColors: Record<AlumniStatus, string> = {
   REGISTERED: 'bg-blue-100 text-blue-800',
@@ -170,7 +171,12 @@ export default function AlumniPage() {
         <TabsList>
           <TabsTrigger value="alumni">Data Alumni</TabsTrigger>
           <TabsTrigger value="events">Acara Alumni</TabsTrigger>
+          <TabsTrigger value="tracer">Dashboard Tracer</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="tracer" className="space-y-4">
+          <AlumniDashboard />
+        </TabsContent>
 
         <TabsContent value="alumni" className="space-y-4">
           <Card>

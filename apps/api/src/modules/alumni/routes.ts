@@ -11,6 +11,25 @@ router.use(authenticate);
 
 /**
  * @swagger
+ * /api/alumni/stats/tracer:
+ *   get:
+ *     summary: Get alumni tracer study statistics
+ *     tags: [Alumni]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: unitId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Alumni tracer study statistics
+ */
+router.get("/stats/tracer", controller.getTracerStudyStats);
+
+/**
+ * @swagger
  * /api/alumni:
  *   get:
  *     summary: List alumni

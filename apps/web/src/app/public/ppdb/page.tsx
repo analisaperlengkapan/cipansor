@@ -855,7 +855,7 @@ export default function PublicPPDBPage() {
                     )}
                   </CardFooter>
                 </Card>
-              </>
+               </div>
             )}
           </TabsContent>
 

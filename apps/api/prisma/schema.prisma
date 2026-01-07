@@ -366,6 +366,9 @@ model User {
   // Marketing relations
   marketingCampaignsCreated         MarketingCampaign[]         @relation("MarketingCampaignCreator")
   recordedInteractions              MarketingInteraction[]      @relation("InteractionRecorder")
+  // Asset management relations
+  assetAssignments                  AssetAssignment[]
+  createdAudits                     AssetAudit[]                @relation("AuditCreator")
 
   @@index([email])
   @@index([role])
@@ -421,6 +424,7 @@ model Unit {
   medications            Medication[]
   announcements          Announcement[]
   assets                 Asset[]
+  assetAudits            AssetAudit[]
   subjects               Subject[]
   schedules              Schedule[]
   exams                  Exam[]
@@ -1866,6 +1870,10 @@ model Asset {
   purchasePrice  Decimal?       @map("purchase_price") @db.Decimal(15, 2)
   supplier       String?
   location       String? // Lokasi penempatan
+  roomId         String?        @map("room_id")
+  purchaseOrderNo String?       @map("purchase_order_no")
+  usefulLife     Int?           @map("useful_life") // Months
+  residualValue  Decimal?       @map("residual_value") @db.Decimal(15, 2)
   condition      AssetCondition @default(GOOD)
   status         AssetStatus    @default(ACTIVE)
   warrantyExpiry DateTime?      @map("warranty_expiry")
@@ -1878,13 +1886,85 @@ model Asset {
   // Relations
   unit            Unit               @relation(fields: [unitId], references: [id])
   category        AssetCategory      @relation(fields: [categoryId], references: [id])
+  room            FacilityRoom?      @relation(fields: [roomId], references: [id])
   maintenanceLogs AssetMaintenance[]
+  assignments     AssetAssignment[]
+  auditItems      AssetAuditItem[]
 
   @@index([unitId])
   @@index([categoryId])
+  @@index([roomId])
   @@index([status])
   @@index([condition])
   @@map("assets")
+}
+
+/// AssetAssignment - Peminjaman/Penggunaan Aset
+model AssetAssignment {
+  id              String          @id @default(uuid())
+  assetId         String          @map("asset_id")
+  userId          String          @map("user_id") // Peminjam
+  assignedAt      DateTime        @default(now()) @map("assigned_at")
+  returnedAt      DateTime?       @map("returned_at")
+  dueDate         DateTime?       @map("due_date")
+  conditionBefore AssetCondition  @map("condition_before")
+  conditionAfter  AssetCondition? @map("condition_after")
+  notes           String?         @db.Text
+  status          String          @default("ACTIVE") // ACTIVE, RETURNED, OVERDUE
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  asset Asset @relation(fields: [assetId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@index([assetId])
+  @@index([userId])
+  @@index([status])
+  @@map("asset_assignments")
+}
+
+/// AssetAudit - Stock Opname Aset
+model AssetAudit {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id")
+  date        DateTime @db.Date
+  status      String   @default("PLANNED") // PLANNED, ONGOING, COMPLETED
+  notes       String?  @db.Text
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit      Unit             @relation(fields: [unitId], references: [id])
+  createdBy User             @relation("AuditCreator", fields: [createdById], references: [id])
+  items     AssetAuditItem[]
+
+  @@index([unitId])
+  @@index([date])
+  @@map("asset_audits")
+}
+
+/// AssetAuditItem - Detail Item Audit
+model AssetAuditItem {
+  id           String         @id @default(uuid())
+  auditId      String         @map("audit_id")
+  assetId      String         @map("asset_id")
+  systemStatus String         @map("system_status") // Snapshot status di sistem
+  actualStatus String         @map("actual_status") // FOUND, MISSING, DAMAGED
+  condition    AssetCondition
+  notes        String?        @db.Text
+  isMatch      Boolean        @default(true) @map("is_match")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  audit AssetAudit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  asset Asset      @relation(fields: [assetId], references: [id])
+
+  @@unique([auditId, assetId])
+  @@index([auditId])
+  @@map("asset_audit_items")
 }
 
 /// AssetMaintenance - Log Pemeliharaan Aset
@@ -4449,6 +4529,7 @@ model FacilityRoom {
   unit     Unit      @relation(fields: [unitId], references: [id])
   building Building? @relation(fields: [buildingId], references: [id])
   roomType RoomType  @relation(fields: [roomTypeId], references: [id])
+  assets   Asset[]
 
   @@unique([unitId, code])
   @@index([unitId])

@@ -121,12 +121,8 @@ export function useUpdateFoundation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Partial<Foundation>) => {
-      // Assuming single foundation or passed ID logic in real app, simplified here
-      const foundation = queryClient.getQueryData(['foundation']) as Foundation;
-      if (!foundation) throw new Error("Foundation not loaded");
-
-      const response = await api.put(`/foundation/${foundation.id}`, data);
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Foundation> }) => {
+      const response = await api.put(`/foundation/${id}`, data);
       return response.data.data;
     },
     onSuccess: () => {

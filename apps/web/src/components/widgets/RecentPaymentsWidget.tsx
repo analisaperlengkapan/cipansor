@@ -80,7 +80,7 @@ export function RecentPaymentsWidget({ maxItems = 10 }: RecentPaymentsWidgetProp
             },
         ]);
 
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
     }, []);
 
     const [isConnected, setIsConnected] = useState(false);

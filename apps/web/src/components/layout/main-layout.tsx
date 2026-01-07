@@ -20,6 +20,10 @@ export function MainLayout({ children, allowedRoles, showSidebar = true }: MainL
 
   return (
     <ProtectedRoute allowedRoles={allowedRoles}>
+      {/* Skip Link for Keyboard Accessibility */}
+      <a href="#main-content" className="skip-link">
+        Langsung ke konten
+      </a>
       <div className="flex h-screen overflow-hidden">
         {/* Desktop Sidebar */}
         {showSidebar && (
@@ -41,7 +45,7 @@ export function MainLayout({ children, allowedRoles, showSidebar = true }: MainL
         {/* Main Content */}
         <div className="flex flex-1 flex-col overflow-hidden">
           <Header onMenuClick={showSidebar ? () => setMobileOpen(true) : undefined} />
-          <main className="flex-1 overflow-auto bg-muted/30 p-4 lg:p-6 premium-gradient">
+          <main id="main-content" className="flex-1 overflow-auto bg-muted/30 p-4 lg:p-6 premium-gradient" role="main">
             <PageTransition>
               <div className="mx-auto max-w-7xl">
                 {children}

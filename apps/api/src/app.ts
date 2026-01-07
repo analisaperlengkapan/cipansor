@@ -69,6 +69,7 @@ import kitabProgressRoutes from '@/modules/kitab-progress/kitab-progress.routes'
 import muhadhorohRoutes from '@/modules/muhadhoroh/muhadhoroh.routes';
 import muhadatsahRoutes from '@/modules/muhadatsah/muhadatsah.routes';
 import emisRoutes from '@/modules/emis/emis.routes';
+import { dapodikRouter } from '@/modules/dapodik/dapodik.routes';
 
 // Enhancement module routes
 import { paudAssessmentRoutes } from '@/modules/paud-assessment';
@@ -213,6 +214,7 @@ apiRouter.use('/kitab-progress', kitabProgressRoutes);
 apiRouter.use('/muhadhoroh', muhadhorohRoutes);
 apiRouter.use('/muhadatsah', muhadatsahRoutes);
 apiRouter.use('/emis', emisRoutes);
+apiRouter.use('/dapodik', dapodikRouter);
 
 // Enhancement modules
 apiRouter.use('/paud-assessment', paudAssessmentRoutes);
@@ -273,6 +275,7 @@ apiRouter.get('/', (_req, res) => {
       muhadhoroh: '/api/muhadhoroh',
       muhadatsah: '/api/muhadatsah',
       emis: '/api/emis',
+      dapodik: '/api/dapodik',
       wilayah: '/api/wilayah',
       kurikulumMerdeka: '/api/kurikulum-merdeka',
       facilities: '/api/facilities',

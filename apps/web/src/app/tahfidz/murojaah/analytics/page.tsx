@@ -3,8 +3,13 @@
 import { useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout';
 import { PageHeader } from '@/components/shared';
+import {
+  useMurojaahRecords,
+  useClassMurojaahSummary,
+  MurojaahRecord,
+} from '@/hooks/use-murojaah';
+import { useClasses } from '@/hooks/use-classes';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -13,502 +18,439 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  BarChart, 
-  Bar, 
-  PieChart, 
-  Pie, 
-  LineChart, 
-  Line,
-  Cell,
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
-} from 'recharts';
-import { 
-  CalendarIcon, 
-  TrendingUp, 
-  Target, 
-  Award,
+import { useAuthStore } from '@/stores/auth';
+import { cn } from '@/lib/utils';
+import {
+  BarChart3,
+  TrendingUp,
+  Users,
   AlertTriangle,
   CheckCircle2,
-  Download,
-  Filter,
+  Clock,
+  BookOpen,
+  Target,
+  AlertCircle,
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { useMurojaahAnalytics } from '@/hooks/use-murojaah-analytics';
+
+// Mistake type labels
+const MISTAKE_TYPE_LABELS: Record<string, string> = {
+  TAJWID: 'Tajwid',
+  MAKHROJ: 'Makhroj',
+  HARAKAT: 'Harakat',
+  WAQF: 'Waqaf',
+  LAFAZ: 'Lafaz',
+  OTHER: 'Lainnya',
+};
+
+// Mistake type colors
+const MISTAKE_TYPE_COLORS: Record<string, string> = {
+  TAJWID: 'bg-purple-500',
+  MAKHROJ: 'bg-blue-500',
+  HARAKAT: 'bg-orange-500',
+  WAQF: 'bg-green-500',
+  LAFAZ: 'bg-red-500',
+  OTHER: 'bg-gray-500',
+};
+
+interface MistakeStats {
+  type: string;
+  count: number;
+  percentage: number;
+}
+
+interface QualityDistribution {
+  excellent: number; // 90-100
+  good: number; // 70-89
+  moderate: number; // 50-69
+  needsWork: number; // <50
+}
 
 export default function MurojaahAnalyticsPage() {
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: subDays(new Date(), 30),
-    to: new Date(),
-  });
-  const [halaqohFilter, setHalaqohFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const { user } = useAuthStore();
+  const [selectedClass, setSelectedClass] = useState<string>('');
+  const [dateRange, setDateRange] = useState<string>('30');
 
-  // Fetch analytics data
-  const {
-    qualityDistribution,
-    mistakePatterns,
-    consistencyScore,
-    topPerformers,
-    isLoading,
-    isError,
-  } = useMurojaahAnalytics({
-    dateFrom: format(dateRange.from, 'yyyy-MM-dd'),
-    dateTo: format(dateRange.to, 'yyyy-MM-dd'),
-    halaqohId: halaqohFilter !== 'all' ? halaqohFilter : undefined,
-    murojaahType: typeFilter !== 'all' ? typeFilter : undefined,
+  const { data: classes } = useClasses({ unitId: user?.unitId });
+
+  const dateFrom = useMemo(() => {
+    return format(subDays(new Date(), parseInt(dateRange)), 'yyyy-MM-dd');
+  }, [dateRange]);
+
+  const { data: recordsData, isLoading } = useMurojaahRecords({
+    classId: selectedClass || undefined,
+    unitId: user?.role !== 'SUPER_ADMIN' ? user?.unitId : undefined,
+    dateFrom,
+    limit: 1000, // Get more records for analytics
   });
 
-  // Transform quality distribution data for chart
-  const qualityChartData = useMemo(() => {
-    if (!qualityDistribution.data) return [];
-    const dist = qualityDistribution.data.distribution;
-    return [
-      { name: 'Sangat Baik (>90)', value: dist.excellent.count, percentage: dist.excellent.percentage, color: '#22c55e' },
-      { name: 'Baik (75-90)', value: dist.good.count, percentage: dist.good.percentage, color: '#3b82f6' },
-      { name: 'Cukup (60-75)', value: dist.fair.count, percentage: dist.fair.percentage, color: '#f59e0b' },
-      { name: 'Perlu Perbaikan (<60)', value: dist.poor.count, percentage: dist.poor.percentage, color: '#ef4444' },
-    ];
-  }, [qualityDistribution.data]);
+  const records = recordsData?.data || [];
 
-  // Transform mistake patterns data for chart
-  const mistakeChartData = useMemo(() => {
-    if (!mistakePatterns.data) return [];
-    const patterns = mistakePatterns.data.patterns;
-    const mistakeTypeLabels: Record<string, string> = {
-      LAHIN_JALI: 'Lahin Jali',
-      LAHIN_KHAFI: 'Lahin Khafi',
-      TAJWID: 'Tajwid',
-      MAKHROJ: 'Makhraj',
-      OTHERS: 'Lainnya',
+  // Calculate analytics from records
+  const analytics = useMemo(() => {
+    if (!records.length)
+      return {
+        totalRecords: 0,
+        passedRecords: 0,
+        pendingRecords: 0,
+        averageGrade: 0,
+        qualityDistribution: { excellent: 0, good: 0, moderate: 0, needsWork: 0 },
+        mistakeStats: [],
+        surahCoverage: [],
+        dailyActivity: [],
+      };
+
+    const totalRecords = records.length;
+    const passedRecords = records.filter((r) => r.status === 'PASSED').length;
+    const pendingRecords = records.filter((r) => r.status === 'PENDING').length;
+
+    // Average grade
+    const gradesSum = records.reduce((sum, r) => sum + (r.grade || 0), 0);
+    const averageGrade = totalRecords > 0 ? Math.round(gradesSum / totalRecords) : 0;
+
+    // Quality distribution
+    const qualityDistribution: QualityDistribution = {
+      excellent: 0,
+      good: 0,
+      moderate: 0,
+      needsWork: 0,
     };
-    return Object.entries(patterns).map(([type, data]) => ({
-      type: mistakeTypeLabels[type] || type,
-      count: data.count,
-      trend: data.trend > 0 ? 'up' : data.trend < 0 ? 'down' : 'stable',
-    }));
-  }, [mistakePatterns.data]);
 
-  // Transform consistency data for chart
-  const consistencyChartData = useMemo(() => {
-    if (!consistencyScore.data) return [];
-    return consistencyScore.data.dailyRecords.map(record => ({
-      date: format(new Date(record.date), 'd MMM', { locale: idLocale }),
-      avgQuality: Math.round(record.avgQuality),
-      records: record.count,
-    }));
-  }, [consistencyScore.data]);
+    records.forEach((r) => {
+      const grade = r.grade || 0;
+      if (grade >= 90) qualityDistribution.excellent++;
+      else if (grade >= 70) qualityDistribution.good++;
+      else if (grade >= 50) qualityDistribution.moderate++;
+      else qualityDistribution.needsWork++;
+    });
 
-  if (isError) {
-    return (
-      <MainLayout>
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h3 className="font-semibold text-lg">Error Loading Analytics</h3>
-            <p className="text-muted-foreground">Failed to load murojaah analytics data</p>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
+    // Mistake statistics
+    const mistakeCounts: Record<string, number> = {};
+    let totalMistakes = 0;
+
+    records.forEach((r) => {
+      r.mistakes?.forEach((m) => {
+        mistakeCounts[m.mistakeType] = (mistakeCounts[m.mistakeType] || 0) + 1;
+        totalMistakes++;
+      });
+    });
+
+    const mistakeStats: MistakeStats[] = Object.entries(mistakeCounts)
+      .map(([type, count]) => ({
+        type,
+        count,
+        percentage: totalMistakes > 0 ? Math.round((count / totalMistakes) * 100) : 0,
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    // Surah coverage
+    const surahCounts: Record<string, number> = {};
+    records.forEach((r) => {
+      if (r.surahName) {
+        surahCounts[r.surahName] = (surahCounts[r.surahName] || 0) + 1;
+      }
+    });
+
+    const surahCoverage = Object.entries(surahCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    return {
+      totalRecords,
+      passedRecords,
+      pendingRecords,
+      averageGrade,
+      qualityDistribution,
+      mistakeStats,
+      surahCoverage,
+    };
+  }, [records]);
 
   return (
-    <MainLayout>
+    <MainLayout allowedRoles={['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']}>
       <div className="space-y-6">
-        {/* Header */}
         <PageHeader
-          title="Analisis Murojaah"
-          description="Dashboard analitik tracking kualitas murojaah santri"
+          title="Analitik Murojaah"
+          description="Pantau kualitas dan pola kesalahan dalam murojaah santri"
         />
 
         {/* Filters */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-wrap gap-4">
-              {/* Date Range */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-[280px] justify-start">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateRange.from ? (
-                      dateRange.to ? (
-                        <>
-                          {format(dateRange.from, 'dd MMM yyyy', { locale: idLocale })} -{' '}
-                          {format(dateRange.to, 'dd MMM yyyy', { locale: idLocale })}
-                        </>
-                      ) : (
-                        format(dateRange.from, 'dd MMM yyyy', { locale: idLocale })
-                      )
-                    ) : (
-                      <span>Pilih periode</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="range"
-                    selected={{ from: dateRange.from, to: dateRange.to }}
-                    onSelect={(range: any) => {
-                      if (range?.from && range?.to) {
-                        setDateRange({ from: range.from, to: range.to });
-                      }
-                    }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+        <div className="flex flex-wrap gap-4">
+          <Select value={selectedClass} onValueChange={setSelectedClass}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Semua Kelas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Semua Kelas</SelectItem>
+              {classes?.data?.map((cls) => (
+                <SelectItem key={cls.id} value={cls.id}>
+                  {cls.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-              {/* Halaqoh Filter */}
-              <Select value={halaqohFilter} onValueChange={setHalaqohFilter}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Pilih halaqoh" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Halaqoh</SelectItem>
-                  <SelectItem value="h1">Halaqoh A</SelectItem>
-                  <SelectItem value="h2">Halaqoh B</SelectItem>
-                  <SelectItem value="h3">Halaqoh C</SelectItem>
-                </SelectContent>
-              </Select>
+          <Select value={dateRange} onValueChange={setDateRange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Periode" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7">7 Hari Terakhir</SelectItem>
+              <SelectItem value="30">30 Hari Terakhir</SelectItem>
+              <SelectItem value="90">3 Bulan Terakhir</SelectItem>
+              <SelectItem value="365">1 Tahun Terakhir</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-              {/* Type Filter */}
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Jenis murojaah" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Jenis</SelectItem>
-                  <SelectItem value="YAUMIYAH">Yaumiyah</SelectItem>
-                  <SelectItem value="USBUIYAH">Usbuiyah</SelectItem>
-                  <SelectItem value="SYAHRIYAH">Syahriyah</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button variant="outline">
-                <Download className="mr-2 h-4 w-4" />
-                Export
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
+        {/* Overview Stats */}
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card className="glass-card">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Record</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Total Murojaah</CardTitle>
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-8 w-20" />
-              ) : (
-                <>
-                  <div className="text-2xl font-bold">{qualityDistribution.data?.total || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Dalam periode terpilih
-                  </p>
-                </>
-              )}
+              <div className="text-2xl font-bold">{analytics.totalRecords}</div>
+              <p className="text-xs text-muted-foreground">sesi tercatat</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-card">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Rata-rata Kualitas</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-8 w-20" />
-              ) : (
-                <>
-                  <div className="text-2xl font-bold">
-                    {qualityDistribution.data?.averageQuality.toFixed(1) || 0}
-                  </div>
-                  <Progress value={qualityDistribution.data?.averageQuality || 0} className="mt-2" />
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Konsistensi</CardTitle>
+              <CardTitle className="text-sm font-medium">Rata-rata Nilai</CardTitle>
               <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-8 w-20" />
-              ) : (
-                <>
-                  <div className="text-2xl font-bold">
-                    {consistencyScore.data?.consistencyPercentage.toFixed(0) || 0}%
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {consistencyScore.data?.activeDays || 0} dari {consistencyScore.data?.totalDays || 0} hari
-                  </p>
-                </>
-              )}
+              <div className="text-2xl font-bold">{analytics.averageGrade}</div>
+              <Progress value={analytics.averageGrade} className="mt-2" />
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-card border-green-500/30">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Perlu Perhatian</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-green-600">Lulus</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-8 w-20" />
-              ) : (
-                <>
-                  <div className="text-2xl font-bold text-orange-600">
-                    {qualityDistribution.data?.distribution.poor.count || 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Record dengan kualitas rendah
-                  </p>
-                </>
-              )}
+              <div className="text-2xl font-bold">{analytics.passedRecords}</div>
+              <p className="text-xs text-muted-foreground">
+                {analytics.totalRecords > 0
+                  ? `${Math.round((analytics.passedRecords / analytics.totalRecords) * 100)}%`
+                  : '0%'}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card border-yellow-500/30">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-yellow-600">Pending</CardTitle>
+              <Clock className="h-4 w-4 text-yellow-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{analytics.pendingRecords}</div>
+              <p className="text-xs text-muted-foreground">menunggu review</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Analytics Tabs */}
         <Tabs defaultValue="quality" className="space-y-4">
           <TabsList>
             <TabsTrigger value="quality">Distribusi Kualitas</TabsTrigger>
             <TabsTrigger value="mistakes">Pola Kesalahan</TabsTrigger>
-            <TabsTrigger value="consistency">Konsistensi</TabsTrigger>
-            <TabsTrigger value="ranking">Peringkat</TabsTrigger>
+            <TabsTrigger value="surah">Cakupan Surah</TabsTrigger>
           </TabsList>
 
-          {/* Quality Distribution Tab */}
           <TabsContent value="quality" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Distribusi Kualitas Murojaah</CardTitle>
+                <CardTitle>Distribusi Nilai Murojaah</CardTitle>
                 <CardDescription>
-                  Sebaran tingkat kualitas murojaah santri dalam 30 hari terakhir
+                  Pembagian kualitas murojaah berdasarkan rentang nilai
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="space-y-3">
-                    <Skeleton className="h-[300px]" />
-                  </div>
-                ) : (
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {/* Pie Chart */}
-                    <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={qualityChartData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={(entry: any) => `${entry.percentage.toFixed(0)}%`}
-                            outerRadius={100}
-                            fill="#8884d8"
-                            dataKey="value"
-                          >
-                            {qualityChartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-4">
+                  <div className="text-center p-4 rounded-lg bg-green-500/10 border border-green-500/30">
+                    <div className="text-3xl font-bold text-green-600">
+                      {analytics.qualityDistribution.excellent}
                     </div>
+                    <p className="text-sm font-medium">Sangat Baik</p>
+                    <p className="text-xs text-muted-foreground">90-100</p>
+                  </div>
+                  <div className="text-center p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                    <div className="text-3xl font-bold text-blue-600">
+                      {analytics.qualityDistribution.good}
+                    </div>
+                    <p className="text-sm font-medium">Baik</p>
+                    <p className="text-xs text-muted-foreground">70-89</p>
+                  </div>
+                  <div className="text-center p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                    <div className="text-3xl font-bold text-yellow-600">
+                      {analytics.qualityDistribution.moderate}
+                    </div>
+                    <p className="text-sm font-medium">Cukup</p>
+                    <p className="text-xs text-muted-foreground">50-69</p>
+                  </div>
+                  <div className="text-center p-4 rounded-lg bg-red-500/10 border border-red-500/30">
+                    <div className="text-3xl font-bold text-red-600">
+                      {analytics.qualityDistribution.needsWork}
+                    </div>
+                    <p className="text-sm font-medium">Perlu Latihan</p>
+                    <p className="text-xs text-muted-foreground">&lt;50</p>
+                  </div>
+                </div>
 
-                    {/* Legend */}
-                    <div className="space-y-3">
-                      {qualityChartData.map((item) => (
-                      <div key={item.name} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-4 h-4 rounded"
-                            style={{ backgroundColor: item.color }}
-                          />
-                          <span className="text-sm">{item.name}</span>
+                {/* Visual bar */}
+                <div className="space-y-2">
+                  <div className="flex h-8 rounded-full overflow-hidden">
+                    {analytics.totalRecords > 0 ? (
+                      <>
+                        <div
+                          className="bg-green-500 flex items-center justify-center text-xs text-white"
+                          style={{
+                            width: `${
+                              (analytics.qualityDistribution.excellent /
+                                analytics.totalRecords) *
+                              100
+                            }%`,
+                          }}
+                        >
+                          {analytics.qualityDistribution.excellent > 0 &&
+                            analytics.qualityDistribution.excellent}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold">{item.value}</span>
-                          <Badge variant="secondary">{item.percentage}%</Badge>
+                        <div
+                          className="bg-blue-500 flex items-center justify-center text-xs text-white"
+                          style={{
+                            width: `${
+                              (analytics.qualityDistribution.good / analytics.totalRecords) *
+                              100
+                            }%`,
+                          }}
+                        >
+                          {analytics.qualityDistribution.good > 0 &&
+                            analytics.qualityDistribution.good}
                         </div>
+                        <div
+                          className="bg-yellow-500 flex items-center justify-center text-xs"
+                          style={{
+                            width: `${
+                              (analytics.qualityDistribution.moderate / analytics.totalRecords) *
+                              100
+                            }%`,
+                          }}
+                        >
+                          {analytics.qualityDistribution.moderate > 0 &&
+                            analytics.qualityDistribution.moderate}
+                        </div>
+                        <div
+                          className="bg-red-500 flex items-center justify-center text-xs text-white"
+                          style={{
+                            width: `${
+                              (analytics.qualityDistribution.needsWork / analytics.totalRecords) *
+                              100
+                            }%`,
+                          }}
+                        >
+                          {analytics.qualityDistribution.needsWork > 0 &&
+                            analytics.qualityDistribution.needsWork}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                        Belum ada data
                       </div>
-                    ))}
-                    </div>
+                    )}
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Mistake Patterns Tab */}
           <TabsContent value="mistakes" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Pola Kesalahan</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-orange-500" />
+                  Analisis Pola Kesalahan
+                </CardTitle>
                 <CardDescription>
-                  Analisis jenis kesalahan yang sering terjadi
+                  Jenis kesalahan yang sering terjadi untuk fokus perbaikan
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-[300px]" />
-                ) : (
-                  <>
-                    <div className="h-[300px] mb-6">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={mistakeChartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="type" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="count" fill="#3b82f6" name="Jumlah Kesalahan" />
-                    </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    <div className="space-y-3">
-                      {mistakeChartData.map((mistake) => (
-                    <div key={mistake.type} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="text-sm font-medium">{mistake.type}</div>
-                        <Badge variant="outline">{mistake.count} kejadian</Badge>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        {mistake.trend === 'up' && (
-                          <span className="text-red-600 flex items-center gap-1">
-                            <TrendingUp className="h-4 w-4" /> Meningkat
+                {analytics.mistakeStats.length > 0 ? (
+                  <div className="space-y-4">
+                    {analytics.mistakeStats.map((stat) => (
+                      <div key={stat.type} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={cn(
+                                'w-3 h-3 rounded-full',
+                                MISTAKE_TYPE_COLORS[stat.type]
+                              )}
+                            />
+                            <span className="font-medium">
+                              {MISTAKE_TYPE_LABELS[stat.type] || stat.type}
+                            </span>
+                          </div>
+                          <span className="text-sm text-muted-foreground">
+                            {stat.count} ({stat.percentage}%)
                           </span>
-                        )}
-                        {mistake.trend === 'down' && (
-                          <span className="text-green-600 flex items-center gap-1">
-                            <TrendingUp className="h-4 w-4 rotate-180" /> Menurun
-                          </span>
-                        )}
-                        {mistake.trend === 'stable' && (
-                          <span className="text-gray-600">Stabil</span>
-                        )}
+                        </div>
+                        <Progress value={stat.percentage} className="h-2" />
                       </div>
-                    </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Consistency Tracking Tab */}
-          <TabsContent value="consistency" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tracking Konsistensi</CardTitle>
-                <CardDescription>
-                  Tren kualitas dan jumlah record murojaah harian
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-[300px]" />
-                ) : (
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={consistencyChartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis yAxisId="left" domain={[0, 100]} />
-                      <YAxis yAxisId="right" orientation="right" />
-                      <Tooltip />
-                      <Legend />
-                      <Line
-                        yAxisId="left"
-                        type="monotone"
-                        dataKey="avgQuality"
-                        stroke="#22c55e"
-                        strokeWidth={2}
-                        name="Rata-rata Kualitas"
-                      />
-                      <Line
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="records"
-                        stroke="#3b82f6"
-                        strokeWidth={2}
-                        name="Jumlah Record"
-                      />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Ranking Tab */}
-          <TabsContent value="ranking" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Peringkat Santri</CardTitle>
-                <CardDescription>
-                  Top performers berdasarkan kualitas dan konsistensi
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="space-y-3">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Skeleton key={i} className="h-20" />
                     ))}
                   </div>
                 ) : (
+                  <div className="text-center py-8">
+                    <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-4" />
+                    <h3 className="font-semibold">Tidak Ada Kesalahan Tercatat</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Belum ada data kesalahan dalam periode ini
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="surah" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Surah yang Sering Dimurojaah</CardTitle>
+                <CardDescription>10 surah teratas dalam periode ini</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {analytics.surahCoverage.length > 0 ? (
                   <div className="space-y-3">
-                    {topPerformers.data?.performers.map((performer) => (
-                    <div
-                      key={performer.rank}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold">
-                          {performer.rank}
+                    {analytics.surahCoverage.map((surah, index) => (
+                      <div
+                        key={surah.name}
+                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg font-bold text-muted-foreground w-6">
+                            {index + 1}
+                          </span>
+                          <span className="font-medium">{surah.name}</span>
                         </div>
-                        <div>
-                          <div className="font-medium">{performer.studentName}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {performer.recordCount} record murojaah
-                          </div>
-                        </div>
+                        <Badge variant="secondary">{surah.count} sesi</Badge>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="text-sm text-muted-foreground">Kualitas</div>
-                          <div className="font-semibold text-green-600">
-                            {performer.avgQuality}
-                          </div>
-                        </div>
-                        <Award className="h-5 w-5 text-yellow-500" />
-                      </div>
-                    </div>
-                      ))}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="font-semibold">Belum Ada Data</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Tidak ada data murojaah dalam periode ini
+                    </p>
                   </div>
                 )}
               </CardContent>

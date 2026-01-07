@@ -128,14 +128,14 @@ export class TahfidzDashboardPage {
 }
 
 /**
- * PAUD Assessment Page Object Model
+ * TK Assessment Page Object Model
  */
-export class PAUDAssessmentPage {
+export class TKAssessmentPage {
   constructor(private page: Page) {}
 
   // Locators
   get heading() {
-    return this.page.getByRole('heading', { name: /penilaian paud/i });
+    return this.page.getByRole('heading', { name: /penilaian tk/i });
   }
 
   get studentSelect() {
@@ -161,7 +161,7 @@ export class PAUDAssessmentPage {
 
   // Actions
   async goto() {
-    await this.page.goto('/paud/assessment');
+    await this.page.goto('/tk/assessment');
     await this.page.waitForLoadState('networkidle');
   }
 

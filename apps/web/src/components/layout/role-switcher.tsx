@@ -38,7 +38,7 @@ interface RoleSwitcherProps {
 const realmDisplayNames: Record<string, string> = {
   GLOBAL: 'Global',
   YAYASAN: 'Yayasan',
-  PAUD: 'PAUD',
+  TK: 'PAUD',
   SD_IT: 'SD IT',
   SMP_IT: 'SMP IT',
   SMA_ALQURAN: 'SMA Al-Qur\'an',
@@ -48,7 +48,7 @@ const realmDisplayNames: Record<string, string> = {
 const realmColors: Record<string, string> = {
   GLOBAL: 'bg-purple-500',
   YAYASAN: 'bg-amber-500',
-  PAUD: 'bg-pink-500',
+  TK: 'bg-pink-500',
   SD_IT: 'bg-green-500',
   SMP_IT: 'bg-blue-500',
   SMA_ALQURAN: 'bg-emerald-500',

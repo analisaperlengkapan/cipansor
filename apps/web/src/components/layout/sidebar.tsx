@@ -35,7 +35,7 @@ interface UserRole {
 const realmColors: Record<string, string> = {
   GLOBAL: 'bg-purple-500',
   YAYASAN: 'bg-amber-500',
-  PAUD: 'bg-pink-500',
+  TK: 'bg-pink-500',
   SD_IT: 'bg-green-500',
   SMP_IT: 'bg-blue-500',
   SMA_ALQURAN: 'bg-emerald-500',

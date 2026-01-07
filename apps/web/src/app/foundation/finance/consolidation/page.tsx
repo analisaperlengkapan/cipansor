@@ -54,7 +54,7 @@ const mockFinancialData = {
     { name: 'SMA Al-Quran', revenue: 1200000000, expenses: 950000000, students: 320, color: '#6366f1' },
     { name: 'SMP IT', revenue: 980000000, expenses: 780000000, students: 280, color: '#f59e0b' },
     { name: 'SD IT', revenue: 650000000, expenses: 580000000, students: 210, color: '#ec4899' },
-    { name: 'PAUD/TK', revenue: 170000000, expenses: 160000000, students: 85, color: '#14b8a6' },
+    { name: 'TK', revenue: 170000000, expenses: 160000000, students: 85, color: '#14b8a6' },
   ],
   monthlyTrend: [
     { month: 'Jul', income: 750, expense: 620 },

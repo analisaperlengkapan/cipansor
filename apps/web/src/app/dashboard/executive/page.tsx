@@ -42,16 +42,16 @@ import { toast } from 'sonner';
 
 // Mock data for initial state
 const mockEnrollmentTrend = [
-  { month: 'Jul', PAUD: 120, SDIT: 250, SMPIT: 180, SMAQ: 95, Pesantren: 65 },
-  { month: 'Agt', PAUD: 125, SDIT: 255, SMPIT: 185, SMAQ: 98, Pesantren: 68 },
-  { month: 'Sep', PAUD: 130, SDIT: 260, SMPIT: 188, SMAQ: 100, Pesantren: 70 },
-  { month: 'Okt', PAUD: 135, SDIT: 265, SMPIT: 192, SMAQ: 102, Pesantren: 72 },
-  { month: 'Nov', PAUD: 138, SDIT: 268, SMPIT: 195, SMAQ: 105, Pesantren: 75 },
-  { month: 'Des', PAUD: 142, SDIT: 272, SMPIT: 198, SMAQ: 108, Pesantren: 78 },
+  { month: 'Jul', TK: 120, SDIT: 250, SMPIT: 180, SMAQ: 95, Pesantren: 65 },
+  { month: 'Agt', TK: 125, SDIT: 255, SMPIT: 185, SMAQ: 98, Pesantren: 68 },
+  { month: 'Sep', TK: 130, SDIT: 260, SMPIT: 188, SMAQ: 100, Pesantren: 70 },
+  { month: 'Okt', TK: 135, SDIT: 265, SMPIT: 192, SMAQ: 102, Pesantren: 72 },
+  { month: 'Nov', TK: 138, SDIT: 268, SMPIT: 195, SMAQ: 105, Pesantren: 75 },
+  { month: 'Des', TK: 142, SDIT: 272, SMPIT: 198, SMAQ: 108, Pesantren: 78 },
 ];
 
 const mockAttendanceByUnit = [
-  { unit: 'PAUD', rate: 92, present: 131, total: 142, color: '#22c55e' },
+  { unit: 'TK', rate: 92, present: 131, total: 142, color: '#22c55e' },
   { unit: 'SDIT', rate: 88, present: 239, total: 272, color: '#3b82f6' },
   { unit: 'SMPIT', rate: 85, present: 168, total: 198, color: '#f59e0b' },
   { unit: 'SMAQ', rate: 90, present: 97, total: 108, color: '#8b5cf6' },
@@ -303,7 +303,7 @@ export default function ExecutiveDashboardPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={mockEnrollmentTrend} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                     <defs>
-                      <linearGradient id="colorPAUD" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient id="colorTK" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
                         <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
                       </linearGradient>
@@ -332,11 +332,11 @@ export default function ExecutiveDashboardPage() {
                     <Legend verticalAlign="top" height={36} iconType="circle" />
                     <Area
                       type="monotone"
-                      dataKey="PAUD"
+                      dataKey="TK"
                       stackId="1"
                       stroke="#22c55e"
                       strokeWidth={3}
-                      fill="url(#colorPAUD)"
+                      fill="url(#colorTK)"
                     />
                     <Area
                       type="monotone"

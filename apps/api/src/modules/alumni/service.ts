@@ -71,14 +71,33 @@ export async function getTracerStudyStats(unitId?: string) {
     ...(unitId && { unitId }),
   };
 
-  const [totalAlumni, alumniStatuses, topUniversities, topMajors, topIndustries] = await Promise.all([
+  const [
+    totalAlumni,
+    countWorking,
+    countStudying,
+    countBoth,
+    topUniversities,
+    topMajors,
+    topIndustries,
+  ] = await Promise.all([
     prisma.alumni.count({ where }),
-    prisma.alumni.findMany({
-      where,
-      select: {
-        id: true,
-        educations: { where: { isCompleted: false }, take: 1 },
-        careers: { where: { isCurrent: true }, take: 1 },
+    prisma.alumni.count({
+      where: {
+        ...where,
+        careers: { some: { isCurrent: true } },
+      },
+    }),
+    prisma.alumni.count({
+      where: {
+        ...where,
+        educations: { some: { isCompleted: false } },
+      },
+    }),
+    prisma.alumni.count({
+      where: {
+        ...where,
+        careers: { some: { isCurrent: true } },
+        educations: { some: { isCompleted: false } },
       },
     }),
     prisma.alumniEducation.groupBy({
@@ -104,27 +123,16 @@ export async function getTracerStudyStats(unitId?: string) {
     }),
   ]);
 
-  let working = 0;
-  let studying = 0;
-  let workingAndStudying = 0;
-  let other = 0;
-
-  for (const a of alumniStatuses) {
-    const isWorking = a.careers.length > 0;
-    const isStudying = a.educations.length > 0;
-
-    if (isWorking && isStudying) workingAndStudying++;
-    else if (isWorking) working++;
-    else if (isStudying) studying++;
-    else other++;
-  }
+  const workingOnly = countWorking - countBoth;
+  const studyingOnly = countStudying - countBoth;
+  const other = totalAlumni - (workingOnly + studyingOnly + countBoth);
 
   return {
     totalAlumni,
     statusDistribution: {
-      working,
-      studying,
-      workingAndStudying,
+      working: workingOnly,
+      studying: studyingOnly,
+      workingAndStudying: countBoth,
       other,
     },
     topUniversities: topUniversities.map((u) => ({

@@ -273,6 +273,10 @@ function generateReportHtml(report: Awaited<ReturnType<typeof PAUDReportService.
     { key: 'SNI', narrative: report.narrativeSNI },
   ];
 
+  // Cast JSON fields to expected types
+  const tahfidz = report.tahfidzSummary as any;
+  const health = report.healthSummary as any;
+
   return `
 <!DOCTYPE html>
 <html lang="id">
@@ -436,6 +440,36 @@ function generateReportHtml(report: Awaited<ReturnType<typeof PAUDReportService.
       )
       .join('')}
   </div>
+
+  ${
+    tahfidz
+      ? `
+  <div class="section">
+    <div class="section-title">PERKEMBANGAN TAHFIDZ AL-QUR'AN</div>
+    <table class="info-table">
+      <tr><td>Surah Terakhir</td><td>: ${tahfidz.lastSurah || '-'} (Ayat ${tahfidz.lastAyah || '-'})</td></tr>
+      <tr><td>Juz</td><td>: ${tahfidz.lastJuz || '-'}</td></tr>
+      <tr><td>Aktivitas Terakhir</td><td>: ${tahfidz.activity || '-'}</td></tr>
+    </table>
+  </div>`
+      : ''
+  }
+
+  ${
+    health
+      ? `
+  <div class="section">
+    <div class="section-title">DATA TUMBUH KEMBANG</div>
+    <table class="info-table">
+      <tr><td>Berat Badan</td><td>: ${health.weight || '-'} kg</td></tr>
+      <tr><td>Tinggi Badan</td><td>: ${health.height || '-'} cm</td></tr>
+      <tr><td>Lingkar Kepala</td><td>: ${health.headCircumference || '-'} cm</td></tr>
+      <tr><td>Status Gizi</td><td>: ${health.bmiDescription || '-'}</td></tr>
+      <tr><td>Catatan Kesehatan</td><td>: ${health.notes || '-'}</td></tr>
+    </table>
+  </div>`
+      : ''
+  }
 
   ${
     report.overallStrengths || report.areasForDevelopment

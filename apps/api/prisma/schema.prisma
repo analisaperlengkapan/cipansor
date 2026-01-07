@@ -5490,6 +5490,8 @@ model PAUDNarrativeReport {
   overallStrengths      String?   @map("overall_strengths") @db.Text
   areasForDevelopment   String?   @map("areas_for_development") @db.Text
   parentRecommendations String?   @map("parent_recommendations") @db.Text
+  tahfidzSummary        Json?     @map("tahfidz_summary")
+  healthSummary         Json?     @map("health_summary")
   teacherSignature      String?   @map("teacher_signature")
   principalSignature    String?   @map("principal_signature")
   status                String    @default("DRAFT") // DRAFT, FINALIZED, PRINTED

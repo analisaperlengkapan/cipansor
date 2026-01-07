@@ -98,6 +98,10 @@ export default function TKReportDetailPage() {
     ? Math.round((report.presentDays / report.totalDays) * 100)
     : 0;
 
+  // Extract summaries
+  const tahfidz = report.tahfidzSummary as any;
+  const health = report.healthSummary as any;
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -275,25 +279,93 @@ export default function TKReportDetailPage() {
 
             {/* Height & Weight */}
             <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Tinggi Badan</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-4xl font-bold">{report.height || '-'}</p>
-                  <p className="text-muted-foreground">cm</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Berat Badan</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-4xl font-bold">{report.weight || '-'}</p>
-                  <p className="text-muted-foreground">kg</p>
-                </CardContent>
-              </Card>
+              {health ? (
+                <Card className="col-span-2">
+                   <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <BookOpen className="h-5 w-5" />
+                      Data Tumbuh Kembang
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-4 bg-muted/50 rounded-lg">
+                        <p className="text-2xl font-bold">{health.weight || '-'}</p>
+                        <p className="text-sm text-muted-foreground">Berat (kg)</p>
+                      </div>
+                      <div className="text-center p-4 bg-muted/50 rounded-lg">
+                        <p className="text-2xl font-bold">{health.height || '-'}</p>
+                        <p className="text-sm text-muted-foreground">Tinggi (cm)</p>
+                      </div>
+                       <div className="text-center p-4 bg-muted/50 rounded-lg">
+                        <p className="text-2xl font-bold">{health.headCircumference || '-'}</p>
+                        <p className="text-sm text-muted-foreground">Lingkar Kepala (cm)</p>
+                      </div>
+                      <div className="text-center p-4 bg-muted/50 rounded-lg">
+                        <p className="text-xl font-bold truncate">{health.bmiDescription || '-'}</p>
+                        <p className="text-sm text-muted-foreground">Status Gizi</p>
+                      </div>
+                    </div>
+                    {health.notes && (
+                       <p className="mt-4 text-sm text-muted-foreground italic">
+                        Catatan: {health.notes}
+                       </p>
+                    )}
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Tinggi Badan</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center">
+                    <p className="text-4xl font-bold">-</p>
+                    <p className="text-muted-foreground">cm</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Berat Badan</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center">
+                    <p className="text-4xl font-bold">-</p>
+                    <p className="text-muted-foreground">kg</p>
+                  </CardContent>
+                </Card>
+                </>
+              )}
             </div>
+
+            {/* Tahfidz Summary */}
+            {tahfidz && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <BookOpen className="h-5 w-5" />
+                    Perkembangan Tahfidz
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
+                        <p className="text-sm text-muted-foreground mb-1">Surah Terakhir</p>
+                        <p className="font-semibold text-lg">{tahfidz.lastSurah || '-'}</p>
+                        <p className="text-xs text-muted-foreground">Ayat {tahfidz.lastAyah || '-'}</p>
+                      </div>
+                       <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
+                        <p className="text-sm text-muted-foreground mb-1">Capaian Juz</p>
+                        <p className="font-semibold text-lg">Juz {tahfidz.lastJuz || '-'}</p>
+                      </div>
+                       <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
+                        <p className="text-sm text-muted-foreground mb-1">Aktivitas Terakhir</p>
+                        <p className="font-semibold text-lg">{tahfidz.activity || '-'}</p>
+                      </div>
+                   </div>
+                </CardContent>
+              </Card>
+            )}
+
           </TabsContent>
 
           {/* Narrative Tab */}

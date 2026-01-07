@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/prisma";
-import { PermitStatus } from "@prisma/client";
+import { PermitStatus, AttendanceStatus, PermitType } from "@prisma/client";
 import { CreatePermitDto, UpdatePermitStatusDto, QueryPermitDto } from "./schema";
 
 export async function createPermit(data: CreatePermitDto) {
@@ -93,17 +93,94 @@ export async function updatePermitStatus(
     updateData.rejectionNote = data.rejectionNote;
   }
 
-  return prisma.permit.update({
-    where: { id },
-    data: updateData,
-    include: {
-      student: {
-        include: {
-          user: { select: { id: true, name: true, email: true } },
+  // Use a transaction to ensure atomicity
+  return prisma.$transaction(async (tx) => {
+    // 1. Update Permit
+    const updatedPermit = await tx.permit.update({
+      where: { id },
+      data: updateData,
+      include: {
+        student: {
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+          },
         },
+        approvedBy: { select: { id: true, name: true } },
       },
-      approvedBy: { select: { id: true, name: true } },
-    },
+    });
+
+    // 2. Auto-generate Attendance if Approved
+    if (data.status === PermitStatus.APPROVED && updatedPermit.studentId) {
+      // Get student's active class
+      const enrollment = await tx.classEnrollment.findFirst({
+        where: {
+          studentId: updatedPermit.studentId,
+          status: 'active',
+        },
+      });
+
+      if (enrollment) {
+        const dates: Date[] = [];
+        const current = new Date(updatedPermit.startDate);
+        const end = new Date(updatedPermit.endDate);
+        const attendanceStatus = updatedPermit.type === PermitType.SAKIT ? AttendanceStatus.SICK : AttendanceStatus.EXCUSED;
+        const notes = `Auto-generated from Permit ${updatedPermit.type}`;
+
+        // Generate all dates in the range
+        while (current <= end) {
+          dates.push(new Date(current));
+          current.setDate(current.getDate() + 1);
+        }
+
+        if (dates.length > 0) {
+          // Optimize: Update existing records first
+          const updateResult = await tx.attendance.updateMany({
+            where: {
+              studentId: updatedPermit.studentId,
+              classId: enrollment.classId,
+              date: { in: dates },
+            },
+            data: {
+              status: attendanceStatus,
+              notes: notes,
+              // recordedById is not updated to preserve original recorder if exists, or should it?
+              // Usually we want to know who modified it last, but updateMany doesn't easily support relations or complex logic.
+              // Let's assume updating status is enough.
+            },
+          });
+
+          // Create missing records
+          if (updateResult.count < dates.length) {
+            const existingRecords = await tx.attendance.findMany({
+              where: {
+                studentId: updatedPermit.studentId,
+                classId: enrollment.classId,
+                date: { in: dates },
+              },
+              select: { date: true },
+            });
+
+            const existingDates = new Set(existingRecords.map((r) => r.date.getTime()));
+            const missingDates = dates.filter((d) => !existingDates.has(d.getTime()));
+
+            if (missingDates.length > 0) {
+              await tx.attendance.createMany({
+                data: missingDates.map((date) => ({
+                  studentId: updatedPermit.studentId!,
+                  classId: enrollment.classId,
+                  date: date,
+                  status: attendanceStatus,
+                  notes: notes,
+                  recordedById: approverId,
+                })),
+              });
+            }
+          }
+        }
+      }
+    }
+
+    return updatedPermit;
   });
 }
 

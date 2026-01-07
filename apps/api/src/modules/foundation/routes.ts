@@ -14,6 +14,26 @@ router.use(authenticate);
 
 /**
  * @swagger
+ * /api/foundation/{id}/financial-summary:
+ *   get:
+ *     summary: Get foundation financial summary
+ *     tags: [Foundation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Financial summary
+ */
+router.get("/:id/financial-summary", authorize(UserRole.SUPER_ADMIN), controller.getFinancialSummary);
+
+/**
+ * @swagger
  * /api/foundation:
  *   get:
  *     summary: List foundations

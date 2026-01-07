@@ -533,6 +533,29 @@ export const payrollPeriodService = {
       throw new Error('Hanya periode APPROVED yang dapat dibayar');
     }
 
+    // Try to find relevant accounts for Journal Entry
+    // 1. Expense Account (Beban Gaji) - usually 5-1-xx
+    // 2. Asset Account (Kas/Bank) - usually 1-1-xx
+    const salaryExpenseAccount = await prisma.accountCode.findFirst({
+      where: {
+        OR: [
+          { code: '5101' },
+          { name: { contains: 'Gaji', mode: 'insensitive' } },
+        ],
+        type: 'EXPENSE',
+      },
+    });
+
+    const cashAccount = await prisma.accountCode.findFirst({
+      where: {
+        OR: [
+          { code: '1101' },
+          { name: { contains: 'Kas', mode: 'insensitive' } },
+        ],
+        type: 'ASSET',
+      },
+    });
+
     return prisma.$transaction(async (tx) => {
       // Update all payrolls to PAID
       await tx.payroll.updateMany({
@@ -541,7 +564,7 @@ export const payrollPeriodService = {
       });
 
       // Update period
-      return tx.payrollPeriod.update({
+      const updatedPeriod = await tx.payrollPeriod.update({
         where: { id },
         data: {
           status: 'PAID',
@@ -550,6 +573,42 @@ export const payrollPeriodService = {
           notes: notes || period.notes,
         },
       });
+
+      // Create Journal Entries (Integrasi ke Finance)
+      // Only if accounts are found and amount > 0
+      if (salaryExpenseAccount && cashAccount && Number(period.totalAmount) > 0) {
+        // Debit: Beban Gaji
+        await tx.journalEntry.create({
+          data: {
+            unitId: period.unitId,
+            accountId: salaryExpenseAccount.id,
+            date: payDate,
+            description: `Pembayaran Gaji Periode ${period.month}/${period.year}`,
+            debit: period.totalAmount,
+            credit: 0,
+            reference: period.id,
+            referenceType: 'PAYROLL',
+            createdById: period.createdById,
+          },
+        });
+
+        // Credit: Kas
+        await tx.journalEntry.create({
+          data: {
+            unitId: period.unitId,
+            accountId: cashAccount.id,
+            date: payDate,
+            description: `Pembayaran Gaji Periode ${period.month}/${period.year}`,
+            debit: 0,
+            credit: period.totalAmount,
+            reference: period.id,
+            referenceType: 'PAYROLL',
+            createdById: period.createdById,
+          },
+        });
+      }
+
+      return updatedPeriod;
     });
   },
 

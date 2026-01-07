@@ -77,6 +77,15 @@ export async function getFoundationStats(req: Request, res: Response, next: Next
   }
 }
 
+export async function getFinancialSummary(req: Request, res: Response, next: NextFunction) {
+  try {
+    const summary = await service.getFinancialSummary(req.params.id);
+    res.json({ success: true, data: summary });
+  } catch (error) {
+    next(error);
+  }
+}
+
 // =====================================
 // BOARD MEMBER CONTROLLERS
 // =====================================

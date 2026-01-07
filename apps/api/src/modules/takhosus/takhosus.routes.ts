@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { halaqohController, enrollmentController, sanadController, progressController } from './takhosus.controller';
+import { halaqohController, enrollmentController, sanadController, progressController, targetController } from './takhosus.controller';
 import { authenticate, authorize } from '@/middleware/auth';
 import { validate } from '@/middleware/validate';
 import { UserRole } from '@prisma/client';
@@ -10,6 +10,7 @@ import {
   updateEnrollmentSchema,
   createSanadSchema,
   updateSanadSchema,
+  createTargetSchema,
 } from './takhosus.schema';
 
 const router = Router();
@@ -223,6 +224,44 @@ router.delete(
   '/sanad/:id',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   sanadController.delete
+);
+
+// =====================================
+// TARGET ROUTES
+// =====================================
+
+/**
+ * @route POST /api/takhosus/targets
+ * @desc Create or update student target
+ * @access Private - Admin, Teacher
+ */
+router.post(
+  '/targets',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  validate(createTargetSchema),
+  targetController.createOrUpdate
+);
+
+/**
+ * @route GET /api/takhosus/targets/student/:studentId
+ * @desc Get target by student ID
+ * @access Private - Admin, Teacher
+ */
+router.get(
+  '/targets/student/:studentId',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  targetController.getByStudent
+);
+
+/**
+ * @route GET /api/takhosus/targets/progress/:studentId
+ * @desc Get progress towards target
+ * @access Private - Admin, Teacher
+ */
+router.get(
+  '/targets/progress/:studentId',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  targetController.getProgress
 );
 
 // =====================================

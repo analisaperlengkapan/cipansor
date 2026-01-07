@@ -88,6 +88,20 @@ export const createSanadSchema = z.object({
 export const updateSanadSchema = createSanadSchema.partial().omit({ enrollmentId: true });
 
 // =====================================
+// TARGET SCHEMAS
+// =====================================
+
+export const createTargetSchema = z.object({
+  studentId: z.string().uuid('Invalid student ID'),
+  academicYearId: z.string().uuid('Invalid academic year ID'),
+  targetJuz: z.coerce.number().min(1).max(30),
+  targetAyah: z.coerce.number().optional(),
+  notes: z.string().optional(),
+});
+
+export const updateTargetSchema = createTargetSchema.partial();
+
+// =====================================
 // PROGRESS SCHEMAS
 // =====================================
 
@@ -102,3 +116,5 @@ export type CreateEnrollmentInput = z.infer<typeof createEnrollmentSchema>;
 export type UpdateEnrollmentInput = z.infer<typeof updateEnrollmentSchema>;
 export type CreateSanadInput = z.infer<typeof createSanadSchema>;
 export type UpdateSanadInput = z.infer<typeof updateSanadSchema>;
+export type CreateTargetInput = z.infer<typeof createTargetSchema>;
+export type UpdateTargetInput = z.infer<typeof updateTargetSchema>;

@@ -6,8 +6,14 @@ import {
   CreateJournalEntryInput,
   CreateScholarshipInput,
   AssignScholarshipInput,
-  CreatePaymentComponentInput
+  CreatePaymentComponentInput,
+  CreateBudgetInput,
+  UpdateBudgetInput,
+  CreateFinancialPeriodInput
 } from '@cipansor/shared';
+import { createBudget, updateBudget, getBudgets } from './budget.service';
+import { createFinancialPeriod, closePeriod, getFinancialPeriods } from './period.service';
+import { getBalanceSheet, getIncomeStatement } from './reporting.service';
 
 // Helper for parsing pagination params
 const parsePagination = (req: Request) => ({
@@ -249,12 +255,121 @@ export class FinanceEnhancementController {
         return res.status(400).json({ success: false, message: 'Start date and end date are required' });
       }
 
-      const result = await financeEnhancementService.getIncomeExpenseReport({
+      // Use the new reporting service if preferred, or keep existing.
+      // Mapping the request to the new service:
+      const result = await getIncomeStatement(
+        unitId as string,
+        new Date(startDate as string),
+        new Date(endDate as string)
+      );
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ==================== BUDGETS ====================
+
+  async getBudgets(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { unitId, academicYearId } = req.query;
+      const { page, limit } = parsePagination(req);
+
+      const result = await getBudgets({
         unitId: unitId as string,
-        startDate: new Date(startDate as string),
-        endDate: new Date(endDate as string),
-        groupBy: groupBy as 'day' | 'month'
+        academicYearId: academicYearId as string,
+        page,
+        limit
       });
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async createBudget(req: Request, res: Response, next: NextFunction) {
+    try {
+      const input: CreateBudgetInput = req.body;
+      const userId = (req as any).user.id;
+
+      const result = await createBudget({
+        ...input,
+        createdById: userId
+      });
+
+      res.status(201).json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateBudget(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const input: UpdateBudgetInput = req.body;
+      const result = await updateBudget(id, input);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ==================== FINANCIAL PERIODS ====================
+
+  async getFinancialPeriods(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { unitId } = req.query;
+      const { page, limit } = parsePagination(req);
+
+      const result = await getFinancialPeriods({
+        unitId: unitId as string,
+        page,
+        limit
+      });
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async createFinancialPeriod(req: Request, res: Response, next: NextFunction) {
+    try {
+      const input: CreateFinancialPeriodInput = req.body;
+      const result = await createFinancialPeriod(input);
+      res.status(201).json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async closeFinancialPeriod(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const userId = (req as any).user.id;
+      const result = await closePeriod(id, userId);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ==================== NEW REPORTS ====================
+
+  async getBalanceSheet(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { unitId, date } = req.query;
+
+      if (!date) {
+        return res.status(400).json({ success: false, message: 'Date is required' });
+      }
+
+      const result = await getBalanceSheet(
+        unitId as string,
+        new Date(date as string)
+      );
 
       res.json({ success: true, data: result });
     } catch (error) {

@@ -131,6 +131,25 @@ export const bulkCreateAssessmentSchema = z.object({
   })).min(1, 'At least one assessment is required'),
 });
 
+// NEW: Class Bulk Assessment Schema
+export const bulkCreateClassAssessmentSchema = z.object({
+  classId: z.string().uuid('Invalid class ID'),
+  unitId: z.string().uuid('Invalid unit ID'),
+  academicYearId: z.string().uuid('Invalid academic year ID'),
+  semester: z.enum(['GANJIL', 'GENAP']),
+  periodType: PAUDReportPeriodEnum,
+  periodDate: z.coerce.date(),
+  aspect: PAUDAspectEnum,
+  indicatorId: z.string().uuid().optional().nullable(),
+  assessments: z.array(z.object({
+    studentId: z.string().uuid('Invalid student ID'),
+    achievementLevel: PAUDAchievementLevelEnum,
+    narrativeText: z.string().max(5000).optional().nullable(),
+    teacherNotes: z.string().max(2000).optional().nullable(),
+    recommendations: z.string().max(2000).optional().nullable(),
+  })).min(1, 'At least one student assessment is required'),
+});
+
 // ============================================
 // PAUD Assessment Evidence Schemas
 // ============================================
@@ -245,6 +264,7 @@ export type ListAssessmentsQuery = z.infer<typeof listAssessmentsQuerySchema>;
 // export type CreateAssessmentInput = z.infer<typeof createAssessmentSchema>; // Use shared type
 // export type UpdateAssessmentInput = z.infer<typeof updateAssessmentSchema>; // Use shared type
 // export type BulkCreateAssessmentInput = z.infer<typeof bulkCreateAssessmentSchema>; // Use shared type
+export type BulkCreateClassPAUDAssessmentInput = z.infer<typeof bulkCreateClassAssessmentSchema>;
 
 // export type CreateEvidenceInput = z.infer<typeof createEvidenceSchema>; // Use shared type
 // export type UpdateEvidenceInput = z.infer<typeof updateEvidenceSchema>; // Use shared type

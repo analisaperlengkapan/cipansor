@@ -65,6 +65,85 @@ export async function getAlumni(query: AlumniQueryInput) {
   };
 }
 
+export async function getTracerStudyStats(unitId?: string) {
+  const where: Prisma.AlumniWhereInput = {
+    deletedAt: null,
+    ...(unitId && { unitId }),
+  };
+
+  const [totalAlumni, alumniStatuses, topUniversities, topMajors, topIndustries] = await Promise.all([
+    prisma.alumni.count({ where }),
+    prisma.alumni.findMany({
+      where,
+      select: {
+        id: true,
+        educations: { where: { isCompleted: false }, take: 1 },
+        careers: { where: { isCurrent: true }, take: 1 },
+      },
+    }),
+    prisma.alumniEducation.groupBy({
+      by: ["institution"],
+      where: { alumni: where },
+      _count: { institution: true },
+      orderBy: { _count: { institution: "desc" } },
+      take: 5,
+    }),
+    prisma.alumniEducation.groupBy({
+      by: ["field"],
+      where: { alumni: where },
+      _count: { field: true },
+      orderBy: { _count: { field: "desc" } },
+      take: 5,
+    }),
+    prisma.alumniCareer.groupBy({
+      by: ["industry"],
+      where: { alumni: where, industry: { not: null } },
+      _count: { industry: true },
+      orderBy: { _count: { industry: "desc" } },
+      take: 5,
+    }),
+  ]);
+
+  let working = 0;
+  let studying = 0;
+  let workingAndStudying = 0;
+  let other = 0;
+
+  for (const a of alumniStatuses) {
+    const isWorking = a.careers.length > 0;
+    const isStudying = a.educations.length > 0;
+
+    if (isWorking && isStudying) workingAndStudying++;
+    else if (isWorking) working++;
+    else if (isStudying) studying++;
+    else other++;
+  }
+
+  return {
+    totalAlumni,
+    statusDistribution: {
+      working,
+      studying,
+      workingAndStudying,
+      other,
+    },
+    topUniversities: topUniversities.map((u) => ({
+      name: u.institution,
+      count: u._count.institution,
+    })),
+    topMajors: topMajors.map((m) => ({
+      name: m.field,
+      count: m._count.field,
+    })),
+    topIndustries: topIndustries
+      .filter((i) => i.industry !== null)
+      .map((i) => ({
+        name: i.industry as string,
+        count: i._count.industry,
+      })),
+  };
+}
+
 export async function getAlumniById(id: string) {
   return prisma.alumni.findFirst({
     where: { id, deletedAt: null },

@@ -215,6 +215,10 @@ export const dailyReportService = {
         snackStatus: data.snackConsumption as MealConsumption | undefined,
         napDuration: data.napDurationMinutes,
         toiletNotes: data.toiletingNotes,
+        sholatDhuha: data.sholatDhuha,
+        sholatDzuhur: data.sholatDzuhur,
+        sholatAshar: data.sholatAshar,
+        sholatJamaah: data.sholatJamaah,
         activitiesSummary: data.activitiesSummary,
         achievements: data.learningAchievements,
         tahfidzActivity: data.surahPractice,
@@ -227,6 +231,15 @@ export const dailyReportService = {
             create: data.photoUrls.map((url) => ({
               photoUrl: url,
               caption: '',
+            })),
+          }
+          : undefined,
+        homework: data.homework && data.homework.length > 0
+          ? {
+            create: data.homework.map((hw) => ({
+              subjectName: hw.subjectName,
+              description: hw.description,
+              dueDate: hw.dueDate ? new Date(hw.dueDate) : null,
             })),
           }
           : undefined,
@@ -365,6 +378,10 @@ export const dailyReportService = {
         snackStatus: data.snackConsumption as MealConsumption | undefined,
         napDuration: data.napDurationMinutes,
         toiletNotes: data.toiletingNotes,
+        sholatDhuha: data.sholatDhuha,
+        sholatDzuhur: data.sholatDzuhur,
+        sholatAshar: data.sholatAshar,
+        sholatJamaah: data.sholatJamaah,
         activitiesSummary: data.activitiesSummary,
         achievements: data.learningAchievements,
         tahfidzActivity: data.surahPractice,
@@ -375,6 +392,7 @@ export const dailyReportService = {
       include: {
         student: { select: { id: true, user: { select: { name: true } } } },
         photos: true,
+        homework: true,
       },
     });
 
@@ -390,6 +408,24 @@ export const dailyReportService = {
             reportId: id,
             photoUrl: url,
             caption: '',
+          })),
+        });
+      }
+    }
+
+    // Handle homework updates
+    if (data.homework !== undefined) {
+      // Delete existing homework
+      await prisma.dailyHomework.deleteMany({ where: { reportId: id } });
+
+      // Create new homework
+      if (data.homework.length > 0) {
+        await prisma.dailyHomework.createMany({
+          data: data.homework.map((hw) => ({
+            reportId: id,
+            subjectName: hw.subjectName,
+            description: hw.description,
+            dueDate: hw.dueDate ? new Date(hw.dueDate) : null,
           })),
         });
       }

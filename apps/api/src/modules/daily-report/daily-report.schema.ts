@@ -40,6 +40,12 @@ export const createDailyReportSchema = z.object({
   afternoonMood: DailyMoodEnum.optional().nullable(),
   healthNotes: z.string().max(500).optional().nullable(),
   temperature: z.number().min(30).max(45).optional().nullable(),
+
+  // Prayers (SD IT Specific)
+  sholatDhuha: z.boolean().optional(),
+  sholatDzuhur: z.boolean().optional(),
+  sholatAshar: z.boolean().optional(),
+  sholatJamaah: z.boolean().optional(),
   
   // Meals
   breakfastConsumption: MealConsumptionEnum.optional().nullable(),
@@ -71,6 +77,13 @@ export const createDailyReportSchema = z.object({
   // Recommendations for parents
   parentNotes: z.string().max(500).optional().nullable(),
   homeworkSuggestion: z.string().max(500).optional().nullable(),
+
+  // Structured Homework (SD IT Specific)
+  homework: z.array(z.object({
+    subjectName: z.string().min(1),
+    description: z.string().min(1),
+    dueDate: z.string().datetime().optional().nullable(),
+  })).optional(),
   
   // Photos of activities (URLs)
   photoUrls: z.array(z.string().url()).max(10).optional().default([]),
@@ -81,6 +94,13 @@ export const updateDailyReportSchema = z.object({
   afternoonMood: DailyMoodEnum.optional().nullable(),
   healthNotes: z.string().max(500).optional().nullable(),
   temperature: z.number().min(30).max(45).optional().nullable(),
+
+  // Prayers
+  sholatDhuha: z.boolean().optional(),
+  sholatDzuhur: z.boolean().optional(),
+  sholatAshar: z.boolean().optional(),
+  sholatJamaah: z.boolean().optional(),
+
   breakfastConsumption: MealConsumptionEnum.optional().nullable(),
   lunchConsumption: MealConsumptionEnum.optional().nullable(),
   snackConsumption: MealConsumptionEnum.optional().nullable(),
@@ -98,6 +118,14 @@ export const updateDailyReportSchema = z.object({
   behaviorNotes: z.string().max(500).optional().nullable(),
   parentNotes: z.string().max(500).optional().nullable(),
   homeworkSuggestion: z.string().max(500).optional().nullable(),
+
+  // Structured Homework
+  homework: z.array(z.object({
+    subjectName: z.string().min(1),
+    description: z.string().min(1),
+    dueDate: z.string().datetime().optional().nullable(),
+  })).optional(),
+
   photoUrls: z.array(z.string().url()).max(10).optional(),
 });
 

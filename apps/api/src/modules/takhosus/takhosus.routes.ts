@@ -186,20 +186,20 @@ router.get(
 
 router.get(
   '/murojaah',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.MUSYRIF),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
   sanadController.list // TODO: Create murojaahController
 );
 
 router.post(
   '/murojaah',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.MUSYRIF),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
   validate(createMurojaahSchema),
   sanadController.create // TODO: Create murojaahController
 );
 
 router.put(
   '/murojaah/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.MUSYRIF),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
   validate(updateMurojaahSchema),
   sanadController.update // TODO: Create murojaahController
 );
@@ -216,20 +216,20 @@ router.delete(
 
 router.get(
   '/simaan',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.MUSYRIF),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
   sanadController.list // TODO: Create simaanController
 );
 
 router.post(
   '/simaan',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.MUSYRIF),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
   validate(createSimaanSchema),
   sanadController.create // TODO: Create simaanController
 );
 
 router.put(
   '/simaan/:id/grade',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.MUSYRIF),
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
   validate(gradeSimaanSchema),
   sanadController.update // TODO: Create simaanController
 );

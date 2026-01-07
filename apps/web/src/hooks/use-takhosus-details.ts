@@ -4,10 +4,45 @@ import { PaginatedResponse } from '@/types/api';
 import {
   MurojaahRecord,
   SimaanExam,
-  TakhosusDashboardStats,
-  CreateMurojaahInput, // Assuming these input types might be in shared schemas or we can infer
-  CreateSimaanInput
+  TakhosusDashboardStats
 } from '@cipansor/shared';
+
+// Define input types locally if not available in @cipansor/shared,
+// or import from a shared location if you move schemas to shared package.
+// For now, I will define them to match the API schemas.
+
+export interface CreateMurojaahInput {
+  studentId: string;
+  murojaahType: 'YAUMIYAH' | 'USBUIYAH' | 'SYAHRIYAH' | 'TASMI';
+  murojaahDate: string;
+  juzStart: number;
+  juzEnd: number;
+  pagesReviewed?: number;
+  durationMinutes?: number;
+  qualityScore: number;
+  mistakeCount?: number;
+  fluencyLevel?: number;
+  tajwidScore?: number;
+  notes?: string;
+  mistakes?: {
+    mistakeType: 'LAHIN_JALI' | 'LAHIN_KHAFI' | 'TAJWID' | 'LUPA' | 'URUTAN';
+    juz: number;
+    surahNumber: number;
+    ayahNumber?: number;
+    description?: string;
+  }[];
+}
+
+export interface CreateSimaanInput {
+  studentId: string;
+  simaanType: 'BIN_NAZHR' | 'BIL_GHAIB' | 'TAHDIR' | 'TASMI' | 'KHATAM';
+  examDate: string;
+  juzStart: number;
+  juzEnd: number;
+  sessionNumber?: number;
+  totalSessions?: number;
+  notes?: string;
+}
 
 // Re-export shared types for component usage
 export type { MurojaahRecord, SimaanExam, TakhosusDashboardStats };
@@ -63,7 +98,7 @@ export function useSimaanExams(params: {
 export function useCreateMurojaah() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (data: any) => {
+        mutationFn: async (data: CreateMurojaahInput) => {
             const { data: response } = await api.post('/takhosus/murojaah', data);
             return response.data;
         },
@@ -77,7 +112,7 @@ export function useCreateMurojaah() {
 export function useCreateSimaan() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (data: any) => {
+        mutationFn: async (data: CreateSimaanInput) => {
             const { data: response } = await api.post('/takhosus/simaan', data);
             return response.data;
         },

@@ -33,12 +33,21 @@ interface FoundationDashboardProps {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export function FoundationDashboard({ foundationId }: FoundationDashboardProps) {
-  const { data: stats, isLoading } = useFoundationStats(foundationId);
+  const { data: stats, isLoading, isError } = useFoundationStats(foundationId);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-destructive">
+        <AlertTriangle className="h-8 w-8 mb-2" />
+        <p>Gagal memuat data statistik</p>
       </div>
     );
   }

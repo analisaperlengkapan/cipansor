@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,11 @@ interface StudentReportState {
   lunchConsumption: "HABIS" | "SETENGAH" | "SEDIKIT" | "TIDAK_MAU";
   napDurationMinutes: number;
   notes: string;
+  tahfidzActivity: string; // ibadahNotes
+  sholatDhuha: boolean;
+  sholatDzuhur: boolean;
+  sholatAshar: boolean;
+  sholatJamaah: boolean;
 }
 
 export default function BulkDailyReportPage() {
@@ -84,6 +90,11 @@ export default function BulkDailyReportPage() {
         lunchConsumption: "HABIS",
         napDurationMinutes: 0,
         notes: "",
+        tahfidzActivity: "",
+        sholatDhuha: true,
+        sholatDzuhur: true,
+        sholatAshar: true,
+        sholatJamaah: true,
       };
     });
     setReports(initialReports);
@@ -117,14 +128,27 @@ export default function BulkDailyReportPage() {
     }));
   };
 
+  const handleCheckAll = (field: keyof StudentReportState, checked: boolean) => {
+    setReports((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((studentId) => {
+        next[studentId] = {
+          ...next[studentId],
+          [field]: checked,
+        };
+      });
+      return next;
+    });
+  };
+
   const handleSubmit = () => {
     if (!classId) return;
 
     // Transform state to API input
     const payload = {
-      unitId: user?.unitId,
-      academicYearId: user?.academicYearId, // Assuming user context has this
-      reportDate: date,
+      unitId: user?.unitId || "",
+      academicYearId: user?.academicYearId || "", // Assuming user context has this
+      reportDate: date.toISOString(),
       reports: Object.values(reports).map((r) => ({
         studentId: r.studentId,
         morningMood: r.morningMood,
@@ -135,7 +159,11 @@ export default function BulkDailyReportPage() {
         healthNotes: r.morningMood === 'SICK' ? 'Sakit' : 'Sehat',
         breakfastConsumption: "FULL",
         activitiesSummary: "Mengikuti kegiatan dengan baik",
-        ibadahNotes: "-",
+        ibadahNotes: r.tahfidzActivity || "-",
+        sholatDhuha: r.sholatDhuha,
+        sholatDzuhur: r.sholatDzuhur,
+        sholatAshar: r.sholatAshar,
+        sholatJamaah: r.sholatJamaah,
       })),
     };
 
@@ -199,7 +227,7 @@ export default function BulkDailyReportPage() {
         <CardHeader>
           <CardTitle>Daftar Siswa</CardTitle>
           <CardDescription>
-            Silakan lengkapi data mood, makan siang, dan tidur siang untuk setiap siswa.
+            Silakan lengkapi data mood, makan, sholat, dan tahfidz untuk setiap siswa.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -217,14 +245,38 @@ export default function BulkDailyReportPage() {
               <p>Tidak ada siswa di kelas ini.</p>
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[200px]">Nama Siswa</TableHead>
-                    <TableHead>Mood Pagi</TableHead>
+                    <TableHead>Mood</TableHead>
                     <TableHead>Makan Siang</TableHead>
-                    <TableHead>Tidur Siang (menit)</TableHead>
+                    <TableHead className="text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <span>Dhuha</span>
+                        <Checkbox onCheckedChange={(c) => handleCheckAll("sholatDhuha", !!c)} />
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <span>Dzuhur</span>
+                        <Checkbox onCheckedChange={(c) => handleCheckAll("sholatDzuhur", !!c)} />
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <span>Ashar</span>
+                        <Checkbox onCheckedChange={(c) => handleCheckAll("sholatAshar", !!c)} />
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <span>Jamaah</span>
+                        <Checkbox onCheckedChange={(c) => handleCheckAll("sholatJamaah", !!c)} />
+                      </div>
+                    </TableHead>
+                    <TableHead>Tahfidz/Ibadah</TableHead>
                     <TableHead>Catatan</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -244,16 +296,16 @@ export default function BulkDailyReportPage() {
                             value={report.morningMood}
                             onValueChange={(val: any) => handleUpdate(studentId, "morningMood", val)}
                           >
-                            <SelectTrigger className="w-[130px]">
+                            <SelectTrigger className="w-[100px]">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="HAPPY">😊 Senang</SelectItem>
-                              <SelectItem value="NEUTRAL">😐 Biasa</SelectItem>
-                              <SelectItem value="SAD">😢 Sedih</SelectItem>
-                              <SelectItem value="TIRED">😴 Lelah</SelectItem>
-                              <SelectItem value="EXCITED">🤩 Antusias</SelectItem>
-                              <SelectItem value="SICK">🤒 Sakit</SelectItem>
+                              <SelectItem value="HAPPY">😊</SelectItem>
+                              <SelectItem value="NEUTRAL">😐</SelectItem>
+                              <SelectItem value="SAD">😢</SelectItem>
+                              <SelectItem value="TIRED">😴</SelectItem>
+                              <SelectItem value="EXCITED">🤩</SelectItem>
+                              <SelectItem value="SICK">🤒</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
@@ -262,31 +314,55 @@ export default function BulkDailyReportPage() {
                             value={report.lunchConsumption}
                             onValueChange={(val: any) => handleUpdate(studentId, "lunchConsumption", val)}
                           >
-                            <SelectTrigger className="w-[130px]">
+                            <SelectTrigger className="w-[110px]">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="HABIS">Habis</SelectItem>
-                              <SelectItem value="SETENGAH">Setengah</SelectItem>
+                              <SelectItem value="SETENGAH">1/2</SelectItem>
                               <SelectItem value="SEDIKIT">Sedikit</SelectItem>
-                              <SelectItem value="TIDAK_MAU">Tidak Mau</SelectItem>
+                              <SelectItem value="TIDAK_MAU">Tdk Mau</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={report.sholatDhuha}
+                            onCheckedChange={(c) => handleUpdate(studentId, "sholatDhuha", !!c)}
+                          />
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={report.sholatDzuhur}
+                            onCheckedChange={(c) => handleUpdate(studentId, "sholatDzuhur", !!c)}
+                          />
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={report.sholatAshar}
+                            onCheckedChange={(c) => handleUpdate(studentId, "sholatAshar", !!c)}
+                          />
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={report.sholatJamaah}
+                            onCheckedChange={(c) => handleUpdate(studentId, "sholatJamaah", !!c)}
+                          />
+                        </TableCell>
                         <TableCell>
-                          <Input
-                            type="number"
-                            min="0"
-                            className="w-[80px]"
-                            value={report.napDurationMinutes}
-                            onChange={(e) => handleUpdate(studentId, "napDurationMinutes", parseInt(e.target.value) || 0)}
+                           <Input
+                            placeholder="Juz/Surat..."
+                            value={report.tahfidzActivity}
+                            onChange={(e) => handleUpdate(studentId, "tahfidzActivity", e.target.value)}
+                            className="w-[120px]"
                           />
                         </TableCell>
                         <TableCell>
                           <Input
-                            placeholder="Catatan singkat..."
+                            placeholder="Catatan..."
                             value={report.notes}
                             onChange={(e) => handleUpdate(studentId, "notes", e.target.value)}
+                            className="w-[150px]"
                           />
                         </TableCell>
                       </TableRow>

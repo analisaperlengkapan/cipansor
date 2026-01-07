@@ -318,6 +318,10 @@ export const dailyReportService = {
             activitiesSummary: report.activitiesSummary,
             tahfidzActivity: report.ibadahNotes,
             teacherNotes: report.parentNotes,
+            sholatDhuha: report.sholatDhuha,
+            sholatDzuhur: report.sholatDzuhur,
+            sholatAshar: report.sholatAshar,
+            sholatJamaah: report.sholatJamaah,
             createdById: userId,
           },
           include: {

@@ -117,5 +117,9 @@ export interface BulkCreateDailyReportsInput {
     activitiesSummary?: string;
     ibadahNotes?: string; // tahfidzActivity
     parentNotes?: string; // teacherNotes
+    sholatDhuha?: boolean;
+    sholatDzuhur?: boolean;
+    sholatAshar?: boolean;
+    sholatJamaah?: boolean;
   }>;
 }

@@ -6,6 +6,7 @@ import {
   generateBatchRaporSchema,
   updateRaporSchema,
   raporConfigSchema,
+  getLegerQuerySchema,
 } from './rapor-pesantren.schema';
 import { authenticate, authorize } from '@/middleware/auth';
 import { validate } from '@/middleware/validate';
@@ -61,6 +62,30 @@ router.post(
     try {
       const result = await service.generateBatchRaporPesantren(req.body);
       res.json(ApiResponse.success(result, `Generated ${result.success}/${result.total} rapor`));
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /api/rapor-pesantren/leger:
+ *   get:
+ *     summary: Get leger pesantren for a class
+ *     tags: [RaporPesantren]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+  '/leger',
+  authenticate,
+  authorize('SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER'),
+  validate(getLegerQuerySchema),
+  async (req, res, next) => {
+    try {
+      const result = await service.getLegerPesantren(req.query as any);
+      res.json(ApiResponse.success(result));
     } catch (error) {
       next(error);
     }

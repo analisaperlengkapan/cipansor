@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { BookOpen, FileText, Users, Download, Settings, Eye, Trash2, RefreshCw } from 'lucide-react';
+import { BookOpen, FileText, Users, Download, Settings, Eye, Trash2, RefreshCw, FileSpreadsheet } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -198,6 +198,10 @@ export default function RaporPesantrenPage() {
           <TabsTrigger value="generate">
             <RefreshCw className="w-4 h-4 mr-2" />
             Generate Batch
+          </TabsTrigger>
+          <TabsTrigger value="leger" onClick={() => router.push('/rapor-pesantren/leger')}>
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            Leger Nilai
           </TabsTrigger>
           <TabsTrigger value="config">
             <Settings className="w-4 h-4 mr-2" />

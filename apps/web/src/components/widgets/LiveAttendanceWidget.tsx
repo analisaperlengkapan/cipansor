@@ -49,7 +49,7 @@ const STATUS_CONFIG = {
 
 interface LiveAttendanceWidgetProps {
     maxItems?: number;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
     onNewEvent?: (event: AttendanceEvent) => void;
 }
 
@@ -123,7 +123,7 @@ export function LiveAttendanceWidget({
             mounted = false;
             clearInterval(interval);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
     }, []);
 
     const getInitials = (name: string) => {

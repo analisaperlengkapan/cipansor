@@ -155,7 +155,7 @@ export default function StudentComplianceEditPage({ params }: PageProps) {
       }
     }
     // We explicitly exclude formData from deps as we only want to update on student change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [student]);
   
   const handleSubmit = async (e: React.FormEvent) => {

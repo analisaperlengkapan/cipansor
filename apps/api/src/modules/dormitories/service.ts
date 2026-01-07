@@ -295,6 +295,74 @@ export async function endRoomAssignment(id: string) {
   });
 }
 
+export async function getStudentsByMusyrif(userId: string) {
+  // 1. Get Musyrif profile
+  const musyrif = await prisma.musyrif.findUnique({
+    where: { userId },
+    include: {
+      assignments: {
+        where: { isActive: true },
+      },
+    },
+  });
+
+  if (!musyrif) {
+    return [];
+  }
+
+  // 2. Collect scope
+  const dormitoryIds = musyrif.assignments
+    .filter((a) => !a.roomId)
+    .map((a) => a.dormitoryId);
+
+  const roomIds = musyrif.assignments
+    .filter((a) => a.roomId)
+    .map((a) => a.roomId as string);
+
+  // 3. Find students
+  const roomAssignments = await prisma.roomAssignment.findMany({
+    where: {
+      isActive: true,
+      room: {
+        OR: [
+          { id: { in: roomIds } },
+          { dormitoryId: { in: dormitoryIds } },
+        ],
+      },
+    },
+    include: {
+      student: {
+        include: {
+          user: { select: { name: true, email: true, photoUrl: true } },
+          classEnrollments: {
+            where: { status: 'active' },
+            include: { class: { select: { name: true } } },
+            take: 1,
+          },
+          roomAssignments: {
+             where: { isActive: true },
+             include: { room: { select: { name: true } } },
+             take: 1,
+          }
+        },
+      },
+    },
+    orderBy: {
+      student: { user: { name: 'asc' } },
+    }
+  });
+
+  return roomAssignments.map(ra => ({
+    id: ra.student.id,
+    name: ra.student.user.name,
+    nis: ra.student.nis,
+    photo: ra.student.user.photoUrl,
+    class: ra.student.classEnrollments[0]?.class.name || '-',
+    room: ra.student.roomAssignments[0]?.room.name || '-',
+    gender: ra.student.gender
+  }));
+}
+
 // =====================================
 // HELPER FUNCTIONS
 // =====================================

@@ -442,4 +442,18 @@ router.put("/assignments/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADM
  */
 router.delete("/assignments/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.endRoomAssignment);
 
+/**
+ * @swagger
+ * /api/dormitories/my-students:
+ *   get:
+ *     summary: Get students assigned to current Musyrif
+ *     tags: [Dormitories]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of students
+ */
+router.get("/my-students", authenticate, controller.getStudentsByMusyrif);
+
 export default router;

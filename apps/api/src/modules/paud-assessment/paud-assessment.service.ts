@@ -346,6 +346,48 @@ async function bulkCreateAssessments(input: BulkCreatePAUDAssessmentInput, asses
   };
 }
 
+async function createClassAssessment(input: BulkCreateClassPAUDAssessmentInput, assessedById: string) {
+  const { classId, unitId, academicYearId, semester, periodType, periodDate, aspect, indicatorId, assessments } = input;
+
+  // Validate class belongs to unit (optional, but good practice)
+  const classData = await prisma.class.findUnique({
+    where: { id: classId },
+    select: { unitId: true },
+  });
+
+  if (!classData || classData.unitId !== unitId) {
+    throw new Error('Class not found or does not belong to this unit');
+  }
+
+  // Create assessments transactionally
+  const created = await prisma.$transaction(
+    assessments.map((assessment) =>
+      prisma.pAUDDevelopmentAssessment.create({
+        data: {
+          studentId: assessment.studentId,
+          unitId,
+          academicYearId,
+          semester,
+          periodType,
+          periodDate: new Date(periodDate),
+          aspect,
+          indicatorId,
+          achievementLevel: assessment.achievementLevel,
+          narrativeText: assessment.narrativeText,
+          teacherNotes: assessment.teacherNotes,
+          recommendations: assessment.recommendations,
+          assessedById,
+        },
+      })
+    )
+  );
+
+  return {
+    count: created.length,
+    assessments: created,
+  };
+}
+
 async function updateAssessment(id: string, input: UpdatePAUDAssessmentInput) {
   const existing = await prisma.pAUDDevelopmentAssessment.findUnique({
     where: { id },
@@ -826,6 +868,7 @@ export const paudAssessmentService = {
   findAssessmentById,
   createAssessment,
   bulkCreateAssessments,
+  createClassAssessment,
   updateAssessment,
   deleteAssessment,
 

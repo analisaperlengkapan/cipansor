@@ -11,6 +11,7 @@ import {
   CreatePAUDNarrativeReportInput,
   UpdatePAUDNarrativeReportInput,
   FinalizePAUDReportInput,
+  BulkCreateClassPAUDAssessmentInput,
 } from '@cipansor/shared';
 import type {
   ListIndicatorsQuery,
@@ -160,6 +161,20 @@ export const createAssessment = asyncHandler(async (req: Request, res: Response)
 export const bulkCreateAssessments = asyncHandler(async (req: Request, res: Response) => {
   const input: BulkCreatePAUDAssessmentInput = req.body;
   const result = await paudAssessmentService.bulkCreateAssessments(input, req.user!.sub);
+
+  res.status(201).json({
+    success: true,
+    data: result,
+  });
+});
+
+/**
+ * Create assessments for a class (Bulk)
+ * POST /api/paud-assessment/assessments/class
+ */
+export const createClassAssessment = asyncHandler(async (req: Request, res: Response) => {
+  const input: BulkCreateClassPAUDAssessmentInput = req.body;
+  const result = await paudAssessmentService.createClassAssessment(input, req.user!.sub);
 
   res.status(201).json({
     success: true,

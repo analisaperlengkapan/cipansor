@@ -213,6 +213,24 @@ export interface BulkCreatePAUDAssessmentInput {
   }>;
 }
 
+export interface BulkCreateClassPAUDAssessmentInput {
+  classId: string;
+  unitId: string;
+  academicYearId: string;
+  semester: string;
+  periodType: PAUDReportPeriod;
+  periodDate: Date | string;
+  aspect: PAUDAspect;
+  indicatorId?: string;
+  assessments: Array<{
+    studentId: string;
+    achievementLevel: PAUDAchievementLevel;
+    narrativeText?: string;
+    teacherNotes?: string;
+    recommendations?: string;
+  }>;
+}
+
 export interface CreatePAUDEvidenceInput {
   assessmentId: string;
   fileUrl: string;

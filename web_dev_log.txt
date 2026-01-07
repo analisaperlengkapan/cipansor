@@ -1,0 +1,779 @@
+
+> web@0.1.0 dev /app/apps/web
+> next dev
+
+[@sentry/nextjs] WARNING: You are using the Sentry SDK with `next dev --turbo`. The Sentry SDK doesn't yet fully support Turbopack. The SDK will not be loaded in the browser, and serverside instrumentation will be inaccurate or incomplete. Production builds without `--turbo` will still fully work. If you are just trying out Sentry or attempting to configure the SDK, we recommend temporarily removing the `--turbo` flag while you are developing locally. Follow this issue for progress on Sentry + Turbopack: https://github.com/getsentry/sentry-javascript/issues/8105. (You can suppress this warning by setting SENTRY_SUPPRESS_TURBOPACK_WARNING=1 as environment variable)
+   ▲ Next.js 16.0.7 (Turbopack)
+   - Local:         http://localhost:3000
+   - Network:       http://192.168.0.2:3000
+   - Experiments (use with caution):
+     · clientTraceMetadata
+
+ ✓ Starting...
+ ✓ Ready in 2.4s
+ ○ Compiling / ...
+ GET / 200 in 8.4s (compile: 7.8s, render: 619ms)
+ ○ Compiling /foundation/dashboard ...
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+
+./apps/web/src/app/foundation/dashboard/page.tsx:22:1
+Export formatCurrency doesn't exist in target module
+[0m [90m 20 |[39m [36mimport[39m { [33mUsers[39m[33m,[39m [33mTrendingUp[39m[33m,[39m [33mWallet[39m[33m,[39m [33mSchool[39m[33m,[39m [33mArrowUpRight[39m[33m,[39m [33mArrowDownRight[39m[33m,[39m [33mLoader2[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 21 |[39m [36mimport[39m { api } [36mfrom[39m [32m'@/lib/api'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 22 |[39m [36mimport[39m { formatCurrency } [36mfrom[39m [32m'@/lib/utils'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 23 |[39m
+ [90m 24 |[39m [90m// Types (should match backend)[39m
+ [90m 25 |[39m [36minterface[39m [33mExecutiveSummary[39m {[0m
+
+The export formatCurrency was not found in module [project]/apps/web/src/lib/utils.ts [app-client] (ecmascript).
+Did you mean to import cn?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+
+
+./apps/web/src/app/foundation/dashboard/page.tsx:22:1
+Export formatCurrency doesn't exist in target module
+[0m [90m 20 |[39m [36mimport[39m { [33mUsers[39m[33m,[39m [33mTrendingUp[39m[33m,[39m [33mWallet[39m[33m,[39m [33mSchool[39m[33m,[39m [33mArrowUpRight[39m[33m,[39m [33mArrowDownRight[39m[33m,[39m [33mLoader2[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 21 |[39m [36mimport[39m { api } [36mfrom[39m [32m'@/lib/api'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 22 |[39m [36mimport[39m { formatCurrency } [36mfrom[39m [32m'@/lib/utils'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 23 |[39m
+ [90m 24 |[39m [90m// Types (should match backend)[39m
+ [90m 25 |[39m [36minterface[39m [33mExecutiveSummary[39m {[0m
+
+The export formatCurrency was not found in module [project]/apps/web/src/lib/utils.ts [app-ssr] (ecmascript).
+Did you mean to import cn?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+
+ GET /foundation/dashboard 500 in 7.1s (compile: 6.9s, render: 169ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ✓ Compiled in 194ms
+ GET / 200 in 502ms (compile: 118ms, render: 385ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 65ms (compile: 50ms, render: 14ms)
+ GET / 200 in 158ms (compile: 6ms, render: 152ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 26ms (compile: 12ms, render: 14ms)
+ GET / 200 in 127ms (compile: 4ms, render: 123ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 24ms (compile: 12ms, render: 12ms)
+ GET / 200 in 165ms (compile: 7ms, render: 158ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 30ms (compile: 15ms, render: 15ms)
+ GET / 200 in 143ms (compile: 4ms, render: 139ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 34ms (compile: 19ms, render: 15ms)
+ GET / 200 in 169ms (compile: 4ms, render: 165ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 29ms (compile: 17ms, render: 12ms)
+ GET / 200 in 120ms (compile: 4ms, render: 116ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 23ms (compile: 12ms, render: 11ms)
+ GET / 200 in 133ms (compile: 5ms, render: 128ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 29ms (compile: 13ms, render: 17ms)
+ GET / 200 in 167ms (compile: 6ms, render: 161ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 30ms (compile: 14ms, render: 16ms)
+ GET / 200 in 131ms (compile: 4ms, render: 126ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 41ms (compile: 21ms, render: 20ms)
+ GET / 200 in 140ms (compile: 4ms, render: 136ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 24ms (compile: 11ms, render: 12ms)
+ GET / 200 in 146ms (compile: 4ms, render: 143ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 25ms (compile: 12ms, render: 13ms)
+ GET / 200 in 136ms (compile: 4ms, render: 132ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 28ms (compile: 13ms, render: 15ms)
+ GET / 200 in 126ms (compile: 4ms, render: 122ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 23ms (compile: 12ms, render: 12ms)
+ GET / 200 in 135ms (compile: 4ms, render: 131ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 23ms (compile: 10ms, render: 13ms)
+ GET / 200 in 129ms (compile: 4ms, render: 125ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 23ms (compile: 12ms, render: 11ms)
+ GET / 200 in 139ms (compile: 4ms, render: 135ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 26ms (compile: 13ms, render: 13ms)
+ GET / 200 in 128ms (compile: 4ms, render: 125ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 24ms (compile: 12ms, render: 13ms)
+ GET / 200 in 129ms (compile: 4ms, render: 125ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 25ms (compile: 12ms, render: 13ms)
+ GET / 200 in 126ms (compile: 4ms, render: 122ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 23ms (compile: 12ms, render: 11ms)
+ GET / 200 in 133ms (compile: 4ms, render: 129ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 25ms (compile: 13ms, render: 12ms)
+ GET / 200 in 120ms (compile: 4ms, render: 116ms)
+ ⨯ ./apps/web/src/lib/api.ts:24:1
+Module not found: Can't resolve '@cipansor/shared'
+[0m [90m 22 |[39m [36mexport[39m type { [33mSharedPaginatedResponse[39m }[33m;[39m
+ [90m 23 |[39m [90m// Re-export shared types[39m
+[31m[1m>[22m[39m[90m 24 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@cipansor/shared'[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 25 |[39m
+ [90m 26 |[39m [90m// Compatibility alias[39m
+ [90m 27 |[39m [36mexport[39m type [33mUserRole[39m [33m=[39m [33mUserRoleAssignment[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/lib/api.ts [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component Browser]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/lib/api.ts [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Client Component SSR]
+    ./apps/web/src/app/foundation/dashboard/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /foundation/dashboard 500 in 26ms (compile: 13ms, render: 13ms)
+ ✓ Compiled in 622ms
+ GET / 200 in 1410ms (compile: 400ms, render: 1010ms)
+ GET /foundation/dashboard 200 in 5.8s (compile: 3.5s, render: 2.3s)
+ ○ Compiling /login ...
+ GET /login 200 in 11.0s (compile: 11.0s, render: 63ms)
+ GET / 200 in 171ms (compile: 6ms, render: 165ms)
+ GET /foundation/dashboard 200 in 304ms (compile: 4ms, render: 300ms)
+ GET /login 200 in 33ms (compile: 5ms, render: 28ms)
+ GET / 200 in 129ms (compile: 5ms, render: 124ms)
+ GET /foundation/dashboard 200 in 204ms (compile: 4ms, render: 200ms)
+ GET /login 200 in 30ms (compile: 4ms, render: 26ms)
+ GET / 200 in 136ms (compile: 4ms, render: 131ms)
+ GET /foundation/dashboard 200 in 394ms (compile: 6ms, render: 388ms)
+ GET / 200 in 157ms (compile: 6ms, render: 151ms)
+ GET /foundation/dashboard 200 in 292ms (compile: 5ms, render: 287ms)
+ GET / 200 in 156ms (compile: 4ms, render: 152ms)
+ GET /foundation/dashboard 200 in 267ms (compile: 6ms, render: 261ms)

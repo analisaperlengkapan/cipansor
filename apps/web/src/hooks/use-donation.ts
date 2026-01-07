@@ -29,6 +29,8 @@ export interface DonationCampaign {
   unit?: { id: string; name: string };
   createdBy?: { id: string; name: string };
   donations?: Donation[];
+  recentDonations?: Donation[];
+  progressPercentage?: number;
 }
 
 export interface Donation {
@@ -47,6 +49,7 @@ export interface Donation {
   verifiedById?: string;
   verifiedAt?: string;
   notes?: string;
+  message?: string;
   createdAt: string;
   updatedAt: string;
   campaign?: { id: string; title: string };
@@ -136,9 +139,22 @@ export function usePublicCampaigns() {
   return useQuery({
     queryKey: ['donation', 'campaigns', 'public'],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<DonationCampaign>>('/donation/campaigns/public');
-      return response.data;
+      const response = await api.get<ApiResponse<DonationCampaign[]>>('/donation/campaigns/public');
+      // The API returns { success: true, data: [...] } so we just need to return the data array
+      // However, to match PaginatedResponse interface expected by consumers, we wrap it
+      return { data: response.data.data || [] };
     },
+  });
+}
+
+export function usePublicCampaignBySlug(slug: string) {
+  return useQuery({
+    queryKey: ['donation', 'campaigns', 'slug', slug],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<DonationCampaign>>(`/donation/campaigns/slug/${slug}`);
+      return response.data.data;
+    },
+    enabled: !!slug,
   });
 }
 
@@ -264,6 +280,21 @@ export function useCreateDonation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['donation'] });
+    },
+  });
+}
+
+export function useCreatePublicDonation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: CreateDonationData) => {
+      const response = await api.post<ApiResponse<Donation>>('/donation/public', data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['donation', 'campaigns', 'public'] });
+      queryClient.invalidateQueries({ queryKey: ['donation', 'campaigns', 'slug'] });
     },
   });
 }

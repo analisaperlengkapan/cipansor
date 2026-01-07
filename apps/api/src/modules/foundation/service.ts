@@ -8,6 +8,7 @@ import {
   CreateDocumentInput,
   UpdateDocumentInput,
 } from "./schema";
+import { FoundationDashboardStats } from "@cipansor/shared";
 
 // =====================================
 // FOUNDATION SERVICE
@@ -261,62 +262,166 @@ export async function deleteDocument(id: string) {
 // STATISTICS
 // =====================================
 
-export async function getFoundationStats(foundationId: string) {
+export async function getFoundationStats(foundationId: string): Promise<FoundationDashboardStats | null> {
   const foundation = await prisma.foundation.findUnique({
     where: { id: foundationId },
-    include: {
-      _count: { select: { units: true, boardMembers: true, documents: true } },
-      units: {
+  });
+
+  if (!foundation) return null;
+
+  // 1. Get Unit Stats
+  const units = await prisma.unit.findMany({
+    where: { foundationId },
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      _count: {
         select: {
-          id: true,
-          name: true,
-          type: true,
-          _count: { select: { students: true, teachers: true, staff: true } },
+          students: { where: { status: "active" } },
+          teachers: { where: { employmentStatus: { in: ["GTY", "GTT"] } } },
+          staff: { where: { deletedAt: null } },
         },
       },
     },
   });
 
-  if (!foundation) return null;
+  // 2. Aggregate counts
+  let totalStudents = 0;
+  let totalTeachers = 0;
+  let totalStaff = 0;
 
-  const totalStudents = foundation.units.reduce(
-    (acc, unit) => acc + unit._count.students,
-    0
-  );
-  const totalTeachers = foundation.units.reduce(
-    (acc, unit) => acc + unit._count.teachers,
-    0
-  );
-  const totalStaff = foundation.units.reduce(
-    (acc, unit) => acc + unit._count.staff,
-    0
-  );
-
-  const activeBoardMembers = await prisma.boardMember.count({
-    where: { foundationId, isActive: true },
+  const unitsDistribution = units.map(unit => {
+    totalStudents += unit._count.students;
+    totalTeachers += unit._count.teachers;
+    totalStaff += unit._count.staff;
+    return {
+      id: unit.id,
+      name: unit.name,
+      type: unit.type,
+      studentCount: unit._count.students,
+      teacherCount: unit._count.teachers,
+      staffCount: unit._count.staff,
+    };
   });
 
-  const expiringDocuments = await prisma.foundationDocument.count({
+  // 3. Financial Stats (Current Month)
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+  // Use raw queries with exact table names based on Prisma schema @map
+  const revenueResult = await prisma.$queryRaw<{ total: bigint }[]>`
+    SELECT SUM(je.credit) as total
+    FROM journal_entries je
+    JOIN account_codes ac ON je.account_id = ac.id
+    WHERE je.date >= ${startOfMonth} AND je.date <= ${endOfMonth}
+    AND ac.type = 'REVENUE'
+    AND je.unit_id IN (SELECT id FROM units WHERE foundation_id = ${foundationId})
+  `;
+
+  const expenseResult = await prisma.$queryRaw<{ total: bigint }[]>`
+    SELECT SUM(je.debit) as total
+    FROM journal_entries je
+    JOIN account_codes ac ON je.account_id = ac.id
+    WHERE je.date >= ${startOfMonth} AND je.date <= ${endOfMonth}
+    AND ac.type = 'EXPENSE'
+    AND je.unit_id IN (SELECT id FROM units WHERE foundation_id = ${foundationId})
+  `;
+
+  const totalRevenueMonth = Number(revenueResult[0]?.total || 0);
+  const totalExpenseMonth = Number(expenseResult[0]?.total || 0);
+
+  // 4. Total Assets
+  // Summing up acquisitionValue of all assets
+  const assetResult = await prisma.asset.aggregate({
     where: {
-      foundationId,
-      expiryDate: {
-        gte: new Date(),
-        lte: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days
-      },
+      unit: { foundationId },
+      status: "ACTIVE",
+    },
+    _sum: {
+      purchasePrice: true,
     },
   });
+
+  const landResult = await prisma.land.aggregate({
+    where: { unit: { foundationId } },
+    _sum: { acquisitionValue: true },
+  });
+
+  const totalAssets = Number(assetResult._sum.purchasePrice || 0) + Number(landResult._sum.acquisitionValue || 0);
+
+  // 5. Recent Documents
+  const recentDocuments = await prisma.foundationDocument.findMany({
+    where: { foundationId },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+
+  const formattedDocuments = recentDocuments.map(doc => {
+    let status: 'valid' | 'expiring' | 'expired' = 'valid';
+    if (doc.expiryDate) {
+      if (doc.expiryDate < now) status = 'expired';
+      else if (doc.expiryDate < new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000)) status = 'expiring';
+    }
+    return {
+      id: doc.id,
+      name: doc.name,
+      type: doc.type,
+      expiryDate: doc.expiryDate?.toISOString(),
+      status,
+    };
+  });
+
+  // 6. Financial Trend (Real Data using Raw Query)
+  // Group by month for the last 6 months
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
+  const trendResult = await prisma.$queryRaw<{ month: Date; revenue: bigint; expense: bigint }[]>`
+    SELECT
+      DATE_TRUNC('month', je.date) as month,
+      SUM(CASE WHEN ac.type = 'REVENUE' THEN je.credit ELSE 0 END) as revenue,
+      SUM(CASE WHEN ac.type = 'EXPENSE' THEN je.debit ELSE 0 END) as expense
+    FROM journal_entries je
+    JOIN account_codes ac ON je.account_id = ac.id
+    WHERE je.date >= ${sixMonthsAgo}
+    AND je.unit_id IN (SELECT id FROM units WHERE foundation_id = ${foundationId})
+    GROUP BY DATE_TRUNC('month', je.date)
+    ORDER BY month ASC
+  `;
+
+  // Map result to fill gaps if any month is missing (optional but good for charts)
+  const financialTrend = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    // Find matching month in result
+    const match = trendResult.find(r =>
+      new Date(r.month).getMonth() === d.getMonth() &&
+      new Date(r.month).getFullYear() === d.getFullYear()
+    );
+
+    const monthName = d.toLocaleString('default', { month: 'short' });
+    financialTrend.push({
+      period: `${monthName} ${d.getFullYear()}`,
+      revenue: match ? Number(match.revenue) : 0,
+      expense: match ? Number(match.expense) : 0,
+    });
+  }
 
   return {
     foundationId,
     foundationName: foundation.name,
-    totalUnits: foundation._count.units,
-    totalStudents,
-    totalTeachers,
-    totalStaff,
-    totalBoardMembers: foundation._count.boardMembers,
-    activeBoardMembers,
-    totalDocuments: foundation._count.documents,
-    expiringDocuments,
-    unitsSummary: foundation.units,
+    summary: {
+      totalUnits: units.length,
+      totalStudents,
+      totalTeachers,
+      totalStaff,
+      totalAssets,
+      totalRevenueMonth,
+      totalExpenseMonth,
+    },
+    unitsDistribution,
+    financialTrend,
+    recentDocuments: formattedDocuments,
   };
 }

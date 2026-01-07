@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { FoundationDashboardStats } from '@cipansor/shared';
 
 // Types
 export interface Foundation {
@@ -97,8 +98,22 @@ export function useFoundation() {
     queryKey: ['foundation'],
     queryFn: async () => {
       const response = await api.get('/foundation');
-      return response.data.data as Foundation;
+      // For single foundation system (most likely case), get the first one if listing
+      const data = response.data.data;
+      if (Array.isArray(data)) return data[0] as Foundation;
+      return data as Foundation;
     },
+  });
+}
+
+export function useFoundationStats(foundationId: string) {
+  return useQuery({
+    queryKey: ['foundation-stats', foundationId],
+    queryFn: async () => {
+      const response = await api.get(`/foundation/${foundationId}/stats`);
+      return response.data.data as FoundationDashboardStats;
+    },
+    enabled: !!foundationId,
   });
 }
 
@@ -107,7 +122,11 @@ export function useUpdateFoundation() {
 
   return useMutation({
     mutationFn: async (data: Partial<Foundation>) => {
-      const response = await api.put('/foundation', data);
+      // Assuming single foundation or passed ID logic in real app, simplified here
+      const foundation = queryClient.getQueryData(['foundation']) as Foundation;
+      if (!foundation) throw new Error("Foundation not loaded");
+
+      const response = await api.put(`/foundation/${foundation.id}`, data);
       return response.data.data;
     },
     onSuccess: () => {
@@ -121,7 +140,7 @@ export function useFoundationDocuments() {
   return useQuery({
     queryKey: ['foundation-documents'],
     queryFn: async () => {
-      const response = await api.get('/foundation/documents');
+      const response = await api.get('/foundation/documents/list');
       return response.data.data as FoundationDocument[];
     },
   });
@@ -188,7 +207,7 @@ export function useFoundationBoardMembers(params?: { isActive?: boolean }) {
   return useQuery({
     queryKey: ['foundation-board-members', params],
     queryFn: async () => {
-      const response = await api.get('/foundation/board-members', { params });
+      const response = await api.get('/foundation/board-members/list', { params });
       return response.data.data as FoundationBoardMember[];
     },
   });

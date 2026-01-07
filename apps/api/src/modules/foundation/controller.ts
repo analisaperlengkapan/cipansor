@@ -9,6 +9,7 @@ import {
   updateDocumentSchema,
 } from "./schema";
 import { Errors } from "../../middleware/error";
+import { FoundationDashboardStats } from "@cipansor/shared";
 
 // =====================================
 // FOUNDATION CONTROLLERS
@@ -67,7 +68,7 @@ export async function deleteFoundation(req: Request, res: Response, next: NextFu
 
 export async function getFoundationStats(req: Request, res: Response, next: NextFunction) {
   try {
-    const stats = await service.getFoundationStats(req.params.id);
+    const stats: FoundationDashboardStats | null = await service.getFoundationStats(req.params.id);
     if (!stats) {
       throw Errors.notFound("Foundation not found");
     }

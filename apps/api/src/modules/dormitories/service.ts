@@ -331,6 +331,7 @@ export async function getStudentsByMusyrif(userId: string) {
       },
     },
     include: {
+      room: { select: { name: true } },
       student: {
         include: {
           user: { select: { name: true, email: true, photoUrl: true } },
@@ -339,11 +340,6 @@ export async function getStudentsByMusyrif(userId: string) {
             include: { class: { select: { name: true } } },
             take: 1,
           },
-          roomAssignments: {
-             where: { isActive: true },
-             include: { room: { select: { name: true } } },
-             take: 1,
-          }
         },
       },
     },
@@ -358,7 +354,7 @@ export async function getStudentsByMusyrif(userId: string) {
     nis: ra.student.nis,
     photo: ra.student.user.photoUrl,
     class: ra.student.classEnrollments[0]?.class.name || '-',
-    room: ra.student.roomAssignments[0]?.room.name || '-',
+    room: ra.room.name,
     gender: ra.student.gender
   }));
 }

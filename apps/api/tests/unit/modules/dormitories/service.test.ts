@@ -47,8 +47,8 @@ describe('DormitoryService', () => {
             gender: 'MALE',
             user: { name: 'Ahmad', email: 'ahmad@example.com', photoUrl: 'pic.jpg' },
             classEnrollments: [{ class: { name: '10 A' } }],
-            roomAssignments: [{ room: { name: 'Room 101' } }],
           },
+          room: { name: 'Room 101' },
         },
         {
           student: {
@@ -57,8 +57,8 @@ describe('DormitoryService', () => {
             gender: 'MALE',
             user: { name: 'Budi', email: 'budi@example.com', photoUrl: null },
             classEnrollments: [],
-            roomAssignments: [{ room: { name: 'Room 102' } }],
           },
+          room: { name: 'Room 102' },
         },
       ];
 

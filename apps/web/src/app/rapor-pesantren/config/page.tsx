@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/shared';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth';
+import { MainLayout } from '@/components/layout/main-layout';
 
 interface RaporConfig {
   unitId: string;
@@ -112,27 +113,28 @@ export default function RaporConfigPage() {
   const totalWeight = Object.values(formData.componentWeights).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Settings className="w-6 h-6" />
-            Konfigurasi Rapor Pesantren
-          </h1>
-          <p className="text-muted-foreground">
-            Pengaturan bobot nilai dan standar kelulusan
-          </p>
+    <MainLayout allowedRoles={['SUPER_ADMIN', 'UNIT_ADMIN']}>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Settings className="w-6 h-6" />
+              Konfigurasi Rapor Pesantren
+            </h1>
+            <p className="text-muted-foreground">
+              Pengaturan bobot nilai dan standar kelulusan
+            </p>
+          </div>
+          <Button
+            onClick={() => mutation.mutate(formData)}
+            disabled={mutation.isPending || totalWeight !== 100}
+          >
+            {mutation.isPending ? <LoadingSpinner size="sm" className="mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+            Simpan Perubahan
+          </Button>
         </div>
-        <Button
-          onClick={() => mutation.mutate(formData)}
-          disabled={mutation.isPending || totalWeight !== 100}
-        >
-          {mutation.isPending ? <LoadingSpinner size="sm" className="mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-          Simpan Perubahan
-        </Button>
-      </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-6">
         {/* Bobot Penilaian */}
         <Card>
           <CardHeader>
@@ -313,8 +315,9 @@ export default function RaporConfigPage() {
               </div>
             </CardContent>
           </Card>
+          </div>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }

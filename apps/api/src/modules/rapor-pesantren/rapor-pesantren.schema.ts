@@ -56,6 +56,15 @@ export const generateBatchRaporSchema = z.object({
 
 export type GenerateBatchRaporInput = z.infer<typeof generateBatchRaporSchema>;
 
+export const getLegerQuerySchema = z.object({
+  unitId: z.string().uuid('Invalid unit ID'),
+  classId: z.string().uuid('Invalid class ID'),
+  academicYearId: z.string().uuid('Invalid academic year ID'),
+  semester: z.coerce.number().min(1).max(2),
+});
+
+export type GetLegerQuery = z.infer<typeof getLegerQuerySchema>;
+
 // =====================
 // CREATE/UPDATE SCHEMAS
 // =====================
@@ -288,6 +297,39 @@ export interface RaporPesantren {
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface LegerItem {
+  id: string; // Rapor ID
+  studentId: string;
+  studentName: string;
+  studentNis: string;
+
+  // Component Scores
+  tahfidzScore: number;
+  tahfidzGrade: string;
+
+  ibadahScore: number;
+  ibadahGrade: string;
+
+  muhadhorohScore: number;
+  muhadhorohGrade: string;
+
+  muhadatsahScore: number;
+  muhadatsahGrade: string;
+
+  kitabScore: number;
+  kitabGrade: string;
+
+  akhlakScore: number;
+  akhlakGrade: string;
+
+  attendanceScore: number;
+  attendanceGrade: string;
+
+  overallScore: number;
+  overallGrade: string;
+  rank?: number;
 }
 
 // Grade mapping helper

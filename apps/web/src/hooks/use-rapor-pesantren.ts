@@ -208,6 +208,38 @@ export interface RaporConfig {
   includeRewards: boolean;
 }
 
+export interface LegerItem {
+  id: string; // Rapor ID
+  studentId: string;
+  studentName: string;
+  studentNis: string;
+
+  tahfidzScore: number;
+  tahfidzGrade: string;
+
+  ibadahScore: number;
+  ibadahGrade: string;
+
+  muhadhorohScore: number;
+  muhadhorohGrade: string;
+
+  muhadatsahScore: number;
+  muhadatsahGrade: string;
+
+  kitabScore: number;
+  kitabGrade: string;
+
+  akhlakScore: number;
+  akhlakGrade: string;
+
+  attendanceScore: number;
+  attendanceGrade: string;
+
+  overallScore: number;
+  overallGrade: string;
+  rank?: number;
+}
+
 // =====================
 // QUERY KEYS
 // =====================
@@ -219,6 +251,7 @@ export const raporPesantrenKeys = {
   details: () => [...raporPesantrenKeys.all, 'detail'] as const,
   detail: (id: string) => [...raporPesantrenKeys.details(), id] as const,
   config: (unitId: string) => [...raporPesantrenKeys.all, 'config', unitId] as const,
+  leger: (filters: Record<string, unknown>) => [...raporPesantrenKeys.all, 'leger', filters] as const,
 };
 
 // =====================
@@ -301,6 +334,18 @@ async function saveRaporConfig(config: RaporConfig) {
   return data.data as RaporConfig;
 }
 
+interface GetLegerParams {
+  unitId: string;
+  classId: string;
+  academicYearId: string;
+  semester: number;
+}
+
+async function getLeger(params: GetLegerParams) {
+  const { data } = await api.get('/rapor-pesantren/leger', { params });
+  return data.data as LegerItem[];
+}
+
 // =====================
 // HOOKS
 // =====================
@@ -336,6 +381,14 @@ export function useGenerateRapor() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: raporPesantrenKeys.lists() });
     },
+  });
+}
+
+export function useLeger(params: Partial<GetLegerParams>) {
+  return useQuery({
+    queryKey: raporPesantrenKeys.leger(params as Record<string, unknown>),
+    queryFn: () => getLeger(params as GetLegerParams),
+    enabled: !!(params.unitId && params.classId && params.academicYearId && params.semester),
   });
 }
 

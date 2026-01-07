@@ -4,6 +4,8 @@ import {
   ListRaporQuery,
   GenerateBatchRaporInput,
   UpdateRaporInput,
+  GetLegerQuery,
+  LegerItem,
   RaporConfig,
   RaporPesantren,
   TahfidzSummary,
@@ -916,6 +918,128 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
     createdAt: rapor.createdAt.toISOString(),
     updatedAt: rapor.updatedAt.toISOString(),
   };
+}
+
+// =====================
+// GET LEGER
+// =====================
+
+export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem[]> {
+  const { unitId, classId, academicYearId, semester } = query;
+
+  // 1. Get all students in the class
+  const enrollments = await prisma.classEnrollment.findMany({
+    where: {
+      classId,
+      status: 'active',
+    },
+    include: {
+      student: {
+        include: {
+          user: true,
+        },
+      },
+    },
+    orderBy: {
+      student: {
+        user: {
+          name: 'asc',
+        },
+      },
+    },
+  });
+
+  if (enrollments.length === 0) {
+    return [];
+  }
+
+  const studentIds = enrollments.map(e => e.studentId);
+
+  // 2. Get all rapors for these students
+  const rapors = await prisma.raporPesantren.findMany({
+    where: {
+      studentId: { in: studentIds },
+      academicYearId,
+      semester,
+    },
+  });
+
+  // 3. Map to LegerItem
+  const raporMap = new Map(rapors.map(r => [r.studentId, r]));
+
+  // Helper to safely extract score/grade from JSON
+  const getComponent = (data: unknown) => {
+    const typedData = data as { score?: number; grade?: string } | null;
+    return {
+      score: typeof typedData?.score === 'number' ? typedData.score : 0,
+      grade: typeof typedData?.grade === 'string' ? typedData.grade : '-',
+    };
+  };
+
+  const leger: LegerItem[] = enrollments.map((enrollment) => {
+    const student = enrollment.student;
+    const rapor = raporMap.get(student.id);
+
+    if (!rapor) {
+      // Return empty item if no rapor generated yet
+      return {
+        id: '',
+        studentId: student.id,
+        studentName: student.user.name,
+        studentNis: student.nis,
+        tahfidzScore: 0, tahfidzGrade: '-',
+        ibadahScore: 0, ibadahGrade: '-',
+        muhadhorohScore: 0, muhadhorohGrade: '-',
+        muhadatsahScore: 0, muhadatsahGrade: '-',
+        kitabScore: 0, kitabGrade: '-',
+        akhlakScore: 0, akhlakGrade: '-',
+        attendanceScore: 0, attendanceGrade: '-',
+        overallScore: 0, overallGrade: '-',
+      };
+    }
+
+    const tahfidz = getComponent(rapor.tahfidzData);
+    const ibadah = getComponent(rapor.ibadahData);
+    const muhadhoroh = getComponent(rapor.muhadhorohData);
+    const muhadatsah = getComponent(rapor.muhadatsahData);
+    const kitab = getComponent(rapor.kitabProgressData);
+    const akhlak = getComponent(rapor.akhlakData);
+    const attendance = getComponent(rapor.attendanceData);
+
+    return {
+      id: rapor.id,
+      studentId: student.id,
+      studentName: student.user.name,
+      studentNis: student.nis,
+
+      tahfidzScore: tahfidz.score,
+      tahfidzGrade: tahfidz.grade,
+
+      ibadahScore: ibadah.score,
+      ibadahGrade: ibadah.grade,
+
+      muhadhorohScore: muhadhoroh.score,
+      muhadhorohGrade: muhadhoroh.grade,
+
+      muhadatsahScore: muhadatsah.score,
+      muhadatsahGrade: muhadatsah.grade,
+
+      kitabScore: kitab.score,
+      kitabGrade: kitab.grade,
+
+      akhlakScore: akhlak.score,
+      akhlakGrade: akhlak.grade,
+
+      attendanceScore: attendance.score,
+      attendanceGrade: attendance.grade,
+
+      overallScore: rapor.overallScore || 0,
+      overallGrade: rapor.overallGrade || '-',
+      rank: rapor.rank || undefined,
+    };
+  });
+
+  return leger;
 }
 
 // =====================

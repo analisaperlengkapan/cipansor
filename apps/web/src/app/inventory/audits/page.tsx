@@ -151,8 +151,9 @@ export default function InventoryAuditsPage() {
                     <TableCell>{item.createdBy?.name || '-'}</TableCell>
                     <TableCell>{item._count?.items || 0}</TableCell>
                     <TableCell className="text-right">
-                      {/* Link to detail page would go here if we implemented the audit detail view */}
-                      <Button variant="outline" size="sm" disabled>Detail</Button>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/inventory/audits/${item.id}`}>Detail</Link>
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

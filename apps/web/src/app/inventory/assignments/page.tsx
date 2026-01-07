@@ -70,6 +70,7 @@ export default function InventoryAssignmentsPage() {
                   <TableHead>Batas Kembali</TableHead>
                   <TableHead>Tanggal Kembali</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -87,6 +88,13 @@ export default function InventoryAssignmentsPage() {
                       <Badge variant={item.status === 'ACTIVE' ? 'default' : 'secondary'}>
                         {item.status}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.assetId && (
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/inventory/${item.assetId}?tab=assignments`}>Lihat Aset</Link>
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

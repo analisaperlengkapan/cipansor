@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import type { FoundationDashboardStats } from '@cipansor/shared';
 
 // Types
 export interface Foundation {
@@ -99,6 +100,17 @@ export function useFoundation() {
       const response = await api.get('/foundation');
       return response.data.data as Foundation;
     },
+  });
+}
+
+export function useFoundationStats(id?: string) {
+  return useQuery({
+    queryKey: ['foundation-stats', id],
+    queryFn: async () => {
+      const response = await api.get(`/foundation/${id}/stats`);
+      return response.data.data as FoundationDashboardStats;
+    },
+    enabled: !!id,
   });
 }
 

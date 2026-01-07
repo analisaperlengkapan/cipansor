@@ -20,50 +20,12 @@ import {
 import { Users, TrendingUp, Wallet, School, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
-
-// Types (should match backend)
-interface ExecutiveSummary {
-  totalStudents: number;
-  totalTeachers: number;
-  totalStaff: number;
-  totalUnits: number;
-  growth: {
-    students: number;
-  };
-}
-
-interface FinancialOverview {
-  currentMonth: {
-    revenue: number;
-    expense: number;
-    net: number;
-  };
-  lastMonth: {
-    revenue: number;
-    expense: number;
-    net: number;
-  };
-  byUnit: {
-    unitId: string;
-    unitName: string;
-    revenue: number;
-    expense: number;
-  }[];
-}
-
-interface UnitComparison {
-  unitId: string;
-  unitName: string;
-  studentCount: number;
-  teacherCount: number;
-  studentTeacherRatio: number;
-  averageGrade: number;
-}
+import { FoundationExecutiveSummary, FoundationFinancialOverview, FoundationUnitComparison } from '@cipansor/shared';
 
 export default function FoundationDashboardPage() {
-  const [summary, setSummary] = useState<ExecutiveSummary | null>(null);
-  const [finance, setFinance] = useState<FinancialOverview | null>(null);
-  const [units, setUnits] = useState<UnitComparison[]>([]);
+  const [summary, setSummary] = useState<FoundationExecutiveSummary | null>(null);
+  const [finance, setFinance] = useState<FoundationFinancialOverview | null>(null);
+  const [units, setUnits] = useState<FoundationUnitComparison[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

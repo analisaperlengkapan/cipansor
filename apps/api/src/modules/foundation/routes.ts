@@ -10,6 +10,12 @@ const router = Router();
 
 router.use(authenticate);
 
+// ==================== ANALYTICS ====================
+
+router.get("/stats/executive", authorize(UserRole.SUPER_ADMIN, UserRole.YAYASAN_ADMIN), controller.getExecutiveSummary);
+router.get("/stats/financial", authorize(UserRole.SUPER_ADMIN, UserRole.YAYASAN_ADMIN), controller.getFinancialOverview);
+router.get("/stats/units", authorize(UserRole.SUPER_ADMIN, UserRole.YAYASAN_ADMIN), controller.getUnitComparison);
+
 // ==================== FOUNDATIONS ====================
 
 /**

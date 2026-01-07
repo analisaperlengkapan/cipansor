@@ -777,3 +777,5 @@ https://nextjs.org/docs/messages/module-not-found
  GET /foundation/dashboard 200 in 292ms (compile: 5ms, render: 287ms)
  GET / 200 in 156ms (compile: 4ms, render: 152ms)
  GET /foundation/dashboard 200 in 267ms (compile: 6ms, render: 261ms)
+ GET / 200 in 1128ms (compile: 114ms, render: 1014ms)
+ GET /foundation/dashboard 200 in 7.1s (compile: 2.8s, render: 4.2s)

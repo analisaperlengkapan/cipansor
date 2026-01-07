@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as service from "./service";
+import * as analyticsService from "./analytics.service";
 import {
   createFoundationSchema,
   updateFoundationSchema,
@@ -9,6 +10,37 @@ import {
   updateDocumentSchema,
 } from "./schema";
 import { Errors } from "../../middleware/error";
+
+// =====================================
+// ANALYTICS CONTROLLERS
+// =====================================
+
+export async function getExecutiveSummary(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await analyticsService.getExecutiveSummary();
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getFinancialOverview(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await analyticsService.getFinancialOverview();
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getUnitComparison(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await analyticsService.getUnitComparison();
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
 
 // =====================================
 // FOUNDATION CONTROLLERS

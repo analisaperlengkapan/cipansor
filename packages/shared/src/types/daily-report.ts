@@ -29,12 +29,21 @@ export interface DailyReport {
   napDuration?: number;
   toiletNotes?: string;
   sholatDhuha?: boolean;
+  sholatDzuhur?: boolean;
+  sholatAshar?: boolean;
+  sholatJamaah?: boolean;
   tahfidzActivity?: string;
   activitiesSummary?: string;
   achievements?: string;
   behaviorNotes?: string;
   teacherNotes?: string;
   homeActivity?: string;
+  homework?: Array<{
+    id?: string;
+    subjectName: string;
+    description: string;
+    dueDate?: string | null;
+  }>;
   departureTime?: string;
   pickedUpBy?: string;
   parentReadAt?: string;
@@ -69,6 +78,10 @@ export interface CreateDailyReportInput {
   morningMood?: DailyMood;
   healthNotes?: string;
   temperature?: number;
+  sholatDhuha?: boolean;
+  sholatDzuhur?: boolean;
+  sholatAshar?: boolean;
+  sholatJamaah?: boolean;
   breakfastConsumption?: string; // Should be stricter ideally, but mapped in service
   lunchConsumption?: string;
   snackConsumption?: string;
@@ -80,6 +93,11 @@ export interface CreateDailyReportInput {
   behaviorNotes?: string;
   parentNotes?: string;
   homeworkSuggestion?: string;
+  homework?: Array<{
+    subjectName: string;
+    description: string;
+    dueDate?: string | null;
+  }>;
   photoUrls?: string[];
 }
 

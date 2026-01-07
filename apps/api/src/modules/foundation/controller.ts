@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as service from "./service";
+import * as analyticsService from "./analytics.service";
 import {
   createFoundationSchema,
   updateFoundationSchema,
@@ -191,6 +192,37 @@ export async function deleteDocument(req: Request, res: Response, next: NextFunc
   try {
     await service.deleteDocument(req.params.id);
     res.json({ success: true, message: "Document deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// =====================================
+// ANALYTICS CONTROLLERS (Executive Dashboard)
+// =====================================
+
+export async function getExecutiveSummary(req: Request, res: Response, next: NextFunction) {
+  try {
+    const summary = await analyticsService.getExecutiveSummary();
+    res.json({ success: true, data: summary });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getFinancialOverview(req: Request, res: Response, next: NextFunction) {
+  try {
+    const overview = await analyticsService.getFinancialOverview();
+    res.json({ success: true, data: overview });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getUnitComparison(req: Request, res: Response, next: NextFunction) {
+  try {
+    const units = await analyticsService.getUnitComparison();
+    res.json({ success: true, data: units });
   } catch (error) {
     next(error);
   }

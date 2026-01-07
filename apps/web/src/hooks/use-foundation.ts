@@ -116,6 +116,48 @@ export function useUpdateFoundation() {
   });
 }
 
+// Financial Summary Types and Hooks
+export interface FinancialSummary {
+  currentMonth: {
+    revenue: number;
+    expense: number;
+    net: number;
+  };
+  lastMonth: {
+    revenue: number;
+    expense: number;
+    net: number;
+  };
+  byUnit: {
+    unitId: string;
+    unitName: string;
+    revenue: number;
+    expense: number;
+  }[];
+  units?: {
+    unitId: string;
+    unitName: string;
+    revenue: number;
+    expense: number;
+    netIncome: number;
+  }[];
+  expenseComposition?: {
+    name: string;
+    value: number;
+  }[];
+}
+
+export function useFinancialSummary(foundationId?: string) {
+  return useQuery({
+    queryKey: ['foundation', 'financial-summary', foundationId],
+    queryFn: async () => {
+      const response = await api.get('/foundation/stats/financial');
+      return response.data.data as FinancialSummary;
+    },
+    enabled: !!foundationId,
+  });
+}
+
 // Document queries
 export function useFoundationDocuments() {
   return useQuery({

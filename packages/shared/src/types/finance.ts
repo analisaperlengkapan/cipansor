@@ -1,15 +1,18 @@
 import { Unit } from './models';
-// Removed AcademicYear import as it does not exist in models.ts
-// We will define a local partial interface for it or just use it as a reference
 
-// Enums (Specific to Finance, ideally these should be in enums.ts if they are shared widely,
-// but sticking to module file if specific)
+// Enums
 export enum AccountType {
   ASSET = 'ASSET',
   LIABILITY = 'LIABILITY',
   EQUITY = 'EQUITY',
   REVENUE = 'REVENUE',
   EXPENSE = 'EXPENSE'
+}
+
+export enum CashFlowCategory {
+  OPERATING = 'OPERATING',
+  INVESTING = 'INVESTING',
+  FINANCING = 'FINANCING'
 }
 
 export enum JournalReferenceType {
@@ -57,7 +60,8 @@ export enum PaymentCategory {
 
 export enum FinanceReportPeriod {
   DAY = 'day',
-  MONTH = 'month'
+  MONTH = 'month',
+  YEAR = 'year'
 }
 
 // Interfaces
@@ -66,10 +70,11 @@ export interface AccountCode {
   id: string;
   code: string;
   name: string;
-  type: AccountType | string; // Use string fallback if enum mismatch
+  type: AccountType | string;
   parentId?: string | null;
   isActive: boolean;
   normalBalance?: 'DEBIT' | 'CREDIT';
+  cashFlowCategory?: CashFlowCategory | string | null;
   createdAt?: Date;
   updatedAt?: Date;
   parent?: AccountCode;
@@ -116,9 +121,9 @@ export interface JournalEntry {
   id: string;
   unitId: string;
   accountId: string;
-  date: Date | string; // Allow string for JSON response
+  date: Date | string;
   description?: string | null;
-  debit: number; // Transported as number usually, but careful with precision
+  debit: number;
   credit: number;
   reference?: string | null;
   referenceType?: JournalReferenceType | string | null;
@@ -166,8 +171,8 @@ export interface ScholarshipRecipient {
   updatedAt?: Date;
 
   scholarship?: Scholarship;
-  student?: any; // Avoiding circular dependency or complex Student type for now, or use a partial
-  academicYear?: { id: string; name: string }; // Minimal interface
+  student?: any;
+  academicYear?: { id: string; name: string };
 }
 
 export interface PaymentComponent {
@@ -193,13 +198,9 @@ export interface CreateAccountCodeInput {
   type: AccountType;
   parentId?: string;
   isActive?: boolean;
+  cashFlowCategory?: CashFlowCategory;
 }
 
-// Fixed: Partial expects a Type, not an interface directly in extends clause if using utility types in a way that confused TS,
-// but usually interface I extends Partial<Other> is valid.
-// The error was "An interface can only extend an identifier/qualified-name with optional type arguments."
-// This happens when you try to extend `Partial<Type>`. Interfaces can only extend other interfaces/classes.
-// You should use `type` for this or duplicate props.
 export type UpdateAccountCodeInput = Partial<CreateAccountCodeInput>;
 
 export interface CreateJournalEntryInput {
@@ -266,26 +267,63 @@ export interface CreateFinancialPeriodInput {
 
 // Report Types
 
+// Trial Balance
 export interface TrialBalanceItem {
+  accountId: string;
   code: string;
   name: string;
   type: string;
-  debit: number;
-  credit: number;
+  startBalance: number; // Saldo Awal
+  debit: number;        // Mutasi Debit
+  credit: number;       // Mutasi Credit
+  endBalance: number;   // Saldo Akhir
 }
 
 export interface TrialBalanceReport {
   period: { startDate: string; endDate: string };
   accounts: TrialBalanceItem[];
-  totals: { debit: number; credit: number };
+  totals: {
+    startBalance: number;
+    debit: number;
+    credit: number;
+    endBalance: number;
+  };
   isBalanced: boolean;
 }
 
+// General Ledger (Buku Besar)
+export interface GeneralLedgerEntry {
+  id: string;
+  date: string;
+  description: string;
+  reference: string | null;
+  debit: number;
+  credit: number;
+  balance: number; // Running balance
+}
+
+export interface GeneralLedgerAccount {
+  accountId: string;
+  code: string;
+  name: string;
+  startBalance: number;
+  entries: GeneralLedgerEntry[];
+  endBalance: number;
+}
+
+export interface GeneralLedgerReport {
+  period: { startDate: string; endDate: string };
+  accounts: GeneralLedgerAccount[];
+}
+
+// Income Statement (Laba Rugi)
 export interface IncomeExpenseItem {
   period: string;
   income: number;
   expense: number;
   net: number;
+  accountName?: string;
+  accountCode?: string;
 }
 
 export interface IncomeExpenseReport {
@@ -298,6 +336,7 @@ export interface IncomeExpenseReport {
   breakdown: IncomeExpenseItem[];
 }
 
+// Balance Sheet (Neraca)
 export interface BalanceSheetItem {
   code: string;
   name: string;
@@ -317,4 +356,26 @@ export interface BalanceSheetReport {
   liabilities: BalanceSheetSection;
   equity: BalanceSheetSection;
   periodDate: string;
+}
+
+// Cash Flow (Arus Kas)
+export interface CashFlowItem {
+  name: string;
+  amount: number;
+}
+
+export interface CashFlowSection {
+  title: string;
+  total: number;
+  items: CashFlowItem[];
+}
+
+export interface CashFlowReport {
+  period: { startDate: string; endDate: string };
+  operatingActivities: CashFlowSection;
+  investingActivities: CashFlowSection;
+  financingActivities: CashFlowSection;
+  netChangeInCash: number;
+  beginningCashBalance: number;
+  endingCashBalance: number;
 }

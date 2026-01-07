@@ -8,7 +8,20 @@ import { Input } from "@/components/ui/input";
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
-import { Loader2, Download } from 'lucide-react';
+import { Loader2, Download, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+// Mock or existing hook for units
+const useUnits = () => {
+  return useQuery({
+    queryKey: ['units'],
+    queryFn: async () => {
+      const res = await api.get('/units');
+      return res.data.data;
+    }
+  });
+};
 
 const useBalanceSheet = (unitId: string, date: string) => {
   return useQuery({
@@ -25,7 +38,7 @@ const useIncomeStatement = (unitId: string, startDate: string, endDate: string) 
   return useQuery({
     queryKey: ['income-statement', unitId, startDate, endDate],
     queryFn: async () => {
-      const res = await api.get('/finance-enhancement/reports/income-expense', { params: { unitId, startDate, endDate } });
+      const res = await api.get('/finance-enhancement/reports/income-statement', { params: { unitId, startDate, endDate } });
       return res.data.data;
     },
     enabled: !!unitId && !!startDate && !!endDate
@@ -69,6 +82,45 @@ export default function FinanceReportsPage() {
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Link href="/finance/reports/trial-balance" className="block">
+          <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Neraca Saldo</CardTitle>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Trial Balance</div>
+              <p className="text-xs text-muted-foreground">Lihat saldo akhir semua akun</p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/finance/reports/general-ledger" className="block">
+          <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Buku Besar</CardTitle>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">General Ledger</div>
+              <p className="text-xs text-muted-foreground">Detail transaksi per akun</p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/finance/reports/cash-flow" className="block">
+          <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Arus Kas</CardTitle>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Cash Flow</div>
+              <p className="text-xs text-muted-foreground">Laporan keluar masuk kas</p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       <Tabs defaultValue="neraca" className="space-y-4">
@@ -157,26 +209,26 @@ export default function FinanceReportsPage() {
 
                   {/* Detailed List (This normally needs grouping by type, simplified here) */}
                   <div className="border rounded-md">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Kode Akun</TableHead>
-                          <TableHead>Nama Akun</TableHead>
-                          <TableHead className="text-right">Pendapatan</TableHead>
-                          <TableHead className="text-right">Beban</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="p-2 text-left">Kode Akun</th>
+                          <th className="p-2 text-left">Nama Akun</th>
+                          <th className="p-2 text-right">Pendapatan</th>
+                          <th className="p-2 text-right">Beban</th>
+                        </tr>
+                      </thead>
+                      <tbody>
                         {pl.breakdown.map((item: any) => (
-                          <TableRow key={item.accountCode}>
-                            <TableCell>{item.accountCode}</TableCell>
-                            <TableCell>{item.accountName}</TableCell>
-                            <TableCell className="text-right">{item.income > 0 ? formatCurrency(item.income) : '-'}</TableCell>
-                            <TableCell className="text-right">{item.expense > 0 ? formatCurrency(item.expense) : '-'}</TableCell>
-                          </TableRow>
+                          <tr key={item.accountCode} className="border-b">
+                            <td className="p-2">{item.accountCode}</td>
+                            <td className="p-2">{item.accountName}</td>
+                            <td className="p-2 text-right">{item.income > 0 ? formatCurrency(item.income) : '-'}</td>
+                            <td className="p-2 text-right">{item.expense > 0 ? formatCurrency(item.expense) : '-'}</td>
+                          </tr>
                         ))}
-                      </TableBody>
-                    </Table>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               ) : <div className="text-center py-8">Pilih Unit untuk melihat laporan.</div>}

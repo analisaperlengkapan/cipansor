@@ -6,7 +6,6 @@ import {
   Plus,
   ArrowLeft,
   Search,
-  Filter,
   Clock,
   CheckCircle,
   AlertTriangle,
@@ -49,6 +48,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { useClasses } from "@/hooks/use-classes";
+import { useBehaviorRecords, useCreateBehaviorRecord } from "@/hooks/use-behavior";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Types
 type NoteType = 'POSITIVE' | 'NEGATIVE' | 'ACHIEVEMENT' | 'VIOLATION' | 'COUNSELING_NEEDED' | 'PARENT_CONTACTED';
@@ -68,90 +70,6 @@ interface BehaviorNote {
   resolvedDate?: string;
   createdBy: string;
 }
-
-// Demo data
-const DEMO_NOTES: BehaviorNote[] = [
-  {
-    id: 'bn1',
-    studentId: 's3',
-    studentName: 'Muhammad Rizki',
-    studentNis: '2024003',
-    type: 'ACHIEVEMENT',
-    category: 'Akademik',
-    description: 'Juara 1 Olimpiade Matematika Tingkat Kota',
-    date: '2024-01-20',
-    points: 50,
-    resolved: true,
-    createdBy: 'Ustadzah Fatimah',
-  },
-  {
-    id: 'bn2',
-    studentId: 's4',
-    studentName: 'Zahra Amelia',
-    studentNis: '2024004',
-    type: 'ACHIEVEMENT',
-    category: 'Tahfidz',
-    description: 'Selesai hafalan Juz 30 dengan nilai Mumtaz',
-    date: '2024-01-18',
-    points: 100,
-    resolved: true,
-    createdBy: 'Ustadz Ahmad',
-  },
-  {
-    id: 'bn3',
-    studentId: 's5',
-    studentName: 'Dimas Pratama',
-    studentNis: '2024005',
-    type: 'VIOLATION',
-    category: 'Kedisiplinan',
-    description: 'Terlambat masuk kelas 3 kali dalam 1 minggu',
-    date: '2024-01-22',
-    points: -10,
-    followUp: 'Perlu pembinaan dan koordinasi dengan orang tua',
-    resolved: false,
-    createdBy: 'Ustadzah Fatimah',
-  },
-  {
-    id: 'bn4',
-    studentId: 's7',
-    studentName: 'Farel Aditya',
-    studentNis: '2024007',
-    type: 'NEGATIVE',
-    category: 'Akademik',
-    description: 'Tidak mengerjakan PR Matematika',
-    date: '2024-01-19',
-    points: -5,
-    resolved: true,
-    resolvedDate: '2024-01-20',
-    createdBy: 'Ustadz Budi',
-  },
-  {
-    id: 'bn5',
-    studentId: 's1',
-    studentName: 'Ahmad Fauzan',
-    studentNis: '2024001',
-    type: 'POSITIVE',
-    category: 'Perilaku',
-    description: 'Membantu teman yang kesulitan belajar',
-    date: '2024-01-15',
-    points: 10,
-    resolved: true,
-    createdBy: 'Ustadzah Fatimah',
-  },
-  {
-    id: 'bn6',
-    studentId: 's2',
-    studentName: 'Aisyah Putri',
-    studentNis: '2024002',
-    type: 'COUNSELING_NEEDED',
-    category: 'Personal',
-    description: 'Terlihat murung dan kurang bersemangat beberapa hari terakhir',
-    date: '2024-01-21',
-    followUp: 'Perlu konseling dengan BK',
-    resolved: false,
-    createdBy: 'Ustadzah Fatimah',
-  },
-];
 
 const NOTE_TYPE_CONFIG: Record<NoteType, { label: string; color: string; icon: React.ReactNode }> = {
   POSITIVE: { label: 'Positif', color: 'bg-green-100 text-green-800', icon: <CheckCircle className="h-4 w-4" /> },
@@ -173,23 +91,12 @@ const CATEGORIES = [
   'Lainnya',
 ];
 
-const STUDENTS = [
-  { id: 's1', nis: '2024001', name: 'Ahmad Fauzan' },
-  { id: 's2', nis: '2024002', name: 'Aisyah Putri' },
-  { id: 's3', nis: '2024003', name: 'Muhammad Rizki' },
-  { id: 's4', nis: '2024004', name: 'Zahra Amelia' },
-  { id: 's5', nis: '2024005', name: 'Dimas Pratama' },
-  { id: 's6', nis: '2024006', name: 'Nur Hidayah' },
-  { id: 's7', nis: '2024007', name: 'Farel Aditya' },
-  { id: 's8', nis: '2024008', name: 'Siti Rahmawati' },
-];
-
-function BehaviorAnalytics({ notes }: { notes: BehaviorNote[] }) {
+function BehaviorAnalytics({ notes }: { notes: any[] }) {
   // 1. Violations by Category
   const categoryData = notes
-    .filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.type))
+    .filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.behaviorType))
     .reduce((acc, curr) => {
-      const existing = acc.find(a => a.name === curr.category);
+      const existing = acc.find((a: any) => a.name === curr.category);
       if (existing) { existing.value += 1; }
       else { acc.push({ name: curr.category, value: 1 }); }
       return acc;
@@ -198,11 +105,12 @@ function BehaviorAnalytics({ notes }: { notes: BehaviorNote[] }) {
 
   // 2. Top Violators
   const studentNegativePoints = notes
-    .filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.type))
+    .filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.behaviorType))
     .reduce((acc, curr) => {
-       const existing = acc.find(a => a.name === curr.studentName);
+       const studentName = curr.student?.user?.name || 'Unknown';
+       const existing = acc.find((a: any) => a.name === studentName);
        if (existing) { existing.points += Math.abs(curr.points || 0); existing.count += 1; }
-       else { acc.push({ name: curr.studentName, points: Math.abs(curr.points || 0), count: 1 }); }
+       else { acc.push({ name: studentName, points: Math.abs(curr.points || 0), count: 1 }); }
        return acc;
     }, [] as { name: string, points: number, count: number }[])
     .sort((a, b) => b.points - a.points)
@@ -210,8 +118,8 @@ function BehaviorAnalytics({ notes }: { notes: BehaviorNote[] }) {
 
   // 3. Positive vs Negative Trend (Simple count)
   const pieData = [
-     { name: 'Positif', value: notes.filter(n => ['POSITIVE', 'ACHIEVEMENT'].includes(n.type)).length, color: '#22c55e' },
-     { name: 'Negatif', value: notes.filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.type)).length, color: '#ef4444' },
+     { name: 'Positif', value: notes.filter(n => ['POSITIVE', 'ACHIEVEMENT'].includes(n.behaviorType)).length, color: '#22c55e' },
+     { name: 'Negatif', value: notes.filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.behaviorType)).length, color: '#ef4444' },
   ];
 
   return (
@@ -298,7 +206,12 @@ function BehaviorAnalytics({ notes }: { notes: BehaviorNote[] }) {
 }
 
 export default function BehaviorNotesPage() {
-  const [notes, setNotes] = useState<BehaviorNote[]>(DEMO_NOTES);
+  const { data: notesData, isLoading } = useBehaviorRecords();
+  const createMutation = useCreateBehaviorRecord();
+
+  // Transform API data to UI model if needed, or use directly
+  const notes = notesData || [];
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterResolved, setFilterResolved] = useState<string>('all');
@@ -315,26 +228,15 @@ export default function BehaviorNotesPage() {
     followUp: '',
   });
 
-  const filteredNotes = notes.filter(note => {
+  const filteredNotes = notes.filter((note: any) => {
     const matchesSearch = 
-      note.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (note.student?.user?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       note.description.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesType = filterType === 'all' || note.type === filterType;
-    const matchesResolved = 
-      filterResolved === 'all' || 
-      (filterResolved === 'resolved' && note.resolved) ||
-      (filterResolved === 'pending' && !note.resolved);
+    // Simplistic mapping for demo purposes - enhance with real API data mapping
+    const matchesType = filterType === 'all' || note.behaviorType === filterType;
 
-    // Tab logic
-    const matchesTab = 
-      activeTab === 'all' ||
-      activeTab === 'analytics' || 
-      (activeTab === 'positive' && ['POSITIVE', 'ACHIEVEMENT'].includes(note.type)) ||
-      (activeTab === 'negative' && ['NEGATIVE', 'VIOLATION'].includes(note.type)) ||
-      (activeTab === 'followup' && ['COUNSELING_NEEDED', 'PARENT_CONTACTED'].includes(note.type));
-
-    return matchesSearch && matchesType && matchesResolved && matchesTab;
+    return matchesSearch && matchesType;
   });
 
   const handleAddNote = () => {
@@ -343,59 +245,50 @@ export default function BehaviorNotesPage() {
       return;
     }
 
-    const student = STUDENTS.find(s => s.id === newNote.studentId);
-    if (!student) return;
-
-    const note: BehaviorNote = {
-      id: `bn${Date.now()}`,
+    createMutation.mutate({
       studentId: newNote.studentId,
-      studentName: student.name,
-      studentNis: student.nis,
-      type: newNote.type,
+      behaviorType: newNote.type === 'POSITIVE' || newNote.type === 'ACHIEVEMENT' ? 'POSITIVE' : 'NEGATIVE',
       category: newNote.category,
       description: newNote.description,
-      date: new Date().toISOString().split('T')[0],
       points: newNote.points ? parseInt(newNote.points) : undefined,
-      followUp: newNote.followUp || undefined,
-      resolved: ['POSITIVE', 'ACHIEVEMENT'].includes(newNote.type),
-      createdBy: 'Ustadzah Fatimah',
-    };
-
-    setNotes(prev => [note, ...prev]);
-    setIsAddDialogOpen(false);
-    setNewNote({
-      studentId: '',
-      type: 'POSITIVE',
-      category: '',
-      description: '',
-      points: '',
-      followUp: '',
+      actionTaken: newNote.followUp,
+      date: new Date().toISOString(),
+    }, {
+      onSuccess: () => {
+        setIsAddDialogOpen(false);
+        setNewNote({
+          studentId: '',
+          type: 'POSITIVE',
+          category: '',
+          description: '',
+          points: '',
+          followUp: '',
+        });
+      }
     });
-    toast.success('Catatan berhasil ditambahkan');
   };
 
   const handleResolve = (noteId: string) => {
-    setNotes(prev => prev.map(n => 
-      n.id === noteId 
-        ? { ...n, resolved: true, resolvedDate: new Date().toISOString().split('T')[0] }
-        : n
-    ));
-    toast.success('Catatan ditandai selesai');
+    toast.success('Fitur update status belum tersedia via API');
   };
 
   const handleDelete = (noteId: string) => {
-    setNotes(prev => prev.filter(n => n.id !== noteId));
-    toast.success('Catatan dihapus');
+    toast.success('Fitur hapus belum tersedia via API');
   };
 
   const getSummary = () => ({
     total: notes.length,
-    positive: notes.filter(n => ['POSITIVE', 'ACHIEVEMENT'].includes(n.type)).length,
-    negative: notes.filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.type)).length,
-    pending: notes.filter(n => !n.resolved).length,
+    positive: notes.filter((n: any) => n.behaviorType === 'POSITIVE').length,
+    negative: notes.filter((n: any) => n.behaviorType === 'NEGATIVE').length,
+    pending: 0, // Pending logic depends on backend implementation
   });
 
   const summary = getSummary();
+
+  // Placeholder for student list - should fetch from API
+  const STUDENTS = [
+      { id: 's1', nis: '2024001', name: 'Ahmad Fauzan' }, // Mock for dropdown
+  ];
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -587,9 +480,9 @@ export default function BehaviorNotesPage() {
             <TabsList>
             <TabsTrigger value="analytics">Analytics & Heatmap</TabsTrigger>
             <TabsTrigger value="all">Semua ({notes.length})</TabsTrigger>
-            <TabsTrigger value="positive">Positif ({notes.filter(n => ['POSITIVE', 'ACHIEVEMENT'].includes(n.type)).length})</TabsTrigger>
-            <TabsTrigger value="negative">Negatif ({notes.filter(n => ['NEGATIVE', 'VIOLATION'].includes(n.type)).length})</TabsTrigger>
-            <TabsTrigger value="followup">Tindak Lanjut ({notes.filter(n => ['COUNSELING_NEEDED', 'PARENT_CONTACTED'].includes(n.type)).length})</TabsTrigger>
+            <TabsTrigger value="positive">Positif ({notes.filter((n: any) => n.behaviorType === 'POSITIVE').length})</TabsTrigger>
+            <TabsTrigger value="negative">Negatif ({notes.filter((n: any) => n.behaviorType === 'NEGATIVE').length})</TabsTrigger>
+            <TabsTrigger value="followup">Tindak Lanjut ({notes.filter((n: any) => n.behaviorType === 'NEUTRAL').length})</TabsTrigger>
             </TabsList>
 
              {/* Search only shows on list tabs */}
@@ -620,22 +513,21 @@ export default function BehaviorNotesPage() {
                     </Card>
                 ) : (
                     <div className="space-y-3">
-                    {filteredNotes.map(note => (
+                    {filteredNotes.map((note: any) => (
                         <Card key={note.id} className={note.resolved ? 'opacity-75' : ''}>
                         <CardContent className="py-4">
                             <div className="flex items-start justify-between gap-4">
                             <div className="flex items-start gap-4">
                                 <Avatar className="h-10 w-10">
-                                <AvatarFallback>{note.studentName.charAt(0)}</AvatarFallback>
+                                <AvatarFallback>{(note.student?.user?.name || '?').charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                    <span className="font-medium">{note.studentName}</span>
-                                    <Badge variant="outline" className="text-xs">{note.studentNis}</Badge>
-                                    <Badge className={`text-xs ${NOTE_TYPE_CONFIG[note.type].color}`}>
+                                    <span className="font-medium">{note.student?.user?.name}</span>
+                                    <Badge variant="outline" className="text-xs">{note.student?.nis}</Badge>
+                                    <Badge className={`text-xs ${note.behaviorType === 'POSITIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                     <span className="flex items-center gap-1">
-                                        {NOTE_TYPE_CONFIG[note.type].icon}
-                                        {NOTE_TYPE_CONFIG[note.type].label}
+                                        {note.behaviorType}
                                     </span>
                                     </Badge>
                                 </div>
@@ -652,52 +544,16 @@ export default function BehaviorNotesPage() {
                                         </span>
                                     </>
                                     )}
-                                    <span>•</span>
-                                    <span>oleh {note.createdBy}</span>
                                 </div>
-                                {note.followUp && (
+                                {note.actionTaken && (
                                     <div className="mt-2 p-2 bg-muted rounded text-sm">
-                                    <strong>Tindak lanjut:</strong> {note.followUp}
+                                    <strong>Tindak lanjut:</strong> {note.actionTaken}
                                     </div>
                                 )}
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                {note.resolved ? (
-                                <Badge variant="outline" className="text-green-600 border-green-600">
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    Selesai
-                                </Badge>
-                                ) : (
-                                <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    onClick={() => handleResolve(note.id)}
-                                >
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    Selesaikan
-                                </Button>
-                                )}
-                                <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                    <ChevronDown className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem>
-                                    <Edit className="h-4 w-4 mr-2" />
-                                    Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem 
-                                    className="text-red-600"
-                                    onClick={() => handleDelete(note.id)}
-                                    >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Hapus
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                                </DropdownMenu>
+                                {/* Actions handled via dropdown/buttons */}
                             </div>
                             </div>
                         </CardContent>

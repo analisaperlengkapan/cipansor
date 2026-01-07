@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/prisma";
-import { PermitStatus } from "@prisma/client";
+import { PermitStatus, AttendanceStatus, PermitType } from "@prisma/client";
 import { CreatePermitDto, UpdatePermitStatusDto, QueryPermitDto } from "./schema";
 
 export async function createPermit(data: CreatePermitDto) {
@@ -93,17 +93,73 @@ export async function updatePermitStatus(
     updateData.rejectionNote = data.rejectionNote;
   }
 
-  return prisma.permit.update({
-    where: { id },
-    data: updateData,
-    include: {
-      student: {
-        include: {
-          user: { select: { id: true, name: true, email: true } },
+  // Use a transaction to ensure atomicity
+  return prisma.$transaction(async (tx) => {
+    // 1. Update Permit
+    const updatedPermit = await tx.permit.update({
+      where: { id },
+      data: updateData,
+      include: {
+        student: {
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+          },
         },
+        approvedBy: { select: { id: true, name: true } },
       },
-      approvedBy: { select: { id: true, name: true } },
-    },
+    });
+
+    // 2. Auto-generate Attendance if Approved
+    if (data.status === PermitStatus.APPROVED && updatedPermit.studentId) {
+      // Get student's active class
+      const enrollment = await tx.classEnrollment.findFirst({
+        where: {
+          studentId: updatedPermit.studentId,
+          status: 'active',
+        },
+      });
+
+      if (enrollment) {
+        const attendancePromises = [];
+        const current = new Date(updatedPermit.startDate);
+        const end = new Date(updatedPermit.endDate);
+        const attendanceStatus = updatedPermit.type === PermitType.SAKIT ? AttendanceStatus.SICK : AttendanceStatus.EXCUSED;
+
+        while (current <= end) {
+          const recordDate = new Date(current);
+
+          attendancePromises.push(
+            tx.attendance.upsert({
+              where: {
+                studentId_classId_date: {
+                  studentId: updatedPermit.studentId,
+                  classId: enrollment.classId,
+                  date: recordDate,
+                },
+              },
+              update: {
+                status: attendanceStatus,
+                notes: `Auto-generated from Permit ${updatedPermit.type}`,
+              },
+              create: {
+                studentId: updatedPermit.studentId,
+                classId: enrollment.classId,
+                date: recordDate,
+                status: attendanceStatus,
+                notes: `Auto-generated from Permit ${updatedPermit.type}`,
+                recordedById: approverId,
+              },
+            })
+          );
+
+          current.setDate(current.getDate() + 1);
+        }
+
+        await Promise.all(attendancePromises);
+      }
+    }
+
+    return updatedPermit;
   });
 }
 

@@ -324,7 +324,7 @@ export default function PermitsPage() {
         open={!!approveId}
         onOpenChange={(open: boolean) => !open && setApproveId(null)}
         title="Setujui Izin"
-        description="Apakah Anda yakin ingin menyetujui izin ini?"
+        description="Apakah Anda yakin ingin menyetujui izin ini? Sistem akan otomatis membuat data absensi (Izin/Sakit) untuk santri selama periode izin."
         confirmLabel="Setujui"
         onConfirm={handleApprove}
         isLoading={approveMutation.isPending}

@@ -31,9 +31,100 @@ export interface Student {
     id: string;
     name: string;
     grade: number;
+    academicYear?: {
+      id: string;
+      name: string;
+    };
   };
   createdAt: string;
   updatedAt: string;
+  // Summary fields for Student 360 View
+  summary?: {
+    walletBalance: number;
+    violationPoints: number;
+    boarding: {
+      dormitoryName: string;
+      roomName: string;
+      assignedAt: string;
+    } | null;
+    unpaidInvoices: {
+      count: number;
+      total: number;
+    };
+  };
+  // Detailed relation data
+  wallet?: {
+    id: string;
+    balance: number | string;
+    lastTopUp?: string;
+  };
+  roomAssignments?: Array<{
+    id: string;
+    room: {
+      id: string;
+      name: string;
+      dormitory: {
+        id: string;
+        name: string;
+      };
+    };
+    assignedAt: string;
+    isActive: boolean;
+  }>;
+  violations?: Array<{
+    id: string;
+    points: number;
+    type: string;
+    category: string;
+    description: string;
+    occurredAt: string;
+  }>;
+  medicalRecords?: Array<{
+    id: string;
+    type: string;
+    complaint: string;
+    diagnosis?: string;
+    visitDate: string;
+  }>;
+  invoices?: Array<{
+    id: string;
+    invoiceNumber: string;
+    amount: number | string;
+    paidAmount: number | string;
+    dueDate: string;
+    status: string;
+    paymentType: {
+      id: string;
+      name: string;
+    };
+  }>;
+  attendances?: Array<{
+    id: string;
+    date: string;
+    status: string;
+    notes?: string;
+  }>;
+  tahfidzRecords?: Array<{
+    id: string;
+    juz: number;
+    surahName: string;
+    ayahStart: number;
+    ayahEnd: number;
+    activityType: string;
+    recordedAt: string;
+  }>;
+  enrollments?: Array<{
+    id: string;
+    status: string;
+    class: {
+      id: string;
+      name: string;
+      academicYear?: {
+        id: string;
+        name: string;
+      };
+    };
+  }>;
 }
 
 export interface StudentListParams {
@@ -288,12 +379,15 @@ export interface TimelineEvent {
 export interface StudentCompleteProfile extends Student {
   enrollments: Array<{
     id: string;
-    classId: string;
-    className: string;
-    academicYear: string;
-    status: 'ACTIVE' | 'COMPLETED' | 'TRANSFERRED';
-    startDate: string;
-    endDate?: string;
+    status: string;
+    class: {
+      id: string;
+      name: string;
+      academicYear?: {
+        id: string;
+        name: string;
+      };
+    };
   }>;
   parents: Array<{
     id: string;

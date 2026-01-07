@@ -5501,6 +5501,9 @@ model DailyStudentReport {
   napDuration       Int?             @map("nap_duration")
   toiletNotes       String?          @map("toilet_notes") @db.Text
   sholatDhuha       Boolean?         @map("sholat_dhuha")
+  sholatDzuhur      Boolean?         @map("sholat_dzuhur")
+  sholatAshar       Boolean?         @map("sholat_ashar")
+  sholatJamaah      Boolean?         @map("sholat_jamaah")
   tahfidzActivity   String?          @map("tahfidz_activity")
   activitiesSummary String?          @map("activities_summary") @db.Text
   achievements      String?          @db.Text

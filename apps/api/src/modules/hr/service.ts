@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/prisma";
-import { Prisma, LeaveStatus, StaffAttendanceStatus, LeaveType } from "@prisma/client";
+import { Prisma, LeaveStatus, StaffAttendanceStatus, LeaveType, UserRole, User } from "@prisma/client";
 import {
   CreateStaffAttendanceInput,
   UpdateStaffAttendanceInput,
@@ -7,7 +7,228 @@ import {
   CreateLeaveInput,
   UpdateLeaveInput,
   ApproveLeaveInput,
+  CreateEmployeeInput,
+  UpdateEmployeeInput,
 } from "./schema";
+import bcrypt from "bcryptjs";
+import { Errors } from "../../middleware/error";
+
+// =====================================
+// EMPLOYEE SERVICE (UNIFIED TEACHER & STAFF)
+// =====================================
+
+export async function getEmployees(params: {
+  page: number;
+  limit: number;
+  unitId?: string;
+  role?: "TEACHER" | "STAFF";
+  search?: string;
+}) {
+  const { page, limit, unitId, role, search } = params;
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.UserWhereInput = {
+    deletedAt: null,
+    role: role ? (role as UserRole) : { in: [UserRole.TEACHER, UserRole.STAFF] },
+  };
+
+  if (unitId) where.unitId = unitId;
+
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+      { teacher: { nip: { contains: search, mode: "insensitive" } } },
+      { staff: { nip: { contains: search, mode: "insensitive" } } },
+    ];
+  }
+
+  const [data, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        unit: { select: { id: true, name: true } },
+        teacher: true,
+        staff: true,
+      },
+    }),
+    prisma.user.count({ where }),
+  ]);
+
+  return {
+    data,
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+  };
+}
+
+export async function getEmployeeById(id: string) {
+  return prisma.user.findUnique({
+    where: { id },
+    include: {
+      unit: { select: { id: true, name: true } },
+      teacher: true,
+      staff: true,
+    },
+  });
+}
+
+export async function createEmployee(data: CreateEmployeeInput) {
+  // Validate unique email
+  const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
+  if (existingUser) {
+    throw Errors.badRequest("Email already exists");
+  }
+
+  // Hash password (default to 'password123' if not provided)
+  const password = data.password || "password123";
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  return prisma.$transaction(async (tx) => {
+    // 1. Create User
+    const user = await tx.user.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        passwordHash,
+        role: data.role as UserRole,
+        unitId: data.unitId,
+        phone: data.phone,
+      },
+    });
+
+    // 2. Create Profile based on Role
+    if (data.role === "TEACHER") {
+      await tx.teacher.create({
+        data: {
+          userId: user.id,
+          unitId: data.unitId,
+          nip: data.nip,
+          nuptk: data.nuptk,
+          gender: data.gender,
+          birthPlace: data.birthPlace,
+          birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
+          address: data.address,
+          nik: data.nik,
+          noKK: data.noKK,
+          religion: data.religion || "ISLAM",
+          joinDate: data.joinDate ? new Date(data.joinDate) : undefined,
+          employmentStatus: data.employmentStatus,
+          specialization: data.specialization,
+          certificationNumber: data.certificationNumber,
+        },
+      });
+    } else {
+      // STAFF
+      if (!data.position) throw Errors.badRequest("Position is required for Staff");
+
+      await tx.staff.create({
+        data: {
+          userId: user.id,
+          unitId: data.unitId,
+          nip: data.nip,
+          position: data.position,
+          department: data.department,
+          joinDate: data.joinDate ? new Date(data.joinDate) : undefined,
+        },
+      });
+    }
+
+    return user;
+  });
+}
+
+export async function updateEmployee(id: string, data: UpdateEmployeeInput) {
+  const user = await prisma.user.findUnique({
+    where: { id },
+    include: { teacher: true, staff: true },
+  });
+
+  if (!user) throw Errors.notFound("Employee not found");
+
+  return prisma.$transaction(async (tx) => {
+    // 1. Update User
+    const updatedUser = await tx.user.update({
+      where: { id },
+      data: {
+        name: data.name,
+        email: data.email,
+        unitId: data.unitId,
+        phone: data.phone,
+        isActive: data.isActive,
+      },
+    });
+
+    // 2. Update Profile
+    if (user.role === "TEACHER" && user.teacher) {
+      await tx.teacher.update({
+        where: { id: user.teacher.id },
+        data: {
+          nip: data.nip,
+          nuptk: data.nuptk,
+          gender: data.gender,
+          birthPlace: data.birthPlace,
+          birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
+          address: data.address,
+          nik: data.nik,
+          noKK: data.noKK,
+          religion: data.religion,
+          joinDate: data.joinDate ? new Date(data.joinDate) : undefined,
+          employmentStatus: data.employmentStatus,
+          specialization: data.specialization,
+          certificationNumber: data.certificationNumber,
+          unitId: data.unitId, // Update unit if user moved
+        },
+      });
+    } else if (user.role === "STAFF" && user.staff) {
+      await tx.staff.update({
+        where: { id: user.staff.id },
+        data: {
+          nip: data.nip,
+          position: data.position,
+          department: data.department,
+          joinDate: data.joinDate ? new Date(data.joinDate) : undefined,
+          unitId: data.unitId,
+        },
+      });
+    }
+
+    return updatedUser;
+  });
+}
+
+export async function deleteEmployee(id: string) {
+  // Soft delete user and related profile
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        isActive: false,
+        email: `deleted_${id}_${Date.now()}@example.com`, // Free up email
+      },
+      include: { teacher: true, staff: true },
+    });
+
+    if (user.teacher) {
+      await tx.teacher.update({
+        where: { id: user.teacher.id },
+        data: { deletedAt: new Date(), nip: null, nuptk: null },
+      });
+    }
+
+    if (user.staff) {
+      await tx.staff.update({
+        where: { id: user.staff.id },
+        data: { deletedAt: new Date(), nip: null },
+      });
+    }
+
+    return user;
+  });
+}
 
 // =====================================
 // STAFF ATTENDANCE SERVICE

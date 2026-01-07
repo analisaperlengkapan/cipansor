@@ -41,7 +41,7 @@ import {
   type RegistrationStatus,
 } from '@/hooks';
 import { useClasses } from '@/hooks';
-import { useDormitories, useDormitoryRooms } from '@/hooks';
+import { useDormitories, useDormitoryRooms, useHalaqohs } from '@/hooks';
 import {
   ArrowLeft,
   User,
@@ -75,11 +75,15 @@ export default function PSBDetailPage() {
   const { data: registration, isLoading } = useRegistration(id);
   const { data: classes } = useClasses();
   const { data: dormitories } = useDormitories();
+  const { data: halaqohs } = useHalaqohs({ isActive: true });
 
   // Form states for enrollment
+  const [nis, setNis] = useState('');
+  const [nisn, setNisn] = useState('');
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedDormitoryId, setSelectedDormitoryId] = useState('');
   const [selectedRoomId, setSelectedRoomId] = useState('');
+  const [selectedHalaqohId, setSelectedHalaqohId] = useState('');
 
   const { data: rooms } = useDormitoryRooms(selectedDormitoryId && selectedDormitoryId !== 'none' ? selectedDormitoryId : '');
 
@@ -224,8 +228,11 @@ export default function PSBDetailPage() {
     try {
       await enrollMutation.mutateAsync({
         id,
-        classId: selectedClassId,
-        roomId: selectedRoomId || undefined,
+        nis,
+        nisn,
+        classId: selectedClassId === 'none' ? undefined : (selectedClassId || undefined),
+        roomId: selectedRoomId === 'none' ? undefined : (selectedRoomId || undefined),
+        halaqohId: selectedHalaqohId === 'none' ? undefined : (selectedHalaqohId || undefined),
       });
       toast.success('Pendaftar berhasil didaftarkan sebagai santri');
       setEnrollOpen(false);
@@ -941,17 +948,37 @@ export default function PSBDetailPage() {
           <DialogHeader>
             <DialogTitle>Daftar Ulang</DialogTitle>
             <DialogDescription>
-              Pilih kelas dan asrama untuk santri baru
+              Lengkapi data santri, pilih kelas, asrama, dan halaqoh untuk santri baru.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>NIS <span className="text-red-500">*</span></Label>
+                <Input
+                  value={nis}
+                  onChange={(e) => setNis(e.target.value)}
+                  placeholder="Nomor Induk Santri"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>NISN (Opsional)</Label>
+                <Input
+                  value={nisn}
+                  onChange={(e) => setNisn(e.target.value)}
+                  placeholder="NISN"
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label>Kelas</Label>
+              <Label>Kelas (Sekolah)</Label>
               <Select value={selectedClassId} onValueChange={setSelectedClassId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih kelas" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">Tidak masuk kelas</SelectItem>
                   {classes?.data?.map((cls) => (
                     <SelectItem key={cls.id} value={cls.id}>
                       {cls.name}
@@ -960,6 +987,24 @@ export default function PSBDetailPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-2">
+              <Label>Halaqoh (Takhosus/Pesantren)</Label>
+              <Select value={selectedHalaqohId} onValueChange={setSelectedHalaqohId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih halaqoh" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Tidak masuk halaqoh</SelectItem>
+                  {halaqohs?.data?.map((halaqoh) => (
+                    <SelectItem key={halaqoh.id} value={halaqoh.id}>
+                      {halaqoh.name} - {halaqoh.teacher?.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <Label>Asrama (Opsional)</Label>
               <Select value={selectedDormitoryId} onValueChange={(val) => {
@@ -1007,7 +1052,7 @@ export default function PSBDetailPage() {
             </Button>
             <Button
               onClick={handleEnroll}
-              disabled={!selectedClassId || enrollMutation.isPending}
+              disabled={!nis || enrollMutation.isPending}
             >
               {enrollMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

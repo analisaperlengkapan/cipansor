@@ -17,10 +17,11 @@ export type UnitType = Unit['type'];
 
 export const UNIT_TYPES: { value: UnitType; label: string }[] = [
   { value: 'PESANTREN', label: 'Pesantren' },
-  { value: 'TK_QURAN', label: 'TK Qur\'an' },
+  { value: 'TK_QURAN', label: 'TK Qur\'an / PAUD' },
   { value: 'SD_IT', label: 'SD Islam Terpadu' },
   { value: 'SMP_IT', label: 'SMP Islam Terpadu' },
   { value: 'SMA_QURAN', label: 'SMA Qur\'an' },
+  { value: 'OTHER', label: 'Takhosus / Lainnya' },
 ];
 
 interface UseUnitsParams {

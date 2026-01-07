@@ -306,6 +306,44 @@ export async function getFoundationStats(foundationId: string) {
     },
   });
 
+  // Simplified approach: Fetch total Revenue and Total Expense for all units
+  // For 'REVENUE': Credit increases, Debit decreases
+  // For 'EXPENSE': Debit increases, Credit decreases
+  const currentYearStart = new Date(new Date().getFullYear(), 0, 1);
+  const unitIds = foundation.units.map((u) => u.id);
+
+  let totalRevenue = 0;
+  let totalExpense = 0;
+
+  if (unitIds.length > 0) {
+    const [revenue, expense] = await Promise.all([
+      prisma.journalEntry.aggregate({
+        where: {
+          unitId: { in: unitIds },
+          account: { type: 'REVENUE' },
+          date: { gte: currentYearStart },
+        },
+        _sum: { credit: true, debit: true },
+      }),
+      prisma.journalEntry.aggregate({
+        where: {
+          unitId: { in: unitIds },
+          account: { type: 'EXPENSE' },
+          date: { gte: currentYearStart },
+        },
+        _sum: { debit: true, credit: true },
+      }),
+    ]);
+
+    totalRevenue = (Number(revenue._sum.credit) || 0) - (Number(revenue._sum.debit) || 0);
+    totalExpense = (Number(expense._sum.debit) || 0) - (Number(expense._sum.credit) || 0);
+  }
+
+  const studentDistribution = foundation.units.map(unit => ({
+    unitName: unit.name,
+    count: unit._count.students,
+  }));
+
   return {
     foundationId,
     foundationName: foundation.name,
@@ -318,5 +356,11 @@ export async function getFoundationStats(foundationId: string) {
     totalDocuments: foundation._count.documents,
     expiringDocuments,
     unitsSummary: foundation.units,
+    financialSummary: {
+      totalRevenue,
+      totalExpense,
+      netIncome: totalRevenue - totalExpense,
+    },
+    studentDistribution,
   };
 }

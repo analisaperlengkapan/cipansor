@@ -8,6 +8,7 @@ import {
   UpdateRegistrantScoreInput,
   UpdateRegistrantStatusInput,
   CreateRegistrantDocumentInput,
+  EnrollRegistrantInput,
 } from "./schema";
 
 // =====================================
@@ -278,12 +279,7 @@ export async function updateRegistrantStatus(id: string, data: UpdateRegistrantS
   });
 }
 
-export async function enrollRegistrant(registrantId: string, studentData: {
-  nis: string;
-  nisn?: string;
-  classId?: string;
-  roomId?: string;
-}) {
+export async function enrollRegistrant(registrantId: string, studentData: EnrollRegistrantInput) {
   const registrant = await prisma.registrant.findUnique({
     where: { id: registrantId },
     include: { admissionPeriod: { include: { unit: true } } },
@@ -292,6 +288,22 @@ export async function enrollRegistrant(registrantId: string, studentData: {
   if (!registrant) throw new Error("Registrant not found");
   if (registrant.status !== AdmissionStatus.ACCEPTED) {
     throw new Error("Registrant must be accepted before enrollment");
+  }
+
+  // Verify related entities if provided
+  if (studentData.classId) {
+    const classEntity = await prisma.class.findUnique({ where: { id: studentData.classId } });
+    if (!classEntity) throw new Error("Class not found");
+  }
+
+  if (studentData.roomId) {
+    const room = await prisma.room.findUnique({ where: { id: studentData.roomId } });
+    if (!room) throw new Error("Room not found");
+  }
+
+  if (studentData.halaqohId) {
+    const halaqoh = await prisma.halaqoh.findUnique({ where: { id: studentData.halaqohId } });
+    if (!halaqoh) throw new Error("Halaqoh not found");
   }
 
   // Create user and student in a transaction
@@ -349,6 +361,18 @@ export async function enrollRegistrant(registrantId: string, studentData: {
                 assignedAt: new Date(),
             }
         });
+    }
+
+    // Assign to halaqoh if provided (For Takhosus/Pesantren)
+    if (studentData.halaqohId) {
+      await tx.takhosusEnrollment.create({
+        data: {
+          studentId: student.id,
+          halaqohId: studentData.halaqohId,
+          status: "active",
+          startDate: new Date(),
+        }
+      });
     }
 
     // Update registrant status

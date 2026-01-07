@@ -45,13 +45,23 @@ export class UnitService {
               classes: { where: { deletedAt: null } },
             },
           },
+          settings: {
+            where: { key: 'HEAD_MASTER_NAME' },
+            select: { value: true },
+          },
         },
       }),
       prisma.unit.count({ where }),
     ]);
 
+    const mappedUnits = units.map((unit) => ({
+      ...unit,
+      headName: unit.settings[0]?.value as string | null,
+      settings: undefined, // Remove raw settings from response
+    }));
+
     return {
-      units,
+      units: mappedUnits,
       pagination: {
         page,
         limit,
@@ -85,6 +95,10 @@ export class UnitService {
             },
           },
         },
+        settings: {
+          where: { key: 'HEAD_MASTER_NAME' },
+          select: { value: true },
+        },
       },
     });
 
@@ -92,7 +106,11 @@ export class UnitService {
       throw Errors.notFound('Unit');
     }
 
-    return unit;
+    return {
+      ...unit,
+      headName: unit.settings[0]?.value as string | null,
+      settings: undefined,
+    };
   }
 
   /**
@@ -107,10 +125,21 @@ export class UnitService {
         phone: input.phone,
         email: input.email,
         logoUrl: input.logoUrl,
+        settings: input.headName
+          ? {
+              create: {
+                key: 'HEAD_MASTER_NAME',
+                value: input.headName,
+              },
+            }
+          : undefined,
       },
     });
 
-    return unit;
+    return {
+      ...unit,
+      headName: input.headName,
+    };
   }
 
   /**
@@ -125,19 +154,39 @@ export class UnitService {
       throw Errors.notFound('Unit');
     }
 
-    const updated = await prisma.unit.update({
-      where: { id },
-      data: {
-        name: input.name,
-        type: input.type as UnitType | undefined,
-        address: input.address,
-        phone: input.phone,
-        email: input.email,
-        logoUrl: input.logoUrl,
-      },
-    });
+    const [updated] = await prisma.$transaction([
+      prisma.unit.update({
+        where: { id },
+        data: {
+          name: input.name,
+          type: input.type as UnitType | undefined,
+          address: input.address,
+          phone: input.phone,
+          email: input.email,
+          logoUrl: input.logoUrl,
+        },
+      }),
+      ...(input.headName !== undefined
+        ? [
+            prisma.setting.upsert({
+              where: { unitId_key: { unitId: id, key: 'HEAD_MASTER_NAME' } },
+              create: {
+                unitId: id,
+                key: 'HEAD_MASTER_NAME',
+                value: input.headName ?? '',
+              },
+              update: {
+                value: input.headName ?? '',
+              },
+            }),
+          ]
+        : []),
+    ]);
 
-    return updated;
+    return {
+      ...updated,
+      headName: input.headName,
+    };
   }
 
   /**

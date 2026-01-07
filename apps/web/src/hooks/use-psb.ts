@@ -477,16 +477,25 @@ export function useEnrollRegistration() {
   return useMutation({
     mutationFn: async ({
       id,
+      nis,
+      nisn,
       classId,
       roomId,
+      halaqohId,
     }: {
       id: string;
-      classId: string;
+      nis: string;
+      nisn?: string;
+      classId?: string;
       roomId?: string;
+      halaqohId?: string;
     }) => {
       const response = await api.post(`/psb/registrations/${id}/enroll`, {
+        nis,
+        nisn,
         classId,
         roomId,
+        halaqohId,
       });
       return response.data.data;
     },

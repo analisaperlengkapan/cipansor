@@ -9,9 +9,9 @@ import {
   updateRegistrantStatusSchema,
   createRegistrantDocumentSchema,
   verifyDocumentSchema,
+  enrollRegistrantSchema,
 } from "./schema";
 import { Errors } from "../../middleware/error";
-import { z } from "zod";
 
 // =====================================
 // ADMISSION PERIOD CONTROLLERS
@@ -148,19 +148,8 @@ export async function updateRegistrantStatus(req: Request, res: Response, next: 
 
 export async function enrollRegistrant(req: Request, res: Response, next: NextFunction) {
   try {
-    const schema = z.object({
-      nis: z.string().min(1),
-      nisn: z.string().optional(),
-      classId: z.string().optional(),
-      roomId: z.string().optional(),
-    });
-    const data = schema.parse(req.body);
-    const result = await service.enrollRegistrant(req.params.id, {
-      nis: data.nis,
-      nisn: data.nisn,
-      classId: data.classId,
-      roomId: data.roomId,
-    });
+    const data = enrollRegistrantSchema.parse(req.body);
+    const result = await service.enrollRegistrant(req.params.id, data);
     res.json({ 
       success: true, 
       data: result,

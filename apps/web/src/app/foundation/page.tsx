@@ -18,15 +18,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -47,6 +38,8 @@ import {
   DOCUMENT_TYPE_LABELS,
   type DocumentType,
 } from '@/hooks';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
 import {
   Building2,
   FileText,
@@ -64,6 +57,10 @@ import {
   Save,
   Eye,
   AlertTriangle,
+  Wallet,
+  TrendingUp,
+  TrendingDown,
+  DollarSign
 } from 'lucide-react';
 import { format, isPast, isBefore, addMonths } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -78,6 +75,18 @@ export default function FoundationPage() {
   const { data: foundation, isLoading } = useFoundation();
   const { data: documents } = useFoundationDocuments();
   const { data: boardMembers } = useFoundationBoardMembers();
+
+  // Financial Data Query
+  const { data: financialData, isLoading: isLoadingFinance } = useQuery({
+    queryKey: ['foundation', 'financial', foundation?.id],
+    queryFn: async () => {
+      if (!foundation?.id) return null;
+      const res = await api.get(`/foundation/${foundation.id}/financial-summary`);
+      return res.data.data;
+    },
+    enabled: !!foundation?.id
+  });
+
   const updateFoundation = useUpdateFoundation();
   const deleteDocument = useDeleteFoundationDocument();
   const deleteBoardMember = useDeleteFoundationBoardMember();
@@ -127,6 +136,14 @@ export default function FoundationPage() {
     return { status: 'valid', label: 'Aktif', variant: 'default' as const };
   };
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(value);
+  };
+
   if (isLoading) {
     return (
       <MainLayout>
@@ -155,6 +172,10 @@ export default function FoundationPage() {
             <TabsTrigger value="info" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               Informasi
+            </TabsTrigger>
+            <TabsTrigger value="financial" className="flex items-center gap-2">
+              <Wallet className="h-4 w-4" />
+              Keuangan
             </TabsTrigger>
             <TabsTrigger value="documents" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
@@ -337,6 +358,106 @@ export default function FoundationPage() {
                     )}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Financial Tab */}
+          <TabsContent value="financial" className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Pemasukan</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-green-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {isLoadingFinance ? <Loader2 className="h-4 w-4 animate-spin" /> : formatCurrency(financialData?.totalRevenue || 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Akumulasi dari seluruh unit
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Pengeluaran</CardTitle>
+                  <TrendingDown className="h-4 w-4 text-red-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {isLoadingFinance ? <Loader2 className="h-4 w-4 animate-spin" /> : formatCurrency(financialData?.totalExpense || 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Akumulasi dari seluruh unit
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Saldo Bersih</CardTitle>
+                  <DollarSign className="h-4 w-4 text-blue-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-2xl font-bold ${(financialData?.totalNetIncome || 0) < 0 ? 'text-red-500' : 'text-green-600'}`}>
+                    {isLoadingFinance ? <Loader2 className="h-4 w-4 animate-spin" /> : formatCurrency(financialData?.totalNetIncome || 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Selisih Pemasukan - Pengeluaran
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Rincian Per Unit</CardTitle>
+                <CardDescription>
+                  Laporan keuangan per unit pendidikan
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nama Unit</TableHead>
+                      <TableHead className="text-right">Pemasukan</TableHead>
+                      <TableHead className="text-right">Pengeluaran</TableHead>
+                      <TableHead className="text-right">Saldo</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoadingFinance ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-4">
+                          <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                        </TableCell>
+                      </TableRow>
+                    ) : financialData?.breakdown?.length ? (
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      financialData.breakdown.map((item: any) => (
+                        <TableRow key={item.unitId}>
+                          <TableCell className="font-medium">{item.unitName}</TableCell>
+                          <TableCell className="text-right text-green-600">
+                            {formatCurrency(item.revenue)}
+                          </TableCell>
+                          <TableCell className="text-right text-red-500">
+                            {formatCurrency(item.expense)}
+                          </TableCell>
+                          <TableCell className={`text-right font-bold ${item.netIncome < 0 ? 'text-red-500' : 'text-green-600'}`}>
+                            {formatCurrency(item.netIncome)}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                          Belum ada data transaksi
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>

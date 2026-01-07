@@ -11,7 +11,7 @@
  */
 
 import { prisma } from '../../lib/prisma';
-import { Prisma, SalaryComponentType, PayrollStatus } from '@prisma/client';
+import { Prisma, SalaryComponentType, PayrollStatus, AccountType } from '@prisma/client';
 import {
   CreateSalaryComponentInput,
   UpdateSalaryComponentInput,
@@ -523,7 +523,10 @@ export const payrollPeriodService = {
   },
 
   async markAsPaid(id: string, payDate: Date, notes?: string) {
-    const period = await prisma.payrollPeriod.findUnique({ where: { id } });
+    const period = await prisma.payrollPeriod.findUnique({
+      where: { id },
+      include: { unit: true }
+    });
 
     if (!period) {
       throw new Error('Periode penggajian tidak ditemukan');
@@ -534,13 +537,80 @@ export const payrollPeriodService = {
     }
 
     return prisma.$transaction(async (tx) => {
-      // Update all payrolls to PAID
+      // 1. Update all payrolls to PAID
       await tx.payroll.updateMany({
         where: { periodId: id, status: 'APPROVED' },
         data: { status: 'PAID' },
       });
 
-      // Update period
+      // 2. Create Journal Entry in Finance
+      // Find account codes (Default fallback if not found)
+      // Beban Gaji (Expense) - usually 5-1-xx
+      // Kas (Asset) - usually 1-1-xx
+
+      const salaryExpenseAccount = await tx.accountCode.findFirst({
+        where: {
+          name: { contains: 'Gaji', mode: 'insensitive' },
+          type: AccountType.EXPENSE
+        }
+      });
+
+      const cashAccount = await tx.accountCode.findFirst({
+        where: {
+          type: AccountType.ASSET,
+          code: { startsWith: '1-1' } // Assuming 1-1 is Cash/Bank
+        }
+      });
+
+      // If accounts exist, create journal entry
+      if (salaryExpenseAccount && cashAccount) {
+        // Calculate total amount from period record (it stores totalAmount)
+        // Ensure we use the latest amount
+        const currentTotal = await tx.payroll.aggregate({
+          where: { periodId: id },
+          _sum: { netSalary: true }
+        });
+
+        const totalAmount = Number(currentTotal._sum.netSalary) || 0;
+
+        if (totalAmount > 0) {
+          await tx.journalEntry.create({
+            data: {
+              unitId: period.unitId,
+              accountId: salaryExpenseAccount.id, // Debit Expense
+              date: payDate,
+              description: `Pembayaran Gaji Periode ${period.name}`,
+              debit: totalAmount,
+              credit: 0,
+              reference: period.id,
+              referenceType: 'PAYROLL',
+              createdById: 'SYSTEM' // System generated
+            }
+          });
+
+          await tx.journalEntry.create({
+            data: {
+              unitId: period.unitId,
+              accountId: cashAccount.id, // Credit Asset (Cash)
+              date: payDate,
+              description: `Pembayaran Gaji Periode ${period.name}`,
+              debit: 0,
+              credit: totalAmount,
+              reference: period.id,
+              referenceType: 'PAYROLL',
+              createdById: 'SYSTEM'
+            }
+          });
+        }
+      } else {
+        // Hardening: If accounts are missing, throw error to prevent data drift
+        const missing = [];
+        if (!salaryExpenseAccount) missing.push('Beban Gaji (Expense)');
+        if (!cashAccount) missing.push('Kas/Bank (Asset)');
+        throw new Error(`Gagal membuat jurnal keuangan: Akun ${missing.join(' dan ')} tidak ditemukan.`);
+      }
+
+      // 3. Update period status
       return tx.payrollPeriod.update({
         where: { id },
         data: {

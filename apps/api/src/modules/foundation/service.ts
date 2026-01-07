@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, AccountType } from "@prisma/client";
 import {
   CreateFoundationInput,
   UpdateFoundationInput,
@@ -318,5 +318,83 @@ export async function getFoundationStats(foundationId: string) {
     totalDocuments: foundation._count.documents,
     expiringDocuments,
     unitsSummary: foundation.units,
+  };
+}
+
+export async function getFinancialSummary(foundationId: string) {
+  // Get all units linked to foundation
+  const units = await prisma.unit.findMany({
+    where: { foundationId },
+    select: { id: true, name: true, type: true }
+  });
+
+  const unitIds = units.map(u => u.id);
+
+  // Aggregate Journal Entries
+  // We want to group by Unit and AccountType (Revenue vs Expense)
+  // For simplicity, we filter for Revenue and Expense account types directly
+  const financialData = await prisma.journalEntry.groupBy({
+    by: ['unitId', 'accountId'],
+    where: {
+      unitId: { in: unitIds },
+      account: {
+        type: { in: [AccountType.REVENUE, AccountType.EXPENSE] }
+      }
+    },
+    _sum: {
+      debit: true,
+      credit: true
+    }
+  });
+
+  // Need to get account types to classify the grouped data
+  const accountIds = financialData.map(d => d.accountId);
+  const accounts = await prisma.accountCode.findMany({
+    where: { id: { in: accountIds } },
+    select: { id: true, type: true }
+  });
+  const accountTypeMap = new Map(accounts.map(a => [a.id, a.type]));
+
+  // Process data
+  const unitStats = units.map(unit => {
+    let revenue = 0;
+    let expense = 0;
+
+    const unitEntries = financialData.filter(d => d.unitId === unit.id);
+
+    for (const entry of unitEntries) {
+      const type = accountTypeMap.get(entry.accountId);
+      const debit = Number(entry._sum.debit) || 0;
+      const credit = Number(entry._sum.credit) || 0;
+      // Balance = Credit - Debit (Normal Balance for Revenue is Credit, Expense is Debit)
+      // Actually:
+      // Revenue (Credit Balance) = Credit - Debit
+      // Expense (Debit Balance) = Debit - Credit
+
+      if (type === AccountType.REVENUE) {
+        revenue += (credit - debit);
+      } else if (type === AccountType.EXPENSE) {
+        expense += (debit - credit);
+      }
+    }
+
+    return {
+      unitId: unit.id,
+      unitName: unit.name,
+      revenue,
+      expense,
+      netIncome: revenue - expense
+    };
+  });
+
+  const totalRevenue = unitStats.reduce((sum, u) => sum + u.revenue, 0);
+  const totalExpense = unitStats.reduce((sum, u) => sum + u.expense, 0);
+  const totalNetIncome = totalRevenue - totalExpense;
+
+  return {
+    totalRevenue,
+    totalExpense,
+    totalNetIncome,
+    breakdown: unitStats
   };
 }

@@ -16,4 +16,5 @@ export * from './types/health';
 export * from './types/counseling';
 export * from './types/calendar';
 export * from './types/takhosus';
+export * from './types/schedule';
 export * from './schemas';

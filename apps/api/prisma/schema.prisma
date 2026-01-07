@@ -360,6 +360,9 @@ model User {
   // Procurement relations
   purchaseRequestsRequested         PurchaseRequest[]           @relation("PRRequester")
   purchaseRequestsApproved          PurchaseRequest[]           @relation("PRApprover")
+  // Reception relations
+  receivedGuests                    GuestBook[]                 @relation("GuestReceiver")
+  receivedPackages                  StudentPackage[]            @relation("PackageReceiver")
 
   @@index([email])
   @@index([role])
@@ -476,6 +479,9 @@ model Unit {
   budgets                Budget[]
   financialPeriods       FinancialPeriod[]
   purchaseRequests       PurchaseRequest[]
+  guestBooks             GuestBook[]
+  studentVisits          StudentVisit[]
+  studentPackages        StudentPackage[]
 
   @@index([type])
   @@index([foundationId])
@@ -857,6 +863,8 @@ model Student {
   // Health & Growth relations
   growthRecords               GrowthRecord[]
   immunizationRecords         ImmunizationRecord[]
+  visits                      StudentVisit[]
+  packages                    StudentPackage[]
 
   @@index([nis])
   @@index([unitId])
@@ -5867,6 +5875,7 @@ model DashboardHistory {
 }
 
 // =====================================
+<<<<<<< HEAD
 // PROCUREMENT (PENGADAAN)
 // =====================================
 
@@ -5937,4 +5946,100 @@ model PurchaseRequestItem {
 
   @@index([requestId])
   @@map("purchase_request_items")
+=======
+// RECEPTION & FRONT OFFICE MODULE
+// =====================================
+
+enum VisitStatus {
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+}
+
+enum PackageStatus {
+  RECEIVED
+  DELIVERED
+  RETURNED
+}
+
+/// GuestBook - Buku Tamu Umum
+model GuestBook {
+  id            String    @id @default(uuid())
+  unitId        String    @map("unit_id")
+  name          String
+  institution   String?
+  purpose       String    @db.Text
+  phone         String?
+  checkIn       DateTime  @default(now()) @map("check_in")
+  checkOut      DateTime? @map("check_out")
+  visitorCount  Int       @default(1) @map("visitor_count")
+  vehicleNumber String?   @map("vehicle_number")
+  receivedById  String    @map("received_by_id")
+  notes         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  unit       Unit @relation(fields: [unitId], references: [id])
+  receivedBy User @relation("GuestReceiver", fields: [receivedById], references: [id])
+
+  @@index([unitId])
+  @@index([checkIn])
+  @@map("guest_books")
+}
+
+/// StudentVisit - Kunjungan Wali Santri
+model StudentVisit {
+  id          String      @id @default(uuid())
+  studentId   String      @map("student_id")
+  unitId      String      @map("unit_id")
+  visitorName String      @map("visitor_name")
+  relation    String      // Hubungan dengan santri
+  purpose     String?
+  checkIn     DateTime    @default(now()) @map("check_in")
+  checkOut    DateTime?   @map("check_out")
+  status      VisitStatus @default(CHECKED_IN)
+  notes       String?
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  unit    Unit    @relation(fields: [unitId], references: [id])
+
+  @@index([studentId])
+  @@index([unitId])
+  @@index([checkIn])
+  @@map("student_visits")
+}
+
+/// StudentPackage - Titipan Paket Santri
+model StudentPackage {
+  id           String        @id @default(uuid())
+  studentId    String        @map("student_id")
+  unitId       String        @map("unit_id")
+  senderName   String        @map("sender_name")
+  senderPhone  String?       @map("sender_phone")
+  description  String?       @db.Text
+  photoUrl     String?       @map("photo_url")
+  receivedAt   DateTime      @default(now()) @map("received_at")
+  receivedById String        @map("received_by_id")
+  status       PackageStatus @default(RECEIVED)
+  deliveredAt  DateTime?     @map("delivered_at")
+  deliveredTo  String?       @map("delivered_to") // Nama penerima (jika diwakilkan)
+  notes        String?
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  unit       Unit    @relation(fields: [unitId], references: [id])
+  receivedBy User    @relation("PackageReceiver", fields: [receivedById], references: [id])
+
+  @@index([studentId])
+  @@index([unitId])
+  @@index([status])
+  @@index([receivedAt])
+  @@map("student_packages")
+>>>>>>> d82f98e (feat: implement reception module for guest book, visits, and packages)
 }

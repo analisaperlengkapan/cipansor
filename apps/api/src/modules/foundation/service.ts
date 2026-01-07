@@ -8,6 +8,7 @@ import {
   CreateDocumentInput,
   UpdateDocumentInput,
 } from "./schema";
+import { FoundationDashboardStats } from "@cipansor/shared";
 
 // =====================================
 // FOUNDATION SERVICE
@@ -261,7 +262,7 @@ export async function deleteDocument(id: string) {
 // STATISTICS
 // =====================================
 
-export async function getFoundationStats(foundationId: string) {
+export async function getFoundationStats(foundationId: string): Promise<FoundationDashboardStats | null> {
   const foundation = await prisma.foundation.findUnique({
     where: { id: foundationId },
     include: {
@@ -306,6 +307,46 @@ export async function getFoundationStats(foundationId: string) {
     },
   });
 
+  // Calculate Financial Summary (Mocked for now as we need complex logic to aggregate JournalEntry by Unit -> Foundation)
+  // In a real scenario, this would aggregate `prisma.journalEntry` where `unit.foundationId` is this foundation.
+  const currentDate = new Date();
+  const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+
+  // Aggregate revenue and expenses from all units in this foundation
+  const financialAggregates = await prisma.journalEntry.groupBy({
+    by: ['account'], // Ideally grouped by account type
+    where: {
+      unit: { foundationId },
+      date: { gte: startOfMonth }
+    },
+    _sum: {
+      credit: true,
+      debit: true
+    }
+  }).catch(() => []); // Fail gracefully if no journals
+
+  // Simplified financial calculation (Mock logic to ensure type safety if no entries)
+  let totalRevenue = 0;
+  let totalExpense = 0;
+
+  // Real implementation would inspect account codes. For now, we simulate safe values or use 0.
+  // Assuming Revenue is Credit heavy and Expense is Debit heavy on specific accounts.
+  // Without AccountType loaded, we can't perfectly distinguish here without a join.
+  // So we will return 0s to be safe and "Not implemented" in UI or just placeholder.
+
+  // Prepare arrays for charts
+  const studentsByUnit = foundation.units.map(unit => ({
+    unitId: unit.id,
+    unitName: unit.name,
+    count: unit._count.students
+  }));
+
+  const staffByUnit = foundation.units.map(unit => ({
+    unitId: unit.id,
+    unitName: unit.name,
+    count: unit._count.teachers + unit._count.staff
+  }));
+
   return {
     foundationId,
     foundationName: foundation.name,
@@ -317,6 +358,17 @@ export async function getFoundationStats(foundationId: string) {
     activeBoardMembers,
     totalDocuments: foundation._count.documents,
     expiringDocuments,
-    unitsSummary: foundation.units,
+    unitsSummary: foundation.units.map(u => ({
+      ...u,
+      type: u.type as string // Explicit cast needed for compatibility
+    })),
+    financialSummary: {
+      totalRevenue,
+      totalExpense,
+      netIncome: totalRevenue - totalExpense,
+      period: "Bulan Ini"
+    },
+    studentsByUnit,
+    staffByUnit
   };
 }

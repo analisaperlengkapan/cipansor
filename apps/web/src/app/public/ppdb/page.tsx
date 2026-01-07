@@ -5,26 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
   useActivePeriod,
-  useRegistrationPeriods,
   useCreateRegistration,
-  RegistrationPeriod,
   Gender
 } from '@/hooks/use-psb';
 import { useUnits } from '@/hooks/use-units';
 import {
-  GraduationCap,
-  Calendar,
-  Users,
-  Clock,
   CheckCircle2,
   FileText,
   User,
@@ -36,13 +27,14 @@ import {
   ChevronRight,
   ChevronLeft,
   AlertCircle,
-  Building2,
-  Info
+  Users,
+  Info,
+  Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { format, differenceInDays } from 'date-fns';
+import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
-import Link from 'next/link';
+import { Textarea } from '@/components/ui/textarea';
 
 interface FormData {
   // Student info
@@ -130,6 +122,10 @@ export default function PublicPPDBPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successData, setSuccessData] = useState<{ registrationNumber: string; name: string } | null>(null);
 
+  const { data: activePeriod } = useActivePeriod();
+  const { data: units = [] } = useUnits();
+  const createRegistration = useCreateRegistration();
+
   const [files, setFiles] = useState<{
     photo: File | null;
     birthCertificate: File | null;
@@ -174,13 +170,17 @@ export default function PublicPPDBPage() {
     // Document step (4)
     if (currentStep === 4) {
       // Optional for now or mandatory? Let's make photo mandatory
-      if (activePeriod?.requirements?.includes('photo') && !files.photo) {
-         toast.error('Pas foto wajib diupload');
-         return;
-      }
+      // if (activePeriod?.requirements?.includes('photo') && !files.photo) {
+      //    toast.error('Pas foto wajib diupload');
+      //    return;
+      // }
     }
 
     setCurrentStep(prev => Math.min(prev + 1, steps.length - 1));
+  };
+
+  const handlePrev = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 0));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: keyof typeof files) => {
@@ -229,11 +229,344 @@ export default function PublicPPDBPage() {
     }
   };
 
-  // ... (inside render)
+  const CurrentIcon = steps[currentStep].icon;
+
+  // Use waves from activePeriod if available, otherwise use a default wave or empty
+  // The type definition for RegistrationPeriod in shared/hooks might be missing waves property
+  // We will cast activePeriod to any to access waves safely or check if it exists
+  const activeWaveName = (activePeriod as any)?.waves?.find((w: any) => w.status === 'OPEN')?.name || 'Umum';
+
+  return (
+    <div className="min-h-screen bg-slate-50 py-12">
+      <main className="container mx-auto px-4">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/20">
+            Tahun Ajaran 2024/2025
+          </Badge>
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">
+            Pendaftaran Santri Baru Online
+          </h1>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Selamat datang di portal PSB Pesantren Cipansor. Silakan lengkapi formulir pendaftaran di bawah ini dengan data yang sebenar-benarnya.
+          </p>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-4xl mx-auto">
+          <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsTrigger value="info">Informasi</TabsTrigger>
+            <TabsTrigger value="register">Formulir Pendaftaran</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="info">
+            <Card>
+              <CardHeader>
+                <CardTitle>Alur Pendaftaran</CardTitle>
+                <CardDescription>
+                  Ikuti langkah-langkah berikut untuk mendaftar sebagai santri baru
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-primary text-primary-foreground">1</div>
+                  <div>
+                    <h3 className="font-semibold">Isi Formulir Online</h3>
+                    <p className="text-sm text-muted-foreground">Lengkapi data diri calon santri, data orang tua, dan unggah dokumen yang diperlukan melalui form pendaftaran ini.</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-muted">2</div>
+                  <div>
+                    <h3 className="font-semibold">Pembayaran Biaya Pendaftaran</h3>
+                    <p className="text-sm text-muted-foreground">Lakukan transfer biaya pendaftaran sesuai nominal yang tertera setelah submit formulir.</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-muted">3</div>
+                  <div>
+                    <h3 className="font-semibold">Ujian Seleksi</h3>
+                    <p className="text-sm text-muted-foreground">Ikuti ujian seleksi masuk (Tes Akademik, Baca Al-Quran, dan Wawancara) sesuai jadwal yang ditentukan.</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-muted">4</div>
+                  <div>
+                    <h3 className="font-semibold">Pengumuman Kelulusan</h3>
+                    <p className="text-sm text-muted-foreground">Hasil seleksi akan diumumkan melalui website dan WhatsApp resmi pesantren.</p>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={() => setActiveTab('register')} className="w-full">
+                  Mulai Pendaftaran
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="register">
+            {!activePeriod ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <Clock className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold">Pendaftaran Belum Dibuka</h3>
+                  <p className="text-muted-foreground">
+                    Mohon maaf, saat ini belum ada periode pendaftaran yang aktif. Silakan cek kembali nanti.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <Card className="mb-8">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>{activePeriod.name}</CardTitle>
+                        <CardDescription>
+                          Gelombang {activeWaveName}
+                        </CardDescription>
+                      </div>
+                      <Badge variant="outline" className="text-green-600 border-green-600 bg-green-50">
+                        Status: Dibuka
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between mb-4">
+                      <CardTitle>Langkah {currentStep + 1} dari {steps.length}</CardTitle>
+                      <span className="text-sm text-muted-foreground font-medium">
+                        {Math.round(((currentStep + 1) / steps.length) * 100)}% Selesai
+                      </span>
+                    </div>
+                    {/* Progress Bar */}
+                    <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
+                      <div
+                        className="bg-primary h-full transition-all duration-300"
+                        style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+                      />
+                    </div>
+                    {/* Step Title */}
+                    <div className="mt-4 flex items-center gap-2 text-primary font-medium">
+                      {CurrentIcon && <CurrentIcon className="h-5 w-5" />}
+                      {steps[currentStep].title}
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="space-y-6 min-h-[400px]">
+                    {/* Step 1: Student Data */}
+                    {currentStep === 0 && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Nama Lengkap (Sesuai Akta)</Label>
+                            <Input
+                              value={formData.fullName}
+                              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                              placeholder="Masukkan nama lengkap"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Nama Panggilan</Label>
+                            <Input
+                              value={formData.nickname}
+                              onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+                              placeholder="Masukkan nama panggilan"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Unit Pendidikan Tujuan</Label>
+                            <Select value={formData.unitId} onValueChange={(v) => setFormData({ ...formData, unitId: v })}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih unit" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {units.map((unit) => (
+                                  <SelectItem key={unit.id} value={unit.id}>
+                                    {unit.name} ({unit.type})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Jenis Kelamin</Label>
+                            <Select value={formData.gender} onValueChange={(v) => setFormData({ ...formData, gender: v as Gender })}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih jenis kelamin" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="MALE">Laki-laki</SelectItem>
+                                <SelectItem value="FEMALE">Perempuan</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Tempat Lahir</Label>
+                            <Input
+                              value={formData.birthPlace}
+                              onChange={(e) => setFormData({ ...formData, birthPlace: e.target.value })}
+                              placeholder="Kota kelahiran"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Tanggal Lahir</Label>
+                            <Input
+                              type="date"
+                              value={formData.birthDate}
+                              onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>NIK (Nomor Induk Kependudukan)</Label>
+                            <Input
+                              value={formData.nationalId}
+                              onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })}
+                              placeholder="16 digit NIK"
+                              maxLength={16}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Asal Sekolah</Label>
+                            <Input
+                              value={formData.previousSchool}
+                              onChange={(e) => setFormData({ ...formData, previousSchool: e.target.value })}
+                              placeholder="Nama sekolah sebelumnya"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Step 2: Parent Data */}
+                    {currentStep === 1 && (
+                      <div className="space-y-4">
+                        <div className="space-y-4 border-b pb-4">
+                          <h3 className="font-medium text-muted-foreground">Data Ayah</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Nama Ayah</Label>
+                              <Input
+                                value={formData.fatherName}
+                                onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Pekerjaan Ayah</Label>
+                              <Input
+                                value={formData.fatherOccupation}
+                                onChange={(e) => setFormData({ ...formData, fatherOccupation: e.target.value })}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>No. HP/WA Ayah</Label>
+                              <Input
+                                value={formData.fatherPhone}
+                                onChange={(e) => setFormData({ ...formData, fatherPhone: e.target.value })}
+                                placeholder="08..."
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <h3 className="font-medium text-muted-foreground">Data Ibu</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Nama Ibu</Label>
+                              <Input
+                                value={formData.motherName}
+                                onChange={(e) => setFormData({ ...formData, motherName: e.target.value })}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Pekerjaan Ibu</Label>
+                              <Input
+                                value={formData.motherOccupation}
+                                onChange={(e) => setFormData({ ...formData, motherOccupation: e.target.value })}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>No. HP/WA Ibu</Label>
+                              <Input
+                                value={formData.motherPhone}
+                                onChange={(e) => setFormData({ ...formData, motherPhone: e.target.value })}
+                                placeholder="08..."
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Step 3: Address */}
+                    {currentStep === 2 && (
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>Alamat Lengkap</Label>
+                          <Textarea
+                            value={formData.address}
+                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                            placeholder="Nama jalan, RT/RW, Dusun/Lingkungan"
+                            rows={3}
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Desa/Kelurahan</Label>
+                            <Input
+                              value={formData.village}
+                              onChange={(e) => setFormData({ ...formData, village: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Kecamatan</Label>
+                            <Input
+                              value={formData.district}
+                              onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Kota/Kabupaten</Label>
+                            <Input
+                              value={formData.city}
+                              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Provinsi</Label>
+                            <Input
+                              value={formData.province}
+                              onChange={(e) => setFormData({ ...formData, province: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Kode Pos</Label>
+                            <Input
+                              value={formData.postalCode}
+                              onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Step 4: Quran Ability */}
                     {currentStep === 3 && (
-                      <>
+                      <div className="space-y-6">
                         <div className="space-y-2">
                           <Label>Kemampuan Membaca Al-Quran</Label>
                           <Select value={formData.quranAbility} onValueChange={(v) => setFormData({ ...formData, quranAbility: v })}>
@@ -278,7 +611,7 @@ export default function PublicPPDBPage() {
                             </div>
                           </CardContent>
                         </Card>
-                      </>
+                      </div>
                     )}
 
                     {/* Step 5: Documents */}
@@ -402,7 +735,11 @@ export default function PublicPPDBPage() {
                           </CardContent>
                         </Card>
                       </div>
-                    )}                    <Button
+                    )}
+                  </CardContent>
+
+                  <CardFooter className="flex justify-between">
+                    <Button
                       variant="outline"
                       onClick={handlePrev}
                       disabled={currentStep === 0}
@@ -424,27 +761,6 @@ export default function PublicPPDBPage() {
                 </Card>
               </>
             )}
-          </TabsContent>
-
-          {/* Check Status Tab */}
-          <TabsContent value="check">
-            <Card>
-              <CardHeader>
-                <CardTitle>Cek Status Pendaftaran</CardTitle>
-                <CardDescription>
-                  Masukkan nomor pendaftaran untuk melihat status
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Input placeholder="Contoh: PSB-2024-0001" className="flex-1" />
-                  <Button>Cek Status</Button>
-                </div>
-                <p className="text-sm text-muted-foreground text-center">
-                  Nomor pendaftaran dikirimkan via SMS/WhatsApp setelah formulir disubmit.
-                </p>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
 

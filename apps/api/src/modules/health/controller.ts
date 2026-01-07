@@ -9,6 +9,8 @@ import {
   queryMedicationSchema,
   createMedicationUsageSchema,
   queryMedicationUsageSchema,
+  createGrowthRecordSchema,
+  queryGrowthRecordSchema,
 } from "./schema";
 import { Errors } from "../../middleware/error";
 import { 
@@ -28,6 +30,28 @@ export async function getMedicalRecords(req: Request, res: Response, next: NextF
       // Pass optional status filter if present
       status: req.query.status as string
     });
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ==================== GROWTH RECORDS ====================
+
+export async function createGrowthRecord(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = createGrowthRecordSchema.parse(req.body);
+    const record = await service.createGrowthRecord(data, req.user!.sub);
+    res.status(201).json({ success: true, data: record });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getGrowthRecords(req: Request, res: Response, next: NextFunction) {
+  try {
+    const query = queryGrowthRecordSchema.parse(req.query);
+    const result = await service.getGrowthRecords(query);
     res.json(result);
   } catch (error) {
     next(error);

@@ -12,6 +12,7 @@ import type {
   MedicalRecord,
   HealthStats,
 } from "@cipansor/shared";
+import { CreateGrowthRecordInput, QueryGrowthRecordInput } from "./schema";
 
 // ==================== MEDICAL RECORD ====================
 
@@ -456,5 +457,67 @@ export async function getHealthStats(unitId: string): Promise<HealthStats> {
       type: r.type as unknown as import("@cipansor/shared").MedicalRecordType,
       count: r._count,
     })),
+  };
+}
+
+// ==================== GROWTH RECORD ====================
+
+export async function createGrowthRecord(data: CreateGrowthRecordInput, recordedById: string) {
+  return prisma.growthRecord.create({
+    data: {
+      studentId: data.studentId,
+      unitId: data.unitId,
+      recordDate: data.recordDate,
+      weight: data.weight,
+      height: data.height,
+      headCircumference: data.headCircumference,
+      notes: data.notes,
+      ageMonths: 0, // Placeholder, logic to calculate age needed
+      recordedById,
+    },
+    include: {
+      student: { select: { id: true, user: { select: { name: true } } } },
+      recordedBy: { select: { id: true, name: true } },
+    },
+  });
+}
+
+export async function getGrowthRecords(query: QueryGrowthRecordInput) {
+  const { page = 1, limit = 20, studentId, unitId, startDate, endDate } = query;
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.GrowthRecordWhereInput = {
+    ...(studentId && { studentId }),
+    ...(unitId && { unitId }),
+    ...(startDate && endDate && {
+      recordDate: { gte: startDate, lte: endDate },
+    }),
+  };
+
+  const [data, total] = await Promise.all([
+    prisma.growthRecord.findMany({
+      where,
+      skip,
+      take: limit,
+      include: {
+        student: { select: { id: true, user: { select: { name: true } } } },
+        recordedBy: { select: { id: true, name: true } },
+      },
+      orderBy: { recordDate: "desc" },
+    }),
+    prisma.growthRecord.count({ where }),
+  ]);
+
+  return {
+    success: true,
+    data,
+    meta: {
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    },
   };
 }

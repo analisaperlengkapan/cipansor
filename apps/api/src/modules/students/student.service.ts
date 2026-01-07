@@ -184,14 +184,16 @@ export class StudentService {
     }
 
     // Parallel aggregation queries for accurate totals
+    // Using aggregation for better performance than pulling all records
     const [violationStats, invoiceStats] = await Promise.all([
       prisma.violation.aggregate({
         where: { studentId: id },
         _sum: { points: true },
       }),
-      prisma.invoice.findMany({
+      prisma.invoice.aggregate({
         where: { studentId: id, status: { not: 'PAID' } },
-        select: { amount: true, paidAmount: true }
+        _sum: { amount: true, paidAmount: true },
+        _count: { id: true }
       }),
     ]);
 
@@ -209,8 +211,8 @@ export class StudentService {
 
     // Calculate summaries from aggregation results
     const totalViolationPoints = violationStats._sum.points || 0;
-    const unpaidInvoicesCount = invoiceStats.length;
-    const unpaidInvoicesTotal = invoiceStats.reduce((sum, inv) => sum + Number(inv.amount) - Number(inv.paidAmount), 0);
+    const unpaidInvoicesCount = invoiceStats._count.id;
+    const unpaidInvoicesTotal = (Number(invoiceStats._sum.amount) || 0) - (Number(invoiceStats._sum.paidAmount) || 0);
 
     // Boarding info
     const boarding = student.roomAssignments[0] ? {

@@ -25,7 +25,7 @@ vi.mock('../../../../../src/lib/prisma', () => {
       aggregate: vi.fn(),
     },
     invoice: {
-      findMany: vi.fn(),
+      aggregate: vi.fn(), // Changed from findMany to aggregate
     },
     class: {
       findFirst: vi.fn(),
@@ -81,14 +81,15 @@ describe('StudentService', () => {
       };
 
       const mockViolationStats = { _sum: { points: 15 } };
-      const mockInvoices = [
-        { amount: 100000, paidAmount: 0 },
-        { amount: 50000, paidAmount: 0 },
-      ];
+      const mockInvoiceStats = {
+        _sum: { amount: 150000, paidAmount: 0 },
+        _count: { id: 2 }
+      };
 
+      // Ensure mock implementations return promises
       vi.mocked(prisma.student.findFirst).mockResolvedValue(mockStudent as any);
       vi.mocked(prisma.violation.aggregate).mockResolvedValue(mockViolationStats as any);
-      vi.mocked(prisma.invoice.findMany).mockResolvedValue(mockInvoices as any);
+      vi.mocked(prisma.invoice.aggregate).mockResolvedValue(mockInvoiceStats as any); // Use aggregate
 
       const result = await studentService.findById('student-1');
 

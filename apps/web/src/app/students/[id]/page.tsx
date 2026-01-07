@@ -35,19 +35,19 @@ const genderLabels: Record<string, string> = {
 };
 
 // Helper to safely format currency
-const formatCurrency = (amount: number) => {
+const formatCurrency = (amount: number | string) => {
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
-  }).format(amount);
+  }).format(numAmount || 0);
 };
 
 export default function StudentDetailPage() {
   const params = useParams();
   const router = useRouter();
-  // Cast the hook result to any to access the new fields without updating the frontend type immediately
-  // Ideally we should update the useStudent type definition
-  const { data: student, isLoading } = useStudent(params.id as string) as any;
+  // No longer casting to any, utilizing updated Student type
+  const { data: student, isLoading } = useStudent(params.id as string);
 
   if (isLoading) {
     return (
@@ -72,7 +72,12 @@ export default function StudentDetailPage() {
     );
   }
 
-  const summary = student.summary || {};
+  const summary = student.summary || {
+    walletBalance: 0,
+    violationPoints: 0,
+    boarding: null,
+    unpaidInvoices: { count: 0, total: 0 }
+  };
 
   return (
     <MainLayout allowedRoles={['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']}>
@@ -125,7 +130,7 @@ export default function StudentDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {formatCurrency(summary.walletBalance || 0)}
+                {formatCurrency(summary.walletBalance)}
               </div>
             </CardContent>
           </Card>
@@ -136,7 +141,7 @@ export default function StudentDetailPage() {
             </CardHeader>
             <CardContent>
               <div className={`text-2xl font-bold ${summary.violationPoints > 50 ? 'text-red-600' : 'text-green-600'}`}>
-                {summary.violationPoints || 0}
+                {summary.violationPoints}
               </div>
             </CardContent>
           </Card>
@@ -147,10 +152,10 @@ export default function StudentDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {summary.unpaidInvoices?.count || 0}
+                {summary.unpaidInvoices.count}
               </div>
                <p className="text-xs text-muted-foreground">
-                Total: {formatCurrency(summary.unpaidInvoices?.total || 0)}
+                Total: {formatCurrency(summary.unpaidInvoices.total)}
               </p>
             </CardContent>
           </Card>
@@ -251,7 +256,7 @@ export default function StudentDetailPage() {
                    {/* Fallback to createdAt if enrollmentDate not available in this shape */}
                   <InfoRow
                     label="Enrollment Date"
-                    value={format(new Date(student.createdAt), 'dd MMMM yyyy')}
+                    value={format(new Date(student.enrollmentDate || student.createdAt), 'dd MMMM yyyy')}
                   />
                   <InfoRow label="Unit" value={student.unit?.name || '-'} />
                   <InfoRow
@@ -275,7 +280,7 @@ export default function StudentDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {student.enrollments?.map((enrollment: any) => (
+                  {student.enrollments?.map((enrollment) => (
                     <div key={enrollment.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
                       <div>
                         <p className="font-medium">{enrollment.class.name}</p>
@@ -302,7 +307,7 @@ export default function StudentDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {student.attendances?.map((att: any) => (
+                  {student.attendances?.map((att) => (
                     <div key={att.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
                       <div className="flex items-center gap-4">
                         <div className={`h-2 w-2 rounded-full ${att.status === 'PRESENT' ? 'bg-green-500' : 'bg-red-500'}`} />
@@ -330,7 +335,7 @@ export default function StudentDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                   {student.tahfidzRecords?.map((rec: any) => (
+                   {student.tahfidzRecords?.map((rec) => (
                     <div key={rec.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
                       <div>
                         <p className="font-medium">Juz {rec.juz}, {rec.surahName}</p>
@@ -359,7 +364,7 @@ export default function StudentDetailPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            {student.invoices?.map((inv: any) => (
+                            {student.invoices?.map((inv) => (
                                 <div key={inv.id} className="flex flex-col gap-1 border-b pb-4 last:border-0 last:pb-0">
                                     <div className="flex justify-between items-center">
                                          <p className="font-medium">{inv.paymentType.name}</p>
@@ -388,7 +393,7 @@ export default function StudentDetailPage() {
                     <CardContent className="space-y-4">
                         <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6 rounded-xl text-white">
                              <p className="text-sm opacity-80 mb-1">Current Balance</p>
-                             <h3 className="text-3xl font-bold mb-4">{formatCurrency(summary.walletBalance || 0)}</h3>
+                             <h3 className="text-3xl font-bold mb-4">{formatCurrency(summary.walletBalance)}</h3>
                              <p className="text-xs opacity-70">
                                 {student.wallet?.lastTopUp
                                     ? `Last top up: ${format(new Date(student.wallet.lastTopUp), 'dd MMM yyyy')}`
@@ -424,7 +429,7 @@ export default function StudentDetailPage() {
                      </CardHeader>
                       <CardContent>
                          <div className="space-y-4">
-                             {student.medicalRecords?.map((med: any) => (
+                             {student.medicalRecords?.map((med) => (
                                  <div key={med.id} className="border-b pb-2 last:border-0 last:pb-0">
                                      <div className="flex justify-between">
                                          <p className="font-medium">{med.complaint || med.type}</p>

@@ -14,6 +14,7 @@ import {
   Eye,
   Pencil,
   Trash2,
+  LayoutDashboard,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -57,9 +58,11 @@ import {
 } from '@/hooks/use-takhosus';
 import { useUnits } from '@/hooks/use-units';
 import { Progress } from '@/components/ui/progress';
+import { TakhosusDashboard } from '@/components/takhosus/takhosus-dashboard';
+import { useTakhosusDashboard } from '@/hooks/use-takhosus-details';
 
 export default function TakhosusPage() {
-  const [activeTab, setActiveTab] = useState('halaqoh');
+  const [activeTab, setActiveTab] = useState('dashboard');
   
   // Halaqoh state
   const [halaqohPage, setHalaqohPage] = useState(1);
@@ -89,6 +92,7 @@ export default function TakhosusPage() {
   });
 
   const { data: stats } = useEnrollmentStats();
+  const { data: dashboardStats, isLoading: statsLoading } = useTakhosusDashboard(halaqohUnitFilter || undefined);
 
   const deleteHalaqoh = useDeleteHalaqoh();
   const deleteEnrollment = useDeleteEnrollment();
@@ -188,6 +192,10 @@ export default function TakhosusPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex items-center justify-between mb-4">
           <TabsList>
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+                <LayoutDashboard className="h-4 w-4" />
+                Dashboard
+            </TabsTrigger>
             <TabsTrigger value="halaqoh" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               Halaqoh
@@ -217,6 +225,11 @@ export default function TakhosusPage() {
             )}
           </div>
         </div>
+
+        {/* Dashboard Tab */}
+        <TabsContent value="dashboard">
+             <TakhosusDashboard stats={dashboardStats} isLoading={statsLoading} />
+        </TabsContent>
 
         {/* Halaqoh Tab */}
         <TabsContent value="halaqoh">

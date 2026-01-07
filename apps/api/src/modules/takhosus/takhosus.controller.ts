@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { halaqohService, enrollmentService, sanadService, progressService } from './takhosus.service';
+import { targetService } from './target.service';
 import { ApiResponse } from '@/utils/response';
 
 // =====================================
@@ -296,6 +297,59 @@ export const sanadController = {
 };
 
 // =====================================
+// TARGET CONTROLLER
+// =====================================
+
+export const targetController = {
+  /**
+   * POST /api/takhosus/targets
+   */
+  async createOrUpdate(req: Request, res: Response, next: NextFunction) {
+    try {
+      const target = await targetService.createOrUpdate(req.body);
+      res.json(ApiResponse.success(target, 'Target saved successfully'));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * GET /api/takhosus/targets/student/:studentId
+   */
+  async getByStudent(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { academicYearId } = req.query;
+      const target = await targetService.getByStudentId(req.params.studentId, academicYearId as string);
+
+      if (!target) {
+        return res.status(404).json(ApiResponse.error('Target not found'));
+      }
+
+      res.json(ApiResponse.success(target));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * GET /api/takhosus/targets/progress/:studentId
+   */
+  async getProgress(req: Request, res: Response, next: NextFunction) {
+    try {
+      const progress = await targetService.getProgress(req.params.studentId);
+
+      if (!progress) {
+        return res.status(404).json(ApiResponse.error('Progress data not available (check if target exists)'));
+      }
+
+      res.json(ApiResponse.success(progress));
+    } catch (error) {
+      next(error);
+    }
+  }
+};
+
+// =====================================
 // PROGRESS CONTROLLER
 // =====================================
 
@@ -346,5 +400,6 @@ export default {
   halaqoh: halaqohController,
   enrollment: enrollmentController,
   sanad: sanadController,
+  target: targetController,
   progress: progressController,
 };

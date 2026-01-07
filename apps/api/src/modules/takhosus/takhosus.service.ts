@@ -8,6 +8,7 @@ import {
   CreateSanadInput,
   UpdateSanadInput,
 } from './takhosus.schema';
+import { targetService } from './target.service';
 
 // =====================================
 // HALAQOH SERVICE
@@ -178,12 +179,54 @@ export const enrollmentService = {
       prisma.takhosusEnrollment.count({ where }),
     ]);
 
+    // OPTIMIZATION: Bulk fetch targets and progress to avoid N+1 queries
+    const studentIds = data.map(e => e.studentId);
+
+    // 1. Get active academic year
+    const activeYear = await prisma.academicYear.findFirst({ where: { isActive: true } });
+
+    // 2. Bulk fetch targets
+    const targets = activeYear ? await prisma.tahfidzTarget.findMany({
+      where: {
+        studentId: { in: studentIds },
+        academicYearId: activeYear.id,
+      }
+    }) : [];
+
+    // 3. Bulk fetch completed juz counts (distinct juz with score >= 60)
+    // Note: Prisma doesn't support complex distinct count in groupBy easily, so we use findMany with distinct
+    const completedJuzRecords = await prisma.tahfidzRecord.findMany({
+      where: {
+        studentId: { in: studentIds },
+        activityType: { in: ['ASSESSMENT', 'TASMI'] },
+        score: { gte: 60 }
+      },
+      select: { studentId: true, juz: true },
+      distinct: ['studentId', 'juz'],
+    });
+
     return {
-      data: data.map(e => ({
-        ...e,
-        sanadCount: e._count.sanadRecords,
-        progressPercentage: Math.round((e.completedJuz / e.targetJuz) * 100),
-      })),
+      data: data.map(e => {
+        const target = targets.find(t => t.studentId === e.studentId);
+        const completedJuzCount = completedJuzRecords.filter(r => r.studentId === e.studentId).length;
+
+        // Use live target if available, otherwise fallback to enrollment data
+        const finalTargetJuz = target?.targetJuz ?? e.targetJuz;
+        // Use live completed count
+        const finalCompletedJuz = completedJuzCount; // Prefer calculation over stored value in enrollment for accuracy
+
+        const progressPercentage = Math.min(100, Math.round((finalCompletedJuz / finalTargetJuz) * 100));
+        const isOnTrack = finalCompletedJuz >= finalTargetJuz;
+
+        return {
+          ...e,
+          sanadCount: e._count.sanadRecords,
+          progressPercentage,
+          targetJuz: finalTargetJuz,
+          completedJuz: finalCompletedJuz,
+          isOnTrack,
+        };
+      }),
       pagination: {
         page,
         limit,
@@ -562,6 +605,9 @@ export const progressService = {
       take: 10,
     });
 
+    // Get Target Info
+    const targetInfo = await targetService.getProgress(studentId);
+
     // Calculate progress by juz
     const juzProgress = Array.from({ length: 30 }, (_, i) => {
       const juz = i + 1;
@@ -587,6 +633,7 @@ export const progressService = {
         targetCompletionDate: enrollment.targetCompletionDate,
         completedAt: enrollment.completedAt,
       },
+      target: targetInfo,
       student: enrollment.student,
       halaqoh: enrollment.halaqoh,
       juzProgress,

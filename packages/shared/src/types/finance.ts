@@ -69,10 +69,47 @@ export interface AccountCode {
   type: AccountType | string; // Use string fallback if enum mismatch
   parentId?: string | null;
   isActive: boolean;
+  normalBalance?: 'DEBIT' | 'CREDIT';
   createdAt?: Date;
   updatedAt?: Date;
   parent?: AccountCode;
   children?: AccountCode[];
+}
+
+export interface Budget {
+  id: string;
+  unitId: string;
+  academicYearId: string;
+  accountId: string;
+  amount: number;
+  usedAmount: number;
+  periodType: 'YEARLY' | 'MONTHLY';
+  notes?: string | null;
+  createdById: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+
+  unit?: Unit;
+  academicYear?: { id: string; name: string };
+  account?: AccountCode;
+  createdBy?: { id: string; name: string };
+}
+
+export interface FinancialPeriod {
+  id: string;
+  unitId: string;
+  name: string;
+  startDate: Date | string;
+  endDate: Date | string;
+  isClosed: boolean;
+  closedAt?: Date | string | null;
+  closedById?: string | null;
+  notes?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
+
+  unit?: Unit;
+  closedBy?: { id: string; name: string };
 }
 
 export interface JournalEntry {
@@ -208,6 +245,25 @@ export interface CreatePaymentComponentInput {
   isActive?: boolean;
 }
 
+export interface CreateBudgetInput {
+  unitId: string;
+  academicYearId: string;
+  accountId: string;
+  amount: number;
+  periodType?: 'YEARLY' | 'MONTHLY';
+  notes?: string;
+}
+
+export type UpdateBudgetInput = Partial<CreateBudgetInput>;
+
+export interface CreateFinancialPeriodInput {
+  unitId: string;
+  name: string;
+  startDate: Date | string;
+  endDate: Date | string;
+  notes?: string;
+}
+
 // Report Types
 
 export interface TrialBalanceItem {
@@ -240,4 +296,25 @@ export interface IncomeExpenseReport {
     netIncome: number;
   };
   breakdown: IncomeExpenseItem[];
+}
+
+export interface BalanceSheetItem {
+  code: string;
+  name: string;
+  amount: number;
+  level: number;
+  children?: BalanceSheetItem[];
+}
+
+export interface BalanceSheetSection {
+  title: string;
+  total: number;
+  items: BalanceSheetItem[];
+}
+
+export interface BalanceSheetReport {
+  assets: BalanceSheetSection;
+  liabilities: BalanceSheetSection;
+  equity: BalanceSheetSection;
+  periodDate: string;
 }

@@ -19,6 +19,7 @@ import {
   FinanceReportPeriod
 } from '@cipansor/shared';
 import { Prisma } from '@prisma/client';
+import { checkPeriodStatus } from './period.service';
 
 export class FinanceEnhancementService {
 
@@ -156,6 +157,9 @@ export class FinanceEnhancementService {
   }
 
   async createJournalEntry(input: CreateJournalEntryInput & { createdById: string }): Promise<JournalEntry> {
+    // Check if period is closed
+    await checkPeriodStatus(input.unitId, new Date(input.date));
+
     const entry = await prisma.journalEntry.create({
       data: {
         unitId: input.unitId,

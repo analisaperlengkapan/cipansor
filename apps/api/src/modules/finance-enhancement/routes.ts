@@ -11,6 +11,37 @@ import {
   assignScholarshipSchema,
   createPaymentComponentSchema
 } from './schema';
+import { z } from 'zod';
+
+// Minimal schemas for new endpoints (should be moved to schema.ts properly)
+const createBudgetSchema = z.object({
+  body: z.object({
+    unitId: z.string().uuid(),
+    academicYearId: z.string().uuid(),
+    accountId: z.string().uuid(),
+    amount: z.number().positive(),
+    periodType: z.enum(['YEARLY', 'MONTHLY']).optional(),
+    notes: z.string().optional(),
+  }),
+});
+
+const updateBudgetSchema = z.object({
+  body: z.object({
+    amount: z.number().positive().optional(),
+    periodType: z.enum(['YEARLY', 'MONTHLY']).optional(),
+    notes: z.string().optional(),
+  }),
+});
+
+const createFinancialPeriodSchema = z.object({
+  body: z.object({
+    unitId: z.string().uuid(),
+    name: z.string().min(1),
+    startDate: z.string().datetime().or(z.date()),
+    endDate: z.string().datetime().or(z.date()),
+    notes: z.string().optional(),
+  }),
+});
 
 const router = Router();
 
@@ -115,6 +146,57 @@ router.get(
   '/reports/income-expense',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
   financeEnhancementController.getIncomeExpenseReport
+);
+
+// ==================== BUDGETS ====================
+
+router.get(
+  '/budgets',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeEnhancementController.getBudgets
+);
+
+router.post(
+  '/budgets',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validate(createBudgetSchema),
+  financeEnhancementController.createBudget
+);
+
+router.put(
+  '/budgets/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validate(updateBudgetSchema),
+  financeEnhancementController.updateBudget
+);
+
+// ==================== FINANCIAL PERIODS ====================
+
+router.get(
+  '/financial-periods',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeEnhancementController.getFinancialPeriods
+);
+
+router.post(
+  '/financial-periods',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validate(createFinancialPeriodSchema),
+  financeEnhancementController.createFinancialPeriod
+);
+
+router.patch(
+  '/financial-periods/:id/close',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeEnhancementController.closeFinancialPeriod
+);
+
+// ==================== NEW REPORTS ====================
+
+router.get(
+  '/reports/balance-sheet',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  financeEnhancementController.getBalanceSheet
 );
 
 export default router;

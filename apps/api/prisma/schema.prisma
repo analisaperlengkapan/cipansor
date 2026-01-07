@@ -330,6 +330,8 @@ model User {
   scholarshipsApproved              ScholarshipRecipient[]      @relation("ScholarshipApprover")
   merdekaGrades                     MerdekaAssessmentResult[]   @relation("MerdekaGrader")
   journalEntries                    JournalEntry[]              @relation("JournalCreator")
+  createdBudgets                    Budget[]                    @relation("BudgetCreator")
+  closedPeriods                     FinancialPeriod[]           @relation("PeriodCloser")
   walletTransactions                WalletTransaction[]         @relation("WalletTransactor")
   // Canteen relations
   canteenTransactions               CanteenTransaction[]        @relation("CanteenCashier")
@@ -468,6 +470,8 @@ model Unit {
   growthRecords          GrowthRecord[]
   immunizationRecords    ImmunizationRecord[]
   dashboardHistory       DashboardHistory[]
+  budgets                Budget[]
+  financialPeriods       FinancialPeriod[]
 
   @@index([type])
   @@index([foundationId])
@@ -641,6 +645,7 @@ model AcademicYear {
   dailyStudentReports   DailyStudentReport[]
   dashboardSnapshots    DashboardMetricSnapshot[]
   unitComparisonReports UnitComparisonReport[]
+  budgets               Budget[]
 
   @@index([isActive])
   @@map("academic_years")
@@ -4227,14 +4232,63 @@ model AccountCode {
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
 
+  normalBalance String   @default("DEBIT") @map("normal_balance") // DEBIT, CREDIT
+
   // Relations
   parent         AccountCode?   @relation("AccountHierarchy", fields: [parentId], references: [id])
   children       AccountCode[]  @relation("AccountHierarchy")
   journalEntries JournalEntry[]
   paymentTypes   PaymentType[]
+  budgets        Budget[]
 
   @@index([type])
   @@map("account_codes")
+}
+
+/// Budget - Anggaran Keuangan
+model Budget {
+  id             String   @id @default(uuid())
+  unitId         String   @map("unit_id")
+  academicYearId String   @map("academic_year_id")
+  accountId      String   @map("account_id")
+  amount         Decimal  @db.Decimal(15, 2)
+  usedAmount     Decimal  @default(0) @map("used_amount") @db.Decimal(15, 2) // Cache current usage
+  periodType     String   @default("YEARLY") @map("period_type") // YEARLY, MONTHLY
+  notes          String?
+  createdById    String   @map("created_by_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  unit         Unit         @relation(fields: [unitId], references: [id])
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  account      AccountCode  @relation(fields: [accountId], references: [id])
+  createdBy    User         @relation("BudgetCreator", fields: [createdById], references: [id])
+
+  @@unique([unitId, academicYearId, accountId])
+  @@index([unitId])
+  @@map("budgets")
+}
+
+/// FinancialPeriod - Periode Akuntansi
+model FinancialPeriod {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id")
+  name        String   // "Januari 2025"
+  startDate   DateTime @map("start_date") @db.Date
+  endDate     DateTime @map("end_date") @db.Date
+  isClosed    Boolean  @default(false) @map("is_closed")
+  closedAt    DateTime? @map("closed_at")
+  closedById  String?  @map("closed_by_id")
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  unit     Unit  @relation(fields: [unitId], references: [id])
+  closedBy User? @relation("PeriodCloser", fields: [closedById], references: [id])
+
+  @@unique([unitId, startDate, endDate])
+  @@index([unitId])
+  @@map("financial_periods")
 }
 
 /// JournalEntry - Jurnal Keuangan

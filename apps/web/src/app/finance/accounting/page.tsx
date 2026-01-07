@@ -45,8 +45,11 @@ import {
   DollarSign,
   TrendingUp,
   TrendingDown,
-  Download
+  Download,
+  Wallet,
+  PieChart
 } from "lucide-react";
+import Link from 'next/link';
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as localeID } from "date-fns/locale";
@@ -811,6 +814,22 @@ export default function AccountingPage() {
           </Card>
         </div>
 
+        {/* Quick Links for New Features */}
+        <div className="flex gap-4">
+          <Link href="/finance/budgeting">
+            <Button variant="outline" className="flex gap-2">
+              <Wallet className="h-4 w-4" />
+              Kelola Anggaran
+            </Button>
+          </Link>
+          <Link href="/finance/reports">
+            <Button variant="outline" className="flex gap-2">
+              <PieChart className="h-4 w-4" />
+              Laporan Detail (Neraca/Laba Rugi)
+            </Button>
+          </Link>
+        </div>
+
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
@@ -824,7 +843,7 @@ export default function AccountingPage() {
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex items-center gap-2">
               <Calculator className="h-4 w-4" />
-              Laporan
+              Ringkasan Laporan
             </TabsTrigger>
           </TabsList>
 

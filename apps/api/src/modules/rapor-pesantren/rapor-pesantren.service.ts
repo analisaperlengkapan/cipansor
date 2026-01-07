@@ -967,15 +967,18 @@ export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem
   // 3. Map to LegerItem
   const raporMap = new Map(rapors.map(r => [r.studentId, r]));
 
-  const leger: LegerItem[] = enrollments.map(enrollment => {
+  // Helper to safely extract score/grade from JSON
+  const getComponent = (data: unknown) => {
+    const typedData = data as { score?: number; grade?: string } | null;
+    return {
+      score: typeof typedData?.score === 'number' ? typedData.score : 0,
+      grade: typeof typedData?.grade === 'string' ? typedData.grade : '-',
+    };
+  };
+
+  const leger: LegerItem[] = enrollments.map((enrollment) => {
     const student = enrollment.student;
     const rapor = raporMap.get(student.id);
-
-    // Helper to safely extract score/grade from JSON
-    const getComponent = (data: any) => ({
-      score: typeof data?.score === 'number' ? data.score : 0,
-      grade: typeof data?.grade === 'string' ? data.grade : '-',
-    });
 
     if (!rapor) {
       // Return empty item if no rapor generated yet

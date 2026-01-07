@@ -1,0 +1,136 @@
+import { prisma } from '@/lib/prisma';
+import { CreateCampaignInput, LogInteractionInput, UpdateCampaignInput } from './schema';
+import { Prisma } from '@prisma/client';
+
+export const createCampaign = async (data: CreateCampaignInput, userId: string) => {
+  return prisma.marketingCampaign.create({
+    data: {
+      ...data,
+      createdById: userId,
+    },
+  });
+};
+
+export const updateCampaign = async (id: string, data: UpdateCampaignInput) => {
+  return prisma.marketingCampaign.update({
+    where: { id },
+    data,
+  });
+};
+
+export const getCampaigns = async (unitId?: string) => {
+  const where: Prisma.MarketingCampaignWhereInput = {};
+  if (unitId) {
+    where.unitId = unitId;
+  }
+  return prisma.marketingCampaign.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      _count: {
+        select: { registrants: true },
+      },
+    },
+  });
+};
+
+export const getCampaignById = async (id: string) => {
+  return prisma.marketingCampaign.findUnique({
+    where: { id },
+    include: {
+      registrants: {
+        select: {
+          id: true,
+          fullName: true,
+          status: true,
+          createdAt: true,
+        },
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+      },
+      _count: {
+        select: { registrants: true },
+      },
+    },
+  });
+};
+
+export const logInteraction = async (data: LogInteractionInput, userId: string) => {
+  return prisma.marketingInteraction.create({
+    data: {
+      ...data,
+      recordedById: userId,
+    },
+  });
+};
+
+export const getInteractionsByRegistrant = async (registrantId: string) => {
+  return prisma.marketingInteraction.findMany({
+    where: { registrantId },
+    orderBy: { date: 'desc' },
+    include: {
+      recordedBy: {
+        select: { name: true },
+      },
+    },
+  });
+};
+
+export const getDashboardStats = async (unitId?: string) => {
+  const whereRegistrant: Prisma.RegistrantWhereInput = {};
+
+  // 1. Sources Distribution
+  const sources = await prisma.registrant.groupBy({
+    by: ['source'],
+    where: {
+       ...whereRegistrant,
+       source: { not: null }
+    },
+    _count: {
+      _all: true,
+    },
+  });
+
+  // 2. Campaign Performance
+  const campaigns = await prisma.marketingCampaign.findMany({
+    where: unitId ? { unitId } : {},
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      budget: true,
+      _count: {
+        select: { registrants: true },
+      },
+    },
+    take: 5,
+    orderBy: {
+      registrants: {
+        _count: 'desc'
+      }
+    }
+  });
+
+  // 3. Conversion Rates (Registered vs Accepted) by Source
+  // This is complex, simplified here
+
+  return {
+    sources: sources.map(s => ({ source: s.source, count: s._count._all })),
+    topCampaigns: campaigns.map(c => ({
+      name: c.name,
+      code: c.code,
+      registrants: c._count.registrants,
+      budget: c.budget,
+    })),
+  };
+};
+
+export default {
+  createCampaign,
+  updateCampaign,
+  getCampaigns,
+  getCampaignById,
+  logInteraction,
+  getInteractionsByRegistrant,
+  getDashboardStats,
+};

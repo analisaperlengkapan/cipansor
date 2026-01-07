@@ -38,6 +38,9 @@ export const createRegistrantSchema = z.object({
   parentPhone: z.string().min(8).max(20),
   parentEmail: z.string().email().optional(),
   parentOccupation: z.string().max(100).optional(),
+  // Marketing fields
+  source: z.string().optional(),
+  campaignId: z.string().uuid().optional(),
 });
 
 export const updateRegistrantSchema = z.object({

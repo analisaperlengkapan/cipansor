@@ -91,6 +91,30 @@ export interface FoundationBoardMember {
   updatedAt: string;
 }
 
+export interface FinancialSummary {
+  foundationId: string;
+  totalRevenue: number;
+  totalExpense: number;
+  netIncome: number;
+  operatingMargin: number;
+  units: {
+    unitId: string;
+    unitName: string;
+    revenue: number;
+    expense: number;
+    netIncome: number;
+  }[];
+  trends: {
+    month: string;
+    revenue: number;
+    expense: number;
+  }[];
+  expenseComposition: {
+    category: string;
+    amount: number;
+  }[];
+}
+
 // Foundation queries
 export function useFoundation() {
   return useQuery({
@@ -113,6 +137,19 @@ export function useUpdateFoundation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['foundation'] });
     },
+  });
+}
+
+// Financial queries
+export function useFinancialSummary(foundationId?: string) {
+  return useQuery({
+    queryKey: ['foundation', 'financial-summary', foundationId],
+    queryFn: async () => {
+      if (!foundationId) return null;
+      const response = await api.get(`/foundation/${foundationId}/financial-summary`);
+      return response.data.data as FinancialSummary;
+    },
+    enabled: !!foundationId,
   });
 }
 

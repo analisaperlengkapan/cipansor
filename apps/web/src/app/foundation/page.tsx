@@ -44,6 +44,7 @@ import {
   useDeleteFoundationDocument,
   useFoundationBoardMembers,
   useDeleteFoundationBoardMember,
+  useFinancialSummary,
   DOCUMENT_TYPE_LABELS,
   type DocumentType,
 } from '@/hooks';
@@ -70,8 +71,6 @@ import {
   Wallet,
   Activity
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import api from '@/lib/api';
 import { format, isPast, isBefore, addMonths } from 'date-fns';
 import { id } from 'date-fns/locale';
 import Link from 'next/link';
@@ -88,15 +87,7 @@ export default function FoundationPage() {
   const { data: boardMembers } = useFoundationBoardMembers();
   const updateFoundation = useUpdateFoundation();
 
-  const { data: financialSummary } = useQuery({
-    queryKey: ['foundation', 'financial-summary', foundation?.id],
-    queryFn: async () => {
-      if (!foundation?.id) return null;
-      const res = await api.get(`/foundation/${foundation.id}/financial-summary`);
-      return res.data.data;
-    },
-    enabled: !!foundation?.id,
-  });
+  const { data: financialSummary } = useFinancialSummary(foundation?.id);
   const deleteDocument = useDeleteFoundationDocument();
   const deleteBoardMember = useDeleteFoundationBoardMember();
 

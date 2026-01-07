@@ -321,7 +321,16 @@ export async function getFoundationStats(foundationId: string) {
   };
 }
 
-export async function getFinancialSummary(foundationId: string) {
+export async function getFinancialSummary(foundationId: string, endDate?: Date) {
+  // Use passed date or default to now
+  const end = endDate || new Date();
+
+  // Calculate start date (12 months ago)
+  const start = new Date(end);
+  start.setMonth(start.getMonth() - 11); // 11 months back + current month = 12 months range
+  start.setDate(1); // Start from 1st of that month
+  start.setHours(0, 0, 0, 0);
+
   // Get all units for this foundation
   const units = await prisma.unit.findMany({
     where: { foundationId },
@@ -333,6 +342,14 @@ export async function getFinancialSummary(foundationId: string) {
   const unitIds = units.map((u) => u.id);
 
   // 1. Overall Summary by Unit (Existing Logic)
+  // Note: This sums ALL time unless we want to restrict to the same period.
+  // Usually "Summary" implies current fiscal year or all time.
+  // Let's restrict to the current fiscal year (Jan 1st to End Date) for consistency with typical dashboards,
+  // OR keep it all-time if that was the original intent.
+  // Given the "Financial Dashboard" context, YTD (Year to Date) is standard.
+  // Let's assume YTD.
+  const currentYearStart = new Date(end.getFullYear(), 0, 1);
+
   const result = await prisma.journalEntry.groupBy({
     by: ['unitId', 'accountId'],
     where: {
@@ -340,6 +357,10 @@ export async function getFinancialSummary(foundationId: string) {
       account: {
         type: { in: ['REVENUE', 'EXPENSE'] },
       },
+      date: {
+        gte: currentYearStart,
+        lte: end,
+      }
     },
     _sum: {
       debit: true,
@@ -388,89 +409,104 @@ export async function getFinancialSummary(foundationId: string) {
   const operatingMargin = totalRevenue > 0 ? ((totalRevenue - totalExpense) / totalRevenue) * 100 : 0;
 
   // 2. Monthly Trends (Last 12 Months)
-  // Using queryRaw for efficient date truncation and aggregation across units
-  // Note: We need to filter by unitIds, but since there's no easy 'IN' clause with variable array in raw query safely without extensive mapping,
-  // we will filter by unit table join if needed, or if foundation has many units, we rely on the application logic.
-  // However, simpler is to filter JournalEntry by unit_id IN (...).
-  // Given potential large unit lists, let's use Prisma.sql for the IN clause if possible, or build string.
-  // Actually, for simplicity and safety, let's grab the last 12 months data for these units via groupBy + date manipulation in JS if dataset is small,
-  // OR use queryRaw with a join to Unit which has foundation_id.
+  // Using queryRaw for efficient date truncation and aggregation
+  try {
+    const trendsRaw = await prisma.$queryRaw<Array<{ month: string; type: string; debit: bigint; credit: bigint }>>`
+      SELECT
+        TO_CHAR(je.date, 'YYYY-MM') as month,
+        ac.type as type,
+        SUM(je.debit) as debit,
+        SUM(je.credit) as credit
+      FROM journal_entries je
+      JOIN account_codes ac ON je.account_id = ac.id
+      JOIN units u ON je.unit_id = u.id
+      WHERE u.foundation_id = ${foundationId}
+        AND ac.type IN ('REVENUE', 'EXPENSE')
+        AND je.date >= ${start}
+        AND je.date <= ${end}
+      GROUP BY TO_CHAR(je.date, 'YYYY-MM'), ac.type
+      ORDER BY month ASC
+    `;
 
-  const trendsRaw = await prisma.$queryRaw<Array<{ month: string; type: string; debit: bigint; credit: bigint }>>`
-    SELECT
-      TO_CHAR(je.date, 'YYYY-MM') as month,
-      ac.type as type,
-      SUM(je.debit) as debit,
-      SUM(je.credit) as credit
-    FROM journal_entries je
-    JOIN account_codes ac ON je.account_id = ac.id
-    JOIN units u ON je.unit_id = u.id
-    WHERE u.foundation_id = ${foundationId}
-      AND ac.type IN ('REVENUE', 'EXPENSE')
-      AND je.date >= NOW() - INTERVAL '12 months'
-    GROUP BY TO_CHAR(je.date, 'YYYY-MM'), ac.type
-    ORDER BY month ASC
-  `;
+    // Process raw trends into { month, revenue, expense }
+    const trendsMap = new Map<string, { revenue: number; expense: number }>();
 
-  // Process raw trends into { month, revenue, expense }
-  const trendsMap = new Map<string, { revenue: number; expense: number }>();
-
-  trendsRaw.forEach(row => {
-    const month = row.month;
-    const type = row.type;
-    const debit = Number(row.debit);
-    const credit = Number(row.credit);
-
-    if (!trendsMap.has(month)) {
-      trendsMap.set(month, { revenue: 0, expense: 0 });
+    // Initialize map with all months in range to ensure continuity
+    const loopDate = new Date(start);
+    while (loopDate <= end) {
+      const monthStr = loopDate.toISOString().slice(0, 7); // YYYY-MM
+      trendsMap.set(monthStr, { revenue: 0, expense: 0 });
+      loopDate.setMonth(loopDate.getMonth() + 1);
     }
 
-    const entry = trendsMap.get(month)!;
+    trendsRaw.forEach(row => {
+      const month = row.month;
+      const type = row.type;
+      const debit = Number(row.debit);
+      const credit = Number(row.credit);
 
-    if (type === 'REVENUE') {
-      entry.revenue += credit - debit;
-    } else if (type === 'EXPENSE') {
-      entry.expense += debit - credit;
-    }
-  });
+      if (trendsMap.has(month)) {
+        const entry = trendsMap.get(month)!;
+        if (type === 'REVENUE') {
+          entry.revenue += credit - debit;
+        } else if (type === 'EXPENSE') {
+          entry.expense += debit - credit;
+        }
+      }
+    });
 
-  const trends = Array.from(trendsMap.entries()).map(([month, data]) => ({
-    month,
-    revenue: data.revenue,
-    expense: data.expense,
-  })).sort((a, b) => a.month.localeCompare(b.month));
+    const trends = Array.from(trendsMap.entries()).map(([month, data]) => ({
+      month,
+      revenue: data.revenue,
+      expense: data.expense,
+    })).sort((a, b) => a.month.localeCompare(b.month));
 
-  // 3. Expense Composition (Top Spending Categories)
-  // Aggregate expenses by Account Name
-  const expenseCompositionRaw = await prisma.journalEntry.groupBy({
-    by: ['accountId'],
-    where: {
-      unitId: { in: unitIds },
-      account: { type: 'EXPENSE' },
-      date: { gte: new Date(new Date().setFullYear(new Date().getFullYear() - 1)) } // Last 12 months for relevance
-    },
-    _sum: { debit: true, credit: true },
-    orderBy: { _sum: { debit: 'desc' } },
-    take: 6 // Top 5 + others maybe, or just top 6
-  });
+    // 3. Expense Composition (Top Spending Categories)
+    // Aggregate expenses by Account Name
+    const expenseCompositionRaw = await prisma.journalEntry.groupBy({
+      by: ['accountId'],
+      where: {
+        unitId: { in: unitIds },
+        account: { type: 'EXPENSE' },
+        date: { gte: start, lte: end } // Use the same 12-month window for relevance
+      },
+      _sum: { debit: true, credit: true },
+      orderBy: { _sum: { debit: 'desc' } },
+      take: 6
+    });
 
-  const expenseComposition = expenseCompositionRaw.map(item => {
-    const account = accounts.find(a => a.id === item.accountId);
-    const amount = Number(item._sum.debit || 0) - Number(item._sum.credit || 0);
+    const expenseComposition = expenseCompositionRaw.map(item => {
+      const account = accounts.find(a => a.id === item.accountId);
+      // Expense is primarily debit, but minus credit (reversals)
+      const amount = Number(item._sum.debit || 0) - Number(item._sum.credit || 0);
+      return {
+        category: account?.name || 'Unknown',
+        amount: amount > 0 ? amount : 0,
+      };
+    }).filter(c => c.amount > 0);
+
     return {
-      category: account?.name || 'Unknown',
-      amount: amount > 0 ? amount : 0,
+      foundationId,
+      totalRevenue,
+      totalExpense,
+      netIncome: totalRevenue - totalExpense,
+      operatingMargin,
+      units: financialData,
+      trends,
+      expenseComposition,
     };
-  }).filter(c => c.amount > 0);
-
-  return {
-    foundationId,
-    totalRevenue,
-    totalExpense,
-    netIncome: totalRevenue - totalExpense,
-    operatingMargin,
-    units: financialData,
-    trends,
-    expenseComposition,
-  };
+  } catch (error) {
+    console.error("Error calculating financial summary:", error);
+    // Return empty/safe data on error to prevent crash
+    return {
+      foundationId,
+      totalRevenue,
+      totalExpense,
+      netIncome: totalRevenue - totalExpense,
+      operatingMargin,
+      units: financialData,
+      trends: [],
+      expenseComposition: [],
+    };
+  }
 }

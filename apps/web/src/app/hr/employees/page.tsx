@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Loader2, MoreHorizontal, Edit, Trash } from "lucide-react";
+import { Plus, Search, Loader2, MoreHorizontal, Edit, Trash, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -75,6 +75,12 @@ export default function EmployeesPage() {
       setDeleteId(null);
     } catch (error) {
       toast({ title: "Error", description: "Failed to delete employee", variant: "destructive" });
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= (data?.meta?.totalPages || 1)) {
+      setPage(newPage);
     }
   };
 
@@ -230,6 +236,34 @@ export default function EmployeesPage() {
               </TableBody>
             </Table>
           </div>
+
+          {data?.meta && (
+            <div className="flex items-center justify-end space-x-2 py-4">
+              <div className="flex-1 text-sm text-muted-foreground">
+                Page {data.meta.page} of {data.meta.totalPages} ({data.meta.total} records)
+              </div>
+              <div className="space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page <= 1 || isLoading}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page >= data.meta.totalPages || isLoading}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

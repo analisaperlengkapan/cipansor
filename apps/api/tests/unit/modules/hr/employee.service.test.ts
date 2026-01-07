@@ -43,8 +43,8 @@ vi.mock("@prisma/client", async (importOriginal) => {
   };
 });
 
-// Import service after mocks - corrected path
-import { createEmployee } from "../../../../../src/modules/hr/service";
+// Import service after mocks
+import { createEmployee } from "../../../../src/modules/hr/service";
 
 vi.mock("bcryptjs", () => ({
   default: {
@@ -86,14 +86,22 @@ describe("HR Employee Service", () => {
 
     // Assert
     expect(db.user.findUnique).toHaveBeenCalledWith({ where: { email: input.email } });
-    expect(db.user.create).toHaveBeenCalledWith(expect.objectContaining({
-      name: input.name,
-      role: "TEACHER",
-    }));
-    expect(db.teacher.create).toHaveBeenCalledWith(expect.objectContaining({
-      userId: "user-1",
-      nuptk: input.nuptk,
-    }));
+
+    // Updated assertion to match Prisma's call structure (args wrapped in data property)
+    expect(db.user.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        name: input.name,
+        role: "TEACHER",
+      })
+    });
+
+    expect(db.teacher.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "user-1",
+        nuptk: input.nuptk,
+      })
+    });
+
     expect(db.staff.create).not.toHaveBeenCalled();
     expect(result).toEqual(mockUser);
   });
@@ -124,14 +132,20 @@ describe("HR Employee Service", () => {
     const result = await createEmployee(input);
 
     // Assert
-    expect(db.user.create).toHaveBeenCalledWith(expect.objectContaining({
-      name: input.name,
-      role: "STAFF",
-    }));
-    expect(db.staff.create).toHaveBeenCalledWith(expect.objectContaining({
-      userId: "user-2",
-      position: input.position,
-    }));
+    expect(db.user.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        name: input.name,
+        role: "STAFF",
+      })
+    });
+
+    expect(db.staff.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "user-2",
+        position: input.position,
+      })
+    });
+
     expect(db.teacher.create).not.toHaveBeenCalled();
     expect(result).toEqual(mockUser);
   });

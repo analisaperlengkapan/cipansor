@@ -15,6 +15,9 @@ const mockPrisma = vi.hoisted(() => ({
   journalEntry: {
     create: vi.fn(),
   },
+  accountCode: {
+    findFirst: vi.fn(),
+  },
   $transaction: vi.fn((callback) => callback(mockPrisma)),
 }));
 
@@ -23,7 +26,7 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 vi.mock('@/utils/code-generator', () => ({
-  generateUniqueCode: vi.fn().mockResolvedValue('PR-TEST-001'),
+  generateUniqueCode: vi.fn().mockResolvedValue('TEST-CODE'),
 }));
 
 // Import service AFTER mocks are set up
@@ -67,7 +70,7 @@ describe('ProcurementService', () => {
   });
 
   describe('fulfill', () => {
-    it('should fulfill a request and create assets', async () => {
+    it('should fulfill a request, create assets, and create balanced journal entries', async () => {
       const mockRequest = {
         id: 'pr-1',
         unitId: 'unit-1',
@@ -80,6 +83,10 @@ describe('ProcurementService', () => {
             estimatedPrice: 5000000,
             totalPrice: 5000000,
             assetCategoryId: 'cat-1',
+            budgetId: 'budget-1',
+            budget: {
+              accountId: 'acc-expense-1'
+            }
           },
         ],
       };
@@ -90,14 +97,43 @@ describe('ProcurementService', () => {
         status: PurchaseRequestStatus.RECEIVED,
       });
 
+      // Mock Cash Account finding
+      mockPrisma.accountCode.findFirst.mockResolvedValue({ id: 'acc-cash-1101', code: '1101' });
+
       await procurementService.fulfill('pr-1', 'user-1');
 
       expect(mockPrisma.$transaction).toHaveBeenCalled();
+
+      // 1. Update status
       expect(mockPrisma.purchaseRequest.update).toHaveBeenCalledWith({
         where: { id: 'pr-1' },
         data: expect.objectContaining({ status: PurchaseRequestStatus.RECEIVED }),
       });
+
+      // 2. Create Asset
       expect(mockPrisma.asset.create).toHaveBeenCalled();
+
+      // 3. Create Journal Entries (Debit & Credit)
+      expect(mockPrisma.accountCode.findFirst).toHaveBeenCalledWith({ where: { code: '1101' } });
+      expect(mockPrisma.journalEntry.create).toHaveBeenCalledTimes(2);
+
+      // Debit check
+      expect(mockPrisma.journalEntry.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          accountId: 'acc-expense-1',
+          debit: 5000000,
+          credit: 0
+        })
+      }));
+
+      // Credit check
+      expect(mockPrisma.journalEntry.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          accountId: 'acc-cash-1101',
+          debit: 0,
+          credit: 5000000
+        })
+      }));
     });
   });
 });

@@ -6,11 +6,6 @@ export const generateUniqueCode = async (prefix: string, table: string): Promise
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const codePrefix = `${prefix}-${year}${month}-`;
 
-  // This is a simplified dynamic query. In a real app with strict types,
-  // you might need a mapping or raw query.
-  // For safety with "any" table name, we use raw query carefully or specific switch.
-  // Using a safe switch for known tables:
-
   let lastRecord: any = null;
 
   if (table === 'purchase_requests') {
@@ -19,8 +14,16 @@ export const generateUniqueCode = async (prefix: string, table: string): Promise
       orderBy: { code: 'desc' },
       select: { code: true }
     });
+  } else if (table === 'assets') {
+    // Assets might use a different format, but assuming [PREFIX]-YYYYMM-XXXX for now based on request
+    // Or just [PREFIX]-[SEQ] if year/month not required.
+    // Let's stick to the standard format for consistency unless specified otherwise.
+    lastRecord = await prisma.asset.findFirst({
+      where: { code: { startsWith: codePrefix } },
+      orderBy: { code: 'desc' },
+      select: { code: true }
+    });
   }
-  // Add other tables here
 
   let sequence = 1;
   if (lastRecord && lastRecord.code) {

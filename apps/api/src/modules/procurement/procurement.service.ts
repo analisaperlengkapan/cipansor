@@ -75,10 +75,11 @@ export const procurementService = {
     if (unitId) where.unitId = unitId;
     if (status) where.status = status;
 
-    // If not Admin/UnitAdmin, only see own requests
-    // Cast YAYASAN_ADMIN to string to avoid Enum strict check if it's missing in generated client
-    const allowedRoles = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, 'YAYASAN_ADMIN'];
-    if (role && !allowedRoles.includes(role as any)) {
+    // If not Admin, only see own requests
+    const adminRoles: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
+    const isAdmin = role && adminRoles.includes(role);
+
+    if (!isAdmin) {
       where.requesterId = userId;
     }
 
@@ -139,7 +140,6 @@ export const procurementService = {
     if (input.status === PurchaseRequestStatus.APPROVED) {
       data.approvedById = approverId;
       data.approvedAt = new Date();
-      // Optional: Check budget here and warn if insufficient (logic skipped for simplicity, assumed manual check)
     } else if (input.status === PurchaseRequestStatus.REJECTED) {
       data.rejectionReason = input.rejectionReason;
     }
@@ -176,12 +176,11 @@ export const procurementService = {
         }
       });
 
-      // 2. Create Assets for items that have categories
+      // 2. Create Assets and Journal Entries
       for (const item of request.items) {
+        // Create Asset if category provided
         if (item.assetCategoryId) {
-          // Generate asset code: [CAT]-[UNIT]-[SEQ]
-          // Simplified for now: unique timestamp based
-          const assetCode = `AST-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+          const assetCode = await generateUniqueCode('AST', 'assets');
 
           await tx.asset.create({
             data: {
@@ -190,7 +189,7 @@ export const procurementService = {
               code: assetCode,
               name: item.itemName,
               purchaseDate: new Date(),
-              purchasePrice: item.estimatedPrice, // Assuming estimated is actual for now
+              purchasePrice: item.estimatedPrice,
               condition: 'GOOD',
               status: 'ACTIVE',
               notes: `Generated from PR: ${request.code}`
@@ -198,33 +197,46 @@ export const procurementService = {
           });
         }
 
-        // 3. Create Journal Entry if Budget is linked
-        // Credit Cash (1101) / Debit Expense (Account from Budget)
-        // Simplified: We need a default cash account or pass it.
-        // For now, we assume standard Cash account 1-1-01 (1101) exists or we skip if not found.
+        // 3. Create Journal Entry (Balanced)
         if (item.budgetId && item.budget?.accountId) {
              const expenseAccount = item.budget.accountId;
-             // Try to find cash account for this unit (usually 1101)
-             // This is tricky without strict configuration.
-             // We will LOG it or skip strictly to avoid errors if accounts missing.
-
-             // Create Expense Journal
-             await tx.journalEntry.create({
-                data: {
-                    unitId: request.unitId,
-                    accountId: expenseAccount,
-                    date: new Date(),
-                    description: `Purchase: ${item.itemName} (PR: ${request.code})`,
-                    debit: item.totalPrice,
-                    credit: 0,
-                    reference: request.code,
-                    referenceType: 'PURCHASE_REQUEST',
-                    createdById: userId
-                }
+             // Try to find default Cash account (usually '1101' or '1-1-01')
+             // For safety, we search by code '1101' which is standard in this system memory
+             const cashAccount = await tx.accountCode.findFirst({
+               where: { code: '1101' }
              });
 
-             // Create Cash Credit Journal (Assuming a generic Cash account or skipping)
-             // To make this robust, we should look up the Cash Account.
+             if (cashAccount) {
+               // Debit Expense
+               await tx.journalEntry.create({
+                  data: {
+                      unitId: request.unitId,
+                      accountId: expenseAccount,
+                      date: new Date(),
+                      description: `Purchase Expense: ${item.itemName} (PR: ${request.code})`,
+                      debit: item.totalPrice,
+                      credit: 0,
+                      reference: request.code,
+                      referenceType: 'PURCHASE_REQUEST',
+                      createdById: userId
+                  }
+               });
+
+               // Credit Cash
+               await tx.journalEntry.create({
+                  data: {
+                      unitId: request.unitId,
+                      accountId: cashAccount.id,
+                      date: new Date(),
+                      description: `Purchase Payment: ${item.itemName} (PR: ${request.code})`,
+                      debit: 0,
+                      credit: item.totalPrice,
+                      reference: request.code,
+                      referenceType: 'PURCHASE_REQUEST',
+                      createdById: userId
+                  }
+               });
+             }
         }
       }
 

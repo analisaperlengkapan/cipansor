@@ -10,6 +10,11 @@ import {
   CreateRegistrantDocumentInput,
 } from "./schema";
 
+interface CreateRegistrantExtendedInput extends CreateRegistrantInput {
+  source?: string;
+  campaignId?: string;
+}
+
 // =====================================
 // ADMISSION PERIOD SERVICE
 // =====================================
@@ -228,7 +233,7 @@ export async function getRegistrantById(id: string) {
   });
 }
 
-export async function createRegistrant(data: CreateRegistrantInput) {
+export async function createRegistrant(data: CreateRegistrantExtendedInput) {
   const registrationNo = await generateRegistrationNo(data.admissionPeriodId);
 
   return prisma.registrant.create({

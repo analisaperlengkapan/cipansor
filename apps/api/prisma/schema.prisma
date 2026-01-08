@@ -363,6 +363,9 @@ model User {
   // Reception relations
   receivedGuests                    GuestBook[]                 @relation("GuestReceiver")
   receivedPackages                  StudentPackage[]            @relation("PackageReceiver")
+  // Marketing relations
+  marketingCampaignsCreated         MarketingCampaign[]         @relation("MarketingCampaignCreator")
+  recordedInteractions              MarketingInteraction[]      @relation("InteractionRecorder")
 
   @@index([email])
   @@index([role])
@@ -482,6 +485,7 @@ model Unit {
   guestBooks             GuestBook[]
   studentVisits          StudentVisit[]
   studentPackages        StudentPackage[]
+  marketingCampaigns     MarketingCampaign[]
 
   @@index([type])
   @@index([foundationId])
@@ -1341,6 +1345,8 @@ model Registrant {
   acceptedAt        DateTime?       @map("accepted_at")
   enrolledAt        DateTime?       @map("enrolled_at")
   studentId         String?         @unique @map("student_id") // Link ke student jika sudah enrolled
+  campaignId        String?         @map("campaign_id")
+  source            String?
   createdAt         DateTime        @default(now()) @map("created_at")
   updatedAt         DateTime        @updatedAt @map("updated_at")
 
@@ -1349,8 +1355,12 @@ model Registrant {
   wave            AdmissionWave?       @relation("WaveRegistrants", fields: [waveId], references: [id])
   student         Student?             @relation(fields: [studentId], references: [id])
   documents       RegistrantDocument[]
+  campaign        MarketingCampaign?   @relation(fields: [campaignId], references: [id])
+  interactions    MarketingInteraction[]
 
   @@index([admissionPeriodId])
+  @@index([campaignId])
+  @@index([source])
   @@index([waveId])
   @@index([status])
   @@index([registrationNo])
@@ -5875,7 +5885,6 @@ model DashboardHistory {
 }
 
 // =====================================
-<<<<<<< HEAD
 // PROCUREMENT (PENGADAAN)
 // =====================================
 
@@ -5946,7 +5955,9 @@ model PurchaseRequestItem {
 
   @@index([requestId])
   @@map("purchase_request_items")
-=======
+}
+
+// =====================================
 // RECEPTION & FRONT OFFICE MODULE
 // =====================================
 
@@ -6041,5 +6052,52 @@ model StudentPackage {
   @@index([status])
   @@index([receivedAt])
   @@map("student_packages")
->>>>>>> d82f98e (feat: implement reception module for guest book, visits, and packages)
+}
+
+// =====================================
+// MARKETING MODELS
+// =====================================
+
+model MarketingCampaign {
+  id          String    @id @default(uuid())
+  unitId      String?   @map("unit_id") // Optional: Campaign per unit
+  name        String
+  code        String    @unique
+  description String?   @db.Text
+  startDate   DateTime  @map("start_date")
+  endDate     DateTime? @map("end_date")
+  budget      Decimal?  @db.Decimal(15, 2)
+  isActive    Boolean   @default(true) @map("is_active")
+  createdById String    @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  unit        Unit?        @relation(fields: [unitId], references: [id])
+  createdBy   User         @relation("MarketingCampaignCreator", fields: [createdById], references: [id])
+  registrants Registrant[]
+
+  @@index([unitId])
+  @@index([isActive])
+  @@map("marketing_campaigns")
+}
+
+model MarketingInteraction {
+  id             String    @id @default(uuid())
+  registrantId   String    @map("registrant_id")
+  date           DateTime
+  type           String // CALL, WA, VISIT, EMAIL, OTHER
+  notes          String?   @db.Text
+  nextActionDate DateTime? @map("next_action_date")
+  recordedById   String    @map("recorded_by_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  registrant Registrant @relation(fields: [registrantId], references: [id], onDelete: Cascade)
+  recordedBy User       @relation("InteractionRecorder", fields: [recordedById], references: [id])
+
+  @@index([registrantId])
+  @@index([date])
+  @@map("marketing_interactions")
 }

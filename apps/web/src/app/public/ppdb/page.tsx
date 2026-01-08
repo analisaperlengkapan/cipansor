@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -73,6 +74,8 @@ interface FormData {
   // Unit
   unitId: string;
   periodId: string;
+  source?: string;
+  campaignId?: string;
 }
 
 const initialFormData: FormData = {
@@ -117,12 +120,27 @@ export default function PublicPPDBPage() {
   const { data: activePeriod } = useActivePeriod();
   const { data: units = [] } = useUnits();
   const createRegistration = useCreateRegistration();
+  const searchParams = useSearchParams();
 
   const [activeTab, setActiveTab] = useState('info');
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successData, setSuccessData] = useState<{ registrationNumber: string; name: string } | null>(null);
+
+  // Capture source/campaign from URL
+  useEffect(() => {
+    const source = searchParams.get('source');
+    const campaignId = searchParams.get('campaign_id');
+
+    if (source || campaignId) {
+      setFormData(prev => ({
+        ...prev,
+        source: source || undefined,
+        campaignId: campaignId || undefined
+      }));
+    }
+  }, [searchParams]);
 
   const [files, setFiles] = useState<{
     photo: File | null;

@@ -118,6 +118,50 @@ router.get("/:id", authorize(UserRole.SUPER_ADMIN), controller.getFoundationById
  */
 router.get("/:id/stats", authorize(UserRole.SUPER_ADMIN), controller.getFoundationStats);
 
+// ==================== EXECUTIVE DASHBOARD ANALYTICS ====================
+
+/**
+ * @swagger
+ * /api/foundation/stats/executive:
+ *   get:
+ *     summary: Get executive summary statistics
+ *     tags: [Foundation - Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Executive summary with totals and growth
+ */
+router.get("/stats/executive", authorize(UserRole.SUPER_ADMIN), controller.getExecutiveSummary);
+
+/**
+ * @swagger
+ * /api/foundation/stats/financial:
+ *   get:
+ *     summary: Get financial overview
+ *     tags: [Foundation - Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Financial data with month comparison and unit breakdown
+ */
+router.get("/stats/financial", authorize(UserRole.SUPER_ADMIN), controller.getFinancialOverview);
+
+/**
+ * @swagger
+ * /api/foundation/stats/units:
+ *   get:
+ *     summary: Get unit comparison metrics
+ *     tags: [Foundation - Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Unit comparison with student/teacher ratios
+ */
+router.get("/stats/units", authorize(UserRole.SUPER_ADMIN), controller.getUnitComparison);
+
 /**
  * @swagger
  * /api/foundation/{id}:

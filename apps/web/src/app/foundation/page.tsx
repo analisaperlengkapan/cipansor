@@ -44,9 +44,23 @@ import {
   useDeleteFoundationDocument,
   useFoundationBoardMembers,
   useDeleteFoundationBoardMember,
+  useFinancialSummary,
   DOCUMENT_TYPE_LABELS,
   type DocumentType,
 } from '@/hooks';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 import {
   Building2,
   FileText,
@@ -64,6 +78,9 @@ import {
   Save,
   Eye,
   AlertTriangle,
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react';
 import { format, isPast, isBefore, addMonths } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -78,9 +95,21 @@ export default function FoundationPage() {
   const { data: foundation, isLoading } = useFoundation();
   const { data: documents } = useFoundationDocuments();
   const { data: boardMembers } = useFoundationBoardMembers();
+  const { data: financialSummary } = useFinancialSummary(foundation?.id);
   const updateFoundation = useUpdateFoundation();
   const deleteDocument = useDeleteFoundationDocument();
   const deleteBoardMember = useDeleteFoundationBoardMember();
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
 
   const { register, handleSubmit, reset } = useForm({
     defaultValues: foundation || {},
@@ -163,6 +192,10 @@ export default function FoundationPage() {
             <TabsTrigger value="board" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Pengurus
+            </TabsTrigger>
+            <TabsTrigger value="financial" className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              Keuangan
             </TabsTrigger>
           </TabsList>
 
@@ -553,6 +586,183 @@ export default function FoundationPage() {
                 </Card>
               )}
             </div>
+          </TabsContent>
+
+          {/* Financial Tab */}
+          <TabsContent value="financial" className="space-y-6">
+            <div>
+              <h2 className="text-xl font-semibold">Ringkasan Keuangan</h2>
+              <p className="text-sm text-muted-foreground">
+                Overview keuangan yayasan bulan ini
+              </p>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Pemasukan Bulan Ini</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-green-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">
+                    {formatCurrency(financialSummary?.currentMonth?.revenue || 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Bulan lalu: {formatCurrency(financialSummary?.lastMonth?.revenue || 0)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Pengeluaran Bulan Ini</CardTitle>
+                  <TrendingDown className="h-4 w-4 text-red-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-red-600">
+                    {formatCurrency(financialSummary?.currentMonth?.expense || 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Bulan lalu: {formatCurrency(financialSummary?.lastMonth?.expense || 0)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Saldo Bersih</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-2xl font-bold ${(financialSummary?.currentMonth?.net || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(financialSummary?.currentMonth?.net || 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Selisih pemasukan dan pengeluaran
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Charts Row */}
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Expense Composition Pie Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Komposisi Pengeluaran</CardTitle>
+                  <CardDescription>Distribusi pengeluaran berdasarkan kategori</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    {financialSummary?.expenseComposition?.length ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={financialSummary.expenseComposition}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                            nameKey="name"
+                          >
+                            {financialSummary.expenseComposition.map((entry: { name: string; value: number }, index: number) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value: number) => formatCurrency(value)}
+                          />
+                          <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-muted-foreground">
+                        Belum ada data pengeluaran
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Revenue vs Expense Bar Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pemasukan vs Pengeluaran per Unit</CardTitle>
+                  <CardDescription>Perbandingan keuangan per unit pendidikan</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    {financialSummary?.byUnit?.length ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={financialSummary.byUnit}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="unitName" fontSize={12} tickLine={false} axisLine={false} />
+                          <YAxis
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={(value) => `${(value / 1000000).toFixed(0)}jt`}
+                          />
+                          <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                          <Legend />
+                          <Bar dataKey="revenue" name="Pemasukan" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="expense" name="Pengeluaran" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-muted-foreground">
+                        Belum ada data transaksi
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Unit Breakdown Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Rincian per Unit</CardTitle>
+                <CardDescription>Ringkasan keuangan berdasarkan unit pendidikan</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nama Unit</TableHead>
+                      <TableHead className="text-right">Pemasukan</TableHead>
+                      <TableHead className="text-right">Pengeluaran</TableHead>
+                      <TableHead className="text-right">Saldo</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {financialSummary?.units?.length ? (
+                      financialSummary.units.map((unit) => (
+                        <TableRow key={unit.unitId}>
+                          <TableCell className="font-medium">{unit.unitName}</TableCell>
+                          <TableCell className="text-right text-green-600">
+                            {formatCurrency(unit.revenue)}
+                          </TableCell>
+                          <TableCell className="text-right text-red-600">
+                            {formatCurrency(unit.expense)}
+                          </TableCell>
+                          <TableCell className="text-right font-bold">
+                            {formatCurrency(unit.netIncome)}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                          Belum ada data transaksi
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

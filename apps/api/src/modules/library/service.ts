@@ -61,19 +61,21 @@ export async function deleteBookCategory(id: string) {
 // ==================== BOOK ====================
 
 export async function getBooks(query: QueryBookInput) {
-  const { page, limit, unitId, categoryId, search, status } = query;
+  const page = Number(query.page || 1);
+  const limit = Number(query.limit || 20);
+  const { unitId, categoryId, search, status } = query;
   const skip = (page - 1) * limit;
 
   const where: Prisma.BookWhereInput = {
     deletedAt: null,
-    ...(unitId && { unitId }),
-    ...(categoryId && { categoryId }),
-    ...(status && { status }),
+    ...(unitId && { unitId: unitId as string }),
+    ...(categoryId && { categoryId: categoryId as string }),
+    ...(status && { status: status as BookStatus }),
     ...(search && {
       OR: [
-        { title: { contains: search, mode: "insensitive" } },
-        { author: { contains: search, mode: "insensitive" } },
-        { isbn: { contains: search, mode: "insensitive" } },
+        { title: { contains: search as string, mode: "insensitive" } },
+        { author: { contains: search as string, mode: "insensitive" } },
+        { isbn: { contains: search as string, mode: "insensitive" } },
       ],
     }),
   };

@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { prisma } from "../../lib/prisma";
 import * as service from "./service";
 import {
   createStaffAttendanceSchema,
@@ -10,6 +11,7 @@ import {
 } from "./schema";
 import { Errors } from "../../middleware/error";
 import { z } from "zod";
+import { UserRole } from "@prisma/client";
 
 // =====================================
 // STAFF ATTENDANCE CONTROLLERS
@@ -97,6 +99,26 @@ export async function deleteStaffAttendance(req: Request, res: Response, next: N
 export async function getLeaves(req: Request, res: Response, next: NextFunction) {
   try {
     const query = res.locals.validatedQuery;
+    const user = req.user!;
+
+    // Restrict access for non-admins
+    if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.UNIT_ADMIN) {
+      if (user.role === UserRole.TEACHER) {
+        const teacher = await prisma.teacher.findUnique({ where: { userId: user.sub } });
+        if (teacher) query.teacherId = teacher.id;
+        else throw Errors.notFound("Teacher profile not found");
+      } else if (user.role === UserRole.STAFF) {
+        const staff = await prisma.staff.findUnique({ where: { userId: user.sub } });
+        if (staff) query.staffId = staff.id;
+        else throw Errors.notFound("Staff profile not found");
+      }
+    } else {
+      // For admins, filter by unit if specified in token (UNIT_ADMIN)
+      if (user.role === UserRole.UNIT_ADMIN && user.unitId) {
+        query.unitId = user.unitId;
+      }
+    }
+
     const result = await service.getLeaves(query);
     res.json({ success: true, ...result });
   } catch (error) {
@@ -119,6 +141,21 @@ export async function getLeaveById(req: Request, res: Response, next: NextFuncti
 export async function createLeave(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createLeaveSchema.parse(req.body);
+    const user = req.user!;
+
+    // Auto-fill staffId/teacherId if creating for self
+    if (!data.staffId && !data.teacherId) {
+      if (user.role === UserRole.TEACHER) {
+        const teacher = await prisma.teacher.findUnique({ where: { userId: user.sub } });
+        if (!teacher) throw Errors.notFound("Teacher profile not found");
+        data.teacherId = teacher.id;
+      } else if (user.role === UserRole.STAFF) {
+        const staff = await prisma.staff.findUnique({ where: { userId: user.sub } });
+        if (!staff) throw Errors.notFound("Staff profile not found");
+        data.staffId = staff.id;
+      }
+    }
+
     const leave = await service.createLeave(data);
     res.status(201).json({ success: true, data: leave });
   } catch (error) {

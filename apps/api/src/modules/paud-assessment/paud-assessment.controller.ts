@@ -11,7 +11,6 @@ import {
   CreatePAUDNarrativeReportInput,
   UpdatePAUDNarrativeReportInput,
   FinalizePAUDReportInput,
-  BulkCreateClassPAUDAssessmentInput,
 } from '@cipansor/shared';
 import type {
   ListIndicatorsQuery,
@@ -19,6 +18,7 @@ import type {
   ListNarrativeReportsQuery,
   AssessmentSummaryQuery,
   ClassSummaryQuery,
+  BulkCreateClassPAUDAssessmentInput,
 } from './paud-assessment.schema';
 
 // ============================================

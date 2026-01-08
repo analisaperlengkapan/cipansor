@@ -297,7 +297,7 @@ export async function endRoomAssignment(id: string) {
 
 export async function getStudentsByMusyrif(userId: string) {
   // 1. Get Musyrif profile
-  const musyrif = await prisma.musyrif.findUnique({
+  const musyrif = await prisma.musyrif.findFirst({
     where: { userId },
     include: {
       assignments: {
@@ -334,8 +334,8 @@ export async function getStudentsByMusyrif(userId: string) {
       room: { select: { name: true } },
       student: {
         include: {
-          user: { select: { name: true, email: true, photoUrl: true } },
-          classEnrollments: {
+          user: { select: { name: true, email: true } },
+          enrollments: {
             where: { status: 'active' },
             include: { class: { select: { name: true } } },
             take: 1,
@@ -352,8 +352,8 @@ export async function getStudentsByMusyrif(userId: string) {
     id: ra.student.id,
     name: ra.student.user.name,
     nis: ra.student.nis,
-    photo: ra.student.user.photoUrl,
-    class: ra.student.classEnrollments[0]?.class.name || '-',
+    photo: ra.student.photoUrl,
+    class: ra.student.enrollments[0]?.class.name || '-',
     room: ra.room.name,
     gender: ra.student.gender
   }));

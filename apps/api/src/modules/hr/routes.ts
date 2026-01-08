@@ -301,7 +301,7 @@ router.get("/staff/:staffId/attendance/summary", authorize(UserRole.SUPER_ADMIN,
  *       200:
  *         description: List of leave requests
  */
-router.get("/leaves", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), validateQuery(queryLeaveSchema), controller.getLeaves);
+router.get("/leaves", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), validateQuery(queryLeaveSchema), controller.getLeaves);
 
 /**
  * @swagger
@@ -318,13 +318,14 @@ router.get("/leaves", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), vali
  *           schema:
  *             type: object
  *             required:
- *               - staffId
  *               - type
  *               - startDate
  *               - endDate
  *               - reason
  *             properties:
  *               staffId:
+ *                 type: string
+ *               teacherId:
  *                 type: string
  *               type:
  *                 type: string
@@ -341,7 +342,7 @@ router.get("/leaves", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), vali
  *       201:
  *         description: Leave request created
  */
-router.post("/leaves", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.createLeave);
+router.post("/leaves", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.createLeave);
 
 /**
  * @swagger
@@ -361,7 +362,7 @@ router.post("/leaves", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, User
  *       200:
  *         description: Leave request details
  */
-router.get("/leaves/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.getLeaveById);
+router.get("/leaves/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getLeaveById);
 
 /**
  * @swagger
@@ -381,7 +382,7 @@ router.get("/leaves/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, U
  *       200:
  *         description: Leave request updated
  */
-router.put("/leaves/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.updateLeave);
+router.put("/leaves/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.updateLeave);
 
 /**
  * @swagger
@@ -435,7 +436,7 @@ router.patch("/leaves/:id/approve", authorize(UserRole.SUPER_ADMIN, UserRole.UNI
  *       200:
  *         description: Leave request cancelled
  */
-router.patch("/leaves/:id/cancel", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.cancelLeave);
+router.patch("/leaves/:id/cancel", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.cancelLeave);
 
 /**
  * @swagger
@@ -475,6 +476,6 @@ router.delete("/leaves/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN
  *       200:
  *         description: Staff leave balance by type
  */
-router.get("/staff/:staffId/leave-balance", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.getLeaveBalance);
+router.get("/staff/:staffId/leave-balance", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getLeaveBalance);
 
 export default router;

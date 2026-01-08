@@ -192,6 +192,17 @@ export function useHalaqohs(params: HalaqohParams = {}) {
   });
 }
 
+export function useTakhosusDashboard(unitId?: string) {
+  return useQuery({
+    queryKey: ['takhosus', 'dashboard', unitId],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<any>>('/takhosus/dashboard-stats', { params: { unitId } });
+      return response.data.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useHalaqoh(id: string) {
   return useQuery({
     queryKey: ['takhosus', 'halaqoh', id],

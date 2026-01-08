@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { halaqohService, enrollmentService, sanadService, progressService } from './takhosus.service';
+import { halaqohService, enrollmentService, sanadService, progressService, dashboardService } from './takhosus.service';
+import { murojaahService } from './murojaah.service';
+import { simaanService } from './simaan.service';
 import { targetService } from './target.service';
 import { ApiResponse } from '@/utils/response';
 
@@ -396,10 +398,106 @@ export const progressController = {
   },
 };
 
+// =====================================
+// MUROJAAH CONTROLLER
+// =====================================
+
+export const murojaahController = {
+  async list(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await murojaahService.findAll(req.query as any);
+      res.json(ApiResponse.success(result.data, 'Murojaah records retrieved', result.pagination));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async create(req: Request, res: Response, next: NextFunction) {
+    try {
+      const record = await murojaahService.create(req.body, (req as any).user.id);
+      res.status(201).json(ApiResponse.success(record, 'Murojaah record created'));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const record = await murojaahService.update(req.params.id, req.body);
+      res.json(ApiResponse.success(record, 'Murojaah record updated'));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      await murojaahService.delete(req.params.id);
+      res.json(ApiResponse.success(null, 'Murojaah record deleted'));
+    } catch (error) {
+      next(error);
+    }
+  },
+};
+
+// =====================================
+// SIMAAN CONTROLLER
+// =====================================
+
+export const simaanController = {
+  async list(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await simaanService.findAll(req.query as any);
+      res.json(ApiResponse.success(result.exams, 'Simaan exams retrieved', result.pagination));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async getById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const exam = await simaanService.findById(req.params.id);
+      res.json(ApiResponse.success(exam));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async create(req: Request, res: Response, next: NextFunction) {
+    try {
+      const exam = await simaanService.create(req.body, (req as any).user.id);
+      res.status(201).json(ApiResponse.success(exam, 'Simaan exam scheduled'));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async updateResult(req: Request, res: Response, next: NextFunction) {
+    try {
+      const exam = await simaanService.updateResult(req.params.id, req.body);
+      res.json(ApiResponse.success(exam, 'Simaan result updated'));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      await simaanService.delete(req.params.id);
+      res.json(ApiResponse.success(null, 'Simaan exam deleted'));
+    } catch (error) {
+      next(error);
+    }
+  },
+};
+
 export default {
   halaqoh: halaqohController,
   enrollment: enrollmentController,
   sanad: sanadController,
   target: targetController,
   progress: progressController,
+  dashboard: dashboardController,
+  murojaah: murojaahController,
+  simaan: simaanController,
 };

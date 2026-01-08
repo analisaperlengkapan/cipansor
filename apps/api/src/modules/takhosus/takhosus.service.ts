@@ -708,9 +708,102 @@ export const progressService = {
   },
 };
 
+// =====================================
+// DASHBOARD SERVICE
+// =====================================
+
+export const dashboardService = {
+  async getStats(unitId?: string) {
+    const enrollmentWhere = {
+      ...(unitId && { student: { unitId } }),
+      status: 'ACTIVE' as TakhosusStatus,
+    };
+
+    const halaqohWhere = {
+      ...(unitId && { unitId }),
+      isActive: true,
+    };
+
+    const [
+      totalActiveStudents,
+      totalHalaqohs,
+      totalSanads,
+      progressAgg,
+      recentSanads,
+      topHalaqohs,
+    ] = await Promise.all([
+      prisma.takhosusEnrollment.count({ where: enrollmentWhere }),
+      prisma.halaqoh.count({ where: halaqohWhere }),
+      prisma.sanadRecord.count({
+        where: unitId ? { enrollment: { student: { unitId } } } : {}
+      }),
+      prisma.takhosusEnrollment.aggregate({
+        where: enrollmentWhere,
+        _sum: { completedJuz: true },
+        _avg: { completedJuz: true },
+      }),
+      prisma.sanadRecord.findMany({
+        where: unitId ? { enrollment: { student: { unitId } } } : {},
+        take: 5,
+        orderBy: { certifiedAt: 'desc' },
+        include: {
+          enrollment: {
+            include: {
+              student: {
+                include: { user: { select: { name: true } } },
+              },
+            },
+          },
+        },
+      }),
+      prisma.halaqoh.findMany({
+        where: halaqohWhere,
+        take: 5,
+        include: {
+          enrollments: {
+            where: { status: 'ACTIVE' },
+            select: { completedJuz: true },
+          },
+          teacher: { select: { user: { select: { name: true } } } },
+        },
+      }),
+    ]);
+
+    // Process top halaqohs by avg progress
+    const halaqohPerformance = topHalaqohs.map(h => {
+      const totalJuz = h.enrollments.reduce((sum, e) => sum + e.completedJuz, 0);
+      const avgJuz = h.enrollments.length > 0 ? totalJuz / h.enrollments.length : 0;
+      return {
+        id: h.id,
+        name: h.name,
+        teacherName: h.teacher.user.name,
+        studentCount: h.enrollments.length,
+        averageJuz: avgJuz,
+      };
+    }).sort((a, b) => b.averageJuz - a.averageJuz);
+
+    return {
+      activeStudents: totalActiveStudents,
+      activeHalaqohs: totalHalaqohs,
+      totalSanadsIssued: totalSanads,
+      totalJuzMemorized: progressAgg._sum.completedJuz || 0,
+      averageJuzPerStudent: progressAgg._avg.completedJuz || 0,
+      recentSanads: recentSanads.map(s => ({
+        id: s.id,
+        studentName: s.enrollment.student.user.name,
+        juz: s.juz,
+        certifiedAt: s.certifiedAt,
+        grade: s.grade,
+      })),
+      topHalaqohs: halaqohPerformance,
+    };
+  }
+};
+
 export default {
   halaqoh: halaqohService,
   enrollment: enrollmentService,
   sanad: sanadService,
   progress: progressService,
+  dashboard: dashboardService,
 };

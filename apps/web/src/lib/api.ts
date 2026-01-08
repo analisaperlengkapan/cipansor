@@ -191,4 +191,17 @@ export const tahfidzApi = {
     api.get<ApiResponse<TahfidzStudentSummary>>(`/tahfidz/students/${studentId}/summary`),
 };
 
+// General Upload API
+export const uploadApi = {
+  uploadFile: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<ApiResponse<{ url: string; filename: string; mimetype: string; size: number }>>('/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+};
+
 export default api;

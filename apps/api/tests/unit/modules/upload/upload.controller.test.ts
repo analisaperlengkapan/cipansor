@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Request, Response } from 'express';
-import { uploadController } from '../../../../../src/modules/upload/upload.controller';
+import { uploadController } from '@/modules/upload/upload.controller';
 
 describe('UploadController', () => {
   describe('uploadFile', () => {

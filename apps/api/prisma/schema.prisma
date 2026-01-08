@@ -4255,7 +4255,8 @@ model AccountCode {
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
 
-  normalBalance String   @default("DEBIT") @map("normal_balance") // DEBIT, CREDIT
+  normalBalance    String   @default("DEBIT") @map("normal_balance") // DEBIT, CREDIT
+  cashFlowCategory String?  @map("cash_flow_category") // OPERATING, INVESTING, FINANCING
 
   // Relations
   parent         AccountCode?   @relation("AccountHierarchy", fields: [parentId], references: [id])

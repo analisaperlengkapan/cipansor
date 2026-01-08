@@ -84,7 +84,8 @@ export class FinanceEnhancementService {
         name: input.name,
         type: input.type,
         parentId: input.parentId,
-        isActive: input.isActive ?? true
+        isActive: input.isActive ?? true,
+        cashFlowCategory: input.cashFlowCategory
       }
     });
 
@@ -96,7 +97,8 @@ export class FinanceEnhancementService {
       where: { id },
       data: {
         ...input,
-        type: input.type ? input.type : undefined
+        type: input.type ? input.type : undefined,
+        cashFlowCategory: input.cashFlowCategory
       }
     });
     return this.mapToAccountCode(accountCode);

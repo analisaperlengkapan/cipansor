@@ -13,7 +13,13 @@ import {
 } from '@cipansor/shared';
 import { createBudget, updateBudget, getBudgets } from './budget.service';
 import { createFinancialPeriod, closePeriod, getFinancialPeriods } from './period.service';
-import { getBalanceSheet, getIncomeStatement } from './reporting.service';
+import {
+  getBalanceSheet,
+  getIncomeStatement,
+  getTrialBalance,
+  getGeneralLedger,
+  getCashFlowStatement
+} from './reporting.service';
 
 // Helper for parsing pagination params
 const parsePagination = (req: Request) => ({
@@ -235,11 +241,53 @@ export class FinanceEnhancementController {
         return res.status(400).json({ success: false, message: 'Start date and end date are required' });
       }
 
-      const result = await financeEnhancementService.getTrialBalance({
-        unitId: unitId as string,
-        startDate: new Date(startDate as string),
-        endDate: new Date(endDate as string)
-      });
+      // Use Reporting Service Logic
+      const result = await getTrialBalance(
+        unitId as string,
+        new Date(startDate as string),
+        new Date(endDate as string)
+      );
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getGeneralLedger(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { unitId, accountId, startDate, endDate } = req.query;
+
+      if (!startDate || !endDate || !accountId) {
+        return res.status(400).json({ success: false, message: 'Start date, end date, and accountId are required' });
+      }
+
+      const result = await getGeneralLedger(
+        unitId as string,
+        accountId as string,
+        new Date(startDate as string),
+        new Date(endDate as string)
+      );
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getCashFlowStatement(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { unitId, startDate, endDate } = req.query;
+
+      if (!startDate || !endDate) {
+        return res.status(400).json({ success: false, message: 'Start date and end date are required' });
+      }
+
+      const result = await getCashFlowStatement(
+        unitId as string,
+        new Date(startDate as string),
+        new Date(endDate as string)
+      );
 
       res.json({ success: true, data: result });
     } catch (error) {
@@ -249,18 +297,35 @@ export class FinanceEnhancementController {
 
   async getIncomeExpenseReport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { unitId, startDate, endDate, groupBy } = req.query;
+      const { unitId, startDate, endDate } = req.query;
 
       if (!startDate || !endDate) {
         return res.status(400).json({ success: false, message: 'Start date and end date are required' });
       }
 
-      // Use the new reporting service if preferred, or keep existing.
-      // Mapping the request to the new service:
       const result = await getIncomeStatement(
         unitId as string,
         new Date(startDate as string),
         new Date(endDate as string)
+      );
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getBalanceSheet(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { unitId, date } = req.query;
+
+      if (!date) {
+        return res.status(400).json({ success: false, message: 'Date is required' });
+      }
+
+      const result = await getBalanceSheet(
+        unitId as string,
+        new Date(date as string)
       );
 
       res.json({ success: true, data: result });
@@ -350,27 +415,6 @@ export class FinanceEnhancementController {
       const { id } = req.params;
       const userId = (req as any).user.id;
       const result = await closePeriod(id, userId);
-      res.json({ success: true, data: result });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  // ==================== NEW REPORTS ====================
-
-  async getBalanceSheet(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { unitId, date } = req.query;
-
-      if (!date) {
-        return res.status(400).json({ success: false, message: 'Date is required' });
-      }
-
-      const result = await getBalanceSheet(
-        unitId as string,
-        new Date(date as string)
-      );
-
       res.json({ success: true, data: result });
     } catch (error) {
       next(error);

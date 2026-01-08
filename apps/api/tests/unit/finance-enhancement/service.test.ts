@@ -20,6 +20,9 @@ vi.mock('../../../src/lib/prisma', () => ({
       create: vi.fn(),
       groupBy: vi.fn(),
     },
+    financialPeriod: {
+      findFirst: vi.fn(), // Added this
+    },
     scholarship: {
       findMany: vi.fn(),
       count: vi.fn(),
@@ -91,6 +94,9 @@ describe('FinanceEnhancementService', () => {
         debit: 1000,
         createdById: 'user1'
       };
+
+      // Mock period check
+      (prisma.financialPeriod.findFirst as any).mockResolvedValue(null); // No closed period
 
       (prisma.journalEntry.create as any).mockResolvedValue({
         id: '1',

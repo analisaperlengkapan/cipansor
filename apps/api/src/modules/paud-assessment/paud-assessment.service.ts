@@ -14,12 +14,14 @@ import {
   UpdatePAUDNarrativeReportInput,
   FinalizePAUDReportInput,
 } from '@cipansor/shared';
+
 import type {
   ListIndicatorsQuery,
   ListAssessmentsQuery,
   ListNarrativeReportsQuery,
   AssessmentSummaryQuery,
   ClassSummaryQuery,
+  BulkCreateClassPAUDAssessmentInput,
 } from './paud-assessment.schema';
 
 // ============================================

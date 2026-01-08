@@ -73,6 +73,23 @@ export function useDailyReportList(query: DailyReportListQuery) {
   });
 }
 
+export function useAddDailyReportPhoto() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ reportId, file }: { reportId: string; file: File }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data } = await api.post(`/daily-report/${reportId}/photos`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return data;
+    },
+    onSuccess: (_, { reportId }) => {
+      queryClient.invalidateQueries({ queryKey: dailyReportKeys.detail(reportId) });
+    },
+  });
+}
+
 // Alias for backward compatibility if needed, though best to update call sites
 export const useDailyReports = useDailyReportList;
 

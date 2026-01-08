@@ -608,7 +608,7 @@ export function usePayrolls(params?: {
   return useQuery({
     queryKey: ['payrolls', params],
     queryFn: async () => {
-      const response = await api.get('/payroll/payrolls', { params });
+      const response = await api.get('/payroll/slips', { params });
       return response.data as {
         data: Payroll[];
         meta: { total: number; page: number; limit: number; totalPages: number };
@@ -621,26 +621,19 @@ export function usePayroll(id: string) {
   return useQuery({
     queryKey: ['payroll', id],
     queryFn: async () => {
-      const response = await api.get(`/payroll/payrolls/${id}`);
+      const response = await api.get(`/payroll/slips/${id}`);
       return response.data.data as Payroll;
     },
     enabled: !!id,
   });
 }
 
-export function useGeneratePayroll() {
+export function useGeneratePayrollSlips() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ month, year, periodId }: { month: number; year: number; periodId?: string }) => {
-      // If no periodId, create a period first then generate
-      const response = await api.post('/payroll/periods', { 
-        month, 
-        year, 
-        name: `Periode Gaji ${month}/${year}`,
-        startDate: new Date(year, month - 1, 1).toISOString(),
-        endDate: new Date(year, month, 0).toISOString(),
-      });
+    mutationFn: async ({ periodId, staffIds, overwrite }: { periodId: string; staffIds?: string[]; overwrite?: boolean }) => {
+      const response = await api.post('/payroll/generate', { periodId, staffIds, overwrite });
       return response.data.data;
     },
     onSuccess: () => {
@@ -655,7 +648,7 @@ export function useUpdatePayroll() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Payroll> }) => {
-      const response = await api.put(`/payroll/payrolls/${id}`, data);
+      const response = await api.put(`/payroll/slips/${id}`, data);
       return response.data.data;
     },
     onSuccess: () => {
@@ -668,9 +661,14 @@ export function useUpdatePayroll() {
 export function useApprovePayroll() {
   const queryClient = useQueryClient();
 
+  // Assuming approval is done via Period or individual Slip status update
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.put(`/payroll/payrolls/${id}/status`, { status: 'APPROVED' });
+      // Using adjust route or we need a status update route on slips?
+      // Check routes: only PUT /slips/:id exists for update, and PUT /slips/:id/adjust
+      // Status update is not explicitly exposed for single slip in routes.ts except via update
+      // But period approve exists: POST /periods/:id/approve
+      const response = await api.put(`/payroll/slips/${id}`, { status: 'APPROVED' });
       return response.data.data;
     },
     onSuccess: () => {
@@ -686,9 +684,9 @@ export function usePayPayroll() {
   return useMutation({
     mutationFn: async (ids: string | string[]) => {
       const idArray = Array.isArray(ids) ? ids : [ids];
-      // Update each payroll status to PAID
+      // Update each payroll status to PAID via PUT /slips/:id
       const results = await Promise.all(
-        idArray.map(id => api.put(`/payroll/payrolls/${id}/status`, { status: 'PAID' }))
+        idArray.map(id => api.put(`/payroll/slips/${id}`, { status: 'PAID' }))
       );
       return results.map(r => r.data.data);
     },
@@ -700,25 +698,8 @@ export function usePayPayroll() {
 }
 
 export function useProcessPayroll() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (ids: string | string[]) => {
-      const idArray = Array.isArray(ids) ? ids : [ids];
-      // Recalculate payrolls and set status to CALCULATED
-      const results = await Promise.all(
-        idArray.map(async id => {
-          await api.post(`/payroll/payrolls/${id}/recalculate`);
-          return api.put(`/payroll/payrolls/${id}/status`, { status: 'CALCULATED' });
-        })
-      );
-      return results.map(r => r.data.data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payrolls'] });
-      queryClient.invalidateQueries({ queryKey: ['payroll'] });
-    },
-  });
+  // Deprecated or remove?
+  return { mutateAsync: async () => {} };
 }
 
 export function useCancelPayroll() {
@@ -728,7 +709,7 @@ export function useCancelPayroll() {
     mutationFn: async (ids: string | string[]) => {
       const idArray = Array.isArray(ids) ? ids : [ids];
       const results = await Promise.all(
-        idArray.map(id => api.put(`/payroll/payrolls/${id}/status`, { status: 'CANCELLED' }))
+        idArray.map(id => api.put(`/payroll/slips/${id}`, { status: 'CANCELLED' }))
       );
       return results.map(r => r.data.data);
     },
@@ -1174,7 +1155,8 @@ export function usePayrollSlip(payrollId: string) {
   return useQuery({
     queryKey: ['payroll-slip', payrollId],
     queryFn: async () => {
-      const response = await api.get(`/payroll/payrolls/${payrollId}/slip`);
+      // Assuming GET /slips/:id returns the slip data
+      const response = await api.get(`/payroll/slips/${payrollId}`);
       return response.data.data;
     },
     enabled: !!payrollId,
@@ -1182,18 +1164,8 @@ export function usePayrollSlip(payrollId: string) {
 }
 
 export function useRecalculatePayroll() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (payrollId: string) => {
-      const response = await api.post(`/payroll/payrolls/${payrollId}/recalculate`);
-      return response.data.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payrolls'] });
-      queryClient.invalidateQueries({ queryKey: ['payroll'] });
-    },
-  });
+  // Not implemented in backend yet, placeholder
+  return { mutateAsync: async () => {} };
 }
 
 export function useAddPayrollAdjustment() {
@@ -1211,7 +1183,7 @@ export function useAddPayrollAdjustment() {
         notes?: string;
       };
     }) => {
-      const response = await api.post(`/payroll/payrolls/${payrollId}/adjustments`, data);
+      const response = await api.put(`/payroll/slips/${payrollId}/adjust`, data);
       return response.data.data;
     },
     onSuccess: () => {

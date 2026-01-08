@@ -303,6 +303,7 @@ export async function createStaffAttendance(data: CreateStaffAttendanceInput) {
   return prisma.staffAttendance.create({
     data: {
       staffId: data.staffId,
+      teacherId: data.teacherId,
       date,
       status: data.status,
       checkIn: data.checkIn ? new Date(data.checkIn) : undefined,
@@ -329,11 +330,15 @@ export async function recordBulkAttendance(data: BulkAttendanceInput) {
   date.setHours(0, 0, 0, 0);
 
   const results = await prisma.$transaction(
-    data.records.map((record) =>
-      prisma.staffAttendance.upsert({
-        where: {
-          staffId_date: { staffId: record.staffId, date },
-        },
+    data.records.map((record) => {
+      // Handle upsert with new composite key
+      // Must explicitly set the other ID to null for the unique constraint
+      const whereUnique = record.staffId
+        ? { staffId_teacherId_date: { staffId: record.staffId, teacherId: null, date } }
+        : { staffId_teacherId_date: { staffId: null, teacherId: record.teacherId!, date } };
+
+      return prisma.staffAttendance.upsert({
+        where: whereUnique as any,
         update: {
           status: record.status,
           checkIn: record.checkIn ? new Date(record.checkIn) : undefined,
@@ -342,14 +347,15 @@ export async function recordBulkAttendance(data: BulkAttendanceInput) {
         },
         create: {
           staffId: record.staffId,
+          teacherId: record.teacherId,
           date,
           status: record.status,
           checkIn: record.checkIn ? new Date(record.checkIn) : undefined,
           checkOut: record.checkOut ? new Date(record.checkOut) : undefined,
           notes: record.notes,
         },
-      })
-    )
+      });
+    })
   );
 
   return { count: results.length, records: results };
@@ -401,19 +407,26 @@ export async function getLeaves(params: {
   page: number;
   limit: number;
   staffId?: string;
+  teacherId?: string;
   unitId?: string;
   type?: LeaveType;
   status?: LeaveStatus;
   startDate?: string;
   endDate?: string;
 }) {
-  const { page, limit, staffId, unitId, type, status, startDate, endDate } = params;
+  const { page, limit, staffId, teacherId, unitId, type, status, startDate, endDate } = params;
   const skip = (page - 1) * limit;
 
   const where: Prisma.LeaveWhereInput = {};
 
   if (staffId) where.staffId = staffId;
-  if (unitId) where.staff = { unitId };
+  if (teacherId) where.teacherId = teacherId;
+  if (unitId) {
+    where.OR = [
+      { staff: { unitId } },
+      { teacher: { unitId } },
+    ];
+  }
   if (type) where.type = type;
   if (status) where.status = status;
 
@@ -447,6 +460,12 @@ export async function getLeaves(params: {
             unit: { select: { id: true, name: true } },
           },
         },
+        teacher: {
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+            unit: { select: { id: true, name: true } },
+          },
+        },
         approvedBy: { select: { id: true, name: true } },
       },
     }),
@@ -469,6 +488,12 @@ export async function getLeaveById(id: string) {
           unit: { select: { id: true, name: true } },
         },
       },
+      teacher: {
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          unit: { select: { id: true, name: true } },
+        },
+      },
       approvedBy: { select: { id: true, name: true } },
     },
   });
@@ -479,9 +504,14 @@ export async function createLeave(data: CreateLeaveInput) {
   const endDate = new Date(data.endDate);
   const totalDays = calculateTotalDays(startDate, endDate);
 
+  if (!data.staffId && !data.teacherId) {
+    throw Errors.badRequest("Either staffId or teacherId must be provided");
+  }
+
   return prisma.leave.create({
     data: {
       staffId: data.staffId,
+      teacherId: data.teacherId,
       type: data.type,
       startDate,
       endDate,
@@ -525,10 +555,10 @@ export async function approveLeave(id: string, approverId: string, data: Approve
   const leave = await prisma.leave.update({
     where: { id },
     data: updateData,
-    include: { staff: true },
+    include: { staff: true, teacher: true },
   });
 
-  // If approved, mark staff attendance as LEAVE for those days
+  // If approved, mark staff/teacher attendance as LEAVE for those days
   if (data.status === LeaveStatus.APPROVED) {
     const startDate = new Date(leave.startDate);
     const endDate = new Date(leave.endDate);
@@ -540,22 +570,48 @@ export async function approveLeave(id: string, approverId: string, data: Approve
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    await prisma.$transaction(
-      dates.map((date) =>
-        prisma.staffAttendance.upsert({
+    // Determine target ID (staff or teacher)
+    const staffId = leave.staffId;
+    const teacherId = leave.teacherId;
+
+    const transactionOperations = dates.map((date) => {
+      // Construct upsert args carefully
+      // Note: For upsert to work with @@unique([staffId, teacherId, date]),
+      // we must explicitly set the other ID to null in the where clause
+      // AND ensure the type safety for Prisma client
+
+      if (staffId) {
+        return prisma.staffAttendance.upsert({
           where: {
-            staffId_date: { staffId: leave.staffId, date },
+            staffId_teacherId_date: { staffId: staffId, teacherId: null, date } as any,
           },
           update: { status: StaffAttendanceStatus.LEAVE, notes: `Cuti: ${leave.type}` },
           create: {
-            staffId: leave.staffId,
+            staffId: staffId,
             date,
             status: StaffAttendanceStatus.LEAVE,
             notes: `Cuti: ${leave.type}`,
           },
-        })
-      )
-    );
+        });
+      } else if (teacherId) {
+        return prisma.staffAttendance.upsert({
+          where: {
+            staffId_teacherId_date: { staffId: null, teacherId: teacherId, date } as any,
+          },
+          update: { status: StaffAttendanceStatus.LEAVE, notes: `Cuti: ${leave.type}` },
+          create: {
+            teacherId: teacherId,
+            date,
+            status: StaffAttendanceStatus.LEAVE,
+            notes: `Cuti: ${leave.type}`,
+          },
+        });
+      }
+
+      return null;
+    }).filter((op): op is Prisma.Prisma__StaffAttendanceClient<any, never> => op !== null);
+
+    await prisma.$transaction(transactionOperations);
   }
 
   return leave;
@@ -576,10 +632,14 @@ export async function deleteLeave(id: string) {
   return prisma.leave.delete({ where: { id } });
 }
 
-export async function getLeaveBalance(staffId: string, year: number) {
+export async function getLeaveBalance(employeeId: string, year: number) {
+  // Check both staff and teacher
   const leaves = await prisma.leave.findMany({
     where: {
-      staffId,
+      OR: [
+        { staffId: employeeId },
+        { teacherId: employeeId }
+      ],
       status: LeaveStatus.APPROVED,
       startDate: {
         gte: new Date(year, 0, 1),
@@ -600,7 +660,7 @@ export async function getLeaveBalance(staffId: string, year: number) {
   const annualQuota = 12;
 
   return {
-    staffId,
+    employeeId,
     year,
     annualQuota,
     usedAnnual: usedByType[LeaveType.ANNUAL] || 0,

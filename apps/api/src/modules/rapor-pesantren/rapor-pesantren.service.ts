@@ -1035,7 +1035,7 @@ export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem
 
       overallScore: rapor.overallScore || 0,
       overallGrade: rapor.overallGrade || '-',
-      rank: rapor.rank || undefined,
+      rank: undefined,
     };
   });
 

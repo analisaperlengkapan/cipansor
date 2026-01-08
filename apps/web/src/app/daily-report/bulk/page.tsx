@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, memo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -53,6 +53,103 @@ interface StudentReportState {
   sholatAshar: boolean;
   sholatJamaah: boolean;
 }
+
+// Memoized Row Component
+const StudentReportRow = memo(({
+  enrollment,
+  report,
+  onUpdate
+}: {
+  enrollment: any;
+  report: StudentReportState;
+  onUpdate: (studentId: string, field: keyof StudentReportState, value: any) => void;
+}) => {
+  const studentId = enrollment.student.id;
+
+  return (
+    <TableRow>
+      <TableCell className="font-medium">
+        {enrollment.student.user.name}
+      </TableCell>
+      <TableCell>
+        <Select
+          value={report.morningMood}
+          onValueChange={(val: any) => onUpdate(studentId, "morningMood", val)}
+        >
+          <SelectTrigger className="w-[100px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="HAPPY">😊</SelectItem>
+            <SelectItem value="NEUTRAL">😐</SelectItem>
+            <SelectItem value="SAD">😢</SelectItem>
+            <SelectItem value="TIRED">😴</SelectItem>
+            <SelectItem value="EXCITED">🤩</SelectItem>
+            <SelectItem value="SICK">🤒</SelectItem>
+          </SelectContent>
+        </Select>
+      </TableCell>
+      <TableCell>
+        <Select
+          value={report.lunchConsumption}
+          onValueChange={(val: any) => onUpdate(studentId, "lunchConsumption", val)}
+        >
+          <SelectTrigger className="w-[110px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="HABIS">Habis</SelectItem>
+            <SelectItem value="SETENGAH">1/2</SelectItem>
+            <SelectItem value="SEDIKIT">Sedikit</SelectItem>
+            <SelectItem value="TIDAK_MAU">Tdk Mau</SelectItem>
+          </SelectContent>
+        </Select>
+      </TableCell>
+      <TableCell className="text-center">
+        <Checkbox
+          checked={report.sholatDhuha}
+          onCheckedChange={(c) => onUpdate(studentId, "sholatDhuha", !!c)}
+        />
+      </TableCell>
+      <TableCell className="text-center">
+        <Checkbox
+          checked={report.sholatDzuhur}
+          onCheckedChange={(c) => onUpdate(studentId, "sholatDzuhur", !!c)}
+        />
+      </TableCell>
+      <TableCell className="text-center">
+        <Checkbox
+          checked={report.sholatAshar}
+          onCheckedChange={(c) => onUpdate(studentId, "sholatAshar", !!c)}
+        />
+      </TableCell>
+      <TableCell className="text-center">
+        <Checkbox
+          checked={report.sholatJamaah}
+          onCheckedChange={(c) => onUpdate(studentId, "sholatJamaah", !!c)}
+        />
+      </TableCell>
+      <TableCell>
+        <Input
+          placeholder="Juz/Surat..."
+          value={report.tahfidzActivity}
+          onChange={(e) => onUpdate(studentId, "tahfidzActivity", e.target.value)}
+          className="w-[120px]"
+        />
+      </TableCell>
+      <TableCell>
+        <Input
+          placeholder="Catatan..."
+          value={report.notes}
+          onChange={(e) => onUpdate(studentId, "notes", e.target.value)}
+          className="w-[150px]"
+        />
+      </TableCell>
+    </TableRow>
+  );
+});
+
+StudentReportRow.displayName = "StudentReportRow";
 
 export default function BulkDailyReportPage() {
   const router = useRouter();
@@ -118,7 +215,8 @@ export default function BulkDailyReportPage() {
     },
   });
 
-  const handleUpdate = (studentId: string, field: keyof StudentReportState, value: any) => {
+  // Optimized update handler with useCallback
+  const handleUpdate = useCallback((studentId: string, field: keyof StudentReportState, value: any) => {
     setReports((prev) => ({
       ...prev,
       [studentId]: {
@@ -126,7 +224,7 @@ export default function BulkDailyReportPage() {
         [field]: value,
       },
     }));
-  };
+  }, []);
 
   const handleCheckAll = (field: keyof StudentReportState, checked: boolean) => {
     setReports((prev) => {
@@ -287,85 +385,12 @@ export default function BulkDailyReportPage() {
                     if (!report) return null;
 
                     return (
-                      <TableRow key={studentId}>
-                        <TableCell className="font-medium">
-                          {enrollment.student.user.name}
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={report.morningMood}
-                            onValueChange={(val: any) => handleUpdate(studentId, "morningMood", val)}
-                          >
-                            <SelectTrigger className="w-[100px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="HAPPY">😊</SelectItem>
-                              <SelectItem value="NEUTRAL">😐</SelectItem>
-                              <SelectItem value="SAD">😢</SelectItem>
-                              <SelectItem value="TIRED">😴</SelectItem>
-                              <SelectItem value="EXCITED">🤩</SelectItem>
-                              <SelectItem value="SICK">🤒</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={report.lunchConsumption}
-                            onValueChange={(val: any) => handleUpdate(studentId, "lunchConsumption", val)}
-                          >
-                            <SelectTrigger className="w-[110px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="HABIS">Habis</SelectItem>
-                              <SelectItem value="SETENGAH">1/2</SelectItem>
-                              <SelectItem value="SEDIKIT">Sedikit</SelectItem>
-                              <SelectItem value="TIDAK_MAU">Tdk Mau</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Checkbox
-                            checked={report.sholatDhuha}
-                            onCheckedChange={(c) => handleUpdate(studentId, "sholatDhuha", !!c)}
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Checkbox
-                            checked={report.sholatDzuhur}
-                            onCheckedChange={(c) => handleUpdate(studentId, "sholatDzuhur", !!c)}
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Checkbox
-                            checked={report.sholatAshar}
-                            onCheckedChange={(c) => handleUpdate(studentId, "sholatAshar", !!c)}
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Checkbox
-                            checked={report.sholatJamaah}
-                            onCheckedChange={(c) => handleUpdate(studentId, "sholatJamaah", !!c)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                           <Input
-                            placeholder="Juz/Surat..."
-                            value={report.tahfidzActivity}
-                            onChange={(e) => handleUpdate(studentId, "tahfidzActivity", e.target.value)}
-                            className="w-[120px]"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            placeholder="Catatan..."
-                            value={report.notes}
-                            onChange={(e) => handleUpdate(studentId, "notes", e.target.value)}
-                            className="w-[150px]"
-                          />
-                        </TableCell>
-                      </TableRow>
+                      <StudentReportRow
+                        key={studentId}
+                        enrollment={enrollment}
+                        report={report}
+                        onUpdate={handleUpdate}
+                      />
                     );
                   })}
                 </TableBody>

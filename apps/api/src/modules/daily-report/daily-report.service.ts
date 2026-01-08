@@ -286,23 +286,46 @@ export const dailyReportService = {
       select: { type: true },
     });
 
+    const studentIds = data.reports.map(r => r.studentId);
+
+    // 1. Batch fetch existing reports to identify duplicates
+    const existingReports = await prisma.dailyStudentReport.findMany({
+      where: {
+        studentId: { in: studentIds },
+        reportDate: reportDate,
+      },
+      select: { studentId: true },
+    });
+    const existingStudentIds = new Set(existingReports.map(r => r.studentId));
+
+    // 2. Batch fetch parent info for notifications
+    const studentsInfo = await prisma.student.findMany({
+      where: { id: { in: studentIds } },
+      select: {
+        id: true,
+        parentName: true,
+        parentPhone: true,
+        user: { select: { name: true } }
+      }
+    });
+    const studentInfoMap = new Map(studentsInfo.map(s => [s.id, s]));
+
     const results: { success: string[]; failed: { studentId: string; error: string }[] } = {
       success: [],
       failed: [],
     };
 
-    for (const report of data.reports) {
-      try {
-        // Check for existing report
-        const existing = await this.findByStudentAndDate(report.studentId, reportDate);
-        if (existing) {
-          results.failed.push({
-            studentId: report.studentId,
-            error: 'Report already exists for this date',
-          });
-          continue;
-        }
+    // 3. Process creations concurrently
+    await Promise.all(data.reports.map(async (report) => {
+      if (existingStudentIds.has(report.studentId)) {
+        results.failed.push({
+          studentId: report.studentId,
+          error: 'Report already exists for this date',
+        });
+        return;
+      }
 
+      try {
         const createdReport = await prisma.dailyStudentReport.create({
           data: {
             studentId: report.studentId,
@@ -324,30 +347,19 @@ export const dailyReportService = {
             sholatJamaah: report.sholatJamaah,
             createdById: userId,
           },
-          include: {
-            student: { select: { id: true, user: { select: { name: true } } } },
-          },
         });
 
         // Send WhatsApp notification
-        try {
-          const studentData = await prisma.student.findUnique({
-            where: { id: report.studentId },
-            select: { parentName: true, parentPhone: true },
-          });
-
-          if (studentData?.parentPhone) {
-            whatsAppService.sendDailyReportNotification({
-              parentPhone: studentData.parentPhone,
-              parentName: studentData.parentName || 'Orang Tua',
-              studentName: createdReport.student.user.name,
-              date: reportDate,
-              mood: report.morningMood,
-              healthStatus: report.healthNotes,
-            }).catch(err => logger.error(`Failed to send WA notification in bulk: ${err}`));
-          }
-        } catch (err) {
-          logger.error(`Error in bulk daily report notification trigger: ${err}`);
+        const studentInfo = studentInfoMap.get(report.studentId);
+        if (studentInfo?.parentPhone) {
+          whatsAppService.sendDailyReportNotification({
+            parentPhone: studentInfo.parentPhone,
+            parentName: studentInfo.parentName || 'Orang Tua',
+            studentName: studentInfo.user.name,
+            date: reportDate,
+            mood: report.morningMood,
+            healthStatus: report.healthNotes,
+          }).catch(err => logger.error(`Failed to send WA notification in bulk for ${report.studentId}: ${err}`));
         }
 
         results.success.push(report.studentId);
@@ -357,7 +369,7 @@ export const dailyReportService = {
           error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
-    }
+    }));
 
     return {
       created: results.success.length,

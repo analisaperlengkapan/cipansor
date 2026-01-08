@@ -47,6 +47,7 @@ import {
   FolderOpen,
   FileBarChart,
   Activity,
+  ShoppingBag,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -507,6 +508,11 @@ const yayasanNavigation: NavGroup[] = [
         icon: Wallet,
       },
       {
+        title: 'Procurement',
+        href: '/procurement',
+        icon: ShoppingBag,
+      },
+      {
         title: 'Donasi Alumni',
         href: '/alumni/donations',
         icon: Receipt,
@@ -784,6 +790,11 @@ const adminNavigation: NavGroup[] = [
         title: 'BOS/BOP',
         href: '/finance/bos',
         icon: Wallet,
+      },
+      {
+        title: 'Procurement',
+        href: '/procurement',
+        icon: ShoppingBag,
       },
       {
         title: 'Accounting',

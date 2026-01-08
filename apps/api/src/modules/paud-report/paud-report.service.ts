@@ -413,11 +413,50 @@ export async function generateReportFromAssessments(
   // Get attendance summary from daily reports
   const attendanceSummary = await getAttendanceSummary(studentId, semesterStart, semesterEnd);
 
+  // Get Health/Growth Summary
+  const growthRecord = await prisma.growthRecord.findFirst({
+    where: {
+      studentId,
+      recordDate: {
+        gte: semesterStart,
+        lte: semesterEnd,
+      },
+    },
+    orderBy: { recordDate: 'desc' },
+  });
+
+  const healthSummary = growthRecord
+    ? {
+        weight: growthRecord.weight,
+        height: growthRecord.height,
+        headCircumference: growthRecord.headCircumference,
+        notes: growthRecord.notes,
+        bmiDescription: growthRecord.nutritionStatus || '-',
+      }
+    : null;
+
+  // Get Tahfidz Summary
+  const latestTahfidz = await prisma.tahfidzRecord.findFirst({
+    where: { studentId },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const tahfidzSummary = latestTahfidz
+    ? {
+        lastSurah: latestTahfidz.surahName,
+        lastJuz: latestTahfidz.juz,
+        lastAyah: latestTahfidz.ayahEnd,
+        activity: latestTahfidz.activityType,
+      }
+    : null;
+
   const reportData = {
     studentId,
     unitId,
     academicYearId,
     semester,
+    tahfidzSummary: tahfidzSummary ?? Prisma.DbNull,
+    healthSummary: healthSummary ?? Prisma.DbNull,
     narrativeNAM: narratives.NAM,
     narrativeFM: narratives.FM,
     narrativeKOG: narratives.KOG,

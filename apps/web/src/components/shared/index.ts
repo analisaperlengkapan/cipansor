@@ -32,4 +32,5 @@ export {
   LoadingSpinner,
   LoadingPage,
 } from './error-boundary';
+export { PhotoGallery, type PhotoGalleryItem } from './photo-gallery';
 

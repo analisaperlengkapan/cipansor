@@ -25,8 +25,9 @@ import {
 } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LoadingSpinner } from '@/components/shared';
+import { LoadingSpinner, PhotoGallery, type PhotoGalleryItem } from '@/components/shared';
 import { toast } from 'sonner';
+import { uploadApi } from '@/lib/api';
 
 import { useUnits } from '@/hooks/use-units';
 import { useClasses } from '@/hooks/use-classes';
@@ -86,6 +87,9 @@ export default function CreateDailyReportPage() {
   const [teacherNotes, setTeacherNotes] = useState('');
   const [homework, setHomework] = useState('');
 
+  // Photos
+  const [photos, setPhotos] = useState<PhotoGalleryItem[]>([]);
+
   // Queries
   const { data: unitsData } = useUnits();
   const { data: classesData } = useClasses({ unitId: unitId || undefined });
@@ -123,7 +127,7 @@ export default function CreateDailyReportPage() {
         behaviorNotes,
         parentNotes: teacherNotes,
         homeworkSuggestion: homework,
-        // TODO: Add photo upload logic if needed
+        photoUrls: photos.map((p) => p.url),
       });
 
       toast.success('Laporan berhasil dibuat');
@@ -132,6 +136,29 @@ export default function CreateDailyReportPage() {
       toast.error('Gagal membuat laporan');
       console.error(error);
     }
+  };
+
+  const handleUploadPhotos = async (files: File[]) => {
+    try {
+      const uploadPromises = files.map((file) => uploadApi.uploadFile(file));
+      const responses = await Promise.all(uploadPromises);
+
+      const newPhotos: PhotoGalleryItem[] = responses.map((res, index) => ({
+        id: `temp-${Date.now()}-${index}`,
+        url: res.data.data.url,
+        uploadedAt: new Date(),
+        category: 'Kegiatan', // Default category
+      }));
+
+      setPhotos((prev) => [...prev, ...newPhotos]);
+    } catch (error) {
+      console.error('Upload failed:', error);
+      throw error; // Let PhotoGallery handle the error toast
+    }
+  };
+
+  const handleDeletePhoto = async (photoId: string) => {
+    setPhotos((prev) => prev.filter((p) => p.id !== photoId));
   };
 
   return (
@@ -256,11 +283,12 @@ export default function CreateDailyReportPage() {
         {/* Right Column: Report Details */}
         <div className="md:col-span-2">
           <Tabs defaultValue="activity" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="activity">Aktivitas</TabsTrigger>
               <TabsTrigger value="health">Kesehatan</TabsTrigger>
               <TabsTrigger value="meals">Makan</TabsTrigger>
               <TabsTrigger value="notes">Catatan</TabsTrigger>
+              <TabsTrigger value="photos">Foto</TabsTrigger>
             </TabsList>
 
             <TabsContent value="activity" className="space-y-4 mt-4">
@@ -313,6 +341,25 @@ export default function CreateDailyReportPage() {
                       onChange={(e) => setTahfidz(e.target.value)}
                     />
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="photos" className="space-y-4 mt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Dokumentasi Kegiatan</CardTitle>
+                  <CardDescription>
+                    Upload foto kegiatan siswa hari ini
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PhotoGallery
+                    photos={photos}
+                    onUpload={handleUploadPhotos}
+                    onDelete={handleDeletePhoto}
+                    categories={['Kegiatan', 'Hasil Karya', 'Makan', 'Tidur', 'Bermain']}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>

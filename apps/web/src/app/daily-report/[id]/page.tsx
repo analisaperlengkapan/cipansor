@@ -9,7 +9,7 @@ import { id as dateLocale } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoadingSpinner } from '@/components/shared';
+import { LoadingSpinner, PhotoGallery, type PhotoGalleryItem } from '@/components/shared';
 import { Separator } from '@/components/ui/separator';
 
 import { useDailyReport } from '@/hooks/use-daily-report';
@@ -209,6 +209,30 @@ export default function DailyReportDetailPage({ params }: { params: { id: string
                </div>
              </CardContent>
            </Card>
+
+           {/* Photos */}
+           {report.photos && report.photos.length > 0 && (
+             <Card>
+               <CardHeader>
+                 <CardTitle className="flex items-center gap-2">
+                   <CalendarIcon className="w-5 h-5" />
+                   Dokumentasi
+                 </CardTitle>
+               </CardHeader>
+               <CardContent>
+                 <PhotoGallery
+                   photos={report.photos.map(p => ({
+                     id: p.id,
+                     url: p.photoUrl,
+                     uploadedAt: new Date(p.createdAt),
+                     caption: p.caption,
+                     category: 'Kegiatan'
+                   }))}
+                   editable={false}
+                 />
+               </CardContent>
+             </Card>
+           )}
 
            {/* Activities */}
            <Card>

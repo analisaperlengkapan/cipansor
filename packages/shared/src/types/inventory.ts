@@ -36,6 +36,10 @@ export interface Asset {
   purchasePrice?: number | string | null;
   supplier?: string | null;
   location?: string | null;
+  roomId?: string | null;
+  purchaseOrderNo?: string | null;
+  usefulLife?: number | null;
+  residualValue?: number | string | null;
   condition: AssetCondition;
   status: AssetStatus;
   warrantyExpiry?: Date | string | null;
@@ -47,7 +51,9 @@ export interface Asset {
   // Relations
   category?: AssetCategory;
   unit?: { id: string; name: string };
+  room?: { id: string; name: string };
   maintenanceLogs?: AssetMaintenance[];
+  assignments?: AssetAssignment[];
 }
 
 export interface AssetMaintenance {
@@ -63,6 +69,50 @@ export interface AssetMaintenance {
   notes?: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
+
+  asset?: Asset;
+}
+
+export interface AssetAssignment {
+  id: string;
+  assetId: string;
+  userId: string;
+  assignedAt: Date | string;
+  returnedAt?: Date | string | null;
+  dueDate?: Date | string | null;
+  conditionBefore: AssetCondition;
+  conditionAfter?: AssetCondition | null;
+  notes?: string | null;
+  status: string; // ACTIVE, RETURNED, OVERDUE
+
+  asset?: Asset;
+  user?: { id: string; name: string };
+}
+
+export interface AssetAudit {
+  id: string;
+  unitId: string;
+  date: Date | string;
+  status: string; // PLANNED, ONGOING, COMPLETED
+  notes?: string | null;
+  createdById: string;
+  createdAt: Date | string;
+
+  unit?: { id: string; name: string };
+  createdBy?: { id: string; name: string };
+  items?: AssetAuditItem[];
+  _count?: { items: number };
+}
+
+export interface AssetAuditItem {
+  id: string;
+  auditId: string;
+  assetId: string;
+  systemStatus: string;
+  actualStatus: string;
+  condition: AssetCondition;
+  notes?: string | null;
+  isMatch: boolean;
 
   asset?: Asset;
 }
@@ -88,6 +138,10 @@ export interface CreateAssetInput {
   purchasePrice?: number;
   supplier?: string;
   location?: string;
+  roomId?: string;
+  purchaseOrderNo?: string;
+  usefulLife?: number;
+  residualValue?: number;
   condition: AssetCondition;
   status: AssetStatus;
   warrantyExpiry?: Date | string;
@@ -111,6 +165,34 @@ export interface CreateAssetMaintenanceInput {
 
 export interface UpdateAssetMaintenanceInput extends Partial<CreateAssetMaintenanceInput> {}
 
+export interface CreateAssetAssignmentInput {
+  assetId: string;
+  userId: string;
+  assignedAt: Date | string;
+  dueDate?: Date | string;
+  conditionBefore: AssetCondition;
+  notes?: string;
+}
+
+export interface ReturnAssetInput {
+  returnedAt: Date | string;
+  conditionAfter: AssetCondition;
+  notes?: string;
+}
+
+export interface CreateAssetAuditInput {
+  unitId: string;
+  date: Date | string;
+  notes?: string;
+}
+
+export interface UpdateAssetAuditItemInput {
+  actualStatus: string;
+  condition: AssetCondition;
+  notes?: string;
+  isMatch: boolean;
+}
+
 export interface InventoryStats {
   totalItems: number;
   byStatus: { status: AssetStatus; count: number }[];
@@ -118,4 +200,14 @@ export interface InventoryStats {
   byCategory: { categoryId: string; categoryName: string; count: number }[];
   recentMaintenances: number;
   totalValue: number;
+}
+
+export interface AssetDepreciation {
+  cost: number;
+  residual: number;
+  lifeMonths: number;
+  ageMonths: number;
+  monthlyDepreciation: number;
+  accumulatedDepreciation: number;
+  bookValue: number;
 }

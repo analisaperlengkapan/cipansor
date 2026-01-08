@@ -1,4 +1,4 @@
-import { Prisma, AssetStatus } from "@prisma/client";
+import { Prisma, AssetStatus, AssetCondition } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 import type {
   CreateInventoryCategoryInput,
@@ -9,6 +9,12 @@ import type {
   CreateMaintenanceInput,
   UpdateMaintenanceInput,
   QueryMaintenanceInput,
+  CreateAssetAssignmentInput,
+  ReturnAssetAssignmentInput,
+  QueryAssetAssignmentInput,
+  CreateAssetAuditInput,
+  QueryAssetAuditInput,
+  UpdateAssetAuditItemInput,
 } from "./schema";
 
 // ==================== ASSET CATEGORY ====================
@@ -85,6 +91,7 @@ export async function getItems(query: QueryInventoryItemInput) {
       include: {
         category: { select: { id: true, name: true, code: true } },
         unit: { select: { id: true, name: true } },
+        room: { select: { id: true, name: true } },
         _count: { select: { maintenanceLogs: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -109,9 +116,15 @@ export async function getItemById(id: string) {
     include: {
       category: { select: { id: true, name: true, code: true } },
       unit: { select: { id: true, name: true } },
+      room: { select: { id: true, name: true } },
       maintenanceLogs: {
         take: 5,
         orderBy: { maintenanceDate: "desc" },
+      },
+      assignments: {
+        take: 5,
+        orderBy: { assignedAt: "desc" },
+        include: { user: { select: { id: true, name: true } } },
       },
     },
   });
@@ -119,7 +132,6 @@ export async function getItemById(id: string) {
 
 export async function createItem(data: CreateInventoryItemInput) {
   return prisma.asset.create({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       unitId: data.unitId,
       categoryId: data.categoryId,
@@ -132,15 +144,20 @@ export async function createItem(data: CreateInventoryItemInput) {
       purchasePrice: data.purchasePrice,
       supplier: data.supplier,
       location: data.location,
+      roomId: data.roomId,
+      purchaseOrderNo: data.purchaseOrderNo,
+      usefulLife: data.usefulLife,
+      residualValue: data.residualValue,
       condition: data.condition,
       status: data.status,
       warrantyExpiry: data.warrantyExpiry,
       notes: data.notes,
       photoUrl: data.photoUrl,
-    } as any,
+    },
     include: {
       category: { select: { id: true, name: true, code: true } },
       unit: { select: { id: true, name: true } },
+      room: { select: { id: true, name: true } },
     },
   });
 }
@@ -152,6 +169,7 @@ export async function updateItem(id: string, data: UpdateInventoryItemInput) {
     include: {
       category: { select: { id: true, name: true, code: true } },
       unit: { select: { id: true, name: true } },
+      room: { select: { id: true, name: true } },
     },
   });
 }
@@ -290,6 +308,235 @@ export async function deleteMaintenance(id: string) {
   return prisma.assetMaintenance.delete({ where: { id } });
 }
 
+// ==================== ASSET ASSIGNMENT ====================
+
+export async function createAssignment(data: CreateAssetAssignmentInput) {
+  // Verify asset is available
+  const asset = await prisma.asset.findUnique({
+    where: { id: data.assetId },
+  });
+
+  if (!asset) throw new Error("Asset not found");
+  if (asset.status !== AssetStatus.ACTIVE) throw new Error("Asset is not available for assignment");
+
+  // Check if asset is already assigned
+  const activeAssignment = await prisma.assetAssignment.findFirst({
+    where: {
+      assetId: data.assetId,
+      status: "ACTIVE",
+    },
+  });
+
+  if (activeAssignment) throw new Error("Asset is currently assigned to another user");
+
+  return prisma.assetAssignment.create({
+    data: {
+      assetId: data.assetId,
+      userId: data.userId,
+      assignedAt: data.assignedAt,
+      dueDate: data.dueDate,
+      conditionBefore: data.conditionBefore,
+      notes: data.notes,
+      status: "ACTIVE",
+    },
+    include: {
+      asset: true,
+      user: { select: { id: true, name: true } },
+    },
+  });
+}
+
+export async function returnAssignment(id: string, data: ReturnAssetAssignmentInput) {
+  const assignment = await prisma.assetAssignment.findUnique({
+    where: { id },
+  });
+
+  if (!assignment) throw new Error("Assignment not found");
+  if (assignment.status !== "ACTIVE") throw new Error("Assignment is already returned");
+
+  // Update assignment status and asset condition
+  const [, updatedAssignment] = await prisma.$transaction([
+    prisma.asset.update({
+      where: { id: assignment.assetId },
+      data: { condition: data.conditionAfter },
+    }),
+    prisma.assetAssignment.update({
+      where: { id },
+      data: {
+        returnedAt: data.returnedAt,
+        conditionAfter: data.conditionAfter,
+        notes: data.notes ? `${assignment.notes || ""}\nReturn Notes: ${data.notes}` : assignment.notes,
+        status: "RETURNED",
+      },
+      include: {
+        asset: true,
+        user: { select: { id: true, name: true } },
+      },
+    }),
+  ]);
+
+  return updatedAssignment;
+}
+
+export async function getAssignments(query: QueryAssetAssignmentInput) {
+  const { page, limit, assetId, userId, status } = query;
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.AssetAssignmentWhereInput = {
+    ...(assetId && { assetId }),
+    ...(userId && { userId }),
+    ...(status && { status }),
+  };
+
+  const [data, total] = await Promise.all([
+    prisma.assetAssignment.findMany({
+      where,
+      skip,
+      take: limit,
+      include: {
+        asset: { select: { id: true, name: true, code: true } },
+        user: { select: { id: true, name: true } },
+      },
+      orderBy: { assignedAt: "desc" },
+    }),
+    prisma.assetAssignment.count({ where }),
+  ]);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
+
+// ==================== ASSET AUDIT ====================
+
+export async function createAudit(data: CreateAssetAuditInput, createdById: string) {
+  // Create audit and populate items
+  const assets = await prisma.asset.findMany({
+    where: { unitId: data.unitId, deletedAt: null },
+  });
+
+  return prisma.assetAudit.create({
+    data: {
+      unitId: data.unitId,
+      date: data.date,
+      notes: data.notes,
+      createdById,
+      status: "PLANNED",
+      items: {
+        create: assets.map((asset) => ({
+          assetId: asset.id,
+          systemStatus: asset.status,
+          actualStatus: "UNKNOWN", // To be filled during audit
+          condition: asset.condition,
+          isMatch: true, // Default assume match until checked
+        })),
+      },
+    },
+  });
+}
+
+export async function getAudits(query: QueryAssetAuditInput) {
+  const { page, limit, unitId, startDate, endDate } = query;
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.AssetAuditWhereInput = {
+    ...(unitId && { unitId }),
+    ...(startDate && endDate && { date: { gte: startDate, lte: endDate } }),
+  };
+
+  const [data, total] = await Promise.all([
+    prisma.assetAudit.findMany({
+      where,
+      skip,
+      take: limit,
+      include: {
+        unit: { select: { name: true } },
+        createdBy: { select: { name: true } },
+        _count: { select: { items: true } },
+      },
+      orderBy: { date: "desc" },
+    }),
+    prisma.assetAudit.count({ where }),
+  ]);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
+
+export async function getAuditById(id: string) {
+  return prisma.assetAudit.findUnique({
+    where: { id },
+    include: {
+      unit: { select: { name: true } },
+      createdBy: { select: { name: true } },
+      items: {
+        include: {
+          asset: { select: { code: true, name: true, location: true, room: { select: { name: true } } } },
+        },
+        orderBy: { asset: { code: "asc" } },
+      },
+    },
+  });
+}
+
+export async function updateAuditItem(id: string, data: UpdateAssetAuditItemInput) {
+  return prisma.assetAuditItem.update({
+    where: { id },
+    data,
+  });
+}
+
+export async function completeAudit(id: string) {
+  return prisma.assetAudit.update({
+    where: { id },
+    data: { status: "COMPLETED" },
+  });
+}
+
+// ==================== DEPRECIATION ====================
+
+export async function calculateDepreciation(assetId: string) {
+  const asset = await prisma.asset.findUnique({ where: { id: assetId } });
+  if (!asset || !asset.purchasePrice || !asset.purchaseDate || !asset.usefulLife) {
+    return null;
+  }
+
+  const cost = Number(asset.purchasePrice);
+  const residual = Number(asset.residualValue || 0);
+  const lifeMonths = asset.usefulLife;
+  const monthlyDepreciation = (cost - residual) / lifeMonths;
+
+  const ageMonths =
+    (new Date().getFullYear() - asset.purchaseDate.getFullYear()) * 12 +
+    (new Date().getMonth() - asset.purchaseDate.getMonth());
+
+  const accumulatedDepreciation = Math.min(monthlyDepreciation * Math.max(0, ageMonths), cost - residual);
+  const bookValue = Math.max(cost - accumulatedDepreciation, residual);
+
+  return {
+    cost,
+    residual,
+    lifeMonths,
+    ageMonths,
+    monthlyDepreciation,
+    accumulatedDepreciation,
+    bookValue,
+  };
+}
+
 // ==================== STATISTICS ====================
 
 export async function getInventoryStats(unitId?: string) {
@@ -352,6 +599,6 @@ export async function getInventoryStats(unitId?: string) {
       count: c._count,
     })),
     recentMaintenances,
-    totalValue: totalValue._sum.purchasePrice || 0,
+    totalValue: totalValue._sum.purchasePrice ? Number(totalValue._sum.purchasePrice) : 0,
   };
 }

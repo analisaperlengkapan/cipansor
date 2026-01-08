@@ -16,6 +16,18 @@ router.delete("/categories/:id", authorize(UserRole.UNIT_ADMIN), controller.dele
 router.get("/stats", authorize(UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getInventoryStats);
 router.get("/stats/:unitId", authorize(UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getInventoryStats);
 
+// Assignments
+router.get("/assignments", authorize(UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getAssignments);
+router.post("/assignments", authorize(UserRole.UNIT_ADMIN, UserRole.STAFF), controller.createAssignment);
+router.post("/assignments/:id/return", authorize(UserRole.UNIT_ADMIN, UserRole.STAFF), controller.returnAssignment);
+
+// Audits
+router.get("/audits", authorize(UserRole.UNIT_ADMIN), controller.getAudits);
+router.post("/audits", authorize(UserRole.UNIT_ADMIN), controller.createAudit);
+router.get("/audits/:id", authorize(UserRole.UNIT_ADMIN), controller.getAuditById);
+router.put("/audits/items/:itemId", authorize(UserRole.UNIT_ADMIN), controller.updateAuditItem);
+router.patch("/audits/:id/complete", authorize(UserRole.UNIT_ADMIN), controller.completeAudit);
+
 // Maintenance
 router.get("/maintenance", authorize(UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getMaintenances);
 router.post("/maintenance", authorize(UserRole.UNIT_ADMIN, UserRole.STAFF), controller.createMaintenance);
@@ -27,6 +39,7 @@ router.delete("/maintenance/:id", authorize(UserRole.UNIT_ADMIN), controller.del
 // Items
 router.get("/", authorize(UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getItems);
 router.post("/", authorize(UserRole.UNIT_ADMIN, UserRole.STAFF), controller.createItem);
+router.get("/:id/depreciation", authorize(UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getDepreciation);
 router.get("/:id", authorize(UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getItemById);
 router.put("/:id", authorize(UserRole.UNIT_ADMIN, UserRole.STAFF), controller.updateItem);
 router.delete("/:id", authorize(UserRole.UNIT_ADMIN), controller.deleteItem);

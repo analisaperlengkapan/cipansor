@@ -9,6 +9,12 @@ import {
   createMaintenanceSchema,
   updateMaintenanceSchema,
   queryMaintenanceSchema,
+  createAssetAssignmentSchema,
+  returnAssetAssignmentSchema,
+  queryAssetAssignmentSchema,
+  createAssetAuditSchema,
+  queryAssetAuditSchema,
+  updateAssetAuditItemSchema,
 } from "./schema";
 import { Errors } from "../../middleware/error";
 
@@ -18,6 +24,104 @@ export async function getCategories(req: Request, res: Response, next: NextFunct
   try {
     const categories = await service.getCategories();
     res.json({ success: true, data: categories });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ==================== ASSET ASSIGNMENT ====================
+
+export async function createAssignment(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = createAssetAssignmentSchema.parse(req.body);
+    const assignment = await service.createAssignment(data);
+    res.status(201).json({ success: true, data: assignment });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function returnAssignment(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = returnAssetAssignmentSchema.parse(req.body);
+    const assignment = await service.returnAssignment(req.params.id, data);
+    res.json({ success: true, data: assignment });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getAssignments(req: Request, res: Response, next: NextFunction) {
+  try {
+    const query = queryAssetAssignmentSchema.parse(req.query);
+    const result = await service.getAssignments(query);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ==================== ASSET AUDIT ====================
+
+export async function createAudit(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = createAssetAuditSchema.parse(req.body);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const createdById = (req as any).user.id;
+    const audit = await service.createAudit(data, createdById);
+    res.status(201).json({ success: true, data: audit });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getAudits(req: Request, res: Response, next: NextFunction) {
+  try {
+    const query = queryAssetAuditSchema.parse(req.query);
+    const result = await service.getAudits(query);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getAuditById(req: Request, res: Response, next: NextFunction) {
+  try {
+    const audit = await service.getAuditById(req.params.id);
+    if (!audit) {
+      throw Errors.notFound("Audit not found");
+    }
+    res.json({ success: true, data: audit });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateAuditItem(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = updateAssetAuditItemSchema.parse(req.body);
+    const item = await service.updateAuditItem(req.params.itemId, data);
+    res.json({ success: true, data: item });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function completeAudit(req: Request, res: Response, next: NextFunction) {
+  try {
+    const audit = await service.completeAudit(req.params.id);
+    res.json({ success: true, data: audit });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ==================== DEPRECIATION ====================
+
+export async function getDepreciation(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await service.calculateDepreciation(req.params.id);
+    res.json({ success: true, data });
   } catch (error) {
     next(error);
   }

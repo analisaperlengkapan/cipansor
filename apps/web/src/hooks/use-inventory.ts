@@ -8,12 +8,20 @@ import {
   CreateAssetInput,
   UpdateAssetInput,
   InventoryStats,
-  CreateAssetMaintenanceInput
+  CreateAssetMaintenanceInput,
+  AssetAssignment,
+  CreateAssetAssignmentInput,
+  ReturnAssetAssignmentInput,
+  AssetAudit,
+  CreateAssetAuditInput,
+  UpdateAssetAuditItemInput,
+  AssetAuditItem,
+  AssetDepreciation,
 } from '@cipansor/shared';
 
 // Re-export shared types/enums for convenience
 export { AssetStatus, AssetCondition };
-export type { Asset, AssetCategory, InventoryStats };
+export type { Asset, AssetCategory, InventoryStats, AssetAssignment, AssetAudit, AssetDepreciation };
 
 // Hooks
 
@@ -31,7 +39,7 @@ export function useInventoryItems(params?: {
   page?: number;
   limit?: number;
   search?: string;
-  categoryId?: string; // Changed from category string to categoryId
+  categoryId?: string;
   condition?: AssetCondition;
   status?: AssetStatus;
   unitId?: string;
@@ -39,8 +47,6 @@ export function useInventoryItems(params?: {
   return useQuery({
     queryKey: ['inventory', params],
     queryFn: async () => {
-      // API returns { success: true, data: [], meta: ... }
-      // We need to match PaginatedResponse structure
       const response = await api.get<PaginatedResponse<Asset>>('/inventory', { params });
       return response.data;
     },
@@ -131,7 +137,136 @@ export function useCreateMaintenance() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      // Invalidate specific item if needed
     }
+  });
+}
+
+// Assignments Hooks
+
+export function useAssetAssignments(params?: {
+  page?: number;
+  limit?: number;
+  assetId?: string;
+  userId?: string;
+  status?: string;
+}) {
+  return useQuery({
+    queryKey: ['inventory-assignments', params],
+    queryFn: async () => {
+      const response = await api.get<PaginatedResponse<AssetAssignment>>('/inventory/assignments', { params });
+      return response.data;
+    },
+  });
+}
+
+export function useCreateAssignment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: CreateAssetAssignmentInput) => {
+      const response = await api.post<{ data: AssetAssignment }>('/inventory/assignments', data);
+      return response.data.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-assignments'] });
+      if (data.assetId) {
+        queryClient.invalidateQueries({ queryKey: ['inventory', data.assetId] });
+      }
+    },
+  });
+}
+
+export function useReturnAssignment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: ReturnAssetAssignmentInput }) => {
+      const response = await api.post<{ data: AssetAssignment }>(`/inventory/assignments/${id}/return`, data);
+      return response.data.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-assignments'] });
+      if (data.assetId) {
+        queryClient.invalidateQueries({ queryKey: ['inventory', data.assetId] });
+      }
+    },
+  });
+}
+
+// Audits Hooks
+
+export function useAssetAudits(params?: {
+  page?: number;
+  limit?: number;
+  unitId?: string;
+}) {
+  return useQuery({
+    queryKey: ['inventory-audits', params],
+    queryFn: async () => {
+      const response = await api.get<PaginatedResponse<AssetAudit>>('/inventory/audits', { params });
+      return response.data;
+    },
+  });
+}
+
+export function useCreateAudit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: CreateAssetAuditInput) => {
+      const response = await api.post<{ data: AssetAudit }>('/inventory/audits', data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-audits'] });
+    },
+  });
+}
+
+export function useAssetAudit(id: string) {
+  return useQuery({
+    queryKey: ['inventory-audits', id],
+    queryFn: async () => {
+      const response = await api.get<{ data: AssetAudit }>(`/inventory/audits/${id}`);
+      return response.data.data;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useUpdateAuditItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ itemId, data }: { itemId: string; data: UpdateAssetAuditItemInput }) => {
+      const response = await api.put<{ data: AssetAuditItem }>(`/inventory/audits/items/${itemId}`, data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-audits'] });
+    },
+  });
+}
+
+export function useCompleteAudit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.patch<{ data: AssetAudit }>(`/inventory/audits/${id}/complete`);
+      return response.data.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-audits'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-audits', data.id] });
+    },
+  });
+}
+
+// Depreciation Hook
+
+export function useAssetDepreciation(id: string) {
+  return useQuery({
+    queryKey: ['inventory-depreciation', id],
+    queryFn: async () => {
+      const response = await api.get<{ data: AssetDepreciation }>(`/inventory/${id}/depreciation`);
+      return response.data.data;
+    },
+    enabled: !!id,
   });
 }

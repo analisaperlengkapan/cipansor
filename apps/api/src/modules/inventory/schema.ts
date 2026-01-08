@@ -30,6 +30,10 @@ export const createInventoryItemSchema = z.object({
   model: z.string().max(100).optional(),
   serialNumber: z.string().max(100).optional(),
   location: z.string().max(255).optional(),
+  roomId: z.string().uuid().optional(),
+  purchaseOrderNo: z.string().optional(),
+  usefulLife: z.number().int().min(0).optional(),
+  residualValue: z.number().min(0).optional(),
   status: AssetStatusEnum.default(AssetStatus.ACTIVE),
   condition: AssetConditionEnum.default(AssetCondition.GOOD),
   purchaseDate: z.coerce.date().optional(),
@@ -94,3 +98,59 @@ export const queryMaintenanceSchema = z.object({
 export type CreateMaintenanceInput = z.infer<typeof createMaintenanceSchema>;
 export type UpdateMaintenanceInput = z.infer<typeof updateMaintenanceSchema>;
 export type QueryMaintenanceInput = z.infer<typeof queryMaintenanceSchema>;
+
+// ==================== ASSET ASSIGNMENT ====================
+
+export const createAssetAssignmentSchema = z.object({
+  assetId: z.string().uuid(),
+  userId: z.string().uuid(),
+  assignedAt: z.coerce.date().default(() => new Date()),
+  dueDate: z.coerce.date().optional(),
+  conditionBefore: AssetConditionEnum,
+  notes: z.string().optional(),
+});
+
+export const returnAssetAssignmentSchema = z.object({
+  returnedAt: z.coerce.date().default(() => new Date()),
+  conditionAfter: AssetConditionEnum,
+  notes: z.string().optional(),
+});
+
+export const queryAssetAssignmentSchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  assetId: z.string().uuid().optional(),
+  userId: z.string().uuid().optional(),
+  status: z.enum(['ACTIVE', 'RETURNED', 'OVERDUE']).optional(),
+});
+
+export type CreateAssetAssignmentInput = z.infer<typeof createAssetAssignmentSchema>;
+export type ReturnAssetAssignmentInput = z.infer<typeof returnAssetAssignmentSchema>;
+export type QueryAssetAssignmentInput = z.infer<typeof queryAssetAssignmentSchema>;
+
+// ==================== ASSET AUDIT ====================
+
+export const createAssetAuditSchema = z.object({
+  unitId: z.string().uuid(),
+  date: z.coerce.date().default(() => new Date()),
+  notes: z.string().optional(),
+});
+
+export const updateAssetAuditItemSchema = z.object({
+  actualStatus: z.string(), // FOUND, MISSING, DAMAGED
+  condition: AssetConditionEnum,
+  notes: z.string().optional(),
+  isMatch: z.boolean(),
+});
+
+export const queryAssetAuditSchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  unitId: z.string().uuid().optional(),
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
+});
+
+export type CreateAssetAuditInput = z.infer<typeof createAssetAuditSchema>;
+export type UpdateAssetAuditItemInput = z.infer<typeof updateAssetAuditItemSchema>;
+export type QueryAssetAuditInput = z.infer<typeof queryAssetAuditSchema>;

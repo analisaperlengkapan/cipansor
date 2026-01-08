@@ -25,8 +25,8 @@ const roleDashboardMap: Record<UserRole, string> = {
 // Role-based route access control
 const roleRouteAccess: Record<UserRole, string[]> = {
   SUPER_ADMIN: ['*'], // Access to all routes
-  UNIT_ADMIN: ['/dashboard', '/students', '/classes', '/teachers', '/staff', '/finance', '/tahfidz', '/health', '/permits', '/violations', '/rewards', '/reports', '/announcements', '/settings'],
-  TEACHER: ['/teacher', '/tahfidz', '/classes', '/students', '/attendance', '/announcements'],
+  UNIT_ADMIN: ['/dashboard', '/students', '/classes', '/teachers', '/staff', '/finance', '/tahfidz', '/health', '/permits', '/violations', '/rewards', '/reports', '/announcements', '/settings', '/daily-report'],
+  TEACHER: ['/teacher', '/tahfidz', '/classes', '/students', '/attendance', '/announcements', '/daily-report'],
   STAFF: ['/staff', '/students', '/health', '/permits', '/violations', '/rewards', '/finance', '/announcements'],
   STUDENT: ['/student', '/tahfidz', '/schedule', '/announcements'],
   PARENT: ['/parent'],

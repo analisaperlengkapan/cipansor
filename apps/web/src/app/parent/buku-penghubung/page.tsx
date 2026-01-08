@@ -44,9 +44,17 @@ import {
   Plus,
   Search,
   Filter,
+  Check,
+  X,
+  Smile,
+  Meh,
+  Frown,
+  Activity,
 } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import { useDailyReports } from '@/hooks/use-daily-report';
+import type { DailyReport } from '@cipansor/shared';
 
 // ========================================
 // TYPES
@@ -239,6 +247,15 @@ export default function BukuPenghubungPage() {
   const [newMessage, setNewMessage] = useState({ subject: '', message: '', category: 'GENERAL' });
   const [replyMessage, setReplyMessage] = useState('');
 
+  // Daily Reports Query
+  const { data: dailyReportsData, isLoading: isLoadingReports } = useDailyReports({
+    studentId: selectedChildId,
+    limit: 10,
+    page: 1,
+  });
+
+  const dailyReports = dailyReportsData?.data || [];
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -372,6 +389,20 @@ export default function BukuPenghubungPage() {
       TAHFIDZ: 'Tahfidz',
     };
     return labels[category] || 'Umum';
+  };
+
+  const getMoodIcon = (mood: string) => {
+    switch (mood) {
+      case 'HAPPY':
+      case 'EXCITED':
+        return <Smile className="h-5 w-5 text-green-500" />;
+      case 'SAD':
+      case 'TIRED':
+      case 'SICK':
+        return <Frown className="h-5 w-5 text-red-500" />;
+      default:
+        return <Meh className="h-5 w-5 text-yellow-500" />;
+    }
   };
 
   if (loading) {
@@ -533,8 +564,12 @@ export default function BukuPenghubungPage() {
         </Card>
       )}
 
-      <Tabs defaultValue="messages" className="space-y-4">
+      <Tabs defaultValue="daily" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="daily" className="gap-2">
+            <Activity className="h-4 w-4" />
+            Laporan Harian
+          </TabsTrigger>
           <TabsTrigger value="messages" className="gap-2">
             <MessageSquare className="h-4 w-4" />
             Pesan ({entries.length})
@@ -544,6 +579,115 @@ export default function BukuPenghubungPage() {
             Progress Mingguan
           </TabsTrigger>
         </TabsList>
+
+        {/* Daily Reports Tab */}
+        <TabsContent value="daily" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Laporan Harian Santri</CardTitle>
+              <CardDescription>
+                Aktivitas harian {selectedChild?.student.name}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isLoadingReports ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-24 w-full" />
+                  ))}
+                </div>
+              ) : dailyReports.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>Belum ada laporan harian</p>
+                </div>
+              ) : (
+                dailyReports.map((report) => (
+                  <Card key={report.id} className="border border-muted">
+                    <CardContent className="p-4">
+                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                        {/* Header & Mood */}
+                        <div className="flex items-center gap-4">
+                          <div className="flex flex-col items-center">
+                            <span className="text-2xl font-bold text-primary">
+                              {format(new Date(report.date), 'dd')}
+                            </span>
+                            <span className="text-xs text-muted-foreground uppercase">
+                              {format(new Date(report.date), 'MMM')}
+                            </span>
+                          </div>
+                          <div className="h-10 w-[1px] bg-border" />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold">
+                                {format(new Date(report.date), 'EEEE, d MMMM yyyy', { locale: idLocale })}
+                              </h4>
+                              {getMoodIcon(report.mood)}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {report.healthStatus === 'SICK' ? 'Sakit' : 'Sehat'}
+                              {report.healthNote && ` - ${report.healthNote}`}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Ibadah Status */}
+                        <div className="flex gap-4 text-sm">
+                          <div className="flex flex-col items-center">
+                            <span className="text-muted-foreground text-xs mb-1">Dhuha</span>
+                            {report.sholatDhuha ? <Check className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-red-300" />}
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <span className="text-muted-foreground text-xs mb-1">Dzuhur</span>
+                            {report.sholatDzuhur ? <Check className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-red-300" />}
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <span className="text-muted-foreground text-xs mb-1">Ashar</span>
+                            {report.sholatAshar ? <Check className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-red-300" />}
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <span className="text-muted-foreground text-xs mb-1">Jamaah</span>
+                            {report.sholatJamaah ? <Check className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-red-300" />}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid md:grid-cols-2 gap-4 text-sm bg-muted/30 p-3 rounded-lg">
+                        {/* Tahfidz Note */}
+                        {report.tahfidzNote && (
+                          <div>
+                            <span className="font-semibold block mb-1">Catatan Tahfidz:</span>
+                            <p className="text-muted-foreground">{report.tahfidzNote}</p>
+                          </div>
+                        )}
+
+                        {/* Activities */}
+                        {report.activities && report.activities.length > 0 && (
+                          <div>
+                            <span className="font-semibold block mb-1">Aktivitas:</span>
+                            <ul className="list-disc list-inside text-muted-foreground">
+                              {report.activities.map((act, idx) => (
+                                <li key={idx}>{act}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* General Note */}
+                        {report.note && (
+                          <div className="md:col-span-2 border-t border-border pt-2 mt-2">
+                            <span className="font-semibold block mb-1">Catatan Wali Kelas:</span>
+                            <p className="text-muted-foreground italic">"{report.note}"</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Messages Tab */}
         <TabsContent value="messages" className="space-y-4">

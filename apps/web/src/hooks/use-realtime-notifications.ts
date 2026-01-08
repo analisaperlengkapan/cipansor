@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, ReactNode } from 'react';
 import { useSocket } from '@/providers/socket-provider';
 import { toast } from 'sonner';
 import { Bell, MessageSquare, CreditCard, AlertTriangle, BookOpen, Calendar } from 'lucide-react';
@@ -25,7 +25,7 @@ export interface RealtimeNotification {
   read: boolean;
 }
 
-const NOTIFICATION_ICONS: Record<RealtimeNotificationType, React.ReactNode> = {
+const NOTIFICATION_ICONS: Record<RealtimeNotificationType, ReactNode> = {
   DAILY_REPORT: <MessageSquare className="h-5 w-5 text-blue-600" />,
   PAYMENT_REMINDER: <CreditCard className="h-5 w-5 text-amber-600" />,
   ATTENDANCE_ALERT: <AlertTriangle className="h-5 w-5 text-red-600" />,

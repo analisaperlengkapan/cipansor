@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { halaqohController, enrollmentController, sanadController, progressController, targetController } from './takhosus.controller';
+import { halaqohController, enrollmentController, sanadController, progressController, targetController, dashboardController, murojaahController, simaanController } from './takhosus.controller';
 import { authenticate, authorize } from '@/middleware/auth';
 import { UserRole } from '@prisma/client';
 import { validate } from '@/middleware/validate';
@@ -14,7 +14,7 @@ import {
   createMurojaahSchema,
   updateMurojaahSchema,
   createSimaanSchema,
-  gradeSimaanSchema,
+  updateSimaanResultSchema,
 } from './takhosus.schema';
 
 const router = Router();
@@ -35,7 +35,7 @@ router.get(
 router.get(
   '/dashboard-stats',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
-  enrollmentController.getStats
+  dashboardController.getStats
 );
 
 // =====================================
@@ -187,27 +187,27 @@ router.get(
 router.get(
   '/murojaah',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
-  sanadController.list // TODO: Create murojaahController
+  murojaahController.list
 );
 
 router.post(
   '/murojaah',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
   validate(createMurojaahSchema),
-  sanadController.create // TODO: Create murojaahController
+  murojaahController.create
 );
 
 router.put(
   '/murojaah/:id',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
   validate(updateMurojaahSchema),
-  sanadController.update // TODO: Create murojaahController
+  murojaahController.update
 );
 
 router.delete(
   '/murojaah/:id',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
-  sanadController.delete // TODO: Create murojaahController
+  murojaahController.delete
 );
 
 // =====================================
@@ -217,27 +217,27 @@ router.delete(
 router.get(
   '/simaan',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
-  sanadController.list // TODO: Create simaanController
+  simaanController.list
 );
 
 router.post(
   '/simaan',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
   validate(createSimaanSchema),
-  sanadController.create // TODO: Create simaanController
+  simaanController.create
 );
 
 router.put(
   '/simaan/:id/grade',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
-  validate(gradeSimaanSchema),
-  sanadController.update // TODO: Create simaanController
+  validate(updateSimaanResultSchema),
+  simaanController.updateResult
 );
 
 router.delete(
   '/simaan/:id',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
-  sanadController.delete // TODO: Create simaanController
+  simaanController.delete
 );
 
 export default router;

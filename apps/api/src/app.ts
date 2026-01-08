@@ -81,6 +81,7 @@ import { simaanRoutes } from '@/modules/simaan';
 import { dashboardEnhancementRoutes } from '@/modules/dashboard-enhancement';
 import { sanadCertificateRouter } from '@/modules/sanad-certificate';
 import dashboardRoutes from '@/modules/dashboard/dashboard.routes';
+import receptionRoutes from '@/modules/reception/reception.routes';
 
 // Create Express app
 const app = express();
@@ -227,6 +228,7 @@ apiRouter.use('/simaan', simaanRoutes);
 apiRouter.use('/dashboard-enhancement', dashboardEnhancementRoutes);
 apiRouter.use('/sanad', sanadCertificateRouter);
 apiRouter.use('/dashboard', dashboardRoutes);
+apiRouter.use('/reception', receptionRoutes);
 
 // API info
 apiRouter.get('/', (_req, res) => {
@@ -291,6 +293,7 @@ apiRouter.get('/', (_req, res) => {
       portfolio: '/api/portfolio',
       ibadah: '/api/ibadah',
       raporPesantren: '/api/rapor-pesantren',
+      reception: '/api/reception',
     },
   });
 });

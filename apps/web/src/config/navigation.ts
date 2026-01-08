@@ -882,6 +882,11 @@ const adminNavigation: NavGroup[] = [
         icon: WashingMachine,
       },
       {
+        title: 'Reception',
+        href: '/reception',
+        icon: IdCard,
+      },
+      {
         title: 'Dompet Santri',
         href: '/finance/wallet',
         icon: CreditCard,

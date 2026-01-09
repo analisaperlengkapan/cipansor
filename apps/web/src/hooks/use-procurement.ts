@@ -7,7 +7,7 @@ import {
 } from '@cipansor/shared';
 import { toast } from 'sonner';
 
-export const useProcurement = (unitId?: string, status?: PurchaseRequestStatus) => {
+export const useProcurement = (unitId?: string, status?: PurchaseRequestStatus | 'all') => {
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
@@ -15,7 +15,7 @@ export const useProcurement = (unitId?: string, status?: PurchaseRequestStatus) 
     queryFn: async () => {
       const params = new URLSearchParams();
       if (unitId && unitId !== 'all') params.append('unitId', unitId);
-      if (status && status !== 'all') params.append('status', status);
+      if (status && status !== 'all') params.append('status', status as string);
 
       const response = await api.get<{ data: PurchaseRequest[] }>(`/procurement?${params.toString()}`);
       return response.data;

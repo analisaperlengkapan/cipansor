@@ -67,6 +67,9 @@ import {
 } from '@/hooks/use-takhosus';
 import { useUsers } from '@/hooks/use-users';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MurojaahList } from '@/components/takhosus/murojaah/murojaah-list';
+import { SimaanList } from '@/components/takhosus/simaan/simaan-list';
 
 interface EnrollmentDetailPageProps {
   params: Promise<{ id: string }>;
@@ -255,201 +258,237 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
         </CardContent>
       </Card>
 
-      {/* Juz Progress Grid */}
-      <Card className="mb-6">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Pencapaian Per Juz</CardTitle>
-            <CardDescription>
-              Klik juz yang belum bersanad untuk menambahkan sanad
-            </CardDescription>
-          </div>
-          <Dialog open={sanadDialogOpen} onOpenChange={setSanadDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Tambah Sanad
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Tambah Sanad</DialogTitle>
-                <DialogDescription>
-                  Catat sanad juz yang telah lulus ujian
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmitSanad)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="juz"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Juz</FormLabel>
-                        <FormControl>
-                          <Input type="number" min={1} max={30} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+      <Tabs defaultValue="progress" className="mb-6">
+        <TabsList>
+          <TabsTrigger value="progress">Progress & Sanad</TabsTrigger>
+          <TabsTrigger value="murojaah">Riwayat Murojaah</TabsTrigger>
+          <TabsTrigger value="simaan">Riwayat Simaan</TabsTrigger>
+        </TabsList>
 
-                  <FormField
-                    control={form.control}
-                    name="teacherId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Penguji</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Pilih penguji" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {teachers.map((teacher) => (
-                              <SelectItem key={teacher.id} value={teacher.id}>
-                                {teacher.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+        <TabsContent value="progress">
+          {/* Juz Progress Grid */}
+          <Card className="mb-6">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Pencapaian Per Juz</CardTitle>
+                <CardDescription>
+                  Klik juz yang belum bersanad untuk menambahkan sanad
+                </CardDescription>
+              </div>
+              <Dialog open={sanadDialogOpen} onOpenChange={setSanadDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Tambah Sanad
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Tambah Sanad</DialogTitle>
+                    <DialogDescription>
+                      Catat sanad juz yang telah lulus ujian
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmitSanad)} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="juz"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Juz</FormLabel>
+                            <FormControl>
+                              <Input type="number" min={1} max={30} {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="grade"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nilai</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Pilih nilai" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {SANAD_GRADES.map((grade) => (
-                              <SelectItem key={grade.value} value={grade.value}>
-                                {grade.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="teacherId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Penguji</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Pilih penguji" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {teachers.map((teacher) => (
+                                  <SelectItem key={teacher.id} value={teacher.id}>
+                                    {teacher.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Catatan</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Catatan tambahan..."
-                            className="resize-none"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="grade"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nilai</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Pilih nilai" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {SANAD_GRADES.map((grade) => (
+                                  <SelectItem key={grade.value} value={grade.value}>
+                                    {grade.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setSanadDialogOpen(false)}
-                    >
-                      Batal
-                    </Button>
-                    <Button type="submit" disabled={createSanad.isPending}>
-                      {createSanad.isPending ? 'Menyimpan...' : 'Simpan Sanad'}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        </CardHeader>
-        <CardContent>
-          {progressLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-6 md:grid-cols-10 gap-2">
-              {progress?.juzProgress?.map((juz) => (
-                <button
-                  key={juz.juz}
-                  onClick={() => {
-                    if (!juz.certified) {
-                      form.setValue('juz', juz.juz);
-                      setSanadDialogOpen(true);
-                    }
-                  }}
-                  className={cn(
-                    'aspect-square rounded-lg flex flex-col items-center justify-center text-sm font-medium transition-colors',
-                    juz.certified
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 cursor-pointer'
-                  )}
-                  title={
-                    juz.certified
-                      ? `Juz ${juz.juz} - ${juz.grade} (${juz.teacherName})`
-                      : `Juz ${juz.juz} - Belum bersanad`
-                  }
-                >
-                  <span className="text-lg font-bold">{juz.juz}</span>
-                  {juz.certified && <Check className="h-3 w-3 mt-0.5" />}
-                </button>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                      <FormField
+                        control={form.control}
+                        name="notes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Catatan</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Catatan tambahan..."
+                                className="resize-none"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-      {/* Recent Activity */}
-      {progress?.recentActivity && progress.recentActivity.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Aktivitas Terakhir</CardTitle>
-            <CardDescription>Riwayat setoran dan murajaah terbaru</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {progress.recentActivity.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-center justify-between border-b pb-3 last:border-0"
-                >
-                  <div>
-                    <p className="font-medium">{activity.surah}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Ayat {activity.ayahStart} - {activity.ayahEnd} • {activity.type}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    {activity.score && (
-                      <Badge variant="secondary">{activity.score}</Badge>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {format(new Date(activity.recordedAt), 'd MMM yyyy', { locale: localeId })}
-                    </p>
-                  </div>
+                      <DialogFooter>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setSanadDialogOpen(false)}
+                        >
+                          Batal
+                        </Button>
+                        <Button type="submit" disabled={createSanad.isPending}>
+                          {createSanad.isPending ? 'Menyimpan...' : 'Simpan Sanad'}
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              {progressLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              ) : (
+                <div className="grid grid-cols-6 md:grid-cols-10 gap-2">
+                  {progress?.juzProgress?.map((juz) => (
+                    <button
+                      key={juz.juz}
+                      onClick={() => {
+                        if (!juz.certified) {
+                          form.setValue('juz', juz.juz);
+                          setSanadDialogOpen(true);
+                        }
+                      }}
+                      className={cn(
+                        'aspect-square rounded-lg flex flex-col items-center justify-center text-sm font-medium transition-colors',
+                        juz.certified
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 cursor-pointer'
+                      )}
+                      title={
+                        juz.certified
+                          ? `Juz ${juz.juz} - ${juz.grade} (${juz.teacherName})`
+                          : `Juz ${juz.juz} - Belum bersanad`
+                      }
+                    >
+                      <span className="text-lg font-bold">{juz.juz}</span>
+                      {juz.certified && <Check className="h-3 w-3 mt-0.5" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent Activity */}
+          {progress?.recentActivity && progress.recentActivity.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Aktivitas Terakhir</CardTitle>
+                <CardDescription>Riwayat setoran dan murajaah terbaru</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {progress.recentActivity.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="flex items-center justify-between border-b pb-3 last:border-0"
+                    >
+                      <div>
+                        <p className="font-medium">{activity.surah}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Ayat {activity.ayahStart} - {activity.ayahEnd} • {activity.type}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        {activity.score && (
+                          <Badge variant="secondary">{activity.score}</Badge>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {format(new Date(activity.recordedAt), 'd MMM yyyy', { locale: localeId })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="murojaah">
+          <Card>
+            <CardContent className="pt-6">
+              {enrollment?.studentId && (
+                <MurojaahList
+                  studentId={enrollment.studentId}
+                  showStudentName={false}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="simaan">
+          <Card>
+            <CardContent className="pt-6">
+              {enrollment?.studentId && (
+                <SimaanList
+                  studentId={enrollment.studentId}
+                  showStudentName={false}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </MainLayout>
   );
 }

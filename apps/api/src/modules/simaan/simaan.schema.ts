@@ -22,6 +22,7 @@ export const listSimaanQuerySchema = z.object({
   studentId: z.string().uuid().optional(),
   enrollmentId: z.string().uuid().optional(),
   halaqohId: z.string().uuid().optional(),
+  unitId: z.string().uuid().optional(),
   simaanType: SimaanTypeEnum.optional(),
   dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),

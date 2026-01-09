@@ -370,6 +370,13 @@ model User {
   assetAssignments                  AssetAssignment[]
   createdAudits                     AssetAudit[]                @relation("AuditCreator")
 
+  // Tata Naskah Dinas (E-Office)
+  createdLetters                    Letter[]                    @relation("LetterCreator")
+  letterReviews                     LetterReviewer[]
+  receivedLetters                   LetterRecipient[]
+  sentDispositions                  Disposition[]               @relation("DispositionSender")
+  receivedDispositions              Disposition[]               @relation("DispositionRecipient")
+
   @@index([email])
   @@index([role])
   @@index([unitId])
@@ -490,6 +497,11 @@ model Unit {
   studentVisits          StudentVisit[]
   studentPackages        StudentPackage[]
   marketingCampaigns     MarketingCampaign[]
+
+  // Tata Naskah Dinas (E-Office)
+  agendaNumbers          AgendaNumber[]
+  letters                Letter[]
+  receivedLetters        LetterRecipient[]
 
   @@index([type])
   @@index([foundationId])
@@ -6190,4 +6202,187 @@ model MarketingInteraction {
   @@index([registrantId])
   @@index([date])
   @@map("marketing_interactions")
+}
+
+// =====================================
+// TATA NASKAH DINAS (E-OFFICE)
+// =====================================
+
+enum LetterDirection {
+  INCOMING // Surat Masuk
+  OUTGOING // Surat Keluar
+}
+
+enum LetterUrgency {
+  NORMAL // Biasa
+  IMMEDIATE // Segera
+  URGENT // Amat Segera
+}
+
+enum LetterNature {
+  PUBLIC // Biasa
+  CONFIDENTIAL // Rahasia
+  STRICTLY_CONFIDENTIAL // Sangat Rahasia
+}
+
+enum LetterStatus {
+  DRAFT // Konsep
+  PENDING_REVIEW // Menunggu Paraf/Review
+  REVISION_NEEDED // Perlu Revisi
+  READY_TO_SIGN // Siap Tanda Tangan
+  SIGNED // Sudah Ditandatangani
+  SENT // Sudah Dikirim (untuk Surat Keluar)
+  ARCHIVED // Diarsipkan
+  DISPOSED // Sudah Didisposisikan (untuk Surat Masuk)
+}
+
+/// FilingClassification - Kode Klasifikasi Arsip (Pola Klasifikasi)
+model FilingClassification {
+  id          String   @id @default(uuid())
+  code        String   @unique // e.g. "000", "421"
+  name        String // e.g. "Umum", "Pendidikan"
+  description String?  @db.Text
+  retention   Int?     @map("retention_years") // Masa retensi dalam tahun
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  letters Letter[]
+
+  @@index([code])
+  @@map("filing_classifications")
+}
+
+/// AgendaNumber - Penomoran Surat Otomatis
+model AgendaNumber {
+  id             String @id @default(uuid())
+  unitId         String @map("unit_id")
+  academicYearId String @map("academic_year_id")
+  type           String // INCOMING, OUTGOING, SK, SURAT_TUGAS, etc.
+  lastNumber     Int    @default(0) @map("last_number")
+  format         String // e.g. "[NO]/SMA-Q/[ROMA]/[YEAR]"
+  resetPeriod    String @default("YEARLY") // YEARLY, MONTHLY
+
+  // Relations
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  @@unique([unitId, academicYearId, type])
+  @@map("agenda_numbers")
+}
+
+/// Letter - Naskah Dinas (Surat Masuk/Keluar)
+model Letter {
+  id               String          @id @default(uuid())
+  unitId           String          @map("unit_id")
+  direction        LetterDirection
+  classificationId String?         @map("classification_id")
+  // Metadata
+  agendaNumber     String?         @map("agenda_number") // Nomor Urut Agenda (Surat Masuk)
+  letterNumber     String?         @map("letter_number") // Nomor Surat (Surat Keluar)
+  date             DateTime        @db.Date // Tanggal Surat
+  receivedAt       DateTime?       @map("received_at") // Tanggal Diterima (Surat Masuk)
+  // Content
+  subject          String // Perihal
+  content          String?         @db.Text // Ringkasan atau Isi Surat
+  fileUrl          String?         @map("file_url") // File Naskah Asli (Scan/PDF)
+  // Attributes
+  urgency          LetterUrgency   @default(NORMAL)
+  nature           LetterNature    @default(PUBLIC)
+  status           LetterStatus    @default(DRAFT)
+  // External Parties (if not linked to User/Unit)
+  senderName       String?         @map("sender_name") // Pengirim (External)
+  senderTitle      String?         @map("sender_title")
+  senderInstance   String?         @map("sender_instance") // Instansi Pengirim
+  recipientName    String?         @map("recipient_name") // Penerima (External)
+  recipientInstance String?        @map("recipient_instance")
+
+  // Relations
+  unit           Unit                  @relation(fields: [unitId], references: [id])
+  classification FilingClassification? @relation(fields: [classificationId], references: [id])
+  createdById    String                @map("created_by_id")
+  createdBy      User                  @relation("LetterCreator", fields: [createdById], references: [id])
+  reviewers      LetterReviewer[]
+  recipients     LetterRecipient[]
+  dispositions   Disposition[]         @relation("LetterDispositions")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([unitId])
+  @@index([direction])
+  @@index([status])
+  @@index([date])
+  @@map("letters")
+}
+
+/// LetterReviewer - Workflow Persetujuan (Paraf/Tanda Tangan)
+model LetterReviewer {
+  id         String    @id @default(uuid())
+  letterId   String    @map("letter_id")
+  reviewerId String    @map("reviewer_id")
+  order      Int       @default(1) // Urutan review (1, 2, 3...)
+  status     String    @default("PENDING") // PENDING, APPROVED, REJECTED, REVISION
+  isSigner   Boolean   @default(false) @map("is_signer") // True = Penandatangan akhir
+  notes      String?   @db.Text
+  reviewedAt DateTime? @map("reviewed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  letter   Letter @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  reviewer User   @relation(fields: [reviewerId], references: [id])
+
+  @@unique([letterId, reviewerId])
+  @@index([letterId])
+  @@index([reviewerId])
+  @@map("letter_reviewers")
+}
+
+/// LetterRecipient - Penerima Surat (Internal)
+model LetterRecipient {
+  id         String    @id @default(uuid())
+  letterId   String    @map("letter_id")
+  userId     String?   @map("user_id") // Penerima Internal User
+  unitId     String?   @map("unit_id") // Penerima Unit
+  isCC       Boolean   @default(false) @map("is_cc") // Tembusan
+  readAt     DateTime? @map("read_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  letter Letter @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id])
+  unit   Unit?  @relation(fields: [unitId], references: [id])
+
+  @@index([letterId])
+  @@index([userId])
+  @@map("letter_recipients")
+}
+
+/// Disposition - Disposisi Surat
+model Disposition {
+  id             String    @id @default(uuid())
+  letterId       String    @map("letter_id")
+  senderId       String    @map("sender_id") // Pemberi Disposisi
+  recipientId    String    @map("recipient_id") // Penerima Disposisi
+  instruction    String    @db.Text // Isi Instruksi (e.g., "Tindak Lanjuti", "Arsipkan")
+  deadline       DateTime?
+  status         String    @default("PENDING") // PENDING, COMPLETED, IN_PROGRESS
+  notes          String?   @db.Text // Catatan tambahan / Laporan hasil
+  completedAt    DateTime? @map("completed_at")
+  parentDispositionId String? @map("parent_disposition_id") // Untuk disposisi berjenjang
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  letter            Letter       @relation("LetterDispositions", fields: [letterId], references: [id], onDelete: Cascade)
+  sender            User         @relation("DispositionSender", fields: [senderId], references: [id])
+  recipient         User         @relation("DispositionRecipient", fields: [recipientId], references: [id])
+  parentDisposition Disposition? @relation("DispositionHierarchy", fields: [parentDispositionId], references: [id])
+  childDispositions Disposition[] @relation("DispositionHierarchy")
+
+  @@index([letterId])
+  @@index([senderId])
+  @@index([recipientId])
+  @@map("dispositions")
 }

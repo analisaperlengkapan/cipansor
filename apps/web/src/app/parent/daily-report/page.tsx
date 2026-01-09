@@ -49,6 +49,13 @@ import {
 import { useStudentDailySummary, useAddParentNotes } from "@/hooks/use-daily-report";
 import { useAuthStore } from "@/stores/auth";
 import { cn } from "@/lib/utils";
+import { User } from "@/lib/api";
+
+// Extended User type for Parent
+interface ParentUser extends User {
+  children?: { id: string; name: string; user?: { name: string } }[];
+  studentId?: string;
+}
 
 // Mood Icon Helper
 const MoodIcon = ({ mood, className }: { mood: string; className?: string }) => {
@@ -86,10 +93,9 @@ export default function ParentDailyReportPage() {
   const [feedback, setFeedback] = useState("");
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
 
-  // Helper to get available children
-  // Use 'any' casting for children property if not strictly typed in the store yet
-  const availableChildren = (user as any)?.children || [];
-  const defaultStudentId = (user as any)?.studentId || availableChildren[0]?.id;
+  const parentUser = user as unknown as ParentUser;
+  const availableChildren = parentUser?.children || [];
+  const defaultStudentId = parentUser?.studentId || availableChildren[0]?.id;
 
   const [activeStudentId, setActiveStudentId] = useState<string>(defaultStudentId || "");
 
@@ -355,6 +361,18 @@ export default function ParentDailyReportPage() {
                           </h4>
                           <div className="text-sm bg-orange-50 border border-orange-100 p-3 rounded-lg text-orange-800">
                             {report.teacherNotes}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Display Parent Feedback / Home Activity */}
+                      {report.homeActivity && (
+                        <div className="space-y-1">
+                          <h4 className="text-sm font-semibold flex items-center gap-2 text-blue-600">
+                            <MessageCircle className="h-4 w-4" /> Kegiatan di Rumah / Tanggapan
+                          </h4>
+                          <div className="text-sm bg-blue-50 border border-blue-100 p-3 rounded-lg text-blue-800 whitespace-pre-wrap">
+                            {report.homeActivity}
                           </div>
                         </div>
                       )}

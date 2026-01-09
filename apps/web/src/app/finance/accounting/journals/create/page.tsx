@@ -33,6 +33,7 @@ import { useAccountCodes } from "@/hooks/use-finance-enhancement";
 import { formatCurrency } from "@/lib/utils";
 
 interface JournalRow {
+  id: string;
   accountId: string;
   description: string;
   debit: number;
@@ -40,13 +41,14 @@ interface JournalRow {
   reference: string;
 }
 
-const INITIAL_ROW: JournalRow = {
+const createRow = (): JournalRow => ({
+  id: crypto.randomUUID(),
   accountId: "",
   description: "",
   debit: 0,
   credit: 0,
   reference: "",
-};
+});
 
 export default function CreateManualJournalPage() {
   const router = useRouter();
@@ -56,10 +58,7 @@ export default function CreateManualJournalPage() {
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [unitId, setUnitId] = useState<string>("");
   const [description, setDescription] = useState("");
-  const [rows, setRows] = useState<JournalRow[]>([
-    { ...INITIAL_ROW },
-    { ...INITIAL_ROW },
-  ]);
+  const [rows, setRows] = useState<JournalRow[]>([createRow(), createRow()]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const totalDebit = rows.reduce((sum, row) => sum + (row.debit || 0), 0);
@@ -67,7 +66,7 @@ export default function CreateManualJournalPage() {
   const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
 
   const handleAddRow = () => {
-    setRows([...rows, { ...INITIAL_ROW }]);
+    setRows([...rows, createRow()]);
   };
 
   const handleRemoveRow = (index: number) => {
@@ -207,7 +206,7 @@ export default function CreateManualJournalPage() {
                 </TableHeader>
                 <TableBody>
                   {rows.map((row, index) => (
-                    <TableRow key={index}>
+                    <TableRow key={row.id}>
                       <TableCell>
                         <Select
                           value={row.accountId}

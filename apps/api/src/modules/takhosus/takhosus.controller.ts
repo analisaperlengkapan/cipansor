@@ -399,6 +399,25 @@ export const progressController = {
 };
 
 // =====================================
+// DASHBOARD CONTROLLER
+// =====================================
+
+export const dashboardController = {
+  /**
+   * GET /api/takhosus/dashboard/stats
+   */
+  async getStats(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { unitId } = req.query;
+      const stats = await dashboardService.getStats(unitId as string);
+      res.json(ApiResponse.success(stats));
+    } catch (error) {
+      next(error);
+    }
+  },
+};
+
+// =====================================
 // MUROJAAH CONTROLLER
 // =====================================
 

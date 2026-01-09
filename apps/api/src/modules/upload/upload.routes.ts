@@ -6,7 +6,7 @@ import { uploadController } from './upload.controller';
 const router = Router();
 
 // Protect all upload routes
-router.use(authenticate());
+router.use(authenticate);
 
 router.post(
   '/',

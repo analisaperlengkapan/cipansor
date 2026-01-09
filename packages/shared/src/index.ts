@@ -19,5 +19,5 @@ export * from './types/takhosus';
 export * from './types/schedule';
 export * from './types/foundation-dashboard';
 export * from './types/procurement';
+export * from './types/reception';
 export * from './schemas';
-

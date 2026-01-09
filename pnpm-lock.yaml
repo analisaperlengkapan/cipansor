@@ -53,6 +53,9 @@ importers:
       helmet:
         specifier: ^7.1.0
         version: 7.2.0
+      http-status:
+        specifier: ^2.1.0
+        version: 2.1.0
       ioredis:
         specifier: ^5.8.2
         version: 5.8.2
@@ -302,7 +305,7 @@ importers:
         version: 5.0.9(@types/react@19.2.7)(immer@11.0.1)(react@19.2.0)(use-sync-external-store@1.6.0(react@19.2.0))
     devDependencies:
       '@playwright/test':
-        specifier: ^1.42.1
+        specifier: ^1.57.0
         version: 1.57.0
       '@tailwindcss/postcss':
         specifier: ^4
@@ -4164,6 +4167,10 @@ packages:
   http-errors@2.0.1:
     resolution: {integrity: sha512-4FbRdAX+bSdmo4AUFuS0WNiPz8NgFt+r8ThgNWmlrjQjt1Q7ZR9+zTlce2859x4KSXrwIsaeTqDoKQmtP8pLmQ==}
     engines: {node: '>= 0.8'}
+
+  http-status@2.1.0:
+    resolution: {integrity: sha512-O5kPr7AW7wYd/BBiOezTwnVAnmSNFY+J7hlZD2X5IOxVBetjcHAiTXhzj0gMrnojQlwy+UT1/Y3H3vJ3UlmvLA==}
+    engines: {node: '>= 0.4.0'}
 
   https-proxy-agent@5.0.1:
     resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
@@ -10443,6 +10450,8 @@ snapshots:
       setprototypeof: 1.2.0
       statuses: 2.0.2
       toidentifier: 1.0.1
+
+  http-status@2.1.0: {}
 
   https-proxy-agent@5.0.1:
     dependencies:

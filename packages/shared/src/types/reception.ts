@@ -1,14 +1,17 @@
 // Reception / Front Office Module Types
 
 export enum VisitStatus {
-  CHECKED_IN = 'CHECKED_IN',
-  CHECKED_OUT = 'CHECKED_OUT',
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED'
 }
 
 export enum PackageStatus {
   RECEIVED = 'RECEIVED',
-  DELIVERED = 'DELIVERED',
+  NOTIFIED = 'NOTIFIED',
+  PICKED_UP = 'PICKED_UP',
   RETURNED = 'RETURNED'
 }
 
@@ -39,8 +42,8 @@ export interface StudentVisit {
   studentId: string;
   unitId: string;
   visitorName: string;
-  relation: string;
-  purpose?: string | null;
+  relationship: string; // Changed from relation to match page
+  needs: string; // Changed from purpose to match page/impl
   checkIn: Date;
   checkOut?: Date | null;
   status: VisitStatus;
@@ -63,14 +66,13 @@ export interface StudentPackage {
   studentId: string;
   unitId: string;
   senderName: string;
-  senderPhone?: string | null;
-  description?: string | null;
+  expedition: string; // Added to match page
+  content: string; // Added to match page (description -> content)
   photoUrl?: string | null;
   receivedAt: Date;
   receivedById: string;
   status: PackageStatus;
-  deliveredAt?: Date | null;
-  deliveredTo?: string | null;
+  pickedUpAt?: Date | null; // Changed from deliveredAt
   notes?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -107,8 +109,8 @@ export interface UpdateGuestBookInput {
 export interface CreateStudentVisitInput {
   studentId: string;
   visitorName: string;
-  relation: string;
-  purpose?: string;
+  relationship: string;
+  needs: string;
   notes?: string;
 }
 
@@ -121,15 +123,16 @@ export interface UpdateStudentVisitInput {
 export interface CreateStudentPackageInput {
   studentId: string;
   senderName: string;
-  senderPhone?: string;
-  description?: string;
+  expedition: string;
+  content: string;
   photoUrl?: string;
+  storageLocation?: string;
   notes?: string;
 }
 
 export interface UpdateStudentPackageInput {
   status?: PackageStatus;
-  deliveredTo?: string;
+  pickedUpAt?: Date;
   notes?: string;
 }
 

@@ -64,7 +64,7 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
-    "@playwright/test": "^1.42.1",
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4",
     "@types/html2canvas": "^1.0.0",
     "@types/jspdf": "^2.0.0",

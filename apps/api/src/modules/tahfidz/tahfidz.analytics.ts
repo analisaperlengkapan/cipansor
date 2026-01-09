@@ -122,52 +122,55 @@ const QURAN_SURAHS = [
 ];
 
 export const getQuranProgressMap = async (studentId: string): Promise<QuranProgressMap> => {
-  // 1. Fetch Ziyadah records (memorization progress)
-  const ziyadahRecords = await prisma.tahfidzRecord.findMany({
-    where: {
-      studentId,
-      activityType: 'ZIYADAH',
-    },
-    select: {
-      surahNumber: true,
-      ayahStart: true,
-      ayahEnd: true,
-      recordedAt: true,
-    },
-    orderBy: {
-      recordedAt: 'desc',
-    },
-  });
+  // Execute queries in parallel for optimization
+  const [ziyadahRecords, assessmentRecords, murojaahRecords] = await Promise.all([
+    // 1. Fetch Ziyadah records (memorization progress)
+    prisma.tahfidzRecord.findMany({
+      where: {
+        studentId,
+        activityType: 'ZIYADAH',
+      },
+      select: {
+        surahNumber: true,
+        ayahStart: true,
+        ayahEnd: true,
+        recordedAt: true,
+      },
+      orderBy: {
+        recordedAt: 'desc',
+      },
+    }),
 
-  // 2. Fetch Assessment records (passed exams)
-  const assessmentRecords = await prisma.tahfidzRecord.findMany({
-    where: {
-      studentId,
-      activityType: 'ASSESSMENT',
-      score: { gte: 75 }, // Passing score
-    },
-    select: {
-      surahNumber: true,
-      score: true,
-      recordedAt: true,
-    },
-  });
+    // 2. Fetch Assessment records (passed exams)
+    prisma.tahfidzRecord.findMany({
+      where: {
+        studentId,
+        activityType: 'ASSESSMENT',
+        score: { gte: 75 }, // Passing score
+      },
+      select: {
+        surahNumber: true,
+        score: true,
+        recordedAt: true,
+      },
+    }),
 
-  // 3. Fetch Murojaah records (for strength/quality)
-  const murojaahRecords = await prisma.tahfidzRecord.findMany({
-    where: {
-      studentId,
-      activityType: 'MUROJAAH',
-    },
-    select: {
-      surahNumber: true,
-      score: true,
-      recordedAt: true,
-    },
-    orderBy: {
-      recordedAt: 'desc',
-    },
-  });
+    // 3. Fetch Murojaah records (for strength/quality)
+    prisma.tahfidzRecord.findMany({
+      where: {
+        studentId,
+        activityType: 'MUROJAAH',
+      },
+      select: {
+        surahNumber: true,
+        score: true,
+        recordedAt: true,
+      },
+      orderBy: {
+        recordedAt: 'desc',
+      },
+    })
+  ]);
 
   // Process data per Surah
   const surahs: QuranSurahProgress[] = QURAN_SURAHS.map((surah) => {

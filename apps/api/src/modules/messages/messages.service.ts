@@ -38,8 +38,8 @@ export class MessagesService {
       },
     });
 
-    // Real-time notification could be emitted here
-    // eventBus.emit('message:sent', message);
+    // Real-time notification
+    eventBus.emit('message:sent', message);
 
     return message;
   }

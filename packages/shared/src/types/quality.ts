@@ -95,6 +95,7 @@ export interface QualityAuditItem {
 }
 
 export interface QualityDashboardSummary {
+  id: string;
   standardType: QualityStandardType;
   standardName: string;
   totalIndicators: number;

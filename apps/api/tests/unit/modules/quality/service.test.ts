@@ -25,11 +25,12 @@ describe('QualityService', () => {
     it('should calculate compliance percentage correctly', async () => {
       const mockStandards = [
         {
+          id: 'std-1',
           type: 'STANDAR_ISI',
           name: 'Standar Isi',
           indicators: [
-            { id: 'ind1', evidences: [{ id: 'ev1' }] }, // Compliant
-            { id: 'ind2', evidences: [] }, // Non-compliant
+            { id: 'ind1', _count: { evidences: 1 } }, // Compliant
+            { id: 'ind2', _count: { evidences: 0 } }, // Non-compliant
           ],
         },
       ];
@@ -39,6 +40,7 @@ describe('QualityService', () => {
       const result = await qualityService.getDashboardSummary('unit-1', 'year-1');
 
       expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('std-1');
       expect(result[0].standardType).toBe('STANDAR_ISI');
       expect(result[0].totalIndicators).toBe(2);
       expect(result[0].uploadedEvidenceCount).toBe(1);
@@ -48,6 +50,7 @@ describe('QualityService', () => {
     it('should handle zero indicators', async () => {
       const mockStandards = [
         {
+          id: 'std-2',
           type: 'STANDAR_PROSES',
           name: 'Standar Proses',
           indicators: [],

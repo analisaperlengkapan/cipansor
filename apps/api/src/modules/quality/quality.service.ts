@@ -76,12 +76,15 @@ export const qualityService = {
       include: {
         indicators: {
           include: {
-            evidences: {
-              where: {
-                unitId,
-                academicYearId
-              },
-              select: { id: true }
+            _count: {
+              select: {
+                evidences: {
+                  where: {
+                    unitId,
+                    academicYearId
+                  }
+                }
+              }
             }
           }
         }
@@ -91,13 +94,14 @@ export const qualityService = {
     return standards.map(std => {
       const totalIndicators = std.indicators.length;
       // An indicator is "compliant" if it has at least one evidence uploaded
-      const compliantIndicators = std.indicators.filter(ind => ind.evidences.length > 0).length;
+      const compliantIndicators = std.indicators.filter(ind => ind._count.evidences > 0).length;
 
       return {
+        id: std.id,
         standardType: std.type as unknown as QualityStandardType,
         standardName: std.name,
         totalIndicators,
-        uploadedEvidenceCount: std.indicators.reduce((acc, curr) => acc + curr.evidences.length, 0),
+        uploadedEvidenceCount: std.indicators.reduce((acc, curr) => acc + curr._count.evidences, 0),
         compliancePercentage: totalIndicators > 0 ? (compliantIndicators / totalIndicators) * 100 : 0
       };
     });

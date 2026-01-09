@@ -75,37 +75,32 @@ export default function QualityDashboardPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {dashboardData?.map((item) => {
-            // Find the ID from the allStandards list using the type
-            const standardId = allStandards?.find(s => s.type === item.standardType)?.id;
-
-            return (
-              <Card key={item.standardType} className="flex flex-col">
-                <CardHeader>
-                  <CardTitle className="text-lg">{item.standardName}</CardTitle>
-                  <CardDescription>
-                    {item.uploadedEvidenceCount} bukti diunggah dari {item.totalIndicators} indikator
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Kelengkapan</span>
-                      <span className="font-medium">{item.compliancePercentage.toFixed(0)}%</span>
-                    </div>
-                    <Progress value={item.compliancePercentage} />
+          {dashboardData?.map((item) => (
+            <Card key={item.standardType} className="flex flex-col">
+              <CardHeader>
+                <CardTitle className="text-lg">{item.standardName}</CardTitle>
+                <CardDescription>
+                  {item.uploadedEvidenceCount} bukti diunggah dari {item.totalIndicators} indikator
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Kelengkapan</span>
+                    <span className="font-medium">{item.compliancePercentage.toFixed(0)}%</span>
                   </div>
-                </CardContent>
-                <div className="p-6 pt-0 mt-auto">
-                  <Link href={`/quality/${standardId}`}>
-                    <Button variant="outline" className="w-full" disabled={!standardId}>
-                      Lihat Detail <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
+                  <Progress value={item.compliancePercentage} />
                 </div>
-              </Card>
-            );
-          })}
+              </CardContent>
+              <div className="p-6 pt-0 mt-auto">
+                <Link href={`/quality/${item.id}`}>
+                  <Button variant="outline" className="w-full">
+                    Lihat Detail <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          ))}
         </div>
       </div>
     </MainLayout>

@@ -1,15 +1,21 @@
 import { Router } from 'express';
 import { CorrespondenceController } from './correspondence.controller';
 import { authenticate } from '@/middleware/auth';
+import { validate } from '@/middleware/validate';
+import {
+  createLetterSchema,
+  reviewLetterSchema,
+  createDispositionSchema
+} from './correspondence.schema';
 
 const router = Router();
 
 router.use(authenticate);
 
-router.post('/letters', CorrespondenceController.create);
+router.post('/letters', validate(createLetterSchema), CorrespondenceController.create);
 router.get('/letters', CorrespondenceController.findAll);
 router.get('/letters/:id', CorrespondenceController.findOne);
-router.post('/letters/:id/review', CorrespondenceController.review);
-router.post('/dispositions', CorrespondenceController.createDisposition);
+router.post('/letters/:id/review', validate(reviewLetterSchema), CorrespondenceController.review);
+router.post('/dispositions', validate(createDispositionSchema), CorrespondenceController.createDisposition);
 
 export default router;

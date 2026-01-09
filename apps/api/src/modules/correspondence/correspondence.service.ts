@@ -35,12 +35,13 @@ export const CorrespondenceService = {
       });
     }
 
-    // 3. Increment
-    const newNumber = agenda.lastNumber + 1;
-    await prisma.agendaNumber.update({
+    // 3. Increment (Atomic)
+    const updatedAgenda = await prisma.agendaNumber.update({
       where: { id: agenda.id },
-      data: { lastNumber: newNumber },
+      data: { lastNumber: { increment: 1 } },
     });
+
+    const newNumber = updatedAgenda.lastNumber;
 
     // 4. Format String
     const date = new Date();
@@ -58,17 +59,23 @@ export const CorrespondenceService = {
   },
 
   async createLetter(data: CreateLetterInput, userId: string) {
+    // Get active academic year
+    const activeYear = await prisma.academicYear.findFirst({
+      where: { isActive: true },
+    });
+    const academicYearId = activeYear?.id || 'DEFAULT';
+
     // Generate number if missing
     let agendaNumber = data.agendaNumber;
     let letterNumber = data.letterNumber;
 
     if (data.direction === 'INCOMING' && !agendaNumber) {
-      agendaNumber = await this.generateNumber(data.unitId, 'INCOMING', 'CURRENT'); // TODO: get real academic year
+      agendaNumber = await this.generateNumber(data.unitId, 'INCOMING', academicYearId);
     } else if (data.direction === 'OUTGOING' && !letterNumber) {
       // Typically only generated when status is READY or SIGNED, but we'll allow draft numbering if needed
       // Or just leave it empty for DRAFT
       if (data.status !== 'DRAFT') {
-         letterNumber = await this.generateNumber(data.unitId, 'OUTGOING', 'CURRENT');
+         letterNumber = await this.generateNumber(data.unitId, 'OUTGOING', academicYearId);
       }
     }
 

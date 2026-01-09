@@ -30,6 +30,9 @@ import { Textarea } from '@/components/ui/textarea';
 // import { MultiSelect } from '@/components/ui/multi-select';
 import { LetterDirection, LetterUrgency, LetterNature, LetterStatus } from '@cipansor/shared';
 import { toast } from 'sonner';
+import { api } from '@/lib/api';
+import React from 'react';
+import { Upload } from 'lucide-react';
 
 const letterSchema = z.object({
   direction: z.nativeEnum(LetterDirection),
@@ -42,6 +45,7 @@ const letterSchema = z.object({
   recipientName: z.string().optional(),
   recipientInstance: z.string().optional(),
   content: z.string().optional(),
+  fileUrl: z.string().optional(),
   reviewerIds: z.array(z.string()).optional(),
   recipientIds: z.array(z.string()).optional(),
 });
@@ -55,6 +59,7 @@ export default function CreateLetterPage() {
     limit: 100,
     unitId: user?.unitId
   });
+  const [uploading, setUploading] = React.useState(false);
 
   const staffOptions = teachers?.data.map((t: any) => ({
     label: t.user?.name || t.nip,
@@ -74,6 +79,30 @@ export default function CreateLetterPage() {
   });
 
   const direction = form.watch('direction');
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (response.data.success) {
+        form.setValue('fileUrl', response.data.data.url);
+        toast.success('File berhasil diupload');
+      }
+    } catch (error) {
+      toast.error('Gagal upload file');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   async function onSubmit(values: z.infer<typeof letterSchema>) {
     if (!user?.unitId) {
@@ -313,6 +342,33 @@ export default function CreateLetterPage() {
                     <FormControl>
                       <Input placeholder="Alamat / Instansi Tujuan" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="fileUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Upload File Naskah (PDF)</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center gap-4">
+                        <Input
+                          type="file"
+                          accept=".pdf"
+                          onChange={handleFileUpload}
+                          disabled={uploading}
+                        />
+                        {uploading && <span className="text-sm text-muted-foreground">Uploading...</span>}
+                      </div>
+                    </FormControl>
+                    {field.value && (
+                      <FormDescription className="text-green-600 flex items-center gap-1">
+                        <Upload className="h-3 w-3" /> File siap dilampirkan
+                      </FormDescription>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

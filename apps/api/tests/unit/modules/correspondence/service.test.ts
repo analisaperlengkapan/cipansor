@@ -48,7 +48,9 @@ describe('CorrespondenceService', () => {
         format: '[NO]/[TYPE]/[ROMAN]/[YEAR]',
       } as any);
 
-      vi.mocked(prisma.agendaNumber.update).mockResolvedValue({} as any);
+      vi.mocked(prisma.agendaNumber.update).mockResolvedValue({
+        lastNumber: 11
+      } as any);
 
       const result = await CorrespondenceService.generateNumber(
         'unit-1',
@@ -69,7 +71,9 @@ describe('CorrespondenceService', () => {
         lastNumber: 0,
         format: '[NO]/[TYPE]/[ROMAN]/[YEAR]',
       } as any);
-      vi.mocked(prisma.agendaNumber.update).mockResolvedValue({} as any);
+      vi.mocked(prisma.agendaNumber.update).mockResolvedValue({
+        lastNumber: 1
+      } as any);
 
       await CorrespondenceService.generateNumber('unit-1', 'OUTGOING', 'year-1');
 

@@ -10,7 +10,8 @@ import {
   PackageStatus,
   ReceptionStats
 } from '@cipansor/shared';
-import { NotFoundError } from '../../middleware/error';
+import { Errors } from '../../middleware/error';
+import { Prisma } from '@prisma/client';
 
 // --- Stats ---
 
@@ -57,7 +58,7 @@ export const getGuestBooks = async (
   unitId: string,
   params: { date?: string }
 ) => {
-  const where: any = { unitId };
+  const where: Prisma.GuestBookWhereInput = { unitId };
 
   if (params.date) {
     const startDate = new Date(params.date);
@@ -110,7 +111,7 @@ export const createGuestBook = async (
 
 export const updateGuestBook = async (id: string, data: UpdateGuestBookInput) => {
   const guestBook = await prisma.guestBook.findUnique({ where: { id } });
-  if (!guestBook) throw new NotFoundError('Guest book entry not found');
+  if (!guestBook) throw Errors.notFound('Guest book entry');
 
   return prisma.guestBook.update({
     where: { id },
@@ -132,7 +133,7 @@ export const getStudentVisits = async (
   unitId: string,
   params: { date?: string; studentId?: string }
 ) => {
-  const where: any = { unitId };
+  const where: Prisma.StudentVisitWhereInput = { unitId };
 
   if (params.date) {
     const startDate = new Date(params.date);
@@ -178,7 +179,7 @@ export const createStudentVisit = async (
     where: { id: data.studentId }
   });
 
-  if (!student) throw new NotFoundError('Student not found');
+  if (!student) throw Errors.notFound('Student');
   // In a real scenario, we might want to check if student.unitId === unitId
   // But for now we trust the input or assume global student access within allowed scopes
 
@@ -211,7 +212,7 @@ export const createStudentVisit = async (
 
 export const updateStudentVisit = async (id: string, data: UpdateStudentVisitInput) => {
   const visit = await prisma.studentVisit.findUnique({ where: { id } });
-  if (!visit) throw new NotFoundError('Visit not found');
+  if (!visit) throw Errors.notFound('Visit');
 
   return prisma.studentVisit.update({
     where: { id },
@@ -242,7 +243,7 @@ export const getPackages = async (
   unitId: string,
   params: { status?: string; studentId?: string }
 ) => {
-  const where: any = { unitId };
+  const where: Prisma.StudentPackageWhereInput = { unitId };
 
   if (params.status) {
     where.status = params.status as PackageStatus;
@@ -313,8 +314,9 @@ export const createPackage = async (
 
 export const updatePackage = async (id: string, data: UpdateStudentPackageInput) => {
   const pkg = await prisma.studentPackage.findUnique({ where: { id } });
-  if (!pkg) throw new NotFoundError('Package not found');
+  if (!pkg) throw Errors.notFound('Package');
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateData: any = {
     status: data.status,
     notes: data.notes,

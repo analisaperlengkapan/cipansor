@@ -124,7 +124,10 @@ export function useStudentPackages(params?: { status?: string, studentId?: strin
   });
 }
 
-export function useCreateStudentPackage() {
+// Alias for compatibility with page imports
+export const usePackages = useStudentPackages;
+
+export function useCreatePackage() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: CreateStudentPackageInput) => {
@@ -138,7 +141,7 @@ export function useCreateStudentPackage() {
   });
 }
 
-export function useUpdateStudentPackage() {
+export function useUpdatePackage() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateStudentPackageInput }) => {
@@ -151,3 +154,7 @@ export function useUpdateStudentPackage() {
     }
   });
 }
+
+// Legacy alias exports if needed, but updated page uses CreatePackage
+export const useCreateStudentPackage = useCreatePackage;
+export const useUpdateStudentPackage = useUpdatePackage;

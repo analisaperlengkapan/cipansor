@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useStudentPackages, useCreateStudentPackage, useUpdateStudentPackage } from '@/hooks/use-reception';
+import { usePackages, useCreatePackage, useUpdatePackage, StudentPackage } from '@/hooks/use-reception';
 import { useStudents } from '@/hooks/use-students';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,23 +22,18 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm, Controller } from 'react-hook-form';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { CreateStudentPackageInput, PackageStatus } from '@cipansor/shared';
-import { Loader2, Plus, CheckCircle } from 'lucide-react';
+import { Loader2, Plus, PackageCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 
-export default function StudentPackagePage() {
-  const [status, setStatus] = useState<string>('RECEIVED');
-  const { data: packages, isLoading } = useStudentPackages({ status });
+export default function PackagePage() {
+  const [date, setDate] = useState<Date>(new Date());
+  const { data: packages, isLoading } = usePackages({ date: date.toISOString() });
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -46,25 +41,21 @@ export default function StudentPackagePage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Paket Santri</h1>
         <div className="flex items-center gap-2">
-           <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="RECEIVED">Belum Diambil</SelectItem>
-              <SelectItem value="DELIVERED">Sudah Diambil</SelectItem>
-              <SelectItem value="RETURNED">Dikembalikan</SelectItem>
-            </SelectContent>
-          </Select>
+           <Input
+            type="date"
+            value={format(date, 'yyyy-MM-dd')}
+            onChange={(e) => setDate(new Date(e.target.value))}
+            className="w-auto"
+          />
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" /> Terima Paket
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent>
               <DialogHeader>
-                <DialogTitle>Catat Penerimaan Paket</DialogTitle>
+                <DialogTitle>Catat Paket Masuk</DialogTitle>
               </DialogHeader>
               <PackageForm onSuccess={() => setIsOpen(false)} />
             </DialogContent>
@@ -76,10 +67,11 @@ export default function StudentPackagePage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Waktu Terima</TableHead>
-              <TableHead>Nama Santri</TableHead>
+              <TableHead>Waktu</TableHead>
+              <TableHead>Penerima (Santri)</TableHead>
               <TableHead>Pengirim</TableHead>
-              <TableHead>Deskripsi</TableHead>
+              <TableHead>Ekspedisi</TableHead>
+              <TableHead>Isi Paket</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Aksi</TableHead>
             </TableRow>
@@ -87,14 +79,14 @@ export default function StudentPackagePage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center h-24">
+                <TableCell colSpan={7} className="text-center h-24">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                 </TableCell>
               </TableRow>
             ) : packages?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
-                  Tidak ada data paket
+                <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
+                  Belum ada paket hari ini
                 </TableCell>
               </TableRow>
             ) : (
@@ -110,62 +102,61 @@ export default function StudentPackagePage() {
 }
 
 function PackageForm({ onSuccess }: { onSuccess: () => void }) {
-  const { register, handleSubmit, control, formState: { errors } } = useForm<CreateStudentPackageInput>();
-  const createPackage = useCreateStudentPackage();
-  const { data: studentsResponse } = useStudents({ page: 1, limit: 100 });
-  const students = studentsResponse?.data || [];
+  const { register, control, handleSubmit, formState: { errors } } = useForm<CreateStudentPackageInput>();
+  const createPackage = useCreatePackage();
+  const { data: studentsData } = useStudents({ page: 1, limit: 100, status: 'active' });
+
+  const studentOptions = studentsData?.data?.map(s => ({
+    value: s.id,
+    label: `${s.user?.name} (${s.nis})`
+  })) || [];
 
   const onSubmit = async (data: CreateStudentPackageInput) => {
     try {
       await createPackage.mutateAsync(data);
       toast.success('Paket berhasil dicatat');
       onSuccess();
-    } catch (error) {
-      toast.error('Gagal mencatat paket');
+    } catch (_error) {
+      // Handled
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid gap-2">
-        <Label htmlFor="studentId">Nama Santri</Label>
+        <Label>Santri Penerima</Label>
         <Controller
-          name="studentId"
           control={control}
+          name="studentId"
           rules={{ required: true }}
           render={({ field }) => (
-            <Select onValueChange={field.onChange} value={field.value}>
-              <SelectTrigger>
-                <SelectValue placeholder="Pilih Santri" />
-              </SelectTrigger>
-              <SelectContent>
-                {students.map((student) => (
-                  <SelectItem key={student.id} value={student.id}>
-                    {student.name} ({student.nis})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+             <SearchableSelect
+              options={studentOptions}
+              value={field.value}
+              onValueChange={field.onChange}
+              placeholder="Pilih santri..."
+             />
           )}
         />
-        {errors.studentId && <span className="text-xs text-red-500">Wajib diisi</span>}
+        {errors.studentId && <span className="text-xs text-red-500">Wajib dipilih</span>}
       </div>
-      <div className="grid gap-2">
-        <Label htmlFor="senderName">Nama Pengirim</Label>
-        <Input id="senderName" {...register('senderName', { required: true })} />
-        {errors.senderName && <span className="text-xs text-red-500">Wajib diisi</span>}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor="senderName">Pengirim</Label>
+          <Input id="senderName" {...register('senderName', { required: true })} />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="expedition">Ekspedisi (JNE, dll)</Label>
+          <Input id="expedition" {...register('expedition', { required: true })} />
+        </div>
       </div>
-      <div className="grid gap-2">
-        <Label htmlFor="senderPhone">No. HP Pengirim (Opsional)</Label>
-        <Input id="senderPhone" {...register('senderPhone')} />
+       <div className="grid gap-2">
+        <Label htmlFor="content">Isi Paket (Deskripsi)</Label>
+        <Textarea id="content" {...register('content', { required: true })} />
       </div>
-      <div className="grid gap-2">
-        <Label htmlFor="description">Deskripsi Isi Paket (Opsional)</Label>
-        <Textarea id="description" {...register('description')} />
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="notes">Catatan (Opsional)</Label>
-        <Textarea id="notes" {...register('notes')} />
+       <div className="grid gap-2">
+        <Label htmlFor="storageLocation">Lokasi Simpan</Label>
+        <Input id="storageLocation" placeholder="Rak A1" {...register('storageLocation')} />
       </div>
       <Button type="submit" className="w-full" disabled={createPackage.isPending}>
         {createPackage.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -175,78 +166,59 @@ function PackageForm({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-function PackageRow({ pkg }: { pkg: any }) {
-  const updatePackage = useUpdateStudentPackage();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [recipient, setRecipient] = useState('');
+function PackageRow({ pkg }: { pkg: StudentPackage }) {
+  const updatePackage = useUpdatePackage();
 
-  const handleDeliver = async () => {
+  const handlePickup = async () => {
     try {
       await updatePackage.mutateAsync({
         id: pkg.id,
         data: {
-          status: PackageStatus.DELIVERED,
-          deliveredTo: recipient || pkg.student?.name
+          status: 'PICKED_UP',
+          pickedUpAt: new Date()
         }
       });
-      toast.success('Paket berhasil diambil');
-      setIsDialogOpen(false);
-    } catch (error) {
-      toast.error('Gagal update status paket');
+      toast.success('Paket telah diambil');
+    } catch (_error) {
+      // Handled
+    }
+  };
+
+  const getStatusBadge = (status: PackageStatus) => {
+    switch(status) {
+      case 'RECEIVED': return <Badge variant="secondary">Diterima Resepsionis</Badge>;
+      case 'NOTIFIED': return <Badge className="bg-blue-500">Notifikasi Terkirim</Badge>;
+      case 'PICKED_UP': return <Badge variant="outline">Sudah Diambil</Badge>;
+      default: return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
   return (
     <TableRow>
-      <TableCell>{format(new Date(pkg.receivedAt), 'dd/MM/yyyy HH:mm')}</TableCell>
+      <TableCell>{format(new Date(pkg.createdAt), 'HH:mm')}</TableCell>
       <TableCell>
         <div className="font-medium">{pkg.student?.name}</div>
-        <div className="text-xs text-muted-foreground">{pkg.student?.enrollments?.[0]?.class?.name || '-'}</div>
+        <div className="text-xs text-muted-foreground">{pkg.student?.nis}</div>
       </TableCell>
       <TableCell>{pkg.senderName}</TableCell>
-      <TableCell>{pkg.description || '-'}</TableCell>
+      <TableCell>{pkg.expedition}</TableCell>
+      <TableCell>{pkg.content}</TableCell>
+      <TableCell>{getStatusBadge(pkg.status)}</TableCell>
       <TableCell>
-        {pkg.status === PackageStatus.DELIVERED ? (
-          <Badge variant="outline">Diambil</Badge>
-        ) : pkg.status === PackageStatus.RETURNED ? (
-          <Badge variant="destructive">Dikembalikan</Badge>
-        ) : (
-          <Badge variant="default" className="bg-blue-600">Menunggu</Badge>
+        {pkg.status !== 'PICKED_UP' && (
+           <Button
+            variant="ghost"
+            size="sm"
+            onClick={handlePickup}
+            title="Tandai Diambil"
+          >
+            <PackageCheck className="h-4 w-4 mr-2" /> Ambil
+          </Button>
         )}
-      </TableCell>
-      <TableCell>
-        {pkg.status === PackageStatus.RECEIVED && (
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                title="Mark as Delivered"
-              >
-                <CheckCircle className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Konfirmasi Pengambilan Paket</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="grid gap-2">
-                  <Label>Diambil Oleh</Label>
-                  <Input
-                    placeholder={`Default: ${pkg.student?.name}`}
-                    value={recipient}
-                    onChange={(e) => setRecipient(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">Kosongkan jika diambil sendiri oleh santri.</p>
-                </div>
-                <Button onClick={handleDeliver} className="w-full" disabled={updatePackage.isPending}>
-                   {updatePackage.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                   Konfirmasi Pengambilan
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+        {pkg.status === 'PICKED_UP' && (
+          <span className="text-xs text-muted-foreground">
+            {pkg.pickedUpAt ? format(new Date(pkg.pickedUpAt), 'dd/MM HH:mm') : '-'}
+          </span>
         )}
       </TableCell>
     </TableRow>

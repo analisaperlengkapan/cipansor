@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useGuestBooks, useCreateGuestBook, useUpdateGuestBook } from '@/hooks/use-reception';
+import { useGuestBooks, useCreateGuestBook, useUpdateGuestBook, GuestBook } from '@/hooks/use-reception';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -23,7 +23,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { CreateGuestBookInput } from '@cipansor/shared';
 import { Loader2, Plus, LogOut } from 'lucide-react';
@@ -111,8 +110,8 @@ function GuestForm({ onSuccess }: { onSuccess: () => void }) {
       });
       toast.success('Data tamu berhasil disimpan');
       onSuccess();
-    } catch (error) {
-      toast.error('Gagal menyimpan data tamu');
+    } catch (_error) {
+      // Error handled by query mutation or global handler
     }
   };
 
@@ -160,7 +159,7 @@ function GuestForm({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-function GuestRow({ guest }: { guest: any }) {
+function GuestRow({ guest }: { guest: GuestBook }) {
   const updateGuest = useUpdateGuestBook();
 
   const handleCheckout = async () => {
@@ -170,8 +169,8 @@ function GuestRow({ guest }: { guest: any }) {
         data: { checkOut: new Date() }
       });
       toast.success('Tamu berhasil check-out');
-    } catch (error) {
-      toast.error('Gagal check-out tamu');
+    } catch (_error) {
+       // Error handled by query mutation or global handler
     }
   };
 

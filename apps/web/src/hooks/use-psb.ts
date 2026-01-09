@@ -143,6 +143,15 @@ export interface Registration {
   enrolledAt?: string;
   studentId?: string;
   
+  // Marketing
+  source?: string;
+  campaignId?: string;
+  campaign?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+
   notes?: string;
   createdAt: string;
   updatedAt: string;

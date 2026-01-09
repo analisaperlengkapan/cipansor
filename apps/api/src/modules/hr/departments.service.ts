@@ -31,7 +31,7 @@ export const departmentService = {
   async findAll(
     unitId: string,
     params: { page: number; limit: number; search?: string }
-  ): Promise<SharedPaginatedResponse<any>> {
+  ): Promise<SharedPaginatedResponse<unknown>> {
     const { page, limit, search } = params;
     const skip = (page - 1) * limit;
 

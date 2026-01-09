@@ -27,7 +27,7 @@ export const contractService = {
   async findAll(
     unitId: string,
     params: { page: number; limit: number; search?: string; status?: string }
-  ): Promise<SharedPaginatedResponse<any>> {
+  ): Promise<SharedPaginatedResponse<unknown>> {
     const { page, limit, search, status } = params;
     const skip = (page - 1) * limit;
 

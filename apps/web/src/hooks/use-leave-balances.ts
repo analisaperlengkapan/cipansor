@@ -23,7 +23,7 @@ export function useLeaveBalances(userId: string, academicYearId?: string) {
       });
       return response.data.data as LeaveBalance[];
     },
-    enabled: !!userId,
+    enabled: !!userId && !!academicYearId,
   });
 }
 

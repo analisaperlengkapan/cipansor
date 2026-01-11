@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { procurementService } from './procurement.service';
-import { PurchaseRequestStatus, CreatePurchaseRequestInput, UpdatePurchaseRequestStatusInput } from '@cipansor/shared';
+import { PurchaseRequestStatus, CreatePurchaseRequestInput, UpdatePurchaseRequestStatusInput, FulfillPurchaseRequestInput } from '@cipansor/shared';
 import { z } from 'zod';
 
 // Zod Schemas for Validation
@@ -23,6 +23,22 @@ const createRequestSchema = z.object({
 const updateStatusSchema = z.object({
   status: z.nativeEnum(PurchaseRequestStatus),
   rejectionReason: z.string().optional()
+});
+
+const fulfillItemSchema = z.object({
+  itemId: z.string().uuid(),
+  quantityReceived: z.number().int().positive(),
+  actualPrice: z.number().positive(),
+  condition: z.enum(['GOOD', 'FAIR', 'POOR']),
+  notes: z.string().optional()
+});
+
+const fulfillRequestSchema = z.object({
+  items: z.array(fulfillItemSchema).min(1),
+  paymentAccountId: z.string().uuid(),
+  receiptDate: z.string().datetime().or(z.date()),
+  purchaseOrderNo: z.string().optional(),
+  supplier: z.string().optional()
 });
 
 export const procurementController = {
@@ -116,9 +132,18 @@ export const procurementController = {
   fulfill: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
+      const input = fulfillRequestSchema.parse(req.body);
       const user = (req as any).user;
 
-      const result = await procurementService.fulfill(id, user.id);
+      const serviceInput: FulfillPurchaseRequestInput = {
+        items: input.items,
+        paymentAccountId: input.paymentAccountId,
+        receiptDate: new Date(input.receiptDate),
+        purchaseOrderNo: input.purchaseOrderNo,
+        supplier: input.supplier
+      };
+
+      const result = await procurementService.fulfill(id, serviceInput, user.id);
 
       res.json({
         success: true,

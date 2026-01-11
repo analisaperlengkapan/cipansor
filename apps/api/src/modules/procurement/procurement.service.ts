@@ -3,9 +3,10 @@ import {
   CreatePurchaseRequestInput,
   UpdatePurchaseRequestStatusInput,
   PurchaseRequestStatus,
-  PurchaseRequest
+  PurchaseRequest,
+  FulfillPurchaseRequestInput
 } from '@cipansor/shared';
-import { UserRole } from '@prisma/client';
+import { UserRole, AssetCondition } from '@prisma/client';
 import { NotFoundError, ForbiddenError, ValidationError } from '@/middleware/error';
 import { generateUniqueCode } from '@/utils/code-generator';
 
@@ -154,7 +155,7 @@ export const procurementService = {
   },
 
   // Fulfill request (Mark as Received -> Create Asset -> Create Journal)
-  fulfill: async (id: string, userId: string) => {
+  fulfill: async (id: string, input: FulfillPurchaseRequestInput, userId: string) => {
     const request = await prisma.purchaseRequest.findUnique({
       where: { id },
       include: { items: { include: { assetCategory: true, budget: { include: { account: true } } } } }
@@ -165,6 +166,14 @@ export const procurementService = {
       throw new ValidationError('Request must be Approved or Ordered to be Fulfilled');
     }
 
+    // Validate payment account
+    const paymentAccount = await prisma.accountCode.findUnique({
+      where: { id: input.paymentAccountId }
+    });
+    if (!paymentAccount) {
+      throw new ValidationError('Invalid payment account');
+    }
+
     // Transactional fulfillment
     return await prisma.$transaction(async (tx) => {
       // 1. Update Status
@@ -172,71 +181,89 @@ export const procurementService = {
         where: { id },
         data: {
           status: PurchaseRequestStatus.RECEIVED,
-          receivedAt: new Date()
+          receivedAt: new Date(input.receiptDate)
         }
       });
 
-      // 2. Create Assets and Journal Entries
-      for (const item of request.items) {
-        // Create Asset if category provided
-        if (item.assetCategoryId) {
-          const assetCode = await generateUniqueCode('AST', 'assets');
+      // 2. Process Items
+      for (const fulfillmentItem of input.items) {
+        const prItem = request.items.find(i => i.id === fulfillmentItem.itemId);
+        if (!prItem) continue;
 
-          await tx.asset.create({
-            data: {
-              unitId: request.unitId,
-              categoryId: item.assetCategoryId,
-              code: assetCode,
-              name: item.itemName,
-              purchaseDate: new Date(),
-              purchasePrice: item.estimatedPrice,
-              condition: 'GOOD',
-              status: 'ACTIVE',
-              notes: `Generated from PR: ${request.code}`
-            }
-          });
+        const totalItemPrice = fulfillmentItem.quantityReceived * fulfillmentItem.actualPrice;
+
+        // Create Asset if category provided
+        if (prItem.assetCategoryId) {
+          // Loop based on quantity received to create individual assets
+          for (let i = 0; i < fulfillmentItem.quantityReceived; i++) {
+            const assetCode = await generateUniqueCode('AST', 'assets');
+
+            // Map simplified condition to Prisma Enum
+            let condition: AssetCondition = AssetCondition.GOOD;
+            if (fulfillmentItem.condition === 'FAIR') condition = AssetCondition.FAIR;
+            if (fulfillmentItem.condition === 'POOR') condition = AssetCondition.POOR;
+
+            await tx.asset.create({
+              data: {
+                unitId: request.unitId,
+                categoryId: prItem.assetCategoryId,
+                code: assetCode,
+                name: `${prItem.itemName} (${i + 1})`,
+                purchaseDate: new Date(input.receiptDate),
+                purchasePrice: fulfillmentItem.actualPrice,
+                condition: condition,
+                status: 'ACTIVE',
+                notes: fulfillmentItem.notes || `Generated from PR: ${request.code}`,
+                purchaseOrderNo: input.purchaseOrderNo,
+                supplier: input.supplier
+              }
+            });
+          }
         }
 
         // 3. Create Journal Entry (Balanced)
-        if (item.budgetId && item.budget?.accountId) {
-             const expenseAccount = item.budget.accountId;
-             // Try to find default Cash account (usually '1101' or '1-1-01')
-             // For safety, we search by code '1101' which is standard in this system memory
-             const cashAccount = await tx.accountCode.findFirst({
-               where: { code: '1101' }
+        // Debit: Expense Account (from Budget) OR Asset Clearing Account
+        // Credit: Payment Account (from Input)
+        if (prItem.budgetId && prItem.budget?.accountId) {
+             const debitAccount = prItem.budget.accountId;
+
+             // Update Budget Used Amount
+             await tx.budget.update({
+               where: { id: prItem.budgetId },
+               data: {
+                 usedAmount: { increment: totalItemPrice }
+               }
              });
 
-             if (cashAccount) {
-               // Debit Expense
-               await tx.journalEntry.create({
-                  data: {
-                      unitId: request.unitId,
-                      accountId: expenseAccount,
-                      date: new Date(),
-                      description: `Purchase Expense: ${item.itemName} (PR: ${request.code})`,
-                      debit: item.totalPrice,
-                      credit: 0,
-                      reference: request.code,
-                      referenceType: 'PURCHASE_REQUEST',
-                      createdById: userId
-                  }
-               });
+             // Debit Entry
+             await tx.journalEntry.create({
+                data: {
+                    unitId: request.unitId,
+                    accountId: debitAccount,
+                    date: new Date(input.receiptDate),
+                    description: `Purchase: ${prItem.itemName} (PR: ${request.code}) - Qty: ${fulfillmentItem.quantityReceived}`,
+                    debit: totalItemPrice,
+                    credit: 0,
+                    reference: request.code,
+                    referenceType: 'PURCHASE_REQUEST',
+                    createdById: userId
+                }
+             });
 
-               // Credit Cash
-               await tx.journalEntry.create({
-                  data: {
-                      unitId: request.unitId,
-                      accountId: cashAccount.id,
-                      date: new Date(),
-                      description: `Purchase Payment: ${item.itemName} (PR: ${request.code})`,
-                      debit: 0,
-                      credit: item.totalPrice,
-                      reference: request.code,
-                      referenceType: 'PURCHASE_REQUEST',
-                      createdById: userId
-                  }
-               });
-             }
+             // Credit Entry (Payment)
+             await tx.journalEntry.create({
+                data: {
+                    unitId: request.unitId,
+                    accountId: paymentAccount.id,
+                    date: new Date(input.receiptDate),
+                    description: `Payment: ${prItem.itemName} (PR: ${request.code})`,
+                    debit: 0,
+                    credit: totalItemPrice,
+                    reference: request.code,
+                    referenceType: 'PURCHASE_REQUEST',
+                    createdById: userId
+                }
+             });
         }
       }
 

@@ -73,3 +73,19 @@ export interface UpdatePurchaseRequestStatusInput {
   status: PurchaseRequestStatus;
   rejectionReason?: string;
 }
+
+export interface FulfillPurchaseRequestItemInput {
+  itemId: string; // The ID of the PurchaseRequestItem being fulfilled
+  quantityReceived: number;
+  actualPrice: number;
+  condition: 'GOOD' | 'FAIR' | 'POOR'; // Simplified condition enum for input
+  notes?: string;
+}
+
+export interface FulfillPurchaseRequestInput {
+  items: FulfillPurchaseRequestItemInput[];
+  paymentAccountId: string; // Account ID (Cash/Bank)
+  receiptDate: Date;
+  purchaseOrderNo?: string;
+  supplier?: string;
+}

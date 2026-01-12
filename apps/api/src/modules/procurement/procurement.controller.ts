@@ -107,6 +107,19 @@ export const procurementController = {
     }
   },
 
+  getAuditLogs: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const result = await procurementService.getAuditLogs(id);
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   updateStatus: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
@@ -118,7 +131,7 @@ export const procurementController = {
         rejectionReason: input.rejectionReason
       };
 
-      const result = await procurementService.updateStatus(id, serviceInput, user.id);
+      const result = await procurementService.updateStatus(id, serviceInput, user.id, user.role);
 
       res.json({
         success: true,

@@ -6,7 +6,7 @@ import {
   PurchaseRequest,
   FulfillPurchaseRequestInput
 } from '@cipansor/shared';
-import { UserRole, AssetCondition } from '@prisma/client';
+import { UserRole, AssetCondition, Prisma } from '@prisma/client';
 import { NotFoundError, ForbiddenError, ValidationError } from '@/middleware/error';
 import { generateUniqueCode } from '@/utils/code-generator';
 import { createNotification } from '../notifications/service';
@@ -18,7 +18,6 @@ export const procurementService = {
     userId: string
   ): Promise<PurchaseRequest> => {
     // 1. Budget Availability Check
-    // Group requested amounts by budget
     const budgetRequests = new Map<string, number>();
 
     for (const item of input.items) {
@@ -49,7 +48,6 @@ export const procurementService = {
     // Generate code: PR-YYYYMM-XXXX
     const code = await generateUniqueCode('PR', 'purchase_requests');
 
-    // Calculate total
     const totalEstimated = input.items.reduce(
       (sum, item) => sum + (item.quantity * item.estimatedPrice),
       0
@@ -92,10 +90,21 @@ export const procurementService = {
       }
     });
 
+    // Audit Log: Create
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        action: 'PROCUREMENT_CREATE',
+        entity: 'PURCHASE_REQUEST',
+        entityId: request.id,
+        newValues: request as any
+      }
+    });
+
     return request as unknown as PurchaseRequest;
   },
 
-  // Find all requests (with filters)
+  // Find all requests
   findAll: async (
     unitId?: string,
     status?: PurchaseRequestStatus,
@@ -106,7 +115,6 @@ export const procurementService = {
     if (unitId) where.unitId = unitId;
     if (status) where.status = status;
 
-    // If not Admin, only see own requests
     const adminRoles: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
     const isAdmin = role && adminRoles.includes(role);
 
@@ -128,7 +136,7 @@ export const procurementService = {
     return requests as unknown as PurchaseRequest[];
   },
 
-  // Find single request by ID
+  // Find single request
   findById: async (id: string) => {
     const request = await prisma.purchaseRequest.findUnique({
       where: { id },
@@ -141,7 +149,7 @@ export const procurementService = {
             assetCategory: true,
             budget: {
               include: {
-                account: true // Ensure Account is included for verification
+                account: true
               }
             }
           }
@@ -153,17 +161,43 @@ export const procurementService = {
     return request as unknown as PurchaseRequest;
   },
 
+  // Get Audit Logs for a Request
+  getAuditLogs: async (id: string) => {
+    return prisma.auditLog.findMany({
+      where: {
+        entity: 'PURCHASE_REQUEST',
+        entityId: id
+      },
+      include: {
+        user: { select: { id: true, name: true, role: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  },
+
   // Update status (Approve/Reject)
   updateStatus: async (
     id: string,
     input: UpdatePurchaseRequestStatusInput,
-    approverId: string
+    approverId: string,
+    approverRole: UserRole
   ) => {
     const request = await prisma.purchaseRequest.findUnique({ where: { id } });
     if (!request) throw new NotFoundError('Purchase Request not found');
 
     if (request.status !== PurchaseRequestStatus.PENDING && request.status !== PurchaseRequestStatus.APPROVED) {
       throw new ValidationError('Cannot update status of processed request');
+    }
+
+    // Tiered Approval Logic
+    if (input.status === PurchaseRequestStatus.APPROVED) {
+      const HIGH_VALUE_THRESHOLD = 10000000; // 10 Million
+      const isHighValue = Number(request.totalEstimated) > HIGH_VALUE_THRESHOLD;
+      const isSuperAdmin = approverRole === UserRole.SUPER_ADMIN;
+
+      if (isHighValue && !isSuperAdmin) {
+        throw new ForbiddenError(`Requests above ${HIGH_VALUE_THRESHOLD} require Foundation/Yayasan approval.`);
+      }
     }
 
     const data: any = { status: input.status };
@@ -181,10 +215,22 @@ export const procurementService = {
       include: { items: true }
     });
 
+    // Audit Log: Status Change
+    await prisma.auditLog.create({
+      data: {
+        userId: approverId,
+        action: input.status === PurchaseRequestStatus.APPROVED ? 'PROCUREMENT_APPROVE' : 'PROCUREMENT_REJECT',
+        entity: 'PURCHASE_REQUEST',
+        entityId: id,
+        oldValues: { status: request.status } as any,
+        newValues: { status: input.status, rejectionReason: input.rejectionReason } as any
+      }
+    });
+
     return updated as unknown as PurchaseRequest;
   },
 
-  // Fulfill request (Mark as Received -> Create Asset -> Create Journal)
+  // Fulfill request
   fulfill: async (id: string, input: FulfillPurchaseRequestInput, userId: string) => {
     const request = await prisma.purchaseRequest.findUnique({
       where: { id },
@@ -196,7 +242,6 @@ export const procurementService = {
       throw new ValidationError('Request must be Approved or Ordered to be Fulfilled');
     }
 
-    // Validate payment account
     const paymentAccount = await prisma.accountCode.findUnique({
       where: { id: input.paymentAccountId }
     });
@@ -204,9 +249,7 @@ export const procurementService = {
       throw new ValidationError('Invalid payment account');
     }
 
-    // Transactional fulfillment
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Update Status
       const updatedRequest = await tx.purchaseRequest.update({
         where: { id },
         data: {
@@ -215,20 +258,15 @@ export const procurementService = {
         }
       });
 
-      // 2. Process Items
       for (const fulfillmentItem of input.items) {
         const prItem = request.items.find(i => i.id === fulfillmentItem.itemId);
         if (!prItem) continue;
 
         const totalItemPrice = fulfillmentItem.quantityReceived * fulfillmentItem.actualPrice;
 
-        // Create Asset if category provided
         if (prItem.assetCategoryId) {
-          // Loop based on quantity received to create individual assets
           for (let i = 0; i < fulfillmentItem.quantityReceived; i++) {
             const assetCode = await generateUniqueCode('AST', 'assets');
-
-            // Map simplified condition to Prisma Enum
             let condition: AssetCondition = AssetCondition.GOOD;
             if (fulfillmentItem.condition === 'FAIR') condition = AssetCondition.FAIR;
             if (fulfillmentItem.condition === 'POOR') condition = AssetCondition.POOR;
@@ -252,13 +290,9 @@ export const procurementService = {
           }
         }
 
-        // 3. Create Journal Entry (Balanced)
-        // Debit: Expense Account (from Budget) OR Asset Clearing Account
-        // Credit: Payment Account (from Input)
         if (prItem.budgetId && prItem.budget?.accountId) {
              const debitAccount = prItem.budget.accountId;
 
-             // Update Budget Used Amount
              await tx.budget.update({
                where: { id: prItem.budgetId },
                data: {
@@ -266,7 +300,6 @@ export const procurementService = {
                }
              });
 
-             // Debit Entry
              await tx.journalEntry.create({
                 data: {
                     unitId: request.unitId,
@@ -281,7 +314,6 @@ export const procurementService = {
                 }
              });
 
-             // Credit Entry (Payment)
              await tx.journalEntry.create({
                 data: {
                     unitId: request.unitId,
@@ -298,10 +330,20 @@ export const procurementService = {
         }
       }
 
+      // Audit Log: Fulfill
+      await tx.auditLog.create({
+        data: {
+          userId,
+          action: 'PROCUREMENT_FULFILL',
+          entity: 'PURCHASE_REQUEST',
+          entityId: id,
+          newValues: { status: 'RECEIVED', receivedAt: input.receiptDate } as any
+        }
+      });
+
       return updatedRequest;
     });
 
-    // Send Notification to Requester
     try {
       await createNotification({
         userId: request.requesterId,

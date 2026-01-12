@@ -28,6 +28,10 @@ const mockPrisma = vi.hoisted(() => ({
     findFirst: vi.fn(),
     findUnique: vi.fn(),
   },
+  auditLog: {
+    create: vi.fn(),
+    findMany: vi.fn(),
+  },
   $transaction: vi.fn((callback) => callback(mockPrisma)),
 }));
 
@@ -39,7 +43,10 @@ vi.mock('@/lib/prisma', () => ({
 vi.mock('@prisma/client', () => ({
   UserRole: { SUPER_ADMIN: 'SUPER_ADMIN', UNIT_ADMIN: 'UNIT_ADMIN' },
   AssetCondition: { GOOD: 'GOOD', FAIR: 'FAIR', POOR: 'POOR', EXCELLENT: 'EXCELLENT', BROKEN: 'BROKEN' },
-  PurchaseRequestStatus: { ...PurchaseRequestStatus }
+  PurchaseRequestStatus: { ...PurchaseRequestStatus },
+  Prisma: {
+    JsonObject: {}
+  }
 }));
 
 vi.mock('@/utils/code-generator', () => ({
@@ -82,6 +89,7 @@ describe('ProcurementService', () => {
       const result = await procurementService.create(input, 'user-1');
 
       expect(mockPrisma.purchaseRequest.create).toHaveBeenCalled();
+      expect(mockPrisma.auditLog.create).toHaveBeenCalled(); // Check audit log
       expect(result).toBeDefined();
       expect(result.id).toBe('pr-1');
     });
@@ -192,6 +200,9 @@ describe('ProcurementService', () => {
           credit: 5000000
         })
       }));
+
+      // Audit log check
+      expect(mockPrisma.auditLog.create).toHaveBeenCalled();
     });
   });
 });

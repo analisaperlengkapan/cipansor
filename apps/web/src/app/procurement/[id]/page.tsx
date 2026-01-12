@@ -11,7 +11,7 @@ import { PurchaseRequestStatus } from '@cipansor/shared';
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
-import { ArrowLeft, CheckCircle, XCircle, PackageCheck, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, PackageCheck, AlertTriangle, History } from 'lucide-react';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
@@ -29,7 +29,7 @@ import { FulfillDialog } from './fulfill-dialog';
 
 export default function ProcurementDetailPage() {
   const { id } = useParams();
-  const { data: request, isLoading, mutate } = useProcurementDetail(id as string);
+  const { data: request, isLoading, mutate, auditLogs } = useProcurementDetail(id as string);
   const { updateStatus, isUpdating } = useProcurement();
   const { user } = useAuth();
 
@@ -226,6 +226,40 @@ export default function ProcurementDetailPage() {
                      <p className="text-xs">{format(new Date(request.receivedAt), 'dd MMM yyyy HH:mm')}</p>
                    </div>
                  )}
+               </CardContent>
+             </Card>
+
+             {/* Audit Log / History */}
+             <Card>
+               <CardHeader>
+                 <CardTitle className="flex items-center gap-2">
+                   <History className="h-4 w-4" /> Riwayat
+                 </CardTitle>
+               </CardHeader>
+               <CardContent>
+                 <div className="space-y-4">
+                   {auditLogs?.map((log: any) => (
+                     <div key={log.id} className="flex gap-3 text-sm">
+                       <div className="mt-1">
+                         <div className="h-2 w-2 rounded-full bg-blue-500" />
+                       </div>
+                       <div>
+                         <p className="font-medium">
+                           {log.action.replace('PROCUREMENT_', '')}
+                         </p>
+                         <p className="text-muted-foreground text-xs">
+                           oleh {log.user?.name}
+                         </p>
+                         <p className="text-xs text-muted-foreground">
+                           {format(new Date(log.createdAt), 'dd MMM HH:mm')}
+                         </p>
+                       </div>
+                     </div>
+                   ))}
+                   {(!auditLogs || auditLogs.length === 0) && (
+                     <p className="text-muted-foreground text-sm">Belum ada riwayat.</p>
+                   )}
+                 </div>
                </CardContent>
              </Card>
           </div>

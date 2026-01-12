@@ -30,6 +30,13 @@ router.get(
   procurementController.findById
 );
 
+// Get Audit Logs
+router.get(
+  '/:id/audit-logs',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  procurementController.getAuditLogs
+);
+
 // Approve/Reject (Admins only)
 router.patch(
   '/:id/status',

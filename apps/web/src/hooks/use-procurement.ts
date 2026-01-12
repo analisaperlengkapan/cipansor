@@ -78,7 +78,7 @@ export const useProcurement = (unitId?: string, status?: PurchaseRequestStatus |
 };
 
 export const useProcurementDetail = (id: string) => {
-  return useQuery({
+  const detailQuery = useQuery({
     queryKey: ['procurement', id],
     queryFn: async () => {
       const response = await api.get<{ data: PurchaseRequest }>(`/procurement/${id}`);
@@ -86,4 +86,22 @@ export const useProcurementDetail = (id: string) => {
     },
     enabled: !!id
   });
+
+  const auditLogQuery = useQuery({
+    queryKey: ['procurement', id, 'audit-logs'],
+    queryFn: async () => {
+      const response = await api.get<{ data: any[] }>(`/procurement/${id}/audit-logs`);
+      return response.data.data;
+    },
+    enabled: !!id
+  });
+
+  return {
+    data: detailQuery.data,
+    isLoading: detailQuery.isLoading,
+    error: detailQuery.error,
+    mutate: detailQuery.refetch,
+    auditLogs: auditLogQuery.data || [],
+    isLoadingAuditLogs: auditLogQuery.isLoading
+  };
 };

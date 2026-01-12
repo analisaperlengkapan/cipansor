@@ -30,6 +30,7 @@ const fulfillItemSchema = z.object({
   quantityReceived: z.number().int().positive(),
   actualPrice: z.number().positive(),
   condition: z.enum(['GOOD', 'FAIR', 'POOR']),
+  roomId: z.string().uuid().optional(),
   notes: z.string().optional()
 });
 

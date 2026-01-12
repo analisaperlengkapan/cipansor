@@ -56,6 +56,7 @@ const formSchema = z.object({
     quantityReceived: z.coerce.number().min(1),
     actualPrice: z.coerce.number().min(0),
     condition: z.enum(["GOOD", "FAIR", "POOR"]),
+    roomId: z.string().optional(),
     notes: z.string().optional()
   }))
 });
@@ -63,6 +64,7 @@ const formSchema = z.object({
 export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
   const [open, setOpen] = useState(false);
   const [accounts, setAccounts] = useState<{id: string, name: string, code: string}[]>([]);
+  const [rooms, setRooms] = useState<{id: string, name: string, code: string}[]>([]);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -83,17 +85,21 @@ export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
   useEffect(() => {
     if (open) {
       // Fetch Cash/Bank accounts
-      api.get('/finance/accounts?type=ASSET&isCash=true') // Assuming endpoint supports filtering or returns all
+      api.get('/finance/accounts?type=ASSET&isCash=true')
         .then(res => {
-          // Filter client-side if needed, assuming generic account endpoint
-          // In a real app, this should be a dedicated 'payment-methods' or 'cash-banks' endpoint
           const cashAccounts = res.data.data.filter((acc: any) =>
-            // Simple heuristic if backend doesn't filter perfectly
             acc.name.toLowerCase().includes('kas') ||
             acc.name.toLowerCase().includes('bank') ||
-            acc.code.startsWith('1-1') // Standard chart of accounts for cash/bank
+            acc.code.startsWith('1-1')
           );
           setAccounts(cashAccounts);
+        })
+        .catch(console.error);
+
+      // Fetch Rooms for asset location
+      api.get('/facilities/rooms')
+        .then(res => {
+          setRooms(res.data.data);
         })
         .catch(console.error);
     }
@@ -237,7 +243,7 @@ export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
               {form.watch("items").map((item, index) => (
                 <div key={item.itemId} className="border p-4 rounded-md space-y-3">
                   <div className="font-semibold">{item.itemName}</div>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-4 gap-3">
                     <FormField
                       control={form.control}
                       name={`items.${index}.quantityReceived`}
@@ -273,13 +279,35 @@ export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select condition" />
+                                <SelectValue placeholder="Select" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="GOOD">Good</SelectItem>
                               <SelectItem value="FAIR">Fair</SelectItem>
                               <SelectItem value="POOR">Poor</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.roomId`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Location</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select Room" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {rooms.map(room => (
+                                <SelectItem key={room.id} value={room.id}>{room.name}</SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />

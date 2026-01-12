@@ -79,6 +79,7 @@ export interface FulfillPurchaseRequestItemInput {
   quantityReceived: number;
   actualPrice: number;
   condition: 'GOOD' | 'FAIR' | 'POOR'; // Simplified condition enum for input
+  roomId?: string; // Location of the asset
   notes?: string;
 }
 

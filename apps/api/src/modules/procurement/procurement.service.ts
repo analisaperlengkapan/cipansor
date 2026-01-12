@@ -9,6 +9,7 @@ import {
 import { UserRole, AssetCondition } from '@prisma/client';
 import { NotFoundError, ForbiddenError, ValidationError } from '@/middleware/error';
 import { generateUniqueCode } from '@/utils/code-generator';
+import { createNotification } from '../notifications/service';
 
 export const procurementService = {
   // Create a new purchase request
@@ -175,7 +176,7 @@ export const procurementService = {
     }
 
     // Transactional fulfillment
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       // 1. Update Status
       const updatedRequest = await tx.purchaseRequest.update({
         where: { id },
@@ -215,7 +216,8 @@ export const procurementService = {
                 status: 'ACTIVE',
                 notes: fulfillmentItem.notes || `Generated from PR: ${request.code}`,
                 purchaseOrderNo: input.purchaseOrderNo,
-                supplier: input.supplier
+                supplier: input.supplier,
+                roomId: fulfillmentItem.roomId
               }
             });
           }
@@ -269,5 +271,20 @@ export const procurementService = {
 
       return updatedRequest;
     });
+
+    // Send Notification to Requester
+    try {
+      await createNotification({
+        userId: request.requesterId,
+        title: 'Barang Telah Diterima',
+        message: `Pengajuan pembelian ${request.code} telah diproses dan barang telah diterima.`,
+        type: 'INFO',
+        link: `/procurement/${request.id}`
+      });
+    } catch (error) {
+      console.error('Failed to send notification', error);
+    }
+
+    return result;
   }
 };

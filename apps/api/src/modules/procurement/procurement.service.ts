@@ -17,6 +17,35 @@ export const procurementService = {
     input: CreatePurchaseRequestInput,
     userId: string
   ): Promise<PurchaseRequest> => {
+    // 1. Budget Availability Check
+    // Group requested amounts by budget
+    const budgetRequests = new Map<string, number>();
+
+    for (const item of input.items) {
+      if (item.budgetId) {
+        const currentAmount = budgetRequests.get(item.budgetId) || 0;
+        budgetRequests.set(item.budgetId, currentAmount + (item.quantity * item.estimatedPrice));
+      }
+    }
+
+    if (budgetRequests.size > 0) {
+      const budgetIds = Array.from(budgetRequests.keys());
+      const budgets = await prisma.budget.findMany({
+        where: { id: { in: budgetIds } }
+      });
+
+      for (const budget of budgets) {
+        const requestedAmount = budgetRequests.get(budget.id) || 0;
+        const availableAmount = Number(budget.amount) - Number(budget.usedAmount);
+
+        if (requestedAmount > availableAmount) {
+          throw new ValidationError(
+            `Budget exceeded for budget ID ${budget.id}. Available: ${availableAmount}, Requested: ${requestedAmount}`
+          );
+        }
+      }
+    }
+
     // Generate code: PR-YYYYMM-XXXX
     const code = await generateUniqueCode('PR', 'purchase_requests');
 
@@ -112,7 +141,7 @@ export const procurementService = {
             assetCategory: true,
             budget: {
               include: {
-                account: true
+                account: true // Ensure Account is included for verification
               }
             }
           }

@@ -25,11 +25,12 @@ import {
 } from "@/components/ui/dialog";
 import { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
+import { FulfillDialog } from './fulfill-dialog';
 
 export default function ProcurementDetailPage() {
   const { id } = useParams();
-  const { data: request, isLoading } = useProcurementDetail(id as string);
-  const { updateStatus, fulfillRequest, isUpdating, isFulfilling } = useProcurement();
+  const { data: request, isLoading, mutate } = useProcurementDetail(id as string);
+  const { updateStatus, isUpdating } = useProcurement();
   const { user } = useAuth();
 
   const [rejectReason, setRejectReason] = useState('');
@@ -44,18 +45,14 @@ export default function ProcurementDetailPage() {
   const handleApprove = async () => {
     if (confirm('Apakah Anda yakin ingin menyetujui pengajuan ini?')) {
       await updateStatus({ id: request.id, status: PurchaseRequestStatus.APPROVED });
+      mutate();
     }
   };
 
   const handleReject = async () => {
     await updateStatus({ id: request.id, status: PurchaseRequestStatus.REJECTED, rejectionReason: rejectReason });
     setIsRejectDialogOpen(false);
-  };
-
-  const handleFulfill = async () => {
-    if (confirm('Konfirmasi penerimaan barang? Aset dan Jurnal akan dibuat otomatis.')) {
-      await fulfillRequest(request.id);
-    }
+    mutate();
   };
 
   return (
@@ -138,9 +135,7 @@ export default function ProcurementDetailPage() {
                   )}
 
                   {canFulfill && (
-                    <Button onClick={handleFulfill} disabled={isFulfilling} className="bg-blue-600 hover:bg-blue-700">
-                      <PackageCheck className="mr-2 h-4 w-4" /> Terima Barang (Fulfill)
-                    </Button>
+                    <FulfillDialog request={request} onSuccess={() => mutate()} />
                   )}
                 </div>
               </CardContent>
@@ -156,6 +151,7 @@ export default function ProcurementDetailPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nama Barang</TableHead>
+                      <TableHead>Anggaran</TableHead>
                       <TableHead>Qty</TableHead>
                       <TableHead>Harga Est.</TableHead>
                       <TableHead className="text-right">Total</TableHead>
@@ -170,13 +166,23 @@ export default function ProcurementDetailPage() {
                             <Badge variant="outline" className="text-xs mt-1">{item.assetCategory.name}</Badge>
                           )}
                         </TableCell>
+                        <TableCell>
+                          {item.budget?.account ? (
+                            <div className="text-sm">
+                              <p className="font-medium">{item.budget.account.name}</p>
+                              <p className="text-xs text-muted-foreground">{item.budget.account.code}</p>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
+                        </TableCell>
                         <TableCell>{item.quantity} {item.unit}</TableCell>
                         <TableCell>{formatCurrency(item.estimatedPrice)}</TableCell>
                         <TableCell className="text-right font-medium">{formatCurrency(item.totalPrice)}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow>
-                      <TableCell colSpan={3} className="text-right font-bold">Total Estimasi:</TableCell>
+                      <TableCell colSpan={4} className="text-right font-bold">Total Estimasi:</TableCell>
                       <TableCell className="text-right font-bold text-lg">{formatCurrency(request.totalEstimated)}</TableCell>
                     </TableRow>
                   </TableBody>

@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PurchaseRequestStatus } from '@cipansor/shared';
 
+// Mock Notification Service first to avoid import issues
+vi.mock('../../../../src/modules/notifications/service', () => ({
+  createNotification: vi.fn(),
+}));
+
 // Use vi.hoisted to ensure mocks are available
 const mockPrisma = vi.hoisted(() => ({
   purchaseRequest: {
@@ -16,6 +21,7 @@ const mockPrisma = vi.hoisted(() => ({
     create: vi.fn(),
   },
   budget: {
+    findMany: vi.fn(),
     update: vi.fn(),
   },
   accountCode: {
@@ -27,10 +33,6 @@ const mockPrisma = vi.hoisted(() => ({
 
 vi.mock('@/lib/prisma', () => ({
   prisma: mockPrisma,
-}));
-
-vi.mock('../notifications/service', () => ({
-  createNotification: vi.fn(),
 }));
 
 // Mock @prisma/client to return local Enums
@@ -46,6 +48,7 @@ vi.mock('@/utils/code-generator', () => ({
 
 // Import service AFTER mocks are set up
 import { procurementService } from '../../../../src/modules/procurement/procurement.service';
+import { ValidationError } from '../../../../src/middleware/error';
 
 describe('ProcurementService', () => {
   beforeEach(() => {
@@ -81,6 +84,30 @@ describe('ProcurementService', () => {
       expect(mockPrisma.purchaseRequest.create).toHaveBeenCalled();
       expect(result).toBeDefined();
       expect(result.id).toBe('pr-1');
+    });
+
+    it('should fail if budget is exceeded', async () => {
+      const input = {
+        unitId: 'unit-1',
+        date: new Date(),
+        description: 'Over Budget Request',
+        items: [
+          {
+            itemName: 'Expensive Item',
+            quantity: 1,
+            unit: 'pcs',
+            estimatedPrice: 2000,
+            budgetId: 'budget-low',
+          },
+        ],
+      };
+
+      mockPrisma.budget.findMany.mockResolvedValue([
+        { id: 'budget-low', amount: 1000, usedAmount: 0 }
+      ]);
+
+      await expect(procurementService.create(input, 'user-1'))
+        .rejects.toThrow(ValidationError);
     });
   });
 

@@ -47,6 +47,7 @@ import {
   useLeaveRequests,
   useUserContracts,
   useLeaveBalances,
+  useUpdateLeaveBalance,
   useActiveAcademicYear,
   useCreateContract,
   EMPLOYEE_STATUS_LABELS,
@@ -73,7 +74,8 @@ import {
   GraduationCap,
   ClipboardList,
   Scale,
-  Plus
+  Plus,
+  Pencil
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
@@ -88,6 +90,7 @@ export default function EmployeeDetailPage() {
   const employeeId = params.id as string;
   const [activeTab, setActiveTab] = useState('info');
   const [isContractDialogOpen, setIsContractDialogOpen] = useState(false);
+  const [balanceToEdit, setBalanceToEdit] = useState<any>(null);
 
   const { data: employee, isLoading } = useEmployee(employeeId);
   const { data: activeAcademicYear } = useActiveAcademicYear();
@@ -97,6 +100,7 @@ export default function EmployeeDetailPage() {
   const { data: contracts } = useUserContracts(employee?.userId || '');
   const { data: leaveBalances } = useLeaveBalances(employee?.userId || '', activeAcademicYear?.id);
   const createContract = useCreateContract();
+  const updateLeaveBalance = useUpdateLeaveBalance();
 
   const deleteEmployee = useDeleteEmployee();
 
@@ -150,6 +154,21 @@ export default function EmployeeDetailPage() {
       setIsContractDialogOpen(false);
     } catch (error) {
       toast.error('Gagal membuat kontrak');
+    }
+  };
+
+  const handleUpdateBalance = async (data: any) => {
+    if (!balanceToEdit || !employee.userId) return;
+    try {
+      await updateLeaveBalance.mutateAsync({
+        id: balanceToEdit.id,
+        totalDays: parseInt(data.totalDays),
+        userId: employee.userId,
+      });
+      toast.success('Saldo cuti berhasil diperbarui');
+      setBalanceToEdit(null);
+    } catch (error) {
+      toast.error('Gagal memperbarui saldo cuti');
     }
   };
 
@@ -563,6 +582,7 @@ export default function EmployeeDetailPage() {
                       <TableHead className="text-center">Total Jatah</TableHead>
                       <TableHead className="text-center">Terpakai</TableHead>
                       <TableHead className="text-center">Sisa</TableHead>
+                      <TableHead className="text-right">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -575,11 +595,20 @@ export default function EmployeeDetailPage() {
                           <TableCell className="text-center font-bold text-green-600">
                             {balance.remainingDays}
                           </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setBalanceToEdit(balance)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                           Belum ada data saldo cuti
                         </TableCell>
                       </TableRow>
@@ -675,6 +704,13 @@ export default function EmployeeDetailPage() {
           onOpenChange={setIsContractDialogOpen}
           onSubmit={handleCreateContract}
         />
+
+        <EditBalanceDialog
+          open={!!balanceToEdit}
+          onOpenChange={(open) => !open && setBalanceToEdit(null)}
+          balance={balanceToEdit}
+          onSubmit={handleUpdateBalance}
+        />
       </div>
     </MainLayout>
   );
@@ -725,6 +761,45 @@ function ContractDialog({ open, onOpenChange, onSubmit }: { open: boolean, onOpe
           <div className="space-y-2">
             <Label htmlFor="notes">Catatan</Label>
             <Textarea id="notes" {...register('notes')} />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Batal
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Simpan
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditBalanceDialog({ open, onOpenChange, balance, onSubmit }: { open: boolean, onOpenChange: (open: boolean) => void, balance: any, onSubmit: (data: any) => Promise<void> }) {
+  const { register, handleSubmit, reset, setValue, formState: { isSubmitting } } = useForm();
+
+  useEffect(() => {
+    if (open && balance) {
+      setValue('totalDays', balance.totalDays);
+    }
+  }, [open, balance, setValue]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Saldo Cuti</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Jenis Cuti</Label>
+            <div className="font-medium">{balance ? (LEAVE_TYPE_LABELS[balance.leaveType as LeaveType] || balance.leaveType) : '-'}</div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="totalDays">Total Jatah Cuti (Hari)</Label>
+            <Input id="totalDays" type="number" {...register('totalDays', { required: true })} />
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

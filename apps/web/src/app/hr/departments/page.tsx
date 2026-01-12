@@ -27,6 +27,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -37,6 +44,7 @@ import {
   useDeleteDepartment,
   Department
 } from '@/hooks/use-departments';
+import { useEmployees } from '@/hooks';
 import { Plus, Search, Edit, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
@@ -103,6 +111,7 @@ export default function DepartmentsPage() {
               <TableRow>
                 <TableHead>Kode</TableHead>
                 <TableHead>Nama Departemen</TableHead>
+                <TableHead>Kepala Departemen</TableHead>
                 <TableHead>Deskripsi</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Jumlah Pegawai</TableHead>
@@ -112,13 +121,13 @@ export default function DepartmentsPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                   </TableCell>
                 </TableRow>
               ) : departments?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     Belum ada data departemen
                   </TableCell>
                 </TableRow>
@@ -127,6 +136,7 @@ export default function DepartmentsPage() {
                   <TableRow key={dept.id}>
                     <TableCell className="font-mono">{dept.code}</TableCell>
                     <TableCell className="font-medium">{dept.name}</TableCell>
+                    <TableCell>{dept.manager?.name || '-'}</TableCell>
                     <TableCell>{dept.description || '-'}</TableCell>
                     <TableCell>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -209,6 +219,8 @@ function DepartmentDialog({
 }) {
   const { register, handleSubmit, reset, setValue, watch, formState: { isSubmitting } } = useForm();
   const isActive = watch('isActive');
+  const { data: employeesData } = useEmployees({ status: 'ACTIVE' });
+  const employees = employeesData?.data || [];
 
   // Fix: Move reset logic to useEffect
   useEffect(() => {
@@ -217,9 +229,10 @@ function DepartmentDialog({
         setValue('code', department.code);
         setValue('name', department.name);
         setValue('description', department.description);
+        setValue('managerId', department.managerId || 'none');
         setValue('isActive', department.isActive);
       } else {
-        reset({ isActive: true, code: '', name: '', description: '' });
+        reset({ isActive: true, code: '', name: '', description: '', managerId: 'none' });
       }
     }
   }, [open, department, setValue, reset]);
@@ -230,7 +243,11 @@ function DepartmentDialog({
         <DialogHeader>
           <DialogTitle>{department ? 'Edit Departemen' : 'Tambah Departemen'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit((data) => {
+          // Convert 'none' to null for managerId
+          const payload = { ...data, managerId: data.managerId === 'none' ? null : data.managerId };
+          onSubmit(payload);
+        })} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="code">Kode Departemen</Label>
             <Input id="code" {...register('code', { required: true })} placeholder="e.g. IT, HR, FIN" />
@@ -239,6 +256,27 @@ function DepartmentDialog({
             <Label htmlFor="name">Nama Departemen</Label>
             <Input id="name" {...register('name', { required: true })} placeholder="e.g. Information Technology" />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="managerId">Kepala Departemen</Label>
+            <Select
+              value={watch('managerId') || 'none'}
+              onValueChange={(val) => setValue('managerId', val)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih Kepala Departemen" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">-- Tidak Ada --</SelectItem>
+                {employees.map((emp) => (
+                  <SelectItem key={emp.userId || emp.id} value={emp.userId || emp.id}>
+                    {emp.fullName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="description">Deskripsi</Label>
             <Textarea id="description" {...register('description')} />

@@ -43,12 +43,7 @@ export default function LeavesPage() {
   const { data: myLeavesData, isLoading: myLoading } = useLeaveRequests({
     page,
     limit: 10,
-    // If not admin, backend filters. If admin, we want to filter by their ID?
-    // Backend controller implementation:
-    // If Admin, it doesn't filter.
-    // So Admin sees ALL.
-    // To see "My Leaves" as Admin, we need to pass staffId/teacherId.
-    // But getting it is hard. So for Admin "My Leaves" might show all for now or we skip it.
+    mine: true, // Explicitly filter by current user (for Admins too)
   });
 
   const { data: allLeavesData, isLoading: allLoading } = useLeaveRequests({
@@ -191,18 +186,6 @@ export default function LeavesPage() {
                 <CardTitle>My Leave History</CardTitle>
               </CardHeader>
               <CardContent>
-                {/* As Admin, fetching "My Leaves" without ID shows ALL.
-                    So this view is redundant for Admin unless we fix the backend to filter by ME.
-                    Currently Backend logic: Admin -> No filter.
-                    We will just show "allLeavesData" here for now or fix backend later.
-                    Actually, let's show "My Leaves" as empty or placeholder if we can't filter.
-                    Or better, hide the tab for now if logic isn't perfect.
-                    I'll show the same list but client-side filter? No, inefficient.
-                    I'll just render allLeavesData for both but maybe user expects it.
-                 */}
-                 <div className="text-muted-foreground text-sm mb-4">
-                   (As Admin, you see all leaves. Filter by self coming soon.)
-                 </div>
                  {renderTable(myLeavesData?.data || [], myLoading, false)}
               </CardContent>
             </Card>

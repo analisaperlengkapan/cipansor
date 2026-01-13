@@ -510,11 +510,12 @@ export function useLeaveRequests(params?: {
   endDate?: string;
   page?: number;
   limit?: number;
+  mine?: boolean;
 }) {
   return useQuery({
     queryKey: ['leave-requests', params],
     queryFn: async () => {
-      const response = await api.get('/hr/leave-requests', { params });
+      const response = await api.get('/hr/leaves', { params });
       return response.data as {
         data: LeaveRequest[];
         meta: { total: number; page: number; limit: number; totalPages: number };
@@ -527,7 +528,7 @@ export function useLeaveRequest(id: string) {
   return useQuery({
     queryKey: ['leave-request', id],
     queryFn: async () => {
-      const response = await api.get(`/hr/leave-requests/${id}`);
+      const response = await api.get(`/hr/leaves/${id}`);
       return response.data.data as LeaveRequest;
     },
     enabled: !!id,

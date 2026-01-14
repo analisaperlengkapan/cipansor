@@ -459,9 +459,9 @@ export default function HomeroomDashboardPage() {
                         <td className="py-3 px-2">
                           <div className="flex items-center gap-2">
                             <Avatar className="h-8 w-8">
-                              <AvatarFallback>{student.user.name.charAt(0)}</AvatarFallback>
+                              <AvatarFallback>{student.user?.name?.charAt(0) || '?'}</AvatarFallback>
                             </Avatar>
-                            <span className="font-medium">{student.user.name}</span>
+                            <span className="font-medium">{student.user?.name || student.name || 'Unknown Student'}</span>
                           </div>
                         </td>
                         {/* Note: Individual stats would require N+1 queries or complex join, for now we list students */}

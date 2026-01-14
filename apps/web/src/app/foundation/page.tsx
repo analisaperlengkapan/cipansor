@@ -606,10 +606,10 @@ export default function FoundationPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600">
-                    {formatCurrency(financialSummary?.currentMonth?.revenue || 0)}
+                    {formatCurrency((financialSummary as any)?.currentMonth?.revenue || 0)}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Bulan lalu: {formatCurrency(financialSummary?.lastMonth?.revenue || 0)}
+                    Bulan lalu: {formatCurrency((financialSummary as any)?.lastMonth?.revenue || 0)}
                   </p>
                 </CardContent>
               </Card>
@@ -620,10 +620,10 @@ export default function FoundationPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-red-600">
-                    {formatCurrency(financialSummary?.currentMonth?.expense || 0)}
+                    {formatCurrency((financialSummary as any)?.currentMonth?.expense || 0)}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Bulan lalu: {formatCurrency(financialSummary?.lastMonth?.expense || 0)}
+                    Bulan lalu: {formatCurrency((financialSummary as any)?.lastMonth?.expense || 0)}
                   </p>
                 </CardContent>
               </Card>
@@ -633,8 +633,8 @@ export default function FoundationPage() {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-2xl font-bold ${(financialSummary?.currentMonth?.net || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatCurrency(financialSummary?.currentMonth?.net || 0)}
+                  <div className={`text-2xl font-bold ${((financialSummary as any)?.currentMonth?.net || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency((financialSummary as any)?.currentMonth?.net || 0)}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Selisih pemasukan dan pengeluaran
@@ -653,11 +653,11 @@ export default function FoundationPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="h-[300px]">
-                    {financialSummary?.expenseComposition?.length ? (
+                    {(financialSummary as any)?.expenseComposition?.length ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
-                            data={financialSummary.expenseComposition}
+                            data={(financialSummary as any).expenseComposition}
                             cx="50%"
                             cy="50%"
                             labelLine={false}
@@ -666,7 +666,7 @@ export default function FoundationPage() {
                             dataKey="value"
                             nameKey="name"
                           >
-                            {financialSummary.expenseComposition.map((entry: { name: string; value: number }, index: number) => (
+                            {(financialSummary as any).expenseComposition.map((entry: { name: string; value: number }, index: number) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
@@ -693,9 +693,9 @@ export default function FoundationPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="h-[300px]">
-                    {financialSummary?.byUnit?.length ? (
+                    {(financialSummary as any)?.byUnit?.length ? (
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={financialSummary.byUnit}>
+                        <BarChart data={(financialSummary as any).byUnit}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} />
                           <XAxis dataKey="unitName" fontSize={12} tickLine={false} axisLine={false} />
                           <YAxis
@@ -737,8 +737,8 @@ export default function FoundationPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {financialSummary?.units?.length ? (
-                      financialSummary.units.map((unit) => (
+                    {(financialSummary as any)?.units?.length ? (
+                      (financialSummary as any).units.map((unit: any) => (
                         <TableRow key={unit.unitId}>
                           <TableCell className="font-medium">{unit.unitName}</TableCell>
                           <TableCell className="text-right text-green-600">

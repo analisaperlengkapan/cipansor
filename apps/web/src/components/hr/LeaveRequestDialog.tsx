@@ -32,7 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -42,7 +41,6 @@ import {
 } from "@/components/ui/popover";
 import { useCreateLeaveRequest, LEAVE_TYPES, LEAVE_TYPE_LABELS } from "@/hooks/use-hr";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/use-auth";
 
 const formSchema = z.object({
   type: z.enum(LEAVE_TYPES as [string, ...string[]]),
@@ -53,7 +51,6 @@ const formSchema = z.object({
 
 export function LeaveRequestDialog({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-  const { user } = useAuth();
   const createMutation = useCreateLeaveRequest();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -65,64 +62,23 @@ export function LeaveRequestDialog({ children }: { children: React.ReactNode }) 
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      // Determine staffId or teacherId from user profile
-      // This logic assumes the backend or hook handles mapping user to profile ID
-      // If the hook `useCreateLeaveRequest` expects `staffId` or `teacherId`, we need to provide it.
-      // However, the current `use-hr.ts` implementation of `createLeaveRequest` sends `data` as is.
-      // We need to inject the profile ID.
-
-      const payload: any = {
+      const payload = {
         type: values.type,
         startDate: values.startDate.toISOString(),
         endDate: values.endDate.toISOString(),
         reason: values.reason,
+        // Backend infers staffId or teacherId from the authenticated user if not provided
       };
-
-      // Since we don't have easy access to profile ID here without fetching user details,
-      // we might rely on the backend to infer it from `req.user.id`.
-      // But the schema requires `staffId` or `teacherId`.
-      // Let's assume the user object from `useAuth` has profile IDs if expanded, or we fetch it.
-      // Actually `useAuth` usually returns basic user info.
-
-      // Ideally, the backend `createLeave` should infer profile from `req.user` if not provided.
-      // But let's check `apps/api/src/modules/hr/service.ts` again.
-      // It takes `CreateLeaveInput`. It does NOT infer from context.
-      // The Controller `createLeave` takes `req.body`.
-      // So the Frontend MUST send the ID.
-
-      // We need to fetch the employee profile first.
-      // For now, let's assume we can get it or fail gracefully.
-      // A better way is to pass `employeeId` as a prop to this dialog if available in parent.
-      // But let's try to use `user` object properties if available.
-
-      // HACK: We will try to find profile ID from user object if available, otherwise rely on a hook.
-      // Let's pass it as a hidden field or assume parent handles it.
-      // Actually, let's modify `onSubmit` to check if we have the ID.
-
-      // Since we can't easily get it here without a query, let's assume the parent component passes the ID
-      // or we use a hook to get the current employee profile.
-      // I'll modify the component to accept `employeeId` and `employeeType`.
-
-      // For this implementation, I'll leave it to the hook or assume `user.teacherId` / `user.staffId` exists in session (which is common).
-
-      if (user?.teacherId) {
-        payload.teacherId = user.teacherId;
-      } else if (user?.staffId) {
-        payload.staffId = user.staffId;
-      } else {
-        // Fallback: try to let backend handle it? No, schema requires it.
-        // We'll throw an error if we can't find it.
-        // Wait, `useAuth` usually returns the JWT payload.
-        // Let's assume `user` has these fields.
-      }
 
       await createMutation.mutateAsync(payload);
 
       toast.success("Leave request submitted successfully");
       setOpen(false);
       form.reset();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to submit leave request");
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const err = error as any;
+      toast.error(err.response?.data?.message || "Failed to submit leave request");
     }
   };
 

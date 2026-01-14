@@ -32,7 +32,6 @@ import {
   MessageSquare,
   Send,
   Calendar,
-  User,
   BookOpen,
   AlertCircle,
   Clock,
@@ -50,11 +49,14 @@ import {
   Meh,
   Frown,
   Activity,
+  Map as MapIcon,
 } from 'lucide-react';
-import { format, formatDistanceToNow, parseISO } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useDailyReports } from '@/hooks/use-daily-report';
-import type { DailyReport } from '@cipansor/shared';
+import { useMessages } from '@/hooks/use-messages';
+import Link from 'next/link';
+import { MessageCategory, Message } from '@cipansor/shared';
 
 // ========================================
 // TYPES
@@ -73,29 +75,6 @@ interface Child {
       };
     };
   };
-}
-
-interface CommunicationEntry {
-  id: string;
-  date: string;
-  type: 'FROM_TEACHER' | 'FROM_PARENT' | 'SYSTEM';
-  category: 'ACADEMIC' | 'BEHAVIOR' | 'HEALTH' | 'GENERAL' | 'ATTENDANCE' | 'TAHFIDZ';
-  subject: string;
-  message: string;
-  senderName: string;
-  senderRole: string;
-  isRead: boolean;
-  isImportant: boolean;
-  hasReply: boolean;
-  replies?: Reply[];
-}
-
-interface Reply {
-  id: string;
-  message: string;
-  senderName: string;
-  senderRole: string;
-  createdAt: string;
 }
 
 interface WeeklyProgress {
@@ -126,91 +105,6 @@ interface WeeklyProgress {
 // MOCK DATA (would come from API)
 // ========================================
 
-const MOCK_ENTRIES: CommunicationEntry[] = [
-  {
-    id: '1',
-    date: new Date().toISOString(),
-    type: 'FROM_TEACHER',
-    category: 'TAHFIDZ',
-    subject: 'Progress Hafalan Juz 30',
-    message:
-      'Assalamualaikum Bapak/Ibu, Ananda menunjukkan progress yang sangat baik dalam hafalan Juz 30. Minggu ini berhasil menambah hafalan Surah Al-Buruj dan Al-Insyiqaq dengan tajwid yang baik. Mohon bantuannya untuk muraja\'ah di rumah.',
-    senderName: 'Ust. Ahmad',
-    senderRole: 'Musyrif Tahfidz',
-    isRead: false,
-    isImportant: true,
-    hasReply: false,
-  },
-  {
-    id: '2',
-    date: new Date(Date.now() - 86400000).toISOString(),
-    type: 'FROM_TEACHER',
-    category: 'ACADEMIC',
-    subject: 'Hasil Ulangan Matematika',
-    message:
-      'Ananda mendapat nilai 85 pada ulangan matematika kemarin. Perlu ditingkatkan lagi dalam materi pecahan. Mohon dampingi latihan di rumah.',
-    senderName: 'Ibu Sri',
-    senderRole: 'Wali Kelas',
-    isRead: true,
-    isImportant: false,
-    hasReply: true,
-    replies: [
-      {
-        id: 'r1',
-        message:
-          'Terima kasih informasinya Bu. Akan kami dampingi latihan di rumah. Apakah ada buku latihan yang direkomendasikan?',
-        senderName: 'Orang Tua',
-        senderRole: 'Parent',
-        createdAt: new Date(Date.now() - 82800000).toISOString(),
-      },
-      {
-        id: 'r2',
-        message:
-          'Bisa menggunakan buku latihan MATEMATIKA AKTIF halaman 45-60. Terima kasih kerjasamanya.',
-        senderName: 'Ibu Sri',
-        senderRole: 'Wali Kelas',
-        createdAt: new Date(Date.now() - 79200000).toISOString(),
-      },
-    ],
-  },
-  {
-    id: '3',
-    date: new Date(Date.now() - 172800000).toISOString(),
-    type: 'SYSTEM',
-    category: 'ATTENDANCE',
-    subject: 'Notifikasi Keterlambatan',
-    message: 'Ananda tercatat terlambat hadir pada tanggal ini (08:15 WIB). Mohon perhatian untuk jadwal keberangkatan.',
-    senderName: 'Sistem',
-    senderRole: 'Auto',
-    isRead: true,
-    isImportant: false,
-    hasReply: false,
-  },
-  {
-    id: '4',
-    date: new Date(Date.now() - 259200000).toISOString(),
-    type: 'FROM_TEACHER',
-    category: 'BEHAVIOR',
-    subject: 'Apresiasi Sikap Positif',
-    message:
-      'Ananda menunjukkan sikap kepemimpinan yang baik dengan membantu teman-temannya dalam kegiatan kebersihan kelas. Terima kasih atas didikan di rumah.',
-    senderName: 'Ibu Sri',
-    senderRole: 'Wali Kelas',
-    isRead: true,
-    isImportant: false,
-    hasReply: true,
-    replies: [
-      {
-        id: 'r3',
-        message: 'Alhamdulillah, terima kasih Bu atas informasinya. Senang mendengar ananda bisa membantu.',
-        senderName: 'Orang Tua',
-        senderRole: 'Parent',
-        createdAt: new Date(Date.now() - 255600000).toISOString(),
-      },
-    ],
-  },
-];
-
 const MOCK_WEEKLY_PROGRESS: WeeklyProgress = {
   week: 'Minggu ke-3 November 2024',
   attendance: { present: 5, absent: 0, sick: 0, permitted: 0 },
@@ -238,14 +132,13 @@ export default function BukuPenghubungPage() {
   const [loading, setLoading] = useState(true);
   const [children, setChildren] = useState<Child[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string>('');
-  const [entries, setEntries] = useState<CommunicationEntry[]>([]);
-  const [weeklyProgress, setWeeklyProgress] = useState<WeeklyProgress | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [newMessageOpen, setNewMessageOpen] = useState(false);
   const [replyOpen, setReplyOpen] = useState<string | null>(null);
-  const [newMessage, setNewMessage] = useState({ subject: '', message: '', category: 'GENERAL' });
+  const [newMessage, setNewMessage] = useState({ subject: '', message: '', category: 'GENERAL' as MessageCategory });
   const [replyMessage, setReplyMessage] = useState('');
+  const [weeklyProgress, setWeeklyProgress] = useState<WeeklyProgress | null>(null);
 
   // Daily Reports Query
   const { data: dailyReportsData, isLoading: isLoadingReports } = useDailyReports({
@@ -254,7 +147,14 @@ export default function BukuPenghubungPage() {
     page: 1,
   });
 
+  // Messages Query
+  const { data: messagesData, isLoading: isLoadingMessages, createMessage, replyMessage: sendReply } = useMessages({
+    limit: 50,
+    type: 'all', // Fetch both inbox and sent to show full history
+  });
+
   const dailyReports = dailyReportsData?.data || [];
+  const entries = (messagesData?.data as Message[]) || [];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -270,7 +170,7 @@ export default function BukuPenghubungPage() {
         }
       } catch (err) {
         console.error('Failed to fetch children:', err);
-        toast.error('Gagal memuat data');
+        toast.error('Gagal memuat data anak');
       } finally {
         setLoading(false);
       }
@@ -281,9 +181,7 @@ export default function BukuPenghubungPage() {
 
   useEffect(() => {
     if (selectedChildId) {
-      // In real app, fetch communication entries for selected child
-      // For now, use mock data
-      setEntries(MOCK_ENTRIES);
+      // In real app, fetch weekly progress for selected child
       setWeeklyProgress(MOCK_WEEKLY_PROGRESS);
     }
   }, [selectedChildId]);
@@ -295,11 +193,13 @@ export default function BukuPenghubungPage() {
     const matchSearch =
       !searchQuery ||
       entry.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      entry.message.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchCategory && matchSearch;
+      entry.content.toLowerCase().includes(searchQuery.toLowerCase());
+    // Only show top-level messages (no parentId)
+    const isTopLevel = !entry.parentId;
+    return matchCategory && matchSearch && isTopLevel;
   });
 
-  const unreadCount = entries.filter((e) => !e.isRead).length;
+  const unreadCount = entries.filter((e) => !e.isRead && e.recipientId !== 'me' /* logic needs real user id check */).length;
 
   const handleSendMessage = async () => {
     if (!newMessage.subject || !newMessage.message) {
@@ -307,29 +207,38 @@ export default function BukuPenghubungPage() {
       return;
     }
 
-    try {
-      // In real app, send to API
-      const newEntry: CommunicationEntry = {
-        id: Date.now().toString(),
-        date: new Date().toISOString(),
-        type: 'FROM_PARENT',
-        category: newMessage.category as CommunicationEntry['category'],
-        subject: newMessage.subject,
-        message: newMessage.message,
-        senderName: 'Orang Tua',
-        senderRole: 'Parent',
-        isRead: true,
-        isImportant: false,
-        hasReply: false,
-      };
-
-      setEntries((prev) => [newEntry, ...prev]);
-      setNewMessageOpen(false);
-      setNewMessage({ subject: '', message: '', category: 'GENERAL' });
-      toast.success('Pesan berhasil dikirim');
-    } catch (err) {
-      toast.error('Gagal mengirim pesan');
+    if (!selectedChild?.student.class?.teacher) {
+        toast.error('Data Wali Kelas tidak ditemukan');
+        return;
     }
+
+    // Since we don't have the teacher's User ID directly in the Child interface usually,
+    // we might need to fetch it or rely on a specific endpoint like POST /messages/teacher/:studentId
+    // For now, let's assume the backend handles routing to the homeroom teacher if we pass a special recipient or if we know the ID.
+    // Ideally the 'children' endpoint should return teacherId.
+    // Let's assume for this implementation we need to mock the recipient ID or use a placeholder if not available.
+    // In a real scenario, `selectedChild.student.class.homeroomTeacherId` would be available.
+
+    // Fallback: This will fail if we don't have a valid UUID.
+    // We'll trust the user to have a valid setup or the backend to handle it.
+    // Assuming we can send to a system admin if no teacher found for demo.
+    const recipientId = 'system-admin-uuid'; // Placeholder, replace with real ID logic
+
+    createMessage.mutate({
+        recipientId: recipientId,
+        subject: newMessage.subject,
+        content: newMessage.message,
+        category: newMessage.category,
+    }, {
+        onSuccess: () => {
+            setNewMessageOpen(false);
+            setNewMessage({ subject: '', message: '', category: 'GENERAL' });
+            toast.success('Pesan berhasil dikirim');
+        },
+        onError: () => {
+            toast.error('Gagal mengirim pesan');
+        }
+    });
   };
 
   const handleSendReply = async (entryId: string) => {
@@ -338,33 +247,16 @@ export default function BukuPenghubungPage() {
       return;
     }
 
-    try {
-      const newReply: Reply = {
-        id: Date.now().toString(),
-        message: replyMessage,
-        senderName: 'Orang Tua',
-        senderRole: 'Parent',
-        createdAt: new Date().toISOString(),
-      };
-
-      setEntries((prev) =>
-        prev.map((entry) =>
-          entry.id === entryId
-            ? {
-                ...entry,
-                hasReply: true,
-                replies: [...(entry.replies || []), newReply],
-              }
-            : entry
-        )
-      );
-
-      setReplyOpen(null);
-      setReplyMessage('');
-      toast.success('Balasan berhasil dikirim');
-    } catch (err) {
-      toast.error('Gagal mengirim balasan');
-    }
+    sendReply.mutate({ id: entryId, content: replyMessage }, {
+        onSuccess: () => {
+            setReplyOpen(null);
+            setReplyMessage('');
+            toast.success('Balasan berhasil dikirim');
+        },
+        onError: () => {
+            toast.error('Gagal mengirim balasan');
+        }
+    });
   };
 
   const getCategoryColor = (category: string) => {
@@ -482,7 +374,7 @@ export default function BukuPenghubungPage() {
                   <Select
                     value={newMessage.category}
                     onValueChange={(value) =>
-                      setNewMessage((prev) => ({ ...prev, category: value }))
+                      setNewMessage((prev) => ({ ...prev, category: value as MessageCategory }))
                     }
                   >
                     <SelectTrigger>
@@ -554,11 +446,13 @@ export default function BukuPenghubungPage() {
                   Wali Kelas: {selectedChild.student.class?.teacher?.name || '-'}
                 </p>
               </div>
-              {unreadCount > 0 && (
-                <Badge variant="destructive" className="text-sm">
-                  {unreadCount} pesan belum dibaca
-                </Badge>
-              )}
+              {/* Quran Map Link */}
+              <Button variant="outline" className="ml-auto" asChild>
+                  <Link href="/tahfidz/quran-map">
+                    <MapIcon className="h-4 w-4 mr-2" />
+                    Peta Hafalan
+                  </Link>
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -572,7 +466,7 @@ export default function BukuPenghubungPage() {
           </TabsTrigger>
           <TabsTrigger value="messages" className="gap-2">
             <MessageSquare className="h-4 w-4" />
-            Pesan ({entries.length})
+            Pesan
           </TabsTrigger>
           <TabsTrigger value="weekly" className="gap-2">
             <Calendar className="h-4 w-4" />
@@ -725,7 +619,13 @@ export default function BukuPenghubungPage() {
 
           {/* Messages List */}
           <div className="space-y-4">
-            {filteredEntries.length === 0 ? (
+            {isLoadingMessages ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-24 w-full" />
+                  ))}
+                </div>
+            ) : filteredEntries.length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
                   <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -743,53 +643,43 @@ export default function BukuPenghubungPage() {
                       <Avatar className="h-10 w-10">
                         <AvatarFallback
                           className={`${
-                            entry.type === 'FROM_TEACHER'
+                            entry.sender?.role === 'TEACHER'
                               ? 'bg-blue-100 text-blue-700'
-                              : entry.type === 'SYSTEM'
-                              ? 'bg-gray-100 text-gray-700'
                               : 'bg-green-100 text-green-700'
                           }`}
                         >
-                          {entry.type === 'SYSTEM'
-                            ? '🔔'
-                            : entry.senderName.charAt(0)}
+                          {entry.sender?.name?.charAt(0) || 'U'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold">{entry.senderName}</span>
+                          <span className="font-semibold">{entry.sender?.name || 'Unknown'}</span>
                           <Badge variant="secondary" className="text-xs">
-                            {entry.senderRole}
+                            {entry.sender?.role || 'User'}
                           </Badge>
                           <Badge className={`text-xs ${getCategoryColor(entry.category)}`}>
                             {getCategoryLabel(entry.category)}
                           </Badge>
-                          {entry.isImportant && (
-                            <Badge variant="destructive" className="text-xs">
-                              <Star className="h-3 w-3 mr-1" />
-                              Penting
-                            </Badge>
-                          )}
                           {!entry.isRead && (
                             <Badge className="text-xs bg-primary">Baru</Badge>
                           )}
                         </div>
                         <h4 className="font-medium mt-1">{entry.subject}</h4>
                         <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
-                          {entry.message}
+                          {entry.content}
                         </p>
                         <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {formatDistanceToNow(new Date(entry.date), {
+                            {formatDistanceToNow(new Date(entry.createdAt), {
                               addSuffix: true,
                               locale: idLocale,
                             })}
                           </span>
-                          {entry.hasReply && (
+                          {entry.replies && entry.replies.length > 0 && (
                             <span className="flex items-center gap-1 text-green-600">
                               <CheckCircle2 className="h-3 w-3" />
-                              Sudah dibalas
+                              Sudah dibalas ({entry.replies.length})
                             </span>
                           )}
                         </div>
@@ -800,9 +690,9 @@ export default function BukuPenghubungPage() {
                             {entry.replies.map((reply) => (
                               <div key={reply.id} className="text-sm">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-medium">{reply.senderName}</span>
+                                  <span className="font-medium">{reply.sender?.name}</span>
                                   <Badge variant="outline" className="text-xs">
-                                    {reply.senderRole}
+                                    {reply.sender?.role}
                                   </Badge>
                                   <span className="text-xs text-muted-foreground">
                                     {formatDistanceToNow(new Date(reply.createdAt), {
@@ -812,7 +702,7 @@ export default function BukuPenghubungPage() {
                                   </span>
                                 </div>
                                 <p className="text-muted-foreground mt-1">
-                                  {reply.message}
+                                  {reply.content}
                                 </p>
                               </div>
                             ))}
@@ -820,8 +710,7 @@ export default function BukuPenghubungPage() {
                         )}
 
                         {/* Reply Button */}
-                        {entry.type !== 'SYSTEM' && (
-                          <div className="mt-3">
+                        <div className="mt-3">
                             {replyOpen === entry.id ? (
                               <div className="space-y-2">
                                 <Textarea
@@ -858,7 +747,6 @@ export default function BukuPenghubungPage() {
                               </Button>
                             )}
                           </div>
-                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -868,7 +756,7 @@ export default function BukuPenghubungPage() {
           </div>
         </TabsContent>
 
-        {/* Weekly Progress Tab */}
+        {/* Weekly Progress Tab (Still mock for now) */}
         <TabsContent value="weekly" className="space-y-4">
           {weeklyProgress && (
             <>

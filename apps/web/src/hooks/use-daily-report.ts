@@ -11,7 +11,6 @@ import type {
 export type { DailyReport, CreateDailyReportInput, UpdateDailyReportInput, BulkCreateDailyReportsInput };
 
 // Re-export specific enums or types that might be needed by consumers
-// This assumes @cipansor/shared exports these. If not, they are defined here as types.
 export type DailyMood = 'HAPPY' | 'NEUTRAL' | 'SAD' | 'TIRED' | 'EXCITED' | 'SICK';
 
 interface DailyReportListResponse {
@@ -30,6 +29,33 @@ interface DailyReportResponse {
   data: DailyReport;
 }
 
+interface StudentDailySummaryResponse {
+  data: {
+    student: {
+      id: string;
+      nisn: string;
+      user: { name: string };
+    };
+    period: {
+      month: number;
+      year: number;
+      startDate: string;
+      endDate: string;
+    };
+    statistics: {
+      totalReports: number;
+      confirmedByParent: number;
+      moodDistribution: Record<string, number>;
+      mealStats: {
+        meal: Record<string, number>;
+        snack: Record<string, number>;
+      };
+      averageNapDuration: number | null;
+    };
+    reports: DailyReport[];
+  };
+}
+
 interface DailyReportListQuery {
   page?: number;
   limit?: number;
@@ -41,6 +67,13 @@ interface DailyReportListQuery {
   dateFrom?: string;
   dateTo?: string;
   search?: string;
+}
+
+interface StudentDailySummaryQuery {
+  studentId: string;
+  academicYearId: string;
+  month?: number;
+  year?: number;
 }
 
 interface ClassDailySummaryQuery {
@@ -58,6 +91,7 @@ const dailyReportKeys = {
   details: () => [...dailyReportKeys.all, 'detail'] as const,
   detail: (id: string) => [...dailyReportKeys.details(), id] as const,
   summaries: () => [...dailyReportKeys.all, 'summary'] as const,
+  studentSummary: (filters: StudentDailySummaryQuery) => [...dailyReportKeys.summaries(), 'student', filters] as const,
   classSummary: (filters: ClassDailySummaryQuery) => [...dailyReportKeys.summaries(), 'class', filters] as const,
 };
 
@@ -111,6 +145,17 @@ export function useDailyReportPhotos(reportId: string) {
     data: report?.photos || [],
     ...rest,
   };
+}
+
+export function useStudentDailySummary(query: StudentDailySummaryQuery) {
+  return useQuery({
+    queryKey: dailyReportKeys.studentSummary(query),
+    queryFn: async () => {
+      const { data } = await api.get<StudentDailySummaryResponse>('/daily-report/summary/student', { params: query });
+      return data.data;
+    },
+    enabled: !!query.studentId && !!query.academicYearId,
+  });
 }
 
 export function useClassDailySummary(query: ClassDailySummaryQuery) {
@@ -168,6 +213,7 @@ export function useUpdateDailyReport() {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: dailyReportKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: dailyReportKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: dailyReportKeys.summaries() });
     },
   });
 }
@@ -181,6 +227,7 @@ export function useDeleteDailyReport() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: dailyReportKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: dailyReportKeys.summaries() });
     },
   });
 }
@@ -188,12 +235,14 @@ export function useDeleteDailyReport() {
 export function useAddParentNotes() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { parentFeedback: string } }) => {
+    mutationFn: async ({ id, data }: { id: string; data: { parentFeedback: string; isConfirmed: boolean } }) => {
       const { data: res } = await api.post(`/daily-report/${id}/confirm`, data);
       return res.data;
     },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: dailyReportKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: dailyReportKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: dailyReportKeys.summaries() });
     },
   });
 }

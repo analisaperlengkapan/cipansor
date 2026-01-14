@@ -45,6 +45,16 @@ export class ParentService {
                         isActive: true,
                       },
                     },
+                    homeroomTeacher: {
+                      select: {
+                        id: true,
+                        user: {
+                          select: {
+                            name: true,
+                          },
+                        },
+                      },
+                    },
                   },
                 },
               },

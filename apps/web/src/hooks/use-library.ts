@@ -1,70 +1,45 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { PaginatedResponse } from '@/lib/api';
+import {
+  Book,
+  BookCategory,
+  Borrowing as Borrow,
+  BorrowingStatus as BorrowStatus,
+  BookStatus,
+  CreateBorrowingInput,
+  ReturnBookInput
+} from '@cipansor/shared';
 
-// Types
-export type BookCategory = 'ISLAMIC' | 'ACADEMIC' | 'FICTION' | 'NON_FICTION' | 'REFERENCE' | 'OTHER';
-export type BorrowStatus = 'BORROWED' | 'RETURNED' | 'OVERDUE' | 'LOST';
-
-export interface Book {
-  id: string;
-  title: string;
-  author: string;
-  isbn?: string;
-  publisher?: string;
-  publishYear?: number;
-  category: BookCategory;
-  description?: string;
-  quantity: number;
-  availableQuantity: number;
-  location?: string;
-  coverImage?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Borrow {
-  id: string;
-  bookId: string;
-  studentId: string;
-  borrowDate: string;
-  dueDate: string;
-  returnDate?: string;
-  status: BorrowStatus;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-  book?: Book;
-  student?: {
-    id: string;
-    name: string;
-    nis: string;
-    class?: { name: string };
-  };
-}
+// Re-export types for component use
+export type { Book, BookCategory, Borrow, BorrowStatus, BookStatus };
 
 // Constants
-export const BOOK_CATEGORIES: { value: BookCategory; label: string }[] = [
-  { value: 'ISLAMIC', label: 'Keislaman' },
-  { value: 'ACADEMIC', label: 'Akademik' },
-  { value: 'FICTION', label: 'Fiksi' },
-  { value: 'NON_FICTION', label: 'Non-Fiksi' },
-  { value: 'REFERENCE', label: 'Referensi' },
-  { value: 'OTHER', label: 'Lainnya' },
-];
-
 export const BORROW_STATUSES: { value: BorrowStatus; label: string; color: string }[] = [
-  { value: 'BORROWED', label: 'Dipinjam', color: 'bg-blue-100 text-blue-800' },
+  { value: 'ACTIVE', label: 'Dipinjam', color: 'bg-blue-100 text-blue-800' },
   { value: 'RETURNED', label: 'Dikembalikan', color: 'bg-green-100 text-green-800' },
   { value: 'OVERDUE', label: 'Terlambat', color: 'bg-red-100 text-red-800' },
   { value: 'LOST', label: 'Hilang', color: 'bg-gray-100 text-gray-800' },
 ];
+
+// Category Hooks
+export function useBookCategories(unitId?: string) {
+  return useQuery({
+    queryKey: ['book-categories', unitId],
+    queryFn: async () => {
+      const response = await api.get<BookCategory[]>('/library/categories', { params: { unitId } });
+      return response.data;
+    },
+  });
+}
 
 // Books Hooks
 export function useBooks(params?: {
   page?: number;
   limit?: number;
   search?: string;
-  category?: BookCategory;
+  categoryId?: string;
+  unitId?: string;
+  status?: BookStatus;
 }) {
   return useQuery({
     queryKey: ['books', params],
@@ -90,17 +65,7 @@ export function useCreateBook() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: {
-      title: string;
-      author: string;
-      isbn?: string;
-      publisher?: string;
-      publishYear?: number;
-      category: BookCategory;
-      description?: string;
-      quantity: number;
-      location?: string;
-    }) => {
+    mutationFn: async (data: any) => {
       const response = await api.post<Book>('/library/books', data);
       return response.data;
     },
@@ -119,17 +84,7 @@ export function useUpdateBook() {
       data,
     }: {
       id: string;
-      data: Partial<{
-        title: string;
-        author: string;
-        isbn: string;
-        publisher: string;
-        publishYear: number;
-        category: BookCategory;
-        description: string;
-        quantity: number;
-        location: string;
-      }>;
+      data: any;
     }) => {
       const response = await api.put<Book>(`/library/books/${id}`, data);
       return response.data;
@@ -164,7 +119,7 @@ export function useBorrows(params?: {
   return useQuery({
     queryKey: ['borrows', params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Borrow>>('/library/borrows', { params });
+      const response = await api.get<PaginatedResponse<Borrow>>('/library/borrowings', { params });
       return response.data;
     },
   });
@@ -174,7 +129,7 @@ export function useBorrow(id: string) {
   return useQuery({
     queryKey: ['borrows', id],
     queryFn: async () => {
-      const response = await api.get<Borrow>(`/library/borrows/${id}`);
+      const response = await api.get<Borrow>(`/library/borrowings/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -185,8 +140,9 @@ export function useStudentBorrows(studentId: string) {
   return useQuery({
     queryKey: ['borrows', 'student', studentId],
     queryFn: async () => {
-      const response = await api.get<Borrow[]>(`/library/borrows/student/${studentId}`);
-      return response.data;
+      // Assuming endpoint exists or filter by studentId in main list
+      const response = await api.get<PaginatedResponse<Borrow>>('/library/borrowings', { params: { studentId } });
+      return response.data.data;
     },
     enabled: !!studentId,
   });
@@ -196,14 +152,8 @@ export function useCreateBorrow() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: {
-      bookId: string;
-      studentId: string;
-      borrowDate: string;
-      dueDate: string;
-      notes?: string;
-    }) => {
-      const response = await api.post<Borrow>('/library/borrows', data);
+    mutationFn: async (data: CreateBorrowingInput) => {
+      const response = await api.post<Borrow>('/library/borrowings', data);
       return response.data;
     },
     onSuccess: () => {
@@ -217,8 +167,8 @@ export function useReturnBook() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, returnDate }: { id: string; returnDate: string }) => {
-      const response = await api.put<Borrow>(`/library/borrows/${id}/return`, { returnDate });
+    mutationFn: async ({ id, data }: { id: string; data: ReturnBookInput }) => {
+      const response = await api.patch<Borrow>(`/library/borrowings/${id}/return`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -233,7 +183,7 @@ export function useMarkLost() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.put<Borrow>(`/library/borrows/${id}/lost`);
+      const response = await api.patch<Borrow>(`/library/borrowings/${id}/lost`);
       return response.data;
     },
     onSuccess: () => {
@@ -244,30 +194,22 @@ export function useMarkLost() {
 }
 
 // Library Summary Hook
-export function useLibrarySummary() {
+export function useLibrarySummary(unitId?: string) {
   return useQuery({
-    queryKey: ['library', 'summary'],
+    queryKey: ['library', 'stats', unitId],
     queryFn: async () => {
+      // Note: Endpoint changed to /stats/:unitId
+      if (!unitId) return null;
       const response = await api.get<{
+        totalTitles: number;
         totalBooks: number;
-        totalQuantity: number;
-        totalBorrowed: number;
-        totalOverdue: number;
-        byCategory: { category: BookCategory; count: number }[];
-        popularBooks: { bookId: string; title: string; borrowCount: number }[];
-      }>('/library/summary');
+        availableBooks: number;
+        totalCategories: number;
+        activeBorrowings: number;
+        overdueBorrowings: number;
+      }>(`/library/stats/${unitId}`);
       return response.data;
     },
-  });
-}
-
-// Get overdue borrows
-export function useOverdueBorrows() {
-  return useQuery({
-    queryKey: ['borrows', 'overdue'],
-    queryFn: async () => {
-      const response = await api.get<Borrow[]>('/library/borrows/overdue');
-      return response.data;
-    },
+    enabled: !!unitId,
   });
 }

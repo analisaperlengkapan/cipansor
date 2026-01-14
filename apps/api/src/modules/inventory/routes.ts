@@ -31,8 +31,10 @@ router.patch("/audits/:id/complete", authorize(UserRole.UNIT_ADMIN), controller.
 // Maintenance
 router.get("/maintenance", authorize(UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getMaintenances);
 router.post("/maintenance", authorize(UserRole.UNIT_ADMIN, UserRole.STAFF), controller.createMaintenance);
+router.post("/maintenance/request", authorize(UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.createMaintenanceRequest);
 router.get("/maintenance/:id", authorize(UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getMaintenanceById);
 router.put("/maintenance/:id", authorize(UserRole.UNIT_ADMIN, UserRole.STAFF), controller.updateMaintenance);
+router.patch("/maintenance/:id/status", authorize(UserRole.UNIT_ADMIN, UserRole.STAFF), controller.updateMaintenanceStatus);
 router.patch("/maintenance/:id/complete", authorize(UserRole.UNIT_ADMIN, UserRole.STAFF), controller.completeMaintenance);
 router.delete("/maintenance/:id", authorize(UserRole.UNIT_ADMIN), controller.deleteMaintenance);
 
@@ -43,5 +45,6 @@ router.get("/:id/depreciation", authorize(UserRole.UNIT_ADMIN, UserRole.TEACHER,
 router.get("/:id", authorize(UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getItemById);
 router.put("/:id", authorize(UserRole.UNIT_ADMIN, UserRole.STAFF), controller.updateItem);
 router.delete("/:id", authorize(UserRole.UNIT_ADMIN), controller.deleteItem);
+router.post("/:id/dispose", authorize(UserRole.UNIT_ADMIN), controller.disposeAsset);
 
 export default router;

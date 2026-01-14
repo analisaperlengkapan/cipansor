@@ -7,9 +7,12 @@ import {
   updateInventoryItemSchema,
   queryInventoryItemSchema,
   createMaintenanceSchema,
+  createMaintenanceRequestSchema,
   updateMaintenanceSchema,
+  updateMaintenanceStatusSchema,
   queryMaintenanceSchema,
   createAssetAssignmentSchema,
+  createAssetDisposalSchema,
   returnAssetAssignmentSchema,
   queryAssetAssignmentSchema,
   createAssetAuditSchema,
@@ -264,6 +267,18 @@ export async function createMaintenance(req: Request, res: Response, next: NextF
   }
 }
 
+export async function createMaintenanceRequest(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = createMaintenanceRequestSchema.parse(req.body);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userId = (req as any).user.id;
+    const maintenance = await service.createMaintenanceRequest(data, userId);
+    res.status(201).json({ success: true, data: maintenance });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function updateMaintenance(req: Request, res: Response, next: NextFunction) {
   try {
     const data = updateMaintenanceSchema.parse(req.body);
@@ -274,10 +289,34 @@ export async function updateMaintenance(req: Request, res: Response, next: NextF
   }
 }
 
+export async function updateMaintenanceStatus(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = updateMaintenanceStatusSchema.parse(req.body);
+    const maintenance = await service.updateMaintenanceStatus(req.params.id, data);
+    res.json({ success: true, data: maintenance });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function deleteMaintenance(req: Request, res: Response, next: NextFunction) {
   try {
     await service.deleteMaintenance(req.params.id);
     res.json({ success: true, message: "Maintenance record deleted" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ==================== DISPOSAL ====================
+
+export async function disposeAsset(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = createAssetDisposalSchema.parse(req.body);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userId = (req as any).user.id;
+    await service.disposeAsset(req.params.id, data, userId);
+    res.json({ success: true, message: "Asset disposed successfully" });
   } catch (error) {
     next(error);
   }

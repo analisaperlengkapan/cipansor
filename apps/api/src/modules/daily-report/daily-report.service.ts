@@ -16,6 +16,7 @@ import type {
 // Helper interface for validation since schema types might not be exported from shared yet or match perfectly
 interface ConfirmReportInput {
   isConfirmed: boolean;
+  parentFeedback?: string;
 }
 
 interface AuthContext {
@@ -470,11 +471,28 @@ export const dailyReportService = {
   // PARENT CONFIRMATION (Read notification)
   // ============================================
 
-  async confirmByParent(id: string, _data: ConfirmReportInput, _userId: string) {
+  async confirmByParent(id: string, data: ConfirmReportInput, _userId: string) {
+    const existing = await prisma.dailyStudentReport.findUnique({
+      where: { id },
+      select: { homeActivity: true },
+    });
+
+    const feedback = data.parentFeedback;
+    let newHomeActivity = existing?.homeActivity;
+
+    if (feedback) {
+      if (newHomeActivity) {
+        newHomeActivity = `${newHomeActivity}\n\n[Tanggapan Orang Tua]: ${feedback}`;
+      } else {
+        newHomeActivity = `[Tanggapan Orang Tua]: ${feedback}`;
+      }
+    }
+
     const report = await prisma.dailyStudentReport.update({
       where: { id },
       data: {
         parentReadAt: new Date(),
+        homeActivity: newHomeActivity,
       },
       include: {
         student: { select: { id: true, user: { select: { name: true } } } },

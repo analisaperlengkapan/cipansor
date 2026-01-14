@@ -147,3 +147,24 @@ export interface DigitalCertificate {
   signatoryTitle: string;
   student?: Student;
 }
+
+export type QuranSurahStatus = 'MEMORIZED' | 'IN_PROGRESS' | 'NOT_STARTED';
+
+export interface QuranSurahProgress {
+  surahNumber: number;
+  surahName: string;
+  status: QuranSurahStatus;
+  strength?: number; // 0-100 score based on murojaah
+  lastReview?: string | Date;
+}
+
+export interface QuranProgressMap {
+  studentId: string;
+  surahs: QuranSurahProgress[]; // 114 entries
+  stats: {
+    totalMemorized: number;
+    totalInProgress: number;
+    totalNotStarted: number;
+    percentage: number;
+  };
+}

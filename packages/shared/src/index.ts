@@ -4,6 +4,7 @@ export * from './types/models';
 export * from './types/attendance';
 export * from './types/enums';
 export * from './types/notifications';
+export * from './types/messages';
 export * from './types/analytics';
 export * from './types/tahfidz';
 export * from './types/daily-report';

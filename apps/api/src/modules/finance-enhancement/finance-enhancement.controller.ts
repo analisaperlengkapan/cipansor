@@ -18,7 +18,8 @@ import {
   getIncomeStatement,
   getTrialBalance,
   getGeneralLedger,
-  getCashFlowStatement
+  getCashFlowStatement,
+  getBudgetRealizationReport
 } from './reporting.service';
 
 // Helper for parsing pagination params
@@ -45,6 +46,25 @@ export class FinanceEnhancementController {
       });
 
       res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getBudgetRealizationReport(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { unitId, academicYearId } = req.query;
+
+      if (!unitId || !academicYearId) {
+        return res.status(400).json({ success: false, message: 'Unit ID and Academic Year ID are required' });
+      }
+
+      const result = await getBudgetRealizationReport(
+        unitId as string,
+        academicYearId as string
+      );
+
+      res.json({ success: true, data: result });
     } catch (error) {
       next(error);
     }
@@ -105,6 +125,22 @@ export class FinanceEnhancementController {
       });
 
       res.status(201).json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async createManualJournal(req: Request, res: Response, next: NextFunction) {
+    try {
+      const input: CreateManualJournalInput = req.body;
+      const userId = (req as any).user.id;
+
+      await financeEnhancementService.createManualJournal({
+        ...input,
+        createdById: userId
+      });
+
+      res.status(201).json({ success: true, message: 'Manual journal created successfully' });
     } catch (error) {
       next(error);
     }

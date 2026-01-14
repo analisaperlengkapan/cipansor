@@ -99,7 +99,7 @@ export default function CreateDailyReportPage() {
   const units = unitsData || [];
   const classes = classesData?.data || [];
   const academicYears = academicYearsData?.data || [];
-  const students = enrollmentsData?.data || [];
+  const students = enrollmentsData || [];
 
   const handleSubmit = async () => {
     if (!unitId || !studentId || !academicYearId || !date) {
@@ -232,11 +232,11 @@ export default function CreateDailyReportPage() {
                     <SelectValue placeholder="Pilih Siswa" />
                   </SelectTrigger>
                   <SelectContent>
-                    {students.map((enrollment) => (
+                    {students.map((enrollment) => enrollment.student ? (
                       <SelectItem key={enrollment.student.id} value={enrollment.student.id}>
                         {enrollment.student.user?.name || enrollment.student.name}
                       </SelectItem>
-                    ))}
+                    ) : null)}
                   </SelectContent>
                 </Select>
               </div>

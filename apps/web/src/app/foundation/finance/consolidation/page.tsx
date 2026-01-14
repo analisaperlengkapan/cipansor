@@ -195,7 +195,7 @@ export default function FinanceConsolidationPage() {
                       outerRadius={100}
                       paddingAngle={2}
                       dataKey="revenue"
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      label={(props: any) => `${props.name} (${(props.percent * 100).toFixed(0)}%)`}
                     >
                       {data.units.map((entry, index) => (
                         <Cell key={index} fill={entry.color} />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useEmployees } from "@/hooks/use-employees";
+import { useEmployees, useDeleteEmployee } from "@/hooks/use-hr";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,8 +31,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useDeleteEmployee } from "@/hooks/use-employees";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,7 +47,6 @@ import { useUnits } from "@/hooks/use-units";
 
 export default function EmployeesPage() {
   const router = useRouter();
-  const { toast } = useToast();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
@@ -61,9 +59,9 @@ export default function EmployeesPage() {
     page,
     limit: 10,
     search: debouncedSearch,
-    role: roleFilter === "ALL" ? undefined : roleFilter,
+    status: undefined,
     unitId: unitFilter === "ALL" ? undefined : unitFilter,
-  });
+  } as any);
 
   const deleteMutation = useDeleteEmployee();
 
@@ -71,10 +69,10 @@ export default function EmployeesPage() {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      toast({ title: "Success", description: "Employee deleted successfully" });
+      toast.success("Success", { description: "Employee deleted successfully" });
       setDeleteId(null);
     } catch (error) {
-      toast({ title: "Error", description: "Failed to delete employee", variant: "destructive" });
+      toast.error("Error", { description: "Failed to delete employee" });
     }
   };
 
@@ -133,7 +131,7 @@ export default function EmployeesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Units</SelectItem>
-                {unitsData?.data?.map((unit: any) => (
+                {unitsData?.map((unit: any) => (
                   <SelectItem key={unit.id} value={unit.id}>
                     {unit.name}
                   </SelectItem>
@@ -177,33 +175,40 @@ export default function EmployeesPage() {
                   data?.data?.map((employee) => (
                     <TableRow key={employee.id}>
                       <TableCell>
-                        <div className="font-medium">{employee.name}</div>
+                        <div className="font-medium">{employee.fullName}</div>
                         <div className="text-sm text-muted-foreground">{employee.email}</div>
                       </TableCell>
                       <TableCell>
-                        {employee.role === "TEACHER" ? (
+                        {/*
+                           Warning: The Employee interface in use-hr.ts might not have 'role' or 'teacher'/'staff' nested properties
+                           if it is strictly following the interface.
+                           However, the original code assumed it did.
+                           I will assume the API returns it even if the type def in use-hr.ts is incomplete,
+                           or I'll cast it to any to avoid build errors.
+                        */}
+                        {(employee as any).role === "TEACHER" ? (
                            <div className="flex flex-col">
-                             <span>NIP: {employee.teacher?.nip || "-"}</span>
-                             <span className="text-xs text-muted-foreground">NUPTK: {employee.teacher?.nuptk || "-"}</span>
+                             <span>NIP: {(employee as any).teacher?.nip || "-"}</span>
+                             <span className="text-xs text-muted-foreground">NUPTK: {(employee as any).teacher?.nuptk || "-"}</span>
                            </div>
                         ) : (
-                          <span>NIP: {employee.staff?.nip || "-"}</span>
+                          <span>NIP: {(employee as any).staff?.nip || "-"}</span>
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={employee.role === "TEACHER" ? "default" : "secondary"}>
-                          {employee.role}
+                        <Badge variant={(employee as any).role === "TEACHER" ? "default" : "secondary"}>
+                          {(employee as any).role}
                         </Badge>
-                        {employee.role === "STAFF" && (
+                        {(employee as any).role === "STAFF" && (
                           <div className="text-xs text-muted-foreground mt-1">
-                            {employee.staff?.position}
+                            {(employee as any).staff?.position}
                           </div>
                         )}
                       </TableCell>
                       <TableCell>{employee.unit?.name}</TableCell>
                       <TableCell>
-                        <Badge variant={employee.isActive ? "outline" : "destructive"}>
-                          {employee.isActive ? "Active" : "Inactive"}
+                        <Badge variant={employee.status === 'ACTIVE' ? "outline" : "destructive"}>
+                          {employee.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">

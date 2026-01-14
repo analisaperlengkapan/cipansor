@@ -87,6 +87,36 @@ export async function markReturned(req: Request, res: Response, next: NextFuncti
   }
 }
 
+export async function markDeparted(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const permit = await permitService.markDeparted(id);
+    res.json({
+      success: true,
+      message: "Student marked as departed",
+      data: permit,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getPermitByCode(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { code } = req.params;
+    const permit = await permitService.getPermitByCode(code);
+    if (!permit) {
+      throw Errors.notFound("Permit not found");
+    }
+    res.json({
+      success: true,
+      data: permit,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getStudentActivePermit(req: Request, res: Response, next: NextFunction) {
   try {
     const { studentId } = req.params;

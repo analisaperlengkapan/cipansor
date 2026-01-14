@@ -191,7 +191,8 @@ export async function getBorrowings(query: QueryBorrowingInput) {
       skip,
       take: limit,
       include: {
-        book: { select: { id: true, title: true, author: true, isbn: true } },
+        book: { select: { id: true, title: true, author: true, isbn: true, category: { select: { id: true, name: true } } } },
+        student: { select: { name: true, nis: true, class: { select: { name: true } } } },
         processedByUser: { select: { id: true, name: true } },
       },
       orderBy: { borrowedAt: "desc" },
@@ -235,16 +236,29 @@ export async function createBorrowing(data: CreateBorrowingInput, processedBy: s
     throw new Error("Book not available for borrowing");
   }
 
+  const studentId = data.studentId;
+  const borrowerId = data.borrowerId || studentId;
+  const borrowerType = data.borrowerType || (studentId ? "STUDENT" : "STAFF");
+
+  if (!borrowerId) {
+    throw new Error("Borrower ID is required");
+  }
+
   // Create borrowing and update book availability
   return prisma.$transaction(async (tx) => {
     const borrowing = await tx.borrowing.create({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data: {
-        ...data,
+        bookId: data.bookId,
+        studentId: studentId,
+        borrowerId: borrowerId,
+        borrowerType: borrowerType,
+        dueDate: data.dueDate,
+        notes: data.notes,
         processedBy,
-      } as any,
+      },
       include: {
         book: { select: { id: true, title: true, author: true } },
+        student: { select: { name: true, nis: true, class: { select: { name: true } } } },
         processedByUser: { select: { id: true, name: true } },
       },
     });

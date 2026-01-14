@@ -1,49 +1,65 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 
-// Types
+// Enums
+export const SIMAAN_TYPES = [
+  { value: 'JUZ_AMMA', label: 'Juz Amma (30)' },
+  { value: 'ONE_JUZ', label: '1 Juz' },
+  { value: 'FIVE_JUZ', label: '5 Juz' },
+  { value: 'TEN_JUZ', label: '10 Juz' },
+  { value: 'FULL_QURAN', label: '30 Juz (Khatam)' },
+] as const;
+
+export const SIMAAN_GRADES = [
+  { value: 'MUMTAZ', label: 'Mumtaz (Istimewa)', color: 'bg-green-100 text-green-800' },
+  { value: 'JAYYID_JIDDAN', label: 'Jayyid Jiddan (Sangat Baik)', color: 'bg-blue-100 text-blue-800' },
+  { value: 'JAYYID', label: 'Jayyid (Baik)', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'MAQBUL', label: 'Maqbul (Cukup)', color: 'bg-orange-100 text-orange-800' },
+  { value: 'RASIB', label: 'Rasib (Kurang)', color: 'bg-red-100 text-red-800' },
+] as const;
+
+// Types matching Backend Schema
+export interface SimaanExaminer {
+  id: string;
+  simaanId: string;
+  examinerId: string;
+  score?: number;
+  notes?: string;
+  createdAt: string;
+  examiner?: {
+    id: string;
+    name?: string;
+    user?: {
+      name: string;
+    };
+  };
+}
+
 export interface SimaanExam {
   id: string;
   studentId: string;
-  examDate: string;
-  examType: 'JUZ_30' | 'JUZ_1_15' | 'JUZ_16_30' | 'FULL_30_JUZ' | 'CUSTOM';
-  startJuz?: number;
-  endJuz?: number;
-  startSurah?: string;
-  endSurah?: string;
-  duration: number; // in minutes
-  status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-  overallGrade?: number;
-  hafalanGrade?: number;
-  tajwidGrade?: number;
-  fashahahGrade?: number;
-  location?: string;
-  startAyat?: number;
-  endAyat?: number;
-  totalJuz?: number;
-  finalScore?: number; // alias for overallGrade
-  isPassed?: boolean;  // alias for passed
-  passed?: boolean;    // another alias for passed
-  predicate?: string;  // alias for grade
-  grade?: string;      // another alias for grade
-  adabScore?: number;
-  tartilScore?: number;
+  enrollmentId?: string;
+  halaqohId?: string;
+  simaanType: 'JUZ_AMMA' | 'ONE_JUZ' | 'FIVE_JUZ' | 'TEN_JUZ' | 'FULL_QURAN';
+  examDate: string; // ISO Date
+  sessionNumber: number;
+  totalSessions: number;
+  juzStart: number;
+  juzEnd: number;
+  overallScore?: number;
   tajwidScore?: number;
-  fashahahScore?: number;
+  fashohaScore?: number;
+  tartilScore?: number;
+  grade?: 'MUMTAZ' | 'JAYYID_JIDDAN' | 'JAYYID' | 'MAQBUL' | 'RASIB';
+  passed: boolean;
   notes?: string;
-  createdById: string;
+  recommendations?: string;
   createdAt: string;
   updatedAt: string;
   student?: {
     id: string;
     nis: string;
-    photoUrl?: string;
-    name?: string; // alias for user.name
     user?: {
-      name: string;
-    };
-    class?: {
-      id: string;
       name: string;
     };
   };
@@ -52,24 +68,6 @@ export interface SimaanExam {
     name: string;
   };
   examiners?: SimaanExaminer[];
-  _count?: {
-    examiners: number;
-  };
-}
-
-export interface SimaanExaminer {
-  id: string;
-  simaanExamId: string;
-  examinerId: string;
-  role: 'MAIN' | 'ASSISTANT';
-  grade?: number;
-  notes?: string;
-  examiner?: {
-    id: string;
-    user?: {
-      name: string;
-    };
-  };
 }
 
 export interface SimaanFilters {
@@ -77,48 +75,51 @@ export interface SimaanFilters {
   limit?: number;
   search?: string;
   studentId?: string;
-  examType?: string;
-  status?: string;
+  enrollmentId?: string;
+  halaqohId?: string;
+  unitId?: string;
+  simaanType?: string;
   dateFrom?: string;
   dateTo?: string;
-  classId?: string;
-  unitId?: string;
+  passed?: boolean;
 }
 
 export interface CreateSimaanData {
   studentId: string;
+  enrollmentId?: string;
+  halaqohId?: string;
+  simaanType: string;
   examDate: string;
-  examType: string;
-  startJuz?: number;
-  endJuz?: number;
-  startSurah?: string;
-  endSurah?: string;
-  duration?: number;
-  location?: string;
-  startAyat?: number;
-  endAyat?: number;
-  totalJuz?: number;
+  sessionNumber?: number;
+  totalSessions?: number;
+  juzStart: number;
+  juzEnd: number;
+  overallScore?: number;
+  tajwidScore?: number;
+  fashohaScore?: number;
+  tartilScore?: number;
+  grade?: string;
+  passed?: boolean;
   notes?: string;
-  examinerIds?: string[];
+  recommendations?: string;
+  examiners?: Array<{
+    examinerId: string;
+    score?: number;
+    notes?: string;
+  }>;
 }
 
-export interface UpdateSimaanData extends Partial<CreateSimaanData> {
-  status?: string;
-  overallGrade?: number;
-  hafalanGrade?: number;
-  tajwidGrade?: number;
-  fashahahGrade?: number;
-}
+export type UpdateSimaanData = Partial<Omit<CreateSimaanData, 'studentId' | 'examiners'>>;
 
-export interface AddExaminerData {
-  examinerId: string;
-  role: 'MAIN' | 'ASSISTANT';
-}
-
-export interface UpdateExaminerScoreData {
-  visibleExaminerId: string;
-  grade: number;
+export interface SubmitScoresData {
+  overallScore: number;
+  tajwidScore?: number;
+  fashohaScore?: number;
+  tartilScore?: number;
+  grade: string;
+  passed: boolean;
   notes?: string;
+  recommendations?: string;
 }
 
 // Query Keys
@@ -128,33 +129,27 @@ export const simaanKeys = {
   list: (filters: SimaanFilters) => [...simaanKeys.lists(), filters] as const,
   details: () => [...simaanKeys.all, 'detail'] as const,
   detail: (id: string) => [...simaanKeys.details(), id] as const,
-  byStudent: (studentId: string, filters?: Omit<SimaanFilters, 'studentId'>) =>
-    [...simaanKeys.all, 'student', studentId, filters] as const,
-  examiners: (simaanId: string) => [...simaanKeys.all, 'examiners', simaanId] as const,
   upcoming: () => [...simaanKeys.all, 'upcoming'] as const,
 };
 
 // Hooks
 
-// Get simaan exams list
 export function useSimaanExams(filters: SimaanFilters = {}) {
   return useQuery({
     queryKey: simaanKeys.list(filters),
     queryFn: async () => {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '') {
+        if (value !== undefined && value !== null && value !== '') {
           params.append(key, String(value));
         }
       });
       const response = await apiClient.get(`/simaan?${params.toString()}`);
       return response.data;
     },
-    staleTime: 5 * 60 * 1000,
   });
 }
 
-// Get single simaan exam
 export function useSimaanExam(id: string) {
   return useQuery({
     queryKey: simaanKeys.detail(id),
@@ -163,61 +158,9 @@ export function useSimaanExam(id: string) {
       return response.data.data as SimaanExam;
     },
     enabled: !!id,
-    staleTime: 10 * 60 * 1000,
   });
 }
 
-// Get simaan exams by student
-export function useStudentSimaan(
-  studentId: string,
-  filters?: Omit<SimaanFilters, 'studentId'>
-) {
-  return useQuery({
-    queryKey: simaanKeys.byStudent(studentId, filters),
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== '') {
-            params.append(key, String(value));
-          }
-        });
-      }
-      const response = await apiClient.get(
-        `/simaan/student/${studentId}?${params.toString()}`
-      );
-      return response.data;
-    },
-    enabled: !!studentId,
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
-// Get simaan examiners
-export function useSimaanExaminers(simaanId: string) {
-  return useQuery({
-    queryKey: simaanKeys.examiners(simaanId),
-    queryFn: async () => {
-      const response = await apiClient.get(`/simaan/${simaanId}/examiners`);
-      return response.data;
-    },
-    enabled: !!simaanId,
-  });
-}
-
-// Get upcoming simaan
-export function useUpcomingSimaan() {
-  return useQuery({
-    queryKey: simaanKeys.upcoming(),
-    queryFn: async () => {
-      const response = await apiClient.get('/simaan/upcoming');
-      return response.data;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
-// Create simaan exam
 export function useCreateSimaan() {
   const queryClient = useQueryClient();
 
@@ -232,7 +175,6 @@ export function useCreateSimaan() {
   });
 }
 
-// Update simaan exam
 export function useUpdateSimaan() {
   const queryClient = useQueryClient();
 
@@ -248,7 +190,6 @@ export function useUpdateSimaan() {
   });
 }
 
-// Delete simaan exam
 export function useDeleteSimaan() {
   const queryClient = useQueryClient();
 
@@ -263,115 +204,27 @@ export function useDeleteSimaan() {
   });
 }
 
-// Add examiner to simaan
-export function useAddSimaanExaminer() {
+export function useSubmitSimaanScores() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ simaanId, data }: { simaanId: string; data: AddExaminerData }) => {
-      const response = await apiClient.post(`/simaan/${simaanId}/examiners`, data);
-      return response.data;
-    },
-    onSuccess: (_, { simaanId }) => {
-      queryClient.invalidateQueries({ queryKey: simaanKeys.examiners(simaanId) });
-      queryClient.invalidateQueries({ queryKey: simaanKeys.detail(simaanId) });
-    },
-  });
-}
-
-// Remove examiner from simaan
-export function useRemoveSimaanExaminer() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ simaanId, examinerId }: { simaanId: string; examinerId: string }) => {
-      const response = await apiClient.delete(`/simaan/${simaanId}/examiners/${examinerId}`);
-      return response.data;
-    },
-    onSuccess: (_, { simaanId }) => {
-      queryClient.invalidateQueries({ queryKey: simaanKeys.examiners(simaanId) });
-      queryClient.invalidateQueries({ queryKey: simaanKeys.detail(simaanId) });
-    },
-  });
-}
-
-// Update examiner score
-export function useUpdateExaminerScore() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      simaanId,
-      examinerId,
-      data,
-    }: {
-      simaanId: string;
-      examinerId: string;
-      data: { grade: number; notes?: string };
-    }) => {
-      const response = await apiClient.patch(
-        `/simaan/${simaanId}/examiners/${examinerId}/score`,
-        data
-      );
-      return response.data;
-    },
-    onSuccess: (_, { simaanId }) => {
-      queryClient.invalidateQueries({ queryKey: simaanKeys.examiners(simaanId) });
-      queryClient.invalidateQueries({ queryKey: simaanKeys.detail(simaanId) });
-    },
-  });
-}
-
-// Start simaan exam
-export function useStartSimaan() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const response = await apiClient.patch(`/simaan/${id}/start`);
-      return response.data;
-    },
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: simaanKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: simaanKeys.lists() });
-    },
-  });
-}
-
-// Complete simaan exam
-export function useCompleteSimaan() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: { overallGrade: number };
-    }) => {
-      const response = await apiClient.post(`/simaan/${id}/complete`, data);
-      return response.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: simaanKeys.detail(variables.id) });
-      queryClient.invalidateQueries({ queryKey: simaanKeys.lists() });
-    },
-  });
-}
-
-// Cancel simaan exam
-export function useCancelSimaan() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
-      const response = await apiClient.patch(`/simaan/${id}/cancel`, { reason });
+    mutationFn: async ({ id, data }: { id: string; data: SubmitScoresData }) => {
+      const response = await apiClient.post(`/simaan/${id}/scores`, { simaanId: id, ...data });
       return response.data;
     },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: simaanKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: simaanKeys.lists() });
+    },
+  });
+}
+
+export function useUpcomingSimaan(days: number = 7) {
+  return useQuery({
+    queryKey: [...simaanKeys.upcoming(), days],
+    queryFn: async () => {
+      const response = await apiClient.get(`/simaan/upcoming?days=${days}`);
+      return response.data.data as SimaanExam[];
     },
   });
 }

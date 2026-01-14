@@ -26,9 +26,30 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   useEmployee,
   useDeleteEmployee,
   useLeaveRequests,
+  useUserContracts,
+  useLeaveBalances,
+  useUpdateLeaveBalance,
+  useActiveAcademicYear,
+  useCreateContract,
   EMPLOYEE_STATUS_LABELS,
   EMPLOYEE_TYPE_LABELS,
   LEAVE_STATUS_LABELS,
@@ -44,7 +65,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  Building2,
   Briefcase,
   Calendar,
   CreditCard,
@@ -52,22 +72,36 @@ import {
   Loader2,
   AlertCircle,
   GraduationCap,
-  Heart,
+  ClipboardList,
+  Scale,
+  Plus,
+  Pencil
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 
 export default function EmployeeDetailPage() {
   const params = useParams();
   const router = useRouter();
   const employeeId = params.id as string;
   const [activeTab, setActiveTab] = useState('info');
+  const [isContractDialogOpen, setIsContractDialogOpen] = useState(false);
+  const [balanceToEdit, setBalanceToEdit] = useState<any>(null);
 
   const { data: employee, isLoading } = useEmployee(employeeId);
+  const { data: activeAcademicYear } = useActiveAcademicYear();
   const { data: leaveRequestsData } = useLeaveRequests({ employeeId });
+
+  // New hooks
+  const { data: contracts } = useUserContracts(employee?.userId || '');
+  const { data: leaveBalances } = useLeaveBalances(employee?.userId || '', activeAcademicYear?.id);
+  const createContract = useCreateContract();
+  const updateLeaveBalance = useUpdateLeaveBalance();
+
   const deleteEmployee = useDeleteEmployee();
 
   const leaveRequests = leaveRequestsData?.data || [];
@@ -103,6 +137,38 @@ export default function EmployeeDetailPage() {
       router.push('/hr');
     } catch (error) {
       toast.error('Gagal menghapus karyawan');
+    }
+  };
+
+  const handleCreateContract = async (data: any) => {
+    if (!employee.userId) {
+      toast.error('User ID not found for this employee');
+      return;
+    }
+    try {
+      await createContract.mutateAsync({
+        ...data,
+        userId: employee.userId,
+      });
+      toast.success('Kontrak berhasil dibuat');
+      setIsContractDialogOpen(false);
+    } catch (error) {
+      toast.error('Gagal membuat kontrak');
+    }
+  };
+
+  const handleUpdateBalance = async (data: any) => {
+    if (!balanceToEdit || !employee.userId) return;
+    try {
+      await updateLeaveBalance.mutateAsync({
+        id: balanceToEdit.id,
+        totalDays: parseInt(data.totalDays),
+        userId: employee.userId,
+      });
+      toast.success('Saldo cuti berhasil diperbarui');
+      setBalanceToEdit(null);
+    } catch (error) {
+      toast.error('Gagal memperbarui saldo cuti');
     }
   };
 
@@ -210,11 +276,13 @@ export default function EmployeeDetailPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Sisa Cuti</CardTitle>
+              <CardTitle className="text-sm font-medium">Sisa Cuti Tahunan</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-xl font-bold">{employee.leaveBalance ?? 12} hari</p>
+              <p className="text-xl font-bold">
+                {leaveBalances?.find(b => b.leaveType === 'ANNUAL')?.remainingDays ?? 12} hari
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -228,6 +296,14 @@ export default function EmployeeDetailPage() {
             <TabsTrigger value="education">
               <GraduationCap className="mr-2 h-4 w-4" />
               Pendidikan
+            </TabsTrigger>
+            <TabsTrigger value="contracts">
+              <ClipboardList className="mr-2 h-4 w-4" />
+              Kontrak
+            </TabsTrigger>
+            <TabsTrigger value="leave-balance">
+              <Scale className="mr-2 h-4 w-4" />
+              Kuota Cuti
             </TabsTrigger>
             <TabsTrigger value="leaves">
               <Calendar className="mr-2 h-4 w-4" />
@@ -430,12 +506,125 @@ export default function EmployeeDetailPage() {
             </Card>
           </TabsContent>
 
+          {/* Contracts Tab */}
+          <TabsContent value="contracts" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium">Riwayat Kontrak Kerja</h3>
+              <Button size="sm" onClick={() => setIsContractDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Tambah Kontrak
+              </Button>
+            </div>
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nomor Kontrak</TableHead>
+                    <TableHead>Tipe</TableHead>
+                    <TableHead>Mulai</TableHead>
+                    <TableHead>Selesai</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Dokumen</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {contracts?.length ? (
+                    contracts.map((contract) => (
+                      <TableRow key={contract.id}>
+                        <TableCell className="font-mono">{contract.contractNumber}</TableCell>
+                        <TableCell>{contract.type}</TableCell>
+                        <TableCell>{format(new Date(contract.startDate), 'd MMM yyyy', { locale: idLocale })}</TableCell>
+                        <TableCell>
+                          {contract.endDate
+                            ? format(new Date(contract.endDate), 'd MMM yyyy', { locale: idLocale })
+                            : 'Permanen'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={contract.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                            {contract.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {contract.documentUrl && (
+                            <Button variant="ghost" size="icon" asChild>
+                              <Link href={contract.documentUrl} target="_blank">
+                                <FileText className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        Belum ada riwayat kontrak
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </Card>
+          </TabsContent>
+
+          {/* Leave Balances Tab */}
+          <TabsContent value="leave-balance" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Saldo & Kuota Cuti</CardTitle>
+                <CardDescription>Sisa hak cuti untuk tahun berjalan</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Jenis Cuti</TableHead>
+                      <TableHead className="text-center">Total Jatah</TableHead>
+                      <TableHead className="text-center">Terpakai</TableHead>
+                      <TableHead className="text-center">Sisa</TableHead>
+                      <TableHead className="text-right">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {leaveBalances?.length ? (
+                      leaveBalances.map((balance) => (
+                        <TableRow key={balance.id}>
+                          <TableCell>{LEAVE_TYPE_LABELS[balance.leaveType as LeaveType] || balance.leaveType}</TableCell>
+                          <TableCell className="text-center">{balance.totalDays}</TableCell>
+                          <TableCell className="text-center">{balance.usedDays}</TableCell>
+                          <TableCell className="text-center font-bold text-green-600">
+                            {balance.remainingDays}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setBalanceToEdit(balance)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          Belum ada data saldo cuti
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Leave History Tab */}
           <TabsContent value="leaves" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Riwayat Cuti</CardTitle>
-                <CardDescription>Daftar pengajuan cuti karyawan</CardDescription>
+                <CardTitle>Riwayat Pengajuan Cuti</CardTitle>
+                <CardDescription>Daftar pengajuan cuti yang pernah dibuat</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -509,7 +698,120 @@ export default function EmployeeDetailPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <ContractDialog
+          open={isContractDialogOpen}
+          onOpenChange={setIsContractDialogOpen}
+          onSubmit={handleCreateContract}
+        />
+
+        <EditBalanceDialog
+          open={!!balanceToEdit}
+          onOpenChange={(open) => !open && setBalanceToEdit(null)}
+          balance={balanceToEdit}
+          onSubmit={handleUpdateBalance}
+        />
       </div>
     </MainLayout>
+  );
+}
+
+function ContractDialog({ open, onOpenChange, onSubmit }: { open: boolean, onOpenChange: (open: boolean) => void, onSubmit: (data: any) => Promise<void> }) {
+  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm();
+
+  useEffect(() => {
+    if (open) reset();
+  }, [open, reset]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Tambah Kontrak Kerja</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="contractNumber">Nomor Kontrak</Label>
+            <Input id="contractNumber" {...register('contractNumber', { required: true })} placeholder="e.g. KONTRAK/2024/001" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="type">Tipe Kontrak</Label>
+            <Select onValueChange={(v) => register('type').onChange({ target: { value: v, name: 'type' } })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih tipe kontrak" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PKWT">PKWT (Kontrak Waktu Tertentu)</SelectItem>
+                <SelectItem value="PKWTT">PKWTT (Tetap)</SelectItem>
+                <SelectItem value="PART_TIME">Part Time</SelectItem>
+                <SelectItem value="PROBATION">Probation</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="startDate">Tanggal Mulai</Label>
+              <Input id="startDate" type="date" {...register('startDate', { required: true })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="endDate">Tanggal Selesai</Label>
+              <Input id="endDate" type="date" {...register('endDate')} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="notes">Catatan</Label>
+            <Textarea id="notes" {...register('notes')} />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Batal
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Simpan
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditBalanceDialog({ open, onOpenChange, balance, onSubmit }: { open: boolean, onOpenChange: (open: boolean) => void, balance: any, onSubmit: (data: any) => Promise<void> }) {
+  const { register, handleSubmit, reset, setValue, formState: { isSubmitting } } = useForm();
+
+  useEffect(() => {
+    if (open && balance) {
+      setValue('totalDays', balance.totalDays);
+    }
+  }, [open, balance, setValue]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Saldo Cuti</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Jenis Cuti</Label>
+            <div className="font-medium">{balance ? (LEAVE_TYPE_LABELS[balance.leaveType as LeaveType] || balance.leaveType) : '-'}</div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="totalDays">Total Jatah Cuti (Hari)</Label>
+            <Input id="totalDays" type="number" {...register('totalDays', { required: true })} />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Batal
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Simpan
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

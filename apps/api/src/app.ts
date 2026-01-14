@@ -32,6 +32,7 @@ import libraryRoutes from '@/modules/library/routes';
 import healthRoutes from '@/modules/health/routes';
 import inventoryRoutes from '@/modules/inventory/routes';
 import notificationRoutes from '@/modules/notifications/routes';
+import messageRoutes from '@/modules/messages/messages.routes';
 import curriculumRoutes from '@/modules/curriculum/routes';
 import assessmentRoutes from '@/modules/assessment/routes';
 import alumniRoutes from '@/modules/alumni/routes';
@@ -72,6 +73,8 @@ import muhadhorohRoutes from '@/modules/muhadhoroh/muhadhoroh.routes';
 import muhadatsahRoutes from '@/modules/muhadatsah/muhadatsah.routes';
 import emisRoutes from '@/modules/emis/emis.routes';
 import { dapodikRouter } from '@/modules/dapodik/dapodik.routes';
+import { qualityRoutes } from '@/modules/quality/quality.routes';
+import correspondenceRoutes from '@/modules/correspondence/correspondence.routes';
 
 // Enhancement module routes
 import { paudAssessmentRoutes } from '@/modules/paud-assessment';
@@ -180,6 +183,7 @@ apiRouter.use('/library', libraryRoutes);
 apiRouter.use('/health', healthRoutes);
 apiRouter.use('/inventory', inventoryRoutes);
 apiRouter.use('/notifications', notificationRoutes);
+apiRouter.use('/messages', messageRoutes);
 apiRouter.use('/curriculum', curriculumRoutes);
 apiRouter.use('/assessment', assessmentRoutes);
 apiRouter.use('/alumni', alumniRoutes);
@@ -220,6 +224,8 @@ apiRouter.use('/muhadhoroh', muhadhorohRoutes);
 apiRouter.use('/muhadatsah', muhadatsahRoutes);
 apiRouter.use('/emis', emisRoutes);
 apiRouter.use('/dapodik', dapodikRouter);
+apiRouter.use('/quality', qualityRoutes);
+apiRouter.use('/correspondence', correspondenceRoutes);
 
 // Enhancement modules
 apiRouter.use('/paud-assessment', paudAssessmentRoutes);

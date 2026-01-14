@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   Users,
   Building2,
+  Mail,
   GraduationCap,
   BookOpen,
   Calendar,
@@ -488,8 +489,8 @@ const yayasanNavigation: NavGroup[] = [
         icon: Users,
       },
       {
-        title: 'Akreditasi',
-        href: '/foundation/accreditation',
+        title: 'Penjaminan Mutu',
+        href: '/quality',
         icon: Award,
       },
     ],
@@ -831,6 +832,11 @@ const adminNavigation: NavGroup[] = [
         href: '/pkg',
         icon: ClipboardPenLine,
       },
+      {
+        title: 'Penjaminan Mutu',
+        href: '/quality',
+        icon: Award,
+      },
     ],
   },
   {
@@ -840,6 +846,11 @@ const adminNavigation: NavGroup[] = [
         title: 'Facilities',
         href: '/facilities',
         icon: Building2,
+      },
+      {
+        title: 'E-Office (Persuratan)',
+        href: '/e-office',
+        icon: Mail,
       },
       {
         title: 'Inventory (Asset)',

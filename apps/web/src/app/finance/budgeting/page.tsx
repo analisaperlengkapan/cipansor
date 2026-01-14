@@ -13,7 +13,7 @@ import { Budget } from '@cipansor/shared';
 import { Loader2, Plus, Pencil } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast"; // kept for backward compatibility if needed, but consider using sonner
+import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
 // Helper Hooks
@@ -71,8 +71,6 @@ const useCreateBudget = () => {
 };
 
 export default function BudgetingPage() {
-  const { toast } = useToast();
-
   const { data: units } = useUnits();
   const { data: years } = useAcademicYears();
   const { data: accounts } = useExpenseAccounts();
@@ -94,14 +92,12 @@ export default function BudgetingPage() {
         academicYearId: selectedYearId,
         ...formData
       });
-      toast({ title: "Success", description: "Budget created successfully" });
+      toast.success("Success", { description: "Budget created successfully" });
       setIsDialogOpen(false);
       setFormData({ accountId: '', amount: 0, notes: '' });
     } catch (error: any) {
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: error.response?.data?.message || "Failed to create budget",
-        variant: "destructive"
       });
     }
   };

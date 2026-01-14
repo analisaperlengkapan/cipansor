@@ -11,6 +11,26 @@ router.use(authenticate);
 
 /**
  * @swagger
+ * /api/permits/code/{code}:
+ *   get:
+ *     summary: Get permit by unique code
+ *     tags: [Permits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: code
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Permit details
+ */
+router.get("/code/:code", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getPermitByCode);
+
+/**
+ * @swagger
  * /api/permits:
  *   get:
  *     summary: List permits
@@ -44,7 +64,7 @@ router.use(authenticate);
  *       200:
  *         description: List of permits
  */
-router.get("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), validateQuery(queryPermitSchema), controller.getPermits);
+router.get("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), validateQuery(queryPermitSchema), controller.getPermits);
 
 /**
  * @swagger
@@ -142,7 +162,7 @@ router.get("/student/:studentId/active", authorize(UserRole.SUPER_ADMIN, UserRol
  *       404:
  *         description: Permit not found
  */
-router.get("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.PARENT), controller.getPermitById);
+router.get("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.PARENT, UserRole.STAFF), controller.getPermitById);
 
 /**
  * @swagger
@@ -181,7 +201,7 @@ router.put("/:id/status", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), 
 /**
  * @swagger
  * /api/permits/{id}/return:
- *   put:
+ *   post:
  *     summary: Mark student as returned
  *     tags: [Permits]
  *     security:
@@ -207,6 +227,26 @@ router.put("/:id/status", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), 
  *       200:
  *         description: Student marked as returned
  */
-router.put("/:id/return", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.markReturned);
+router.put("/:id/return", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.markReturned);
+
+/**
+ * @swagger
+ * /api/permits/{id}/depart:
+ *   post:
+ *     summary: Mark student as departed
+ *     tags: [Permits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Student marked as departed
+ */
+router.post("/:id/depart", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.markDeparted);
 
 export default router;

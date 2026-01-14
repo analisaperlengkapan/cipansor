@@ -20,6 +20,8 @@ import {
   XCircle,
   Clock,
   Calendar,
+  LogOut,
+  QrCode,
 } from 'lucide-react';
 
 interface Child {
@@ -34,11 +36,14 @@ interface Child {
 
 interface Permit {
   id: string;
+  code?: string;
   type: string;
   reason: string;
   startDate: string;
   endDate: string;
   status: string;
+  departedAt?: string;
+  returnedAt?: string;
   notes?: string;
   approvedBy?: {
     name: string;
@@ -126,8 +131,15 @@ export default function PermitsPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
+  const getStatusBadge = (permit: Permit) => {
+    if (permit.returnedAt) {
+      return <Badge className="bg-blue-500"><CheckCircle className="h-3 w-3 mr-1" /> Selesai (Kembali)</Badge>;
+    }
+    if (permit.departedAt) {
+      return <Badge className="bg-orange-500 animate-pulse"><LogOut className="h-3 w-3 mr-1" /> Sedang Keluar</Badge>;
+    }
+
+    switch (permit.status) {
       case 'APPROVED':
         return <Badge className="bg-green-500"><CheckCircle className="h-3 w-3 mr-1" /> Disetujui</Badge>;
       case 'REJECTED':
@@ -137,7 +149,7 @@ export default function PermitsPage() {
       case 'COMPLETED':
         return <Badge className="bg-blue-500"><CheckCircle className="h-3 w-3 mr-1" /> Selesai</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="secondary">{permit.status}</Badge>;
     }
   };
 
@@ -291,9 +303,17 @@ export default function PermitsPage() {
               <CardContent className="p-4">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{getTypeLabel(permit.type)}</p>
-                      {getStatusBadge(permit.status)}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{getTypeLabel(permit.type)}</p>
+                        {getStatusBadge(permit)}
+                      </div>
+                      {permit.code && (
+                        <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-xs font-mono">
+                          <QrCode className="h-3 w-3" />
+                          {permit.code}
+                        </div>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground mt-2">
                       {permit.reason}

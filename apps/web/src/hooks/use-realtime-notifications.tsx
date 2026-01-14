@@ -156,7 +156,13 @@ export function useAttendanceRealtime(classId?: string) {
 
     socket.emit('join:attendance', { classId });
 
-    const handleAttendanceUpdate = (data: typeof attendanceData) => {
+    const handleAttendanceUpdate = (data: {
+        present: number;
+        absent: number;
+        late: number;
+        excused: number;
+        total: number;
+    }) => {
       setAttendanceData(data);
     };
 
@@ -185,7 +191,11 @@ export function useTahfidzRealtime(studentId?: string) {
 
     socket.emit('join:tahfidz', { studentId });
 
-    const handleProgressUpdate = (data: typeof progress) => {
+    const handleProgressUpdate = (data: {
+        currentJuz: number;
+        lastSession: string;
+        recentScore: number;
+    }) => {
       setProgress(data);
     };
 

@@ -1115,7 +1115,9 @@ model Permit {
   approvedById  String?      @map("approved_by_id")
   approvedAt    DateTime?    @map("approved_at")
   rejectionNote String?      @map("rejection_note")
+  departedAt    DateTime?    @map("departed_at")
   returnedAt    DateTime?    @map("returned_at")
+  code          String?      @unique // Unique short code for scanning
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")
 
@@ -1126,6 +1128,7 @@ model Permit {
   @@index([studentId])
   @@index([status])
   @@index([startDate, endDate])
+  @@index([code])
   @@map("permits")
 }
 

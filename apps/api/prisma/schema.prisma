@@ -1646,6 +1646,7 @@ model Borrowing {
   bookId       String          @map("book_id")
   borrowerId   String          @map("borrower_id") // Can be student or staff
   borrowerType String          @map("borrower_type") // STUDENT, STAFF, TEACHER
+  studentId    String?         @map("student_id")
   borrowedAt   DateTime        @default(now()) @map("borrowed_at")
   dueDate      DateTime        @map("due_date")
   returnedAt   DateTime?       @map("returned_at")
@@ -1657,11 +1658,13 @@ model Borrowing {
   updatedAt    DateTime        @updatedAt @map("updated_at")
 
   // Relations
-  book            Book @relation(fields: [bookId], references: [id])
-  processedByUser User @relation("BorrowingProcessor", fields: [processedBy], references: [id])
+  book            Book     @relation(fields: [bookId], references: [id])
+  student         Student? @relation(fields: [studentId], references: [id])
+  processedByUser User     @relation("BorrowingProcessor", fields: [processedBy], references: [id])
 
   @@index([bookId])
   @@index([borrowerId])
+  @@index([studentId])
   @@index([status])
   @@index([dueDate])
   @@map("borrowings")

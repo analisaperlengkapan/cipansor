@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AssetStatus, AssetCondition } from "@prisma/client";
+import { AssetStatus, AssetCondition, AssetMaintenanceStatus, AssetDisposalReason } from "@prisma/client";
 
 // ==================== ASSET CATEGORY ====================
 
@@ -16,10 +16,10 @@ export type UpdateInventoryCategoryInput = z.infer<typeof updateInventoryCategor
 
 // ==================== ASSET (INVENTORY ITEM) ====================
 
-// Match Prisma enums: ACTIVE, MAINTENANCE, DAMAGED, DISPOSED
 const AssetStatusEnum = z.nativeEnum(AssetStatus);
-// Match Prisma enums: EXCELLENT, GOOD, FAIR, POOR, BROKEN
 const AssetConditionEnum = z.nativeEnum(AssetCondition);
+const AssetMaintenanceStatusEnum = z.nativeEnum(AssetMaintenanceStatus);
+const AssetDisposalReasonEnum = z.nativeEnum(AssetDisposalReason);
 
 export const createInventoryItemSchema = z.object({
   categoryId: z.string().uuid(),
@@ -63,6 +63,7 @@ export type QueryInventoryItemInput = z.infer<typeof queryInventoryItemSchema>;
 
 // ==================== ASSET MAINTENANCE ====================
 
+// For admin creation
 export const createMaintenanceSchema = z.object({
   itemId: z.string().uuid(),
   type: z.string().min(1).max(100), // perbaikan, servis, penggantian, dll
@@ -75,6 +76,14 @@ export const createMaintenanceSchema = z.object({
   notes: z.string().optional(),
 });
 
+// For user request
+export const createMaintenanceRequestSchema = z.object({
+  assetId: z.string().uuid(),
+  type: z.string().min(1).max(100),
+  description: z.string().min(1),
+  notes: z.string().optional(),
+});
+
 export const updateMaintenanceSchema = z.object({
   type: z.string().min(1).max(100).optional(),
   description: z.string().min(1).optional(),
@@ -84,6 +93,18 @@ export const updateMaintenanceSchema = z.object({
   performedBy: z.string().min(1).max(255).optional(),
   nextSchedule: z.coerce.date().optional(),
   notes: z.string().optional(),
+  status: AssetMaintenanceStatusEnum.optional(),
+  completionDate: z.coerce.date().optional(),
+  invoiceUrl: z.string().url().optional(),
+});
+
+// Specific status update
+export const updateMaintenanceStatusSchema = z.object({
+  status: AssetMaintenanceStatusEnum,
+  notes: z.string().optional(),
+  cost: z.number().optional(),
+  completionDate: z.coerce.date().optional(),
+  invoiceUrl: z.string().url().optional(),
 });
 
 export const queryMaintenanceSchema = z.object({
@@ -91,13 +112,27 @@ export const queryMaintenanceSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   itemId: z.string().uuid().optional(),
   type: z.string().optional(),
+  status: AssetMaintenanceStatusEnum.optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
 });
 
 export type CreateMaintenanceInput = z.infer<typeof createMaintenanceSchema>;
+export type CreateMaintenanceRequestInput = z.infer<typeof createMaintenanceRequestSchema>;
 export type UpdateMaintenanceInput = z.infer<typeof updateMaintenanceSchema>;
+export type UpdateMaintenanceStatusInput = z.infer<typeof updateMaintenanceStatusSchema>;
 export type QueryMaintenanceInput = z.infer<typeof queryMaintenanceSchema>;
+
+// ==================== ASSET DISPOSAL ====================
+
+export const createAssetDisposalSchema = z.object({
+  date: z.coerce.date().default(() => new Date()),
+  reason: AssetDisposalReasonEnum,
+  salePrice: z.number().min(0).optional(),
+  notes: z.string().optional(),
+});
+
+export type CreateAssetDisposalInput = z.infer<typeof createAssetDisposalSchema>;
 
 // ==================== ASSET ASSIGNMENT ====================
 

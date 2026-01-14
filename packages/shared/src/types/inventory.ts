@@ -5,6 +5,24 @@ export enum AssetStatus {
   DISPOSED = 'DISPOSED',
 }
 
+export enum AssetMaintenanceStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  REJECTED = 'REJECTED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum AssetDisposalReason {
+  SOLD = 'SOLD',
+  LOST = 'LOST',
+  DAMAGED = 'DAMAGED',
+  DONATED = 'DONATED',
+  OBSOLETE = 'OBSOLETE',
+  OTHER = 'OTHER',
+}
+
 export enum AssetCondition {
   EXCELLENT = 'EXCELLENT',
   GOOD = 'GOOD',
@@ -54,6 +72,7 @@ export interface Asset {
   room?: { id: string; name: string };
   maintenanceLogs?: AssetMaintenance[];
   assignments?: AssetAssignment[];
+  disposal?: AssetDisposal | null;
 }
 
 export interface AssetMaintenance {
@@ -62,15 +81,36 @@ export interface AssetMaintenance {
   maintenanceDate: Date | string;
   type: string;
   description: string;
+  status: AssetMaintenanceStatus;
   cost?: number | string | null;
   vendor?: string | null;
   performedBy?: string | null;
+  requestedById?: string | null;
+  completionDate?: Date | string | null;
+  invoiceUrl?: string | null;
   nextSchedule?: Date | string | null;
   notes?: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
 
   asset?: Asset;
+  requestedBy?: { id: string; name: string };
+}
+
+export interface AssetDisposal {
+  id: string;
+  assetId: string;
+  date: Date | string;
+  reason: AssetDisposalReason;
+  salePrice?: number | string | null;
+  bookValue?: number | string | null;
+  notes?: string | null;
+  approvedById?: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+
+  asset?: Asset;
+  approvedBy?: { id: string; name: string };
 }
 
 export interface AssetAssignment {
@@ -163,7 +203,25 @@ export interface CreateAssetMaintenanceInput {
   notes?: string;
 }
 
-export interface UpdateAssetMaintenanceInput extends Partial<CreateAssetMaintenanceInput> {}
+export interface CreateMaintenanceRequestInput {
+  assetId: string;
+  type: string;
+  description: string;
+  notes?: string;
+}
+
+export interface UpdateAssetMaintenanceInput extends Partial<CreateAssetMaintenanceInput> {
+  status?: AssetMaintenanceStatus;
+  completionDate?: Date | string;
+  invoiceUrl?: string;
+}
+
+export interface CreateAssetDisposalInput {
+  date: Date | string;
+  reason: AssetDisposalReason;
+  salePrice?: number;
+  notes?: string;
+}
 
 export interface CreateAssetAssignmentInput {
   assetId: string;

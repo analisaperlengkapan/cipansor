@@ -77,6 +77,14 @@ export const queryRegistrantSchema = z.object({
   search: z.string().optional(),
 });
 
+export const enrollRegistrantSchema = z.object({
+  nis: z.string().min(1),
+  nisn: z.string().optional(),
+  classId: z.string().optional(),
+  roomId: z.string().optional(),
+  halaqohId: z.string().optional(),
+});
+
 // Registrant Document schemas
 export const createRegistrantDocumentSchema = z.object({
   registrantId: z.string().uuid(),
@@ -98,3 +106,4 @@ export type UpdateRegistrantInput = z.infer<typeof updateRegistrantSchema>;
 export type UpdateRegistrantScoreInput = z.infer<typeof updateRegistrantScoreSchema>;
 export type UpdateRegistrantStatusInput = z.infer<typeof updateRegistrantStatusSchema>;
 export type CreateRegistrantDocumentInput = z.infer<typeof createRegistrantDocumentSchema>;
+export type EnrollRegistrantInput = z.infer<typeof enrollRegistrantSchema>;

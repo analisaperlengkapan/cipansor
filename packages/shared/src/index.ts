@@ -22,6 +22,7 @@ export * from './types/foundation-dashboard';
 export * from './types/procurement';
 export * from './types/reception';
 export * from './types/correspondence';
+export * from './types/foundation';
 export * from './schemas';
 export * from './types/marketing';
 export * from './types/quality';

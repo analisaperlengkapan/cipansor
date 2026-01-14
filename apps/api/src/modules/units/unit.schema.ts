@@ -15,6 +15,7 @@ export const createUnitSchema = z.object({
   address: z.string().min(5, 'Address must be at least 5 characters'),
   phone: z.string().optional(),
   email: z.string().email().optional(),
+  headName: z.string().optional(),
   logoUrl: z.string().url().optional(),
 });
 
@@ -25,6 +26,7 @@ export const updateUnitSchema = z.object({
   address: z.string().min(5).optional(),
   phone: z.string().optional().nullable(),
   email: z.string().email().optional().nullable(),
+  headName: z.string().optional().nullable(),
   logoUrl: z.string().url().optional().nullable(),
 });
 

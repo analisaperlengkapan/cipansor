@@ -103,6 +103,7 @@ export function useFoundation() {
   });
 }
 
+// Stats
 export function useFoundationStats(id?: string) {
   return useQuery({
     queryKey: ['foundation-stats', id],

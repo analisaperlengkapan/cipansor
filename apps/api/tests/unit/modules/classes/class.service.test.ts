@@ -1,20 +1,93 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Define mocks first
+const prismaMock = {
+  class: {
+    findUnique: vi.fn(),
+  },
+  classEnrollment: {
+    findMany: vi.fn(),
+    updateMany: vi.fn(),
+    createMany: vi.fn(),
+  },
+  $transaction: vi.fn(),
+};
+
+// Mock library
+vi.mock('../../../../src/lib/prisma', () => ({
+  prisma: prismaMock,
+}));
+
+// Mock @prisma/client
+vi.mock('@prisma/client', () => ({
+  Gender: { MALE: 'MALE', FEMALE: 'FEMALE' },
+  EnrollmentStatus: { ACTIVE: 'active', COMPLETED: 'completed' },
+  PrismaClient: class {
+    constructor() {
+      return prismaMock;
+    }
+  },
+}));
+
+// Import service AFTER mocks
 import { classService } from '../../../../src/modules/classes/class.service';
 import { prisma } from '../../../../src/lib/prisma';
 import { Gender } from '@prisma/client';
 
-// Mock Prisma
-vi.mock('../../../../src/lib/prisma', () => ({
-  prisma: {
-    classEnrollment: {
-      findMany: vi.fn(),
-    },
-  },
-}));
-
 describe('Class Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (prisma.$transaction as any).mockImplementation((cb: any) => cb(prisma));
+  });
+
+  describe('promoteStudents', () => {
+    it('should promote students to target class', async () => {
+      const studentIds = ['student-1', 'student-2'];
+      const targetClassId = 'target-class-id';
+
+      // Mock target class
+      (prisma.class.findUnique as any).mockResolvedValue({
+        id: targetClassId,
+        capacity: 30,
+        _count: { enrollments: 10 },
+      });
+
+      (prisma.classEnrollment.createMany as any).mockResolvedValue({ count: 2 });
+
+      await classService.promoteStudents({ studentIds, targetClassId });
+
+      // Should deactivate old enrollments
+      expect(prisma.classEnrollment.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: {
+          studentId: { in: studentIds },
+          status: 'active',
+        },
+        data: { status: 'completed' },
+      }));
+
+      // Should create new enrollments
+      expect(prisma.classEnrollment.createMany).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.arrayContaining([
+          expect.objectContaining({ studentId: 'student-1', classId: targetClassId, status: 'active' }),
+          expect.objectContaining({ studentId: 'student-2', classId: targetClassId, status: 'active' }),
+        ]),
+      }));
+    });
+
+    it('should throw error if class capacity exceeded', async () => {
+      const studentIds = ['student-1', 'student-2'];
+      const targetClassId = 'target-class-id';
+
+      // Mock target class full
+      (prisma.class.findUnique as any).mockResolvedValue({
+        id: targetClassId,
+        capacity: 30,
+        _count: { enrollments: 29 },
+      });
+
+      await expect(classService.promoteStudents({ studentIds, targetClassId }))
+        .rejects.toThrow('Target class capacity exceeded');
+    });
   });
 
   describe('getEnrollments', () => {

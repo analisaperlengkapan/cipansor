@@ -37,13 +37,14 @@ export default function GeneralLedgerPage() {
   };
 
   return (
-    <MainLayout title="Buku Besar (General Ledger)">
+    <MainLayout>
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
+          <h1 className="text-2xl font-bold">Buku Besar (General Ledger)</h1>
           <div className="flex gap-4 items-end">
             <div className="grid gap-1.5">
               <Label>Periode</Label>
-              <DatePickerWithRange date={dateRange} setDate={setDateRange} />
+              <DatePickerWithRange date={dateRange} setDate={setDateRange as any} />
             </div>
             <div className="grid gap-1.5 w-64">
               <Label>Akun ID (Sementara)</Label>

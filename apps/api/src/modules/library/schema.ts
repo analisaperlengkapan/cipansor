@@ -42,10 +42,14 @@ export const queryBookSchema = z.object({
 // Borrowing schemas
 export const createBorrowingSchema = z.object({
   bookId: z.string().uuid(),
-  borrowerId: z.string().uuid(),
-  borrowerType: z.enum(["STUDENT", "STAFF", "TEACHER"]),
+  studentId: z.string().uuid().optional(),
+  borrowerId: z.string().uuid().optional(),
+  borrowerType: z.enum(["STUDENT", "STAFF", "TEACHER"]).optional().default("STUDENT"),
   dueDate: z.coerce.date(),
   notes: z.string().optional(),
+}).refine((data) => data.studentId || data.borrowerId, {
+  message: "Either studentId or borrowerId must be provided",
+  path: ["studentId"],
 });
 
 export const returnBookSchema = z.object({

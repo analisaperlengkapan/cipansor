@@ -299,38 +299,70 @@ export async function enrollRegistrant(registrantId: string, studentData: {
     throw new Error("Registrant must be accepted before enrollment");
   }
 
+  // Check if user already exists (Internal Track / Alumni)
+  const existingUser = registrant.email
+    ? await prisma.user.findUnique({
+        where: { email: registrant.email },
+        include: { student: true }
+      })
+    : null;
+
   // Create user and student in a transaction
   const result = await prisma.$transaction(async (tx) => {
-    // Create user account
-    const user = await tx.user.create({
-      data: {
-        name: registrant.name,
-        email: registrant.email || `${studentData.nis}@student.cipansor.id`,
-        passwordHash: "$2a$10$defaultpasswordhash", // Should be changed on first login
-        role: "STUDENT",
-        unitId: registrant.admissionPeriod.unitId,
-        isActive: true,
-      },
-    });
+    let user;
+    let student;
 
-    // Create student profile
-    const student = await tx.student.create({
-      data: {
-        userId: user.id,
-        unitId: registrant.admissionPeriod.unitId,
-        nis: studentData.nis,
-        nisn: studentData.nisn,
-        gender: registrant.gender,
-        birthPlace: registrant.birthPlace,
-        birthDate: registrant.birthDate,
-        address: registrant.address,
-        parentName: registrant.parentName,
-        parentPhone: registrant.parentPhone,
-        parentEmail: registrant.parentEmail,
-        status: "active",
-        entryYear: new Date().getFullYear(),
-      },
-    });
+    if (existingUser && existingUser.student) {
+      // Internal Track: Update existing student
+      user = existingUser;
+      student = await tx.student.update({
+        where: { id: existingUser.student.id },
+        data: {
+          unitId: registrant.admissionPeriod.unitId, // Update to new unit
+          status: "active",
+          nis: studentData.nis, // Update NIS for new level
+          graduateYear: null, // Clear graduation status if any
+          // Update other fields if necessary
+        }
+      });
+
+      // Deactivate previous class enrollments if any active
+      await tx.classEnrollment.updateMany({
+        where: { studentId: student.id, status: "active" },
+        data: { status: "completed", endDate: new Date() } // Mark as completed
+      });
+
+    } else {
+      // External Track: Create new user and student
+      user = await tx.user.create({
+        data: {
+          name: registrant.name,
+          email: registrant.email || `${studentData.nis}@student.cipansor.id`,
+          passwordHash: "$2a$10$defaultpasswordhash", // Should be changed on first login
+          role: "STUDENT",
+          unitId: registrant.admissionPeriod.unitId,
+          isActive: true,
+        },
+      });
+
+      student = await tx.student.create({
+        data: {
+          userId: user.id,
+          unitId: registrant.admissionPeriod.unitId,
+          nis: studentData.nis,
+          nisn: studentData.nisn,
+          gender: registrant.gender,
+          birthPlace: registrant.birthPlace,
+          birthDate: registrant.birthDate,
+          address: registrant.address,
+          parentName: registrant.parentName,
+          parentPhone: registrant.parentPhone,
+          parentEmail: registrant.parentEmail,
+          status: "active",
+          entryYear: new Date().getFullYear(),
+        },
+      });
+    }
 
     // Enroll in class if provided
     if (studentData.classId) {

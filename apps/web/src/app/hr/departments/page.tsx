@@ -1,13 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -19,11 +14,8 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -34,404 +26,280 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   useDepartments,
   useCreateDepartment,
   useUpdateDepartment,
   useDeleteDepartment,
-} from '@/hooks';
-import {
-  ArrowLeft,
-  Plus,
-  Edit,
-  Trash2,
-  Building2,
-  Users,
-  Loader2,
-  Search,
-} from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+  Department
+} from '@/hooks/use-departments';
+import { useEmployees } from '@/hooks';
+import { Plus, Search, Edit, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-
-const departmentSchema = z.object({
-  name: z.string().min(1, 'Nama departemen wajib diisi'),
-  code: z.string().min(1, 'Kode departemen wajib diisi'),
-  description: z.string().optional(),
-});
-
-type DepartmentFormData = z.infer<typeof departmentSchema>;
+import { useForm } from 'react-hook-form';
+import { Switch } from '@/components/ui/switch';
 
 export default function DepartmentsPage() {
-  const router = useRouter();
   const [search, setSearch] = useState('');
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editDepartment, setEditDepartment] = useState<{ id: string; name: string; code: string; description?: string } | null>(null);
+  const [selectedDept, setSelectedDept] = useState<Department | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data: departments, isLoading } = useDepartments();
-  const createDepartment = useCreateDepartment();
-  const updateDepartment = useUpdateDepartment();
-  const deleteDepartment = useDeleteDepartment();
+  const { data: departments, isLoading } = useDepartments({ search });
+  const createMutation = useCreateDepartment();
+  const updateMutation = useUpdateDepartment();
+  const deleteMutation = useDeleteDepartment();
 
-  const createForm = useForm<DepartmentFormData>({
-    resolver: zodResolver(departmentSchema),
-    defaultValues: {
-      name: '',
-      code: '',
-      description: '',
-    },
-  });
-
-  const editForm = useForm<DepartmentFormData>({
-    resolver: zodResolver(departmentSchema),
-    defaultValues: {
-      name: '',
-      code: '',
-      description: '',
-    },
-  });
-
-  const filteredDepartments = departments?.filter((dept) =>
-    dept.name.toLowerCase().includes(search.toLowerCase()) ||
-    dept.code.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const handleCreate = async (data: DepartmentFormData) => {
-    try {
-      await createDepartment.mutateAsync(data);
-      toast.success('Departemen berhasil ditambahkan');
-      setIsCreateOpen(false);
-      createForm.reset();
-    } catch (error) {
-      toast.error('Gagal menambahkan departemen');
-    }
+  const handleOpenDialog = (dept?: Department) => {
+    setSelectedDept(dept || null);
+    setIsDialogOpen(true);
   };
 
-  const handleEdit = async (data: DepartmentFormData) => {
-    if (!editDepartment) return;
+  const handleDelete = async () => {
+    if (!deleteId) return;
     try {
-      await updateDepartment.mutateAsync({ id: editDepartment.id, data });
-      toast.success('Departemen berhasil diperbarui');
-      setEditDepartment(null);
-      editForm.reset();
+      await deleteMutation.mutateAsync(deleteId);
+      toast.success('Department deleted successfully');
+      setDeleteId(null);
     } catch (error) {
-      toast.error('Gagal memperbarui departemen');
+      toast.error('Failed to delete department');
     }
-  };
-
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteDepartment.mutateAsync(id);
-      toast.success('Departemen berhasil dihapus');
-    } catch (error) {
-      toast.error('Gagal menghapus departemen');
-    }
-  };
-
-  const openEdit = (dept: { id: string; name: string; code: string; description?: string }) => {
-    setEditDepartment(dept);
-    editForm.reset({
-      name: dept.name,
-      code: dept.code,
-      description: dept.description ?? '',
-    });
   };
 
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.back()}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Departemen</h1>
-              <p className="text-muted-foreground">
-                Kelola struktur departemen organisasi
-              </p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Departemen</h1>
+            <p className="text-muted-foreground">
+              Kelola struktur organisasi dan departemen
+            </p>
           </div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Tambah Departemen
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Tambah Departemen Baru</DialogTitle>
-                <DialogDescription>
-                  Isi informasi departemen baru
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...createForm}>
-                <form onSubmit={createForm.handleSubmit(handleCreate)} className="space-y-4">
-                  <FormField
-                    control={createForm.control}
-                    name="code"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Kode Departemen</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Contoh: HRD, FIN, IT" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={createForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nama Departemen</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Contoh: Human Resources" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={createForm.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Deskripsi</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="Deskripsi departemen (opsional)" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
-                      Batal
-                    </Button>
-                    <Button type="submit" disabled={createDepartment.isPending}>
-                      {createDepartment.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : null}
-                      Simpan
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={() => handleOpenDialog()}>
+            <Plus className="mr-2 h-4 w-4" />
+            Tambah Departemen
+          </Button>
         </div>
 
-        {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Departemen</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{departments?.length ?? 0}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Karyawan</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {departments?.reduce((sum, dept) => sum + (dept._count?.employees ?? 0), 0) ?? 0}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Rata-rata/Dept</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {departments?.length
-                  ? (
-                      departments.reduce((sum, dept) => sum + (dept._count?.employees ?? 0), 0) /
-                      departments.length
-                    ).toFixed(1)
-                  : 0}
-              </div>
-            </CardContent>
-          </Card>
+        <div className="flex items-center space-x-2">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Cari departemen..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
 
-        {/* Search */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Cari departemen..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Table */}
-        <Card>
+        <div className="border rounded-lg">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Kode</TableHead>
                 <TableHead>Nama Departemen</TableHead>
+                <TableHead>Kepala Departemen</TableHead>
                 <TableHead>Deskripsi</TableHead>
-                <TableHead className="text-center">Jumlah Karyawan</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Jumlah Pegawai</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                   </TableCell>
                 </TableRow>
-              ) : filteredDepartments?.length ? (
-                filteredDepartments.map((dept) => (
+              ) : departments?.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    Belum ada data departemen
+                  </TableCell>
+                </TableRow>
+              ) : (
+                departments?.map((dept) => (
                   <TableRow key={dept.id}>
-                    <TableCell>
-                      <Badge variant="outline" className="font-mono">
-                        {dept.code}
-                      </Badge>
-                    </TableCell>
+                    <TableCell className="font-mono">{dept.code}</TableCell>
                     <TableCell className="font-medium">{dept.name}</TableCell>
-                    <TableCell className="text-muted-foreground max-w-[300px] truncate">
-                      {dept.description || '-'}
+                    <TableCell>{dept.manager?.name || '-'}</TableCell>
+                    <TableCell>{dept.description || '-'}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        dept.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {dept.isActive ? 'Aktif' : 'Non-Aktif'}
+                      </span>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <Badge>{dept._count?.employees ?? 0} karyawan</Badge>
+                    <TableCell>
+                      {((dept._count as any)?.staff || 0) + ((dept._count as any)?.teachers || 0)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(dept)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(dept)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Hapus Departemen?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Apakah Anda yakin ingin menghapus departemen {dept.name}? Tindakan ini tidak dapat dibatalkan.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Batal</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(dept.id)}>
-                                Hapus
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(dept.id)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    Belum ada departemen
-                  </TableCell>
-                </TableRow>
               )}
             </TableBody>
           </Table>
-        </Card>
+        </div>
 
-        {/* Edit Dialog */}
-        <Dialog open={!!editDepartment} onOpenChange={(open) => !open && setEditDepartment(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Departemen</DialogTitle>
-              <DialogDescription>
-                Perbarui informasi departemen
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...editForm}>
-              <form onSubmit={editForm.handleSubmit(handleEdit)} className="space-y-4">
-                <FormField
-                  control={editForm.control}
-                  name="code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Kode Departemen</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={editForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nama Departemen</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={editForm.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Deskripsi</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setEditDepartment(null)}>
-                    Batal
-                  </Button>
-                  <Button type="submit" disabled={updateDepartment.isPending}>
-                    {updateDepartment.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : null}
-                    Simpan Perubahan
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+        <DepartmentDialog
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          department={selectedDept}
+          onSubmit={async (data) => {
+            try {
+              if (selectedDept) {
+                await updateMutation.mutateAsync({ id: selectedDept.id, data });
+                toast.success('Department updated successfully');
+              } else {
+                await createMutation.mutateAsync(data);
+                toast.success('Department created successfully');
+              }
+              setIsDialogOpen(false);
+            } catch (error) {
+              toast.error('Operation failed');
+            }
+          }}
+        />
+
+        <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Hapus Departemen?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tindakan ini tidak dapat dibatalkan. Departemen akan dihapus secara permanen.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Batal</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+                Hapus
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </MainLayout>
+  );
+}
+
+function DepartmentDialog({
+  open,
+  onOpenChange,
+  department,
+  onSubmit
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  department: Department | null;
+  onSubmit: (data: any) => Promise<void>;
+}) {
+  const { register, handleSubmit, reset, setValue, watch, formState: { isSubmitting } } = useForm();
+  const isActive = watch('isActive');
+  const { data: employeesData } = useEmployees({ status: 'ACTIVE' });
+  const employees = employeesData?.data || [];
+
+  // Fix: Move reset logic to useEffect
+  useEffect(() => {
+    if (open) {
+      if (department) {
+        setValue('code', department.code);
+        setValue('name', department.name);
+        setValue('description', department.description);
+        setValue('managerId', department.managerId || 'none');
+        setValue('isActive', department.isActive);
+      } else {
+        reset({ isActive: true, code: '', name: '', description: '', managerId: 'none' });
+      }
+    }
+  }, [open, department, setValue, reset]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{department ? 'Edit Departemen' : 'Tambah Departemen'}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit((data) => {
+          // Convert 'none' to null for managerId
+          const payload = { ...data, managerId: data.managerId === 'none' ? null : data.managerId };
+          onSubmit(payload);
+        })} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="code">Kode Departemen</Label>
+            <Input id="code" {...register('code', { required: true })} placeholder="e.g. IT, HR, FIN" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="name">Nama Departemen</Label>
+            <Input id="name" {...register('name', { required: true })} placeholder="e.g. Information Technology" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="managerId">Kepala Departemen</Label>
+            <Select
+              value={watch('managerId') || 'none'}
+              onValueChange={(val) => setValue('managerId', val)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih Kepala Departemen" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">-- Tidak Ada --</SelectItem>
+                {employees.map((emp) => (
+                  <SelectItem key={emp.userId || emp.id} value={emp.userId || emp.id}>
+                    {emp.fullName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Deskripsi</Label>
+            <Textarea id="description" {...register('description')} />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="isActive"
+              checked={isActive}
+              onCheckedChange={(checked) => setValue('isActive', checked)}
+            />
+            <Label htmlFor="isActive">Aktif</Label>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Batal
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Simpan
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

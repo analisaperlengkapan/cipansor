@@ -86,6 +86,7 @@ import { dashboardEnhancementRoutes } from '@/modules/dashboard-enhancement';
 import { sanadCertificateRouter } from '@/modules/sanad-certificate';
 import dashboardRoutes from '@/modules/dashboard/dashboard.routes';
 import receptionRoutes from '@/modules/reception/reception.routes';
+import marketingRoutes from '@/modules/marketing/routes';
 
 // Create Express app
 const app = express();
@@ -178,6 +179,7 @@ apiRouter.use('/rewards', rewardRoutes);
 apiRouter.use('/finance', financeRoutes);
 apiRouter.use('/foundation', foundationRoutes);
 apiRouter.use('/psb', psbRoutes);
+apiRouter.use('/marketing', marketingRoutes);
 apiRouter.use('/hr', hrRoutes);
 apiRouter.use('/library', libraryRoutes);
 apiRouter.use('/health', healthRoutes);
@@ -264,6 +266,7 @@ apiRouter.get('/', (_req, res) => {
       donation: '/api/donation',
       foundation: '/api/foundation',
       psb: '/api/psb',
+      marketing: '/api/marketing',
       ppdbWave: '/api/ppdb-wave',
       hr: '/api/hr',
       library: '/api/library',

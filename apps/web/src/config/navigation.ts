@@ -581,6 +581,26 @@ const adminNavigation: NavGroup[] = [
     ],
   },
   {
+    title: 'Marketing',
+    items: [
+      {
+        title: 'Dashboard',
+        href: '/marketing',
+        icon: BarChart3,
+      },
+      {
+        title: 'Campaigns',
+        href: '/marketing/campaigns',
+        icon: Megaphone,
+      },
+      {
+        title: 'Leads',
+        href: '/marketing/leads',
+        icon: Users,
+      },
+    ],
+  },
+  {
     title: 'Management',
     items: [
       {

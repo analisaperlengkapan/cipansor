@@ -203,6 +203,9 @@ export async function getRegistrants(params: {
         admissionPeriod: {
           select: { id: true, name: true, unit: { select: { id: true, name: true } } },
         },
+        campaign: {
+          select: { id: true, name: true, code: true },
+        },
         _count: { select: { documents: true } },
       },
     }),

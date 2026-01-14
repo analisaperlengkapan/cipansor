@@ -23,6 +23,7 @@ export const listMurojaahQuerySchema = z.object({
   studentId: z.string().uuid().optional(),
   enrollmentId: z.string().uuid().optional(),
   halaqohId: z.string().uuid().optional(),
+  unitId: z.string().uuid().optional(),
   murojaahType: MurojaahTypeEnum.optional(),
   dateFrom: z.string().datetime().optional(),
   dateTo: z.string().datetime().optional(),

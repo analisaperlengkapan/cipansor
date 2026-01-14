@@ -27,6 +27,7 @@ export const simaanService = {
       studentId,
       enrollmentId,
       halaqohId,
+      unitId,
       simaanType,
       dateFrom,
       dateTo,
@@ -39,6 +40,7 @@ export const simaanService = {
     if (studentId) where.studentId = studentId;
     if (enrollmentId) where.enrollmentId = enrollmentId;
     if (halaqohId) where.halaqohId = halaqohId;
+    if (unitId) where.student = { unitId };
     if (simaanType) where.simaanType = simaanType as SimaanType;
     if (passed !== undefined) where.passed = passed;
 

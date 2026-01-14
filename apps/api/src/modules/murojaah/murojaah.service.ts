@@ -30,6 +30,7 @@ export const murojaahService = {
       studentId,
       enrollmentId,
       halaqohId,
+      unitId,
       murojaahType,
       dateFrom,
       dateTo,
@@ -47,6 +48,9 @@ export const murojaahService = {
 
     // Filter by halaqoh
     if (halaqohId) where.halaqohId = halaqohId;
+
+    // Filter by unit
+    if (unitId) where.student = { unitId };
 
     // Filter by murojaah type
     if (murojaahType) where.murojaahType = murojaahType as MurojaahType;

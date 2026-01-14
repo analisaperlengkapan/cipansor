@@ -86,8 +86,8 @@ export default function NewClassPage() {
 
   // Filter teachers by selected unit
   const filteredTeachers = selectedUnitId
-    ? teachers?.filter((t) => t.unitId === selectedUnitId)
-    : teachers;
+    ? (teachers as any)?.data?.filter((t: any) => t.unitId === selectedUnitId)
+    : (teachers as any)?.data || [];
 
   return (
     <MainLayout>
@@ -218,9 +218,9 @@ export default function NewClassPage() {
                       <SelectValue placeholder={!selectedUnitId ? 'Pilih unit terlebih dahulu' : 'Pilih wali kelas'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {filteredTeachers?.map((teacher) => (
+                      {filteredTeachers?.map((teacher: any) => (
                         <SelectItem key={teacher.id} value={teacher.id}>
-                          {teacher.name}
+                          {teacher.user?.name || teacher.nip || 'Unknown Teacher'}
                         </SelectItem>
                       ))}
                     </SelectContent>

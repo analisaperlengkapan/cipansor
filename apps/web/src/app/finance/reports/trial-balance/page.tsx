@@ -30,10 +30,11 @@ export default function TrialBalancePage() {
   };
 
   return (
-    <MainLayout title="Neraca Saldo (Trial Balance)">
+    <MainLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center print:hidden">
-          <DatePickerWithRange date={dateRange} setDate={setDateRange} />
+          <h1 className="text-2xl font-bold">Neraca Saldo (Trial Balance)</h1>
+          <DatePickerWithRange date={dateRange} setDate={setDateRange as any} />
           <Button onClick={handlePrint} variant="outline">
             <Download className="mr-2 h-4 w-4" /> Cetak / PDF
           </Button>

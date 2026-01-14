@@ -302,6 +302,8 @@ model User {
   givenMedications                  MedicationUsageLog[]        @relation("MedicationGiver")
   createdAnnouncements              Announcement[]              @relation("AnnouncementCreator")
   notifications                     Notification[]
+  sentMessages                      Message[]                   @relation("SentMessages")
+  receivedMessages                  Message[]                   @relation("ReceivedMessages")
   leaveBalances                     LeaveBalance[]
   employmentContracts               EmploymentContract[]
   managedDepartments                Department[]                @relation("DepartmentManager")
@@ -1933,6 +1935,32 @@ model Notification {
   @@index([createdAt])
   @@index([scheduledAt])
   @@map("notifications")
+}
+
+/// Message - Pesan Internal (Buku Penghubung)
+model Message {
+  id          String    @id @default(uuid())
+  senderId    String    @map("sender_id")
+  recipientId String    @map("recipient_id")
+  subject     String
+  content     String    @db.Text
+  category    String    @default("GENERAL") // ACADEMIC, BEHAVIOR, HEALTH, GENERAL, ATTENDANCE, TAHFIDZ
+  isRead      Boolean   @default(false) @map("is_read")
+  parentId    String?   @map("parent_id") // For replies
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  sender    User      @relation("SentMessages", fields: [senderId], references: [id])
+  recipient User      @relation("ReceivedMessages", fields: [recipientId], references: [id])
+  parent    Message?  @relation("MessageReplies", fields: [parentId], references: [id])
+  replies   Message[] @relation("MessageReplies")
+
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([parentId])
+  @@index([category])
+  @@map("messages")
 }
 
 // =====================================

@@ -80,7 +80,7 @@ export default function DailyReportPage() {
   });
 
   const reports = reportsData?.data || [];
-  const pagination = reportsData?.meta || { totalPages: 1, page: 1, total: 0 };
+  const pagination: any = reportsData?.meta || { totalPages: 1, page: 1, total: 0 };
 
   // Helper to format mood
   const getMoodConfig = (mood?: string | null) => {

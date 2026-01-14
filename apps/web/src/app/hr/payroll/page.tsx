@@ -103,8 +103,7 @@ export default function PayrollPage() {
                       </TableCell>
                       <TableCell>{period._count?.payrolls || 0}</TableCell>
                       <TableCell>
-                        {/* Assuming totalAmount is available, might be string or number */}
-                        {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(Number(period.totalAmount || 0))}
+                        -
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="sm">
@@ -136,8 +135,11 @@ function GeneratePayrollDialog() {
   const handleCreate = async () => {
     try {
       const res: any = await createPeriodMutation.mutateAsync({
+        name: `Payroll ${new Date(0, parseInt(month) - 1).toLocaleString('default', { month: 'long' })} ${year}`,
         month: parseInt(month),
         year: parseInt(year),
+        startDate: new Date(parseInt(year), parseInt(month) - 1, 1).toISOString(),
+        endDate: new Date(parseInt(year), parseInt(month), 0).toISOString(),
       });
       setPeriodId(res.id);
       setStep("GENERATE");

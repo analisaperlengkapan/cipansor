@@ -10,7 +10,7 @@
       backendAvailable = true;
     }
   } catch (error) {
-    console.warn('⚠️ Backend API is not accessible (Mocking might be required):', error);
+    console.warn('⚠️ Backend API is not accessible (proceeding with frontend-only tests):', error);
   }
 
   // 2. Check frontend is accessible

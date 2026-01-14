@@ -147,10 +147,10 @@ const StudentPicker = ({ onSelect, search, setSearch, results }: { onSelect: (st
 export default function WalletPage() {
   const [activeTab, setActiveTab] = useState('wallets');
   const [search, setSearch] = useState('');
-  const [selectedUnitId, setSelectedUnitId] = useState<string>('');
+  const [selectedUnitId, setSelectedUnitId] = useState<string>('ALL');
   const [page, setPage] = useState(1);
   const [transactionPage, setTransactionPage] = useState(1);
-  const [transactionType, setTransactionType] = useState<string>('');
+  const [transactionType, setTransactionType] = useState<string>('ALL');
   
   // Dialogs
   const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
@@ -174,15 +174,15 @@ export default function WalletPage() {
     page,
     limit: 20,
     search: search || undefined,
-    unitId: selectedUnitId || undefined,
+    unitId: selectedUnitId !== 'ALL' ? selectedUnitId : undefined,
   });
   
-  const { data: summary } = useWalletSummary(selectedUnitId || undefined);
+  const { data: summary } = useWalletSummary(selectedUnitId !== 'ALL' ? selectedUnitId : undefined);
   
   const { data: transactionsData, isLoading: transactionsLoading } = useWalletTransactions({
     page: transactionPage,
     limit: 20,
-    type: transactionType as TransactionType || undefined,
+    type: transactionType !== 'ALL' ? (transactionType as TransactionType) : undefined,
   });
 
   const { data: searchResults } = useQuery({
@@ -450,7 +450,7 @@ export default function WalletPage() {
                     <SelectValue placeholder="Semua Unit" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Unit</SelectItem>
+                    <SelectItem value="ALL">Semua Unit</SelectItem>
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     {units?.map((unit: any) => (
                       <SelectItem key={unit.id} value={unit.id}>
@@ -607,7 +607,7 @@ export default function WalletPage() {
                     <SelectValue placeholder="Semua Tipe" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Tipe</SelectItem>
+                    <SelectItem value="ALL">Semua Tipe</SelectItem>
                     {TRANSACTION_TYPES.map((type) => (
                       <SelectItem key={type.value} value={type.value}>
                         {type.label}

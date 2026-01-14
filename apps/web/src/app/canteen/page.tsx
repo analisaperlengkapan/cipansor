@@ -188,7 +188,7 @@ export default function CanteenPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('pos');
   const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
@@ -211,7 +211,7 @@ export default function CanteenPage() {
   const { data: itemsData, isLoading: itemsLoading } = useQuery({
     queryKey: ['canteen-items', selectedCategory, search],
     queryFn: () => api.getItems({
-      categoryId: selectedCategory || undefined,
+      categoryId: (selectedCategory && selectedCategory !== 'ALL') ? selectedCategory : undefined,
       search: search || undefined,
       isAvailable: 'true',
     }),
@@ -426,7 +426,7 @@ export default function CanteenPage() {
                         <SelectValue placeholder="Semua Kategori" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Semua Kategori</SelectItem>
+                        <SelectItem value="ALL">Semua Kategori</SelectItem>
                         {categories?.map((cat) => (
                           <SelectItem key={cat.id} value={cat.id}>
                             {cat.name} ({cat._count.items})

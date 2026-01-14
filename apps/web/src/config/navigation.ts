@@ -888,16 +888,6 @@ const adminNavigation: NavGroup[] = [
         icon: Heart,
       },
       {
-        title: 'Inventory',
-        href: '/inventory',
-        icon: Package,
-      },
-      {
-        title: 'Facilities',
-        href: '/facilities',
-        icon: Building2,
-      },
-      {
         title: 'Meals',
         href: '/meals',
         icon: UtensilsCrossed,

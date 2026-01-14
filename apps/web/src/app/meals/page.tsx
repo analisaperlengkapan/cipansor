@@ -192,15 +192,16 @@ function MealCard({ menu, mealType }: { menu?: MealMenu; mealType: MealType }) {
 }
 
 export default function MealsPage() {
-  const [selectedUnitId, setSelectedUnitId] = useState<string>('');
+  const [selectedUnitId, setSelectedUnitId] = useState<string>('ALL');
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(
     startOfWeek(new Date(), { weekStartsOn: 1 })
   );
 
   const { data: units = [] } = useUnits();
-  const { data: todayMenus, isLoading: todayLoading } = useTodayMenus(selectedUnitId || undefined);
+  const unitId = selectedUnitId === 'ALL' ? undefined : selectedUnitId;
+  const { data: todayMenus, isLoading: todayLoading } = useTodayMenus(unitId);
   const { data: weeklyMenus = DEMO_WEEKLY_MENUS, isLoading: weeklyLoading } = useWeeklyMenus({
-    unitId: selectedUnitId || undefined,
+    unitId,
     weekStart: format(currentWeekStart, 'yyyy-MM-dd'),
   });
 
@@ -297,7 +298,7 @@ export default function MealsPage() {
                     <SelectValue placeholder="Semua Unit" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Unit</SelectItem>
+                    <SelectItem value="ALL">Semua Unit</SelectItem>
                     {units.map(unit => (
                       <SelectItem key={unit.id} value={unit.id}>
                         {unit.name}

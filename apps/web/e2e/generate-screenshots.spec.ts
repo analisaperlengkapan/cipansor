@@ -3,6 +3,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 test.describe('Generate Screenshots Expanded', () => {
+  // Increase timeouts for reliable screenshot generation
+  test.setTimeout(120000); // 2 minutes per test
+  
   test.use({
     viewport: { width: 1280, height: 1200 },
     locale: 'id-ID',
@@ -184,7 +187,7 @@ test.describe('Generate Screenshots Expanded', () => {
       if (url.includes('/api/rooms')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([{ id: 'room1', name: 'Kamar Ikhlas 101', floor: 1, capacity: 4, currentOccupancy: 4 }])) });
 
       // VIOLATIONS - Deep mock for violationType
-      if (url.includes('/api/violation-summary')) return route.fulfill({ status: 200, body: JSON.stringify({ totalViolations: 12, byCategory: [{ category: 'LIGHT', count: 10 }, { category: 'MEDIUM', count: 2 }], topViolationTypes: [], topStudents: [] }) });
+      if (url.includes('/api/dashboard/violation-reward') || url.includes('/api/violation-summary')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ totalViolations: 12, totalRewards: 5, recentViolations: [{ id: 'v1', studentName: 'Budi Santoso', type: 'Terlambat', points: 5, date: mockDate }], recentRewards: [{ id: 'r1', studentName: 'Ahmad', type: 'Tahfidz', points: 10, date: mockDate }] })) });
       if (url.includes('/api/violations')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
         { 
           id: 'v1', 
@@ -203,16 +206,44 @@ test.describe('Generate Screenshots Expanded', () => {
       if (url.includes('/api/inventory/assets')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([{ id: 'inv1', name: 'Laptop Dell Latitude', code: 'AST-SMA-001', category: 'ELECTRONIC', status: 'AVAILABLE', unit: { name: 'SMA' } }])) });
 
       // DASHBOARD & COMMON
-      if (url.includes('/api/dashboard/stats')) return route.fulfill({ status: 200, body: JSON.stringify({ totalStudents: 1250, totalTeachers: 85, totalClasses: 32, totalUnits: 5, studentsGrowth: 5.4, attendanceRate: 98.7, activeAcademicYear: { name: '2024/2025', startDate, endDate } }) });
-      if (url.includes('/api/dashboard/finance')) return route.fulfill({ status: 200, body: JSON.stringify({ totalBilled: 750000000, totalPaid: 620000000, totalUnpaid: 130000000, recentPayments: [] }) });
+      if (url.includes('/api/dashboard/stats')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ totalStudents: 1250, totalTeachers: 85, totalClasses: 32, totalUnits: 5, studentsGrowth: 5.4, attendanceRate: 98.7, activeAcademicYear: { name: '2024/2025', startDate, endDate } })) });
+      if (url.includes('/api/dashboard/finance')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ totalBilled: 750000000, totalPaid: 620000000, totalUnpaid: 130000000, recentPayments: [] })) });
       if (url.includes('/api/health/summary')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ medications: { total: 45, lowStock: 5, expired: 0 }, thisMonthRecords: 120, recordsByType: [{ type: 'CHECKUP', count: 80 }, { type: 'ILLNESS', count: 40 }] })) });
       if (url.includes('/api/health')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([{ id: 'h1', visitDate: mockDate, student: { name: 'Ahmad' }, type: 'CHECKUP', diagnosis: 'Sehat', status: 'HEALTHY' }])) });
+      // Duplicate homeroom/teachers/library/reports removed/consolidated earlier
       if (url.includes('/api/psb/stats')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ total: 156, enrolled: 85, accepted: 110, byStatus: { SUBMITTED: 20, INTERVIEW: 15, ACCEPTED: 110, REJECTED: 11 } })) });
       if (url.includes('/api/auth/me')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse(mockUser)) });
       if (url.includes('/api/academic-years')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([{ id: 'ay1', name: '2024/2025', isActive: true, startDate, endDate }])) });
-      if (url.includes('/api/students/s1')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ id: 's1', name: 'Ahmad Fauzi', nis: '12345', status: 'ACTIVE', currentClass: { name: 'X IPA 1' }, unit: { name: 'SMA' }, enrollmentDate: mockDate, user: { name: 'Ahmad Fauzi' }, gender: 'MALE', birthPlace: 'Tasikmalaya', birthDate: '2008-01-01' })) });
-      if (url.includes('/api/students')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([{ id: 's1', name: 'Ahmad Fauzi', nis: '12345', status: 'ACTIVE', currentClass: { name: 'X IPA 1' }, enrollmentDate: mockDate, user: { name: 'Ahmad Fauzi' } }])) });
-      if (url.includes('/api/tahfidz/dashboard')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ totalRecords: 2840, totalStudents: 450, avgQuality: 'MUMTAZ' })) });
+      if (url.includes('/api/students/s1')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ id: 's1', name: 'Ahmad Fauzi', nis: '12345', status: 'ACTIVE', currentClass: { name: 'X IPA 1' }, unit: { name: 'SMA' }, enrollmentDate: mockDate, createdAt: mockDate, user: { name: 'Ahmad Fauzi' }, gender: 'MALE', birthPlace: 'Tasikmalaya', birthDate: '2008-01-01' })) });
+      if (url.includes('/api/students')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([{ id: 's1', name: 'Ahmad Fauzi', nis: '12345', status: 'ACTIVE', currentClass: { name: 'X IPA 1' }, enrollmentDate: mockDate, createdAt: mockDate, user: { name: 'Ahmad Fauzi' } }])) });
+      if (url.includes('/api/dashboard/tahfidz') || url.includes('/api/tahfidz/dashboard')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ totalRecords: 2840, totalStudents: 450, avgQuality: 'MUMTAZ' })) });
+      
+      // Additional Dashboard Mocks (Fix for variants)
+      if (url.includes('/api/dashboard/attendance')) {
+        const attendanceData = Array.from({ length: 7 }, (_, i) => {
+          const d = new Date();
+          d.setDate(d.getDate() - (6 - i));
+          return {
+            date: d.toISOString(),
+            present: 1200 + Math.floor(Math.random() * 50),
+            absent: Math.floor(Math.random() * 10),
+            sick: Math.floor(Math.random() * 10),
+            excused: Math.floor(Math.random() * 5),
+            unitId: 'unit-sma'
+          };
+        });
+        return route.fulfill({ status: 200, body: JSON.stringify(apiResponse(attendanceData)) });
+      }
+
+      if (url.includes('/api/dashboard/quick-stats')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({
+        totalStudents: 1250, activeStudents: 1250, totalTeachers: 85, todayAttendance: 1230, attendanceRate: 98.4
+      })) });
+
+      if (url.includes('/api/dashboard/metrics')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({
+        current: { totalStudents: 1250, attendanceRate: 98.4, violationCount: 5 },
+        recent: [],
+        alerts: []
+      })) });
       if (url.includes('/api/psb/registrations')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([{ id: 'p1', registrationNumber: 'REG-2024-001', fullName: 'Calon Santri Baru', status: 'SUBMITTED', createdAt: mockDate }])) });
 
       // PARENT PORTAL
@@ -238,6 +269,478 @@ test.describe('Generate Screenshots Expanded', () => {
         ]
       })) });
 
+      // ANNOUNCEMENTS
+      if (url.includes('/api/announcements')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'ann1', title: 'Libur Tahun Baru Islam 1446 H', content: 'Sekolah diliburkan tanggal...', priority: 'HIGH', isPublished: true, createdAt: mockDate, author: { name: 'Admin' }, unit: null },
+        { id: 'ann2', title: 'Jadwal UAS Semester Ganjil', content: 'UAS dimulai tanggal 15 Desember...', priority: 'MEDIUM', isPublished: true, createdAt: mockDate, author: { name: 'Admin' }, unit: { name: 'SMA' } },
+        { id: 'ann3', title: 'Pembagian Raport', content: 'Raport dapat diambil...', priority: 'NORMAL', isPublished: true, createdAt: mockDate, author: { name: 'Kepala Sekolah' }, unit: { name: 'SMA' } }
+      ])) });
+
+      // NOTIFICATIONS
+      if (url.includes('/api/notifications?') || url.endsWith('/api/notifications')) {
+        return route.fulfill({ 
+          status: 200, 
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: [
+              { id: 'n1', title: 'Tagihan SPP Januari', message: 'Tagihan SPP bulan Januari sebesar Rp 500.000', isRead: false, createdAt: mockDate, type: 'PAYMENT' },
+              { id: 'n2', title: 'Hasil Setoran Tahfidz', message: 'Ahmad berhasil menyetorkan 1 halaman', isRead: true, createdAt: mockDate, type: 'TAHFIDZ' },
+              { id: 'n3', title: 'Izin Disetujui', message: 'Permohonan izin pulang telah disetujui', isRead: true, createdAt: mockDate, type: 'PERMIT' }
+            ],
+            meta: { total: 3, page: 1, limit: 10, totalPages: 1, unreadCount: 1 }
+          })
+        });
+      }
+      if (url.includes('/api/notifications/admin')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify(paginated([
+          { id: 'an1', title: 'Penerimaan Raport', message: 'Diumumkan kepada seluruh orang tua...', type: 'ANNOUNCEMENT', priority: 'HIGH', recipientType: 'ALL', totalRecipients: 500, deliveredCount: 480, readCount: 350, sentAt: mockDate, createdAt: mockDate },
+          { id: 'an2', title: 'Info Ekstrakurikuler', message: 'Kegiatan ekskul hari ini ditiadakan...', type: 'SYSTEM', priority: 'NORMAL', recipientType: 'UNIT', totalRecipients: 200, deliveredCount: 195, readCount: 120, sentAt: mockDate, createdAt: mockDate }
+        ]))
+      });
+
+      // PERMITS (Perizinan)
+      if (url.includes('/api/permits')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'pm1', student: { name: 'Ahmad', nis: '12345', currentClass: { name: 'X IPA 1' } }, permitType: 'PULANG', reason: 'Menghadiri acara keluarga', startDate: mockDate, endDate: mockDate, createdAt: mockDate, status: 'APPROVED', approvedBy: { name: 'Ust. Zainal' } },
+        { id: 'pm2', student: { name: 'Fatimah', nis: '12346', currentClass: { name: 'X IPA 2' } }, permitType: 'SAKIT', reason: 'Demam', startDate: mockDate, endDate: mockDate, createdAt: mockDate, status: 'PENDING', approvedBy: null }
+      ])) });
+
+      // REWARD TYPES
+      // Note: useRewardTypes expects direct array, not paginated
+      if (url.includes('/api/reward-types')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { id: 'rt1', name: 'Juara Tahfidz', category: 'ACADEMIC', points: 50, description: 'Juara lomba tahfidz', isActive: true },
+          { id: 'rt2', name: 'Santri Terbaik', category: 'CHARACTER', points: 30, description: 'Santri teladan', isActive: true }
+        ]) 
+      });
+
+      // REWARDS (Penghargaan)
+      if (url.includes('/api/rewards')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'rw1', student: { name: 'Ahmad', nis: '12345', currentClass: { name: 'X IPA 1' } }, rewardType: { name: 'Juara Tahfidz', category: 'ACADEMIC', points: 50 }, date: mockDate, createdAt: mockDate, givenBy: { name: 'Ust. Keamanan' }, notes: 'Juara 1 Lomba Tahfidz tingkat Kota' },
+        { id: 'rw2', student: { name: 'Budi', nis: '12347', currentClass: { name: 'X IPA 2' } }, rewardType: { name: 'Santri Terbaik', category: 'CHARACTER', points: 30 }, date: mockDate, createdAt: mockDate, givenBy: { name: 'Wali Kelas' }, notes: 'Kedisiplinan tinggi' }
+      ])) });
+
+      // TEACHERS
+      if (url.includes('/api/teachers')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 't1', name: 'Ust. Dr. Hamzah, M.Pd.', nip: '198501012010011001', position: 'Kepala Sekolah', status: 'ACTIVE', subjects: [{ name: 'Fiqih' }], unit: { name: 'SMA' } },
+        { id: 't2', name: 'Ustadzah Aisyah, S.Pd.', nip: '198702022011012001', position: 'Guru Tahfidz', status: 'ACTIVE', subjects: [{ name: 'Tahfidz' }], unit: { name: 'SMA' } }
+      ])) });
+
+      // HOMEROOM (Wali Kelas) - Generic removed to prevent shadowing
+      // if (url.includes('/api/homeroom')) ... moved/handled specifically below
+
+      // MUHADHOROH (Latihan Pidato)
+      if (url.includes('/api/muhadhoroh/upcoming')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { id: 'u1', student: { name: 'Ahmad Fauzi' }, topic: 'Pentingnya Menuntut Ilmu', scheduledAt: mockDate, language: 'Indonesian' },
+          { id: 'u2', student: { name: 'Siti Aisyah' }, topic: 'فضل الصدقة', scheduledAt: mockDate, language: 'Arabic' }
+        ]) 
+      });
+      if (url.includes('/api/muhadhoroh/statistics')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify({
+          total: 156,
+          byStatus: [{ status: 'COMPLETED', count: 120 }, { status: 'SCHEDULED', count: 28 }, { status: 'CANCELLED', count: 8 }],
+          byLanguage: [{ language: 'Indonesian', count: 85 }, { language: 'Arabic', count: 42 }, { language: 'English', count: 29 }],
+          averages: { content: 78.5, delivery: 76.2, language: 74.8, total: 76.5 }
+        }) 
+      });
+      if (url.includes('/api/muhadhoroh/top-performers')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { studentId: 's1', name: 'Fatimah', nis: '2024003', class: 'VIII A', averageScore: 92, totalSessions: 12 }
+        ]) 
+      });
+      if (url.includes('/api/muhadhoroh')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'mh1', student: { name: 'Ahmad', currentClass: { name: 'X IPA 1' } }, topic: 'Keutamaan Ilmu', language: 'Arabic', scheduledAt: mockDate, createdAt: mockDate, totalScore: 85, grade: 'B', status: 'COMPLETED', evaluatedBy: { name: 'Ust. Yusuf' } },
+        { id: 'mh2', student: { name: 'Fatimah', currentClass: { name: 'X IPA 2' } }, topic: 'Birrul Walidain', language: 'Indonesian', scheduledAt: mockDate, createdAt: mockDate, totalScore: 90, grade: 'A', status: 'COMPLETED', evaluatedBy: { name: 'Ustadzah Khadijah' } }
+      ])) });
+
+      // MUSYRIF (Pembimbing Asrama)
+      if (url.includes('/api/musyrif')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'ms1', name: 'Ust. Zainal', dormitory: { name: 'Gedung Abu Bakar' }, totalStudents: 85, status: 'ACTIVE', phone: '081234567890' },
+        { id: 'ms2', name: 'Ustadzah Halimah', dormitory: { name: 'Gedung Khadijah' }, totalStudents: 70, status: 'ACTIVE', phone: '081234567891' }
+      ])) });
+
+      // WALLET (E-Wallet Santri)
+      if (url.includes('/api/wallet/transactions')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'wt1', student: { name: 'Ahmad' }, type: 'TOP_UP', amount: 100000, date: mockDate, description: 'Top up saldo', status: 'SUCCESS' },
+        { id: 'wt2', student: { name: 'Ahmad' }, type: 'PAYMENT', amount: -15000, date: mockDate, description: 'Pembayaran kantin', status: 'SUCCESS' }
+      ])) });
+      if (url.includes('/api/wallet')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'w1', student: { name: 'Ahmad', nis: '12345' }, balance: 150000, lastTransaction: mockDate, status: 'ACTIVE' },
+        { id: 'w2', student: { name: 'Fatimah', nis: '12346' }, balance: 75000, lastTransaction: mockDate, status: 'ACTIVE' }
+      ])) });
+
+      // DONATION (Donasi)
+      if (url.includes('/api/donations')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'd1', donorName: 'H. Abdullah', amount: 5000000, date: mockDate, type: 'WAKAF', description: 'Wakaf Pembangunan Masjid', status: 'VERIFIED' },
+        { id: 'd2', donorName: 'Ibu Fatimah', amount: 1000000, date: mockDate, type: 'INFAQ', description: 'Infaq Bulanan', status: 'VERIFIED' }
+      ])) });
+
+      // TK DAILY REPORT
+      if (url.includes('/api/tk/daily-reports')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'dr1', student: { name: 'Daffa', class: { name: 'Kelas Bintang' } }, date: mockDate, moodLevel: 'HAPPY', activities: ['Mewarnai', 'Bermain'], notes: 'Anak ceria hari ini', teacher: { name: 'Ustadzah Nur' } },
+        { id: 'dr2', student: { name: 'Aisyah', class: { name: 'Kelas Bintang' } }, date: mockDate, moodLevel: 'NEUTRAL', activities: ['Belajar Huruf'], notes: 'Sudah mengenal huruf A-E', teacher: { name: 'Ustadzah Nur' } }
+      ])) });
+
+      // TK PORTFOLIO
+      if (url.includes('/api/tk/portfolios')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'pf1', student: { name: 'Daffa' }, title: 'Gambar Masjid', category: 'ART', date: mockDate, description: 'Hasil karya mewarnai', fileUrl: '#' },
+        { id: 'pf2', student: { name: 'Aisyah' }, title: 'Tulisan Huruf Hijaiyah', category: 'WRITING', date: mockDate, description: 'Latihan menulis', fileUrl: '#' }
+      ])) });
+
+      // MEALS (Makanan/Catering)
+      if (url.includes('/api/meals')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'm1', date: mockDate, type: 'BREAKFAST', menu: 'Nasi Goreng + Telur + Susu', servings: 450, status: 'SERVED' },
+        { id: 'm2', date: mockDate, type: 'LUNCH', menu: 'Nasi + Ayam Goreng + Sayur Asem', servings: 450, status: 'SERVED' },
+        { id: 'm3', date: mockDate, type: 'DINNER', menu: 'Nasi + Ikan Bakar + Lalapan', servings: 450, status: 'PENDING' }
+      ])) });
+
+      // LAUNDRY
+      if (url.includes('/api/laundry/pricing')) return route.fulfill({ status: 200, body: JSON.stringify({ data: [
+        { id: 'p1', itemType: 'Cuci Kering', pricePerKg: 5000, pricePerItem: 0, estimatedDays: 2, isActive: true, unit: { name: 'Unit A' } }
+      ] }) });
+      if (url.includes('/api/laundry/transactions')) return route.fulfill({ status: 200, body: JSON.stringify({ data: [
+         { id: 'tx1', transactionNumber: 'TRX-001', student: { fullName: 'Ahmad' }, status: 'PROCESSING', totalAmount: 15000, receivedAt: mockDate, estimatedReady: mockDate, createdAt: mockDate, paymentStatus: 'PAID', items: [] }
+      ] }) });
+      if (url.includes('/api/laundry/stats')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ totalKg: 150, totalItems: 300, revenue: 2500000, activeTransactions: 15 })) });
+      // Remove catch-all laundry mock or make it specific for records if needed
+      if (url.includes('/api/laundry/records')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'l1', student: { name: 'Ahmad', nis: '12345' }, date: mockDate, items: 5, weight: 2.5, status: 'WASHING', pickupDate: mockDate }
+      ])) });
+
+      // HOMEROOM
+      // Note: Order matters. Specific paths first.
+      // HOMEROOM
+      // Note: Order matters. Specific paths first.
+      if (url.includes('/api/homeroom/my-classes')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse([{
+           id: 'cls1', name: 'X IPA 1', studentCount: 30, unit: { name: 'SMA' }, academicYear: { id: 'ay1', name: '2024/2025', year: '2024/2025', semester: 1 }, grade: 10
+        }])) 
+      });
+      if (url.includes('/api/homeroom/my-class')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse({
+           id: 'cls1', name: 'X IPA 1', studentCount: 30, unit: { name: 'SMA' }, academicYear: { id: 'ay1', name: '2024/2025', year: '2024/2025', semester: 1 }, students: [], grade: 10
+        })) 
+      });
+
+      // Dashboard logic: Matches /homeroom/cls1/dashboard
+      if (url.includes('/dashboard') && url.includes('/homeroom/')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse({
+           class: { id: 'cls1', name: 'X IPA 1', homeroomTeacher: { user: { name: 'Ust. Budi' } }, unit: { id: 'u1', name: 'SMA' }, academicYear: { id: 'ay1', name: '2024/2025' } },
+           studentCount: 30,
+           students: [
+             { id: 's1', nis: '12345', user: { name: 'Ahmad Fauzi' }, name: 'Ahmad Fauzi', gender: 'MALE', status: 'ACTIVE' },
+             { id: 's2', nis: '12346', user: { name: 'Siti Aminah' }, name: 'Siti Aminah', gender: 'FEMALE', status: 'ACTIVE' },
+             { id: 's3', nis: '12347', user: { name: 'Budi Santoso' }, name: 'Budi Santoso', gender: 'MALE', status: 'ACTIVE' }
+           ],
+           attendanceSummary: [
+             { status: 'PRESENT', count: 580 }, 
+             { status: 'ABSENT', count: 12 }, 
+             { status: 'SICK', count: 5 }, 
+             { status: 'EXCUSED', count: 3 }, 
+             { status: 'LATE', count: 8 }
+           ],
+           dashboardSummary: { 
+             averageAttendance: 96.5, 
+             averageAcademicScore: 84.2, 
+             pendingBehaviorNotes: 2, 
+             upcomingBirthdays: [
+               { student: { id: 's1', name: 'Ahmad Fauzi', nis: '12345' }, daysUntil: 2 },
+               { student: { id: 's2', name: 'Siti Aminah', nis: '12346' }, daysUntil: 5 }
+             ], 
+             recentAchievements: [
+               { id: 'a1', student: { user: { name: 'Ahmad Fauzi' } }, description: 'Juara 1 Lomba Adzan', date: mockDate, category: 'RELIGIOUS', points: 50 },
+               { id: 'a2', student: { user: { name: 'Siti Aminah' } }, description: 'Hafal Juz 30', date: mockDate, category: 'TAHFIDZ', points: 100 }
+             ], 
+             recentViolations: [
+               { id: 'v1', student: { user: { name: 'Budi Santoso' } }, description: 'Terlambat masuk kelas', occurredAt: mockDate, category: 'DISCIPLINE', action: 'Teguran lisan', points: 10 }
+             ] 
+           }
+        })) 
+      });
+
+      // Summary logic
+      if (url.includes('/summary') && url.includes('/homeroom/')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify({
+           totalStudents: 30, maleCount: 15, femaleCount: 15, averageAttendance: 95, averageAcademicScore: 85, pendingBehaviorNotes: 2, upcomingBirthdays: [], recentAchievements: [], recentViolations: []
+        }) 
+      });
+
+      // PROCUREMENT (Pengadaan)
+      if (url.includes('/api/procurement')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'pr1', requestNumber: 'PR-2024-001', title: 'Pengadaan Komputer Lab', status: 'APPROVED', requestDate: mockDate, totalAmount: 50000000, requestedBy: { name: 'Admin Lab' } },
+        { id: 'pr2', requestNumber: 'PR-2024-002', title: 'Perlengkapan Olahraga', status: 'PENDING', requestDate: mockDate, totalAmount: 5000000, requestedBy: { name: 'Guru Olahraga' } }
+      ])) });
+
+      // REPORTS
+      if (url.includes('/api/reports')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse([
+        { id: 'rp1', name: 'Laporan Keuangan Bulanan', type: 'FINANCE', period: 'Desember 2024', status: 'GENERATED', createdAt: mockDate },
+        { id: 'rp2', name: 'Laporan Kehadiran Santri', type: 'ATTENDANCE', period: 'Semester 1 2024/2025', status: 'GENERATED', createdAt: mockDate },
+        { id: 'rp3', name: 'Laporan Progress Tahfidz', type: 'TAHFIDZ', period: 'Semester 1 2024/2025', status: 'GENERATED', createdAt: mockDate }
+      ])) });
+
+      // ANALYTICS
+      if (url.includes('/api/analytics')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({
+        studentGrowth: { current: 1250, previous: 1180, growth: 5.9 },
+        attendanceRate: { current: 98.7, previous: 97.5 },
+        tahfidzProgress: { avgJuz: 8.5, topPerformers: 25 },
+        financeStats: { totalRevenue: 750000000, totalExpense: 650000000, profit: 100000000 }
+      })) });
+
+      // CALENDAR
+      if (url.includes('/api/calendar/events')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse([
+        { id: 'ev1', title: 'UAS Semester Ganjil', startDate: '2024-12-15T00:00:00Z', endDate: '2024-12-22T23:59:59Z', category: 'ACADEMIC', allDay: true, color: '#3b82f6' },
+        { id: 'ev2', title: 'Libur Tahun Baru', startDate: '2025-01-01T00:00:00Z', endDate: '2025-01-01T23:59:59Z', category: 'HOLIDAY', allDay: true, color: '#ef4444' },
+        { id: 'ev3', title: 'Pembagian Raport', startDate: '2024-12-27T00:00:00Z', endDate: '2024-12-27T23:59:59Z', category: 'ACADEMIC', allDay: true, color: '#3b82f6' },
+        { id: 'ev4', title: 'Wisuda Tahfidz', startDate: '2024-12-30T00:00:00Z', endDate: '2024-12-30T23:59:59Z', category: 'EVENT', allDay: true, color: '#10b981' }
+      ])) });
+      if (url.includes('/api/calendar')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ totalEvents: 45, upcomingEvents: 5 })) });
+
+      // DUTY ROSTER (Piket)
+      if (url.includes('/api/duty-roster')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'dt1', date: mockDate, type: 'TEACHER', person: { name: 'Ust. Ahmad' }, shift: 'PAGI', location: 'Gerbang Utama', status: 'COMPLETED' },
+        { id: 'dt2', date: mockDate, type: 'STUDENT', person: { name: 'Budi - X IPA 1' }, shift: 'SIANG', location: 'Halaman', status: 'ONGOING' }
+      ])) });
+
+      // PPDB (Extended PSB)
+      if (url.includes('/api/ppdb/registrations')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'ppdb1', registrationNumber: 'PPDB-2024-001', fullName: 'Calon Santri A', status: 'INTERVIEW', program: 'Reguler', createdAt: mockDate, testScore: 85 },
+        { id: 'ppdb2', registrationNumber: 'PPDB-2024-002', fullName: 'Calon Santri B', status: 'ACCEPTED', program: 'Tahfidz', createdAt: mockDate, testScore: 92 }
+      ])) });
+      if (url.includes('/api/ppdb/stats')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ total: 200, accepted: 150, rejected: 20, pending: 30 })) });
+
+      // CLASSES
+      if (url.includes('/api/classes')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'c1', name: 'X IPA 1', grade: '10', capacity: 30, totalStudents: 28, homeroom: { name: 'Ust. Ahmad' }, unit: { name: 'SMA' } },
+        { id: 'c2', name: 'X IPA 2', grade: '10', capacity: 30, totalStudents: 30, homeroom: { name: 'Ustadzah Siti' }, unit: { name: 'SMA' } },
+        { id: 'c3', name: 'X IPS 1', grade: '10', capacity: 30, totalStudents: 25, homeroom: { name: 'Ust. Yusuf' }, unit: { name: 'SMA' } }
+      ])) });
+
+      // TAHFIDZ
+      if (url.includes('/api/tahfidz/records')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 't1', date: mockDate, student: { name: 'Ahmad', nis: '12345', class: { name: 'X IPA 1' } }, surah: { name: 'Al-Baqarah' }, ayahStart: 1, ayahEnd: 20, type: 'ZIYADAH', quality: 'MUMTAZ', teacher: { name: 'Ust. Hafidz' } },
+        { id: 't2', date: mockDate, student: { name: 'Fatimah', nis: '12346', class: { name: 'X IPA 2' } }, surah: { name: 'Ali Imran' }, ayahStart: 1, ayahEnd: 15, type: 'MUROJAAH', quality: 'JAYYID_JIDDAN', teacher: { name: 'Ust. Hafidz' } }
+      ])) });
+      if (url.includes('/api/tahfidz/stats')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ totalRecords: 2840, totalStudents: 450, avgQuality: 'MUMTAZ', totalJuz: 1250 })) });
+
+      // FINANCE
+      if (url.includes('/api/finance/transactions')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'f1', date: mockDate, student: { name: 'Ahmad', nis: '12345' }, type: 'SPP', amount: 500000, status: 'PAID', paymentMethod: 'TRANSFER' },
+        { id: 'f2', date: mockDate, student: { name: 'Budi', nis: '12347' }, type: 'SPP', amount: 500000, status: 'PENDING', paymentMethod: null }
+      ])) });
+      if (url.includes('/api/finance/summary')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ totalRevenue: 750000000, totalExpense: 650000000, balance: 100000000, pendingPayments: 130000000 })) });
+      if (url.includes('/api/finance/bills')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'b1', student: { name: 'Ahmad', nis: '12345' }, type: 'SPP', amount: 500000, dueDate: mockDate, status: 'PAID' },
+        { id: 'b2', student: { name: 'Budi', nis: '12347' }, type: 'SPP', amount: 500000, dueDate: mockDate, status: 'PENDING' }
+      ])) });
+
+      // ATTENDANCE  
+      if (url.includes('/api/attendance/summary')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ present: 1180, absent: 30, late: 25, excused: 15, total: 1250 })) });
+      if (url.includes('/api/attendance')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'a1', date: mockDate, student: { name: 'Ahmad', nis: '12345', class: { name: 'X IPA 1' } }, status: 'PRESENT', checkInTime: '06:45:00' },
+        { id: 'a2', date: mockDate, student: { name: 'Budi', nis: '12347', class: { name: 'X IPA 1' } }, status: 'LATE', checkInTime: '07:15:00' }
+      ])) });
+
+      // ASSESSMENT (Penilaian)
+      if (url.includes('/api/assessments')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'as1', student: { name: 'Ahmad', nis: '12345', class: { name: 'X IPA 1' } }, subject: { name: 'Matematika' }, type: 'UTS', score: 85, maxScore: 100, date: mockDate },
+        { id: 'as2', student: { name: 'Fatimah', nis: '12346', class: { name: 'X IPA 2' } }, subject: { name: 'Bahasa Arab' }, type: 'UAS', score: 90, maxScore: 100, date: mockDate }
+      ])) });
+
+      // LIBRARY
+      if (url.includes('/api/library/books')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'lb1', title: 'Riyadhus Shalihin', author: 'Imam An-Nawawi', isbn: '978-123-456', category: 'ISLAMIC', available: 5, total: 10 },
+        { id: 'lb2', title: 'Fisika Dasar', author: 'Halliday', isbn: '978-789-012', category: 'SCIENCE', available: 3, total: 5 }
+      ])) });
+      if (url.includes('/api/library/loans')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'll1', book: { title: 'Riyadhus Shalihin' }, borrower: { name: 'Ahmad' }, borrowDate: mockDate, dueDate: mockDate, status: 'BORROWED' }
+      ])) });
+
+      // EXTRACURRICULAR
+      if (url.includes('/api/extracurricular')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'ex1', name: 'Tahfidz Club', category: 'RELIGIOUS', schedule: 'Senin, Rabu 15:00', instructor: { name: 'Ust. Hafidz' }, totalMembers: 45 },
+        { id: 'ex2', name: 'Futsal', category: 'SPORTS', schedule: 'Selasa, Kamis 16:00', instructor: { name: 'Coach Adi' }, totalMembers: 30 },
+        { id: 'ex3', name: 'English Club', category: 'ACADEMIC', schedule: 'Jumat 14:00', instructor: { name: 'Ms. Sarah' }, totalMembers: 25 }
+      ])) });
+
+      // FACILITIES
+      if (url.includes('/api/facilities')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'fc1', name: 'Masjid Al-Ikhlas', type: 'WORSHIP', capacity: 500, status: 'AVAILABLE', unit: { name: 'Yayasan' } },
+        { id: 'fc2', name: 'Lab Komputer', type: 'ACADEMIC', capacity: 40, status: 'AVAILABLE', unit: { name: 'SMA' } },
+        { id: 'fc3', name: 'Lapangan Futsal', type: 'SPORTS', capacity: 22, status: 'MAINTENANCE', unit: { name: 'Yayasan' } }
+      ])) });
+
+      // COUNSELING
+      if (url.includes('/api/counseling/stats')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse({ total: 15, open: 5, inProgress: 3, resolved: 7, avgResolutionDays: 2.5, byCategory: { ACADEMIC: 5, BEHAVIOR: 10 } })) 
+      });
+      if (url.includes('/api/counseling')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify(paginated([
+          { 
+            id: 'cs1', 
+            caseNumber: 'BK-2024-001',
+            title: 'Masalah Belajar',
+            student: { name: 'Ahmad', nis: '12345', currentClass: { name: 'X IPA 1' } }, 
+            counselor: { name: 'Ustadzah Khadijah' }, 
+            reportedAt: mockDate, 
+            createdAt: mockDate,
+            category: 'ACADEMIC', 
+            priority: 'HIGH',
+            status: 'OPEN', 
+            notes: 'Konseling prestasi akademik',
+            sessions: []
+          },
+          { 
+            id: 'cs2', 
+            caseNumber: 'BK-2024-002',
+            title: 'Kedisiplinan',
+            student: { name: 'Budi', nis: '12347', currentClass: { name: 'X IPA 1' } }, 
+            counselor: { name: 'Ust. Zainal' }, 
+            reportedAt: mockDate, 
+            createdAt: mockDate,
+            category: 'BEHAVIOR', 
+            priority: 'MEDIUM',
+            status: 'IN_PROGRESS', 
+            notes: 'Tindak lanjut pelanggaran',
+            sessions: []
+          }
+        ])) 
+      });
+
+      // CERTIFICATES
+      if (url.includes('/api/certificates')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'ct1', student: { name: 'Ahmad', nis: '12345' }, type: 'TAHFIDZ', title: 'Sertifikat Hafalan 5 Juz', issueDate: mockDate, status: 'ISSUED' },
+        { id: 'ct2', student: { name: 'Fatimah', nis: '12346' }, type: 'GRADUATION', title: 'Ijazah SMA', issueDate: mockDate, status: 'PENDING' }
+      ])) });
+
+      // SCHEDULE
+      if (url.includes('/api/schedules')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse([
+        { id: 'sc1', day: 'MONDAY', startTime: '07:00', endTime: '07:45', subject: { name: 'Tahfidz' }, teacher: { name: 'Ust. Hafidz' }, class: { name: 'X IPA 1' }, room: 'Kelas X-1' },
+        { id: 'sc2', day: 'MONDAY', startTime: '07:45', endTime: '08:30', subject: { name: 'Matematika' }, teacher: { name: 'Ust. Ahmad' }, class: { name: 'X IPA 1' }, room: 'Kelas X-1' }
+      ])) });
+
+      // CURRICULUM
+      if (url.includes('/api/curriculum/subjects')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'sb1', name: 'Matematika', code: 'MTK', category: 'UMUM', hoursPerWeek: 4, isActive: true, type: 'REQUIRED', credits: 4, unit: { name: 'SMA' } }
+      ])) });
+      if (url.includes('/api/curriculum/curriculums')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse([
+        { id: 'cr1', name: 'Kurikulum Merdeka 2024', code: 'KM-2024', isActive: true, unit: { name: 'SMA' }, subjects: [], gradeLevel: 10 }
+      ])) });
+      if (url.includes('/api/curriculum/schedules')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse([])) });
+      if (url.includes('/api/curriculum/teacher-assignments')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse([])) });
+      if (url.includes('/api/curriculum')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ name: 'Kurikulum Merdeka + Pesantren', year: '2024/2025', totalSubjects: 15, totalHours: 45 })) });
+
+      // ALUMNI
+      if (url.includes('/api/alumni/events')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse([
+          { id: 'ev1', title: 'Reuni Akbar 2024', description: 'Temu kangen alumni lintas angkatan', date: mockDate, eventDate: mockDate, location: 'Aula Utama', status: 'UPCOMING', registeredCount: 150, maxParticipants: 500, isOnline: false, createdAt: mockDate, updatedAt: mockDate },
+          { id: 'ev2', title: 'Seminar Karir', description: 'Berbagi pengalaman dunia kerja', date: mockDate, eventDate: mockDate, location: 'Zoom Meeting', status: 'UPCOMING', registeredCount: 85, maxParticipants: 200, isOnline: true, createdAt: mockDate, updatedAt: mockDate }
+        ])) 
+      });
+      if (url.includes('/api/alumni/stats')) return route.fulfill({ 
+         status: 200, 
+         contentType: 'application/json',
+         body: JSON.stringify(apiResponse({ total: 150, byStatus: { REGISTERED: 50, VERIFIED: 80, ACTIVE: 20, INACTIVE: 0 }, byGraduationYear: { 2010: 10, 2011: 15, 2012: 25 }, byEmploymentStatus: { EMPLOYED: 100, SELF_EMPLOYED: 20, STUDENT: 20, UNEMPLOYED: 5, OTHER: 5 }, byEducationLevel: { SMP: 0, SMA: 10, D3: 5, S1: 100, S2: 30, S3: 5, OTHER: 0 }, recentGraduates: 30, activeMembers: 150 })) 
+      });
+      if (url.includes('/api/alumni?') || url.endsWith('/api/alumni')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify(paginated([
+          { id: 'al1', studentName: 'Dr. Ahmad Fauzi', nis: '10001', graduationYear: 2010, currentOccupation: 'Dosen', currentCompany: 'UIN Jakarta', phone: '081234567890', status: 'VERIFIED', email: 'ahmad@example.com', currentCity: 'Jakarta' },
+          { id: 'al2', studentName: 'Ustadzah Fatimah, S.Pd.', nis: '10002', graduationYear: 2012, currentOccupation: 'Guru', currentCompany: 'Pesantren Cipansor', phone: '081234567891', status: 'ACTIVE', email: 'fatimah@example.com', currentCity: 'Bandung' }
+        ])) 
+      });
+
+      // RAPOR PESANTREN
+      if (url.includes('/api/rapor-pesantren')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'rp1', studentNis: '12345', studentName: 'Ahmad', className: 'X IPA 1', semester: 1, academicYearName: '2024/2025', overallScore: 85, tahfidzScore: 85, ibadahScore: 90, akhlakScore: 88, overallGrade: 'B', status: 'DRAFT' }
+      ])) });
+
+      // SETTINGS (Profile/User)
+      if (url.includes('/api/settings')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ theme: 'light', language: 'id', notifications: true })) });
+
+      // INVENTORY
+      if (url.includes('/api/inventory')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'inv1', name: 'Laptop Dell Latitude', code: 'AST-SMA-001', category: 'ELECTRONIC', status: 'AVAILABLE', quantity: 10, unit: { name: 'SMA' } },
+        { id: 'inv2', name: 'Proyektor Epson', code: 'AST-SMA-002', category: 'ELECTRONIC', status: 'IN_USE', quantity: 5, unit: { name: 'SMA' } }
+      ])) });
+
+      // CANTEEN
+      if (url.includes('/api/canteen/categories')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse([
+          { id: 'cat1', name: 'Makanan', _count: { items: 10 } },
+          { id: 'cat2', name: 'Minuman', _count: { items: 5 } }
+        ])) 
+      });
+      if (url.includes('/api/canteen/items/low-stock')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse([])) 
+      });
+      if (url.includes('/api/canteen/items')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify(paginated([
+          { id: 'cp1', name: 'Nasi Goreng', price: 10000, category: { name: 'Makanan' }, isAvailable: true, stock: 50, minStock: 10 },
+          { id: 'cp2', name: 'Es Teh', price: 3000, category: { name: 'Minuman' }, isAvailable: true, stock: 30, minStock: 5 }
+        ])) 
+      });
+      if (url.includes('/api/canteen/transactions/stats')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse({ summary: { totalRevenue: 15000000, totalTransactions: 150 }, topItems: [{ itemId: 'cp1', itemName: 'Nasi Goreng', quantitySold: 150, totalRevenue: 1500000 }] })) 
+      });
+      if (url.includes('/api/canteen/transactions')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify(paginated([
+          { id: 'cn1', student: { name: 'Ahmad', nis: '12345' }, amount: 15000, date: mockDate, items: ['Nasi Goreng', 'Es Teh'], status: 'COMPLETED' }
+        ])) 
+      });
+
+      // DUPLICATE BLOCKS REMOVED - Using consolidate blocks at lines 200-600
+
+
+      // TK/PAUD ASSESSMENT
+      if (url.includes('/api/paud-assessment/assessments')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+         { id: 'asm1', periodDate: mockDate, periodType: 'MINGGUAN', aspect: 'NAM', achievementLevel: 'BSH', narrativeText: 'Anak mampu menghafal doa harian', student: { user: { name: 'Fulan' }, nis: '123' }, academicYear: { name: '2024/2025' } }
+      ])) });
+      
+      // TK DAILY REPORT
+      if (url.includes('/api/tk/daily-reports') || url.includes('/api/daily-reports')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'dr1', student: { name: 'Daffa Al-Fatih', nis: 'P001' }, class: { name: 'Kelas Bintang' }, date: mockDate, moodLevel: 'HAPPY', activities: ['Mewarnai', 'Bermain'], notes: 'Anak ceria hari ini', teacher: { name: 'Ustadzah Nur' } },
+        { id: 'dr2', student: { name: 'Aisyah', nis: 'P002' }, class: { name: 'Kelas Bintang' }, date: mockDate, moodLevel: 'NEUTRAL', activities: ['Belajar Huruf'], notes: 'Sudah mengenal huruf A-E', teacher: { name: 'Ustadzah Nur' } }
+      ])) });
+
+      // PROFILE
+      if (url.includes('/api/profile')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse(mockUser)) });
+
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(paginated([])) });
     });
   });
@@ -252,51 +755,98 @@ test.describe('Generate Screenshots Expanded', () => {
   }
 
   const pages: PageConfig[] = [
+    // Dashboard - Multiple unit views
     { name: 'dashboard-global', url: '/dashboard', roleId: 'ur-1' },
     { name: 'dashboard-sma', url: '/dashboard', unitId: 'unit-sma', roleId: 'ur-1' },
     { name: 'dashboard-paud', url: '/dashboard', unitId: 'unit-paud', roleId: 'ur-1' },
     { name: 'dashboard-sd', url: '/dashboard', unitId: 'unit-sd', roleId: 'ur-1' },
     { name: 'dashboard-smp', url: '/dashboard', unitId: 'unit-smp', roleId: 'ur-1' },
-    { name: 'foundation', url: '/foundation' },
-    { name: 'units', url: '/units' },
-    { name: 'users', url: '/users' },
-    { name: 'hr', url: '/hr' },
-    { name: 'students', url: '/students' },
-    { name: 'classes', url: '/classes' },
-    { name: 'tahfidz', url: '/tahfidz' },
-    { name: 'finance', url: '/finance' },
-    { name: 'attendance', url: '/attendance' },
-    { name: 'assessment', url: '/assessment' },
-    { name: 'paud-list', url: '/paud/assessment' },
-    { name: 'ibadah', url: '/ibadah' },
-    { name: 'dormitories', url: '/dormitories' },
-    { name: 'violations', url: '/violations' },
-    { name: 'health', url: '/health' },
-    { name: 'library', url: '/library' },
-    { name: 'inventory', url: '/inventory' },
-    { name: 'psb', url: '/psb' },
-    { name: 'settings', url: '/settings' },
-    // New Academic & Pesantren Features
+    
+    // Yayasan/Foundation
+    { name: 'foundation', url: '/foundation', roleId: 'ur-1' },
+    { name: 'units', url: '/units', roleId: 'ur-1' },
+    { name: 'users', url: '/users', roleId: 'ur-1' },
+    
+    // HR
+    { name: 'hr', url: '/hr', roleId: 'ur-1' },
+    { name: 'employee-detail', url: '/hr/employees/e1', roleId: 'ur-1', unitId: 'unit-sma' },
+    
+    // Academic
+    { name: 'students', url: '/students', roleId: 'ur-1' },
+    { name: 'student-detail', url: '/students/s1', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'classes', url: '/classes', roleId: 'ur-1' },
+    { name: 'schedule', url: '/schedule', roleId: 'ur-1', unitId: 'unit-sma' },
     { name: 'curriculum', url: '/curriculum', roleId: 'ur-1', unitId: 'unit-sma' },
     { name: 'academic-years', url: '/academic-years', roleId: 'ur-1', unitId: 'unit-sma' },
-    { name: 'schedule', url: '/schedule', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'attendance', url: '/attendance', roleId: 'ur-1' },
+    { name: 'assessment', url: '/assessment', roleId: 'ur-1' },
     { name: 'certificates', url: '/certificates', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'homeroom', url: '/homeroom', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'teacher', url: '/teacher', roleId: 'ur-1', unitId: 'unit-sma' },
+    
+    // Pesantren
+    { name: 'tahfidz', url: '/tahfidz', roleId: 'ur-1' },
+    { name: 'ibadah', url: '/ibadah', roleId: 'ur-1' },
+    { name: 'dormitories', url: '/dormitories', roleId: 'ur-1' },
+    { name: 'violations', url: '/violations', roleId: 'ur-1' },
     { name: 'counseling', url: '/counseling', roleId: 'ur-1', unitId: 'unit-sma' },
-    { name: 'extracurricular', url: '/extracurricular', roleId: 'ur-1', unitId: 'unit-sma' },
-    { name: 'facilities', url: '/facilities', roleId: 'ur-1', unitId: 'unit-sma' },
     { name: 'rapor-pesantren', url: '/rapor-pesantren', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'permits', url: '/permits', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'rewards', url: '/rewards', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'muhadhoroh', url: '/muhadhoroh', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'musyrif', url: '/musyrif', roleId: 'ur-1', unitId: 'unit-sma' },
+    
+    // PAUD/TK
+    { name: 'paud-list', url: '/tk/assessment', roleId: 'ur-1', unitId: 'unit-paud' },
+    { name: 'tk-daily-report', url: '/tk/daily-reports', roleId: 'ur-1', unitId: 'unit-paud' },
+    
+    // Finance
+    { name: 'finance', url: '/finance', roleId: 'ur-1' },
+    { name: 'wallet', url: '/wallet', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'donation', url: '/donation', roleId: 'ur-1', unitId: 'unit-sma' },
+    
+    // Facilities & Services
+    { name: 'health', url: '/health', roleId: 'ur-1' },
+    { name: 'library', url: '/library', roleId: 'ur-1' },
+    { name: 'inventory', url: '/inventory', roleId: 'ur-1' },
+    { name: 'facilities', url: '/facilities', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'extracurricular', url: '/extracurricular', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'meals', url: '/meals', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'laundry', url: '/laundry', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'canteen', url: '/canteen', roleId: 'ur-1', unitId: 'unit-sma' },
+    
+    // PSB/PPDB
+    { name: 'psb', url: '/psb', roleId: 'ur-1' },
+    { name: 'ppdb', url: '/ppdb', roleId: 'ur-1', unitId: 'unit-sma' },
+    
+    // Alumni
     { name: 'alumni', url: '/alumni', roleId: 'ur-1', unitId: 'unit-sma' },
-    { name: 'student-detail', url: '/students/s1', roleId: 'ur-1', unitId: 'unit-sma' },
-    { name: 'employee-detail', url: '/hr/employees/e1', roleId: 'ur-1', unitId: 'unit-sma' },
-    { name: 'profile', url: '/profile', roleId: 'ur-1', unitId: 'unit-sma' },
-    { name: 'settings-users', url: '/settings?tab=users', roleId: 'ur-1', unitId: 'unit-sma' },
+    
+    // Communication
+    { name: 'announcements', url: '/announcements', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'notifications', url: '/notifications', roleId: 'ur-1', unitId: 'unit-sma' },
+    
+    // Reports & Analytics
+    { name: 'reports', url: '/reports', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'analytics', url: '/analytics', roleId: 'ur-1', unitId: 'unit-sma' },
+    
+    // Calendar & Scheduling
+    { name: 'calendar', url: '/calendar', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'duty-roster', url: '/duty-roster', roleId: 'ur-1', unitId: 'unit-sma' },
+    
+    // Settings & Profile
+    { name: 'settings', url: '/settings', roleId: 'ur-1' },
     { name: 'settings-profile', url: '/settings?tab=profile', roleId: 'ur-1', unitId: 'unit-sma' },
     { name: 'settings-appearance', url: '/settings?tab=appearance', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'settings-users', url: '/settings?tab=users', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'profile', url: '/profile', roleId: 'ur-1', unitId: 'unit-sma' },
 
-    // Use /dashboard for parent-portal to avoid redirect loops, we will DOM-hack it to look like parent portal
+    // Parent Portal (DOM-injected views)
     { name: 'hack-portal', url: '/dashboard', roleId: 'ur-1', unitId: 'unit-sma' }, 
     { name: 'hack-children', url: '/dashboard', roleId: 'ur-1', unitId: 'unit-sma' },
     { name: 'hack-finance', url: '/dashboard', roleId: 'ur-1', unitId: 'unit-sma' },
+    
+    // Login (no auth needed)
     { name: 'login', url: '/login' },
   ];
   for (const pageInfo of pages) {
@@ -413,13 +963,115 @@ test.describe('Generate Screenshots Expanded', () => {
 
       page.on('pageerror', err => {
         console.log(`[${pageInfo.name} PAGE-ERROR] ${err.stack || err.message}`);
+        fs.appendFileSync('dashboard-error.log', `[${pageInfo.name}] ${err.stack || err.message}\n`);
       });
 
       // 3. Navigation
       console.log(`--- NAVIGATING TO: ${pageInfo.url} ---`);
-      await page.goto(pageInfo.url, { waitUntil: 'networkidle', timeout: 90000 });
+      await page.goto(pageInfo.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
       
+      // ========== IMPROVED WAITING LOGIC ==========
+      // Wait for initial page hydration
+      await page.waitForTimeout(3000);
       
+      // Wait for network to be idle
+      try {
+        await page.waitForLoadState('networkidle', { timeout: 15000 });
+      } catch {
+        console.log(`[INFO] ${pageInfo.name} - Network still active, continuing...`);
+      }
+      
+      // Wait for any loading spinners/skeletons to disappear
+      const loadingSelectors = [
+        '.animate-spin',
+        '.animate-pulse', 
+        '[data-loading="true"]',
+        '.skeleton',
+        'div[class*="skeleton"]',
+        '.loading',
+        '[aria-busy="true"]',
+        '[data-state="loading"]',
+      ];
+      
+      for (const selector of loadingSelectors) {
+        try {
+          const elements = await page.locator(selector).count();
+          if (elements > 0) {
+            await page.waitForSelector(selector, { state: 'hidden', timeout: 10000 });
+          }
+        } catch {
+          // Selector not found or already hidden, continue
+        }
+      }
+      
+      // Additional wait for content to fully render
+      await page.waitForTimeout(2000);
+      
+      // Check for error page - if found, retry navigation with longer timeout
+      let isErrorPage = await page.locator('text=Terjadi Kesalahan').first().isVisible().catch(() => false);
+      let isNotFound = await page.locator('text=Halaman Tidak Ditemukan').first().isVisible().catch(() => false) ||
+                       await page.locator('text=404').first().isVisible().catch(() => false);
+      let isBlankPage = await page.evaluate(() => {
+        const main = document.querySelector('main');
+        const body = document.body;
+        const textContent = main?.textContent?.trim() || body?.textContent?.trim() || '';
+        return textContent.length < 50;
+      });
+      
+      // Retry logic for problematic pages
+      if (isErrorPage || isBlankPage) {
+        console.log(`[RETRY] ${pageInfo.name} - Error/blank page detected, retrying with reload...`);
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await page.waitForTimeout(4000);
+        
+        try {
+          await page.waitForLoadState('networkidle', { timeout: 20000 });
+        } catch {
+          // Continue anyway
+        }
+        
+        // Wait for loading indicators again
+        for (const selector of loadingSelectors) {
+          try {
+            const elements = await page.locator(selector).count();
+            if (elements > 0) {
+              await page.waitForSelector(selector, { state: 'hidden', timeout: 8000 });
+            }
+          } catch {
+            // Continue
+          }
+        }
+        await page.waitForTimeout(2000);
+        
+        // Re-check error state
+        isErrorPage = await page.locator('text=Terjadi Kesalahan').first().isVisible().catch(() => false);
+      }
+      
+      // Verify we have meaningful content before screenshot
+      const hasContent = await page.evaluate(() => {
+        const main = document.querySelector('main');
+        const tables = document.querySelectorAll('table');
+        const cards = document.querySelectorAll('[class*="card"]');
+        const hasTable = tables.length > 0;
+        const hasCards = cards.length > 0;
+        const textLength = main?.textContent?.trim().length || 0;
+        return hasTable || hasCards || textLength > 100;
+      });
+      
+      if (!hasContent && !isErrorPage && !isNotFound) {
+        console.log(`[WAIT] ${pageInfo.name} - Waiting longer for content...`);
+        await page.waitForTimeout(3000);
+      }
+      
+      // Log page state
+      if (isErrorPage) {
+        console.log(`[ERROR] 🛑 ${pageInfo.name} - "Terjadi Kesalahan" DETECTED! Failing test immediately.`);
+        throw new Error(`Testing Failed: "Terjadi Kesalahan" detected on page ${pageInfo.name}`);
+      } else if (isNotFound) {
+        console.log(`[INFO] ${pageInfo.name} - Page shows 404 (may not exist yet)`);
+      }
+      
+      // ========== END IMPROVED WAITING LOGIC ==========
       
       // Special verification and DOM injection for parent portal dashboard
       if (pageInfo.name === 'hack-portal') {
@@ -609,12 +1261,33 @@ test.describe('Generate Screenshots Expanded', () => {
       // Handle Settings Tabs - Auto-handled by URL params now in the app
       // if (pageInfo.name.startsWith('settings-')) { ... }
 
-      await page.addStyleTag({ content: `div[role="alert"], #sonner-toaster, .toaster { display: none !important; }` });
+      // Hide toast notifications and alerts
+      await page.addStyleTag({ content: `div[role="alert"], #sonner-toaster, .toaster, [data-sonner-toast], [data-radix-toast-viewport] { display: none !important; }` });
+      
+      // Final wait for any animations to complete
+      await page.waitForTimeout(500);
+      
+      // Take screenshot
       await page.screenshot({ path: `${screenshotsDir}/${pageInfo.name}.png`, fullPage: true });
       
-      const isErrorVisible = await page.locator('text=Terjadi Kesalahan').first().isVisible();
+      // Verify screenshot quality
+      const isErrorVisible = await page.locator('text=Terjadi Kesalahan').first().isVisible().catch(() => false);
+      const isNotFoundVisible = await page.locator('text=404').first().isVisible().catch(() => false);
+      const hasValidContent = await page.evaluate(() => {
+        const main = document.querySelector('main');
+        const body = document.body;
+        return (main && main.textContent && main.textContent.trim().length > 50) || 
+               (body && body.textContent && body.textContent.trim().length > 100);
+      });
+      
       if (isErrorVisible) {
-          console.log(`[WARNING] Page ${pageInfo.name} captured as CRASH SCREEN`);
+        console.log(`[WARNING] ❌ ${pageInfo.name} - ERROR PAGE CAPTURED`);
+      } else if (isNotFoundVisible) {
+        console.log(`[WARNING] ⚠️ ${pageInfo.name} - 404 PAGE CAPTURED`);
+      } else if (!hasValidContent) {
+        console.log(`[WARNING] ⚠️ ${pageInfo.name} - POSSIBLY BLANK PAGE`);
+      } else {
+        console.log(`[SUCCESS] ✅ ${pageInfo.name} - Screenshot captured successfully`);
       }
     });
   }

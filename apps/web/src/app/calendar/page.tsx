@@ -155,27 +155,27 @@ export default function AcademicCalendarPage() {
 
               <div className="flex items-center gap-2">
                 {/* Unit Filter */}
-                <Select value={selectedUnitId} onValueChange={setSelectedUnitId}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Semua Unit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Semua Unit</SelectItem>
-                    {units.map((unit) => (
-                      <SelectItem key={unit.id} value={unit.id}>
-                        {unit.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <Select value={selectedUnitId || 'all'} onValueChange={(v) => setSelectedUnitId(v === 'all' ? '' : v)}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Semua Unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Unit</SelectItem>
+                      {units.map((unit) => (
+                        <SelectItem key={unit.id} value={unit.id}>
+                          {unit.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
                 {/* Category Filter */}
-                <Select value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as EventCategory | '')}>
+                <Select value={selectedCategory || 'all'} onValueChange={(v) => setSelectedCategory(v === 'all' ? '' : v as EventCategory)}>
                   <SelectTrigger className="w-44">
                     <SelectValue placeholder="Semua Kategori" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Kategori</SelectItem>
+                    <SelectItem value="all">Semua Kategori</SelectItem>
                     {EVENT_CATEGORIES.map((cat) => (
                       <SelectItem key={cat.value} value={cat.value}>
                         <div className="flex items-center gap-2">

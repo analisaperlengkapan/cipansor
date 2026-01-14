@@ -590,7 +590,7 @@ function PricingTab() {
 function TransactionsTab() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [showDialog, setShowDialog] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<LaundryTransaction | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
@@ -614,7 +614,7 @@ function TransactionsTab() {
     queryFn: () =>
       fetchTransactions({
         ...(search && { search }),
-        ...(statusFilter && { status: statusFilter }),
+        ...(statusFilter !== 'ALL' && { status: statusFilter }),
       }),
   });
 
@@ -739,7 +739,7 @@ function TransactionsTab() {
               <SelectValue placeholder="Semua status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua status</SelectItem>
+              <SelectItem value="ALL">Semua status</SelectItem>
               <SelectItem value="PENDING">Pending</SelectItem>
               <SelectItem value="PROCESSING">Proses</SelectItem>
               <SelectItem value="READY">Siap Ambil</SelectItem>

@@ -90,8 +90,8 @@ export default function DailyReportListPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState('');
-  const [classFilter, setClassFilter] = useState<string>('');
-  const [attendanceFilter, setAttendanceFilter] = useState<string>('');
+  const [classFilter, setClassFilter] = useState<string>('ALL');
+  const [attendanceFilter, setAttendanceFilter] = useState<string>('ALL');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -101,8 +101,8 @@ export default function DailyReportListPage() {
     page,
     limit: pageSize,
     search: search || undefined,
-    classId: classFilter || undefined,
-    attendanceStatus: attendanceFilter || undefined,
+    classId: classFilter !== 'ALL' ? classFilter : undefined,
+    attendanceStatus: attendanceFilter !== 'ALL' ? attendanceFilter : undefined,
     dateFrom: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
     dateTo: dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined,
     unitId: user?.role !== 'SUPER_ADMIN' ? user?.unitId : undefined,
@@ -264,7 +264,7 @@ export default function DailyReportListPage() {
               <SelectValue placeholder="Semua Kelas" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Kelas</SelectItem>
+              <SelectItem value="ALL">Semua Kelas</SelectItem>
               {classes?.data?.map((cls) => (
                 <SelectItem key={cls.id} value={cls.id}>
                   {cls.name}
@@ -278,7 +278,7 @@ export default function DailyReportListPage() {
               <SelectValue placeholder="Semua Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Status</SelectItem>
+              <SelectItem value="ALL">Semua Status</SelectItem>
               {Object.entries(ATTENDANCE_LABELS).map(([value, label]) => (
                 <SelectItem key={value} value={value}>
                   {label}

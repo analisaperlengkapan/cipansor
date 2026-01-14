@@ -67,6 +67,8 @@ Pengelolaan sumber daya yayasan secara terpusat.
 | Detail Pegawai | Keuangan Yayasan |
 |----------------|------------------|
 | ![Detail Pegawai](docs/images/employee-detail.png) | ![Keuangan](docs/images/finance.png) |
+| Laporan (Reports) | Analitik (Analytics) |
+| ![Reports](docs/images/reports.png) | ![Analytics](docs/images/analytics.png) |
 
 ### 3. Akademik & Pembelajaran
 Sistem administrasi sekolah yang komprehensif.
@@ -78,6 +80,8 @@ Sistem administrasi sekolah yang komprehensif.
 | Manajemen Kelas | Jadwal Pelajaran |
 |-----------------|------------------|
 | ![Kelas](docs/images/classes.png) | ![Jadwal](docs/images/schedule.png) |
+| Kalender Akademik | Piket Santri (Duty Roster) |
+| ![Calendar](docs/images/calendar.png) | ![Duty Roster](docs/images/duty-roster.png) |
 
 | Kurikulum | Tahun Ajaran |
 |-----------|--------------|
@@ -90,6 +94,10 @@ Sistem administrasi sekolah yang komprehensif.
 | Sertifikat & Ijazah | Rapor PAUD |
 |---------------------|------------|
 | ![Sertifikat](docs/images/certificates.png) | ![Rapor PAUD](docs/images/paud-list.png) |
+
+| Wali Kelas (Homeroom) | |
+|-----------------------|---|
+| ![Homeroom](docs/images/homeroom.png) | |
 
 ### 4. Kepesantrenan (Boarding System)
 Fitur unggulan untuk manajemen pendidikan Islam berasrama.
@@ -116,6 +124,10 @@ Modul pendukung operasional harian.
 | Fasilitas & Sarana | Inventaris & Aset |
 |--------------------|-------------------|
 | ![Fasilitas](docs/images/facilities.png) | ![Inventaris](docs/images/inventory.png) |
+
+| Laundry Santri | Kantin |
+|----------------|--------|
+| ![Laundry](docs/images/laundry.png) | ![Kantin](docs/images/canteen.png) |
 
 | Ekstrakurikuler | Alumni |
 |-----------------|--------|
@@ -146,6 +158,8 @@ Konfigurasi sistem yang fleksibel.
 | Keamanan Akun | Konfigurasi Umum |
 |---------------|------------------|
 | ![Keamanan](docs/images/settings-users.png) | ![Pengaturan Umum](docs/images/settings.png) |
+| Notifikasi | |
+| ![Notifications](docs/images/notifications.png) | |
 
 ---
 

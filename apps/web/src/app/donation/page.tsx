@@ -70,26 +70,26 @@ export default function DonationPage() {
   // Campaign state
   const [campaignPage, setCampaignPage] = useState(1);
   const [campaignPageSize, setCampaignPageSize] = useState(10);
-  const [campaignStatusFilter, setCampaignStatusFilter] = useState<string>('');
+  const [campaignStatusFilter, setCampaignStatusFilter] = useState<string>('ALL');
   const [deleteCampaignId, setDeleteCampaignId] = useState<string | null>(null);
   
   // Donation state
   const [donationPage, setDonationPage] = useState(1);
   const [donationPageSize, setDonationPageSize] = useState(10);
-  const [donationStatusFilter, setDonationStatusFilter] = useState<string>('');
+  const [donationStatusFilter, setDonationStatusFilter] = useState<string>('ALL');
   const [deleteDonationId, setDeleteDonationId] = useState<string | null>(null);
 
   // Data fetching
   const { data: campaignsData, isLoading: campaignsLoading } = useCampaigns({
     page: campaignPage,
     limit: campaignPageSize,
-    status: (campaignStatusFilter as CampaignStatus) || undefined,
+    status: campaignStatusFilter !== 'ALL' ? (campaignStatusFilter as CampaignStatus) : undefined,
   });
 
   const { data: donationsData, isLoading: donationsLoading } = useDonations({
     page: donationPage,
     limit: donationPageSize,
-    status: (donationStatusFilter as DonationStatus) || undefined,
+    status: donationStatusFilter !== 'ALL' ? (donationStatusFilter as DonationStatus) : undefined,
   });
 
   const { data: stats } = useDonationStats();
@@ -258,7 +258,7 @@ export default function DonationPage() {
                     <SelectValue placeholder="Semua Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Status</SelectItem>
+                    <SelectItem value="ALL">Semua Status</SelectItem>
                     {CAMPAIGN_STATUSES.map((status) => (
                       <SelectItem key={status.value} value={status.value}>
                         {status.label}
@@ -266,7 +266,7 @@ export default function DonationPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button variant="ghost" onClick={() => setCampaignStatusFilter('')}>
+                <Button variant="ghost" onClick={() => setCampaignStatusFilter('ALL')}>
                   Reset
                 </Button>
               </div>
@@ -397,7 +397,7 @@ export default function DonationPage() {
                     <SelectValue placeholder="Semua Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Status</SelectItem>
+                    <SelectItem value="ALL">Semua Status</SelectItem>
                     {DONATION_STATUSES.map((status) => (
                       <SelectItem key={status.value} value={status.value}>
                         {status.label}
@@ -405,7 +405,7 @@ export default function DonationPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button variant="ghost" onClick={() => setDonationStatusFilter('')}>
+                <Button variant="ghost" onClick={() => setDonationStatusFilter('ALL')}>
                   Reset
                 </Button>
               </div>

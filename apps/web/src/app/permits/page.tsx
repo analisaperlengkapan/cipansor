@@ -156,14 +156,14 @@ export default function PermitsPage() {
         <CardContent className="pt-6">
           <div className="flex flex-col gap-4 sm:flex-row">
             <Select
-              value={permitType}
-              onValueChange={(v) => setPermitType(v as PermitType | '')}
+              value={permitType || 'ALL'}
+              onValueChange={(v) => setPermitType(v === 'ALL' ? '' : v as PermitType)}
             >
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Jenis Izin" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Jenis</SelectItem>
+                <SelectItem value="ALL">Semua Jenis</SelectItem>
                 {PERMIT_TYPES.map((type) => (
                   <SelectItem key={type.value} value={type.value}>
                     {type.label}
@@ -173,14 +173,14 @@ export default function PermitsPage() {
             </Select>
 
             <Select
-              value={status}
-              onValueChange={(v) => setStatus(v as PermitStatus | '')}
+              value={status || 'ALL'}
+              onValueChange={(v) => setStatus(v === 'ALL' ? '' : v as PermitStatus)}
             >
               <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Status</SelectItem>
+                <SelectItem value="ALL">Semua Status</SelectItem>
                 {PERMIT_STATUSES.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     {s.label}

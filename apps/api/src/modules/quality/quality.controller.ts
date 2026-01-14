@@ -1,11 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { qualityService } from './quality.service';
-import { catchAsync } from '@/utils/catch-async';
-import { ApiError } from '@/middleware/error';
+import { asyncHandler, ApiError, ErrorCode } from '@/middleware/error';
 import httpStatus from 'http-status';
 
 export const qualityController = {
-  getAllStandards: catchAsync(async (req: Request, res: Response) => {
+  getAllStandards: asyncHandler(async (req: Request, res: Response) => {
     const standards = await qualityService.getAllStandards();
     res.json({
       success: true,
@@ -13,12 +12,12 @@ export const qualityController = {
     });
   }),
 
-  getStandardDetails: catchAsync(async (req: Request, res: Response) => {
+  getStandardDetails: asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const { unitId, academicYearId } = req.query;
 
     if (!unitId || !academicYearId) {
-      throw new ApiError(httpStatus.BAD_REQUEST, 'unitId and academicYearId are required');
+      throw new ApiError(ErrorCode.BAD_REQUEST, 'unitId and academicYearId are required');
     }
 
     const standard = await qualityService.getStandardDetails(
@@ -28,7 +27,7 @@ export const qualityController = {
     );
 
     if (!standard) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Standard not found');
+      throw new ApiError(ErrorCode.NOT_FOUND, 'Standard not found');
     }
 
     res.json({
@@ -37,7 +36,7 @@ export const qualityController = {
     });
   }),
 
-  createEvidence: catchAsync(async (req: Request, res: Response) => {
+  createEvidence: asyncHandler(async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
     const evidence = await qualityService.createEvidence(req.body, userId);
     res.status(httpStatus.CREATED).json({
@@ -46,7 +45,7 @@ export const qualityController = {
     });
   }),
 
-  deleteEvidence: catchAsync(async (req: Request, res: Response) => {
+  deleteEvidence: asyncHandler(async (req: Request, res: Response) => {
     await qualityService.deleteEvidence(req.params.id);
     res.json({
       success: true,
@@ -54,11 +53,11 @@ export const qualityController = {
     });
   }),
 
-  getDashboardSummary: catchAsync(async (req: Request, res: Response) => {
+  getDashboardSummary: asyncHandler(async (req: Request, res: Response) => {
     const { unitId, academicYearId } = req.query;
 
     if (!unitId || !academicYearId) {
-      throw new ApiError(httpStatus.BAD_REQUEST, 'unitId and academicYearId are required');
+      throw new ApiError(ErrorCode.BAD_REQUEST, 'unitId and academicYearId are required');
     }
 
     const summary = await qualityService.getDashboardSummary(

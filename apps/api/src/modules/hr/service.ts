@@ -560,6 +560,42 @@ export async function approveLeave(id: string, approverId: string, data: Approve
 
   // If approved, mark staff/teacher attendance as LEAVE for those days
   if (data.status === LeaveStatus.APPROVED) {
+    // 1. Update Leave Balance
+    const userId = leave.staff?.userId || leave.teacher?.userId;
+    if (userId) {
+      // Find relevant academic year for the leave start date
+      const academicYear = await prisma.academicYear.findFirst({
+        where: {
+          startDate: { lte: leave.startDate },
+          endDate: { gte: leave.startDate },
+          isActive: true, // Prefer active, but date match is key
+        }
+      });
+
+      if (academicYear) {
+        // Update balance if exists
+        const balance = await prisma.leaveBalance.findUnique({
+          where: {
+            userId_academicYearId_leaveType: {
+              userId,
+              academicYearId: academicYear.id,
+              leaveType: leave.type,
+            }
+          }
+        });
+
+        if (balance) {
+          await prisma.leaveBalance.update({
+            where: { id: balance.id },
+            data: {
+              usedDays: { increment: leave.totalDays },
+              remainingDays: { decrement: leave.totalDays },
+            }
+          });
+        }
+      }
+    }
+
     const startDate = new Date(leave.startDate);
     const endDate = new Date(leave.endDate);
     

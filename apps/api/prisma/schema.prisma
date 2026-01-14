@@ -302,6 +302,9 @@ model User {
   givenMedications                  MedicationUsageLog[]        @relation("MedicationGiver")
   createdAnnouncements              Announcement[]              @relation("AnnouncementCreator")
   notifications                     Notification[]
+  leaveBalances                     LeaveBalance[]
+  employmentContracts               EmploymentContract[]
+  managedDepartments                Department[]                @relation("DepartmentManager")
   recordedGrades                    Grade[]                     @relation("GradeRecorder")
   // New relations for Phase 8
   halaqohTeaching                   Halaqoh[]                   @relation("HalaqohTeacher")
@@ -497,6 +500,8 @@ model Unit {
   studentVisits          StudentVisit[]
   studentPackages        StudentPackage[]
   marketingCampaigns     MarketingCampaign[]
+  leaveBalances          LeaveBalance[]
+  departments            Department[]
 
   // Tata Naskah Dinas (E-Office)
   agendaNumbers          AgendaNumber[]
@@ -538,6 +543,7 @@ model Teacher {
   villageId  String? @map("village_id")
 
   // Data Kepegawaian
+  departmentId     String?           @map("department_id")
   employmentStatus EmploymentStatus? @map("employment_status")
   pangkat          String? // Pangkat (III/a, III/b, dst)
   golongan         String? // Golongan
@@ -579,6 +585,7 @@ model Teacher {
   regency                  Regency?            @relation("TeacherRegency", fields: [regencyId], references: [id])
   district                 District?           @relation("TeacherDistrict", fields: [districtId], references: [id])
   village                  Village?            @relation("TeacherVillage", fields: [villageId], references: [id])
+  department               Department?         @relation(fields: [departmentId], references: [id])
   homeroomClasses          Class[]             @relation("HomeroomTeacher")
   teacherSubjects          TeacherSubject[]
   lessonPlans              LessonPlan[]
@@ -619,6 +626,7 @@ model Staff {
   nip        String?   @unique
   position   String // Jabatan
   department String? // Bagian
+  departmentId String? @map("department_id")
   joinDate   DateTime? @map("join_date")
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
@@ -627,6 +635,7 @@ model Staff {
   // Relations
   user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   unit           Unit              @relation(fields: [unitId], references: [id])
+  departmentRel  Department?       @relation(fields: [departmentId], references: [id])
   attendance     StaffAttendance[]
   leaves         Leave[]
   musyrifs       Musyrif[]
@@ -678,6 +687,7 @@ model AcademicYear {
   dashboardSnapshots    DashboardMetricSnapshot[]
   unitComparisonReports UnitComparisonReport[]
   budgets               Budget[]
+  leaveBalances         LeaveBalance[]
 
   @@index([isActive])
   @@map("academic_years")
@@ -1490,6 +1500,84 @@ model Leave {
   @@index([status])
   @@index([startDate, endDate])
   @@map("leaves")
+}
+
+/// LeaveBalance - Saldo Cuti Karyawan
+model LeaveBalance {
+  id             String    @id @default(uuid())
+  unitId         String    @map("unit_id")
+  academicYearId String    @map("academic_year_id")
+  userId         String    @map("user_id") // Link ke User (bisa Guru atau Staff)
+  leaveType      LeaveType @map("leave_type")
+  totalDays      Int       @default(12) @map("total_days") // Jatah cuti setahun
+  usedDays       Int       @default(0) @map("used_days") // Cuti yang sudah dipakai
+  remainingDays  Int       @default(12) @map("remaining_days") // Sisa cuti
+  notes          String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  unit         Unit         @relation(fields: [unitId], references: [id])
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, academicYearId, leaveType])
+  @@index([unitId])
+  @@index([userId])
+  @@map("leave_balances")
+}
+
+/// Department - Departemen/Divisi
+model Department {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id")
+  code        String   // Kode departemen
+  name        String   // Nama departemen
+  description String?
+  managerId   String?  @map("manager_id") // Kepala departemen
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit    Unit      @relation(fields: [unitId], references: [id])
+  manager User?     @relation("DepartmentManager", fields: [managerId], references: [id])
+  staff   Staff[]
+  teachers Teacher[]
+
+  @@unique([unitId, code])
+  @@index([unitId])
+  @@map("departments")
+}
+
+enum ContractStatus {
+  ACTIVE
+  EXPIRED
+  TERMINATED
+  RENEWED
+}
+
+/// EmploymentContract - Kontrak Kerja
+model EmploymentContract {
+  id            String         @id @default(uuid())
+  userId        String         @map("user_id")
+  contractNumber String        @unique @map("contract_number")
+  type          String         // PKWT, PKWTT, Part-Time, Probation
+  startDate     DateTime       @map("start_date")
+  endDate       DateTime?      @map("end_date") // Nullable for permanent employees
+  status        ContractStatus @default(ACTIVE)
+  documentUrl   String?        @map("document_url") // Scan kontrak
+  notes         String?        @db.Text
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([endDate])
+  @@map("employment_contracts")
 }
 
 // =====================================

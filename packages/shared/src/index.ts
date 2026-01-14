@@ -23,4 +23,5 @@ export * from './types/procurement';
 export * from './types/reception';
 export * from './types/correspondence';
 export * from './schemas';
+export * from './types/quality';
 export * from './types/library';

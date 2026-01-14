@@ -73,6 +73,7 @@ import muhadhorohRoutes from '@/modules/muhadhoroh/muhadhoroh.routes';
 import muhadatsahRoutes from '@/modules/muhadatsah/muhadatsah.routes';
 import emisRoutes from '@/modules/emis/emis.routes';
 import { dapodikRouter } from '@/modules/dapodik/dapodik.routes';
+import { qualityRoutes } from '@/modules/quality/quality.routes';
 import correspondenceRoutes from '@/modules/correspondence/correspondence.routes';
 
 // Enhancement module routes
@@ -223,6 +224,7 @@ apiRouter.use('/muhadhoroh', muhadhorohRoutes);
 apiRouter.use('/muhadatsah', muhadatsahRoutes);
 apiRouter.use('/emis', emisRoutes);
 apiRouter.use('/dapodik', dapodikRouter);
+apiRouter.use('/quality', qualityRoutes);
 apiRouter.use('/correspondence', correspondenceRoutes);
 
 // Enhancement modules

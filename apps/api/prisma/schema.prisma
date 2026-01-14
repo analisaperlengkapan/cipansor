@@ -307,6 +307,10 @@ model User {
   leaveBalances                     LeaveBalance[]
   employmentContracts               EmploymentContract[]
   managedDepartments                Department[]                @relation("DepartmentManager")
+  // Quality Assurance relations
+  uploadedEvidences                 QualityEvidence[]           @relation("EvidenceUploader")
+  ledAudits                         QualityAudit[]              @relation("AuditLeader")
+  qualityAuditItems                 QualityAuditItem[]          @relation("Auditor")
   recordedGrades                    Grade[]                     @relation("GradeRecorder")
   // New relations for Phase 8
   halaqohTeaching                   Halaqoh[]                   @relation("HalaqohTeacher")
@@ -510,6 +514,10 @@ model Unit {
   letters                Letter[]
   receivedLetters        LetterRecipient[]
 
+  // Quality Assurance
+  qualityEvidences       QualityEvidence[]
+  qualityAudits          QualityAudit[]
+
   @@index([type])
   @@index([foundationId])
   @@map("units")
@@ -690,6 +698,8 @@ model AcademicYear {
   unitComparisonReports UnitComparisonReport[]
   budgets               Budget[]
   leaveBalances         LeaveBalance[]
+  qualityEvidences      QualityEvidence[]
+  qualityAudits         QualityAudit[]
 
   @@index([isActive])
   @@map("academic_years")
@@ -6507,4 +6517,140 @@ model Disposition {
   @@index([senderId])
   @@index([recipientId])
   @@map("dispositions")
+}
+  @@index([date])
+  @@map("marketing_interactions")
+}
+
+// =====================================
+// PHASE 13: QUALITY ASSURANCE (SPMI)
+// =====================================
+
+enum QualityStandardType {
+  STANDAR_ISI
+  STANDAR_PROSES
+  STANDAR_KOMPETENSI_LULUSAN
+  STANDAR_PENDIDIK_DAN_TENAGA_KEPENDIDIKAN
+  STANDAR_SARANA_DAN_PRASARANA
+  STANDAR_PENGELOLAAN
+  STANDAR_PEMBIAYAAN
+  STANDAR_PENILAIAN_PENDIDIKAN
+}
+
+enum AuditStatus {
+  PLANNED
+  ONGOING
+  COMPLETED
+  CLOSED
+}
+
+/// QualityStandard - 8 Standar Nasional Pendidikan
+model QualityStandard {
+  id          String              @id @default(uuid())
+  type        QualityStandardType @unique // One record per standard type
+  name        String              // "Standar Isi", "Standar Proses"
+  description String?             @db.Text
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  indicators  QualityIndicator[]
+
+  @@map("quality_standards")
+}
+
+/// QualityIndicator - Indikator per Standar
+model QualityIndicator {
+  id          String          @id @default(uuid())
+  standardId  String          @map("standard_id")
+  code        String          // "1.1", "1.2"
+  name        String
+  description String?         @db.Text
+  targetScore Float           @default(100) @map("target_score")
+  isActive    Boolean         @default(true) @map("is_active")
+  sortOrder   Int             @default(0) @map("sort_order")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  standard    QualityStandard @relation(fields: [standardId], references: [id], onDelete: Cascade)
+  evidences   QualityEvidence[]
+  auditItems  QualityAuditItem[]
+
+  @@index([standardId])
+  @@map("quality_indicators")
+}
+
+/// QualityEvidence - Bukti Fisik Akreditasi
+model QualityEvidence {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id")
+  indicatorId String   @map("indicator_id")
+  academicYearId String @map("academic_year_id")
+  name        String   // "RPP Matematika Kelas 7"
+  fileUrl     String   @map("file_url")
+  description String?  @db.Text
+  uploadedById String  @map("uploaded_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit        Unit             @relation(fields: [unitId], references: [id])
+  indicator   QualityIndicator @relation(fields: [indicatorId], references: [id])
+  academicYear AcademicYear    @relation(fields: [academicYearId], references: [id])
+  uploadedBy  User             @relation("EvidenceUploader", fields: [uploadedById], references: [id])
+
+  @@index([unitId])
+  @@index([indicatorId])
+  @@index([academicYearId])
+  @@map("quality_evidences")
+}
+
+/// QualityAudit - Audit Mutu Internal (AMI)
+model QualityAudit {
+  id             String      @id @default(uuid())
+  unitId         String      @map("unit_id")
+  academicYearId String      @map("academic_year_id")
+  code           String      // "AMI-2024-01"
+  name           String      // "Audit Mutu Semester Ganjil"
+  startDate      DateTime    @map("start_date")
+  endDate        DateTime    @map("end_date")
+  status         AuditStatus @default(PLANNED)
+  leadAuditorId  String?     @map("lead_auditor_id")
+  notes          String?     @db.Text
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  unit         Unit             @relation(fields: [unitId], references: [id])
+  academicYear AcademicYear     @relation(fields: [academicYearId], references: [id])
+  leadAuditor  User?            @relation("AuditLeader", fields: [leadAuditorId], references: [id])
+  items        QualityAuditItem[]
+
+  @@index([unitId])
+  @@index([academicYearId])
+  @@index([status])
+  @@map("quality_audits")
+}
+
+/// QualityAuditItem - Detail Audit per Indikator
+model QualityAuditItem {
+  id          String   @id @default(uuid())
+  auditId     String   @map("audit_id")
+  indicatorId String   @map("indicator_id")
+  score       Float?   // Skor hasil audit
+  notes       String?  @db.Text // Temuan audit
+  auditorId   String?  @map("auditor_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  audit       QualityAudit     @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  indicator   QualityIndicator @relation(fields: [indicatorId], references: [id])
+  auditor     User?            @relation("Auditor", fields: [auditorId], references: [id])
+
+  @@unique([auditId, indicatorId])
+  @@index([auditId])
+  @@index([indicatorId])
+  @@map("quality_audit_items")
 }

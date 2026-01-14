@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
+import { BudgetRealizationItem } from '@cipansor/shared';
 import { Loader2, Download, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -45,6 +46,27 @@ const useIncomeStatement = (unitId: string, startDate: string, endDate: string) 
   });
 };
 
+const useBudgetRealization = (unitId: string, academicYearId: string) => {
+  return useQuery({
+    queryKey: ['budget-realization', unitId, academicYearId],
+    queryFn: async () => {
+      const res = await api.get('/finance-enhancement/reports/budget-realization', { params: { unitId, academicYearId } });
+      return res.data.data;
+    },
+    enabled: !!unitId && !!academicYearId
+  });
+};
+
+const useAcademicYears = () => {
+  return useQuery({
+    queryKey: ['academic-years'],
+    queryFn: async () => {
+      const res = await api.get('/academic-years');
+      return res.data.data;
+    }
+  });
+};
+
 // Recursive component for BS Tree
 const AccountNode = ({ node, level = 0 }: { node: any, level?: number }) => (
   <>
@@ -60,28 +82,44 @@ const AccountNode = ({ node, level = 0 }: { node: any, level?: number }) => (
 
 export default function FinanceReportsPage() {
   const { data: units } = useUnits();
+  const { data: years } = useAcademicYears();
+
   const [unitId, setUnitId] = useState('');
+  const [academicYearId, setAcademicYearId] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
   const { data: bs, isLoading: bsLoading } = useBalanceSheet(unitId, date);
   const { data: pl, isLoading: plLoading } = useIncomeStatement(unitId, startDate, endDate);
+  const { data: realization, isLoading: realizationLoading } = useBudgetRealization(unitId, academicYearId);
 
   return (
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">Laporan Keuangan</h1>
-        <Select value={unitId} onValueChange={setUnitId}>
-          <SelectTrigger className="w-[250px]">
-            <SelectValue placeholder="Pilih Unit" />
-          </SelectTrigger>
-          <SelectContent>
-            {units?.map((unit: any) => (
-              <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex gap-4">
+          <Select value={unitId} onValueChange={setUnitId}>
+            <SelectTrigger className="w-[250px]">
+              <SelectValue placeholder="Pilih Unit" />
+            </SelectTrigger>
+            <SelectContent>
+              {units?.map((unit: any) => (
+                <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={academicYearId} onValueChange={setAcademicYearId}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Tahun Ajaran" />
+            </SelectTrigger>
+            <SelectContent>
+              {years?.map((year: any) => (
+                <SelectItem key={year.id} value={year.id}>{year.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -127,7 +165,77 @@ export default function FinanceReportsPage() {
         <TabsList>
           <TabsTrigger value="neraca">Neraca (Balance Sheet)</TabsTrigger>
           <TabsTrigger value="laba-rugi">Laba Rugi (Income Statement)</TabsTrigger>
+          <TabsTrigger value="realisasi">Realisasi Anggaran</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="realisasi" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Laporan Realisasi Anggaran</CardTitle>
+              <div className="flex gap-2">
+                <Button variant="outline"><Download className="h-4 w-4" /></Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {realizationLoading ? <Loader2 className="animate-spin" /> : realization ? (
+                <div className="space-y-6">
+                  {/* Totals Summary */}
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="p-4 bg-muted/30 rounded-lg">
+                      <div className="text-sm text-muted-foreground">Total Anggaran</div>
+                      <div className="text-xl font-bold">{formatCurrency(realization.totals.budget)}</div>
+                    </div>
+                    <div className="p-4 bg-muted/30 rounded-lg">
+                      <div className="text-sm text-muted-foreground">Realisasi</div>
+                      <div className="text-xl font-bold">{formatCurrency(realization.totals.actual)}</div>
+                    </div>
+                    <div className="p-4 bg-muted/30 rounded-lg">
+                      <div className="text-sm text-muted-foreground">Sisa Anggaran</div>
+                      <div className="text-xl font-bold">{formatCurrency(realization.totals.variance)}</div>
+                    </div>
+                    <div className="p-4 bg-muted/30 rounded-lg">
+                      <div className="text-sm text-muted-foreground">Persentase</div>
+                      <div className="text-xl font-bold">{realization.totals.percentage.toFixed(2)}%</div>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-md">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50 font-semibold">
+                        <tr>
+                          <th className="p-3 text-left">Kode Akun</th>
+                          <th className="p-3 text-left">Uraian</th>
+                          <th className="p-3 text-right">Anggaran</th>
+                          <th className="p-3 text-right">Realisasi</th>
+                          <th className="p-3 text-right">Sisa</th>
+                          <th className="p-3 text-center">%</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {realization.items.map((item: BudgetRealizationItem) => (
+                          <tr key={item.accountId} className="border-b hover:bg-muted/10">
+                            <td className="p-3 font-mono">{item.code}</td>
+                            <td className="p-3">{item.name}</td>
+                            <td className="p-3 text-right">{formatCurrency(item.budgetAmount)}</td>
+                            <td className="p-3 text-right">{formatCurrency(item.actualAmount)}</td>
+                            <td className={`p-3 text-right font-medium ${item.variance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                              {formatCurrency(item.variance)}
+                            </td>
+                            <td className="p-3 text-center">
+                              <span className={`px-2 py-1 rounded text-xs ${item.percentage > 90 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                                {item.percentage.toFixed(1)}%
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : <div className="text-center py-8">Pilih Unit dan Tahun Ajaran untuk melihat laporan.</div>}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="neraca" className="space-y-4">
           <Card>

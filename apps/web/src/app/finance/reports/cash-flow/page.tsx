@@ -56,9 +56,10 @@ export default function CashFlowPage() {
   );
 
   return (
-    <MainLayout title="Laporan Arus Kas (Cash Flow)">
+    <MainLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center print:hidden">
+          <h1 className="text-2xl font-bold">Laporan Arus Kas (Cash Flow)</h1>
           <DatePickerWithRange date={dateRange} setDate={setDateRange} />
           <Button onClick={handlePrint} variant="outline">
             <Download className="mr-2 h-4 w-4" /> Cetak / PDF

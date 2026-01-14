@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { UserRole } from "@prisma/client";
 import * as controller from "./controller";
+import { departmentController } from "./departments.controller";
+import { contractController } from "./contracts.controller";
+import { leaveBalanceController } from "./leave-balances.controller";
 import { authenticate, authorize } from "../../middleware/auth";
 import { validateQuery } from "../../middleware/error";
 import { queryStaffAttendanceSchema, queryLeaveSchema, queryStaffSchema } from "./schema";
@@ -477,5 +480,27 @@ router.delete("/leaves/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN
  *         description: Staff leave balance by type
  */
 router.get("/staff/:staffId/leave-balance", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getLeaveBalance);
+
+// ==================== DEPARTMENTS ====================
+
+router.post("/departments", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), departmentController.create);
+router.get("/departments", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), departmentController.findAll);
+router.get("/departments/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), departmentController.findOne);
+router.patch("/departments/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), departmentController.update);
+router.delete("/departments/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), departmentController.delete);
+
+// ==================== CONTRACTS ====================
+
+router.post("/contracts", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), contractController.create);
+router.get("/contracts", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), contractController.findAll);
+router.get("/contracts/expiring", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), contractController.getExpiring);
+router.get("/contracts/user/:userId", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), contractController.findByUser);
+router.patch("/contracts/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), contractController.update);
+
+// ==================== LEAVE BALANCES (ENHANCED) ====================
+
+router.get("/leave-balances/user/:userId", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), leaveBalanceController.getBalances);
+router.post("/leave-balances/initialize", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), leaveBalanceController.initialize);
+router.patch("/leave-balances/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), leaveBalanceController.update);
 
 export default router;

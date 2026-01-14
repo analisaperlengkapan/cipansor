@@ -9,10 +9,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
+import { Budget } from '@cipansor/shared';
 import { Loader2, Plus, Pencil } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
+import { Progress } from "@/components/ui/progress";
 
 // Helper Hooks
 const useBudgets = (unitId: string, academicYearId: string) => {
@@ -69,8 +71,6 @@ const useCreateBudget = () => {
 };
 
 export default function BudgetingPage() {
-  const { toast } = useToast();
-
   const { data: units } = useUnits();
   const { data: years } = useAcademicYears();
   const { data: accounts } = useExpenseAccounts();
@@ -92,14 +92,12 @@ export default function BudgetingPage() {
         academicYearId: selectedYearId,
         ...formData
       });
-      toast({ title: "Success", description: "Budget created successfully" });
+      toast.success("Success", { description: "Budget created successfully" });
       setIsDialogOpen(false);
       setFormData({ accountId: '', amount: 0, notes: '' });
     } catch (error: any) {
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: error.response?.data?.message || "Failed to create budget",
-        variant: "destructive"
       });
     }
   };
@@ -210,19 +208,30 @@ export default function BudgetingPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {budgets?.map((budget: any) => {
+                {budgets?.map((budget: Budget) => {
                   const percentage = budget.amount > 0 ? (budget.usedAmount / budget.amount) * 100 : 0;
+                  const isOverBudget = percentage > 100;
+
                   return (
                     <TableRow key={budget.id}>
-                      <TableCell>{budget.account?.code}</TableCell>
-                      <TableCell>{budget.account?.name}</TableCell>
-                      <TableCell>{formatCurrency(budget.amount)}</TableCell>
-                      <TableCell>{formatCurrency(budget.usedAmount)}</TableCell>
-                      <TableCell>{formatCurrency(budget.amount - budget.usedAmount)}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded text-xs ${percentage > 90 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                          {percentage.toFixed(1)}%
-                        </span>
+                      <TableCell className="font-mono">{budget.account?.code}</TableCell>
+                      <TableCell className="font-medium">{budget.account?.name}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(budget.amount)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(budget.usedAmount)}</TableCell>
+                      <TableCell className="text-right font-bold text-muted-foreground">
+                        {formatCurrency(budget.amount - budget.usedAmount)}
+                      </TableCell>
+                      <TableCell className="w-[200px]">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex justify-between text-xs">
+                            <span>{percentage.toFixed(1)}%</span>
+                          </div>
+                          <Progress
+                            value={Math.min(percentage, 100)}
+                            className={`h-2 ${isOverBudget ? "bg-red-200" : ""}`}
+                            // Note: shadcn Progress color customization might need class overrides on the indicator
+                          />
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Button variant="ghost" size="sm"><Pencil className="h-4 w-4" /></Button>

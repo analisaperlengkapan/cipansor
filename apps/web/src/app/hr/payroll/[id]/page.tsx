@@ -2,7 +2,7 @@
 
 import { use } from "react";
 import { useRouter } from "next/navigation";
-import { usePayrollPeriod, usePayrolls, PAYROLL_STATUS_LABELS } from "@/hooks/use-hr";
+import { usePayrollPeriod, usePayrolls, usePayrollPeriodSummary, PAYROLL_STATUS_LABELS } from "@/hooks/use-hr";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -24,6 +24,7 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
   const router = useRouter();
 
   const { data: period, isLoading: periodLoading } = usePayrollPeriod(id);
+  const { data: summary } = usePayrollPeriodSummary(id);
   const { data: slips, isLoading: slipsLoading } = usePayrolls({ periodId: id, page: 1, limit: 100 }); // Pagination simplified for now
 
   if (periodLoading) {
@@ -62,7 +63,7 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(Number(period.totalAmount || 0))}
+              {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(Number(summary?.totalNetSalary || 0))}
             </div>
           </CardContent>
         </Card>
@@ -119,13 +120,13 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
                   slips?.data?.map((slip) => (
                     <TableRow key={slip.id}>
                       <TableCell>
-                        <div className="font-medium">{slip.staff?.user?.name || slip.employeeName || "Unknown"}</div>
-                        <div className="text-xs text-muted-foreground">{slip.employeeNo}</div>
+                        <div className="font-medium">{slip.staff?.fullName || slip.employee?.fullName || "Unknown"}</div>
+                        <div className="text-xs text-muted-foreground">{slip.staff?.nip || slip.employee?.nip}</div>
                       </TableCell>
-                      <TableCell>{slip.department || slip.staff?.department?.name || "-"}</TableCell>
+                      <TableCell>{slip.staff?.department?.name || slip.employee?.department?.name || "-"}</TableCell>
                       <TableCell>{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(Number(slip.baseSalary))}</TableCell>
                       <TableCell className="text-green-600">
-                        {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(Number(slip.totalEarnings))}
+                        {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(Number(slip.totalAllowances))}
                       </TableCell>
                       <TableCell className="text-red-600">
                         {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(Number(slip.totalDeductions))}

@@ -26,6 +26,7 @@ import {
   useEmployees,
   useLeaveRequests,
   useDepartments,
+  useExpiringContracts,
   EMPLOYEE_STATUSES,
   EMPLOYEE_STATUS_LABELS,
   EMPLOYEE_TYPE_LABELS,
@@ -48,6 +49,7 @@ import {
   UserX,
   Clock,
   Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -70,6 +72,7 @@ export default function HRPage() {
   });
   const { data: departments } = useDepartments();
   const { data: units } = useUnits();
+  const { data: expiringContracts } = useExpiringContracts();
 
   const employees = employeesData?.data || [];
   const leaveRequests = leaveRequestsData?.data || [];
@@ -77,6 +80,7 @@ export default function HRPage() {
   const activeEmployees = employees.filter(e => e.status === 'ACTIVE').length;
   const onLeaveEmployees = employees.filter(e => e.status === 'ON_LEAVE').length;
   const pendingLeaves = leaveRequests.filter(l => l.status === 'PENDING').length;
+  const expiringCount = expiringContracts?.length || 0;
 
   const getStatusBadge = (status: EmployeeStatus) => {
     const colors: Record<EmployeeStatus, string> = {
@@ -174,6 +178,16 @@ export default function HRPage() {
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">{pendingLeaves}</div>
               <p className="text-xs text-muted-foreground">Menunggu persetujuan</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Kontrak Habis</CardTitle>
+              <AlertCircle className="h-4 w-4 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{expiringCount}</div>
+              <p className="text-xs text-muted-foreground">Dalam 30 hari ke depan</p>
             </CardContent>
           </Card>
         </div>

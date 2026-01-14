@@ -101,19 +101,34 @@ export async function getLeaves(req: Request, res: Response, next: NextFunction)
     const query = res.locals.validatedQuery;
     const user = req.user!;
 
-    // Restrict access for non-admins
-    if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.UNIT_ADMIN) {
-      if (user.role === UserRole.TEACHER) {
-        const teacher = await prisma.teacher.findUnique({ where: { userId: user.sub } });
-        if (teacher) query.teacherId = teacher.id;
-        else throw Errors.notFound("Teacher profile not found");
-      } else if (user.role === UserRole.STAFF) {
-        const staff = await prisma.staff.findUnique({ where: { userId: user.sub } });
-        if (staff) query.staffId = staff.id;
-        else throw Errors.notFound("Staff profile not found");
+    const { mine, ...otherQuery } = query;
+    const shouldFilterByMe = mine === true || (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.UNIT_ADMIN);
+
+    // Apply filtering if explicitly requested or required by role
+    if (shouldFilterByMe) {
+      // Resolve teacher/staff profile from user ID
+      const [teacher, staff] = await Promise.all([
+        prisma.teacher.findUnique({ where: { userId: user.sub } }),
+        prisma.staff.findUnique({ where: { userId: user.sub } })
+      ]);
+
+      if (teacher) query.teacherId = teacher.id;
+      else if (staff) query.staffId = staff.id;
+      else {
+        // If "mine" requested but no profile found:
+        // - For non-admins, strict error.
+        // - For admins who just pressed "My Leaves", return empty list instead of error.
+        if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.UNIT_ADMIN) {
+          throw Errors.notFound("Employee profile not found");
+        } else {
+          // Admin with no profile: Force a filter that matches nothing
+          // Or we can return empty array immediately.
+          // Let's use a dummy ID that won't match to reuse service logic.
+          query.staffId = "00000000-0000-0000-0000-000000000000";
+        }
       }
     } else {
-      // For admins, filter by unit if specified in token (UNIT_ADMIN)
+      // For admins viewing all, filter by unit if specified in token (UNIT_ADMIN)
       if (user.role === UserRole.UNIT_ADMIN && user.unitId) {
         query.unitId = user.unitId;
       }

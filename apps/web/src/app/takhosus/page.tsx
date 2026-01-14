@@ -60,10 +60,16 @@ import { useUnits } from '@/hooks/use-units';
 import { Progress } from '@/components/ui/progress';
 import { TakhosusDashboard } from '@/components/takhosus/takhosus-dashboard';
 import { useTakhosusDashboard } from '@/hooks/use-takhosus-details';
+import { MurojaahList } from '@/components/takhosus/murojaah/murojaah-list';
+import { SimaanList } from '@/components/takhosus/simaan/simaan-list';
 
 export default function TakhosusPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
   
+  // Murojaah & Simaan state
+  const [murojaahUnitFilter, setMurojaahUnitFilter] = useState<string>('');
+  const [simaanUnitFilter, setSimaanUnitFilter] = useState<string>('');
+
   // Halaqoh state
   const [halaqohPage, setHalaqohPage] = useState(1);
   const [halaqohPageSize, setHalaqohPageSize] = useState(10);
@@ -204,6 +210,14 @@ export default function TakhosusPage() {
               <Users className="h-4 w-4" />
               Pendaftaran
             </TabsTrigger>
+            <TabsTrigger value="murojaah" className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" />
+              Murojaah
+            </TabsTrigger>
+            <TabsTrigger value="simaan" className="flex items-center gap-2">
+              <Medal className="h-4 w-4" />
+              Simaan
+            </TabsTrigger>
           </TabsList>
 
           <div className="flex gap-2">
@@ -229,6 +243,82 @@ export default function TakhosusPage() {
         {/* Dashboard Tab */}
         <TabsContent value="dashboard">
              <TakhosusDashboard stats={dashboardStats} isLoading={statsLoading} />
+        </TabsContent>
+
+        {/* Murojaah Tab */}
+        <TabsContent value="murojaah">
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Filter
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-4">
+                <Select value={murojaahUnitFilter} onValueChange={setMurojaahUnitFilter}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Semua Unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Semua Unit</SelectItem>
+                    {(units || []).map((unit) => (
+                      <SelectItem key={unit.id} value={unit.id}>
+                        {unit.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="ghost" onClick={() => setMurojaahUnitFilter('')}>
+                  Reset
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <MurojaahList unitId={murojaahUnitFilter || undefined} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Simaan Tab */}
+        <TabsContent value="simaan">
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Filter
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-4">
+                <Select value={simaanUnitFilter} onValueChange={setSimaanUnitFilter}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Semua Unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Semua Unit</SelectItem>
+                    {(units || []).map((unit) => (
+                      <SelectItem key={unit.id} value={unit.id}>
+                        {unit.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="ghost" onClick={() => setSimaanUnitFilter('')}>
+                  Reset
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <SimaanList unitId={simaanUnitFilter || undefined} />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Halaqoh Tab */}

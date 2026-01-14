@@ -17,11 +17,26 @@ import {
   UpdateAssetAuditItemInput,
   AssetAuditItem,
   AssetDepreciation,
+  AssetMaintenance,
+  CreateMaintenanceRequestInput,
+  UpdateAssetMaintenanceInput,
+  UpdateMaintenanceStatusInput,
+  CreateAssetDisposalInput,
+  AssetMaintenanceStatus,
+  AssetDisposalReason,
 } from '@cipansor/shared';
 
 // Re-export shared types/enums for convenience
-export { AssetStatus, AssetCondition };
-export type { Asset, AssetCategory, InventoryStats, AssetAssignment, AssetAudit, AssetDepreciation };
+export { AssetStatus, AssetCondition, AssetMaintenanceStatus, AssetDisposalReason };
+export type {
+  Asset,
+  AssetCategory,
+  InventoryStats,
+  AssetAssignment,
+  AssetAudit,
+  AssetDepreciation,
+  AssetMaintenance
+};
 
 // Hooks
 
@@ -127,6 +142,24 @@ export function useInventorySummary(unitId?: string) {
 
 // Maintenance Hooks
 
+export function useMaintenances(params?: {
+  page?: number;
+  limit?: number;
+  itemId?: string;
+  type?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+}) {
+  return useQuery({
+    queryKey: ['inventory-maintenances', params],
+    queryFn: async () => {
+      const response = await api.get<PaginatedResponse<AssetMaintenance>>('/inventory/maintenance', { params });
+      return response.data;
+    },
+  });
+}
+
 export function useCreateMaintenance() {
   const queryClient = useQueryClient();
 
@@ -137,6 +170,67 @@ export function useCreateMaintenance() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-maintenances'] });
+    }
+  });
+}
+
+export function useCreateMaintenanceRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: CreateMaintenanceRequestInput) => {
+      const response = await api.post('/inventory/maintenance/request', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-maintenances'] });
+    }
+  });
+}
+
+export function useUpdateMaintenance() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: UpdateAssetMaintenanceInput }) => {
+      const response = await api.put(`/inventory/maintenance/${id}`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-maintenances'] });
+    }
+  });
+}
+
+export function useUpdateMaintenanceStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: UpdateMaintenanceStatusInput }) => {
+      const response = await api.patch(`/inventory/maintenance/${id}/status`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-maintenances'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] }); // Might affect asset status
+    }
+  });
+}
+
+// Disposal Hook
+
+export function useDisposeAsset() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: CreateAssetDisposalInput }) => {
+      const response = await api.post(`/inventory/${id}/dispose`, data);
+      return response.data;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory', variables.id] });
     }
   });
 }

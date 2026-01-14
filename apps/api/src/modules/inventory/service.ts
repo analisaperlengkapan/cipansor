@@ -1,4 +1,4 @@
-import { Prisma, AssetStatus, AssetCondition } from "@prisma/client";
+import { Prisma, AssetStatus, AssetCondition, AssetMaintenanceStatus } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 import type {
   CreateInventoryCategoryInput,
@@ -7,9 +7,12 @@ import type {
   UpdateInventoryItemInput,
   QueryInventoryItemInput,
   CreateMaintenanceInput,
+  CreateMaintenanceRequestInput,
   UpdateMaintenanceInput,
+  UpdateMaintenanceStatusInput,
   QueryMaintenanceInput,
   CreateAssetAssignmentInput,
+  CreateAssetDisposalInput,
   ReturnAssetAssignmentInput,
   QueryAssetAssignmentInput,
   CreateAssetAuditInput,
@@ -184,11 +187,12 @@ export async function deleteItem(id: string) {
 // ==================== ASSET MAINTENANCE ====================
 
 export async function getMaintenances(query: QueryMaintenanceInput) {
-  const { page, limit, itemId, type, startDate, endDate } = query;
+  const { page, limit, itemId, type, status, startDate, endDate } = query;
   const skip = (page - 1) * limit;
 
   const where: Prisma.AssetMaintenanceWhereInput = {
     ...(itemId && { assetId: itemId }),
+    ...(status && { status }),
     ...(type && { type: { contains: type, mode: "insensitive" } }),
     ...(startDate && endDate && {
       maintenanceDate: { gte: startDate, lte: endDate },
@@ -209,6 +213,7 @@ export async function getMaintenances(query: QueryMaintenanceInput) {
             unit: { select: { id: true, name: true } },
           },
         },
+        requestedBy: { select: { id: true, name: true } },
       },
       orderBy: { maintenanceDate: "desc" },
     }),
@@ -239,10 +244,12 @@ export async function getMaintenanceById(id: string) {
           unit: { select: { id: true, name: true } },
         },
       },
+      requestedBy: { select: { id: true, name: true } },
     },
   });
 }
 
+// Admin/Staff direct creation
 export async function createMaintenance(data: CreateMaintenanceInput) {
   // Update asset status to MAINTENANCE
   await prisma.asset.update({
@@ -251,7 +258,6 @@ export async function createMaintenance(data: CreateMaintenanceInput) {
   });
 
   return prisma.assetMaintenance.create({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       assetId: data.itemId,
       type: data.type,
@@ -262,7 +268,8 @@ export async function createMaintenance(data: CreateMaintenanceInput) {
       performedBy: data.performedBy,
       nextSchedule: data.nextSchedule,
       notes: data.notes,
-    } as any,
+      status: AssetMaintenanceStatus.IN_PROGRESS,
+    },
     include: {
       asset: {
         select: {
@@ -271,6 +278,22 @@ export async function createMaintenance(data: CreateMaintenanceInput) {
           name: true,
         },
       },
+    },
+  });
+}
+
+// User request
+export async function createMaintenanceRequest(data: CreateMaintenanceRequestInput, userId: string) {
+  return prisma.assetMaintenance.create({
+    data: {
+      assetId: data.assetId,
+      type: data.type,
+      description: data.description,
+      notes: data.notes,
+      maintenanceDate: new Date(),
+      status: AssetMaintenanceStatus.PENDING,
+      requestedById: userId,
+      performedBy: 'Pending Assignment',
     },
   });
 }
@@ -291,21 +314,80 @@ export async function updateMaintenance(id: string, data: UpdateMaintenanceInput
   });
 }
 
-export async function completeMaintenance(id: string) {
+export async function updateMaintenanceStatus(id: string, data: UpdateMaintenanceStatusInput) {
   const maintenance = await prisma.assetMaintenance.findUnique({ where: { id } });
   if (!maintenance) throw new Error("Maintenance record not found");
 
-  // Restore asset status to ACTIVE
-  await prisma.asset.update({
-    where: { id: maintenance.assetId },
-    data: { status: AssetStatus.ACTIVE },
-  });
+  const updateData: Prisma.AssetMaintenanceUpdateInput = {
+    status: data.status,
+    notes: data.notes ? (maintenance.notes ? `${maintenance.notes}\n${data.notes}` : data.notes) : undefined,
+    cost: data.cost,
+    completionDate: data.completionDate,
+    invoiceUrl: data.invoiceUrl,
+  };
 
-  return maintenance;
+  // If completing, fix asset status
+  if (data.status === AssetMaintenanceStatus.COMPLETED) {
+    await prisma.asset.update({
+      where: { id: maintenance.assetId },
+      data: { status: AssetStatus.ACTIVE },
+    });
+    // Ensure completion date is set
+    if (!updateData.completionDate) {
+      updateData.completionDate = new Date();
+    }
+  } else if (data.status === AssetMaintenanceStatus.IN_PROGRESS) {
+     await prisma.asset.update({
+      where: { id: maintenance.assetId },
+      data: { status: AssetStatus.MAINTENANCE },
+    });
+  }
+
+  return prisma.assetMaintenance.update({
+    where: { id },
+    data: updateData,
+    include: {
+      asset: true,
+    },
+  });
+}
+
+export async function completeMaintenance(id: string) {
+  return updateMaintenanceStatus(id, { status: AssetMaintenanceStatus.COMPLETED });
 }
 
 export async function deleteMaintenance(id: string) {
   return prisma.assetMaintenance.delete({ where: { id } });
+}
+
+// ==================== ASSET DISPOSAL ====================
+
+export async function disposeAsset(assetId: string, data: CreateAssetDisposalInput, userId: string) {
+  const asset = await prisma.asset.findUnique({ where: { id: assetId } });
+  if (!asset) throw new Error("Asset not found");
+  if (asset.status === AssetStatus.DISPOSED) throw new Error("Asset is already disposed");
+
+  // Calculate book value at disposal
+  const depreciation = await calculateDepreciation(assetId);
+  const bookValue = depreciation?.bookValue ?? 0;
+
+  return prisma.$transaction([
+    prisma.asset.update({
+      where: { id: assetId },
+      data: { status: AssetStatus.DISPOSED, deletedAt: new Date() },
+    }),
+    prisma.assetDisposal.create({
+      data: {
+        assetId,
+        date: data.date,
+        reason: data.reason,
+        salePrice: data.salePrice,
+        bookValue,
+        notes: data.notes,
+        approvedById: userId,
+      },
+    }),
+  ]);
 }
 
 // ==================== ASSET ASSIGNMENT ====================

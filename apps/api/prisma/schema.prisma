@@ -378,6 +378,8 @@ model User {
   // Asset management relations
   assetAssignments                  AssetAssignment[]
   createdAudits                     AssetAudit[]                @relation("AuditCreator")
+  requestedMaintenances             AssetMaintenance[]          @relation("MaintenanceRequester")
+  approvedDisposals                 AssetDisposal[]             @relation("DisposalApprover")
 
   // Tata Naskah Dinas (E-Office)
   createdLetters                    Letter[]                    @relation("LetterCreator")
@@ -1984,6 +1986,24 @@ enum AssetStatus {
   DISPOSED // Dihapuskan
 }
 
+enum AssetMaintenanceStatus {
+  PENDING
+  APPROVED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum AssetDisposalReason {
+  SOLD
+  LOST
+  DAMAGED
+  DONATED
+  OBSOLETE
+  OTHER
+}
+
 enum AssetCondition {
   EXCELLENT // Sangat baik
   GOOD // Baik
@@ -2042,6 +2062,7 @@ model Asset {
   maintenanceLogs AssetMaintenance[]
   assignments     AssetAssignment[]
   auditItems      AssetAuditItem[]
+  disposal        AssetDisposal?
 
   @@index([unitId])
   @@index([categoryId])
@@ -2126,20 +2147,48 @@ model AssetMaintenance {
   maintenanceDate DateTime  @map("maintenance_date")
   type            String // perbaikan, servis, penggantian, dll
   description     String    @db.Text
+  status          AssetMaintenanceStatus @default(PENDING)
   cost            Decimal?  @db.Decimal(15, 2)
   vendor          String?
   performedBy     String    @map("performed_by")
+  requestedById   String?   @map("requested_by_id")
+  completionDate  DateTime? @map("completion_date")
+  invoiceUrl      String?   @map("invoice_url")
   nextSchedule    DateTime? @map("next_schedule")
   notes           String?   @db.Text
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  asset Asset @relation(fields: [assetId], references: [id])
+  asset       Asset @relation(fields: [assetId], references: [id])
+  requestedBy User? @relation("MaintenanceRequester", fields: [requestedById], references: [id])
 
   @@index([assetId])
   @@index([maintenanceDate])
+  @@index([status])
   @@map("asset_maintenance")
+}
+
+/// AssetDisposal - Penghapusan Aset
+model AssetDisposal {
+  id           String              @id @default(uuid())
+  assetId      String              @unique @map("asset_id")
+  date         DateTime            @db.Date
+  reason       AssetDisposalReason
+  salePrice    Decimal?            @map("sale_price") @db.Decimal(15, 2)
+  bookValue    Decimal?            @map("book_value") @db.Decimal(15, 2) // Nilai buku saat dihapus
+  notes        String?             @db.Text
+  approvedById String?             @map("approved_by_id")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  asset      Asset @relation(fields: [assetId], references: [id])
+  approvedBy User? @relation("DisposalApprover", fields: [approvedById], references: [id])
+
+  @@index([date])
+  @@index([reason])
+  @@map("asset_disposals")
 }
 
 // =====================================

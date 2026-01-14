@@ -168,7 +168,22 @@ export default function HomeroomDailyReportPage() {
           sholatDhuhaCompleted: data.sholatDhuha,
         }));
 
-      await bulkCreateMutation.mutateAsync({ reports });
+      await bulkCreateMutation.mutateAsync({
+        unitId: user?.unitId || '',
+        academicYearId: user?.academicYearId || '',
+        reportDate: format(selectedDate, 'yyyy-MM-dd'),
+        reports: reports.map(r => ({
+          studentId: r.studentId,
+          attendanceStatus: r.attendanceStatus,
+          activitiesSummary: r.activitiesSummary,
+          learningAchievements: r.learningAchievements,
+          behaviorNotes: r.behaviorNotes,
+          surahPractice: r.surahPractice,
+          parentNotes: r.parentNotes,
+          homeworkSuggestion: r.homeworkSuggestion,
+          sholatDhuhaCompleted: r.sholatDhuhaCompleted
+        }))
+      } as any);
       toast.success(`${reports.length} laporan harian berhasil dibuat`);
       router.push('/homeroom');
     } catch (error) {

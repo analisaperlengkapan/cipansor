@@ -54,6 +54,7 @@ export default function NewDormitoryPage() {
 
   const { data: unitsData, isLoading: unitsLoading } = useUnits();
   const { data: teachersData, isLoading: teachersLoading } = useTeachers();
+  const teachers = (teachersData as any)?.data || [];
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -224,9 +225,9 @@ export default function NewDormitoryPage() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="">Tidak ada</SelectItem>
-                          {teachersData?.map((teacher) => (
+                          {teachers.map((teacher: any) => (
                             <SelectItem key={teacher.id} value={teacher.id}>
-                              {teacher.name}
+                              {teacher.user?.name || teacher.nip || 'Unknown Teacher'}
                             </SelectItem>
                           ))}
                         </SelectContent>

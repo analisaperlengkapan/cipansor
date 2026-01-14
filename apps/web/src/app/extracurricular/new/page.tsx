@@ -60,7 +60,7 @@ export default function NewExtracurricularPage() {
 
   const units = unitsData || [];
   const academicYears = academicYearsData?.data || [];
-  const teachers = teachersData || [];
+  const teachers = (teachersData as any)?.data || [];
   const activeYear = academicYears.find((y) => y.isActive);
 
   const createMutation = useCreateExtracurricular();
@@ -272,9 +272,9 @@ export default function NewExtracurricularPage() {
                   <SelectValue placeholder="Pilih pembina" />
                 </SelectTrigger>
                 <SelectContent>
-                  {teachers.map((teacher) => (
+                  {teachers.map((teacher: any) => (
                     <SelectItem key={teacher.id} value={teacher.id}>
-                      {teacher.name}
+                      {teacher.user?.name || teacher.nip || 'Unknown Teacher'}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -101,7 +101,7 @@ function BehaviorAnalytics({ notes }: { notes: any[] }) {
       else { acc.push({ name: curr.category, value: 1 }); }
       return acc;
     }, [] as { name: string, value: number }[])
-    .sort((a, b) => b.value - a.value);
+    .sort((a: { value: number }, b: { value: number }) => b.value - a.value);
 
   // 2. Top Violators
   const studentNegativePoints = notes
@@ -113,7 +113,7 @@ function BehaviorAnalytics({ notes }: { notes: any[] }) {
        else { acc.push({ name: studentName, points: Math.abs(curr.points || 0), count: 1 }); }
        return acc;
     }, [] as { name: string, points: number, count: number }[])
-    .sort((a, b) => b.points - a.points)
+    .sort((a: { points: number }, b: { points: number }) => b.points - a.points)
     .slice(0, 5);
 
   // 3. Positive vs Negative Trend (Simple count)
@@ -184,7 +184,7 @@ function BehaviorAnalytics({ notes }: { notes: any[] }) {
           </CardHeader>
           <CardContent>
              <div className="space-y-4">
-                {studentNegativePoints.map((s, idx) => (
+                {studentNegativePoints.map((s: { name: string; points: number; count: number }, idx: number) => (
                    <div key={idx} className="flex items-center justify-between border-b last:border-0 pb-2">
                       <div className="flex items-center gap-3">
                          <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center font-bold text-red-700">

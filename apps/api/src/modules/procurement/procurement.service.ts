@@ -3,11 +3,13 @@ import {
   CreatePurchaseRequestInput,
   UpdatePurchaseRequestStatusInput,
   PurchaseRequestStatus,
-  PurchaseRequest
+  PurchaseRequest,
+  FulfillPurchaseRequestInput
 } from '@cipansor/shared';
-import { UserRole } from '@prisma/client';
+import { UserRole, AssetCondition, Prisma } from '@prisma/client';
 import { NotFoundError, ForbiddenError, ValidationError } from '@/middleware/error';
 import { generateUniqueCode } from '@/utils/code-generator';
+import { createNotification } from '../notifications/service';
 
 export const procurementService = {
   // Create a new purchase request
@@ -15,10 +17,37 @@ export const procurementService = {
     input: CreatePurchaseRequestInput,
     userId: string
   ): Promise<PurchaseRequest> => {
+    // 1. Budget Availability Check
+    const budgetRequests = new Map<string, number>();
+
+    for (const item of input.items) {
+      if (item.budgetId) {
+        const currentAmount = budgetRequests.get(item.budgetId) || 0;
+        budgetRequests.set(item.budgetId, currentAmount + (item.quantity * item.estimatedPrice));
+      }
+    }
+
+    if (budgetRequests.size > 0) {
+      const budgetIds = Array.from(budgetRequests.keys());
+      const budgets = await prisma.budget.findMany({
+        where: { id: { in: budgetIds } }
+      });
+
+      for (const budget of budgets) {
+        const requestedAmount = budgetRequests.get(budget.id) || 0;
+        const availableAmount = Number(budget.amount) - Number(budget.usedAmount);
+
+        if (requestedAmount > availableAmount) {
+          throw new ValidationError(
+            `Budget exceeded for budget ID ${budget.id}. Available: ${availableAmount}, Requested: ${requestedAmount}`
+          );
+        }
+      }
+    }
+
     // Generate code: PR-YYYYMM-XXXX
     const code = await generateUniqueCode('PR', 'purchase_requests');
 
-    // Calculate total
     const totalEstimated = input.items.reduce(
       (sum, item) => sum + (item.quantity * item.estimatedPrice),
       0
@@ -61,10 +90,21 @@ export const procurementService = {
       }
     });
 
+    // Audit Log: Create
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        action: 'PROCUREMENT_CREATE',
+        entity: 'PURCHASE_REQUEST',
+        entityId: request.id,
+        newValues: request as any
+      }
+    });
+
     return request as unknown as PurchaseRequest;
   },
 
-  // Find all requests (with filters)
+  // Find all requests
   findAll: async (
     unitId?: string,
     status?: PurchaseRequestStatus,
@@ -75,7 +115,6 @@ export const procurementService = {
     if (unitId) where.unitId = unitId;
     if (status) where.status = status;
 
-    // If not Admin, only see own requests
     const adminRoles: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
     const isAdmin = role && adminRoles.includes(role);
 
@@ -97,7 +136,7 @@ export const procurementService = {
     return requests as unknown as PurchaseRequest[];
   },
 
-  // Find single request by ID
+  // Find single request
   findById: async (id: string) => {
     const request = await prisma.purchaseRequest.findUnique({
       where: { id },
@@ -122,17 +161,43 @@ export const procurementService = {
     return request as unknown as PurchaseRequest;
   },
 
+  // Get Audit Logs for a Request
+  getAuditLogs: async (id: string) => {
+    return prisma.auditLog.findMany({
+      where: {
+        entity: 'PURCHASE_REQUEST',
+        entityId: id
+      },
+      include: {
+        user: { select: { id: true, name: true, role: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  },
+
   // Update status (Approve/Reject)
   updateStatus: async (
     id: string,
     input: UpdatePurchaseRequestStatusInput,
-    approverId: string
+    approverId: string,
+    approverRole: UserRole
   ) => {
     const request = await prisma.purchaseRequest.findUnique({ where: { id } });
     if (!request) throw new NotFoundError('Purchase Request not found');
 
     if (request.status !== PurchaseRequestStatus.PENDING && request.status !== PurchaseRequestStatus.APPROVED) {
       throw new ValidationError('Cannot update status of processed request');
+    }
+
+    // Tiered Approval Logic
+    if (input.status === PurchaseRequestStatus.APPROVED) {
+      const HIGH_VALUE_THRESHOLD = 10000000; // 10 Million
+      const isHighValue = Number(request.totalEstimated) > HIGH_VALUE_THRESHOLD;
+      const isSuperAdmin = approverRole === UserRole.SUPER_ADMIN;
+
+      if (isHighValue && !isSuperAdmin) {
+        throw new ForbiddenError(`Requests above ${HIGH_VALUE_THRESHOLD} require Foundation/Yayasan approval.`);
+      }
     }
 
     const data: any = { status: input.status };
@@ -150,11 +215,23 @@ export const procurementService = {
       include: { items: true }
     });
 
+    // Audit Log: Status Change
+    await prisma.auditLog.create({
+      data: {
+        userId: approverId,
+        action: input.status === PurchaseRequestStatus.APPROVED ? 'PROCUREMENT_APPROVE' : 'PROCUREMENT_REJECT',
+        entity: 'PURCHASE_REQUEST',
+        entityId: id,
+        oldValues: { status: request.status } as any,
+        newValues: { status: input.status, rejectionReason: input.rejectionReason } as any
+      }
+    });
+
     return updated as unknown as PurchaseRequest;
   },
 
-  // Fulfill request (Mark as Received -> Create Asset -> Create Journal)
-  fulfill: async (id: string, userId: string) => {
+  // Fulfill request
+  fulfill: async (id: string, input: FulfillPurchaseRequestInput, userId: string) => {
     const request = await prisma.purchaseRequest.findUnique({
       where: { id },
       include: { items: { include: { assetCategory: true, budget: { include: { account: true } } } } }
@@ -165,82 +242,120 @@ export const procurementService = {
       throw new ValidationError('Request must be Approved or Ordered to be Fulfilled');
     }
 
-    // Transactional fulfillment
-    return await prisma.$transaction(async (tx) => {
-      // 1. Update Status
+    const paymentAccount = await prisma.accountCode.findUnique({
+      where: { id: input.paymentAccountId }
+    });
+    if (!paymentAccount) {
+      throw new ValidationError('Invalid payment account');
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
       const updatedRequest = await tx.purchaseRequest.update({
         where: { id },
         data: {
           status: PurchaseRequestStatus.RECEIVED,
-          receivedAt: new Date()
+          receivedAt: new Date(input.receiptDate)
         }
       });
 
-      // 2. Create Assets and Journal Entries
-      for (const item of request.items) {
-        // Create Asset if category provided
-        if (item.assetCategoryId) {
-          const assetCode = await generateUniqueCode('AST', 'assets');
+      for (const fulfillmentItem of input.items) {
+        const prItem = request.items.find(i => i.id === fulfillmentItem.itemId);
+        if (!prItem) continue;
 
-          await tx.asset.create({
-            data: {
-              unitId: request.unitId,
-              categoryId: item.assetCategoryId,
-              code: assetCode,
-              name: item.itemName,
-              purchaseDate: new Date(),
-              purchasePrice: item.estimatedPrice,
-              condition: 'GOOD',
-              status: 'ACTIVE',
-              notes: `Generated from PR: ${request.code}`
-            }
-          });
+        const totalItemPrice = fulfillmentItem.quantityReceived * fulfillmentItem.actualPrice;
+
+        if (prItem.assetCategoryId) {
+          for (let i = 0; i < fulfillmentItem.quantityReceived; i++) {
+            const assetCode = await generateUniqueCode('AST', 'assets');
+            let condition: AssetCondition = AssetCondition.GOOD;
+            if (fulfillmentItem.condition === 'FAIR') condition = AssetCondition.FAIR;
+            if (fulfillmentItem.condition === 'POOR') condition = AssetCondition.POOR;
+
+            await tx.asset.create({
+              data: {
+                unitId: request.unitId,
+                categoryId: prItem.assetCategoryId,
+                code: assetCode,
+                name: `${prItem.itemName} (${i + 1})`,
+                purchaseDate: new Date(input.receiptDate),
+                purchasePrice: fulfillmentItem.actualPrice,
+                condition: condition,
+                status: 'ACTIVE',
+                notes: fulfillmentItem.notes || `Generated from PR: ${request.code}`,
+                purchaseOrderNo: input.purchaseOrderNo,
+                supplier: input.supplier,
+                roomId: fulfillmentItem.roomId
+              }
+            });
+          }
         }
 
-        // 3. Create Journal Entry (Balanced)
-        if (item.budgetId && item.budget?.accountId) {
-             const expenseAccount = item.budget.accountId;
-             // Try to find default Cash account (usually '1101' or '1-1-01')
-             // For safety, we search by code '1101' which is standard in this system memory
-             const cashAccount = await tx.accountCode.findFirst({
-               where: { code: '1101' }
+        if (prItem.budgetId && prItem.budget?.accountId) {
+             const debitAccount = prItem.budget.accountId;
+
+             await tx.budget.update({
+               where: { id: prItem.budgetId },
+               data: {
+                 usedAmount: { increment: totalItemPrice }
+               }
              });
 
-             if (cashAccount) {
-               // Debit Expense
-               await tx.journalEntry.create({
-                  data: {
-                      unitId: request.unitId,
-                      accountId: expenseAccount,
-                      date: new Date(),
-                      description: `Purchase Expense: ${item.itemName} (PR: ${request.code})`,
-                      debit: item.totalPrice,
-                      credit: 0,
-                      reference: request.code,
-                      referenceType: 'PURCHASE_REQUEST',
-                      createdById: userId
-                  }
-               });
+             await tx.journalEntry.create({
+                data: {
+                    unitId: request.unitId,
+                    accountId: debitAccount,
+                    date: new Date(input.receiptDate),
+                    description: `Purchase: ${prItem.itemName} (PR: ${request.code}) - Qty: ${fulfillmentItem.quantityReceived}`,
+                    debit: totalItemPrice,
+                    credit: 0,
+                    reference: request.code,
+                    referenceType: 'PURCHASE_REQUEST',
+                    createdById: userId
+                }
+             });
 
-               // Credit Cash
-               await tx.journalEntry.create({
-                  data: {
-                      unitId: request.unitId,
-                      accountId: cashAccount.id,
-                      date: new Date(),
-                      description: `Purchase Payment: ${item.itemName} (PR: ${request.code})`,
-                      debit: 0,
-                      credit: item.totalPrice,
-                      reference: request.code,
-                      referenceType: 'PURCHASE_REQUEST',
-                      createdById: userId
-                  }
-               });
-             }
+             await tx.journalEntry.create({
+                data: {
+                    unitId: request.unitId,
+                    accountId: paymentAccount.id,
+                    date: new Date(input.receiptDate),
+                    description: `Payment: ${prItem.itemName} (PR: ${request.code})`,
+                    debit: 0,
+                    credit: totalItemPrice,
+                    reference: request.code,
+                    referenceType: 'PURCHASE_REQUEST',
+                    createdById: userId
+                }
+             });
         }
       }
 
+      // Audit Log: Fulfill
+      await tx.auditLog.create({
+        data: {
+          userId,
+          action: 'PROCUREMENT_FULFILL',
+          entity: 'PURCHASE_REQUEST',
+          entityId: id,
+          newValues: { status: 'RECEIVED', receivedAt: input.receiptDate } as any
+        }
+      });
+
       return updatedRequest;
     });
+
+    try {
+      await createNotification({
+        userId: request.requesterId,
+        title: 'Barang Telah Diterima',
+        message: `Pengajuan pembelian ${request.code} telah diproses dan barang telah diterima.`,
+        type: 'INFO',
+        link: `/procurement/${request.id}`
+      });
+    } catch (error) {
+      console.error('Failed to send notification', error);
+    }
+
+    return result;
   }
 };

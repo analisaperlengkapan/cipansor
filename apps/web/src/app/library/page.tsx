@@ -40,19 +40,17 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { toast } from 'sonner';
 import {
   useBooks,
+  useBookCategories,
   useBorrows,
   useDeleteBook,
   useReturnBook,
   useLibrarySummary,
-  BOOK_CATEGORIES,
   BORROW_STATUSES,
   BookCategory,
   BorrowStatus,
+  BookStatus,
 } from '@/hooks/use-library';
-
-function getCategoryLabel(category: BookCategory) {
-  return BOOK_CATEGORIES.find((c) => c.value === category)?.label || category;
-}
+import { useAuthStore } from '@/stores/auth';
 
 function getStatusBadge(status: BorrowStatus) {
   const statusInfo = BORROW_STATUSES.find((s) => s.value === status);
@@ -70,12 +68,17 @@ export default function LibraryPage() {
   const [bookSearch, setBookSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const user = useAuthStore((state) => state.user);
+  const unitId = user?.unitId;
+
+  const { data: categories } = useBookCategories(unitId || undefined);
 
   const { data: booksData, isLoading: booksLoading } = useBooks({
     page: booksPage,
     limit: 10,
     search: bookSearch || undefined,
-    category: categoryFilter !== 'ALL' ? (categoryFilter as BookCategory) : undefined,
+    categoryId: categoryFilter !== 'ALL' ? categoryFilter : undefined,
+    unitId: unitId || undefined,
   });
 
   const { data: borrowsData, isLoading: borrowsLoading } = useBorrows({
@@ -84,7 +87,7 @@ export default function LibraryPage() {
     status: statusFilter !== 'ALL' ? (statusFilter as BorrowStatus) : undefined,
   });
 
-  const { data: summaryData } = useLibrarySummary();
+  const { data: summaryData } = useLibrarySummary(unitId || undefined);
   const deleteBookMutation = useDeleteBook();
   const returnMutation = useReturnBook();
 
@@ -101,7 +104,9 @@ export default function LibraryPage() {
     try {
       await returnMutation.mutateAsync({
         id,
-        returnDate: new Date().toISOString().split('T')[0],
+        data: {
+          notes: 'Dikembalikan via Dashboard',
+        },
       });
       toast.success('Buku berhasil dikembalikan');
     } catch {
@@ -141,9 +146,9 @@ export default function LibraryPage() {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summaryData?.totalBooks || 0}</div>
+            <div className="text-2xl font-bold">{summaryData?.totalTitles || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {summaryData?.totalQuantity || 0} eksemplar
+              {summaryData?.totalBooks || 0} eksemplar
             </p>
           </CardContent>
         </Card>
@@ -154,7 +159,7 @@ export default function LibraryPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {summaryData?.totalBorrowed || 0}
+              {summaryData?.activeBorrowings || 0}
             </div>
           </CardContent>
         </Card>
@@ -165,7 +170,7 @@ export default function LibraryPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {summaryData?.totalOverdue || 0}
+              {summaryData?.overdueBorrowings || 0}
             </div>
           </CardContent>
         </Card>
@@ -175,7 +180,7 @@ export default function LibraryPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {summaryData?.byCategory?.length || 0}
+              {summaryData?.totalCategories || 0}
             </div>
           </CardContent>
         </Card>
@@ -208,9 +213,9 @@ export default function LibraryPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">Semua Kategori</SelectItem>
-                  {BOOK_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
+                  {categories?.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -249,13 +254,13 @@ export default function LibraryPage() {
                       <TableRow key={book.id}>
                         <TableCell className="font-medium">{book.title}</TableCell>
                         <TableCell>{book.author}</TableCell>
-                        <TableCell>{getCategoryLabel(book.category)}</TableCell>
+                        <TableCell>{book.category?.name || '-'}</TableCell>
                         <TableCell>{book.quantity}</TableCell>
                         <TableCell>
                           <Badge
-                            variant={book.availableQuantity > 0 ? 'default' : 'secondary'}
+                            variant={book.available > 0 ? 'default' : 'secondary'}
                           >
-                            {book.availableQuantity}
+                            {book.available}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -347,7 +352,7 @@ export default function LibraryPage() {
                     {borrowsData?.data.map((borrow) => (
                       <TableRow key={borrow.id}>
                         <TableCell>
-                          {format(new Date(borrow.borrowDate), 'dd MMM yyyy', { locale: localeId })}
+                          {borrow.borrowedAt ? format(new Date(borrow.borrowedAt), 'dd MMM yyyy', { locale: localeId }) : '-'}
                         </TableCell>
                         <TableCell className="font-medium">{borrow.book?.title}</TableCell>
                         <TableCell>
@@ -363,7 +368,7 @@ export default function LibraryPage() {
                         </TableCell>
                         <TableCell>{getStatusBadge(borrow.status)}</TableCell>
                         <TableCell className="text-right">
-                          {borrow.status === 'BORROWED' && (
+                          {borrow.status === 'ACTIVE' && (
                             <Button
                               variant="outline"
                               size="sm"

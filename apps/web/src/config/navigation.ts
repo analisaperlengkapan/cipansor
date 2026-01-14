@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   Users,
   Building2,
+  Mail,
   GraduationCap,
   BookOpen,
   Calendar,
@@ -840,6 +841,11 @@ const adminNavigation: NavGroup[] = [
         title: 'Facilities',
         href: '/facilities',
         icon: Building2,
+      },
+      {
+        title: 'E-Office (Persuratan)',
+        href: '/e-office',
+        icon: Mail,
       },
       {
         title: 'Inventory (Asset)',

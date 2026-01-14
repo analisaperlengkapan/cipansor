@@ -1,12 +1,39 @@
 import { prisma } from "../../lib/prisma";
-import { PermitStatus, AttendanceStatus, PermitType } from "@prisma/client";
+import { PermitStatus, AttendanceStatus, PermitType, UserRole } from "@prisma/client";
 import { CreatePermitDto, UpdatePermitStatusDto, QueryPermitDto } from "./schema";
+import { Errors } from "../../middleware/error";
+import { createNotification } from "../notifications/service";
+import { NotificationType } from "@prisma/client";
+
+// Helper to generate random code
+function generatePermitCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = 'PMT-';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
 
 export async function createPermit(data: CreatePermitDto) {
+  let code = generatePermitCode();
+  let isUnique = false;
+
+  // Ensure uniqueness (simple retry)
+  while (!isUnique) {
+    const existing = await prisma.permit.findUnique({ where: { code } });
+    if (!existing) {
+      isUnique = true;
+    } else {
+      code = generatePermitCode();
+    }
+  }
+
   return prisma.permit.create({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
       ...data,
+      code,
       startDate: new Date(data.startDate),
       endDate: new Date(data.endDate),
     } as any,
@@ -103,6 +130,7 @@ export async function updatePermitStatus(
         student: {
           include: {
             user: { select: { id: true, name: true, email: true } },
+            parents: { include: { parent: true } } // Fetch parents for notification
           },
         },
         approvedBy: { select: { id: true, name: true } },
@@ -133,7 +161,6 @@ export async function updatePermitStatus(
         }
 
         if (dates.length > 0) {
-          // Optimize: Update existing records first
           const updateResult = await tx.attendance.updateMany({
             where: {
               studentId: updatedPermit.studentId,
@@ -143,9 +170,6 @@ export async function updatePermitStatus(
             data: {
               status: attendanceStatus,
               notes: notes,
-              // recordedById is not updated to preserve original recorder if exists, or should it?
-              // Usually we want to know who modified it last, but updateMany doesn't easily support relations or complex logic.
-              // Let's assume updating status is enough.
             },
           });
 
@@ -178,6 +202,32 @@ export async function updatePermitStatus(
           }
         }
       }
+
+      // Notify Parents
+      for (const sp of updatedPermit.student.parents) {
+         try {
+           await createNotification({
+             userId: sp.parentId,
+             type: NotificationType.INFO,
+             title: 'Izin Disetujui',
+             message: `Pengajuan izin ${updatedPermit.type} untuk ${updatedPermit.student.user.name} telah disetujui.`,
+             data: { permitId: updatedPermit.id },
+           });
+         } catch (e) { console.error('Failed to notify parent', e); }
+      }
+    } else if (data.status === PermitStatus.REJECTED) {
+       // Notify Parents of Rejection
+       for (const sp of updatedPermit.student.parents) {
+         try {
+           await createNotification({
+             userId: sp.parentId,
+             type: NotificationType.INFO,
+             title: 'Izin Ditolak',
+             message: `Pengajuan izin untuk ${updatedPermit.student.user.name} ditolak. Alasan: ${updatedPermit.rejectionNote}`,
+             data: { permitId: updatedPermit.id },
+           });
+         } catch (e) { console.error('Failed to notify parent', e); }
+       }
     }
 
     return updatedPermit;
@@ -185,13 +235,109 @@ export async function updatePermitStatus(
 }
 
 export async function markReturned(id: string, returnedAt?: string) {
-  return prisma.permit.update({
+  const permit = await prisma.permit.findUnique({
+    where: { id },
+    include: {
+        student: {
+            include: {
+                user: true,
+                parents: { include: { parent: true } }
+            }
+        }
+    }
+  });
+  if (!permit) throw Errors.notFound("Permit");
+
+  const result = await prisma.permit.update({
     where: { id },
     data: {
       status: PermitStatus.COMPLETED,
       returnedAt: returnedAt ? new Date(returnedAt) : new Date(),
     },
   });
+
+  // Notify Parents
+  for (const sp of permit.student.parents) {
+    try {
+        await createNotification({
+            userId: sp.parentId,
+            type: NotificationType.INFO,
+            title: 'Santri Kembali',
+            message: `${permit.student.user.name} telah kembali ke asrama.`,
+            data: { permitId: permit.id },
+        });
+    } catch (e) { console.error('Failed to notify parent', e); }
+  }
+
+  return result;
+}
+
+export async function markDeparted(id: string) {
+  const permit = await prisma.permit.findUnique({
+    where: { id },
+    include: {
+        student: {
+            include: {
+                user: true,
+                parents: { include: { parent: true } }
+            }
+        }
+    }
+  });
+
+  if (!permit) throw Errors.notFound("Permit");
+  if (permit.status !== PermitStatus.APPROVED) {
+    throw Errors.badRequest("Permit must be APPROVED to depart");
+  }
+
+  const result = await prisma.permit.update({
+    where: { id },
+    data: {
+      departedAt: new Date(),
+    },
+  });
+
+   // Notify Parents
+   for (const sp of permit.student.parents) {
+    try {
+        await createNotification({
+            userId: sp.parentId,
+            type: NotificationType.INFO,
+            title: 'Santri Keluar',
+            message: `${permit.student.user.name} telah meninggalkan area pesantren sesuai izin.`,
+            data: { permitId: permit.id },
+        });
+    } catch (e) { console.error('Failed to notify parent', e); }
+  }
+
+  return result;
+}
+
+export async function getPermitByCode(code: string) {
+  const permit = await prisma.permit.findUnique({
+    where: { code },
+    include: {
+      student: {
+        include: {
+          user: { select: { id: true, name: true, email: true, photoUrl: true } }, // Include photo
+          unit: { select: { id: true, name: true } },
+          dormitories: { include: { dormitory: true, room: true } } // Include dorm info if available (via Musyrif logic usually, but here checking Dormitory relation if exists in Student... wait Student doesn't relate directly to Dormitory, it's RoomAssignment)
+        },
+      },
+      approvedBy: { select: { id: true, name: true } },
+    },
+  });
+
+  // Fetch room info manually if needed or add relation to include
+  if (permit) {
+      const roomAssignment = await prisma.roomAssignment.findFirst({
+          where: { studentId: permit.studentId, isActive: true },
+          include: { room: { include: { dormitory: true } } }
+      });
+      return { ...permit, roomAssignment };
+  }
+
+  return null;
 }
 
 export async function getStudentActivePermit(studentId: string) {

@@ -78,6 +78,7 @@ export const queryLeaveSchema = z.object({
   status: z.nativeEnum(LeaveStatus).optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
+  mine: z.string().optional().transform(val => val === 'true'),
 });
 
 // Staff/Employee Management Schemas

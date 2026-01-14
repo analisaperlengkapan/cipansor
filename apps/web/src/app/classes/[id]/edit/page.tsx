@@ -109,8 +109,26 @@ export default function EditClassPage() {
 
   // Filter teachers by selected unit
   const filteredTeachers = selectedUnitId
-    ? teachers?.filter((t) => t.unitId === selectedUnitId)
-    : teachers;
+    // If teachers is an array (from my fix), this works. If it's PaginatedResponse, this fails.
+    // The previous error said `Property 'filter' does not exist on type 'PaginatedResponse<Teacher>'.`
+    // This implies `teachers` IS PaginatedResponse in the compiled context.
+    // But in `apps/web/src/app/classes/[id]/edit/page.tsx` line 57 I see:
+    // `const { data: teachers, isLoading: teachersLoading } = useTeachers();`
+    // Wait, in my previous edit (Turn 37), I changed it to:
+    // `const { data: teachersData, isLoading: teachersLoading } = useTeachers();`
+    // `const teachers = teachersData?.data || [];`
+    // But looking at the file content I just read:
+    // `const { data: teachers, isLoading: teachersLoading } = useTeachers();` (Line 66)
+    // It seems my edit in Turn 37 was reverted or lost? Or maybe I edited `classes/new/page.tsx` instead?
+    // Checking history... I edited `classes/[id]/edit/page.tsx` in Turn 37.
+    // But the file content read in Turn 46 shows:
+    // `const { data: teachers, isLoading: teachersLoading } = useTeachers();`
+    // This means `teachers` holds the direct response from `useQuery`.
+    // And `useTeachers` returns `{ data: Teacher[], meta: ... }` (PaginatedResponse).
+    // So `teachers` is indeed PaginatedResponse.
+    // I need to fix this by extracting `.data`.
+    ? (teachers as any)?.data?.filter((t: any) => t.unitId === selectedUnitId)
+    : (teachers as any)?.data || [];
 
   if (classLoading) {
     return (
@@ -267,9 +285,9 @@ export default function EditClassPage() {
                       <SelectValue placeholder={!selectedUnitId ? 'Pilih unit terlebih dahulu' : 'Pilih wali kelas'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {filteredTeachers?.map((teacher) => (
+                      {filteredTeachers?.map((teacher: any) => (
                         <SelectItem key={teacher.id} value={teacher.id}>
-                          {teacher.name}
+                          {teacher.user?.name || teacher.nip || 'Unknown Teacher'}
                         </SelectItem>
                       ))}
                     </SelectContent>

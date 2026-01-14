@@ -7,7 +7,7 @@ import {
 } from '@cipansor/shared';
 import { toast } from 'sonner';
 
-export const useProcurement = (unitId?: string, status?: PurchaseRequestStatus) => {
+export const useProcurement = (unitId?: string, status?: PurchaseRequestStatus | 'all') => {
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
@@ -15,7 +15,7 @@ export const useProcurement = (unitId?: string, status?: PurchaseRequestStatus) 
     queryFn: async () => {
       const params = new URLSearchParams();
       if (unitId && unitId !== 'all') params.append('unitId', unitId);
-      if (status && status !== 'all') params.append('status', status);
+      if (status && status !== 'all') params.append('status', status as string);
 
       const response = await api.get<{ data: PurchaseRequest[] }>(`/procurement?${params.toString()}`);
       return response.data;
@@ -78,7 +78,7 @@ export const useProcurement = (unitId?: string, status?: PurchaseRequestStatus) 
 };
 
 export const useProcurementDetail = (id: string) => {
-  return useQuery({
+  const detailQuery = useQuery({
     queryKey: ['procurement', id],
     queryFn: async () => {
       const response = await api.get<{ data: PurchaseRequest }>(`/procurement/${id}`);
@@ -86,4 +86,22 @@ export const useProcurementDetail = (id: string) => {
     },
     enabled: !!id
   });
+
+  const auditLogQuery = useQuery({
+    queryKey: ['procurement', id, 'audit-logs'],
+    queryFn: async () => {
+      const response = await api.get<{ data: any[] }>(`/procurement/${id}/audit-logs`);
+      return response.data.data;
+    },
+    enabled: !!id
+  });
+
+  return {
+    data: detailQuery.data,
+    isLoading: detailQuery.isLoading,
+    error: detailQuery.error,
+    mutate: detailQuery.refetch,
+    auditLogs: auditLogQuery.data || [],
+    isLoadingAuditLogs: auditLogQuery.isLoading
+  };
 };

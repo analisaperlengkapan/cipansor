@@ -438,68 +438,6 @@ export function useDeleteEmployee() {
   });
 }
 
-// Department queries
-export function useDepartments(params?: { unitId?: string; isActive?: boolean }) {
-  return useQuery({
-    queryKey: ['departments', params],
-    queryFn: async () => {
-      const response = await api.get('/hr/departments', { params });
-      return response.data.data as Department[];
-    },
-  });
-}
-
-export function useDepartment(id: string) {
-  return useQuery({
-    queryKey: ['department', id],
-    queryFn: async () => {
-      const response = await api.get(`/hr/departments/${id}`);
-      return response.data.data as Department;
-    },
-    enabled: !!id,
-  });
-}
-
-export function useCreateDepartment() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: Partial<Department>) => {
-      const response = await api.post('/hr/departments', data);
-      return response.data.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['departments'] });
-    },
-  });
-}
-
-export function useUpdateDepartment() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Department> }) => {
-      const response = await api.put(`/hr/departments/${id}`, data);
-      return response.data.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['departments'] });
-    },
-  });
-}
-
-export function useDeleteDepartment() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/hr/departments/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['departments'] });
-    },
-  });
-}
 
 // Leave request queries
 export function useLeaveRequests(params?: {
@@ -510,11 +448,12 @@ export function useLeaveRequests(params?: {
   endDate?: string;
   page?: number;
   limit?: number;
+  mine?: boolean;
 }) {
   return useQuery({
     queryKey: ['leave-requests', params],
     queryFn: async () => {
-      const response = await api.get('/hr/leave-requests', { params });
+      const response = await api.get('/hr/leaves', { params });
       return response.data as {
         data: LeaveRequest[];
         meta: { total: number; page: number; limit: number; totalPages: number };
@@ -527,7 +466,7 @@ export function useLeaveRequest(id: string) {
   return useQuery({
     queryKey: ['leave-request', id],
     queryFn: async () => {
-      const response = await api.get(`/hr/leave-requests/${id}`);
+      const response = await api.get(`/hr/leaves/${id}`);
       return response.data.data as LeaveRequest;
     },
     enabled: !!id,

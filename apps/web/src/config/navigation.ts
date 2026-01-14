@@ -489,8 +489,8 @@ const yayasanNavigation: NavGroup[] = [
         icon: Users,
       },
       {
-        title: 'Akreditasi',
-        href: '/foundation/accreditation',
+        title: 'Penjaminan Mutu',
+        href: '/quality',
         icon: Award,
       },
     ],
@@ -851,6 +851,11 @@ const adminNavigation: NavGroup[] = [
         title: 'PKG Guru',
         href: '/pkg',
         icon: ClipboardPenLine,
+      },
+      {
+        title: 'Penjaminan Mutu',
+        href: '/quality',
+        icon: Award,
       },
     ],
   },

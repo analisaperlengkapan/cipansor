@@ -23,3 +23,4 @@ export * from './types/reception';
 export * from './types/correspondence';
 export * from './schemas';
 export * from './types/marketing';
+export * from './types/quality';

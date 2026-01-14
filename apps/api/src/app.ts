@@ -73,6 +73,7 @@ import muhadatsahRoutes from '@/modules/muhadatsah/muhadatsah.routes';
 import emisRoutes from '@/modules/emis/emis.routes';
 import { dapodikRouter } from '@/modules/dapodik/dapodik.routes';
 import correspondenceRoutes from '@/modules/correspondence/correspondence.routes';
+import { qualityRoutes } from '@/modules/quality/quality.routes';
 
 // Enhancement module routes
 import { paudAssessmentRoutes } from '@/modules/paud-assessment';
@@ -224,6 +225,7 @@ apiRouter.use('/muhadatsah', muhadatsahRoutes);
 apiRouter.use('/emis', emisRoutes);
 apiRouter.use('/dapodik', dapodikRouter);
 apiRouter.use('/correspondence', correspondenceRoutes);
+apiRouter.use('/quality', qualityRoutes);
 
 // Enhancement modules
 apiRouter.use('/paud-assessment', paudAssessmentRoutes);

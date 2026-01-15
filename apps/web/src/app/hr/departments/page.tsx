@@ -47,8 +47,20 @@ import {
 import { useEmployees } from '@/hooks';
 import { Plus, Search, Edit, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { Switch } from '@/components/ui/switch';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const departmentSchema = z.object({
+  code: z.string().min(1, 'Kode harus diisi'),
+  name: z.string().min(1, 'Nama departemen harus diisi'),
+  description: z.string().optional(),
+  managerId: z.string().nullable().optional(),
+  isActive: z.boolean().default(true),
+});
+
+type DepartmentFormValues = z.infer<typeof departmentSchema>;
 
 export default function DepartmentsPage() {
   const [search, setSearch] = useState('');
@@ -215,26 +227,43 @@ function DepartmentDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   department: Department | null;
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: DepartmentFormValues) => Promise<void>;
 }) {
-  const { register, handleSubmit, reset, setValue, watch, formState: { isSubmitting } } = useForm();
-  const isActive = watch('isActive');
+  const { register, control, handleSubmit, reset, formState: { isSubmitting, errors } } = useForm<DepartmentFormValues>({
+    resolver: zodResolver(departmentSchema),
+    defaultValues: {
+      code: '',
+      name: '',
+      description: '',
+      managerId: null,
+      isActive: true,
+    }
+  });
+
   const { data: employeesData } = useEmployees({ status: 'ACTIVE' });
   const employees = employeesData?.data || [];
 
   useEffect(() => {
     if (open) {
       if (department) {
-        setValue('code', department.code);
-        setValue('name', department.name);
-        setValue('description', department.description);
-        setValue('managerId', department.managerId || 'none');
-        setValue('isActive', department.isActive);
+        reset({
+          code: department.code,
+          name: department.name,
+          description: department.description || '',
+          managerId: department.managerId || null,
+          isActive: department.isActive
+        });
       } else {
-        reset({ isActive: true, code: '', name: '', description: '', managerId: 'none' });
+        reset({
+          code: '',
+          name: '',
+          description: '',
+          managerId: null,
+          isActive: true
+        });
       }
     }
-  }, [open, department, setValue, reset]);
+  }, [open, department, reset]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -242,38 +271,50 @@ function DepartmentDialog({
         <DialogHeader>
           <DialogTitle>{department ? 'Edit Departemen' : 'Tambah Departemen'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit((data) => {
-          // Convert 'none' to null for managerId
-          const payload = { ...data, managerId: data.managerId === 'none' ? null : data.managerId };
-          onSubmit(payload);
-        })} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="code">Kode Departemen</Label>
-            <Input id="code" {...register('code', { required: true })} placeholder="e.g. IT, HR, FIN" />
+            <Input
+              id="code"
+              {...register('code')}
+              placeholder="e.g. IT, HR, FIN"
+            />
+            {errors.code && <p className="text-sm text-red-500">{errors.code.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="name">Nama Departemen</Label>
-            <Input id="name" {...register('name', { required: true })} placeholder="e.g. Information Technology" />
+            <Input
+              id="name"
+              {...register('name')}
+              placeholder="e.g. Information Technology"
+            />
+            {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="managerId">Kepala Departemen</Label>
-            <Select
-              value={watch('managerId') || 'none'}
-              onValueChange={(val) => setValue('managerId', val)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Pilih Kepala Departemen" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">-- Tidak Ada --</SelectItem>
-                {employees.map((emp) => (
-                  <SelectItem key={emp.userId || emp.id} value={emp.userId || emp.id}>
-                    {emp.fullName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              control={control}
+              name="managerId"
+              render={({ field }) => (
+                <Select
+                  value={field.value || 'none'}
+                  onValueChange={(val) => field.onChange(val === 'none' ? null : val)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih Kepala Departemen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">-- Tidak Ada --</SelectItem>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.userId || emp.id} value={emp.userId || emp.id}>
+                        {emp.fullName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           <div className="space-y-2">
@@ -281,10 +322,16 @@ function DepartmentDialog({
             <Textarea id="description" {...register('description')} />
           </div>
           <div className="flex items-center space-x-2">
-            <Switch
-              id="isActive"
-              checked={isActive}
-              onCheckedChange={(checked) => setValue('isActive', checked)}
+            <Controller
+              control={control}
+              name="isActive"
+              render={({ field }) => (
+                <Switch
+                  id="isActive"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              )}
             />
             <Label htmlFor="isActive">Aktif</Label>
           </div>

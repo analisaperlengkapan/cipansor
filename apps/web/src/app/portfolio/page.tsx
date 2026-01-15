@@ -108,8 +108,8 @@ export default function PortfolioPage() {
   const { data: yearsData } = useAcademicYears();
   const { data: studentsData } = useStudents({ unitId: selectedUnit || undefined, limit: 100 });
   const { data: portfoliosData, isLoading } = usePortfolios({
-    unitId: selectedUnit || undefined,
-    type: selectedType || undefined,
+    unitId: (selectedUnit && selectedUnit !== 'ALL') ? selectedUnit : undefined,
+    type: (selectedType && selectedType !== 'ALL') ? selectedType : undefined,
     search: searchQuery || undefined,
   });
   const { data: stats } = usePortfolioStatistics({
@@ -268,7 +268,7 @@ export default function PortfolioPage() {
                 <SelectValue placeholder="Semua Unit" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Unit</SelectItem>
+                <SelectItem value="ALL">Semua Unit</SelectItem>
                 {unitsData?.map((unit) => (
                   <SelectItem key={unit.id} value={unit.id}>
                     {unit.name}
@@ -281,7 +281,7 @@ export default function PortfolioPage() {
                 <SelectValue placeholder="Semua Tipe" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Tipe</SelectItem>
+                <SelectItem value="ALL">Semua Tipe</SelectItem>
                 {typesData?.types?.map((type) => (
                   <SelectItem key={type.value} value={type.value}>
                     {type.label}

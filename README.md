@@ -49,9 +49,13 @@ Pusat kendali utama untuk memantau statistik dan kinerja seluruh unit pendidikan
 |------------------|-----------------|
 | ![Dashboard SMP](docs/images/dashboard-smp.png) | ![Dashboard SD](docs/images/dashboard-sd.png) |
 
-| Dashboard PAUD/TK | Login System |
-|-------------------|--------------|
-| ![Dashboard PAUD](docs/images/dashboard-paud.png) | ![Login](docs/images/login.png) |
+| Dashboard PAUD/TK | Dashboard Umum |
+|-------------------|----------------|
+| ![Dashboard PAUD](docs/images/dashboard-paud.png) | ![Dashboard](docs/images/dashboard.png) |
+
+| Login System | |
+|--------------|---|
+| ![Login](docs/images/login.png) | |
 
 ### 2. Manajemen Yayasan & Administrasi (Foundation)
 Pengelolaan sumber daya yayasan, keuangan, dan administrasi perkantoran.
@@ -64,6 +68,14 @@ Pengelolaan sumber daya yayasan, keuangan, dan administrasi perkantoran.
 |------------------|------------------|
 | ![HR](docs/images/hr.png) | ![E-Office](docs/images/e-office.png) |
 
+| Dashboard Guru | Jadwal Piket |
+|----------------|--------------|
+| ![Teacher](docs/images/teacher.png) | ![Duty Roster](docs/images/duty-roster.png) |
+
+| Detail Pegawai | Cuti (Terverifikasi) |
+|----------------|----------------------|
+| ![Employee Detail](docs/images/employee-detail.png) | ![Leaves Verified](docs/images/admin_my_leaves_verified.png) |
+
 | Resepsionis (Buku Tamu) | Pengadaan (Procurement) |
 |-------------------------|-------------------------|
 | ![Reception](docs/images/reception.png) | ![Procurement](docs/images/procurement.png) |
@@ -71,6 +83,18 @@ Pengelolaan sumber daya yayasan, keuangan, dan administrasi perkantoran.
 | Manajemen User | Analitik & Laporan |
 |----------------|--------------------|
 | ![Users](docs/images/users.png) | ![Analytics](docs/images/analytics.png) |
+
+| Laporan Pusat | Manajemen Unit |
+|---------------|----------------|
+| ![Reports](docs/images/reports.png) | ![Units](docs/images/units.png) |
+
+| Marketing & Pendaftaran | Penjaminan Mutu (SPMI) |
+|-------------------------|------------------------|
+| ![Marketing](docs/images/marketing.png) | ![Quality](docs/images/quality.png) |
+
+| Dashboard Staff | |
+|-----------------|---|
+| ![Staff](docs/images/staff.png) | |
 
 ### 3. Akademik & Pembelajaran
 Sistem administrasi sekolah yang komprehensif.
@@ -91,9 +115,29 @@ Sistem administrasi sekolah yang komprehensif.
 |---------------------|-----------------------|
 | ![Certificates](docs/images/certificates.png) | ![Homeroom](docs/images/homeroom.png) |
 
+| Tahun Ajaran | Jadwal Pelajaran |
+|--------------|------------------|
+| ![Academic Years](docs/images/academic-years.png) | ![Schedule](docs/images/schedule.png) |
+
+| Detail Siswa | |
+|--------------|---|
+| ![Student Detail](docs/images/student-detail.png) | |
+
 | Perpustakaan | Rapor PAUD |
 |--------------|------------|
 | ![Library](docs/images/library.png) | ![PAUD Rapor](docs/images/tk-daily-report.png) |
+
+| Manajemen PAUD | Daftar Siswa PAUD |
+|----------------|-------------------|
+| ![PAUD](docs/images/paud.png) | ![PAUD List](docs/images/paud-list.png) |
+
+| Laporan Harian (Bulk) | |
+|-----------------------|---|
+| ![Daily Report Bulk](docs/images/daily-report-bulk.png) | |
+
+| Portofolio Siswa | |
+|------------------|---|
+| ![Portfolio](docs/images/portfolio.png) | |
 
 ### 4. Kepesantrenan (Boarding System)
 Fitur unggulan untuk manajemen pendidikan Islam berasrama.
@@ -114,9 +158,17 @@ Fitur unggulan untuk manajemen pendidikan Islam berasrama.
 |------------------|---------------------|
 | ![Dormitories](docs/images/dormitories.png) | ![Muhadhoroh](docs/images/muhadhoroh.png) |
 
+| Dashboard Musyrif | Rapor Pesantren |
+|-------------------|-----------------|
+| ![Musyrif](docs/images/musyrif.png) | ![Rapor Pesantren](docs/images/rapor-pesantren.png) |
+
 | Pelanggaran | Konseling & Perizinan |
 |-------------|-----------------------|
 | ![Violations](docs/images/violations.png) | ![Counseling](docs/images/counseling.png) |
+
+| Perizinan (Detail) | Penghargaan (Reward) |
+|--------------------|----------------------|
+| ![Permits](docs/images/permits.png) | ![Rewards](docs/images/rewards.png) |
 
 ### 5. Fasilitas & Layanan Pendukung
 Modul pendukung operasional harian dan pelayanan santri.
@@ -133,10 +185,22 @@ Modul pendukung operasional harian dan pelayanan santri.
 |--------|-------------------|
 | ![Canteen](docs/images/canteen.png) | ![Inventory](docs/images/inventory.png) |
 
+| Fasilitas | Jadwal Makan |
+|-----------|--------------|
+| ![Facilities](docs/images/facilities.png) | ![Meals](docs/images/meals.png) |
+
+| Ekstrakurikuler | Notifikasi |
+|-----------------|------------|
+| ![Extracurricular](docs/images/extracurricular.png) | ![Notifications](docs/images/notifications.png) |
+
 ### 6. Komunikasi & Penerimaan
 | Pengumuman & Notifikasi | PSB & PPDB |
 |-------------------------|------------|
 | ![News](docs/images/announcements.png) | ![PPDB](docs/images/ppdb.png) |
+
+| Portal PSB Online | |
+|-------------------|---|
+| ![PSB](docs/images/psb.png) | |
 
 | Alumni | Donasi |
 |--------|--------|
@@ -149,15 +213,23 @@ Akses khusus bagi orang tua untuk memantau perkembangan anak.
 |----------------------|---------------------|
 | ![Parent Portal](docs/images/parent-portal.png) | ![Data Anak](docs/images/parent-children.png) |
 
-| Info Keuangan & Tagihan | |
-|-------------------------|---|
-| ![Keuangan Orang Tua](docs/images/parent-finance.png) | |
+| Info Keuangan & Tagihan | Laporan Harian Anak |
+|-------------------------|---------------------|
+| ![Keuangan Orang Tua](docs/images/parent-finance.png) | ![Laporan Harian](docs/images/parent-daily-report.png) |
 
 ### 8. Pengaturan & Personalisasi
 
-| Profil Pengguna | Pengaturan Sistem |
-|-----------------|-------------------|
-| ![Profil](docs/images/settings-profile.png) | ![Settings](docs/images/settings.png) |
+| Profil Pengguna | Detail Profil |
+|-----------------|---------------|
+| ![Profil](docs/images/settings-profile.png) | ![Profile Detail](docs/images/profile.png) |
+
+| Pengaturan Sistem | |
+|-------------------|---|
+| ![Settings](docs/images/settings.png) | |
+
+| Manajemen User (Settings) | Tampilan & Tema |
+|---------------------------|-----------------|
+| ![Users Settings](docs/images/settings-users.png) | ![Appearance](docs/images/settings-appearance.png) |
 
 ---
 

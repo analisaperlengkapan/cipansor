@@ -28,8 +28,9 @@ import {
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { useCreateSanad } from '@/hooks/use-takhosus';
+import { useCreateSanad, useEnrollments } from '@/hooks/use-takhosus';
 import { useTeachers } from '@/hooks/use-teachers';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -59,18 +60,19 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-// Sample data - replace with actual API
-const mockEnrollments = [
-  { id: '1', student: { name: 'Ahmad Fauzi', nis: '2024001' } },
-  { id: '2', student: { name: 'Fatimah Zahra', nis: '2024002' } },
-  { id: '3', student: { name: 'Muhammad Rizki', nis: '2024003' } },
-];
-
 export default function NewSanadPage() {
   const router = useRouter();
 
+  // Fetch enrollments from API
+  const { data: enrollmentsData, isLoading: isLoadingEnrollments } = useEnrollments({ 
+    limit: 100, 
+    status: 'active' 
+  });
   const { data: teachersData, isLoading: isLoadingTeachers } = useTeachers();
   const createMutation = useCreateSanad();
+
+  // Get enrollments from API response
+  const enrollments = enrollmentsData?.data || [];
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -136,15 +138,25 @@ export default function NewSanadPage() {
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Pilih santri" />
+                            <SelectValue placeholder={isLoadingEnrollments ? 'Memuat...' : 'Pilih santri'} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {mockEnrollments.map((enrollment) => (
-                            <SelectItem key={enrollment.id} value={enrollment.id}>
-                              {enrollment.student.name} - {enrollment.student.nis}
-                            </SelectItem>
-                          ))}
+                          {isLoadingEnrollments ? (
+                            <div className="p-2">
+                              <Skeleton className="h-8 w-full" />
+                            </div>
+                          ) : enrollments.length === 0 ? (
+                            <div className="p-2 text-center text-sm text-muted-foreground">
+                              Tidak ada santri terdaftar
+                            </div>
+                          ) : (
+                            enrollments.map((enrollment) => (
+                              <SelectItem key={enrollment.id} value={enrollment.id}>
+                                {enrollment.student?.user?.name || enrollment.student?.name || 'Unknown'} - {enrollment.student?.nis || '—'}
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                       <FormDescription>

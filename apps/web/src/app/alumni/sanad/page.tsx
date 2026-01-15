@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -27,6 +28,9 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAlumni, useAlumniStats } from '@/hooks/use-alumni';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
 
 // Sanad chain data structure
 interface SanadNode {
@@ -40,6 +44,7 @@ interface SanadNode {
 }
 
 // Mock sanad chain data - showing isnad (chain of transmission)
+// This is static institutional data representing the chain of transmission (silsilah)
 const mockSanadChain: SanadNode = {
   id: 'root',
   name: 'Syaikh Abdul Qadir Al-Arnauth',
@@ -102,14 +107,47 @@ const mockSanadChain: SanadNode = {
   ],
 };
 
-// Mock alumni with sanad
-const mockAlumniWithSanad = [
-  { id: '1', name: 'Muhammad Hasan', graduationYear: 2024, sanadCount: 3, juzCount: 30, status: 'verified' },
-  { id: '2', name: 'Fatimah Azzahra', graduationYear: 2024, sanadCount: 2, juzCount: 30, status: 'verified' },
-  { id: '3', name: 'Ahmad Syakir', graduationYear: 2023, sanadCount: 3, juzCount: 30, status: 'verified' },
-  { id: '4', name: 'Aisyah Putri', graduationYear: 2023, sanadCount: 1, juzCount: 25, status: 'pending' },
-  { id: '5', name: 'Umar Faruq', graduationYear: 2022, sanadCount: 2, juzCount: 30, status: 'verified' },
-];
+// Hook to fetch alumni with sanad data
+function useAlumniWithSanad(params?: { search?: string; graduationYear?: string }) {
+  return useQuery({
+    queryKey: ['alumni-sanad', params],
+    queryFn: async () => {
+      // Try to get sanad data, fallback to alumni data
+      try {
+        const response = await api.get('/sanad', { 
+          params: { 
+            limit: 50,
+            ...params 
+          } 
+        });
+        // Map sanad data to alumni format
+        const sanadRecords = response.data.data || [];
+        const uniqueStudents = new Map();
+        for (const record of sanadRecords) {
+          const studentId = record.enrollment?.student?.id || record.id;
+          if (!uniqueStudents.has(studentId)) {
+            uniqueStudents.set(studentId, {
+              id: studentId,
+              name: record.enrollment?.student?.user?.name || record.enrollment?.student?.name || 'Unknown',
+              graduationYear: new Date(record.certifiedAt).getFullYear(),
+              sanadCount: 1,
+              juzCount: record.juz || 0,
+              status: record.status || 'verified',
+            });
+          } else {
+            const existing = uniqueStudents.get(studentId);
+            existing.sanadCount += 1;
+            existing.juzCount = Math.max(existing.juzCount, record.juz || 0);
+          }
+        }
+        return Array.from(uniqueStudents.values());
+      } catch {
+        // Return empty array if API fails
+        return [];
+      }
+    },
+  });
+}
 
 // Recursive component for rendering sanad tree
 function SanadTreeNode({ node, level = 0, isExpanded = true }: { node: SanadNode; level?: number; isExpanded?: boolean }) {
@@ -197,11 +235,23 @@ export default function AlumniSanadPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterYear, setFilterYear] = useState<string>('all');
 
-  const filteredAlumni = mockAlumniWithSanad.filter((alumni) => {
-    const matchesSearch = alumni.name.toLowerCase().includes(searchQuery.toLowerCase());
+  // Fetch alumni with sanad from API
+  const { data: alumniWithSanad = [], isLoading } = useAlumniWithSanad({
+    search: searchQuery || undefined,
+    graduationYear: filterYear !== 'all' ? filterYear : undefined,
+  });
+
+  const filteredAlumni = alumniWithSanad.filter((alumni) => {
+    const matchesSearch = searchQuery ? alumni.name.toLowerCase().includes(searchQuery.toLowerCase()) : true;
     const matchesYear = filterYear === 'all' || alumni.graduationYear.toString() === filterYear;
     return matchesSearch && matchesYear;
   });
+
+  // Calculate stats from actual data
+  const totalSanad = alumniWithSanad.reduce((sum, a) => sum + a.sanadCount, 0);
+  const totalAlumni = alumniWithSanad.length;
+  const verifiedCount = alumniWithSanad.filter(a => a.status === 'verified').length;
+  const totalJuz = alumniWithSanad.reduce((sum, a) => sum + a.juzCount, 0);
 
   return (
     <MainLayout allowedRoles={['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']}>
@@ -227,7 +277,11 @@ export default function AlumniSanadPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Sanad</p>
-                  <p className="text-2xl font-bold">{mockAlumniWithSanad.reduce((sum, a) => sum + a.sanadCount, 0)}</p>
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-12" />
+                  ) : (
+                    <p className="text-2xl font-bold">{totalSanad}</p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -241,7 +295,11 @@ export default function AlumniSanadPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Alumni Bersanad</p>
-                  <p className="text-2xl font-bold">{mockAlumniWithSanad.length}</p>
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-12" />
+                  ) : (
+                    <p className="text-2xl font-bold">{totalAlumni}</p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -255,7 +313,11 @@ export default function AlumniSanadPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Hafizh 30 Juz</p>
-                  <p className="text-2xl font-bold">{mockAlumniWithSanad.filter(a => a.juzCount === 30).length}</p>
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-12" />
+                  ) : (
+                    <p className="text-2xl font-bold">{alumniWithSanad.filter(a => a.juzCount >= 30).length}</p>
+                  )}
                 </div>
               </div>
             </CardContent>

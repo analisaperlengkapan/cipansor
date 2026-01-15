@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
@@ -12,7 +12,8 @@ import {
   Save,
   Users,
   Calendar,
-  Download
+  Download,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -30,6 +32,12 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { AttendanceStatus } from '@cipansor/shared';
+import { 
+  useMyHomeroomClass, 
+  useHomeroomClassAttendance, 
+  useSubmitQuickAttendance,
+  HomeroomStudent 
+} from '@/hooks/use-homeroom';
 
 // Types
 interface StudentAttendance {
@@ -41,25 +49,6 @@ interface StudentAttendance {
   notes: string;
   arrivalTime?: string;
 }
-
-// Demo data
-const DEMO_STUDENTS: StudentAttendance[] = [
-  { studentId: 's1', nis: '2024001', name: 'Ahmad Fauzan', gender: 'MALE', status: AttendanceStatus.PRESENT, notes: '' },
-  { studentId: 's2', nis: '2024002', name: 'Aisyah Putri', gender: 'FEMALE', status: AttendanceStatus.PRESENT, notes: '' },
-  { studentId: 's3', nis: '2024003', name: 'Muhammad Rizki', gender: 'MALE', status: AttendanceStatus.PRESENT, notes: '' },
-  { studentId: 's4', nis: '2024004', name: 'Zahra Amelia', gender: 'FEMALE', status: AttendanceStatus.PRESENT, notes: '' },
-  { studentId: 's5', nis: '2024005', name: 'Dimas Pratama', gender: 'MALE', status: AttendanceStatus.PRESENT, notes: '' },
-  { studentId: 's6', nis: '2024006', name: 'Nur Hidayah', gender: 'FEMALE', status: AttendanceStatus.PRESENT, notes: '' },
-  { studentId: 's7', nis: '2024007', name: 'Farel Aditya', gender: 'MALE', status: AttendanceStatus.PRESENT, notes: '' },
-  { studentId: 's8', nis: '2024008', name: 'Siti Rahmawati', gender: 'FEMALE', status: AttendanceStatus.PRESENT, notes: '' },
-  { studentId: 's9', nis: '2024009', name: 'Alif Rahman', gender: 'MALE', status: AttendanceStatus.PRESENT, notes: '' },
-  { studentId: 's10', nis: '2024010', name: 'Putri Maharani', gender: 'FEMALE', status: AttendanceStatus.PRESENT, notes: '' },
-  { studentId: 's11', nis: '2024011', name: 'Fajar Ramadhan', gender: 'MALE', status: AttendanceStatus.PRESENT, notes: '' },
-  { studentId: 's12', nis: '2024012', name: 'Anisa Fitri', gender: 'FEMALE', status: AttendanceStatus.PRESENT, notes: '' },
-  { studentId: 's13', nis: '2024013', name: 'Rizky Maulana', gender: 'MALE', status: AttendanceStatus.PRESENT, notes: '' },
-  { studentId: 's14', nis: '2024014', name: 'Dewi Anggraini', gender: 'FEMALE', status: AttendanceStatus.PRESENT, notes: '' },
-  { studentId: 's15', nis: '2024015', name: 'Budi Santoso', gender: 'MALE', status: AttendanceStatus.PRESENT, notes: '' },
-];
 
 const STATUS_CONFIG: Record<AttendanceStatus, { label: string; color: string; icon: React.ReactNode }> = {
   [AttendanceStatus.PRESENT]: { label: 'Hadir', color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400', icon: <Check className="h-4 w-4" /> },
@@ -73,8 +62,53 @@ export default function QuickAttendancePage() {
   const router = useRouter();
   const today = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState(today);
-  const [attendances, setAttendances] = useState<StudentAttendance[]>(DEMO_STUDENTS);
+  const [attendances, setAttendances] = useState<StudentAttendance[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [additionalNotes, setAdditionalNotes] = useState('');
+  
+  // Get homeroom class data
+  const { data: homeroomClass, isLoading: isLoadingClass } = useMyHomeroomClass();
+  
+  // Get existing attendance data for the selected date
+  const { data: existingAttendance, isLoading: isLoadingAttendance } = useHomeroomClassAttendance(
+    homeroomClass?.id, 
+    selectedDate
+  );
+  
+  // Submit mutation
+  const submitAttendance = useSubmitQuickAttendance();
+  
+  // Initialize attendances from class students
+  useEffect(() => {
+    if (homeroomClass?.students && attendances.length === 0) {
+      // Initialize all students with PRESENT status by default
+      const initialAttendances: StudentAttendance[] = homeroomClass.students.map((student: HomeroomStudent) => ({
+        studentId: student.id,
+        nis: student.nis,
+        name: student.name,
+        gender: student.gender,
+        status: AttendanceStatus.PRESENT,
+        notes: ''
+      }));
+      setAttendances(initialAttendances);
+    }
+  }, [homeroomClass?.students, attendances.length]);
+  
+  // Update from existing attendance if available
+  useEffect(() => {
+    if (existingAttendance?.attendances && existingAttendance.attendances.length > 0) {
+      const updatedAttendances: StudentAttendance[] = existingAttendance.attendances.map(att => ({
+        studentId: att.studentId,
+        nis: att.student?.nis || '',
+        name: att.student?.name || '',
+        gender: att.student?.gender || 'MALE',
+        status: att.status,
+        notes: att.notes || '',
+        arrivalTime: att.arrivalTime || undefined
+      }));
+      setAttendances(updatedAttendances);
+    }
+  }, [existingAttendance]);
 
   const updateAttendance = (studentId: string, field: keyof StudentAttendance, value: string) => {
     setAttendances(prev => prev.map(a => 
@@ -101,19 +135,82 @@ export default function QuickAttendancePage() {
   const summary = getSummary();
 
   const handleSubmit = async () => {
+    if (!homeroomClass?.id) {
+      toast.error('Kelas tidak ditemukan');
+      return;
+    }
+    
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    toast.success('Absensi berhasil disimpan');
-    setIsSubmitting(false);
-    router.push('/homeroom');
+    try {
+      await submitAttendance.mutateAsync({
+        classId: homeroomClass.id,
+        data: {
+          date: selectedDate,
+          attendances: attendances.map(a => ({
+            studentId: a.studentId,
+            status: a.status,
+            notes: a.notes || undefined,
+            arrivalTime: a.arrivalTime
+          }))
+        }
+      });
+      
+      toast.success('Absensi berhasil disimpan');
+      router.push('/homeroom');
+    } catch (error) {
+      toast.error('Gagal menyimpan absensi');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleExport = () => {
     toast.success('Data absensi akan diunduh');
   };
+  
+  // Loading state
+  if (isLoadingClass) {
+    return (
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+        </div>
+        <Skeleton className="h-96" />
+      </div>
+    );
+  }
+  
+  // No class found
+  if (!homeroomClass) {
+    return (
+      <div className="container mx-auto py-6">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+            <h2 className="text-lg font-medium">Tidak Ada Kelas Wali</h2>
+            <p className="text-muted-foreground text-sm mt-1">
+              Anda belum ditugaskan sebagai wali kelas
+            </p>
+            <Link href="/homeroom">
+              <Button variant="outline" className="mt-4">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Kembali
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -126,7 +223,7 @@ export default function QuickAttendancePage() {
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold">Absensi Cepat</h1>
-          <p className="text-muted-foreground">Kelas VII-A - SMP IT Al-Ikhlas</p>
+          <p className="text-muted-foreground">{homeroomClass.name} - {homeroomClass.unit?.name || 'Pesantren Cipansor'}</p>
         </div>
         <Button variant="outline" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" />
@@ -286,6 +383,8 @@ export default function QuickAttendancePage() {
           <Textarea
             placeholder="Tambahkan catatan untuk absensi hari ini (opsional)..."
             rows={3}
+            value={additionalNotes}
+            onChange={(e) => setAdditionalNotes(e.target.value)}
           />
         </CardContent>
       </Card>

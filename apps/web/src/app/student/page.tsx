@@ -4,6 +4,9 @@ import { useAuthStore } from '@/stores/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   BookOpen,
   Calendar,
@@ -13,17 +16,31 @@ import {
   TrendingUp,
   Clock,
   CheckCircle2,
+  RefreshCw,
+  AlertTriangle,
+  User,
+  GraduationCap,
 } from 'lucide-react';
 import Link from 'next/link';
+import {
+  useStudentDashboard,
+  getGradeDisplay,
+  getStatusDisplay,
+} from '@/hooks/use-student-dashboard';
+import { formatDistanceToNow } from 'date-fns';
+import { id as localeId } from 'date-fns/locale';
 
 export default function StudentDashboard() {
   const { user } = useAuthStore();
-
-  const hafalanProgress = {
-    target: 5, // Juz target semester
-    completed: 3, // Juz selesai
-    percentage: 60,
-  };
+  const { 
+    progress, 
+    recentHafalan, 
+    todaySchedule, 
+    stats,
+    isLoading, 
+    isError,
+    refetch 
+  } = useStudentDashboard();
 
   const quickActions = [
     {
@@ -56,20 +73,9 @@ export default function StudentDashboard() {
     },
   ];
 
-  const recentHafalan = [
-    { surah: 'Al-Baqarah', ayat: '1-20', status: 'Lancar', date: 'Hari ini', grade: 'A' },
-    { surah: 'Ali Imran', ayat: '1-15', status: 'Lancar', date: 'Kemarin', grade: 'A-' },
-    { surah: 'An-Nisa', ayat: '1-10', status: 'Perlu Muraja\'ah', date: '2 hari lalu', grade: 'B+' },
-  ];
-
-  const todaySchedule = [
-    { time: '05:00', activity: 'Sholat Subuh & Tahajud', status: 'completed' },
-    { time: '05:30', activity: 'Tahfidz Pagi', status: 'completed' },
-    { time: '07:00', activity: 'Sarapan', status: 'completed' },
-    { time: '08:00', activity: 'Pelajaran Formal', status: 'ongoing' },
-    { time: '12:00', activity: 'Sholat Dzuhur', status: 'upcoming' },
-    { time: '13:00', activity: 'Tahfidz Siang', status: 'upcoming' },
-  ];
+  if (isLoading) {
+    return <StudentDashboardSkeleton />;
+  }
 
   return (
     <div className="space-y-6">
@@ -83,10 +89,25 @@ export default function StudentDashboard() {
             Dashboard Santri - Pantau progress belajar dan hafalanmu
           </p>
         </div>
-        <div className="text-right text-sm text-muted-foreground">
-          <p>{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm" onClick={refetch}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          <div className="text-right text-sm text-muted-foreground">
+            <p>{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          </div>
         </div>
       </div>
+
+      {isError && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Gagal memuat beberapa data. Klik refresh untuk mencoba lagi.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Progress Card */}
       <Card className="bg-linear-to-r from-green-500 to-emerald-600 text-white">
@@ -99,15 +120,28 @@ export default function StudentDashboard() {
         <CardContent>
           <div className="flex items-center gap-8">
             <div className="flex-1">
-              <Progress value={hafalanProgress.percentage} className="h-4 bg-white/20" />
+              <Progress 
+                value={progress?.percentage || 0} 
+                className="h-4 bg-white/20" 
+              />
               <div className="flex justify-between mt-2 text-sm">
-                <span>{hafalanProgress.completed} Juz selesai</span>
-                <span>Target: {hafalanProgress.target} Juz</span>
+                <span>{progress?.totalJuz || 0} Juz selesai</span>
+                <span>Target: {progress?.targetJuz || 5} Juz</span>
               </div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold">{hafalanProgress.percentage}%</div>
+              <div className="text-4xl font-bold">{progress?.percentage || 0}%</div>
               <p className="text-sm opacity-80">Tercapai</p>
+            </div>
+          </div>
+          <div className="flex gap-4 mt-4 text-sm">
+            <div className="flex items-center gap-1">
+              <BookOpen className="h-4 w-4" />
+              <span>{progress?.completedSurahs || 0}/{progress?.totalSurahs || 114} Surat</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <GraduationCap className="h-4 w-4" />
+              <span>{progress?.totalPages || 0} Halaman</span>
             </div>
           </div>
         </CardContent>
@@ -121,8 +155,8 @@ export default function StudentDashboard() {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3 Juz</div>
-            <p className="text-xs text-muted-foreground">90 halaman</p>
+            <div className="text-2xl font-bold">{stats?.totalHafalan.juz || 0} Juz</div>
+            <p className="text-xs text-muted-foreground">{stats?.totalHafalan.pages || 0} halaman</p>
           </CardContent>
         </Card>
         <Card>
@@ -131,8 +165,18 @@ export default function StudentDashboard() {
             <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">15</div>
-            <p className="text-xs text-muted-foreground">+5 dari bulan lalu</p>
+            <div className="text-2xl font-bold">{stats?.setoranThisMonth || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.setoranThisMonth && stats?.setoranLastMonth ? (
+                stats.setoranThisMonth > stats.setoranLastMonth
+                  ? `+${stats.setoranThisMonth - stats.setoranLastMonth} dari bulan lalu`
+                  : stats.setoranThisMonth < stats.setoranLastMonth
+                    ? `${stats.setoranThisMonth - stats.setoranLastMonth} dari bulan lalu`
+                    : 'sama dengan bulan lalu'
+              ) : (
+                'setoran bulan ini'
+              )}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -141,8 +185,10 @@ export default function StudentDashboard() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">A-</div>
-            <p className="text-xs text-muted-foreground">sangat baik</p>
+            <div className="text-2xl font-bold">{stats?.averageGrade || 'N/A'}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.averageScore ? `Skor: ${stats.averageScore.toFixed(1)}` : 'belum ada data'}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -151,8 +197,10 @@ export default function StudentDashboard() {
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5</div>
-            <p className="text-xs text-muted-foreground">tahun ini</p>
+            <div className="text-2xl font-bold">{stats?.totalRewards || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.attendancePercentage ? `Kehadiran: ${stats.attendancePercentage}%` : 'tahun ini'}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -189,31 +237,49 @@ export default function StudentDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {todaySchedule.map((item, index) => (
-                <div key={index} className="flex items-center gap-4">
-                  <div className="text-sm font-medium text-muted-foreground w-14">
-                    {item.time}
+            {todaySchedule && todaySchedule.length > 0 ? (
+              <div className="space-y-3">
+                {todaySchedule.map((item) => (
+                  <div key={item.id} className="flex items-center gap-4">
+                    <div className="text-sm font-medium text-muted-foreground w-14">
+                      {item.time}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`text-sm ${item.status === 'completed' ? 'text-muted-foreground line-through' : 'font-medium'}`}>
+                        {item.activity}
+                      </p>
+                      {item.teacher && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          {item.teacher}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {item.type === 'TAHFIDZ' ? 'Tahfidz' :
+                         item.type === 'RELIGIOUS' ? 'Diniyah' :
+                         item.type === 'ACADEMIC' ? 'Formal' : 'Ekstra'}
+                      </Badge>
+                      {item.status === 'completed' && (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      )}
+                      {item.status === 'ongoing' && (
+                        <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                      )}
+                      {item.status === 'upcoming' && (
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className={`text-sm ${item.status === 'completed' ? 'text-muted-foreground line-through' : 'font-medium'}`}>
-                      {item.activity}
-                    </p>
-                  </div>
-                  <div>
-                    {item.status === 'completed' && (
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    )}
-                    {item.status === 'ongoing' && (
-                      <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-                    )}
-                    {item.status === 'upcoming' && (
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Tidak ada jadwal hari ini</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -226,26 +292,44 @@ export default function StudentDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentHafalan.map((item, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">{item.surah}: {item.ayat}</p>
-                    <p className="text-xs text-muted-foreground">{item.date}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-                      item.status === 'Lancar' 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                      {item.status}
-                    </span>
-                    <span className="text-lg font-bold text-green-600">{item.grade}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {recentHafalan && recentHafalan.length > 0 ? (
+              <div className="space-y-4">
+                {recentHafalan.map((item) => {
+                  const gradeInfo = getGradeDisplay(item.grade);
+                  const statusInfo = getStatusDisplay(item.status);
+                  
+                  return (
+                    <div key={item.id} className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">
+                          {item.surahName}: {item.ayahStart}-{item.ayahEnd}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(item.createdAt), { 
+                            addSuffix: true, 
+                            locale: localeId 
+                          })}
+                          {item.teacherName && ` • ${item.teacherName}`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className={statusInfo.color}>
+                          {statusInfo.label}
+                        </Badge>
+                        <Badge className={gradeInfo.color}>
+                          {gradeInfo.label.split(' ')[0]}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Belum ada setoran</p>
+              </div>
+            )}
             <Button variant="outline" className="w-full mt-4" asChild>
               <Link href="/tahfidz">Lihat Semua Hafalan</Link>
             </Button>
@@ -267,6 +351,69 @@ export default function StudentDashboard() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Skeleton component for loading state
+function StudentDashboardSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <Skeleton className="h-9 w-64" />
+          <Skeleton className="h-5 w-48 mt-2" />
+        </div>
+        <Skeleton className="h-5 w-32" />
+      </div>
+
+      <Skeleton className="h-40 w-full rounded-lg" />
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i}>
+            <CardHeader className="pb-2">
+              <Skeleton className="h-4 w-24" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-3 w-20 mt-2" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div>
+        <Skeleton className="h-7 w-32 mb-4" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24 rounded-lg" />
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+          </CardHeader>
+          <CardContent>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-8 w-full mb-2" />
+            ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+          </CardHeader>
+          <CardContent>
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-12 w-full mb-2" />
+            ))}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

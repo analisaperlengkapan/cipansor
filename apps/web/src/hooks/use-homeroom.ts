@@ -250,10 +250,132 @@ export function useHomeroomStudent(studentId?: string) {
   return useQuery<HomeroomStudent>({
     queryKey: ['homeroom', 'student', studentId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<HomeroomStudent>>(`/homeroom/students/${studentId}`);
+      const response = await api.get<ApiResponse<HomeroomStudent>>(`/homeroom/student/${studentId}`);
       return response.data.data;
     },
     enabled: !!studentId,
+  });
+}
+
+// Student Detail Types for comprehensive view
+export interface StudentDetailData {
+  id: string;
+  nis: string;
+  name: string;
+  gender: 'MALE' | 'FEMALE';
+  birthDate?: string;
+  birthPlace?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  parentName?: string;
+  parentPhone?: string;
+  parentEmail?: string;
+  motherName?: string;
+  motherPhone?: string;
+  enrollmentDate?: string;
+  photo?: string;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  unit?: {
+    id: string;
+    name: string;
+  };
+  enrollments?: Array<{
+    id: string;
+    status: string;
+    class?: {
+      id: string;
+      name: string;
+      grade?: number;
+    };
+  }>;
+  tahfidzRecords?: Array<{
+    id: string;
+    activityType: string;
+    juz: number;
+    surahId: number;
+    surahName: string;
+    ayatStart: number;
+    ayatEnd: number;
+    score?: number;
+    grade?: string;
+    notes?: string;
+    recordedAt: string;
+  }>;
+  attendances?: Array<{
+    id: string;
+    date: string;
+    status: string;
+    notes?: string;
+  }>;
+}
+
+export interface StudentNotesData {
+  violations: Array<{
+    id: string;
+    type: string;
+    category: string;
+    description: string;
+    points: number;
+    occurredAt: string;
+    action?: string;
+  }>;
+  rewards: Array<{
+    id: string;
+    category: string;
+    description: string;
+    points: number;
+    givenAt: string;
+  }>;
+}
+
+// Get student full detail from homeroom
+export function useHomeroomStudentDetail(studentId?: string) {
+  return useQuery<StudentDetailData>({
+    queryKey: ['homeroom', 'student-detail', studentId],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<StudentDetailData>>(`/homeroom/student/${studentId}`);
+      return response.data.data;
+    },
+    enabled: !!studentId,
+  });
+}
+
+// Get student notes (violations & rewards)
+export function useHomeroomStudentNotes(studentId?: string) {
+  return useQuery<StudentNotesData>({
+    queryKey: ['homeroom', 'student-notes', studentId],
+    queryFn: async () => {
+      const response = await api.get<ApiResponse<StudentNotesData>>(`/homeroom/student/${studentId}/notes`);
+      return response.data.data;
+    },
+    enabled: !!studentId,
+  });
+}
+
+// Create student note via homeroom
+export function useCreateHomeroomNote() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (data: {
+      studentId: string;
+      type: 'POSITIVE' | 'NEGATIVE';
+      title: string;
+      description?: string;
+      category?: string;
+    }) => {
+      const response = await api.post<ApiResponse<{ type: string; data: unknown }>>('/homeroom/notes', data);
+      return response.data.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['homeroom', 'student-notes', variables.studentId] });
+      queryClient.invalidateQueries({ queryKey: ['homeroom', 'student-detail', variables.studentId] });
+    },
   });
 }
 

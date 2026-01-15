@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   GraduationCap, 
@@ -12,12 +12,15 @@ import {
   Award,
   BookOpen,
   Users,
-  ChevronRight
+  ChevronRight,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -25,79 +28,108 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-// Demo data
-const DEMO_CHILDREN = [
-  {
-    id: 'child-1',
-    nis: '2024001',
-    name: 'Ahmad Fauzan',
-    gender: 'MALE',
-    photo: null,
-    class: { id: 'cls-1', name: 'VII-A' },
-    unit: { id: 'unit-1', name: 'SMP IT Al-Ikhlas' },
-  },
-  {
-    id: 'child-2',
-    nis: '2024050',
-    name: 'Aisyah Putri',
-    gender: 'FEMALE',
-    photo: null,
-    class: { id: 'cls-5', name: 'V-B' },
-    unit: { id: 'unit-2', name: 'SD IT Al-Ikhlas' },
-  },
-];
-
-const DEMO_REPORT_HISTORY = [
-  {
-    academicYearId: 'ay-2024-1',
-    year: '2024/2025',
-    semester: 1,
-    averageScore: 82.5,
-    rank: 5,
-    reportCardId: 'rc-1',
-    status: 'PUBLISHED',
-  },
-  {
-    academicYearId: 'ay-2023-2',
-    year: '2023/2024',
-    semester: 2,
-    averageScore: 80.2,
-    rank: 7,
-    reportCardId: 'rc-2',
-    status: 'DOWNLOADED',
-  },
-  {
-    academicYearId: 'ay-2023-1',
-    year: '2023/2024',
-    semester: 1,
-    averageScore: 78.8,
-    rank: 10,
-    reportCardId: 'rc-3',
-    status: 'DOWNLOADED',
-  },
-];
+import { useParentChildren, useChildReportCards, useChildGrades } from '@/hooks/use-parent-portal';
 
 export default function ParentReportCardsPage() {
-  const [selectedChild, setSelectedChild] = useState(DEMO_CHILDREN[0].id);
-  const children = DEMO_CHILDREN;
-  const reportHistory = DEMO_REPORT_HISTORY;
+  // Fetch children from API
+  const { data: childrenData, isLoading: isLoadingChildren } = useParentChildren();
+  
+  // Extract children array
+  const children = useMemo(() => {
+    return childrenData?.map(c => ({
+      id: c.student.id,
+      nis: c.student.nis,
+      name: c.student.name,
+      gender: c.student.gender,
+      photo: c.student.photoUrl || null,
+      class: { id: c.student.class?.id || '', name: c.student.class?.name || '-' },
+      unit: { id: c.student.unit?.id || '', name: c.student.unit?.name || '-' },
+    })) || [];
+  }, [childrenData]);
+  
+  const [selectedChild, setSelectedChild] = useState<string>('');
+  
+  // Auto-select first child when data loads
+  useEffect(() => {
+    if (children.length > 0 && !selectedChild) {
+      setSelectedChild(children[0].id);
+    }
+  }, [children, selectedChild]);
+  
+  // Fetch report cards for selected child
+  const { data: reportCardsData, isLoading: isLoadingReports } = useChildReportCards(selectedChild);
+  
+  // Fetch grades for selected child
+  const { data: gradesData } = useChildGrades(selectedChild);
 
   const currentChild = children.find(c => c.id === selectedChild);
+  
+  // Transform report cards to report history format
+  const reportHistory = useMemo(() => {
+    if (!reportCardsData) return [];
+    return reportCardsData.map((rc, idx) => ({
+      academicYearId: rc.academicYearId,
+      year: rc.academicYearName,
+      semester: rc.semester === 'GANJIL' ? 1 : 2,
+      averageScore: gradesData?.overallAverage || 0,
+      rank: gradesData?.ranking || null,
+      reportCardId: rc.id,
+      status: rc.status === 'PRINTED' ? 'DOWNLOADED' : 'PUBLISHED',
+      downloadUrl: rc.downloadUrl,
+    }));
+  }, [reportCardsData, gradesData]);
+  
   const latestReport = reportHistory[0];
 
   const getScoreTrend = () => {
     if (reportHistory.length < 2) return 0;
-    return reportHistory[0].averageScore - reportHistory[1].averageScore;
+    return (reportHistory[0].averageScore || 0) - (reportHistory[1].averageScore || 0);
   };
 
   const getRankTrend = () => {
     if (reportHistory.length < 2 || !reportHistory[0].rank || !reportHistory[1].rank) return 0;
-    return reportHistory[1].rank - reportHistory[0].rank; // Positive = improved (lower rank number)
+    return (reportHistory[1].rank as number) - (reportHistory[0].rank as number);
   };
 
   const scoreTrend = getScoreTrend();
   const rankTrend = getRankTrend();
+  
+  // Loading state
+  if (isLoadingChildren) {
+    return (
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <Skeleton className="h-32" />
+        <div className="grid gap-4 md:grid-cols-4">
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+        </div>
+        <Skeleton className="h-96" />
+      </div>
+    );
+  }
+  
+  // No children
+  if (children.length === 0) {
+    return (
+      <div className="container mx-auto py-6">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+            <h2 className="text-lg font-medium">Tidak Ada Data Anak</h2>
+            <p className="text-muted-foreground text-sm mt-1">
+              Anak Anda belum terdaftar dalam sistem
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6 space-y-6">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
@@ -12,7 +12,9 @@ import {
   Users,
   Plus,
   X,
-  Search
+  Search,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +24,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -30,28 +33,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { DUTY_TYPE_LABELS, DutyType } from '@/hooks/use-duty-roster';
-
-// Demo data
-const DEMO_STUDENTS = [
-  { id: 's1', nis: '2024001', name: 'Ahmad Fauzan', class: { id: 'c1', name: 'VII-A' }, gender: 'MALE' },
-  { id: 's2', nis: '2024002', name: 'Muhammad Rizki', class: { id: 'c1', name: 'VII-A' }, gender: 'MALE' },
-  { id: 's3', nis: '2024003', name: 'Dimas Pratama', class: { id: 'c1', name: 'VII-A' }, gender: 'MALE' },
-  { id: 's4', nis: '2024004', name: 'Farel Aditya', class: { id: 'c1', name: 'VII-A' }, gender: 'MALE' },
-  { id: 's5', nis: '2024005', name: 'Aisyah Putri', class: { id: 'c2', name: 'VII-B' }, gender: 'FEMALE' },
-  { id: 's6', nis: '2024006', name: 'Zahra Amelia', class: { id: 'c2', name: 'VII-B' }, gender: 'FEMALE' },
-  { id: 's7', nis: '2024007', name: 'Siti Rahmawati', class: { id: 'c2', name: 'VII-B' }, gender: 'FEMALE' },
-  { id: 's8', nis: '2024008', name: 'Nur Hidayah', class: { id: 'c2', name: 'VII-B' }, gender: 'FEMALE' },
-  { id: 's9', nis: '2024009', name: 'Alif Rahman', class: { id: 'c1', name: 'VII-A' }, gender: 'MALE' },
-  { id: 's10', nis: '2024010', name: 'Putri Maharani', class: { id: 'c2', name: 'VII-B' }, gender: 'FEMALE' },
-];
-
-const DEMO_SUPERVISORS = [
-  { id: 'u1', name: 'Ustadz Ahmad' },
-  { id: 'u2', name: 'Ustadzah Fatimah' },
-  { id: 'u3', name: 'Ustadz Budi' },
-  { id: 'u4', name: 'Ustadzah Khadijah' },
-];
+import { DUTY_TYPE_LABELS, DutyType, useCreateDutyRoster } from '@/hooks/use-duty-roster';
+import { useStudents } from '@/hooks/use-students';
+import { useTeachers } from '@/hooks/use-teachers';
+import { useClasses } from '@/hooks/use-classes';
+import { useAuthStore } from '@/stores/auth';
 
 const LOCATIONS: Record<DutyType, string[]> = {
   CLEANING_CLASSROOM: ['Kelas VII-A', 'Kelas VII-B', 'Kelas VIII-A', 'Kelas VIII-B'],
@@ -67,9 +53,48 @@ const LOCATIONS: Record<DutyType, string[]> = {
 
 export default function NewDutyRosterPage() {
   const router = useRouter();
+  const { user } = useAuthStore();
+  const unitId = user?.unitId || user?.unit?.id;
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterClass, setFilterClass] = useState('all');
+
+  // Fetch real data
+  const { data: studentsData, isLoading: isLoadingStudents } = useStudents({ 
+    unitId, 
+    status: 'ACTIVE',
+    limit: 100 
+  });
+  const { data: teachersData, isLoading: isLoadingTeachers } = useTeachers({ 
+    unitId, 
+    status: 'ACTIVE' 
+  });
+  const { data: classesData } = useClasses({ unitId });
+  
+  const createDutyRoster = useCreateDutyRoster();
+  
+  // Extract students and teachers from API response
+  const students = useMemo(() => {
+    return studentsData?.data?.map(s => ({
+      id: s.id,
+      nis: s.nis,
+      name: s.name,
+      class: { id: s.class?.id || '', name: s.class?.name || '-' },
+      gender: s.gender
+    })) || [];
+  }, [studentsData]);
+  
+  const supervisors = useMemo(() => {
+    return teachersData?.data?.map(t => ({
+      id: t.id,
+      name: t.name
+    })) || [];
+  }, [teachersData]);
+  
+  const classes = useMemo(() => {
+    return classesData?.data || [];
+  }, [classesData]);
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -83,7 +108,7 @@ export default function NewDutyRosterPage() {
     studentIds: [] as string[],
   });
 
-  const filteredStudents = DEMO_STUDENTS.filter(student => {
+  const filteredStudents = students.filter(student => {
     const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.nis.includes(searchQuery);
     const matchesClass = filterClass === 'all' || student.class.id === filterClass;
@@ -137,14 +162,48 @@ export default function NewDutyRosterPage() {
 
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    toast.success('Jadwal piket berhasil dibuat');
-    router.push('/duty-roster');
+    try {
+      await createDutyRoster.mutateAsync({
+        date: formData.date,
+        dutyType: formData.dutyType as DutyType,
+        location: formData.location,
+        shift: formData.shift,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+        supervisorId: formData.supervisorId || undefined,
+        notes: formData.notes || undefined,
+        studentIds: formData.studentIds,
+      });
+      
+      toast.success('Jadwal piket berhasil dibuat');
+      router.push('/duty-roster');
+    } catch (error) {
+      toast.error('Gagal membuat jadwal piket');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const selectedStudents = DEMO_STUDENTS.filter(s => formData.studentIds.includes(s.id));
+  const selectedStudents = students.filter(s => formData.studentIds.includes(s.id));
+  
+  // Loading state
+  if (isLoadingStudents) {
+    return (
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10" />
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Skeleton className="h-96" />
+          <Skeleton className="h-96" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -264,9 +323,15 @@ export default function NewDutyRosterPage() {
                       <SelectValue placeholder="Pilih pengawas" />
                     </SelectTrigger>
                     <SelectContent>
-                      {DEMO_SUPERVISORS.map(sup => (
-                        <SelectItem key={sup.id} value={sup.id}>{sup.name}</SelectItem>
-                      ))}
+                      {isLoadingTeachers ? (
+                        <SelectItem value="" disabled>Memuat...</SelectItem>
+                      ) : supervisors.length === 0 ? (
+                        <SelectItem value="" disabled>Tidak ada data guru</SelectItem>
+                      ) : (
+                        supervisors.map(sup => (
+                          <SelectItem key={sup.id} value={sup.id}>{sup.name}</SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -360,40 +425,48 @@ export default function NewDutyRosterPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua</SelectItem>
-                    <SelectItem value="c1">VII-A</SelectItem>
-                    <SelectItem value="c2">VII-B</SelectItem>
+                    {classes.map(cls => (
+                      <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Student List */}
               <div className="border rounded-lg max-h-[500px] overflow-y-auto">
-                {filteredStudents.map(student => (
-                  <div 
-                    key={student.id}
-                    className={`flex items-center gap-3 p-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 ${
-                      formData.studentIds.includes(student.id) ? 'bg-primary/10' : ''
-                    }`}
-                    onClick={() => toggleStudent(student.id)}
-                  >
-                    <Checkbox
-                      checked={formData.studentIds.includes(student.id)}
-                      onCheckedChange={() => toggleStudent(student.id)}
-                    />
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="font-medium">{student.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {student.nis} • {student.class.name}
-                      </p>
-                    </div>
-                    <Badge variant={student.gender === 'MALE' ? 'default' : 'secondary'}>
-                      {student.gender === 'MALE' ? 'L' : 'P'}
-                    </Badge>
+                {filteredStudents.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                    <AlertCircle className="h-8 w-8 mb-2" />
+                    <p>Tidak ada santri ditemukan</p>
                   </div>
-                ))}
+                ) : (
+                  filteredStudents.map(student => (
+                    <div 
+                      key={student.id}
+                      className={`flex items-center gap-3 p-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 ${
+                        formData.studentIds.includes(student.id) ? 'bg-primary/10' : ''
+                      }`}
+                      onClick={() => toggleStudent(student.id)}
+                    >
+                      <Checkbox
+                        checked={formData.studentIds.includes(student.id)}
+                        onCheckedChange={() => toggleStudent(student.id)}
+                      />
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="font-medium">{student.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {student.nis} • {student.class.name}
+                        </p>
+                      </div>
+                      <Badge variant={student.gender === 'MALE' ? 'default' : 'secondary'}>
+                        {student.gender === 'MALE' ? 'L' : 'P'}
+                      </Badge>
+                    </div>
+                  ))
+                )}
               </div>
 
               <div className="flex items-center justify-between text-sm text-muted-foreground">

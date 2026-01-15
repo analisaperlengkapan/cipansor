@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import {
     MessageSquare,
@@ -20,10 +21,19 @@ import {
     Clock,
     Check,
     CheckCheck,
+    Loader2,
+    AlertCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { 
+    useParentPortalMessages, 
+    useParentMessage, 
+    useSendParentPortalMessage,
+    useMarkParentMessageAsRead,
+    ParentPortalMessage 
+} from '@/hooks/use-parent-portal';
 
 interface Message {
     id: string;
@@ -46,101 +56,96 @@ interface Conversation {
     unreadCount: number;
 }
 
-// Demo data
-const DEMO_CONVERSATIONS: Conversation[] = [
-    {
-        id: '1',
-        teacherId: 't1',
-        teacherName: 'Ustadz Ahmad',
-        teacherRole: 'Wali Kelas 7A',
-        childName: 'Muhammad Farhan',
-        lastMessage: 'Terima kasih atas informasinya, Bu/Pak',
-        lastMessageAt: new Date().toISOString(),
-        unreadCount: 2,
-    },
-    {
-        id: '2',
-        teacherId: 't2',
-        teacherName: 'Ustadzah Fatimah',
-        teacherRole: 'Guru Tahfidz',
-        childName: 'Muhammad Farhan',
-        lastMessage: 'Alhamdulillah progres tahfidz minggu ini bagus',
-        lastMessageAt: new Date(Date.now() - 86400000).toISOString(),
-        unreadCount: 0,
-    },
-    {
-        id: '3',
-        teacherId: 't3',
-        teacherName: 'Ustadz Mahmud',
-        teacherRole: 'Guru Matematika',
-        childName: 'Aisyah Zahra',
-        lastMessage: 'Nilai ulangan sudah keluar',
-        lastMessageAt: new Date(Date.now() - 172800000).toISOString(),
-        unreadCount: 1,
-    },
-];
-
-const DEMO_MESSAGES: Message[] = [
-    {
-        id: '1',
-        senderId: 't1',
-        senderName: 'Ustadz Ahmad',
-        senderRole: 'teacher',
-        content: 'Assalamualaikum, Bu/Pak. Farhan hari ini aktif sekali di kelas. Alhamdulillah.',
-        createdAt: new Date(Date.now() - 3600000).toISOString(),
-        read: true,
-    },
-    {
-        id: '2',
-        senderId: 'p1',
-        senderName: 'Orang Tua',
-        senderRole: 'parent',
-        content: 'Waalaikumsalam, Ustadz. Syukurlah. Bagaimana dengan tugas PR nya?',
-        createdAt: new Date(Date.now() - 3000000).toISOString(),
-        read: true,
-    },
-    {
-        id: '3',
-        senderId: 't1',
-        senderName: 'Ustadz Ahmad',
-        senderRole: 'teacher',
-        content: 'PR sudah dikerjakan dengan baik. Nilainya 85.',
-        createdAt: new Date(Date.now() - 1800000).toISOString(),
-        read: true,
-    },
-    {
-        id: '4',
-        senderId: 't1',
-        senderName: 'Ustadz Ahmad',
-        senderRole: 'teacher',
-        content: 'Minggu depan ada ulangan Matematika, mohon dibimbing belajar di rumah ya.',
-        createdAt: new Date(Date.now() - 600000).toISOString(),
-        read: false,
-    },
-];
-
 export default function ParentMessagesPage() {
     const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
     const [newMessage, setNewMessage] = useState('');
-    const [messages, setMessages] = useState<Message[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const queryClient = useQueryClient();
 
-    // Load conversations
-    const { data: conversations = DEMO_CONVERSATIONS, isLoading: loadingConversations } = useQuery({
-        queryKey: ['parent-conversations'],
-        queryFn: async () => {
-            // In production, fetch from API
-            return DEMO_CONVERSATIONS;
-        },
+    // Load messages from API
+    const { data: messagesData, isLoading: loadingMessages } = useParentPortalMessages({
+        limit: 100
     });
-
-    // Load messages when conversation selected
-    // Note: Setting state in effect is okay here as it's triggered by user selection change
-    // and we're loading mock data. In real app, this would be a useQuery.
+    
+    // Get single message with replies when selected
+    const { data: selectedMessageDetail } = useParentMessage(selectedConversation?.id || '');
+    
+    // Send message mutation
+    const sendMutation = useSendParentPortalMessage();
+    
+    // Mark as read mutation
+    const markAsReadMutation = useMarkParentMessageAsRead();
+    
+    // Convert API messages to conversations format
+    const conversations = useMemo((): Conversation[] => {
+        if (!messagesData?.data) return [];
+        
+        // Group messages by sender to create conversations
+        const convMap = new Map<string, Conversation>();
+        
+        messagesData.data.forEach((msg: ParentPortalMessage) => {
+            const key = msg.senderId;
+            const existing = convMap.get(key);
+            
+            if (!existing) {
+                convMap.set(key, {
+                    id: msg.id,
+                    teacherId: msg.senderId,
+                    teacherName: msg.sender?.name || 'Unknown',
+                    teacherRole: msg.sender?.role || 'Teacher',
+                    childName: '-',
+                    lastMessage: msg.content,
+                    lastMessageAt: msg.createdAt,
+                    unreadCount: msg.isRead ? 0 : 1,
+                });
+            } else if (new Date(msg.createdAt) > new Date(existing.lastMessageAt)) {
+                existing.lastMessage = msg.content;
+                existing.lastMessageAt = msg.createdAt;
+                if (!msg.isRead) existing.unreadCount++;
+            }
+        });
+        
+        return Array.from(convMap.values()).sort(
+            (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+        );
+    }, [messagesData]);
+    
+    // Get messages for selected conversation
+    const messages = useMemo((): Message[] => {
+        if (!selectedMessageDetail) return [];
+        
+        const allMessages: Message[] = [{
+            id: selectedMessageDetail.id,
+            senderId: selectedMessageDetail.senderId,
+            senderName: selectedMessageDetail.sender?.name || 'Unknown',
+            senderRole: selectedMessageDetail.sender?.role?.toLowerCase() === 'parent' ? 'parent' : 'teacher',
+            content: selectedMessageDetail.content,
+            createdAt: selectedMessageDetail.createdAt,
+            read: selectedMessageDetail.isRead
+        }];
+        
+        // Add replies if any
+        if (selectedMessageDetail.replies) {
+            selectedMessageDetail.replies.forEach(reply => {
+                allMessages.push({
+                    id: reply.id,
+                    senderId: reply.senderId,
+                    senderName: reply.sender?.name || 'Unknown',
+                    senderRole: reply.sender?.role?.toLowerCase() === 'parent' ? 'parent' : 'teacher',
+                    content: reply.content,
+                    createdAt: reply.createdAt,
+                    read: reply.isRead
+                });
+            });
+        }
+        
+        return allMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    }, [selectedMessageDetail]);
+    
+    // Mark conversation as read when selected
     useEffect(() => {
-        if (selectedConversation) {
-            setMessages(DEMO_MESSAGES);
+        if (selectedConversation && selectedConversation.unreadCount > 0) {
+            markAsReadMutation.mutate(selectedConversation.id);
         }
     }, [selectedConversation]);
 
@@ -149,37 +154,44 @@ export default function ParentMessagesPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Send message mutation
-    const sendMutation = useMutation({
-        mutationFn: async (content: string) => {
-            await new Promise((r) => setTimeout(r, 500));
-            return {
-                id: String(Date.now()),
-                senderId: 'p1',
-                senderName: 'Orang Tua',
-                senderRole: 'parent' as const,
-                content,
-                createdAt: new Date().toISOString(),
-                read: false,
-            };
-        },
-        onSuccess: (newMsg) => {
-            setMessages((prev) => [...prev, newMsg]);
+    const handleSend = async () => {
+        if (!newMessage.trim() || !selectedConversation) return;
+        
+        try {
+            await sendMutation.mutateAsync({
+                receiverId: selectedConversation.teacherId,
+                subject: 'Re: ' + selectedConversation.teacherName,
+                content: newMessage,
+                replyToId: selectedConversation.id,
+            });
             setNewMessage('');
             toast.success('Pesan terkirim');
-        },
-        onError: () => {
+        } catch (error) {
             toast.error('Gagal mengirim pesan');
-        },
-    });
-
-    const handleSend = () => {
-        if (!newMessage.trim() || !selectedConversation) return;
-        sendMutation.mutate(newMessage);
+        }
     };
 
     const getInitials = (name: string) =>
         name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+    
+    // Loading state
+    if (loadingMessages) {
+        return (
+            <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                    <Skeleton className="h-10 w-10" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-6 w-32" />
+                        <Skeleton className="h-4 w-64" />
+                    </div>
+                </div>
+                <div className="grid gap-6 lg:grid-cols-3 h-[calc(100vh-220px)]">
+                    <Skeleton className="h-full" />
+                    <Skeleton className="lg:col-span-2 h-full" />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">

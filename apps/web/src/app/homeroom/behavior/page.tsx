@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Plus,
@@ -14,7 +14,8 @@ import {
   Edit,
   ChevronDown,
   MessageCircle,
-  User
+  User,
+  Loader2
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -50,6 +52,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useClasses } from "@/hooks/use-classes";
 import { useBehaviorRecords, useCreateBehaviorRecord } from "@/hooks/use-behavior";
+import { useMyHomeroomClass } from "@/hooks/use-homeroom";
 import { useQueryClient } from "@tanstack/react-query";
 
 // Types
@@ -207,10 +210,20 @@ function BehaviorAnalytics({ notes }: { notes: any[] }) {
 
 export default function BehaviorNotesPage() {
   const { data: notesData, isLoading } = useBehaviorRecords();
+  const { data: homeroomClass, isLoading: isLoadingClass } = useMyHomeroomClass();
   const createMutation = useCreateBehaviorRecord();
 
   // Transform API data to UI model if needed, or use directly
   const notes = notesData || [];
+  
+  // Get students from homeroom class
+  const students = useMemo(() => {
+    return homeroomClass?.students?.map(s => ({
+      id: s.id,
+      nis: s.nis,
+      name: s.name
+    })) || [];
+  }, [homeroomClass]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
@@ -285,11 +298,6 @@ export default function BehaviorNotesPage() {
 
   const summary = getSummary();
 
-  // Placeholder for student list - should fetch from API
-  const STUDENTS = [
-      { id: 's1', nis: '2024001', name: 'Ahmad Fauzan' }, // Mock for dropdown
-  ];
-
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
@@ -301,7 +309,9 @@ export default function BehaviorNotesPage() {
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold">Catatan Perilaku Siswa</h1>
-          <p className="text-muted-foreground">Kelas VII-A - SMP IT Al-Ikhlas</p>
+          <p className="text-muted-foreground">
+            {homeroomClass?.name || 'Memuat...'} - {homeroomClass?.unit?.name || 'Pesantren Cipansor'}
+          </p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
@@ -328,11 +338,20 @@ export default function BehaviorNotesPage() {
                     <SelectValue placeholder="Pilih siswa" />
                   </SelectTrigger>
                   <SelectContent>
-                    {STUDENTS.map(student => (
-                      <SelectItem key={student.id} value={student.id}>
-                        {student.nis} - {student.name}
+                    {isLoadingClass ? (
+                      <SelectItem value="" disabled>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Memuat...
                       </SelectItem>
-                    ))}
+                    ) : students.length === 0 ? (
+                      <SelectItem value="" disabled>Tidak ada data siswa</SelectItem>
+                    ) : (
+                      students.map(student => (
+                        <SelectItem key={student.id} value={student.id}>
+                          {student.nis} - {student.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>

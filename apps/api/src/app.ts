@@ -87,6 +87,7 @@ import { sanadCertificateRouter } from '@/modules/sanad-certificate';
 import dashboardRoutes from '@/modules/dashboard/dashboard.routes';
 import receptionRoutes from '@/modules/reception/reception.routes';
 import marketingRoutes from '@/modules/marketing/routes';
+import { announcementRoutes } from '@/modules/announcements';
 
 // Create Express app
 const app = express();
@@ -239,6 +240,7 @@ apiRouter.use('/dashboard-enhancement', dashboardEnhancementRoutes);
 apiRouter.use('/sanad', sanadCertificateRouter);
 apiRouter.use('/dashboard', dashboardRoutes);
 apiRouter.use('/reception', receptionRoutes);
+apiRouter.use('/announcements', announcementRoutes);
 
 // API info
 apiRouter.get('/', (_req, res) => {

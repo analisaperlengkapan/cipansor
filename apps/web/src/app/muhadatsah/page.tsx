@@ -63,17 +63,18 @@ import {
   formatDuration,
   MuhadatsahStatus,
 } from '@/hooks/use-muhadatsah';
-
-// Demo unit ID
-const DEMO_UNIT_ID = 'unit-sma';
+import { useAuthStore } from '@/stores/auth';
 
 export default function MuhadatsahPage() {
+  const { user } = useAuthStore();
+  const unitId = user?.unitId || user?.unit?.id;
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<MuhadatsahStatus | 'ALL'>('ALL');
   const [languageFilter, setLanguageFilter] = useState<string>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch data
+  // Fetch data with auth context unitId
   const { data: listData, isLoading: isLoadingList } = useMuhadatsahList({
     page: currentPage,
     limit: 10,
@@ -81,10 +82,10 @@ export default function MuhadatsahPage() {
     language: languageFilter === 'ALL' ? undefined : languageFilter,
   });
 
-  const { data: upcomingData } = useUpcomingMuhadatsah(DEMO_UNIT_ID, 5);
-  const { data: statsData } = useMuhadatsahStatistics(DEMO_UNIT_ID);
-  const { data: topPerformersData } = useTopPerformers(DEMO_UNIT_ID, undefined, 5);
-  const { data: availablePartnersData } = useMatchPartners(DEMO_UNIT_ID, 'Arabic');
+  const { data: upcomingData } = useUpcomingMuhadatsah(unitId, 5);
+  const { data: statsData } = useMuhadatsahStatistics(unitId);
+  const { data: topPerformersData } = useTopPerformers(unitId, undefined, 5);
+  const { data: availablePartnersData } = useMatchPartners(unitId, 'Arabic');
 
   // Demo data
   const demoRecords = [

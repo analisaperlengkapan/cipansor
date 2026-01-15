@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   ArrowLeft, 
@@ -17,7 +17,9 @@ import {
   Clock,
   User,
   Eye,
-  Users
+  Users,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +29,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -45,82 +48,13 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { useMyHomeroomClass, useParentMessages, useSendParentMessage, ParentMessage } from '@/hooks/use-homeroom';
 
 // Types
 type MessageType = 'INFO' | 'WARNING' | 'URGENT' | 'ACHIEVEMENT' | 'INVITATION';
 type MessageStatus = 'DRAFT' | 'SENT' | 'READ' | 'REPLIED';
 
-interface ParentMessage {
-  id: string;
-  studentId: string;
-  studentName: string;
-  parentName: string;
-  subject: string;
-  message: string;
-  type: MessageType;
-  status: MessageStatus;
-  sentAt?: string;
-  readAt?: string;
-  reply?: string;
-  repliedAt?: string;
-  createdAt: string;
-}
-
-// Demo data
-const DEMO_MESSAGES: ParentMessage[] = [
-  {
-    id: 'msg1',
-    studentId: 's3',
-    studentName: 'Muhammad Rizki',
-    parentName: 'Bapak Ahmad Rizki',
-    subject: 'Selamat! Putra Bapak Juara Olimpiade',
-    message: 'Assalamualaikum Bapak Ahmad yang dirahmati Allah.\n\nKami ingin mengabarkan kabar baik bahwa putra Bapak, Muhammad Rizki, telah berhasil meraih Juara 1 Olimpiade Matematika Tingkat Kota. Ini adalah prestasi yang sangat membanggakan.\n\nKami mengundang Bapak untuk hadir dalam acara penyerahan penghargaan yang akan dilaksanakan pada hari Senin, 29 Januari 2024.',
-    type: 'ACHIEVEMENT',
-    status: 'REPLIED',
-    sentAt: '2024-01-21T09:00:00',
-    readAt: '2024-01-21T12:30:00',
-    reply: 'Waalaikumsalam. Terima kasih banyak atas kabarnya, Bu. Alhamdulillah. InsyaAllah saya akan hadir di acara tersebut. Jazakallahu khairan.',
-    repliedAt: '2024-01-21T13:00:00',
-    createdAt: '2024-01-21T08:30:00',
-  },
-  {
-    id: 'msg2',
-    studentId: 's5',
-    studentName: 'Dimas Pratama',
-    parentName: 'Ibu Siti Pratama',
-    subject: 'Perhatian: Keterlambatan Berulang',
-    message: 'Assalamualaikum Ibu Siti yang dirahmati Allah.\n\nKami ingin menginformasikan bahwa putra Ibu, Dimas Pratama, tercatat terlambat masuk kelas sebanyak 3 kali dalam minggu ini.\n\nKami berharap dapat berdiskusi dengan Ibu mengenai hal ini untuk menemukan solusi terbaik. Mohon dapat menghubungi kami untuk menjadwalkan pertemuan.',
-    type: 'WARNING',
-    status: 'READ',
-    sentAt: '2024-01-22T10:00:00',
-    readAt: '2024-01-22T14:00:00',
-    createdAt: '2024-01-22T09:30:00',
-  },
-  {
-    id: 'msg3',
-    studentId: 's2',
-    studentName: 'Aisyah Putri',
-    parentName: 'Bapak Ibrahim',
-    subject: 'Informasi: Jadwal Pengambilan Rapor',
-    message: 'Assalamualaikum Bapak Ibrahim yang dirahmati Allah.\n\nKami ingin menginformasikan bahwa pengambilan rapor semester ganjil akan dilaksanakan pada:\n\nHari: Sabtu, 27 Januari 2024\nWaktu: 08.00 - 12.00 WIB\nTempat: Ruang kelas masing-masing\n\nMohon kehadiran Bapak/Ibu tepat waktu. Terima kasih.',
-    type: 'INFO',
-    status: 'SENT',
-    sentAt: '2024-01-23T08:00:00',
-    createdAt: '2024-01-23T07:30:00',
-  },
-  {
-    id: 'msg4',
-    studentId: 's6',
-    studentName: 'Nur Hidayah',
-    parentName: 'Ibu Aminah',
-    subject: 'Undangan: Study Tour ke Museum Nasional',
-    message: 'Assalamualaikum Ibu Aminah yang dirahmati Allah.\n\nKami bermaksud mengundang siswa-siswi kelas VII untuk mengikuti kegiatan study tour ke Museum Nasional pada:\n\nHari: Rabu, 31 Januari 2024\nBiaya: Rp 150.000\n\nMohon mengisi formulir persetujuan dan mengirimkan biaya paling lambat tanggal 26 Januari 2024.',
-    type: 'INVITATION',
-    status: 'DRAFT',
-    createdAt: '2024-01-23T09:00:00',
-  },
-];
-
+// UI config
 const MESSAGE_TYPE_CONFIG: Record<MessageType, { label: string; color: string; icon: React.ReactNode }> = {
   INFO: { label: 'Informasi', color: 'bg-blue-100 text-blue-800', icon: <Bell className="h-4 w-4" /> },
   WARNING: { label: 'Perhatian', color: 'bg-yellow-100 text-yellow-800', icon: <AlertTriangle className="h-4 w-4" /> },
@@ -135,17 +69,6 @@ const MESSAGE_STATUS_CONFIG: Record<MessageStatus, { label: string; color: strin
   READ: { label: 'Dibaca', color: 'bg-green-100 text-green-800' },
   REPLIED: { label: 'Dibalas', color: 'bg-purple-100 text-purple-800' },
 };
-
-const STUDENTS = [
-  { id: 's1', name: 'Ahmad Fauzan', parentName: 'Bapak Fauzan' },
-  { id: 's2', name: 'Aisyah Putri', parentName: 'Bapak Ibrahim' },
-  { id: 's3', name: 'Muhammad Rizki', parentName: 'Bapak Ahmad Rizki' },
-  { id: 's4', name: 'Zahra Amelia', parentName: 'Ibu Fatimah' },
-  { id: 's5', name: 'Dimas Pratama', parentName: 'Ibu Siti Pratama' },
-  { id: 's6', name: 'Nur Hidayah', parentName: 'Ibu Aminah' },
-  { id: 's7', name: 'Farel Aditya', parentName: 'Bapak Aditya' },
-  { id: 's8', name: 'Siti Rahmawati', parentName: 'Ibu Rahmah' },
-];
 
 const MESSAGE_TEMPLATES = [
   {
@@ -171,11 +94,48 @@ const MESSAGE_TEMPLATES = [
 ];
 
 export default function ParentMessagesPage() {
-  const [messages, setMessages] = useState<ParentMessage[]>(DEMO_MESSAGES);
+  // Fetch homeroom class data
+  const { data: homeroomClass, isLoading: isLoadingClass } = useMyHomeroomClass();
+  
+  // Extract students from homeroom class
+  const students = useMemo(() => {
+    return homeroomClass?.students?.map(s => ({
+      id: s.id,
+      name: s.name,
+      parentName: s.parentName || 'Wali Murid'
+    })) || [];
+  }, [homeroomClass]);
+  
+  // Fetch messages for this class
+  const { data: messagesData, isLoading: isLoadingMessages } = useParentMessages(homeroomClass?.id);
+  
+  // Transform messages for UI display
+  const messages = useMemo(() => {
+    if (!messagesData) return [];
+    return messagesData.map(msg => ({
+      id: msg.id,
+      studentId: msg.studentId,
+      studentName: msg.student?.name || 'Unknown',
+      parentName: students.find(s => s.id === msg.studentId)?.parentName || 'Wali Murid',
+      subject: msg.subject,
+      message: msg.message,
+      type: msg.type,
+      status: msg.status,
+      sentAt: msg.sentAt,
+      readAt: msg.readAt,
+      reply: msg.reply,
+      repliedAt: msg.repliedAt,
+      createdAt: msg.createdAt,
+    }));
+  }, [messagesData, students]);
+  
+  // Send message mutation
+  const sendMessageMutation = useSendParentMessage();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [isComposeOpen, setIsComposeOpen] = useState(false);
-  const [selectedMessage, setSelectedMessage] = useState<ParentMessage | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<typeof messages[0] | null>(null);
 
   // Compose form state
   const [composeForm, setComposeForm] = useState({
@@ -208,38 +168,30 @@ export default function ParentMessagesPage() {
     }
 
     const studentIds = composeForm.sendToAll 
-      ? STUDENTS.map(s => s.id) 
+      ? students.map(s => s.id) 
       : composeForm.studentIds;
 
-    studentIds.forEach(studentId => {
-      const student = STUDENTS.find(s => s.id === studentId);
-      if (!student) return;
-
-      const newMessage: ParentMessage = {
-        id: `msg${Date.now()}-${studentId}`,
-        studentId,
-        studentName: student.name,
-        parentName: student.parentName,
-        subject: composeForm.subject,
-        message: composeForm.message,
-        type: composeForm.type,
-        status: 'SENT',
-        sentAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      };
-
-      setMessages(prev => [newMessage, ...prev]);
+    sendMessageMutation.mutate({
+      studentIds,
+      subject: composeForm.subject,
+      message: composeForm.message,
+      type: composeForm.type,
+    }, {
+      onSuccess: () => {
+        setIsComposeOpen(false);
+        setComposeForm({
+          studentIds: [],
+          type: 'INFO',
+          subject: '',
+          message: '',
+          sendToAll: false,
+        });
+        toast.success(`Pesan berhasil dikirim ke ${studentIds.length} wali murid`);
+      },
+      onError: (error) => {
+        toast.error('Gagal mengirim pesan: ' + (error as Error).message);
+      }
     });
-
-    setIsComposeOpen(false);
-    setComposeForm({
-      studentIds: [],
-      type: 'INFO',
-      subject: '',
-      message: '',
-      sendToAll: false,
-    });
-    toast.success(`Pesan berhasil dikirim ke ${studentIds.length} wali murid`);
   };
 
   const handleUseTemplate = (template: typeof MESSAGE_TEMPLATES[0]) => {
@@ -269,6 +221,51 @@ export default function ParentMessagesPage() {
   });
 
   const summary = getSummary();
+  
+  // Loading state
+  if (isLoadingClass) {
+    return (
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10" />
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-5">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+        <Skeleton className="h-12" />
+        <Skeleton className="h-96" />
+      </div>
+    );
+  }
+  
+  // No homeroom class assigned
+  if (!homeroomClass) {
+    return (
+      <div className="container mx-auto py-6">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+            <h2 className="text-lg font-medium">Tidak Ada Kelas Wali</h2>
+            <p className="text-muted-foreground text-sm mt-1">
+              Anda belum ditugaskan sebagai wali kelas
+            </p>
+            <Link href="/homeroom">
+              <Button variant="link" className="mt-4">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Kembali ke Halaman Wali Kelas
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -281,7 +278,7 @@ export default function ParentMessagesPage() {
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold">Komunikasi Wali Murid</h1>
-          <p className="text-muted-foreground">Kelas VII-A - SMP IT Al-Ikhlas</p>
+          <p className="text-muted-foreground">{homeroomClass.name} - {homeroomClass.unit?.name}</p>
         </div>
         <Dialog open={isComposeOpen} onOpenChange={setIsComposeOpen}>
           <DialogTrigger asChild>
@@ -337,7 +334,7 @@ export default function ParentMessagesPage() {
                 </div>
                 {!composeForm.sendToAll && (
                   <div className="border rounded-lg p-3 max-h-40 overflow-y-auto space-y-2">
-                    {STUDENTS.map(student => (
+                    {students.map(student => (
                       <div key={student.id} className="flex items-center gap-2">
                         <Checkbox
                           id={student.id}

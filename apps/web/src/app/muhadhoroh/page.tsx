@@ -21,6 +21,7 @@ import {
   TrendingUp,
   Star,
 } from 'lucide-react';
+import { useAuthStore } from '@/stores/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -61,26 +62,28 @@ import {
   MuhadhorohStatus,
 } from '@/hooks/use-muhadhoroh';
 
-// Demo unit ID - in real app, this would come from auth context
-const DEMO_UNIT_ID = 'demo-unit-id';
-
 export default function MuhadhorohPage() {
+  // Get user from auth context
+  const { user } = useAuthStore();
+  const unitId = user?.unitId || user?.unit?.id;
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<MuhadhorohStatus | 'ALL'>('ALL');
   const [languageFilter, setLanguageFilter] = useState<string>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch data
+  // Fetch data with unitId from auth context
   const { data: listData, isLoading: isLoadingList } = useMuhadhorohList({
     page: currentPage,
     limit: 10,
     status: statusFilter === 'ALL' ? undefined : statusFilter,
     language: languageFilter === 'ALL' ? undefined : languageFilter,
+    unitId,
   });
 
-  const { data: upcomingData } = useUpcomingMuhadhoroh(DEMO_UNIT_ID, 5);
-  const { data: statsData } = useMuhadhorohStatistics(DEMO_UNIT_ID);
-  const { data: topPerformersData } = useTopPerformers(DEMO_UNIT_ID, 5);
+  const { data: upcomingData } = useUpcomingMuhadhoroh(unitId, 5);
+  const { data: statsData } = useMuhadhorohStatistics(unitId);
+  const { data: topPerformersData } = useTopPerformers(unitId, 5);
 
   // Demo data for illustration
   const demoRecords = [

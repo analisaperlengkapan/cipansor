@@ -2,10 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { format } from 'date-fns';
+import { id as localeId } from 'date-fns/locale';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   GraduationCap,
   BookOpen,
@@ -15,12 +20,26 @@ import {
   FileText,
   ClipboardCheck,
   Activity,
+  RefreshCw,
+  ChevronRight,
+  Star,
+  Smile,
+  Heart,
 } from 'lucide-react';
 import Link from 'next/link';
+import {
+  usePAUDDashboard,
+  getAspectLabel,
+  getAchievementLabel,
+  getAchievementColor,
+} from '@/hooks/use-paud-dashboard';
 
 export default function TKPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Fetch real data from API
+  const { stats, recentAssessments, recentReports, isLoading, refetch } = usePAUDDashboard();
 
   const menuItems = [
     {
@@ -57,30 +76,34 @@ export default function TKPage() {
     },
   ];
 
-  const stats = [
+  const statsConfig = [
     {
       title: 'Total Siswa',
-      value: '0',
+      value: stats?.totalStudents ?? 0,
       icon: Users,
       color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
     },
     {
       title: 'Penilaian Bulan Ini',
-      value: '0',
+      value: stats?.assessmentsThisMonth ?? 0,
       icon: ClipboardCheck,
       color: 'text-green-600',
+      bgColor: 'bg-green-50',
     },
     {
       title: 'Laporan Harian',
-      value: '0',
+      value: stats?.dailyReportsThisMonth ?? 0,
       icon: Calendar,
       color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
     },
     {
       title: 'Rapor Aktif',
-      value: '0',
+      value: stats?.activeReports ?? 0,
       icon: FileText,
       color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
     },
   ];
 
@@ -88,11 +111,17 @@ export default function TKPage() {
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">TK Management</h1>
-          <p className="text-muted-foreground">
-            Sistem penilaian dan pelaporan untuk TK Qur'an
-          </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">TK Management</h1>
+            <p className="text-muted-foreground">
+              Sistem penilaian dan pelaporan untuk TK Qur'an
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -105,7 +134,7 @@ export default function TKPage() {
           <TabsContent value="overview" className="space-y-6">
             {/* Stats */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {stats.map((stat) => {
+              {statsConfig.map((stat) => {
                 const Icon = stat.icon;
                 return (
                   <Card key={stat.title}>
@@ -113,42 +142,132 @@ export default function TKPage() {
                       <CardTitle className="text-sm font-medium">
                         {stat.title}
                       </CardTitle>
-                      <Icon className={`h-4 w-4 ${stat.color}`} />
+                      <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                        <Icon className={`h-4 w-4 ${stat.color}`} />
+                      </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{stat.value}</div>
+                      {isLoading ? (
+                        <Skeleton className="h-8 w-16" />
+                      ) : (
+                        <div className="text-2xl font-bold">{stat.value}</div>
+                      )}
                     </CardContent>
                   </Card>
                 );
               })}
             </div>
 
-            {/* Menu Cards */}
-            <div className="grid gap-6 md:grid-cols-2">
-              {menuItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link key={item.href} href={item.href}>
-                    <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                      <CardHeader>
-                        <div className="flex items-start gap-4">
-                          <div className={`p-3 rounded-lg ${item.bgColor}`}>
-                            <Icon className={`h-6 w-6 ${item.color}`} />
+            {/* Menu Cards & Recent Activity */}
+            <div className="grid gap-6 lg:grid-cols-3">
+              {/* Menu Cards */}
+              <div className="lg:col-span-2 grid gap-4 md:grid-cols-2">
+                {menuItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link key={item.href} href={item.href}>
+                      <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                        <CardHeader>
+                          <div className="flex items-start gap-4">
+                            <div className={`p-3 rounded-lg ${item.bgColor}`}>
+                              <Icon className={`h-6 w-6 ${item.color}`} />
+                            </div>
+                            <div className="flex-1">
+                              <CardTitle className="text-lg">
+                                {item.title}
+                              </CardTitle>
+                              <CardDescription className="mt-2">
+                                {item.description}
+                              </CardDescription>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <CardTitle className="text-lg">
-                              {item.title}
-                            </CardTitle>
-                            <CardDescription className="mt-2">
-                              {item.description}
-                            </CardDescription>
+                        </CardHeader>
+                      </Card>
+                    </Link>
+                  );
+                })}
+              </div>
+
+              {/* Recent Activity */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Aktivitas Terbaru
+                  </CardTitle>
+                  <CardDescription>Penilaian & laporan terkini</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[280px]">
+                    <div className="space-y-3">
+                      {isLoading ? (
+                        Array.from({ length: 4 }).map((_, i) => (
+                          <div key={i} className="flex items-start gap-3 p-2">
+                            <Skeleton className="h-8 w-8 rounded-full" />
+                            <div className="flex-1 space-y-2">
+                              <Skeleton className="h-4 w-24" />
+                              <Skeleton className="h-3 w-32" />
+                            </div>
                           </div>
-                        </div>
-                      </CardHeader>
-                    </Card>
-                  </Link>
-                );
-              })}
+                        ))
+                      ) : (
+                        <>
+                          {/* Recent Assessments */}
+                          {recentAssessments?.map((assessment) => (
+                            <div key={assessment.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                              <div className="bg-blue-100 p-2 rounded-full">
+                                <Star className="h-4 w-4 text-blue-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">
+                                  {assessment.student?.name || 'Siswa'}
+                                </p>
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {assessment.indicator?.name || 'Penilaian'}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge className={getAchievementColor(assessment.achievementLevel)} variant="secondary">
+                                    {getAchievementLabel(assessment.achievementLevel)}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {/* Recent Daily Reports */}
+                          {recentReports?.map((report) => (
+                            <div key={report.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                              <div className="bg-green-100 p-2 rounded-full">
+                                <Smile className="h-4 w-4 text-green-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">
+                                  {report.student?.name || 'Siswa'}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {format(new Date(report.date), 'd MMM yyyy', { locale: localeId })}
+                                </p>
+                                {report.mood && (
+                                  <Badge variant="outline" className="mt-1 text-xs">
+                                    {report.mood}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {(!recentAssessments || recentAssessments.length === 0) && 
+                           (!recentReports || recentReports.length === 0) && (
+                            <div className="text-center text-sm text-muted-foreground py-8">
+                              Belum ada aktivitas
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Quick Actions */}

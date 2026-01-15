@@ -18,7 +18,8 @@ import {
   Minus,
   MessageCircle,
   FileText,
-  Edit
+  Edit,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,96 +27,133 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useHomeroomStudentDetail, useHomeroomStudentNotes } from '@/hooks/use-homeroom';
 
-// Demo data - in production this would come from API
-const DEMO_STUDENT = {
-  id: 's1',
-  nis: '2024001',
-  name: 'Ahmad Fauzan',
-  gender: 'MALE',
-  birthDate: '2011-05-15',
-  birthPlace: 'Jakarta',
-  address: 'Jl. Mawar No. 123, RT 05/RW 02, Kelurahan Mekarwangi, Kecamatan Tanah Sareal, Kota Bogor',
-  phone: '081234567890',
-  email: 'ahmad.fauzan@student.smpit.sch.id',
-  parentName: 'Bapak Fauzan',
-  parentPhone: '081987654321',
-  parentEmail: 'fauzan@email.com',
-  parentOccupation: 'Wiraswasta',
-  motherName: 'Ibu Siti Aminah',
-  motherPhone: '081567890123',
-  enrollmentDate: '2024-07-15',
-  photo: null,
-  class: {
-    name: 'VII-A',
-    grade: 7,
-  },
+// Fallback demo data for when API returns empty
+const FALLBACK_STUDENT = {
+  id: '',
+  nis: '—',
+  name: 'Loading...',
+  gender: 'MALE' as const,
+  birthDate: '2011-01-01',
+  birthPlace: '—',
+  address: '—',
+  phone: '',
+  email: '',
+  parentName: '—',
+  parentPhone: '',
+  motherName: '',
+  motherPhone: '',
+  enrollmentDate: '',
+  photo: null as string | null,
+  enrollments: [] as Array<{ class?: { name: string; grade?: number } }>,
+  tahfidzRecords: [] as Array<{
+    id: string;
+    activityType: string;
+    juz: number;
+    surahName: string;
+    ayatStart: number;
+    ayatEnd: number;
+    score?: number;
+    grade?: string;
+    recordedAt: string;
+  }>,
+  attendances: [] as Array<{
+    id: string;
+    date: string;
+    status: string;
+    notes?: string;
+  }>,
 };
 
-const DEMO_ATTENDANCE = {
-  totalDays: 120,
-  present: 115,
-  absent: 1,
-  sick: 2,
-  permitted: 2,
-  late: 3,
-  attendanceRate: 95.8,
+// Fallback data for attendance (will be computed from API data)
+const FALLBACK_ATTENDANCE = {
+  totalDays: 0,
+  present: 0,
+  absent: 0,
+  sick: 0,
+  permitted: 0,
+  late: 0,
+  attendanceRate: 0,
 };
 
-const DEMO_ACADEMIC = {
-  averageScore: 82.5,
-  rank: 5,
-  totalStudents: 28,
+// Fallback academic data
+const FALLBACK_ACADEMIC = {
+  averageScore: 0,
+  rank: 0,
+  totalStudents: 0,
   semester: 1,
-  subjects: [
-    { name: 'Al-Quran & Hadits', score: 88, grade: 'A' },
-    { name: 'Aqidah Akhlak', score: 85, grade: 'A' },
-    { name: 'Fiqih', score: 82, grade: 'B+' },
-    { name: 'SKI', score: 80, grade: 'B+' },
-    { name: 'Bahasa Arab', score: 78, grade: 'B' },
-    { name: 'Matematika', score: 85, grade: 'A' },
-    { name: 'IPA', score: 82, grade: 'B+' },
-    { name: 'IPS', score: 80, grade: 'B+' },
-    { name: 'Bahasa Indonesia', score: 85, grade: 'A' },
-    { name: 'Bahasa Inggris', score: 82, grade: 'B+' },
-    { name: 'Prakarya', score: 80, grade: 'B+' },
-    { name: 'PJOK', score: 85, grade: 'A' },
-  ],
+  subjects: [] as Array<{ name: string; score: number; grade: string }>,
 };
 
-const DEMO_TAHFIDZ = {
-  totalJuz: 30,
-  memorized: 2,
-  inProgress: 1,
-  currentSurah: 'Al-Mulk',
-  currentAyat: 15,
-  lastAssessment: '2024-01-15',
-  lastGrade: 'Jayyid Jiddan',
-};
-
-const DEMO_BEHAVIOR_NOTES = [
-  { id: 'n1', type: 'POSITIVE', description: 'Membantu teman yang kesulitan belajar', date: '2024-01-15', points: 10 },
-  { id: 'n2', type: 'ACHIEVEMENT', description: 'Juara 3 Lomba Pidato Bahasa Arab', date: '2024-01-10', points: 30 },
-  { id: 'n3', type: 'NEGATIVE', description: 'Bermain saat jam pelajaran', date: '2024-01-12', points: -5 },
-];
-
-const DEMO_EXTRACURRICULAR = [
-  { name: 'Pramuka', status: 'Aktif', achievement: 'Tanda Kecakapan Umum' },
-  { name: 'Hadroh', status: 'Aktif', achievement: null },
-  { name: 'Futsal', status: 'Aktif', achievement: 'Tim Inti' },
+// Fallback extracurricular data
+const FALLBACK_EXTRACURRICULAR = [
+  { name: 'Pramuka', status: 'Aktif', achievement: null },
 ];
 
 export default function StudentDetailPage() {
   const params = useParams();
-  const studentId = params.id;
+  const studentId = params.id as string;
   const [activeTab, setActiveTab] = useState('overview');
 
-  const student = DEMO_STUDENT;
-  const attendance = DEMO_ATTENDANCE;
-  const academic = DEMO_ACADEMIC;
-  const tahfidz = DEMO_TAHFIDZ;
-  const behaviorNotes = DEMO_BEHAVIOR_NOTES;
-  const extracurricular = DEMO_EXTRACURRICULAR;
+  // Fetch student detail from API
+  const { data: studentData, isLoading: isLoadingStudent } = useHomeroomStudentDetail(studentId);
+  const { data: notesData, isLoading: isLoadingNotes } = useHomeroomStudentNotes(studentId);
+
+  // Use API data or fallback
+  const student = studentData || FALLBACK_STUDENT;
+  const className = student.enrollments?.[0]?.class?.name || '—';
+  const classGrade = student.enrollments?.[0]?.class?.grade || 0;
+
+  // Compute attendance summary from records
+  const attendances = student.attendances || [];
+  const attendance = {
+    totalDays: attendances.length || FALLBACK_ATTENDANCE.totalDays,
+    present: attendances.filter(a => a.status === 'PRESENT').length,
+    absent: attendances.filter(a => a.status === 'ABSENT').length,
+    sick: attendances.filter(a => a.status === 'SICK').length,
+    permitted: attendances.filter(a => a.status === 'EXCUSED').length,
+    late: attendances.filter(a => a.status === 'LATE').length,
+    attendanceRate: attendances.length > 0 
+      ? Math.round((attendances.filter(a => a.status === 'PRESENT').length / attendances.length) * 100 * 10) / 10
+      : 0,
+  };
+
+  // Academic data (would need separate API in production)
+  const academic = FALLBACK_ACADEMIC;
+
+  // Tahfidz from student records
+  const tahfidzRecords = student.tahfidzRecords || [];
+  const tahfidz = {
+    totalJuz: 30,
+    memorized: new Set(tahfidzRecords.filter(t => t.activityType === 'ZIYADAH').map(t => t.juz)).size,
+    inProgress: 1,
+    currentSurah: tahfidzRecords[0]?.surahName || '—',
+    currentAyat: tahfidzRecords[0]?.ayatEnd || 0,
+    lastAssessment: tahfidzRecords.find(t => t.activityType === 'ASSESSMENT')?.recordedAt || '',
+    lastGrade: tahfidzRecords.find(t => t.activityType === 'ASSESSMENT')?.grade || '—',
+  };
+
+  // Behavior notes from API
+  const behaviorNotes = [
+    ...(notesData?.rewards || []).map(r => ({
+      id: r.id,
+      type: 'POSITIVE' as const,
+      description: r.description,
+      date: r.givenAt,
+      points: r.points,
+    })),
+    ...(notesData?.violations || []).map(v => ({
+      id: v.id,
+      type: 'NEGATIVE' as const,
+      description: v.description,
+      date: v.occurredAt,
+      points: -v.points,
+    })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const extracurricular = FALLBACK_EXTRACURRICULAR;
 
   const calculateAge = (birthDate: string) => {
     const today = new Date();
@@ -137,6 +175,56 @@ export default function StudentDetailPage() {
 
   const totalPoints = behaviorNotes.reduce((sum, note) => sum + (note.points || 0), 0);
 
+  // Loading state
+  if (isLoadingStudent) {
+    return (
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="flex items-center gap-4">
+          <Link href="/homeroom">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <div className="flex-1">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-24 mt-2" />
+          </div>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row gap-6">
+              <Skeleton className="h-32 w-32 rounded-full" />
+              <div className="flex-1 space-y-4">
+                <Skeleton className="h-8 w-64" />
+                <Skeleton className="h-4 w-32" />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <div className="grid gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map(i => (
+            <Card key={i}>
+              <CardContent className="pt-4">
+                <Skeleton className="h-12 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
@@ -148,7 +236,7 @@ export default function StudentDetailPage() {
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold">Detail Siswa</h1>
-          <p className="text-muted-foreground">Kelas {student.class.name}</p>
+          <p className="text-muted-foreground">Kelas {className}</p>
         </div>
         <Link href={`/homeroom/messages/new?studentId=${studentId}`}>
           <Button variant="outline">
@@ -166,16 +254,16 @@ export default function StudentDetailPage() {
             <div className="flex flex-col items-center md:items-start gap-4">
               <Avatar className="h-32 w-32">
                 <AvatarImage src={student.photo || undefined} />
-                <AvatarFallback className="text-4xl">{student.name.charAt(0)}</AvatarFallback>
+                <AvatarFallback className="text-4xl">{student.name?.charAt(0) || '?'}</AvatarFallback>
               </Avatar>
               <div className="text-center md:text-left">
-                <h2 className="text-2xl font-bold">{student.name}</h2>
+                <h2 className="text-2xl font-bold">{student.name || student.user?.name || '—'}</h2>
                 <p className="text-muted-foreground font-mono">{student.nis}</p>
                 <div className="flex gap-2 mt-2">
                   <Badge variant={student.gender === 'MALE' ? 'default' : 'secondary'}>
                     {student.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}
                   </Badge>
-                  <Badge variant="outline">{student.class.name}</Badge>
+                  <Badge variant="outline">{className}</Badge>
                 </div>
               </div>
             </div>
@@ -187,11 +275,14 @@ export default function StudentDetailPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>{student.birthPlace}, {new Date(student.birthDate).toLocaleDateString('id-ID')} ({calculateAge(student.birthDate)} tahun)</span>
+                    <span>
+                      {student.birthPlace || '—'}, {student.birthDate ? new Date(student.birthDate).toLocaleDateString('id-ID') : '—'} 
+                      {student.birthDate && ` (${calculateAge(student.birthDate)} tahun)`}
+                    </span>
                   </div>
                   <div className="flex items-start gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
-                    <span>{student.address}</span>
+                    <span>{student.address || '—'}</span>
                   </div>
                   {student.phone && (
                     <div className="flex items-center gap-2">
@@ -213,28 +304,28 @@ export default function StudentDetailPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span><strong>Ayah:</strong> {student.parentName}</span>
+                    <span><strong>Ayah:</strong> {student.parentName || '—'}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <a href={`tel:${student.parentPhone}`} className="text-blue-600 hover:underline">{student.parentPhone}</a>
-                  </div>
+                  {student.parentPhone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <a href={`tel:${student.parentPhone}`} className="text-blue-600 hover:underline">{student.parentPhone}</a>
+                    </div>
+                  )}
                   {student.motherName && (
                     <>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <span><strong>Ibu:</strong> {student.motherName}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <a href={`tel:${student.motherPhone}`} className="text-blue-600 hover:underline">{student.motherPhone}</a>
-                      </div>
+                      {student.motherPhone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <a href={`tel:${student.motherPhone}`} className="text-blue-600 hover:underline">{student.motherPhone}</a>
+                        </div>
+                      )}
                     </>
                   )}
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">Pekerjaan:</span>
-                    <span>{student.parentOccupation}</span>
-                  </div>
                 </div>
               </div>
             </div>

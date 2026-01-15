@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { MainLayout } from '@/components/layout';
 import { PageHeader } from '@/components/shared';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -8,6 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRealtimeDashboard } from '@/hooks/use-realtime-dashboard';
+import {
+  useExecutiveDashboard,
+  type ExecutiveAlert,
+  type AttendanceByUnit,
+  type EnrollmentTrend,
+} from '@/hooks/use-executive-dashboard';
 import {
   LineChart,
   Line,
@@ -34,54 +40,29 @@ import {
   Bell,
   RefreshCw,
   Download,
+  DollarSign,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
-// Mock data for initial state
-const mockEnrollmentTrend = [
-  { month: 'Jul', TK: 120, SDIT: 250, SMPIT: 180, SMAQ: 95, Pesantren: 65 },
-  { month: 'Agt', TK: 125, SDIT: 255, SMPIT: 185, SMAQ: 98, Pesantren: 68 },
-  { month: 'Sep', TK: 130, SDIT: 260, SMPIT: 188, SMAQ: 100, Pesantren: 70 },
-  { month: 'Okt', TK: 135, SDIT: 265, SMPIT: 192, SMAQ: 102, Pesantren: 72 },
-  { month: 'Nov', TK: 138, SDIT: 268, SMPIT: 195, SMAQ: 105, Pesantren: 75 },
-  { month: 'Des', TK: 142, SDIT: 272, SMPIT: 198, SMAQ: 108, Pesantren: 78 },
+// Fallback mock data when API returns empty
+const fallbackEnrollmentTrend: EnrollmentTrend[] = [
+  { month: 'Jul', year: 2025, TK: 120, SDIT: 250, SMPIT: 180, SMAQ: 95, Pesantren: 65, total: 710 },
+  { month: 'Agt', year: 2025, TK: 125, SDIT: 255, SMPIT: 185, SMAQ: 98, Pesantren: 68, total: 731 },
+  { month: 'Sep', year: 2025, TK: 130, SDIT: 260, SMPIT: 188, SMAQ: 100, Pesantren: 70, total: 748 },
+  { month: 'Okt', year: 2025, TK: 135, SDIT: 265, SMPIT: 192, SMAQ: 102, Pesantren: 72, total: 766 },
+  { month: 'Nov', year: 2025, TK: 138, SDIT: 268, SMPIT: 195, SMAQ: 105, Pesantren: 75, total: 781 },
+  { month: 'Des', year: 2025, TK: 142, SDIT: 272, SMPIT: 198, SMAQ: 108, Pesantren: 78, total: 798 },
 ];
 
-const mockAttendanceByUnit = [
-  { unit: 'TK', rate: 92, present: 131, total: 142, color: '#22c55e' },
-  { unit: 'SDIT', rate: 88, present: 239, total: 272, color: '#3b82f6' },
-  { unit: 'SMPIT', rate: 85, present: 168, total: 198, color: '#f59e0b' },
-  { unit: 'SMAQ', rate: 90, present: 97, total: 108, color: '#8b5cf6' },
-  { unit: 'Pesantren', rate: 94, present: 73, total: 78, color: '#ec4899' },
-];
-
-interface Alert {
-  id: string;
-  message: string;
-  severity: 'INFO' | 'WARNING' | 'CRITICAL';
-  timestamp: string;
-  unitId?: string;
-  metricType?: string;
-}
-
-const mockAlerts: Alert[] = [
-  {
-    id: '1',
-    message: 'Kehadiran SMPIT hari ini dibawah target (85%)',
-    severity: 'WARNING',
-    timestamp: new Date().toISOString(),
-    unitId: 'smpit-1',
-  },
-  {
-    id: '2',
-    message: '12 santri belum murojaah hari ini',
-    severity: 'INFO',
-    timestamp: new Date().toISOString(),
-    unitId: 'pesantren-1',
-  },
+const fallbackAttendanceByUnit: AttendanceByUnit[] = [
+  { unit: 'TK', unitId: 'tk-1', rate: 92, present: 131, absent: 8, sick: 2, excused: 1, total: 142, color: '#22c55e' },
+  { unit: 'SDIT', unitId: 'sdit-1', rate: 88, present: 239, absent: 20, sick: 8, excused: 5, total: 272, color: '#3b82f6' },
+  { unit: 'SMPIT', unitId: 'smpit-1', rate: 85, present: 168, absent: 18, sick: 7, excused: 5, total: 198, color: '#f59e0b' },
+  { unit: 'SMAQ', unitId: 'smaq-1', rate: 90, present: 97, absent: 6, sick: 3, excused: 2, total: 108, color: '#8b5cf6' },
+  { unit: 'Pesantren', unitId: 'pesantren-1', rate: 94, present: 73, absent: 3, sick: 1, excused: 1, total: 78, color: '#ec4899' },
 ];
 
 interface KPICardProps {
@@ -133,23 +114,38 @@ function KPICard({ title, value, subtitle, activeCount, trend, icon: Icon, iconC
 }
 
 export default function ExecutiveDashboardPage() {
-  const [metrics, setMetrics] = useState<any>(null);
-  const [alerts, setAlerts] = useState(mockAlerts);
+  // Fetch all executive dashboard data
+  const {
+    stats,
+    attendanceByUnit,
+    enrollmentTrends,
+    financeSummary,
+    tahfidzSummary,
+    alerts,
+    isLoading,
+    refetchAll,
+  } = useExecutiveDashboard();
 
-  // Initialize WebSocket connection
+  // Initialize WebSocket connection for real-time updates
   const { isConnected, lastUpdate, reconnect } = useRealtimeDashboard({
     enabled: true,
     unitIds: ['all'],
     metrics: ['students', 'attendance', 'tahfidz', 'academic'],
     onMetricsUpdate: (data) => {
       console.log('Metrics updated:', data);
-      setMetrics(data);
+      // Refetch data on websocket update
+      refetchAll();
     },
     onAlert: (alert: any) => {
       console.log('New alert:', alert);
-      setAlerts((prev) => [alert as Alert, ...prev].slice(0, 10)); // Keep last 10 alerts
+      toast.info(alert.message);
     },
   });
+
+  // Use real data or fallback
+  const displayEnrollmentTrend = enrollmentTrends?.length ? enrollmentTrends : fallbackEnrollmentTrend;
+  const displayAttendanceByUnit = attendanceByUnit?.length ? attendanceByUnit : fallbackAttendanceByUnit;
+  const displayAlerts = alerts || [];
 
   // Connection status indicator
   const ConnectionStatus = () => (
@@ -197,7 +193,7 @@ export default function ExecutiveDashboardPage() {
         </div>
 
         {/* Alerts Panel */}
-        {alerts.length > 0 && (
+        {displayAlerts.length > 0 && (
           <Card className="border-orange-200 bg-orange-50/50 glass-card">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
@@ -208,13 +204,13 @@ export default function ExecutiveDashboardPage() {
                   <CardTitle className="text-sm font-semibold">Notifikasi & Alert</CardTitle>
                 </div>
                 <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors">
-                  {alerts.length} Baru
+                  {displayAlerts.length} Baru
                 </Badge>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {alerts.slice(0, 3).map((alert, idx) => (
+                {displayAlerts.slice(0, 3).map((alert, idx) => (
                   <div
                     key={alert.id}
                     className={cn(
@@ -226,9 +222,9 @@ export default function ExecutiveDashboardPage() {
                   >
                     <div className={cn(
                       "p-1.5 rounded-full mt-0.5",
-                      alert.severity === 'CRITICAL' && 'bg-red-100 text-red-600',
-                      alert.severity === 'WARNING' && 'bg-orange-100 text-orange-600',
-                      alert.severity === 'INFO' && 'bg-blue-100 text-blue-600'
+                      alert.type === 'CRITICAL' && 'bg-red-100 text-red-600',
+                      alert.type === 'WARNING' && 'bg-orange-100 text-orange-600',
+                      alert.type === 'INFO' && 'bg-blue-100 text-blue-600'
                     )}>
                       <AlertTriangle className="h-4 w-4" />
                     </div>
@@ -247,39 +243,54 @@ export default function ExecutiveDashboardPage() {
 
         {/* KPI Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <KPICard
-            title="Total Siswa"
-            value={metrics?.students?.total || 798}
-            activeCount={metrics?.students?.active || 750}
-            trend="+5.2%"
-            icon={Users}
-            iconColor="text-blue-600"
-            iconBg="bg-blue-100"
-          />
-          <KPICard
-            title="Total Guru"
-            value={metrics?.teachers?.total || 85}
-            activeCount={82}
-            icon={GraduationCap}
-            iconColor="text-green-600"
-            iconBg="bg-green-100"
-          />
-          <KPICard
-            title="Kehadiran"
-            value={`${metrics?.attendance?.rate || 89}%`}
-            subtitle={`${metrics?.attendance?.present || 708} / ${metrics?.attendance?.total || 798}`}
-            icon={UserCheck}
-            iconColor="text-orange-600"
-            iconBg="bg-orange-100"
-          />
-          <KPICard
-            title="Tahfidz Progress"
-            value={metrics?.tahfidz?.totalHafidz || 156}
-            subtitle={`Avg: ${metrics?.tahfidz?.avgQuality || 84.5}`}
-            icon={BookOpen}
-            iconColor="text-purple-600"
-            iconBg="bg-purple-100"
-          />
+          {isLoading ? (
+            <>
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i}>
+                  <CardContent className="p-6">
+                    <Skeleton className="h-4 w-24 mb-2" />
+                    <Skeleton className="h-8 w-16" />
+                  </CardContent>
+                </Card>
+              ))}
+            </>
+          ) : (
+            <>
+              <KPICard
+                title="Total Siswa"
+                value={stats?.totalStudents || 0}
+                activeCount={stats?.activeStudents || 0}
+                trend={stats?.studentsGrowth ? `${stats.studentsGrowth > 0 ? '+' : ''}${stats.studentsGrowth}%` : undefined}
+                icon={Users}
+                iconColor="text-blue-600"
+                iconBg="bg-blue-100"
+              />
+              <KPICard
+                title="Total Guru"
+                value={stats?.totalTeachers || 0}
+                activeCount={stats?.totalStaff || 0}
+                icon={GraduationCap}
+                iconColor="text-green-600"
+                iconBg="bg-green-100"
+              />
+              <KPICard
+                title="Kehadiran"
+                value={`${stats?.overallAttendanceRate || 0}%`}
+                subtitle={`${stats?.totalClasses || 0} kelas aktif`}
+                icon={UserCheck}
+                iconColor="text-orange-600"
+                iconBg="bg-orange-100"
+              />
+              <KPICard
+                title="Tahfidz Progress"
+                value={tahfidzSummary?.totalHafidz || 0}
+                subtitle={`Avg: ${tahfidzSummary?.averageJuz?.toFixed(1) || 0} Juz`}
+                icon={BookOpen}
+                iconColor="text-purple-600"
+                iconBg="bg-purple-100"
+              />
+            </>
+          )}
         </div>
 
         {/* Charts */}
@@ -301,7 +312,7 @@ export default function ExecutiveDashboardPage() {
             <CardContent className="pt-4">
               <div className="h-[350px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={mockEnrollmentTrend} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <AreaChart data={displayEnrollmentTrend} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorTK" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
@@ -388,7 +399,7 @@ export default function ExecutiveDashboardPage() {
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={mockAttendanceByUnit} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                  <BarChart data={displayAttendanceByUnit} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(var(--border))" opacity={0.5} />
                     <XAxis
                       dataKey="unit"
@@ -405,7 +416,7 @@ export default function ExecutiveDashboardPage() {
                       barSize={40}
                       name="Kehadiran"
                     >
-                      {mockAttendanceByUnit.map((entry, index) => (
+                      {displayAttendanceByUnit.map((entry, index) => (
                         <Bar key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Bar>
@@ -423,7 +434,7 @@ export default function ExecutiveDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockAttendanceByUnit.map((unit) => (
+                {displayAttendanceByUnit.map((unit) => (
                   <div key={unit.unit} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">
@@ -460,6 +471,45 @@ export default function ExecutiveDashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Finance Summary */}
+        {financeSummary && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-green-600" />
+                  <CardTitle>Ringkasan Keuangan</CardTitle>
+                </div>
+                <Badge variant={financeSummary.collectionRate >= 80 ? 'default' : 'secondary'}>
+                  Collection Rate: {financeSummary.collectionRate}%
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Total Tagihan</p>
+                  <p className="text-xl font-bold text-blue-600">
+                    Rp {(financeSummary.totalBilled / 1000000).toFixed(1)} Jt
+                  </p>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Total Terbayar</p>
+                  <p className="text-xl font-bold text-green-600">
+                    Rp {(financeSummary.totalPaid / 1000000).toFixed(1)} Jt
+                  </p>
+                </div>
+                <div className="text-center p-4 bg-red-50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Tunggakan</p>
+                  <p className="text-xl font-bold text-red-600">
+                    Rp {(financeSummary.totalUnpaid / 1000000).toFixed(1)} Jt
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Real-time Activity Feed */}
         <Card>

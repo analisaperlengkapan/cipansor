@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   CalendarDays, 
@@ -17,13 +17,15 @@ import {
   Star,
   Award,
   ClipboardList,
-  Settings
+  Settings,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -32,115 +34,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DUTY_TYPE_LABELS, DutyType, DutyStatus } from '@/hooks/use-duty-roster';
+import { 
+  DUTY_TYPE_LABELS, 
+  DutyType, 
+  DutyStatus, 
+  DutyShift,
+  useDutyRosters, 
+  useDutyStatistics 
+} from '@/hooks/use-duty-roster';
 
 // Extended UI status for local display
 type UIStatus = DutyStatus | 'SCHEDULED' | 'IN_PROGRESS' | 'MISSED' | 'EXCUSED';
-
-interface StudentAssignment {
-  id: string;
-  studentId: string;
-  student: {
-    id: string;
-    nis: string;
-    name: string;
-    class: { id: string; name: string };
-  };
-  status: UIStatus;
-  checkInTime?: string;
-  checkOutTime?: string;
-  rating?: number;
-  points?: number;
-}
-
-interface DemoRoster {
-  id: string;
-  date: string;
-  dayOfWeek: number;
-  dutyType: DutyType;
-  location: string;
-  shift: 'MORNING' | 'AFTERNOON' | 'EVENING';
-  startTime: string;
-  endTime: string;
-  students: StudentAssignment[];
-  supervisor?: { id: string; name: string };
-}
-
-// Demo data
-const DEMO_TODAY_ROSTERS: DemoRoster[] = [
-  {
-    id: 'dr-1',
-    date: '2024-01-24',
-    dayOfWeek: 3,
-    dutyType: 'CLEANING_MOSQUE',
-    location: 'Masjid Al-Ikhlas',
-    shift: 'MORNING',
-    startTime: '05:00',
-    endTime: '06:30',
-    students: [
-      { id: 'da-1', studentId: 's1', student: { id: 's1', nis: '2024001', name: 'Ahmad Fauzan', class: { id: 'c1', name: 'VII-A' } }, status: 'COMPLETED', checkInTime: '05:05', checkOutTime: '06:25', rating: 5, points: 10 },
-      { id: 'da-2', studentId: 's2', student: { id: 's2', nis: '2024002', name: 'Muhammad Rizki', class: { id: 'c1', name: 'VII-A' } }, status: 'COMPLETED', checkInTime: '05:10', checkOutTime: '06:30', rating: 4, points: 8 },
-      { id: 'da-3', studentId: 's3', student: { id: 's3', nis: '2024003', name: 'Dimas Pratama', class: { id: 'c1', name: 'VII-A' } }, status: 'IN_PROGRESS', checkInTime: '05:15' },
-    ],
-    supervisor: { id: 'u1', name: 'Ustadz Ahmad' },
-  },
-  {
-    id: 'dr-2',
-    date: '2024-01-24',
-    dayOfWeek: 3,
-    dutyType: 'CLEANING_YARD',
-    location: 'Halaman Depan',
-    shift: 'MORNING',
-    startTime: '06:00',
-    endTime: '07:00',
-    students: [
-      { id: 'da-4', studentId: 's4', student: { id: 's4', nis: '2024004', name: 'Aisyah Putri', class: { id: 'c2', name: 'VII-B' } }, status: 'COMPLETED', checkInTime: '06:05', checkOutTime: '07:00', rating: 5, points: 10 },
-      { id: 'da-5', studentId: 's5', student: { id: 's5', nis: '2024005', name: 'Zahra Amelia', class: { id: 'c2', name: 'VII-B' } }, status: 'SCHEDULED' },
-    ],
-    supervisor: { id: 'u2', name: 'Ustadzah Fatimah' },
-  },
-  {
-    id: 'dr-3',
-    date: '2024-01-24',
-    dayOfWeek: 3,
-    dutyType: 'SECURITY',
-    location: 'Gerbang Utama',
-    shift: 'AFTERNOON',
-    startTime: '15:00',
-    endTime: '17:00',
-    students: [
-      { id: 'da-6', studentId: 's6', student: { id: 's6', nis: '2024006', name: 'Farel Aditya', class: { id: 'c1', name: 'VII-A' } }, status: 'SCHEDULED' },
-      { id: 'da-7', studentId: 's7', student: { id: 's7', nis: '2024007', name: 'Alif Rahman', class: { id: 'c1', name: 'VII-A' } }, status: 'SCHEDULED' },
-    ],
-  },
-  {
-    id: 'dr-4',
-    date: '2024-01-24',
-    dayOfWeek: 3,
-    dutyType: 'KITCHEN',
-    location: 'Dapur Asrama',
-    shift: 'EVENING',
-    startTime: '17:30',
-    endTime: '19:00',
-    students: [
-      { id: 'da-8', studentId: 's8', student: { id: 's8', nis: '2024008', name: 'Siti Rahmawati', class: { id: 'c2', name: 'VII-B' } }, status: 'SCHEDULED' },
-      { id: 'da-9', studentId: 's9', student: { id: 's9', nis: '2024009', name: 'Nur Hidayah', class: { id: 'c2', name: 'VII-B' } }, status: 'SCHEDULED' },
-    ],
-  },
-];
-
-const DEMO_REPORT = {
-  totalAssignments: 150,
-  completed: 135,
-  missed: 10,
-  excused: 5,
-  averageRating: 4.2,
-  topPerformers: [
-    { student: { id: 's1', name: 'Ahmad Fauzan', nis: '2024001' }, completedDuties: 20, averageRating: 4.8, totalPoints: 180 },
-    { student: { id: 's4', name: 'Aisyah Putri', nis: '2024004' }, completedDuties: 18, averageRating: 4.7, totalPoints: 165 },
-    { student: { id: 's2', name: 'Muhammad Rizki', nis: '2024003' }, completedDuties: 17, averageRating: 4.5, totalPoints: 150 },
-  ],
-};
 
 const STATUS_CONFIG: Record<UIStatus, { label: string; color: string; icon: React.ReactNode }> = {
   PENDING: { label: 'Menunggu', color: 'bg-gray-100 text-gray-800', icon: <Clock className="h-4 w-4" /> },
@@ -153,7 +57,7 @@ const STATUS_CONFIG: Record<UIStatus, { label: string; color: string; icon: Reac
   EXCUSED: { label: 'Izin', color: 'bg-yellow-100 text-yellow-800', icon: <AlertCircle className="h-4 w-4" /> },
 };
 
-const SHIFT_CONFIG = {
+const SHIFT_CONFIG: Record<DutyShift, { label: string; color: string }> = {
   MORNING: { label: 'Pagi', color: 'bg-amber-100 text-amber-800' },
   AFTERNOON: { label: 'Siang', color: 'bg-orange-100 text-orange-800' },
   EVENING: { label: 'Sore/Malam', color: 'bg-purple-100 text-purple-800' },
@@ -165,9 +69,55 @@ export default function DutyRosterPage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [filterShift, setFilterShift] = useState<string>('all');
   const [activeTab, setActiveTab] = useState('today');
-
-  const todayRosters = DEMO_TODAY_ROSTERS;
-  const report = DEMO_REPORT;
+  
+  // Fetch rosters for selected date
+  const { data: rostersData, isLoading: isLoadingRosters } = useDutyRosters({ 
+    date: selectedDate 
+  });
+  
+  // Fetch statistics for report view
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  const { data: statisticsData, isLoading: isLoadingStats } = useDutyStatistics({
+    startDate: startOfMonth.toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
+  });
+  
+  // Transform API data to UI format
+  const todayRosters = useMemo(() => {
+    if (!rostersData?.data) return [];
+    return rostersData.data.map(roster => ({
+      id: roster.id,
+      date: roster.date,
+      dayOfWeek: new Date(roster.date).getDay(),
+      dutyType: roster.dutyType,
+      location: roster.location,
+      shift: roster.shift,
+      startTime: roster.startTime,
+      endTime: roster.endTime,
+      students: roster.assignments?.map(a => ({
+        id: a.id,
+        studentId: a.student.id,
+        student: a.student,
+        status: a.status as UIStatus,
+        checkInTime: a.completedAt?.slice(11, 16),
+        checkOutTime: undefined,
+        rating: undefined,
+        points: undefined,
+      })) || [],
+      supervisor: roster.supervisor,
+    }));
+  }, [rostersData]);
+  
+  // Transform statistics for report
+  const report = useMemo(() => ({
+    totalAssignments: statisticsData?.totalAssignments || 0,
+    completed: statisticsData?.completed || 0,
+    missed: statisticsData?.absent || 0,
+    excused: 0,
+    averageRating: 0,
+    topPerformers: [],
+  }), [statisticsData]);
 
   const filteredRosters = filterShift === 'all' 
     ? todayRosters 
@@ -193,6 +143,30 @@ export default function DutyRosterPage() {
       day: 'numeric' 
     });
   };
+  
+  // Loading state
+  if (isLoadingRosters && isLoadingStats) {
+    return (
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-5">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+        <Skeleton className="h-96" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6 space-y-6">

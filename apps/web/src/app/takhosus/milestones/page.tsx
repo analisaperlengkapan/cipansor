@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
@@ -27,8 +28,10 @@ import {
   Users,
   TrendingUp,
   Calendar,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useMyProgress } from '@/hooks/use-takhosus';
 
 // Takhosus program milestones/levels
 const TAKHOSUS_LEVELS = [
@@ -39,27 +42,27 @@ const TAKHOSUS_LEVELS = [
   { level: 5, name: 'Mutqin (Penguat)', juzTarget: 30, durationMonths: 36, color: 'bg-green-500' },
 ];
 
-// Mock student progress data
-const mockStudentProgress = {
-  studentId: 'student-123',
-  studentName: 'Muhammad Hasan',
-  class: 'Takhosus A',
-  currentLevel: 2,
-  currentJuz: 12,
-  totalAyahMemorized: 1450,
-  startDate: '2024-07-15',
-  expectedCompletion: '2026-01-15',
-  weeklyTarget: 3, // pages per week
-  lastWeekProgress: 4,
-  streakDays: 45,
-  sanadCount: 8,
-  milestones: [
-    { level: 1, completed: true, completedDate: '2024-12-01', sanadId: 'sanad-001' },
-    { level: 2, completed: false, progress: 70, currentJuz: 12, targetJuz: 15 },
-    { level: 3, completed: false, progress: 0 },
-    { level: 4, completed: false, progress: 0 },
-    { level: 5, completed: false, progress: 0 },
-  ],
+// Fallback data for when API returns empty
+const fallbackProgress = {
+  studentId: '',
+  studentName: 'Memuat...',
+  class: '-',
+  currentLevel: 1,
+  currentJuz: 0,
+  totalAyahMemorized: 0,
+  startDate: new Date().toISOString(),
+  expectedCompletion: new Date().toISOString(),
+  weeklyTarget: 3,
+  lastWeekProgress: 0,
+  streakDays: 0,
+  sanadCount: 0,
+  milestones: TAKHOSUS_LEVELS.map((level, index) => ({
+    level: level.level,
+    completed: false,
+    progress: 0,
+    currentJuz: 0,
+    targetJuz: level.juzTarget,
+  })),
 };
 
 const getMilestoneIcon = (completed: boolean, inProgress: boolean) => {
@@ -70,9 +73,66 @@ const getMilestoneIcon = (completed: boolean, inProgress: boolean) => {
 
 export default function TakhosusMilestonePage() {
   const [selectedStudent, setSelectedStudent] = useState<string>('');
-  const progress = mockStudentProgress;
+  
+  // Fetch progress from API
+  const { data: apiProgress, isLoading } = useMyProgress();
+  
+  // Use API data or fallback
+  const progress = apiProgress || fallbackProgress;
   
   const totalProgress = (progress.currentJuz / 30) * 100;
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <MainLayout allowedRoles={['STUDENT', 'TEACHER', 'SUPER_ADMIN', 'UNIT_ADMIN', 'PARENT']}>
+        <div className="space-y-6">
+          <PageHeader
+            title="Milestone Takhosus"
+            description="Perjalanan menuju Hafizh 30 Juz"
+          />
+          <Card className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent">
+            <CardContent className="pt-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="w-16 h-16 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-8 w-48" />
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-6 w-24" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-6 text-center">
+                  {[1, 2, 3].map(i => (
+                    <div key={i}>
+                      <Skeleton className="h-10 w-16 mx-auto" />
+                      <Skeleton className="h-4 w-20 mt-1 mx-auto" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-6">
+                <Skeleton className="h-4 w-full" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} className="flex gap-4">
+                  <Skeleton className="w-12 h-12 rounded-full" />
+                  <Skeleton className="flex-1 h-24 rounded-xl" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout allowedRoles={['STUDENT', 'TEACHER', 'SUPER_ADMIN', 'UNIT_ADMIN', 'PARENT']}>

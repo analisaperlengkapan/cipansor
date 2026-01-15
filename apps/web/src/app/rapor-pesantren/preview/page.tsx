@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout';
 import { PageHeader } from '@/components/shared';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -25,10 +26,13 @@ import {
   MessageSquare,
   Star,
   Award,
+  AlertCircle,
 } from 'lucide-react';
 import { useClasses } from '@/hooks/use-classes';
 import { useStudents } from '@/hooks/use-students';
 import { useAuthStore } from '@/stores/auth';
+import { useRaporList, useRaporDetail, RaporPesantren } from '@/hooks/use-rapor-pesantren';
+import { useAcademicYears } from '@/hooks/use-academic-years';
 
 // Grade mapping
 const GRADE_LABELS: Record<string, { label: string; color: string }> = {
@@ -37,78 +41,108 @@ const GRADE_LABELS: Record<string, { label: string; color: string }> = {
   jayyid: { label: 'Jayyid (C)', color: 'bg-yellow-500' },
   maqbul: { label: 'Maqbul (D)', color: 'bg-orange-500' },
   rasib: { label: 'Rasib (E)', color: 'bg-red-500' },
-};
-
-// Mock rapor data for preview
-const mockRaporData = {
-  student: {
-    name: 'Muhammad Hasan',
-    nis: '2024001',
-    class: 'VII A',
-  },
-  period: {
-    semester: 1,
-    academicYear: '2025/2026',
-  },
-  tahfidz: {
-    totalAyah: 156,
-    surahCount: 12,
-    averageScore: 85,
-    grade: 'jayyidJiddan',
-    details: [
-      { surah: 'Al-Baqarah', ayah: '1-50', score: 88 },
-      { surah: 'Ali Imran', ayah: '1-30', score: 82 },
-    ],
-  },
-  ibadah: {
-    sholatWajib: 95,
-    sholatSunnah: 78,
-    tilawah: 85,
-    averageScore: 86,
-    grade: 'jayyidJiddan',
-  },
-  muhadhoroh: {
-    totalSessions: 12,
-    averageScore: 80,
-    grade: 'jayyid',
-    bestPerformance: 'Kultum Ramadhan',
-  },
-  muhadatsah: {
-    totalSessions: 10,
-    averageScore: 75,
-    grade: 'jayyid',
-  },
-  kitabProgress: {
-    kitabCount: 3,
-    completedChapters: 15,
-    averageScore: 82,
-    grade: 'jayyidJiddan',
-  },
-  akhlak: {
-    attendance: 98,
-    violations: 1,
-    rewards: 3,
-    averageScore: 88,
-    grade: 'jayyidJiddan',
-  },
-  finalScore: 83,
-  finalGrade: 'jayyidJiddan',
-  recommendation: 'Santri menunjukkan perkembangan yang baik. Perlu fokus peningkatan pada Muhadatsah.',
+  MUMTAZ: { label: 'Mumtaz (A)', color: 'bg-green-500' },
+  JAYYID_JIDDAN: { label: 'Jayyid Jiddan (B)', color: 'bg-blue-500' },
+  JAYYID: { label: 'Jayyid (C)', color: 'bg-yellow-500' },
+  MAQBUL: { label: 'Maqbul (D)', color: 'bg-orange-500' },
+  RASIB: { label: 'Rasib (E)', color: 'bg-red-500' },
 };
 
 export default function RaporPesantrenPreviewPage() {
   const { user } = useAuthStore();
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedStudent, setSelectedStudent] = useState<string>('');
+  const [selectedRaporId, setSelectedRaporId] = useState<string>('');
   
   const { data: classes } = useClasses({ unitId: user?.unitId });
   const { data: studentsData } = useStudents({ 
     classId: selectedClass || undefined,
     limit: 100,
   });
+  const { data: academicYears } = useAcademicYears();
+  
+  // Get current academic year
+  const activeAcademicYear = useMemo(() => {
+    return academicYears?.data?.find(ay => ay.isActive);
+  }, [academicYears]);
+  
+  // Fetch rapor list for selected student
+  const { data: raporListData, isLoading: isLoadingList } = useRaporList({
+    classId: selectedClass || undefined,
+    academicYearId: activeAcademicYear?.id,
+  });
+  
+  // Find rapor for selected student from list
+  const studentRapor = useMemo(() => {
+    if (!raporListData?.data || !selectedStudent) return null;
+    return raporListData.data.find((r: RaporPesantren) => r.student?.id === selectedStudent);
+  }, [raporListData, selectedStudent]);
+  
+  // Fetch detailed rapor if available
+  const { data: raporDetail, isLoading: isLoadingDetail } = useRaporDetail(
+    studentRapor?.id || selectedRaporId || ''
+  );
 
   const students = studentsData?.data || [];
-  const rapor = mockRaporData; // In real app, fetch from API
+  
+  // Use real data from API or placeholder
+  const rapor = useMemo(() => {
+    if (!raporDetail) return null;
+    
+    // Map API response to display format
+    return {
+      student: {
+        name: raporDetail.student?.name || '-',
+        nis: raporDetail.student?.nis || '-',
+        class: raporDetail.student?.class?.name || '-',
+      },
+      period: {
+        semester: raporDetail.semester || 1,
+        academicYear: raporDetail.academicYear?.year || '-',
+      },
+      tahfidz: raporDetail.tahfidzComponent || {
+        totalAyah: 0,
+        surahCount: 0,
+        averageScore: 0,
+        grade: 'maqbul',
+        details: [],
+      },
+      ibadah: raporDetail.ibadahComponent || {
+        sholatWajib: 0,
+        sholatSunnah: 0,
+        tilawah: 0,
+        averageScore: 0,
+        grade: 'maqbul',
+      },
+      muhadhoroh: raporDetail.muhadhorohComponent || {
+        totalSessions: 0,
+        averageScore: 0,
+        grade: 'maqbul',
+        bestPerformance: '-',
+      },
+      muhadatsah: raporDetail.muhadatsahComponent || {
+        totalSessions: 0,
+        averageScore: 0,
+        grade: 'maqbul',
+      },
+      kitabProgress: raporDetail.kitabComponent || {
+        kitabCount: 0,
+        completedChapters: 0,
+        averageScore: 0,
+        grade: 'maqbul',
+      },
+      akhlak: raporDetail.akhlakComponent || {
+        attendance: 0,
+        violations: 0,
+        rewards: 0,
+        averageScore: 0,
+        grade: 'maqbul',
+      },
+      finalScore: raporDetail.finalScore || 0,
+      finalGrade: raporDetail.finalGrade || 'maqbul',
+      recommendation: raporDetail.notes || raporDetail.musyrifNotes || 'Tidak ada catatan',
+    };
+  }, [raporDetail]);
 
   const renderScoreBar = (score: number, maxScore: number = 100) => {
     const percentage = (score / maxScore) * 100;
@@ -167,6 +201,29 @@ export default function RaporPesantrenPreviewPage() {
         </div>
 
         {/* Rapor Preview */}
+        {isLoadingDetail ? (
+          <div className="space-y-4">
+            <Skeleton className="h-32" />
+            <div className="grid gap-6 lg:grid-cols-3">
+              <Skeleton className="h-48" />
+              <Skeleton className="h-48" />
+              <Skeleton className="h-48" />
+            </div>
+          </div>
+        ) : !rapor ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+              <h2 className="text-lg font-medium">Tidak Ada Data Rapor</h2>
+              <p className="text-muted-foreground text-sm mt-1">
+                {selectedStudent 
+                  ? 'Rapor pesantren belum tersedia untuk santri ini. Silahkan generate terlebih dahulu.'
+                  : 'Silahkan pilih kelas dan santri untuk melihat rapor.'
+                }
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Student Info */}
           <Card className="lg:col-span-3">
@@ -274,6 +331,7 @@ export default function RaporPesantrenPreviewPage() {
             </CardContent>
           </Card>
         </div>
+        )}
       </div>
     </MainLayout>
   );

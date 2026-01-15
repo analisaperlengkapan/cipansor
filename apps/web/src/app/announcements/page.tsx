@@ -1,78 +1,203 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bell, Search, Calendar, AlertCircle, Info, CheckCircle } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Bell,
+  Search,
+  Calendar,
+  AlertCircle,
+  Info,
+  CheckCircle,
+  Plus,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  Megaphone,
+  Users,
+  Clock,
+  Eye,
+  FileText,
+  Loader2,
+} from 'lucide-react';
+import {
+  useAnnouncements,
+  useAnnouncementStats,
+  useCreateAnnouncement,
+  useUpdateAnnouncement,
+  useDeleteAnnouncement,
+  Announcement,
+} from '@/hooks/use-announcements';
+import { useAuth } from '@/hooks/use-auth';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { id as localeId } from 'date-fns/locale';
 
-interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  createdAt: string;
-  author?: {
-    name: string;
-  };
-  unit?: {
-    name: string;
-  };
-}
+const PRIORITY_OPTIONS = [
+  { value: 0, label: 'Normal', color: 'bg-gray-500', icon: Info },
+  { value: 1, label: 'Penting', color: 'bg-orange-500', icon: AlertCircle },
+  { value: 2, label: 'Mendesak', color: 'bg-red-500', icon: AlertCircle },
+];
+
+const TYPE_OPTIONS = [
+  { value: 'ANNOUNCEMENT', label: 'Pengumuman' },
+  { value: 'INFO', label: 'Informasi' },
+  { value: 'REMINDER', label: 'Pengingat' },
+  { value: 'ALERT', label: 'Peringatan' },
+];
+
+const ROLE_OPTIONS = [
+  { value: 'STUDENT', label: 'Santri' },
+  { value: 'PARENT', label: 'Orang Tua' },
+  { value: 'TEACHER', label: 'Guru/Ustadz' },
+  { value: 'STAFF', label: 'Staff' },
+];
 
 export default function AnnouncementsPage() {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showDialog, setShowDialog] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [viewingAnnouncement, setViewingAnnouncement] = useState<Announcement | null>(null);
+  
+  const [form, setForm] = useState({
+    title: '',
+    content: '',
+    type: 'ANNOUNCEMENT',
+    priority: 0,
+    publishedAt: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+    expiresAt: '',
+    targetRoles: [] as string[],
+  });
 
-  useEffect(() => {
-    // Simulated data - replace with actual API call
-    const mockAnnouncements: Announcement[] = [
-      {
-        id: '1',
-        title: 'Pengumuman Libur Hari Raya Idul Fitri 1446 H',
-        content: 'Diberitahukan kepada seluruh santri dan orang tua wali bahwa libur Hari Raya Idul Fitri akan dimulai tanggal 28 Maret 2025. Santri dapat dijemput mulai tanggal 27 Maret 2025 setelah sholat Ashar.',
-        priority: 'HIGH',
-        createdAt: new Date().toISOString(),
-        author: { name: 'Admin Pesantren' },
-        unit: { name: 'Pesantren Al-Hikmah' },
-      },
-      {
-        id: '2',
-        title: 'Jadwal Ujian Tengah Semester Genap 2024/2025',
-        content: 'Ujian Tengah Semester Genap akan dilaksanakan pada tanggal 10-15 Februari 2025. Materi yang diujikan meliputi seluruh materi yang telah dipelajari sejak awal semester genap.',
-        priority: 'MEDIUM',
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        author: { name: 'Bidang Kurikulum' },
-        unit: { name: 'Pesantren Al-Hikmah' },
-      },
-      {
-        id: '3',
-        title: 'Kegiatan Rutin Tahfidz Mingguan',
-        content: 'Mengingatkan kembali bahwa kegiatan setoran hafalan rutin dilaksanakan setiap hari Senin-Kamis pukul 05.30-06.30 WIB dan 16.00-17.00 WIB. Diharapkan seluruh santri hadir tepat waktu.',
-        priority: 'LOW',
-        createdAt: new Date(Date.now() - 172800000).toISOString(),
-        author: { name: 'Koordinator Tahfidz' },
-        unit: { name: 'Pesantren Al-Hikmah' },
-      },
-      {
-        id: '4',
-        title: 'PENTING: Pembayaran SPP Bulan Februari',
-        content: 'Diinformasikan kepada orang tua wali agar segera melakukan pembayaran SPP bulan Februari 2025 paling lambat tanggal 10 Februari 2025. Pembayaran dapat dilakukan melalui transfer bank atau langsung ke bagian keuangan.',
-        priority: 'URGENT',
-        createdAt: new Date(Date.now() - 259200000).toISOString(),
-        author: { name: 'Bagian Keuangan' },
-        unit: { name: 'Pesantren Al-Hikmah' },
-      },
-    ];
+  const { data: announcementsData, isLoading } = useAnnouncements({
+    unitId: user?.unitId,
+    published: activeTab === 'published',
+    limit: 50,
+  });
+  const { data: stats } = useAnnouncementStats(user?.unitId);
+  
+  const createAnnouncement = useCreateAnnouncement();
+  const updateAnnouncement = useUpdateAnnouncement();
+  const deleteAnnouncement = useDeleteAnnouncement();
 
-    setTimeout(() => {
-      setAnnouncements(mockAnnouncements);
-      setLoading(false);
-    }, 500);
-  }, []);
+  const announcements = announcementsData?.data || [];
+
+  const resetForm = () => {
+    setForm({
+      title: '',
+      content: '',
+      type: 'ANNOUNCEMENT',
+      priority: 0,
+      publishedAt: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+      expiresAt: '',
+      targetRoles: [],
+    });
+    setEditingAnnouncement(null);
+  };
+
+  const handleOpenEdit = (announcement: Announcement) => {
+    setEditingAnnouncement(announcement);
+    setForm({
+      title: announcement.title,
+      content: announcement.content,
+      type: announcement.type,
+      priority: announcement.priority,
+      publishedAt: announcement.publishedAt 
+        ? format(new Date(announcement.publishedAt), "yyyy-MM-dd'T'HH:mm")
+        : '',
+      expiresAt: announcement.expiresAt 
+        ? format(new Date(announcement.expiresAt), "yyyy-MM-dd'T'HH:mm")
+        : '',
+      targetRoles: announcement.targetRoles || [],
+    });
+    setShowDialog(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.title || !form.content) {
+      toast.error('Judul dan konten wajib diisi');
+      return;
+    }
+
+    try {
+      const payload = {
+        ...form,
+        unitId: user?.unitId,
+        publishedAt: form.publishedAt ? new Date(form.publishedAt).toISOString() : undefined,
+        expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : undefined,
+      };
+
+      if (editingAnnouncement) {
+        await updateAnnouncement.mutateAsync({
+          id: editingAnnouncement.id,
+          data: payload,
+        });
+        toast.success('Pengumuman berhasil diperbarui');
+      } else {
+        await createAnnouncement.mutateAsync(payload);
+        toast.success('Pengumuman berhasil dibuat');
+      }
+      setShowDialog(false);
+      resetForm();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal menyimpan pengumuman');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Apakah Anda yakin ingin menghapus pengumuman ini?')) return;
+    
+    try {
+      await deleteAnnouncement.mutateAsync(id);
+      toast.success('Pengumuman berhasil dihapus');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal menghapus pengumuman');
+    }
+  };
+
+  const toggleRole = (role: string) => {
+    setForm(prev => ({
+      ...prev,
+      targetRoles: prev.targetRoles.includes(role)
+        ? prev.targetRoles.filter(r => r !== role)
+        : [...prev.targetRoles, role],
+    }));
+  };
 
   const filteredAnnouncements = announcements.filter(
     (a) =>
@@ -80,35 +205,31 @@ export default function AnnouncementsPage() {
       a.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'URGENT':
-        return <Badge variant="destructive">Mendesak</Badge>;
-      case 'HIGH':
-        return <Badge variant="destructive" className="bg-orange-500">Penting</Badge>;
-      case 'MEDIUM':
-        return <Badge variant="secondary">Sedang</Badge>;
-      default:
-        return <Badge variant="outline">Info</Badge>;
-    }
-  };
-
-  const getPriorityIcon = (priority: string) => {
-    switch (priority) {
-      case 'URGENT':
-        return <AlertCircle className="h-5 w-5 text-red-500" />;
-      case 'HIGH':
-        return <AlertCircle className="h-5 w-5 text-orange-500" />;
-      case 'MEDIUM':
-        return <Info className="h-5 w-5 text-blue-500" />;
-      default:
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-    }
-  };
-
-  if (loading) {
+  const getPriorityBadge = (priority: number) => {
+    const option = PRIORITY_OPTIONS.find(o => o.value === priority);
     return (
-      <div className="space-y-6">
+      <Badge className={option?.color || 'bg-gray-500'}>
+        {option?.label || 'Normal'}
+      </Badge>
+    );
+  };
+
+  const getPriorityIcon = (priority: number) => {
+    switch (priority) {
+      case 2:
+        return <AlertCircle className="h-5 w-5 text-red-500" />;
+      case 1:
+        return <AlertCircle className="h-5 w-5 text-orange-500" />;
+      default:
+        return <Info className="h-5 w-5 text-blue-500" />;
+    }
+  };
+
+  const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'UNIT_ADMIN';
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 p-6">
         <div className="flex items-center justify-between">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-10 w-64" />
@@ -125,7 +246,7 @@ export default function AnnouncementsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -137,16 +258,66 @@ export default function AnnouncementsPage() {
             Informasi dan pengumuman terbaru
           </p>
         </div>
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Cari pengumuman..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+        <div className="flex gap-2">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Cari pengumuman..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          {isAdmin && (
+            <Button onClick={() => setShowDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Buat Baru
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Stats for Admin */}
+      {isAdmin && stats && (
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Pengumuman</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.total}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Aktif</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.active}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Mendesak</CardTitle>
+              <AlertCircle className="h-4 w-4 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-500">{stats.urgent}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Bulan Ini</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.thisMonth}</div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Announcements List */}
       <div className="space-y-4">
@@ -164,7 +335,7 @@ export default function AnnouncementsPage() {
           </Card>
         ) : (
           filteredAnnouncements.map((announcement) => (
-            <Card key={announcement.id} className="overflow-hidden">
+            <Card key={announcement.id} className="overflow-hidden hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3">
@@ -174,33 +345,251 @@ export default function AnnouncementsPage() {
                       <div className="flex flex-wrap items-center gap-2 mt-2 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {new Date(announcement.createdAt).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          })}
+                          {announcement.publishedAt
+                            ? format(new Date(announcement.publishedAt), 'dd MMM yyyy HH:mm', { locale: localeId })
+                            : format(new Date(announcement.createdAt), 'dd MMM yyyy', { locale: localeId })}
                         </span>
-                        {announcement.author && (
-                          <span>• {announcement.author.name}</span>
+                        {announcement.createdBy && (
+                          <span>• {announcement.createdBy.name}</span>
                         )}
                         {announcement.unit && (
-                          <span>• {announcement.unit.name}</span>
+                          <Badge variant="outline">{announcement.unit.name}</Badge>
+                        )}
+                        {announcement.targetRoles?.length > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            {announcement.targetRoles.join(', ')}
+                          </span>
                         )}
                       </div>
                     </div>
                   </div>
-                  {getPriorityBadge(announcement.priority)}
+                  <div className="flex items-center gap-2">
+                    {getPriorityBadge(announcement.priority)}
+                    {isAdmin && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setViewingAnnouncement(announcement)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Lihat Detail
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleOpenEdit(announcement)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDelete(announcement.id)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Hapus
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
                   {announcement.content}
                 </p>
+                {announcement.expiresAt && (
+                  <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Berlaku sampai: {format(new Date(announcement.expiresAt), 'dd MMM yyyy HH:mm', { locale: localeId })}
+                  </p>
+                )}
               </CardContent>
             </Card>
           ))
         )}
       </div>
+
+      {/* Create/Edit Dialog */}
+      <Dialog open={showDialog} onOpenChange={(open) => {
+        if (!open) resetForm();
+        setShowDialog(open);
+      }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {editingAnnouncement ? 'Edit Pengumuman' : 'Buat Pengumuman Baru'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingAnnouncement 
+                ? 'Perbarui informasi pengumuman'
+                : 'Buat pengumuman baru untuk disampaikan ke pengguna'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Judul*</Label>
+              <Input
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="Judul pengumuman"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Konten*</Label>
+              <Textarea
+                value={form.content}
+                onChange={(e) => setForm({ ...form, content: e.target.value })}
+                placeholder="Isi pengumuman..."
+                rows={5}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Tipe</Label>
+                <Select
+                  value={form.type}
+                  onValueChange={(v) => setForm({ ...form, type: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TYPE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Prioritas</Label>
+                <Select
+                  value={String(form.priority)}
+                  onValueChange={(v) => setForm({ ...form, priority: parseInt(v) })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIORITY_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={String(option.value)}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Tanggal Publish</Label>
+                <Input
+                  type="datetime-local"
+                  value={form.publishedAt}
+                  onChange={(e) => setForm({ ...form, publishedAt: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Tanggal Berakhir (opsional)</Label>
+                <Input
+                  type="datetime-local"
+                  value={form.expiresAt}
+                  onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Target Audience</Label>
+              <div className="flex flex-wrap gap-2">
+                {ROLE_OPTIONS.map((option) => (
+                  <Badge
+                    key={option.value}
+                    variant={form.targetRoles.includes(option.value) ? 'default' : 'outline'}
+                    className="cursor-pointer"
+                    onClick={() => toggleRole(option.value)}
+                  >
+                    {option.label}
+                  </Badge>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Kosongkan untuk semua pengguna
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDialog(false)}>
+              Batal
+            </Button>
+            <Button 
+              onClick={handleSave} 
+              disabled={createAnnouncement.isPending || updateAnnouncement.isPending}
+            >
+              {(createAnnouncement.isPending || updateAnnouncement.isPending) 
+                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
+                : 'Simpan'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Detail Dialog */}
+      <Dialog open={!!viewingAnnouncement} onOpenChange={(open) => {
+        if (!open) setViewingAnnouncement(null);
+      }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {viewingAnnouncement && getPriorityIcon(viewingAnnouncement.priority)}
+              {viewingAnnouncement?.title}
+            </DialogTitle>
+            <DialogDescription>
+              {viewingAnnouncement?.publishedAt && (
+                <span>
+                  Dipublikasi: {format(new Date(viewingAnnouncement.publishedAt), 'dd MMMM yyyy HH:mm', { locale: localeId })}
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {viewingAnnouncement && getPriorityBadge(viewingAnnouncement.priority)}
+              <Badge variant="outline">{viewingAnnouncement?.type}</Badge>
+              {viewingAnnouncement?.unit && (
+                <Badge variant="secondary">{viewingAnnouncement.unit.name}</Badge>
+              )}
+            </div>
+            <div className="prose prose-sm max-w-none">
+              <p className="whitespace-pre-wrap">{viewingAnnouncement?.content}</p>
+            </div>
+            {viewingAnnouncement?.targetRoles && viewingAnnouncement.targetRoles.length > 0 && (
+              <div className="text-sm text-muted-foreground">
+                <strong>Target:</strong> {viewingAnnouncement.targetRoles.join(', ')}
+              </div>
+            )}
+            {viewingAnnouncement?.expiresAt && (
+              <div className="text-sm text-muted-foreground">
+                <strong>Berlaku sampai:</strong> {format(new Date(viewingAnnouncement.expiresAt), 'dd MMMM yyyy HH:mm', { locale: localeId })}
+              </div>
+            )}
+            <div className="text-sm text-muted-foreground">
+              <strong>Dibuat oleh:</strong> {viewingAnnouncement?.createdBy?.name || 'System'}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewingAnnouncement(null)}>
+              Tutup
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

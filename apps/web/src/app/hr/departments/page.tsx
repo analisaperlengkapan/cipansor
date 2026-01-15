@@ -222,7 +222,6 @@ function DepartmentDialog({
   const { data: employeesData } = useEmployees({ status: 'ACTIVE' });
   const employees = employeesData?.data || [];
 
-  // Fix: Move reset logic to useEffect
   useEffect(() => {
     if (open) {
       if (department) {

@@ -20,6 +20,7 @@ vi.mock('@/lib/prisma', () => ({
       findUniqueOrThrow: vi.fn(),
       count: vi.fn(),
       create: vi.fn(),
+      createMany: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
     },
@@ -445,25 +446,35 @@ describe('DailyReportService', () => {
       vi.mocked(prisma.dailyStudentReport.findMany).mockResolvedValue([] as any);
       vi.mocked(prisma.student.findMany).mockResolvedValue([
         { id: 'student-1', parentName: 'Parent 1', parentPhone: '123', user: { name: 'S1' } },
-        { id: 'student-2', parentName: 'Parent 2', parentPhone: '456', user: { name: 'S2' } }
+        { id: 'student-2', parentName: 'Parent 2', parentPhone: '456', user: { name: 'S2' } },
       ] as any);
-      vi.mocked(prisma.dailyStudentReport.create).mockResolvedValue(mockReport as any);
+      vi.mocked(prisma.dailyStudentReport.createMany).mockResolvedValue({ count: 2 } as any);
 
       const result = await dailyReportService.bulkCreate(bulkInput, mockUserId);
 
       expect(result.created).toBe(2);
       expect(result.failed).toBe(0);
       expect(result.details.success).toHaveLength(2);
-      expect(prisma.dailyStudentReport.create).toHaveBeenCalledTimes(2);
+      expect(prisma.dailyStudentReport.createMany).toHaveBeenCalledTimes(1);
     });
 
     it('should trigger WhatsApp notifications for multiple students', async () => {
       vi.mocked(prisma.dailyStudentReport.findMany).mockResolvedValue([] as any);
       vi.mocked(prisma.student.findMany).mockResolvedValue([
-        { id: 'student-1', parentName: 'Parent 1', parentPhone: '628123456789', user: { name: 'S1' } },
-        { id: 'student-2', parentName: 'Parent 2', parentPhone: '628987654321', user: { name: 'S2' } }
+        {
+          id: 'student-1',
+          parentName: 'Parent 1',
+          parentPhone: '628123456789',
+          user: { name: 'S1' },
+        },
+        {
+          id: 'student-2',
+          parentName: 'Parent 2',
+          parentPhone: '628987654321',
+          user: { name: 'S2' },
+        },
       ] as any);
-      vi.mocked(prisma.dailyStudentReport.create).mockResolvedValue(mockReport as any);
+      vi.mocked(prisma.dailyStudentReport.createMany).mockResolvedValue({ count: 2 } as any);
 
       await dailyReportService.bulkCreate(bulkInput, mockUserId);
 
@@ -471,12 +482,14 @@ describe('DailyReportService', () => {
     });
 
     it('should handle duplicate reports', async () => {
-      vi.mocked(prisma.dailyStudentReport.findMany).mockResolvedValue([{ studentId: 'student-1' }] as any);
+      vi.mocked(prisma.dailyStudentReport.findMany).mockResolvedValue([
+        { studentId: 'student-1' },
+      ] as any);
       vi.mocked(prisma.student.findMany).mockResolvedValue([
         { id: 'student-1', parentName: 'Parent 1', parentPhone: '123', user: { name: 'S1' } },
-        { id: 'student-2', parentName: 'Parent 2', parentPhone: '456', user: { name: 'S2' } }
+        { id: 'student-2', parentName: 'Parent 2', parentPhone: '456', user: { name: 'S2' } },
       ] as any);
-      vi.mocked(prisma.dailyStudentReport.create).mockResolvedValue(mockReport as any);
+      vi.mocked(prisma.dailyStudentReport.createMany).mockResolvedValue({ count: 1 } as any);
 
       const result = await dailyReportService.bulkCreate(bulkInput, mockUserId);
 
@@ -489,17 +502,17 @@ describe('DailyReportService', () => {
       vi.mocked(prisma.dailyStudentReport.findMany).mockResolvedValue([] as any);
       vi.mocked(prisma.student.findMany).mockResolvedValue([
         { id: 'student-1', parentName: 'Parent 1', parentPhone: '123', user: { name: 'S1' } },
-        { id: 'student-2', parentName: 'Parent 2', parentPhone: '456', user: { name: 'S2' } }
+        { id: 'student-2', parentName: 'Parent 2', parentPhone: '456', user: { name: 'S2' } },
       ] as any);
 
-      vi.mocked(prisma.dailyStudentReport.create)
-        .mockRejectedValueOnce(new Error('Database error'))
-        .mockResolvedValueOnce(mockReport as any);
+      vi.mocked(prisma.dailyStudentReport.createMany).mockRejectedValueOnce(
+        new Error('Database error')
+      );
 
       const result = await dailyReportService.bulkCreate(bulkInput, mockUserId);
 
-      expect(result.created).toBe(1);
-      expect(result.failed).toBe(1);
+      expect(result.created).toBe(0);
+      expect(result.failed).toBe(2);
       expect(result.details.failed[0].error).toBe('Database error');
     });
   });

@@ -264,61 +264,82 @@ export const dashboardService = {
   async getUnitComparison(query: UnitComparisonQuery) {
     const { metricType, academicYearId, periodStart, periodEnd } = query;
 
-    // Get all units
+    // 1. Get all units
     const units = await prisma.unit.findMany({
       select: { id: true, name: true, type: true },
     });
 
-    // Get metrics for each unit
-    const comparisons = await Promise.all(
-      units.map(async (unit) => {
-        const where: Prisma.DashboardMetricSnapshotWhereInput = {
-          unitId: unit.id,
-          metricType,
-        };
+    const unitIds = units.map((u) => u.id);
 
-        if (academicYearId) where.academicYearId = academicYearId;
+    // 2. Build the common where clause for metrics
+    const metricWhere: Prisma.DashboardMetricSnapshotWhereInput = {
+      unitId: { in: unitIds },
+      metricType,
+    };
+    if (academicYearId) metricWhere.academicYearId = academicYearId;
+    if (periodStart || periodEnd) {
+      metricWhere.periodDate = {};
+      if (periodStart) metricWhere.periodDate.gte = new Date(periodStart);
+      if (periodEnd) metricWhere.periodDate.lte = new Date(periodEnd);
+    }
 
-        if (periodStart || periodEnd) {
-          where.periodDate = {};
-          if (periodStart) where.periodDate.gte = new Date(periodStart);
-          if (periodEnd) where.periodDate.lte = new Date(periodEnd);
-        }
+    // 3. Get all data in parallel with a few bulk queries
+    const [metricsByUnit, studentsByUnit, teachersByUnit] = await Promise.all([
+      // Get metrics aggregated by unit
+      prisma.dashboardMetricSnapshot.groupBy({
+        by: ['unitId'],
+        where: metricWhere,
+        _avg: { metricValue: true },
+        _sum: { metricValue: true },
+        _count: { _all: true },
+      }),
+      // Get active student counts by unit
+      prisma.student.groupBy({
+        by: ['unitId'],
+        where: { unitId: { in: unitIds }, status: 'active' },
+        _count: { _all: true },
+      }),
+      // Get teacher counts by unit
+      prisma.teacher.groupBy({
+        by: ['unitId'],
+        where: { unitId: { in: unitIds } },
+        _count: { _all: true },
+      }),
+    ]);
 
-        const metrics = await prisma.dashboardMetricSnapshot.aggregate({
-          where,
-          _avg: { metricValue: true },
-          _sum: { metricValue: true },
-          _count: { _all: true },
-        });
-
-        // Get additional stats
-        const studentCount = await prisma.student.count({
-          where: { unitId: unit.id, status: 'active' },
-        });
-
-        const teacherCount = await prisma.teacher.count({
-          where: { unitId: unit.id },
-        });
-
-        return {
-          unit: {
-            id: unit.id,
-            name: unit.name,
-            type: unit.type,
-          },
-          metrics: {
-            avg: metrics._avg.metricValue || 0,
-            sum: metrics._sum.metricValue || 0,
-            count: metrics._count._all,
-          },
-          stats: {
-            students: studentCount,
-            teachers: teacherCount,
-          },
-        };
-      })
+    // 4. Create maps for efficient lookups
+    const metricsMap = new Map(
+      metricsByUnit.map((m) => [
+        m.unitId,
+        {
+          avg: m._avg.metricValue || 0,
+          sum: m._sum.metricValue || 0,
+          count: m._count._all,
+        },
+      ])
     );
+
+    const studentsMap = new Map(
+      studentsByUnit.map((s) => [s.unitId, s._count._all])
+    );
+
+    const teachersMap = new Map(
+      teachersByUnit.map((t) => [t.unitId, t._count._all])
+    );
+
+    // 5. Combine the data
+    const comparisons = units.map((unit) => ({
+      unit: {
+        id: unit.id,
+        name: unit.name,
+        type: unit.type,
+      },
+      metrics: metricsMap.get(unit.id) || { avg: 0, sum: 0, count: 0 },
+      stats: {
+        students: studentsMap.get(unit.id) || 0,
+        teachers: teachersMap.get(unit.id) || 0,
+      },
+    }));
 
     return {
       metricType,

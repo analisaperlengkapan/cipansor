@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -23,9 +24,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
+import { Pagination } from "@/components/shared/pagination";
 
 export function MaintenanceList() {
-  const { data, isLoading } = useMaintenances({ limit: 50 }); // TODO: Pagination
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const { data, isLoading } = useMaintenances({ page, limit });
   const { mutateAsync: updateStatus } = useUpdateMaintenanceStatus();
 
   if (isLoading) {
@@ -131,6 +135,13 @@ export function MaintenanceList() {
           )}
         </TableBody>
       </Table>
+      <Pagination
+        page={data?.meta.page || 1}
+        totalPages={data?.meta.totalPages || 1}
+        total={data?.meta.total || 0}
+        onPageChange={setPage}
+        onPageSizeChange={setLimit}
+       />
     </div>
   );
 }

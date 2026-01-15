@@ -65,7 +65,7 @@ import {
 } from '@/hooks/use-muhadatsah';
 
 // Demo unit ID
-const DEMO_UNIT_ID = 'demo-unit-id';
+const DEMO_UNIT_ID = 'unit-sma';
 
 export default function MuhadatsahPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -142,14 +142,20 @@ export default function MuhadatsahPage() {
   const meta = listData?.meta || { total: demoRecords.length, page: 1, limit: 10, totalPages: 1 };
 
   // Filter by search
-  const filteredRecords = records.filter(record => {
+  const filteredRecords = (records || []).filter(record => {
     if (!searchQuery) return true;
+    if (!record) return false;
     const query = searchQuery.toLowerCase();
+    const studentName = record.student?.name || '';
+    const studentNis = record.student?.nis || '';
+    const partnerName = record.partner?.name || '';
+    const topic = record.topic || '';
+    
     return (
-      record.topic?.toLowerCase().includes(query) ||
-      record.student?.name.toLowerCase().includes(query) ||
-      record.student?.nis.toLowerCase().includes(query) ||
-      record.partner?.name.toLowerCase().includes(query)
+      topic.toLowerCase().includes(query) ||
+      studentName.toLowerCase().includes(query) ||
+      studentNis.toLowerCase().includes(query) ||
+      partnerName.toLowerCase().includes(query)
     );
   });
 
@@ -223,7 +229,7 @@ export default function MuhadatsahPage() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+            <div className="text-2xl font-bold">{stats?.total || 0}</div>
             <p className="text-xs text-muted-foreground">
               Semester ini
             </p>
@@ -237,10 +243,10 @@ export default function MuhadatsahPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats.byStatus.find(s => s.status === 'COMPLETED')?.count || 0}
+              {stats?.byStatus?.find(s => s.status === 'COMPLETED')?.count || 0}
             </div>
             <p className="text-xs text-muted-foreground">
-              {Math.round(((stats.byStatus.find(s => s.status === 'COMPLETED')?.count || 0) / stats.total) * 100)}% completion rate
+              {Math.round(((stats?.byStatus?.find(s => s.status === 'COMPLETED')?.count || 0) / (stats?.total || 1)) * 100)}% completion rate
             </p>
           </CardContent>
         </Card>
@@ -252,7 +258,7 @@ export default function MuhadatsahPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats.byStatus.find(s => s.status === 'SCHEDULED')?.count || 0}
+              {stats?.byStatus?.find(s => s.status === 'SCHEDULED')?.count || 0}
             </div>
             <p className="text-xs text-muted-foreground">
               Menunggu pelaksanaan
@@ -266,7 +272,7 @@ export default function MuhadatsahPage() {
             <TrendingUp className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.averages.total.toFixed(1)}</div>
+            <div className="text-2xl font-bold">{(stats?.averages?.total || 0).toFixed(1)}</div>
             <p className="text-xs text-muted-foreground">
               Dari 100 poin
             </p>
@@ -362,13 +368,13 @@ export default function MuhadatsahPage() {
                           </div>
                           <div>
                             <div className="font-medium text-sm">
-                              {record.student?.name}
-                              {record.partner && (
+                              {record.student?.name || '-'}
+                              {record.partner?.name && (
                                 <span className="text-muted-foreground"> & {record.partner.name}</span>
                               )}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {record.student?.class?.name}
+                              {record.student?.class?.name || '-'}
                             </div>
                           </div>
                         </div>
@@ -383,7 +389,7 @@ export default function MuhadatsahPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {format(new Date(record.scheduledAt), 'dd MMM yyyy, HH:mm', { locale: localeId })}
+                        {record.scheduledAt ? format(new Date(record.scheduledAt), 'dd MMM yyyy, HH:mm', { locale: localeId }) : '-'}
                       </TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(record.status)}>
@@ -571,30 +577,30 @@ export default function MuhadatsahPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Kelancaran (Fluency)</span>
-                    <span className="font-medium">{stats.averages.fluency.toFixed(1)}</span>
+                    <span className="font-medium">{(stats?.averages?.fluency || 0).toFixed(1)}</span>
                   </div>
-                  <Progress value={stats.averages.fluency} className="h-2" />
+                  <Progress value={stats?.averages?.fluency || 0} className="h-2" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Tata Bahasa (Grammar)</span>
-                    <span className="font-medium">{stats.averages.grammar.toFixed(1)}</span>
+                    <span className="font-medium">{(stats?.averages?.grammar || 0).toFixed(1)}</span>
                   </div>
-                  <Progress value={stats.averages.grammar} className="h-2" />
+                  <Progress value={stats?.averages?.grammar || 0} className="h-2" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Kosakata (Vocabulary)</span>
-                    <span className="font-medium">{stats.averages.vocabulary.toFixed(1)}</span>
+                    <span className="font-medium">{(stats?.averages?.vocabulary || 0).toFixed(1)}</span>
                   </div>
-                  <Progress value={stats.averages.vocabulary} className="h-2" />
+                  <Progress value={stats?.averages?.vocabulary || 0} className="h-2" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Pengucapan (Pronunciation)</span>
-                    <span className="font-medium">{stats.averages.pronunciation.toFixed(1)}</span>
+                    <span className="font-medium">{(stats?.averages?.pronunciation || 0).toFixed(1)}</span>
                   </div>
-                  <Progress value={stats.averages.pronunciation} className="h-2" />
+                  <Progress value={stats?.averages?.pronunciation || 0} className="h-2" />
                 </div>
               </CardContent>
             </Card>

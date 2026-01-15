@@ -182,6 +182,26 @@ test.describe('Generate Screenshots Expanded', () => {
           currentOccupancy: 85, 
           unit: { id: 'unit-sma', name: 'SMA Al-Qur\'an' }, 
           supervisor: { id: 'e2', name: 'Ust. Zainal' } 
+        },
+        { 
+          id: 'dorm2', 
+          name: 'Gedung Umar', 
+          code: 'AS-02', 
+          type: 'MALE', 
+          capacity: 80, 
+          currentOccupancy: 75, 
+          unit: { id: 'unit-sma', name: 'SMA Al-Qur\'an' }, 
+          supervisor: { id: 'e3', name: 'Ust. Farhan' } 
+        },
+        { 
+          id: 'dorm3', 
+          name: 'Gedung Khadijah', 
+          code: 'AS-03', 
+          type: 'FEMALE', 
+          capacity: 120, 
+          currentOccupancy: 110, 
+          unit: { id: 'unit-sma', name: 'SMA Al-Qur\'an' }, 
+          supervisor: { id: 'e4', name: 'Ustadzah Aminah' } 
         }
       ])) });
       if (url.includes('/api/rooms')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([{ id: 'room1', name: 'Kamar Ikhlas 101', floor: 1, capacity: 4, currentOccupancy: 4 }])) });
@@ -196,6 +216,22 @@ test.describe('Generate Screenshots Expanded', () => {
           violationType: { id: 'vt1', name: 'Terlambat Berjamaah', category: 'LIGHT', points: 5 }, 
           actionTaken: 'Nasehat', 
           reportedBy: { name: 'Ust. Keamanan' } 
+        },
+        { 
+          id: 'v2', 
+          date: mockDate, 
+          student: { id: 's2', name: 'Doni', nis: '123457' }, 
+          violationType: { id: 'vt2', name: 'Tidak Piket', category: 'LIGHT', points: 5 }, 
+          actionTaken: 'Membersihkan Halaman', 
+          reportedBy: { name: 'Ust. Asrama' } 
+        },
+        { 
+          id: 'v3', 
+          date: mockDate, 
+          student: { id: 's3', name: 'Rudi', nis: '123458' }, 
+          violationType: { id: 'vt3', name: 'Merokok', category: 'SEVERE', points: 100 }, 
+          actionTaken: 'Panggilan Orang Tua', 
+          reportedBy: { name: 'Ust. Kesiswaan' } 
         }
       ])) });
       if (url.includes('/api/violation-types')) return route.fulfill({ status: 200, body: JSON.stringify([
@@ -268,6 +304,88 @@ test.describe('Generate Screenshots Expanded', () => {
           { id: 'ann1', title: 'Penerimaan Raport Semester Ganjil', content: 'Raport dapat diambil pada tanggal 20 Desember...', createdAt: mockDate, priority: 'HIGH' }
         ]
       })) });
+      if (url.includes('/api/parent/finance')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({
+        totalBilling: 5000000,
+        totalPaid: 4500000,
+        totalUnpaid: 500000,
+        invoices: [
+          { id: 'i1', date: '2024-01-01', type: 'SPP Januari', amount: 500000, status: 'UNPAID' },
+          { id: 'i2', date: '2023-12-01', type: 'SPP Desember', amount: 500000, status: 'PAID' }
+        ]
+      })) });
+
+      // E-OFFICE
+      if (url.includes('/api/correspondence/letters')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
+        { id: 'l1', letterNumber: '001/YPC/I/2024', subject: 'Undangan Rapat Yayasan', senderName: 'Sekretariat Yayasan', date: '2024-01-10T00:00:00Z', urgency: 'URGENT', status: 'SENT', createdAt: mockDate },
+        { id: 'l2', letterNumber: '042/SMA-Q/I/2024', subject: 'Laporan Bulanan Unit', senderName: 'Kepala Sekolah SMA', date: '2024-01-05T00:00:00Z', urgency: 'NORMAL', status: 'DRAFT', createdAt: mockDate }
+      ])) });
+
+      // RECEPTION
+      if (url.includes('/api/reception/stats')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse({ guestsToday: 12, visitsToday: 5, pendingPackages: 8 })) });
+      if (url.includes('/api/reception/guests')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse([
+        { id: 'g1', name: 'Bpk. Hendra', instance: 'Dinas Pendidikan', purpose: 'Koordinasi Kurikulum', date: mockDate, time: '09:00' },
+        { id: 'g2', name: 'Ibu Siska', instance: 'Orang Tua Santri', purpose: 'Konsultasi Tahfidz', date: mockDate, time: '10:30' }
+      ])) });
+      if (url.includes('/api/reception/visits')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse([
+        { id: 'v1', studentName: 'Zaidan Ahmad', visitorName: 'Bpk. Ahmad (Ayah)', relation: 'Ayah', purpose: 'Antar Bekal', date: mockDate, time: '12:00' }
+      ])) });
+      if (url.includes('/api/reception/packages')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse([
+        { id: 'p1', studentName: 'Zahra Amira', courier: 'JNE', sender: 'Ibu Rita', dateReceived: mockDate, status: 'PENDING' }
+      ])) });
+
+      if (url.includes('/api/muhadatsah/upcoming')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { id: 'u1', student: { name: 'Ahmad Fauzi' }, partner: { name: 'Muhammad Rizki' }, topic: 'في السوق', scheduledAt: mockDate, language: 'Arabic', status: 'SCHEDULED' },
+          { id: 'u2', student: { name: 'Siti Aisyah' }, partner: { name: 'Fatimah Zahra' }, topic: 'At the Library', scheduledAt: mockDate, language: 'English', status: 'SCHEDULED' },
+          { id: 'u3', student: { name: 'Ibrahim Malik' }, partner: { name: 'Yusuf Abdillah' }, topic: 'Daily Routine', scheduledAt: mockDate, language: 'English', status: 'SCHEDULED' }
+        ])
+      });
+      if (url.includes('/api/muhadatsah/top-performers')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { studentId: 's1', name: 'Fatimah Zahra', nis: '2024003', class: 'VIII A', averageScore: 92, totalSessions: 18 },
+          { studentId: 's2', name: 'Ahmad Fauzi', nis: '2024001', class: 'IX A', averageScore: 88, totalSessions: 22 },
+          { studentId: 's3', name: 'Muhammad Rizki', nis: '2024002', class: 'IX B', averageScore: 86, totalSessions: 15 },
+          { studentId: 's4', name: 'Khadijah Nur', nis: '2024005', class: 'VII B', averageScore: 84, totalSessions: 12 }
+        ])
+      });
+      if (url.includes('/api/muhadatsah/match-partners')) return route.fulfill({ 
+        status: 200, 
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { id: 'p1', nis: '2024010', name: 'Ali Imran', class: { name: 'VIII A' } },
+          { id: 'p2', nis: '2024011', name: 'Bilal Ahmad', class: { name: 'VIII B' } },
+          { id: 'p3', nis: '2024012', name: 'Hamzah Yusuf', class: { name: 'VII A' } }
+        ])
+      });
+      if (url.includes('/api/muhadatsah/statistics')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ total: 120, averages: { fluency: 85, grammar: 80, vocabulary: 88, pronunciation: 82, total: 84 }, byStatus: [{ status: 'COMPLETED', count: 100 }, { status: 'SCHEDULED', count: 20 }], byLanguage: [{ language: 'Arabic', count: 80 }, { language: 'English', count: 40 }] }) });
+
+      if (url.includes('/api/muhadatsah')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(paginated([
+        { id: 'm1', student: { name: 'Zaidan Ahmad', nis: '2024001', class: { name: 'VII-A' } }, partner: { id: 'p1', name: 'Zahra Amira', nis: '2024002' }, language: 'Arabic', topic: 'At-Taaruf', totalScore: 85, grade: 'A', status: 'COMPLETED', scheduledAt: mockDate },
+        { id: 'm2', student: { name: 'Ahmad Fauzi', nis: '2024002', class: { name: 'IX-A' } }, partner: { id: 'p2', name: 'Rizki', nis: '2024011' }, language: 'English', topic: 'Future Plans', totalScore: 90, grade: 'A', status: 'COMPLETED', scheduledAt: mockDate }
+      ])) });
+
+      if (url.includes('/api/muhasabah/stats')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(apiResponse({ totalDays: 30, currentStreak: 7, averageSholatCompletion: 92, averageTilawahPages: 5 })) });
+      if (url.includes('/api/muhasabah')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(paginated([
+        { id: 'mu1', date: mockDate, mood: 'EXCELLENT', sholatSubuh: true, sholatDzuhur: true, sholatAshar: true, sholatMaghrib: true, sholatIsya: true, tilawahPages: 10, createdAt: mockDate }
+      ])) });
+
+      if (url.includes('/api/kitab-progress/statistics')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(apiResponse({ totalKitab: 15, totalStudentsLearning: 250, completionRate: 65, byCategory: { NAHWU: 5, FIQIH: 4, HADITS: 6 } })) });
+      if (url.includes('/api/kitab-progress/kitab')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(paginated([
+        { id: 'k1', title: 'Matan Al-Jurumiyah', category: 'NAHWU', level: 'MUBTADI', isActive: true, createdAt: mockDate }
+      ])) });
+
+      if (url.includes('/api/takhosus/dashboard-stats')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(apiResponse({ totalHalaqoh: 12, totalStudents: 145, activeEnrollments: 140, completedJuz: 450 })) });
+      if (url.includes('/api/takhosus/halaqoh')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(paginated([
+        { id: 'h1', code: 'HAL-001', name: 'Halaqoh Al-Jazari', teacher: { name: 'Ust. Abdullah' }, unit: { name: 'SMA' }, level: 1, studentCount: 12, maxStudents: 15, isActive: true, scheduleDay: ['MONDAY', 'WEDNESDAY'], scheduleTime: '16:00', createdAt: mockDate }
+      ])) });
+      if (url.includes('/api/takhosus/enrollment/stats')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(apiResponse({ total: 145, active: 140, completed: 5, dropped: 0, averageProgress: 65 })) });
+      if (url.includes('/api/takhosus/enrollment')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(paginated([
+        { id: 'e1', student: { user: { name: 'Ahmad Fauzi' }, unit: { name: 'SMA' } }, halaqoh: { name: 'Halaqoh Al-Jazari' }, targetJuz: 30, completedJuz: 15, progressPercentage: 50, sanadCount: 2, enrolledAt: mockDate, status: 'ACTIVE' }
+      ])) });
 
       // ANNOUNCEMENTS
       if (url.includes('/api/announcements')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
@@ -304,7 +422,8 @@ test.describe('Generate Screenshots Expanded', () => {
       // PERMITS (Perizinan)
       if (url.includes('/api/permits')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
         { id: 'pm1', student: { name: 'Ahmad', nis: '12345', currentClass: { name: 'X IPA 1' } }, permitType: 'PULANG', reason: 'Menghadiri acara keluarga', startDate: mockDate, endDate: mockDate, createdAt: mockDate, status: 'APPROVED', approvedBy: { name: 'Ust. Zainal' } },
-        { id: 'pm2', student: { name: 'Fatimah', nis: '12346', currentClass: { name: 'X IPA 2' } }, permitType: 'SAKIT', reason: 'Demam', startDate: mockDate, endDate: mockDate, createdAt: mockDate, status: 'PENDING', approvedBy: null }
+        { id: 'pm2', student: { name: 'Fatimah', nis: '12346', currentClass: { name: 'X IPA 2' } }, permitType: 'SAKIT', reason: 'Demam', startDate: mockDate, endDate: mockDate, createdAt: mockDate, status: 'PENDING', approvedBy: null },
+        { id: 'pm3', student: { name: 'Budi', nis: '12347', currentClass: { name: 'X IPA 1' } }, permitType: 'KELUAR', reason: 'Membeli perlengkapan', startDate: mockDate, endDate: mockDate, createdAt: mockDate, status: 'REJECTED', approvedBy: { name: 'Ust. Keamanan' }, rejectionReason: 'Tidak mendesak' }
       ])) });
 
       // REWARD TYPES
@@ -367,7 +486,9 @@ test.describe('Generate Screenshots Expanded', () => {
       // MUSYRIF (Pembimbing Asrama)
       if (url.includes('/api/musyrif')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
         { id: 'ms1', name: 'Ust. Zainal', dormitory: { name: 'Gedung Abu Bakar' }, totalStudents: 85, status: 'ACTIVE', phone: '081234567890' },
-        { id: 'ms2', name: 'Ustadzah Halimah', dormitory: { name: 'Gedung Khadijah' }, totalStudents: 70, status: 'ACTIVE', phone: '081234567891' }
+        { id: 'ms2', name: 'Ustadzah Halimah', dormitory: { name: 'Gedung Khadijah' }, totalStudents: 70, status: 'ACTIVE', phone: '081234567891' },
+        { id: 'ms3', name: 'Ust. Farhan', dormitory: { name: 'Gedung Umar' }, totalStudents: 80, status: 'ACTIVE', phone: '081234567892' },
+        { id: 'ms4', name: 'Ustadzah Aminah', dormitory: { name: 'Gedung Aisyah' }, totalStudents: 65, status: 'LEAVE', phone: '081234567893' }
       ])) });
 
       // WALLET (E-Wallet Santri)
@@ -385,6 +506,13 @@ test.describe('Generate Screenshots Expanded', () => {
         { id: 'd1', donorName: 'H. Abdullah', amount: 5000000, date: mockDate, type: 'WAKAF', description: 'Wakaf Pembangunan Masjid', status: 'VERIFIED' },
         { id: 'd2', donorName: 'Ibu Fatimah', amount: 1000000, date: mockDate, type: 'INFAQ', description: 'Infaq Bulanan', status: 'VERIFIED' }
       ])) });
+
+      // PROCUREMENT (Pengadaan - New)
+      if (url.includes('/api/procurement')) return route.fulfill({ status: 200, body: JSON.stringify({ data: [
+        { id: 'pr1', code: 'PR-SMA-001', date: mockDate, unit: { name: 'SMA Al-Qur\'an' }, requester: { name: 'Pak Budi (Sarpras)' }, description: 'Pengadaan Laptop Guru & ATK', totalEstimated: 15000000, status: 'APPROVED' },
+        { id: 'pr2', code: 'PR-SMA-002', date: mockDate, unit: { name: 'SMA Al-Qur\'an' }, requester: { name: 'Bu Ani (TU)' }, description: 'Kertas A4 & Tinta Printer', totalEstimated: 500000, status: 'PENDING' },
+        { id: 'pr3', code: 'PR-SMA-003', date: mockDate, unit: { name: 'SMA Al-Qur\'an' }, requester: { name: 'Ust. Zainal' }, description: 'Perbaikan AC Kelas X', totalEstimated: 750000, status: 'ORDERED' }
+      ]}) });
 
       // TK DAILY REPORT
       if (url.includes('/api/tk/daily-reports')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
@@ -573,6 +701,20 @@ test.describe('Generate Screenshots Expanded', () => {
       if (url.includes('/api/library/loans')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
         { id: 'll1', book: { title: 'Riyadhus Shalihin' }, borrower: { name: 'Ahmad' }, borrowDate: mockDate, dueDate: mockDate, status: 'BORROWED' }
       ])) });
+      if (url.includes('/api/library/categories')) return route.fulfill({ status: 200, body: JSON.stringify([
+         { id: 'c1', name: 'Kitab', count: 50 },
+         { id: 'c2', name: 'Fiqh', count: 30 },
+         { id: 'c3', name: 'Sejarah', count: 20 },
+         { id: 'c4', name: 'Umum', count: 10 }
+      ]) });
+      if (url.includes('/api/library/stats')) return route.fulfill({ status: 200, body: JSON.stringify({
+         totalTitles: 110,
+         totalBooks: 150,
+         availableBooks: 120,
+         totalCategories: 10,
+         activeBorrowings: 30,
+         overdueBorrowings: 5
+      }) });
 
       // EXTRACURRICULAR
       if (url.includes('/api/extracurricular')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
@@ -636,9 +778,12 @@ test.describe('Generate Screenshots Expanded', () => {
       ])) });
 
       // SCHEDULE
-      if (url.includes('/api/schedules')) return route.fulfill({ status: 200, body: JSON.stringify(apiResponse([
+      // SCHEDULE
+      if (url.includes('/api/curriculum/schedules')) return route.fulfill({ status: 200, body: JSON.stringify(paginated([
         { id: 'sc1', day: 'MONDAY', startTime: '07:00', endTime: '07:45', subject: { name: 'Tahfidz' }, teacher: { name: 'Ust. Hafidz' }, class: { name: 'X IPA 1' }, room: 'Kelas X-1' },
-        { id: 'sc2', day: 'MONDAY', startTime: '07:45', endTime: '08:30', subject: { name: 'Matematika' }, teacher: { name: 'Ust. Ahmad' }, class: { name: 'X IPA 1' }, room: 'Kelas X-1' }
+        { id: 'sc2', day: 'MONDAY', startTime: '07:45', endTime: '08:30', subject: { name: 'Matematika' }, teacher: { name: 'Ust. Ahmad' }, class: { name: 'X IPA 1' }, room: 'Kelas X-1' },
+        { id: 'sc3', day: 'MONDAY', startTime: '08:30', endTime: '09:15', subject: { name: 'Bahasa Indonesia' }, teacher: { name: 'Ibu Guru' }, class: { name: 'X IPA 1' }, room: 'Kelas X-1' },
+        { id: 'sc4', day: 'TUESDAY', startTime: '07:00', endTime: '07:45', subject: { name: 'Fisika' }, teacher: { name: 'Pak Fisika' }, class: { name: 'X IPA 1' }, room: 'Lab Fisika' }
       ])) });
 
       // CURRICULUM
@@ -833,6 +978,16 @@ test.describe('Generate Screenshots Expanded', () => {
     // Calendar & Scheduling
     { name: 'calendar', url: '/calendar', roleId: 'ur-1', unitId: 'unit-sma' },
     { name: 'duty-roster', url: '/duty-roster', roleId: 'ur-1', unitId: 'unit-sma' },
+
+    // Office & Misc
+    { name: 'e-office', url: '/e-office/inbox', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'reception', url: '/reception', roleId: 'ur-1', unitId: 'unit-sma' },
+    
+    // Religious Tracks
+    { name: 'muhadatsah', url: '/muhadatsah', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'muhasabah', url: '/muhasabah', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'kitab-progress', url: '/kitab-progress', roleId: 'ur-1', unitId: 'unit-sma' },
+    { name: 'takhosus', url: '/takhosus', roleId: 'ur-1', unitId: 'unit-sma' },
     
     // Settings & Profile
     { name: 'settings', url: '/settings', roleId: 'ur-1' },
@@ -841,10 +996,13 @@ test.describe('Generate Screenshots Expanded', () => {
     { name: 'settings-users', url: '/settings?tab=users', roleId: 'ur-1', unitId: 'unit-sma' },
     { name: 'profile', url: '/profile', roleId: 'ur-1', unitId: 'unit-sma' },
 
-    // Parent Portal (DOM-injected views)
-    { name: 'hack-portal', url: '/dashboard', roleId: 'ur-1', unitId: 'unit-sma' }, 
-    { name: 'hack-children', url: '/dashboard', roleId: 'ur-1', unitId: 'unit-sma' },
-    { name: 'hack-finance', url: '/dashboard', roleId: 'ur-1', unitId: 'unit-sma' },
+    // Procurement
+    { name: 'procurement', url: '/procurement', roleId: 'ur-1', unitId: 'unit-sma' },
+
+    // Parent Portal (REAL routes)
+    { name: 'parent-portal', url: '/parent', roleId: 'ur-parent', unitId: 'unit-sma' },
+    { name: 'parent-children', url: '/parent/children', roleId: 'ur-parent', unitId: 'unit-sma' },
+    { name: 'parent-finance', url: '/parent/finance', roleId: 'ur-parent', unitId: 'unit-sma' },
     
     // Login (no auth needed)
     { name: 'login', url: '/login' },
@@ -855,10 +1013,20 @@ test.describe('Generate Screenshots Expanded', () => {
       
       // Force standard admin auth flow by disabling isParent logic for auth injection
       // We will handle visual customization via DOM manipulation later
-      const isParent = false; 
-      const role = 'SUPER_ADMIN';
+      // Force standard admin auth flow by disabling isParent logic for auth injection
+      // We will handle visual customization via DOM manipulation later
+      const isParent = pageInfo.name.startsWith('parent-'); 
+      const role = isParent ? 'PARENT' : 'SUPER_ADMIN';
       const unitId = pageInfo.unitId || 'unit-sma';
       
+      
+      const unitNames: Record<string, string> = {
+        'unit-sma': 'SMA Al-Qur\'an Cipansor',
+        'unit-paud': 'PAUD/TK Cipansor',
+        'unit-sd': 'SD IT Cipansor',
+        'unit-smp': 'SMP IT Cipansor'
+      };
+
       // 0. Update cookies for Middleware (Server-side check)
       // Use URL-encoded JSON as the app's customStorage does
       const sessionData = {
@@ -866,17 +1034,23 @@ test.describe('Generate Screenshots Expanded', () => {
           isAuthenticated: true,
           user: {
             id: isParent ? 'parent-1' : 'user-123',
-            role: role
+            name: isParent ? 'Bapak Ahmad' : 'Dr. Ahmad Fauzi, M.Pd.',
+            email: isParent ? 'parent@example.com' : 'admin@cipansor.id',
+            role: role,
+            unitId: isParent ? null : unitId,
+            unit: isParent ? null : { id: unitId, name: unitNames[unitId] || 'SMA Al-Qur\'an Cipansor' }
           }
         },
         version: 0
       };
 
+      const authCookieValue = JSON.stringify(sessionData);
+      
       await context.addCookies([
         { 
           name: 'auth-storage', 
-          value: encodeURIComponent(JSON.stringify(sessionData)), 
-          domain: 'localhost', 
+          value: authCookieValue, 
+          domain: 'localhost',
           path: '/', 
           expires: Math.floor(Date.now() / 1000) + 3600, 
           sameSite: 'Lax' 
@@ -891,20 +1065,15 @@ test.describe('Generate Screenshots Expanded', () => {
         }
       ]);
       
-      const unitNames: Record<string, string> = {
-        'unit-sma': 'SMA Al-Qur\'an Cipansor',
-        'unit-paud': 'PAUD/TK Cipansor',
-        'unit-sd': 'SD IT Cipansor',
-        'unit-smp': 'SMP IT Cipansor'
-      };
+
 
       // 1. Dynamic unit/role context in localStorage (Client-side)
-      await page.addInitScript(({ unitId, roleId, unitNames, isParent }) => {
+      await page.addInitScript(({ unitId, roleId, unitNames, isParent, authCookieValue }) => {
         const user = isParent ? {
           id: 'parent-1',
           name: 'Bapak Ahmad',
           email: 'parent@example.com',
-          role: 'SUPER_ADMIN',
+          role: 'PARENT',
           unitId: null,
           unit: null,
         } : {
@@ -917,12 +1086,17 @@ test.describe('Generate Screenshots Expanded', () => {
         };
 
         window.localStorage.setItem('auth-storage', JSON.stringify({
-          state: { user, isAuthenticated: true, isLoading: false },
+          state: { 
+            isAuthenticated: true,
+            user: user
+          },
           version: 0
         }));
-
-        if (unitId) window.localStorage.setItem('unitId', unitId);
         
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('unitId', unitId || 'unit-sma');
+
         if (roleId) {
           window.localStorage.setItem('role-storage', JSON.stringify({
             state: { activeRoleId: roleId },
@@ -933,11 +1107,18 @@ test.describe('Generate Screenshots Expanded', () => {
         // Inject tokens to prevent client-side logout on rehydration
         window.localStorage.setItem('accessToken', 'mock-token');
         window.localStorage.setItem('refreshToken', 'mock-refresh-token');
-      }, { unitId: pageInfo.unitId, roleId: pageInfo.roleId, unitNames, isParent });
+
+        // Also set cookies manually on the client as a fallback
+        // We use encodeURIComponent here because browser document.cookie usually takes encoded values if they have special chars
+        // but middleware.ts might have trouble. Let's try raw JSON first there too if possible, but cookies usually need encoding.
+        // Actually, if middleware.ts uses parsed = JSON.parse(authStorage), it means it's ALREADY decoded or not encoded.
+        // Let's use the same value as we set in addCookies.
+        document.cookie = `auth-storage=${authCookieValue}; path=/; max-age=86400; samesite=lax`;
+        document.cookie = `accessToken=mock-token; path=/; max-age=86400; samesite=lax`;
+      }, { unitId: (pageInfo as any).unitId, roleId: (pageInfo as any).roleId, unitNames, isParent, authCookieValue });
 
       // 2. Dynamic Interception for /api/auth/me to reflect the current unit/role
       await page.route('**/api/auth/me', route => {
-        const isParent = false; 
         const currentUnitId = pageInfo.unitId || 'unit-sma';
         const currentUnitName = unitNames[currentUnitId] || 'SMA Al-Qur\'an Cipansor';
         
@@ -945,10 +1126,12 @@ test.describe('Generate Screenshots Expanded', () => {
           id: isParent ? 'parent-1' : 'user-123',
           name: isParent ? 'Bapak Ahmad' : 'Dr. Ahmad Fauzi, M.Pd.',
           email: isParent ? 'parent@example.com' : 'admin@cipansor.id',
-          role: 'SUPER_ADMIN',
-          unitId: currentUnitId,
-          unit: { id: currentUnitId, name: currentUnitName },
-          userRoles: [
+          role: isParent ? 'PARENT' : 'SUPER_ADMIN',
+          unitId: isParent ? null : currentUnitId,
+          unit: isParent ? null : { id: currentUnitId, name: currentUnitName },
+          userRoles: isParent ? [
+            { id: 'ur-parent', isPrimary: true, role: { id: 'r-parent', code: 'PARENT', name: 'Wali Murid', realm: 'UNIT' } }
+          ] : [
             { id: 'ur-1', isPrimary: true, role: { id: 'r-1', code: 'SUPER_ADMIN', name: 'Super Admin', realm: 'GLOBAL' } }
           ],
           createdAt: "2024-01-01T00:00:00.000Z",
@@ -970,9 +1153,18 @@ test.describe('Generate Screenshots Expanded', () => {
       console.log(`--- NAVIGATING TO: ${pageInfo.url} ---`);
       await page.goto(pageInfo.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
       
+      if (isParent) {
+        // Wait for the URL to stabilize on the protected route
+        try {
+          await page.waitForURL(`**${pageInfo.url}*`, { timeout: 10000 });
+        } catch {
+          console.log(`[WARNING] ${pageInfo.name} - URL did not match ${pageInfo.url}, current: ${page.url()}`);
+        }
+      }
+
       // ========== IMPROVED WAITING LOGIC ==========
       // Wait for initial page hydration
-      await page.waitForTimeout(3000);
+      await page.waitForTimeout(4000);
       
       // Wait for network to be idle
       try {
@@ -1011,18 +1203,36 @@ test.describe('Generate Screenshots Expanded', () => {
       let isErrorPage = await page.locator('text=Terjadi Kesalahan').first().isVisible().catch(() => false);
       let isNotFound = await page.locator('text=Halaman Tidak Ditemukan').first().isVisible().catch(() => false) ||
                        await page.locator('text=404').first().isVisible().catch(() => false);
+      
+      // Strict Login Page Detection - If we see these on a protected route, we were redirected
+      let isLoginPage = false;
+      if (pageInfo.name !== 'login') {
+        isLoginPage = await page.locator('text=Masuk ke Akun Anda').first().isVisible().catch(() => false) ||
+                      await page.locator('text=Kata Sandi').first().isVisible().catch(() => false) ||
+                      (await page.url()).includes('/login');
+      }
+
       let isBlankPage = await page.evaluate(() => {
-        const main = document.querySelector('main');
         const body = document.body;
-        const textContent = main?.textContent?.trim() || body?.textContent?.trim() || '';
+        const main = document.querySelector('main') || document.querySelector('.container') || body;
+        const textContent = main?.textContent?.trim() || '';
         return textContent.length < 50;
       });
       
       // Retry logic for problematic pages
-      if (isErrorPage || isBlankPage) {
-        console.log(`[RETRY] ${pageInfo.name} - Error/blank page detected, retrying with reload...`);
-        await page.reload({ waitUntil: 'domcontentloaded' });
-        await page.waitForTimeout(4000);
+      if (isErrorPage || isBlankPage || isLoginPage) {
+        if (isLoginPage) {
+          console.log(`[WARNING] ⚠️ login redirect detected for ${pageInfo.name}, injecting session and navigating again...`);
+          // Re-inject session just in case
+          await page.evaluate(({ authCookieValue }) => {
+            document.cookie = `auth-storage=${authCookieValue}; path=/; max-age=3600; samesite=lax`;
+            document.cookie = `accessToken=mock-token; path=/; max-age=3600; samesite=lax`;
+          }, { authCookieValue: (authCookieValue as any) });
+        }
+        
+        console.log(`[RETRY] ${pageInfo.name} - Error/blank/login page detected, retrying with reload...`);
+        await page.goto(`http://localhost:3000${pageInfo.url}`, { waitUntil: 'domcontentloaded' });
+        await page.waitForTimeout(6000);
         
         try {
           await page.waitForLoadState('networkidle', { timeout: 20000 });
@@ -1049,7 +1259,8 @@ test.describe('Generate Screenshots Expanded', () => {
       
       // Verify we have meaningful content before screenshot
       const hasContent = await page.evaluate(() => {
-        const main = document.querySelector('main');
+        const body = document.body;
+        const main = document.querySelector('main') || document.querySelector('.container') || body;
         const tables = document.querySelectorAll('table');
         const cards = document.querySelectorAll('[class*="card"]');
         const hasTable = tables.length > 0;

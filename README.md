@@ -53,113 +53,111 @@ Pusat kendali utama untuk memantau statistik dan kinerja seluruh unit pendidikan
 |-------------------|--------------|
 | ![Dashboard PAUD](docs/images/dashboard-paud.png) | ![Login](docs/images/login.png) |
 
-### 2. Manajemen Yayasan (Foundation)
-Pengelolaan sumber daya yayasan secara terpusat.
+### 2. Manajemen Yayasan & Administrasi (Foundation)
+Pengelolaan sumber daya yayasan, keuangan, dan administrasi perkantoran.
 
-| Profil & Legalitas | Manajemen Unit |
-|--------------------|----------------|
-| ![Yayasan](docs/images/foundation.png) | ![Unit Pendidikan](docs/images/units.png) |
+| Profil & Unit | Keuangan Yayasan |
+|---------------|------------------|
+| ![Yayasan](docs/images/foundation.png) | ![Keuangan](docs/images/finance.png) |
 
-| Manajemen User | Kepegawaian (HR) |
-|----------------|------------------|
-| ![User Management](docs/images/users.png) | ![Data Pegawai](docs/images/hr.png) |
+| Kepegawaian (HR) | E-Office (Surat) |
+|------------------|------------------|
+| ![HR](docs/images/hr.png) | ![E-Office](docs/images/e-office.png) |
 
-| Detail Pegawai | Keuangan Yayasan |
-|----------------|------------------|
-| ![Detail Pegawai](docs/images/employee-detail.png) | ![Keuangan](docs/images/finance.png) |
-| Laporan (Reports) | Analitik (Analytics) |
-| ![Reports](docs/images/reports.png) | ![Analytics](docs/images/analytics.png) |
+| Resepsionis (Buku Tamu) | Pengadaan (Procurement) |
+|-------------------------|-------------------------|
+| ![Reception](docs/images/reception.png) | ![Procurement](docs/images/procurement.png) |
+
+| Manajemen User | Analitik & Laporan |
+|----------------|--------------------|
+| ![Users](docs/images/users.png) | ![Analytics](docs/images/analytics.png) |
 
 ### 3. Akademik & Pembelajaran
 Sistem administrasi sekolah yang komprehensif.
 
-| Data Siswa | Detail Siswa |
-|------------|--------------|
-| ![Manajemen Siswa](docs/images/students.png) | ![Profil Siswa](docs/images/student-detail.png) |
+| Data Siswa | Kelas & Jadwal |
+|------------|----------------|
+| ![Students](docs/images/students.png) | ![Classes](docs/images/classes.png) |
 
-| Manajemen Kelas | Jadwal Pelajaran |
-|-----------------|------------------|
-| ![Kelas](docs/images/classes.png) | ![Jadwal](docs/images/schedule.png) |
-| Kalender Akademik | Piket Santri (Duty Roster) |
-| ![Calendar](docs/images/calendar.png) | ![Duty Roster](docs/images/duty-roster.png) |
-
-| Kurikulum | Tahun Ajaran |
-|-----------|--------------|
-| ![Kurikulum](docs/images/curriculum.png) | ![Tahun Ajaran](docs/images/academic-years.png) |
+| Kurikulum | Kalender Akademik |
+|-----------|-------------------|
+| ![Curriculum](docs/images/curriculum.png) | ![Calendar](docs/images/calendar.png) |
 
 | Absensi | Penilaian (Rapor) |
 |---------|-------------------|
-| ![Kehadiran](docs/images/attendance.png) | ![Penilaian](docs/images/assessment.png) |
+| ![Attendance](docs/images/attendance.png) | ![Assessment](docs/images/assessment.png) |
 
-| Sertifikat & Ijazah | Rapor PAUD |
-|---------------------|------------|
-| ![Sertifikat](docs/images/certificates.png) | ![Rapor PAUD](docs/images/paud-list.png) |
+| Sertifikat & Ijazah | Wali Kelas (Homeroom) |
+|---------------------|-----------------------|
+| ![Certificates](docs/images/certificates.png) | ![Homeroom](docs/images/homeroom.png) |
 
-| Wali Kelas (Homeroom) | |
-|-----------------------|---|
-| ![Homeroom](docs/images/homeroom.png) | |
+| Perpustakaan | Rapor PAUD |
+|--------------|------------|
+| ![Library](docs/images/library.png) | ![PAUD Rapor](docs/images/tk-daily-report.png) |
 
 ### 4. Kepesantrenan (Boarding System)
 Fitur unggulan untuk manajemen pendidikan Islam berasrama.
 
-| Dashboard Tahfidz | Monitoring Ibadah |
-|-------------------|-------------------|
-| ![Tahfidz](docs/images/tahfidz.png) | ![Jurnal Ibadah](docs/images/ibadah.png) |
+| Tahfidz Quran | Setoran Hafalan |
+|---------------|-----------------|
+| ![Tahfidz](docs/images/tahfidz.png) | ![Setoran](docs/images/takhosus.png) |
 
-| Rapor Pesantren | Asrama Santri |
-|-----------------|---------------|
-| ![Rapor Pesantren](docs/images/rapor-pesantren.png) | ![Asrama](docs/images/dormitories.png) |
+| Ibadah Harian | Muhasabah Diri |
+|---------------|----------------|
+| ![Ibadah](docs/images/ibadah.png) | ![Muhasabah](docs/images/muhasabah.png) |
 
-| Pelanggaran (Kedisiplinan) | Konseling |
-|----------------------------|-----------|
-| ![Pelanggaran](docs/images/violations.png) | ![Bimbingan Konseling](docs/images/counseling.png) |
+| Pembelajaran Kitab | Muhadatsah (Bahasa) |
+|--------------------|---------------------|
+| ![Kitab](docs/images/kitab-progress.png) | ![Muhadatsah](docs/images/muhadatsah.png) |
+
+| Asrama & Musyrif | Muhadhoroh (Pidato) |
+|------------------|---------------------|
+| ![Dormitories](docs/images/dormitories.png) | ![Muhadhoroh](docs/images/muhadhoroh.png) |
+
+| Pelanggaran | Konseling & Perizinan |
+|-------------|-----------------------|
+| ![Violations](docs/images/violations.png) | ![Counseling](docs/images/counseling.png) |
 
 ### 5. Fasilitas & Layanan Pendukung
-Modul pendukung operasional harian.
+Modul pendukung operasional harian dan pelayanan santri.
 
-| Kesehatan (UKS) | Perpustakaan |
-|-----------------|--------------|
-| ![UKS](docs/images/health.png) | ![Perpustakaan](docs/images/library.png) |
+| Kesehatan (UKS) | Tabungan Santri (E-Wallet) |
+|-----------------|----------------------------|
+| ![Health](docs/images/health.png) | ![Wallet](docs/images/wallet.png) |
 
-| Fasilitas & Sarana | Inventaris & Aset |
-|--------------------|-------------------|
-| ![Fasilitas](docs/images/facilities.png) | ![Inventaris](docs/images/inventory.png) |
+| Makan (Catering) | Laundry |
+|------------------|---------|
+| ![Meals](docs/images/meals.png) | ![Laundry](docs/images/laundry.png) |
 
-| Laundry Santri | Kantin |
-|----------------|--------|
-| ![Laundry](docs/images/laundry.png) | ![Kantin](docs/images/canteen.png) |
+| Kantin | Inventaris & Aset |
+|--------|-------------------|
+| ![Canteen](docs/images/canteen.png) | ![Inventory](docs/images/inventory.png) |
 
-| Ekstrakurikuler | Alumni |
-|-----------------|--------|
-| ![Ekstrakurikuler](docs/images/extracurricular.png) | ![Alumni](docs/images/alumni.png) |
+### 6. Komunikasi & Penerimaan
+| Pengumuman & Notifikasi | PSB & PPDB |
+|-------------------------|------------|
+| ![News](docs/images/announcements.png) | ![PPDB](docs/images/ppdb.png) |
 
-| Penerimaan Santri Baru (PSB) | |
-|------------------------------|---|
-| ![PSB](docs/images/psb.png) | |
+| Alumni | Donasi |
+|--------|--------|
+| ![Alumni](docs/images/alumni.png) | ![Donation](docs/images/donation.png) |
 
-### 6. Portal Wali Santri
+### 7. Portal Wali Santri
 Akses khusus bagi orang tua untuk memantau perkembangan anak.
 
 | Dashboard Wali Murid | Data & Progres Anak |
 |----------------------|---------------------|
-| ![Parent Portal](docs/images/hack-portal.png) | ![Data Anak](docs/images/hack-children.png) |
+| ![Parent Portal](docs/images/parent-portal.png) | ![Data Anak](docs/images/parent-children.png) |
 
 | Info Keuangan & Tagihan | |
 |-------------------------|---|
-| ![Keuangan Orang Tua](docs/images/hack-finance.png) | |
+| ![Keuangan Orang Tua](docs/images/parent-finance.png) | |
 
-### 7. Pengaturan & Personalisasi
-Konfigurasi sistem yang fleksibel.
+### 8. Pengaturan & Personalisasi
 
-| Profil Pengguna | Pengaturan Tampilan |
-|-----------------|---------------------|
-| ![Profil](docs/images/settings-profile.png) | ![Tampilan](docs/images/settings-appearance.png) |
-
-| Keamanan Akun | Konfigurasi Umum |
-|---------------|------------------|
-| ![Keamanan](docs/images/settings-users.png) | ![Pengaturan Umum](docs/images/settings.png) |
-| Notifikasi | |
-| ![Notifications](docs/images/notifications.png) | |
+| Profil Pengguna | Pengaturan Sistem |
+|-----------------|-------------------|
+| ![Profil](docs/images/settings-profile.png) | ![Settings](docs/images/settings.png) |
 
 ---
 

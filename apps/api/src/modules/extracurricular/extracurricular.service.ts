@@ -459,20 +459,24 @@ export class ExtracurricularService {
 
     const recordDate = new Date(date);
 
+    // Fetch active enrollments for all students
+    const studentIds = attendances.map((att) => att.studentId);
+    const enrollments = await prisma.extracurricularEnrollment.findMany({
+      where: {
+        extracurricularId,
+        studentId: { in: studentIds },
+        status: 'ACTIVE',
+      },
+      select: { studentId: true },
+    });
+
+    const enrolledStudentIds = new Set(enrollments.map((e) => e.studentId));
+
     // Create or update attendance records
     const results = await Promise.all(
       attendances.map(async (att) => {
         // Verify student is enrolled
-        const enrollment = await prisma.extracurricularEnrollment.findUnique({
-          where: {
-            extracurricularId_studentId: {
-              extracurricularId,
-              studentId: att.studentId,
-            },
-          },
-        });
-
-        if (!enrollment || enrollment.status !== 'ACTIVE') {
+        if (!enrolledStudentIds.has(att.studentId)) {
           throw Errors.badRequest(`Student ${att.studentId} is not enrolled in this extracurricular`);
         }
 

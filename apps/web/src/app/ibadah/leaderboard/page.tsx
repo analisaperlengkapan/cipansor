@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout';
 import { PageHeader } from '@/components/shared';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
@@ -21,22 +22,24 @@ import {
   Star,
   TrendingUp,
   Users,
+  AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/stores/auth';
+import { 
+  useIbadahLeaderboard, 
+  LeaderboardPeriod, 
+  LEADERBOARD_PERIODS,
+  IbadahLeaderboard 
+} from '@/hooks/use-ibadah';
 
-// Mock leaderboard data
-const mockLeaderboard = [
-  { rank: 1, name: 'Muhammad Hasan', class: 'VII A', score: 980, streak: 30, avatar: '🥇' },
-  { rank: 2, name: 'Fatimah Azzahra', class: 'VII B', score: 945, streak: 28, avatar: '🥈' },
-  { rank: 3, name: 'Ahmad Fadlan', class: 'VIII A', score: 920, streak: 25, avatar: '🥉' },
-  { rank: 4, name: 'Aisyah Putri', class: 'VI A', score: 890, streak: 22, avatar: '👤' },
-  { rank: 5, name: 'Umar Faruq', class: 'VIII B', score: 875, streak: 20, avatar: '👤' },
-  { rank: 6, name: 'Khadijah Nur', class: 'VII A', score: 860, streak: 18, avatar: '👤' },
-  { rank: 7, name: 'Ibrahim Malik', class: 'VI B', score: 845, streak: 17, avatar: '👤' },
-  { rank: 8, name: 'Zainab Sari', class: 'VIII A', score: 830, streak: 15, avatar: '👤' },
-  { rank: 9, name: 'Yusuf Hakim', class: 'VII B', score: 815, streak: 14, avatar: '👤' },
-  { rank: 10, name: 'Maryam Dewi', class: 'VI A', score: 800, streak: 12, avatar: '👤' },
-];
+// Period mapping for UI filter to API enum
+const PERIOD_MAP: Record<string, LeaderboardPeriod> = {
+  today: 'DAILY',
+  week: 'WEEKLY',
+  month: 'MONTHLY',
+  semester: 'SEMESTER',
+};
 
 const getRankIcon = (rank: number) => {
   switch (rank) {
@@ -64,13 +67,51 @@ const getRankBg = (rank: number) => {
   }
 };
 
+interface LeaderboardEntry {
+  rank: number;
+  name: string;
+  class: string;
+  score: number;
+  streak: number;
+  avatar: string;
+}
+
 export default function IbadahLeaderboardPage() {
+  const { user } = useAuthStore();
   const [period, setPeriod] = useState('week');
   const [category, setCategory] = useState('all');
 
-  // Find current user position (mock)
-  const currentUserRank = 15;
-  const currentUserScore = 720;
+  // Fetch leaderboard data
+  const { data: leaderboardData, isLoading } = useIbadahLeaderboard({
+    unitId: user?.unitId || user?.unit?.id || '',
+    periodType: PERIOD_MAP[period] || 'WEEKLY',
+    limit: 10,
+  });
+
+  // Transform API data to UI format
+  const leaderboard: LeaderboardEntry[] = useMemo(() => {
+    if (!leaderboardData) return [];
+    return leaderboardData.map((item, index) => ({
+      rank: item.rank || index + 1,
+      name: item.student?.name || item.student?.user?.name || 'Unknown',
+      class: item.student?.class?.name || '-',
+      score: item.totalPoints + (item.bonusPoints || 0),
+      streak: item.streakDays || 0,
+      avatar: index < 3 ? ['🥇', '🥈', '🥉'][index] : '👤',
+    }));
+  }, [leaderboardData]);
+
+  // Find current user position (from leaderboard or default)
+  const currentUserEntry = useMemo(() => {
+    if (!user?.id || !leaderboardData) return { rank: '-', score: 0 };
+    const found = leaderboardData.find(
+      (item) => item.studentId === user.id || item.student?.userId === user.id
+    );
+    if (found) {
+      return { rank: found.rank || '-', score: found.totalPoints + (found.bonusPoints || 0) };
+    }
+    return { rank: '-', score: 0 };
+  }, [leaderboardData, user?.id]);
 
   return (
     <MainLayout allowedRoles={['STUDENT', 'TEACHER', 'SUPER_ADMIN', 'UNIT_ADMIN', 'PARENT']}>
@@ -81,47 +122,73 @@ export default function IbadahLeaderboardPage() {
         />
 
         {/* Top 3 Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
-          {mockLeaderboard.slice(0, 3).map((student, index) => (
-            <Card
-              key={student.rank}
-              className={cn(
-                'relative overflow-hidden',
-                index === 0 && 'md:order-2 md:scale-105 z-10',
-                index === 1 && 'md:order-1',
-                index === 2 && 'md:order-3'
-              )}
-            >
-              <div
+        {isLoading ? (
+          <div className="grid gap-4 md:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <Card key={i} className={cn(i === 0 && 'md:order-2 md:scale-105 z-10', i === 1 && 'md:order-1', i === 2 && 'md:order-3')}>
+                <CardContent className="pt-6 text-center">
+                  <Skeleton className="h-12 w-12 rounded-full mx-auto mb-2" />
+                  <Skeleton className="h-6 w-6 mx-auto mb-2" />
+                  <Skeleton className="h-5 w-24 mx-auto mb-1" />
+                  <Skeleton className="h-4 w-16 mx-auto" />
+                  <div className="mt-4 flex justify-center gap-4">
+                    <Skeleton className="h-10 w-16" />
+                    <Skeleton className="h-10 w-16" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : leaderboard.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">Belum ada data leaderboard untuk periode ini.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-3">
+            {leaderboard.slice(0, 3).map((student, index) => (
+              <Card
+                key={student.rank}
                 className={cn(
-                  'absolute inset-0 opacity-10',
-                  index === 0 && 'bg-yellow-500',
-                  index === 1 && 'bg-gray-500',
-                  index === 2 && 'bg-amber-500'
+                  'relative overflow-hidden',
+                  index === 0 && 'md:order-2 md:scale-105 z-10',
+                  index === 1 && 'md:order-1',
+                  index === 2 && 'md:order-3'
                 )}
-              />
-              <CardContent className="pt-6 text-center relative">
-                <div className="text-5xl mb-2">{student.avatar}</div>
-                <div className="mb-2">{getRankIcon(student.rank)}</div>
-                <h3 className="font-bold text-lg">{student.name}</h3>
-                <p className="text-sm text-muted-foreground">{student.class}</p>
-                <div className="mt-4 flex items-center justify-center gap-4">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-primary">{student.score}</p>
-                    <p className="text-xs text-muted-foreground">Poin</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center gap-1">
-                      <Flame className="h-5 w-5 text-orange-500" />
-                      <span className="text-xl font-bold">{student.streak}</span>
+              >
+                <div
+                  className={cn(
+                    'absolute inset-0 opacity-10',
+                    index === 0 && 'bg-yellow-500',
+                    index === 1 && 'bg-gray-500',
+                    index === 2 && 'bg-amber-500'
+                  )}
+                />
+                <CardContent className="pt-6 text-center relative">
+                  <div className="text-5xl mb-2">{student.avatar}</div>
+                  <div className="mb-2">{getRankIcon(student.rank)}</div>
+                  <h3 className="font-bold text-lg">{student.name}</h3>
+                  <p className="text-sm text-muted-foreground">{student.class}</p>
+                  <div className="mt-4 flex items-center justify-center gap-4">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-primary">{student.score}</p>
+                      <p className="text-xs text-muted-foreground">Poin</p>
                     </div>
-                    <p className="text-xs text-muted-foreground">Streak</p>
+                    <div className="text-center">
+                      <div className="flex items-center gap-1">
+                        <Flame className="h-5 w-5 text-orange-500" />
+                        <span className="text-xl font-bold">{student.streak}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Streak</p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* Filters */}
         <div className="flex flex-wrap gap-4">
@@ -165,11 +232,11 @@ export default function IbadahLeaderboardPage() {
               </div>
               <div className="flex items-center gap-6">
                 <div className="text-center">
-                  <p className="text-2xl font-bold">#{currentUserRank}</p>
+                  <p className="text-2xl font-bold">#{currentUserEntry.rank}</p>
                   <p className="text-xs text-muted-foreground">Peringkat</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-primary">{currentUserScore}</p>
+                  <p className="text-2xl font-bold text-primary">{currentUserEntry.score}</p>
                   <p className="text-xs text-muted-foreground">Poin</p>
                 </div>
               </div>
@@ -187,36 +254,60 @@ export default function IbadahLeaderboardPage() {
             <CardDescription>Berdasarkan total poin ibadah</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {mockLeaderboard.map((student) => (
-                <div
-                  key={student.rank}
-                  className={cn(
-                    'flex items-center justify-between p-4 border rounded-xl transition-all',
-                    getRankBg(student.rank)
-                  )}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 flex items-center justify-center">
-                      {getRankIcon(student.rank)}
+            {isLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-4 border rounded-xl">
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div>
+                        <Skeleton className="h-4 w-24 mb-1" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">{student.name}</p>
-                      <p className="text-sm text-muted-foreground">{student.class}</p>
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-6 w-12" />
+                      <Skeleton className="h-8 w-16" />
                     </div>
                   </div>
-                  <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-1">
-                      <Flame className="h-4 w-4 text-orange-500" />
-                      <span className="font-medium">{student.streak}</span>
+                ))}
+              </div>
+            ) : leaderboard.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
+                Belum ada data leaderboard
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {leaderboard.map((student) => (
+                  <div
+                    key={student.rank}
+                    className={cn(
+                      'flex items-center justify-between p-4 border rounded-xl transition-all',
+                      getRankBg(student.rank)
+                    )}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 flex items-center justify-center">
+                        {getRankIcon(student.rank)}
+                      </div>
+                      <div>
+                        <p className="font-medium">{student.name}</p>
+                        <p className="text-sm text-muted-foreground">{student.class}</p>
+                      </div>
                     </div>
-                    <Badge variant="secondary" className="text-lg px-3">
-                      {student.score}
-                    </Badge>
+                    <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-1">
+                        <Flame className="h-4 w-4 text-orange-500" />
+                        <span className="font-medium">{student.streak}</span>
+                      </div>
+                      <Badge variant="secondary" className="text-lg px-3">
+                        {student.score}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout';
 import { PageHeader } from '@/components/shared';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -37,9 +38,13 @@ import {
   Presentation,
   Upload,
   Edit,
+  AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/stores/auth';
+import { useP5Projects, P5Project, ProjectStatus } from '@/hooks/use-kurikulum-merdeka';
+import { format } from 'date-fns';
 
 // P5 (Profil Pelajar Pancasila) dimensions + Islamic values
 const CHARACTER_DIMENSIONS = [
@@ -51,36 +56,17 @@ const CHARACTER_DIMENSIONS = [
   { id: 'kreatif', name: 'Kreatif', icon: '💡', weight: 15 },
 ];
 
-// Mock projects data
-const mockProjects = [
-  {
-    id: 'project-1',
-    title: 'Kampanye Hemat Air',
-    tema: 'Gaya Hidup Berkelanjutan',
-    status: 'IN_PROGRESS',
-    startDate: '2026-01-06',
-    endDate: '2026-02-15',
-    progress: 45,
-    members: ['Muhammad Hasan', 'Fatimah Azzahra', 'Ahmad Fadlan'],
-    dimensions: ['beriman', 'gotong-royong', 'kreatif'],
-    description: 'Membuat poster dan video kampanye hemat air di lingkungan sekolah',
-  },
-  {
-    id: 'project-2',
-    title: 'Kewirausahaan Islami',
-    tema: 'Kewirausahaan',
-    status: 'COMPLETED',
-    startDate: '2025-10-01',
-    endDate: '2025-12-15',
-    progress: 100,
-    members: ['Muhammad Hasan', 'Umar Faruq'],
-    dimensions: ['mandiri', 'bernalar-kritis', 'kreatif'],
-    description: 'Membuat produk makanan ringan halal dan menjualnya di kantin sekolah',
-    score: 88,
-  },
-];
+// Dimension code mapping to readable names
+const DIMENSION_MAP: Record<string, { name: string; icon: string }> = {
+  FAITH_PIETY: { name: 'Beriman', icon: '🕌' },
+  GLOBAL_DIVERSITY: { name: 'Berkebinekaan', icon: '🌍' },
+  MUTUAL_COOPERATION: { name: 'Gotong Royong', icon: '🤝' },
+  INDEPENDENCE: { name: 'Mandiri', icon: '🎯' },
+  CRITICAL_REASONING: { name: 'Bernalar Kritis', icon: '🧠' },
+  CREATIVITY: { name: 'Kreatif', icon: '💡' },
+};
 
-const getStatusBadge = (status: string) => {
+const getStatusBadge = (status: ProjectStatus) => {
   switch (status) {
     case 'NOT_STARTED':
       return <Badge variant="outline">Belum Dimulai</Badge>;
@@ -95,9 +81,44 @@ const getStatusBadge = (status: string) => {
   }
 };
 
+// Calculate progress based on status
+const getProgressValue = (status: ProjectStatus): number => {
+  switch (status) {
+    case 'NOT_STARTED': return 0;
+    case 'IN_PROGRESS': return 50;
+    case 'COMPLETED': return 100;
+    case 'PRESENTED': return 100;
+    default: return 0;
+  }
+};
+
 export default function ProjectBasedLearningPage() {
+  const { user } = useAuthStore();
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  // Fetch projects from API
+  const { data: projectsData, isLoading } = useP5Projects({
+    unitId: user?.unitId || user?.unit?.id,
+  });
+
+  // Transform API data
+  const projects = useMemo(() => {
+    if (!projectsData?.data) return [];
+    return projectsData.data.map((project: P5Project) => ({
+      id: project.id,
+      title: project.title,
+      tema: project.theme?.name || 'Tema P5',
+      status: project.status,
+      startDate: format(new Date(project.startDate), 'yyyy-MM-dd'),
+      endDate: format(new Date(project.endDate), 'yyyy-MM-dd'),
+      progress: getProgressValue(project.status),
+      members: project.supervisor ? [project.supervisor.name] : [],
+      dimensions: project.dimensions || [],
+      description: project.description,
+      className: project.class?.name,
+    }));
+  }, [projectsData]);
 
   return (
     <MainLayout allowedRoles={['STUDENT', 'TEACHER', 'SUPER_ADMIN', 'UNIT_ADMIN', 'PARENT']}>
@@ -195,91 +216,126 @@ export default function ProjectBasedLearningPage() {
 
         {/* Active Projects */}
         <div className="grid gap-6">
-          {mockProjects.map((project) => (
-            <Card key={project.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Lightbulb className="h-5 w-5 text-amber-500" />
-                      {project.title}
-                    </CardTitle>
-                    <CardDescription className="mt-1">
-                      Tema: {project.tema}
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(project.status)}
-                    {project.score && (
-                      <Badge variant="outline" className="font-bold">
-                        Nilai: {project.score}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">{project.description}</p>
-                
-                <div className="flex flex-wrap gap-4 text-sm">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>{project.startDate} - {project.endDate}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span>{project.members.length} anggota</span>
-                  </div>
-                </div>
-
-                {project.status !== 'COMPLETED' && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Progress</span>
-                      <span>{project.progress}%</span>
+          {isLoading ? (
+            // Loading skeleton
+            [1, 2].map((i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <Skeleton className="h-6 w-48 mb-2" />
+                      <Skeleton className="h-4 w-32" />
                     </div>
-                    <Progress value={project.progress} />
+                    <Skeleton className="h-6 w-24" />
                   </div>
-                )}
-
-                <div className="flex flex-wrap gap-2">
-                  {project.dimensions.map((dimId) => {
-                    const dim = CHARACTER_DIMENSIONS.find((d) => d.id === dimId);
-                    return dim ? (
-                      <Badge key={dimId} variant="secondary">
-                        {dim.icon} {dim.name.split(' ')[0]}
-                      </Badge>
-                    ) : null;
-                  })}
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  {project.status !== 'COMPLETED' && (
-                    <>
-                      <Button variant="outline" size="sm">
-                        <Edit className="mr-1 h-4 w-4" />
-                        Update Progress
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Upload className="mr-1 h-4 w-4" />
-                        Upload Bukti
-                      </Button>
-                    </>
-                  )}
-                  <Button variant="outline" size="sm">
-                    <FileText className="mr-1 h-4 w-4" />
-                    Lihat Detail
-                  </Button>
-                  {project.status === 'COMPLETED' && (
-                    <Button variant="outline" size="sm">
-                      <Presentation className="mr-1 h-4 w-4" />
-                      Lihat Presentasi
-                    </Button>
-                  )}
-                </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-6 w-20" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : projects.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">Belum ada proyek P5 yang terdaftar.</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Klik &quot;Proyek Baru&quot; untuk menambahkan proyek.
+                </p>
               </CardContent>
             </Card>
-          ))}
+          ) : (
+            projects.map((project) => (
+              <Card key={project.id}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Lightbulb className="h-5 w-5 text-amber-500" />
+                        {project.title}
+                      </CardTitle>
+                      <CardDescription className="mt-1">
+                        Tema: {project.tema}
+                        {project.className && ` • Kelas: ${project.className}`}
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(project.status)}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">{project.description}</p>
+                  
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span>{project.startDate} - {project.endDate}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span>{project.members.length} pembimbing</span>
+                    </div>
+                  </div>
+
+                  {project.status !== 'COMPLETED' && project.status !== 'PRESENTED' && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Progress</span>
+                        <span>{project.progress}%</span>
+                      </div>
+                      <Progress value={project.progress} />
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-2">
+                    {project.dimensions.map((dimCode: string) => {
+                      const dim = DIMENSION_MAP[dimCode];
+                      return dim ? (
+                        <Badge key={dimCode} variant="secondary">
+                          {dim.icon} {dim.name}
+                        </Badge>
+                      ) : (
+                        <Badge key={dimCode} variant="secondary">
+                          {dimCode}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    {project.status !== 'COMPLETED' && project.status !== 'PRESENTED' && (
+                      <>
+                        <Button variant="outline" size="sm">
+                          <Edit className="mr-1 h-4 w-4" />
+                          Update Progress
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Upload className="mr-1 h-4 w-4" />
+                          Upload Bukti
+                        </Button>
+                      </>
+                    )}
+                    <Button variant="outline" size="sm">
+                      <FileText className="mr-1 h-4 w-4" />
+                      Lihat Detail
+                    </Button>
+                    {(project.status === 'COMPLETED' || project.status === 'PRESENTED') && (
+                      <Button variant="outline" size="sm">
+                        <Presentation className="mr-1 h-4 w-4" />
+                        Lihat Presentasi
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       </div>
     </MainLayout>

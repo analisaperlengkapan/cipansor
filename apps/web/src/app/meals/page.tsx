@@ -67,60 +67,6 @@ const MEAL_TIMES: Record<MealType, string> = {
   SNACK: '15:00 - 15:30',
 };
 
-// Static demo data for menus
-const DEMO_WEEKLY_MENUS: MealMenu[] = [
-  {
-    id: '1',
-    name: 'Menu Senin',
-    mealType: 'BREAKFAST',
-    dayType: 'WEEKDAY',
-    date: format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'),
-    mainDish: 'Nasi Goreng Kampung',
-    sideDish: 'Telur Dadar',
-    vegetable: 'Acar Ketimun',
-    drink: 'Teh Manis',
-    calories: 450,
-    unitId: '1',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    name: 'Menu Senin',
-    mealType: 'LUNCH',
-    dayType: 'WEEKDAY',
-    date: format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'),
-    mainDish: 'Nasi + Ayam Bakar',
-    sideDish: 'Tempe Goreng',
-    vegetable: 'Sayur Asem',
-    soup: 'Sop Ayam',
-    dessert: 'Buah Semangka',
-    drink: 'Es Teh',
-    calories: 650,
-    unitId: '1',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    name: 'Menu Senin',
-    mealType: 'DINNER',
-    dayType: 'WEEKDAY',
-    date: format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'),
-    mainDish: 'Nasi + Ikan Goreng',
-    sideDish: 'Tahu Bacem',
-    vegetable: 'Ca Kangkung',
-    drink: 'Air Mineral',
-    calories: 550,
-    unitId: '1',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
 function MealCard({ menu, mealType }: { menu?: MealMenu; mealType: MealType }) {
   return (
     <Card className={`${menu ? MEAL_COLORS[mealType] : 'bg-gray-50'} border`}>
@@ -200,7 +146,7 @@ export default function MealsPage() {
   const { data: units = [] } = useUnits();
   const unitId = selectedUnitId === 'ALL' ? undefined : selectedUnitId;
   const { data: todayMenus, isLoading: todayLoading } = useTodayMenus(unitId);
-  const { data: weeklyMenus = DEMO_WEEKLY_MENUS, isLoading: weeklyLoading } = useWeeklyMenus({
+  const { data: weeklyMenus = [], isLoading: weeklyLoading } = useWeeklyMenus({
     unitId,
     weekStart: format(currentWeekStart, 'yyyy-MM-dd'),
   });

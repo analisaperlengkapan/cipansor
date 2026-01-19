@@ -217,11 +217,15 @@ export async function createManyNotifications(data: CreateNotificationInput[]) {
   const notifications: any[] = data.map((item) => {
     const { dbType, originalType } = mapTypeToPrisma(item.type);
     return {
-      ...item,
+      userId: item.userId,
+      title: item.title,
+      message: item.message,
       type: dbType,
+      link: item.link,
       data: {
         ...(item.data || {}),
         ...(originalType ? { originalType } : {}),
+        ...(item.imageUrl ? { imageUrl: item.imageUrl } : {}),
       },
       scheduledAt: item.scheduledAt || null,
     };

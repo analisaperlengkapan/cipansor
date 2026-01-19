@@ -604,30 +604,48 @@ class NotificationService {
       select: { id: true, email: true, phone: true },
     });
 
-    let sent = 0;
-    let failed = 0;
+    const usersWithEmail = users.filter((u) => u.email);
 
-    for (const user of users) {
-      if (user.email) {
-        const result = await this.send({
+    if (usersWithEmail.length > 0) {
+      await prisma.notification.createMany({
+        data: usersWithEmail.map((user) => ({
           userId: user.id,
-          recipientEmail: user.email,
-          channel: 'EMAIL',
-          type: 'ANNOUNCEMENT',
+          type: this.mapNotificationType('ANNOUNCEMENT'),
           title: announcement.title,
           message: '',
-          templateKey: 'announcement',
-          templateData: {
-            title: announcement.title,
-            content: announcement.content,
-            priority: announcement.priority,
-          },
-          priority: announcement.priority as 'LOW' | 'MEDIUM' | 'HIGH',
-        });
+          status: 'UNREAD',
+        })),
+      });
+    }
 
-        if (result.success) sent++;
-        else failed++;
-      }
+    let sent = 0;
+    let failed = 0;
+    const BATCH_SIZE = 50;
+
+    for (let i = 0; i < usersWithEmail.length; i += BATCH_SIZE) {
+      const batch = usersWithEmail.slice(i, i + BATCH_SIZE);
+      await Promise.all(
+        batch.map(async (user) => {
+          const result = await this.sendEmail({
+            userId: user.id,
+            recipientEmail: user.email!,
+            channel: 'EMAIL',
+            type: 'ANNOUNCEMENT',
+            title: announcement.title,
+            message: '',
+            templateKey: 'announcement',
+            templateData: {
+              title: announcement.title,
+              content: announcement.content,
+              priority: announcement.priority,
+            },
+            priority: announcement.priority as 'LOW' | 'MEDIUM' | 'HIGH',
+          });
+
+          if (result.success) sent++;
+          else failed++;
+        }),
+      );
     }
 
     return { sent, failed };

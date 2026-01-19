@@ -53,9 +53,6 @@ export default function EditClassPage() {
   const updateClass = useUpdateClass();
 
   const { data: units, isLoading: unitsLoading } = useUnits();
-  const { data: teachers, isLoading: teachersLoading } = useTeachers();
-  const { data: academicYearsData, isLoading: academicYearsLoading } = useAcademicYears();
-  const academicYears = academicYearsData?.data || [];
 
   const {
     register,
@@ -69,6 +66,22 @@ export default function EditClassPage() {
   });
 
   const selectedUnitId = watch('unitId');
+
+  // Fetch teachers filtered by unit from the backend directly
+  const { data: teachers, isLoading: teachersLoading } = useTeachers({
+    unitId: selectedUnitId,
+    status: 'ACTIVE',
+    limit: 100,
+  });
+
+  // Fetch academic years filtered by unit from the backend directly
+  const { data: academicYearsData, isLoading: academicYearsLoading } = useAcademicYears({
+    unitId: selectedUnitId,
+    limit: 100,
+  });
+
+  const academicYears = academicYearsData?.data || [];
+  const teachersList = teachers?.data || [];
 
   // Populate form with existing data
   useEffect(() => {
@@ -101,34 +114,6 @@ export default function EditClassPage() {
       toast.error(errorMessage);
     }
   };
-
-  // Filter academic years by selected unit
-  const filteredAcademicYears = selectedUnitId
-    ? academicYears?.filter((ay) => ay.unitId === selectedUnitId)
-    : academicYears;
-
-  // Filter teachers by selected unit
-  const filteredTeachers = selectedUnitId
-    // If teachers is an array (from my fix), this works. If it's PaginatedResponse, this fails.
-    // The previous error said `Property 'filter' does not exist on type 'PaginatedResponse<Teacher>'.`
-    // This implies `teachers` IS PaginatedResponse in the compiled context.
-    // But in `apps/web/src/app/classes/[id]/edit/page.tsx` line 57 I see:
-    // `const { data: teachers, isLoading: teachersLoading } = useTeachers();`
-    // Wait, in my previous edit (Turn 37), I changed it to:
-    // `const { data: teachersData, isLoading: teachersLoading } = useTeachers();`
-    // `const teachers = teachersData?.data || [];`
-    // But looking at the file content I just read:
-    // `const { data: teachers, isLoading: teachersLoading } = useTeachers();` (Line 66)
-    // It seems my edit in Turn 37 was reverted or lost? Or maybe I edited `classes/new/page.tsx` instead?
-    // Checking history... I edited `classes/[id]/edit/page.tsx` in Turn 37.
-    // But the file content read in Turn 46 shows:
-    // `const { data: teachers, isLoading: teachersLoading } = useTeachers();`
-    // This means `teachers` holds the direct response from `useQuery`.
-    // And `useTeachers` returns `{ data: Teacher[], meta: ... }` (PaginatedResponse).
-    // So `teachers` is indeed PaginatedResponse.
-    // I need to fix this by extracting `.data`.
-    ? (teachers as any)?.data?.filter((t: any) => t.unitId === selectedUnitId)
-    : (teachers as any)?.data || [];
 
   if (classLoading) {
     return (
@@ -262,7 +247,7 @@ export default function EditClassPage() {
                       <SelectValue placeholder={!selectedUnitId ? 'Pilih unit terlebih dahulu' : 'Pilih tahun ajaran'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {filteredAcademicYears?.map((ay) => (
+                      {academicYears?.map((ay) => (
                         <SelectItem key={ay.id} value={ay.id}>
                           {ay.name} {ay.isActive && '(Aktif)'}
                         </SelectItem>
@@ -285,7 +270,7 @@ export default function EditClassPage() {
                       <SelectValue placeholder={!selectedUnitId ? 'Pilih unit terlebih dahulu' : 'Pilih wali kelas'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {filteredTeachers?.map((teacher: any) => (
+                      {teachersList?.map((teacher) => (
                         <SelectItem key={teacher.id} value={teacher.id}>
                           {teacher.user?.name || teacher.nip || 'Unknown Teacher'}
                         </SelectItem>

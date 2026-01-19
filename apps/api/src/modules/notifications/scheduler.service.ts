@@ -10,9 +10,9 @@
  */
 
 import { prisma } from '../../lib/prisma';
-import { createNotification } from './service';
+import { createNotification, mapTypeToPrisma } from './service';
 import { whatsAppService } from './whatsapp.service';
-import { NotificationType, AttendanceStatus, PaymentStatus } from '@prisma/client';
+import { NotificationType, AttendanceStatus, PaymentStatus, Prisma } from '@prisma/client';
 import { NotificationPriority, NotificationChannel, RecipientType } from '@cipansor/shared';
 import { logger } from '../../lib/logger';
 
@@ -254,7 +254,7 @@ export class SchedulerService {
       take: 100,
     });
 
-    let sentCount = 0;
+    const notifications: Prisma.NotificationCreateManyInput[] = [];
 
     for (const invoice of unpaidInvoices) {
       const student = invoice.student;
@@ -269,18 +269,30 @@ export class SchedulerService {
       const amount = Number(invoice.amount).toLocaleString('id-ID');
       const message = 'Tagihan ' + typeName + ' sebesar Rp ' + amount + ' akan jatuh tempo dalam ' + daysUntilDue + ' hari.';
 
-      await createNotification({
+      const { dbType, originalType } = mapTypeToPrisma(NotificationType.PAYMENT);
+
+      notifications.push({
         userId: student.user.id,
+        type: dbType as NotificationType,
         title,
         message,
-        type: NotificationType.PAYMENT,
-        priority: 'HIGH',
-        channels: ['IN_APP', 'EMAIL'],
-        recipientType: 'INDIVIDUAL',
+        data: {
+          ...(originalType ? { originalType } : {}),
+          priority: 'HIGH',
+          channels: ['IN_APP', 'EMAIL'],
+          recipientType: 'INDIVIDUAL',
+        },
+        scheduledAt: null,
       });
-
-      sentCount++;
     }
+
+    if (notifications.length > 0) {
+      await prisma.notification.createMany({
+        data: notifications,
+      });
+    }
+
+    const sentCount = notifications.length;
 
     logger.info('Sent ' + sentCount + ' payment reminders');
   }

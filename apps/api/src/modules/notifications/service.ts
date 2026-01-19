@@ -15,7 +15,7 @@ import type {
 import type { NotificationTemplate } from "@cipansor/shared";
 
 // Helper to map shared types to Prisma Enum
-const mapTypeToPrisma = (type: string): { dbType: string; originalType: string | null } => {
+export const mapTypeToPrisma = (type: string): { dbType: string; originalType: string | null } => {
   const validTypes = ['INFO', 'ANNOUNCEMENT', 'REMINDER', 'ALERT', 'PAYMENT', 'ACADEMIC'];
 
   if (validTypes.includes(type)) {

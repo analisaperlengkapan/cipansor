@@ -10,8 +10,9 @@
  */
 
 import { prisma } from '../../lib/prisma';
-import { createNotification, createBulkNotifications, mapTypeToPrisma } from './service';
+import { createNotification, createBulkNotifications, createManyNotifications, mapTypeToPrisma } from './service';
 import { whatsAppService } from './whatsapp.service';
+import { CreateNotificationInput } from './schema';
 import { NotificationType, AttendanceStatus, PaymentStatus, Prisma } from '@prisma/client';
 import { NotificationPriority, NotificationChannel, RecipientType } from '@cipansor/shared';
 import { logger } from '../../lib/logger';
@@ -413,13 +414,13 @@ export class SchedulerService {
       }
     }
 
-    let sentCount = 0;
+    const notifications: CreateNotificationInput[] = [];
 
     for (const data of studentProgress.values()) {
       const title = 'Laporan Tahfidz Mingguan';
       const message = 'Alhamdulillah, ' + data.studentName + ' telah menghafal ' + data.totalAyat + ' ayat minggu ini dalam ' + data.sessions + ' sesi.';
 
-      await createNotification({
+      notifications.push({
         userId: data.userId,
         title,
         message,
@@ -428,11 +429,13 @@ export class SchedulerService {
         channels: ['IN_APP'],
         recipientType: 'INDIVIDUAL',
       });
-
-      sentCount++;
     }
 
-    logger.info('Sent ' + sentCount + ' tahfidz progress reports');
+    if (notifications.length > 0) {
+      await createManyNotifications(notifications);
+    }
+
+    logger.info('Sent ' + notifications.length + ' tahfidz progress reports');
   }
 
   private static async sendEventReminders(): Promise<void> {

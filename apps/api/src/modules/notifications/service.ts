@@ -212,6 +212,26 @@ export async function createBulkNotifications(data: CreateBulkNotificationInput)
   });
 }
 
+export async function createManyNotifications(data: CreateNotificationInput[]) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const notifications: any[] = data.map((item) => {
+    const { dbType, originalType } = mapTypeToPrisma(item.type);
+    return {
+      ...item,
+      type: dbType,
+      data: {
+        ...(item.data || {}),
+        ...(originalType ? { originalType } : {}),
+      },
+      scheduledAt: item.scheduledAt || null,
+    };
+  });
+
+  return prisma.notification.createMany({
+    data: notifications,
+  });
+}
+
 export async function markAsRead(id: string, userId: string) {
   return prisma.notification.updateMany({
     where: { id, userId },

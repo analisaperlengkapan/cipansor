@@ -300,27 +300,63 @@ export const murojaahService = {
       where.murojaahType = murojaahType as MurojaahType;
     }
 
-    const records = await prisma.murojaahRecord.findMany({
-      where,
-      include: { mistakes: true },
-      orderBy: { murojaahDate: 'desc' },
-    });
+    const [stats, mistakesGrouped, coverageRecords, recentRecordsRaw, student] = await Promise.all([
+      prisma.murojaahRecord.aggregate({
+        where,
+        _count: { _all: true },
+        _sum: {
+          pagesReviewed: true,
+          durationMinutes: true,
+          mistakeCount: true,
+          qualityScore: true,
+          fluencyLevel: true,
+        },
+      }),
+      prisma.murojaahMistake.groupBy({
+        by: ['mistakeType'],
+        where: { murojaah: where },
+        _count: { _all: true },
+      }),
+      prisma.murojaahRecord.findMany({
+        where,
+        select: { juzStart: true, juzEnd: true },
+      }),
+      prisma.murojaahRecord.findMany({
+        where,
+        orderBy: { murojaahDate: 'desc' },
+        take: 10,
+        select: {
+          id: true,
+          murojaahDate: true,
+          murojaahType: true,
+          juzStart: true,
+          juzEnd: true,
+          pagesReviewed: true,
+          qualityScore: true,
+          mistakeCount: true,
+        },
+      }),
+      prisma.student.findUnique({
+        where: { id: studentId },
+        select: { id: true, nis: true, user: { select: { name: true } } },
+      }),
+    ]);
 
     // Calculate statistics
-    const totalSessions = records.length;
-    const totalPages = records.reduce((sum, r) => sum + r.pagesReviewed, 0);
-    const totalMinutes = records.reduce((sum, r) => sum + r.durationMinutes, 0);
-    const totalMistakes = records.reduce((sum, r) => sum + r.mistakeCount, 0);
+    const totalSessions = stats._count._all;
+    const totalPages = stats._sum.pagesReviewed || 0;
+    const totalMinutes = stats._sum.durationMinutes || 0;
+    const totalMistakes = stats._sum.mistakeCount || 0;
     const avgQuality = totalSessions > 0
-      ? Math.round(records.reduce((sum, r) => sum + r.qualityScore, 0) / totalSessions)
+      ? Math.round((stats._sum.qualityScore || 0) / totalSessions)
       : 0;
     const avgFluency = totalSessions > 0
-      ? Math.round((records.reduce((sum, r) => sum + r.fluencyLevel, 0) / totalSessions) * 10) / 10
+      ? Math.round(((stats._sum.fluencyLevel || 0) / totalSessions) * 10) / 10
       : 0;
 
     // Juz coverage analysis
     const juzCoverage: Record<number, number> = {};
-    records.forEach((r) => {
+    coverageRecords.forEach((r) => {
       for (let j = r.juzStart; j <= r.juzEnd; j++) {
         juzCoverage[j] = (juzCoverage[j] || 0) + 1;
       }
@@ -328,14 +364,12 @@ export const murojaahService = {
 
     // Mistake type breakdown
     const mistakeBreakdown: Record<string, number> = {};
-    records.forEach((r) => {
-      r.mistakes.forEach((m) => {
-        mistakeBreakdown[m.mistakeType] = (mistakeBreakdown[m.mistakeType] || 0) + 1;
-      });
+    mistakesGrouped.forEach((g) => {
+      mistakeBreakdown[g.mistakeType] = g._count._all;
     });
 
     // Recent murojaah records (last 10)
-    const recentRecords = records.slice(0, 10).map((r) => ({
+    const recentRecords = recentRecordsRaw.map((r) => ({
       id: r.id,
       date: r.murojaahDate,
       type: r.murojaahType,
@@ -346,10 +380,7 @@ export const murojaahService = {
     }));
 
     return {
-      student: await prisma.student.findUnique({
-        where: { id: studentId },
-        select: { id: true, nis: true, user: { select: { name: true } } },
-      }),
+      student,
       summary: {
         totalSessions,
         totalPages,

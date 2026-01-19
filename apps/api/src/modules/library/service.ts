@@ -345,27 +345,25 @@ export async function markAsLost(id: string) {
 // ==================== STATISTICS ====================
 
 export async function getLibraryStats(unitId: string) {
-  const [totalBooks, totalCategories, activeBorrowings, overdueBorrowings] = await Promise.all([
+  const [totalBooks, totalCategories, activeBorrowingsData] = await Promise.all([
     prisma.book.aggregate({
       where: { unitId, deletedAt: null },
       _sum: { quantity: true, available: true },
       _count: true,
     }),
     prisma.bookCategory.count({ where: { unitId } }),
-    prisma.borrowing.count({
+    prisma.borrowing.findMany({
       where: {
         book: { unitId },
         status: BorrowingStatus.ACTIVE,
       },
-    }),
-    prisma.borrowing.count({
-      where: {
-        book: { unitId },
-        status: BorrowingStatus.ACTIVE,
-        dueDate: { lt: new Date() },
-      },
+      select: { dueDate: true },
     }),
   ]);
+
+  const activeBorrowings = activeBorrowingsData.length;
+  const now = new Date();
+  const overdueBorrowings = activeBorrowingsData.filter((b) => b.dueDate < now).length;
 
   return {
     totalTitles: totalBooks._count,

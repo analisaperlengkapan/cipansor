@@ -339,23 +339,107 @@ export class ExtracurricularService {
   async bulkEnroll(input: BulkEnrollInput, currentUser: { role: UserRole; unitId: string | null }) {
     const { extracurricularId, studentIds } = input;
 
-    const results = {
-      success: 0,
-      failed: 0,
-      errors: [] as string[],
-    };
+    if (!studentIds || studentIds.length === 0) {
+      throw Errors.badRequest('No students to enroll');
+    }
 
+    // 1. Validate extracurricular and permissions
+    const extracurricular = await this.findById(extracurricularId, currentUser);
+
+    // 2. Fetch all students in one go
+    const students = await prisma.student.findMany({
+      where: {
+        id: { in: studentIds },
+        deletedAt: null,
+      },
+      select: { id: true, unitId: true },
+    });
+
+    const studentMap = new Map(students.map((s) => [s.id, s]));
+    const errors: string[] = [];
+
+    // 3. Validate students
     for (const studentId of studentIds) {
-      try {
-        await this.enrollStudent({ extracurricularId, studentId }, currentUser);
-        results.success++;
-      } catch (error) {
-        results.failed++;
-        results.errors.push(`Student ${studentId}: ${error instanceof Error ? error.message : 'Failed to enroll'}`);
+      const student = studentMap.get(studentId);
+      if (!student) {
+        errors.push(`Student ${studentId}: Not found`);
+      } else if (student.unitId !== extracurricular.unitId) {
+        errors.push(`Student ${studentId}: Not in the same unit`);
       }
     }
 
-    return results;
+    if (errors.length > 0) {
+      return { success: 0, failed: studentIds.length, errors };
+    }
+
+    // 4. Check for existing enrollments
+    const existingEnrollments = await prisma.extracurricularEnrollment.findMany({
+      where: {
+        extracurricularId,
+        studentId: { in: studentIds },
+      },
+      select: { studentId: true, status: true },
+    });
+
+    const existingEnrollmentMap = new Map(existingEnrollments.map((e) => [e.studentId, e.status]));
+    const studentsToEnroll: string[] = [];
+    const studentsToReactivate: string[] = [];
+
+    for (const studentId of studentIds) {
+      const status = existingEnrollmentMap.get(studentId);
+      if (!status) {
+        studentsToEnroll.push(studentId);
+      } else if (status !== 'ACTIVE') {
+        studentsToReactivate.push(studentId);
+      } else {
+        errors.push(`Student ${studentId}: Already actively enrolled`);
+      }
+    }
+
+    // 5. Check capacity
+    const currentCount = await prisma.extracurricularEnrollment.count({
+      where: { extracurricularId, status: 'ACTIVE' },
+    });
+    const totalJoining = studentsToEnroll.length + studentsToReactivate.length;
+    if (extracurricular.maxParticipants && currentCount + totalJoining > extracurricular.maxParticipants) {
+      throw Errors.badRequest(
+        `Cannot enroll/reactivate ${totalJoining} students. Exceeds maximum capacity of ${extracurricular.maxParticipants}.`
+      );
+    }
+
+    // 6. Perform bulk operations
+    const createPromise =
+      studentsToEnroll.length > 0
+        ? prisma.extracurricularEnrollment.createMany({
+            data: studentsToEnroll.map((studentId) => ({
+              extracurricularId,
+              studentId,
+              status: 'ACTIVE',
+            })),
+            skipDuplicates: true,
+          })
+        : Promise.resolve({ count: 0 });
+
+    const reactivatePromise =
+      studentsToReactivate.length > 0
+        ? prisma.extracurricularEnrollment.updateMany({
+            where: {
+              extracurricularId,
+              studentId: { in: studentsToReactivate },
+            },
+            data: { status: 'ACTIVE' },
+          })
+        : Promise.resolve({ count: 0 });
+
+    const [createResult, reactivateResult] = await Promise.all([createPromise, reactivatePromise]);
+
+    const successCount = createResult.count + reactivateResult.count;
+
+    return {
+      success: successCount,
+      failed: studentIds.length - successCount,
+      errors,
+    };
   }
 
   /**

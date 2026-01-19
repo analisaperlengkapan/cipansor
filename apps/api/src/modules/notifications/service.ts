@@ -173,13 +173,21 @@ export async function getNotificationById(id: string) {
 export async function createNotification(data: CreateNotificationInput) {
   const { dbType, originalType } = mapTypeToPrisma(data.type);
 
+  // Extract fields that are not in the Prisma model but need to be stored in `data`
+  const { priority, channels, recipientType, recipientIds, ...rest } = data;
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const createData: any = {
-    ...data,
+    ...rest,
     type: dbType,
     data: {
       ...(data.data || {}),
       ...(originalType ? { originalType } : {}),
+      // Store non-model fields in JSON data for downstream consumers
+      priority,
+      channels,
+      recipientType,
+      ...(recipientIds ? { recipientIds } : {}),
     },
     // Explicitly map scheduledAt if provided
     scheduledAt: data.scheduledAt || null,
@@ -196,14 +204,17 @@ export async function createNotification(data: CreateNotificationInput) {
 export async function createBulkNotifications(data: CreateBulkNotificationInput) {
   const { userIds, ...notificationData } = data;
   const { dbType, originalType } = mapTypeToPrisma(notificationData.type);
+  const { priority, channels, ...rest } = notificationData;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const notifications: any[] = userIds.map((userId) => ({
-    ...notificationData,
+    ...rest,
     type: dbType,
     userId,
     data: {
       ...(originalType ? { originalType } : {}),
+      priority,
+      channels,
     }
   }));
 
@@ -216,6 +227,8 @@ export async function createManyNotifications(data: CreateNotificationInput[]) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const notifications: any[] = data.map((item) => {
     const { dbType, originalType } = mapTypeToPrisma(item.type);
+    const { priority, channels, recipientType, recipientIds, ...rest } = item;
+
     return {
       userId: item.userId,
       title: item.title,
@@ -226,6 +239,10 @@ export async function createManyNotifications(data: CreateNotificationInput[]) {
         ...(item.data || {}),
         ...(originalType ? { originalType } : {}),
         ...(item.imageUrl ? { imageUrl: item.imageUrl } : {}),
+        priority,
+        channels,
+        recipientType,
+        ...(recipientIds ? { recipientIds } : {}),
       },
       scheduledAt: item.scheduledAt || null,
     };

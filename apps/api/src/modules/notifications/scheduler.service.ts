@@ -343,13 +343,13 @@ export class SchedulerService {
       }
     }
 
-    let sentCount = 0;
+    const notifications: CreateNotificationInput[] = [];
 
     for (const data of studentAbsences.values()) {
       const title = 'Laporan Kehadiran Hari Ini';
       const message = data.studentName + ' tidak hadir pada ' + data.count + ' sesi hari ini.';
 
-      await createNotification({
+      notifications.push({
         userId: data.userId,
         title,
         message,
@@ -358,10 +358,13 @@ export class SchedulerService {
         channels: ['IN_APP'],
         recipientType: 'INDIVIDUAL',
       });
-
-      sentCount++;
     }
 
+    if (notifications.length > 0) {
+      await createManyNotifications(notifications);
+    }
+
+    const sentCount = notifications.length;
     logger.info('Sent ' + sentCount + ' attendance summaries');
   }
 

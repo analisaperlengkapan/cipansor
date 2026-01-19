@@ -630,52 +630,47 @@ export class SchedulerService {
     let sent = 0;
     let failed = 0;
 
-    // 1. Bulk DB Insert
-    if (users.length > 0) {
-      try {
-        const userIds = users.map((u) => u.id);
-        const result = await createBulkNotifications({
-          userIds,
+    try {
+      // 1. Bulk create in-app notifications
+      // This is atomic and much faster than creating one by one
+      if (users.length > 0) {
+        await createBulkNotifications({
+          userIds: users.map((u) => u.id),
           title,
           message,
           type,
           priority: 'NORMAL',
           channels: ['IN_APP'],
         });
-        sent = result.count;
-      } catch (error) {
-        failed = users.length;
-        logger.error('Failed to create bulk notifications', error);
-        // If DB insert fails, abort to ensure consistency (don't send WA without In-App notification)
-        return { total: users.length, sent: 0, failed };
       }
-    }
 
-    // 2. WhatsApp (Parallel Batched)
-    if (useWhatsApp) {
-      const waUsers = users.filter((u) => u.phone);
-      if (waUsers.length > 0) {
-        const waMessage = '*' + title + '*\n\n' + message;
+      // 2. Bulk send via WhatsApp if enabled
+      if (useWhatsApp) {
+        const waRecipients = users
+          .filter((u) => u.phone)
+          .map((u) => ({ phone: u.phone!, userId: u.id }));
 
-        // Chunking for concurrency control
-        const CHUNK_SIZE = 50;
-        for (let i = 0; i < waUsers.length; i += CHUNK_SIZE) {
-          const chunk = waUsers.slice(i, i + CHUNK_SIZE);
-          await Promise.all(
-            chunk.map(async (user) => {
-              try {
-                await whatsAppService.sendMessage({
-                  to: user.phone!,
-                  message: waMessage,
-                  type: 'text',
-                });
-              } catch (error) {
-                logger.error('Failed to send WhatsApp to user ' + user.id, error);
-              }
-            })
-          );
+        if (waRecipients.length > 0) {
+          const waMessage = '*' + title + '*\n\n' + message;
+          // Use our optimized concurrent sender
+          const result = await whatsAppService.sendBulk(waRecipients, waMessage);
+
+          // For WhatsApp, we track success/fail based on the bulk result
+          sent = result.success;
+          failed = result.failed;
+        } else {
+          // If no WA recipients, we count all as sent (since DB insert succeeded)
+          sent = users.length;
         }
+      } else {
+        // If WA disabled, we count all as sent (since DB insert succeeded)
+        sent = users.length;
       }
+
+    } catch (error) {
+      // If bulk operation fails, we mark all as failed
+      failed = users.length;
+      logger.error('Failed to broadcast notifications', error);
     }
 
     return {

@@ -19,23 +19,7 @@ export default function StandardDetailPage() {
   const { user } = useAuth();
   const { activeAcademicYear } = useActiveAcademicYear();
   const unitId = user?.unitId;
-  const standardType = params.id as string; // Ideally this comes from route, but API uses UUID.
-  // Wait, my service findById takes UUID, but frontend link uses ENUM?
-  // I need to map Enum to ID or fetch by ID.
-  // The dashboard page linked to `/quality/${item.standardType}` (ENUM).
-  // But my backend route `GET /standards/:id` expects ID? No, looking at `getStandardDetails` in controller, it expects ID.
-  // BUT, looking at `getAllStandards` response, it returns `id`.
-  // So the link should be `/quality/${item.id}`.
-
-  // Let me fix the previous page link first or assume this is ID.
-  // If params.id is UUID, good. If Enum, I need to find the ID.
-  // For now, let's assume the previous page passes ID.
-  // Wait, I used `item.standardType` in the link in the previous step. That was a mistake if I want to use ID.
-  // However, fetching by ID is better.
-  // Let me fix the previous page first in my mind -> I will overwrite it next if needed.
-  // Actually, let's make the previous page use ID.
-
-  const standardId = standardType; // Assuming ID is passed.
+  const standardId = params.id as string;
 
   const { data: standard, isLoading } = useStandardDetails(
     standardId,

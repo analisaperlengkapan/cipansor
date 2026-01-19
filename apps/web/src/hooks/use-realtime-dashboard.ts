@@ -60,8 +60,9 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
     onAlertRef.current = onAlert;
   }, [onMetricsUpdate, onAlert]);
 
-  // Use refs for options to detect deep changes if needed, or rely on them being stable/memoized in parent
-  // Assuming unitIds and metrics are stable or simple enough to trigger re-connection if changed
+  // Memoize unitIds and metrics to prevent unnecessary re-connections
+  const memoizedUnitIds = useDeepCompareMemoize(unitIds);
+  const memoizedMetrics = useDeepCompareMemoize(metrics);
 
   useEffect(() => {
     if (!enabled) return;
@@ -209,10 +210,7 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
       setSocket(null);
     };
     // We intentionally omit reconnectAttempts from deps to avoid reconnecting on attempt increment
-    // unitIds and metrics are objects/arrays, so be careful with deps.
-    // JSON.stringify can be used if they are not memoized.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, getAccessToken, queryClient, JSON.stringify(unitIds), JSON.stringify(metrics)]);
+  }, [enabled, getAccessToken, queryClient, memoizedUnitIds, memoizedMetrics]);
 
   // Manual subscription update
   const updateSubscription = useCallback((newUnitIds: string[], newMetrics: string[]) => {
@@ -268,4 +266,23 @@ export function useDashboardAlerts(params: { page?: number; limit?: number } = {
   const { page = 1, limit = 20 } = params;
   
   return useQueryClient().getQueryData<DashboardAlert[]>(['dashboard-alerts']) || [];
+}
+
+// Helper for deep comparison of string arrays
+function areArraysEqual(a: string[] | undefined, b: string[] | undefined) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+function useDeepCompareMemoize(value: string[] | undefined) {
+  const [ref, setRef] = useState<string[] | undefined>(value);
+  if (!areArraysEqual(value, ref)) {
+    setRef(value);
+  }
+  return ref;
 }

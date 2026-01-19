@@ -1,36 +1,61 @@
 import { prisma } from '@/lib/prisma';
+import { PrismaClient } from '@prisma/client';
 
-export const generateUniqueCode = async (prefix: string, table: string): Promise<string> => {
+type TransactionClient = Omit<
+  PrismaClient,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>;
+
+export const generateUniqueCode = async (
+  prefix: string,
+  table: string,
+  tx: TransactionClient | PrismaClient = prisma
+): Promise<string> => {
+  const [code] = await generateBulkUniqueCodes(prefix, table, 1, tx);
+  return code;
+};
+
+export const generateBulkUniqueCodes = async (
+  prefix: string,
+  table: string,
+  count: number,
+  tx: TransactionClient | PrismaClient = prisma
+): Promise<string[]> => {
+  if (count < 1) return [];
+
   const date = new Date();
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const codePrefix = `${prefix}-${year}${month}-`;
 
-  let lastRecord: any = null;
+  let lastRecord: { code: string } | null = null;
 
+  // We use the provided transaction client 'tx' to ensure consistency
   if (table === 'purchase_requests') {
-    lastRecord = await prisma.purchaseRequest.findFirst({
+    lastRecord = await tx.purchaseRequest.findFirst({
       where: { code: { startsWith: codePrefix } },
       orderBy: { code: 'desc' },
       select: { code: true }
     });
   } else if (table === 'assets') {
-    // Assets might use a different format, but assuming [PREFIX]-YYYYMM-XXXX for now based on request
-    // Or just [PREFIX]-[SEQ] if year/month not required.
-    // Let's stick to the standard format for consistency unless specified otherwise.
-    lastRecord = await prisma.asset.findFirst({
+    lastRecord = await tx.asset.findFirst({
       where: { code: { startsWith: codePrefix } },
       orderBy: { code: 'desc' },
       select: { code: true }
     });
   }
 
-  let sequence = 1;
+  let startSequence = 1;
   if (lastRecord && lastRecord.code) {
     const lastCode = lastRecord.code;
     const lastSequence = parseInt(lastCode.split('-').pop() || '0');
-    sequence = lastSequence + 1;
+    startSequence = lastSequence + 1;
   }
 
-  return `${codePrefix}${String(sequence).padStart(4, '0')}`;
+  const codes: string[] = [];
+  for (let i = 0; i < count; i++) {
+    codes.push(`${codePrefix}${String(startSequence + i).padStart(4, '0')}`);
+  }
+
+  return codes;
 };

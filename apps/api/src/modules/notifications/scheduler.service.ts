@@ -521,7 +521,7 @@ export class SchedulerService {
       take: 200,
     });
 
-    let sentCount = 0;
+    const notifications: CreateNotificationInput[] = [];
 
     for (const student of students) {
       if (!student.user) continue;
@@ -530,7 +530,7 @@ export class SchedulerService {
       const title = 'Laporan Bulanan ' + monthName;
       const message = 'Laporan progress bulanan ' + studentName + ' untuk bulan ' + monthName + ' telah tersedia. Silakan cek di portal orang tua.';
 
-      await createNotification({
+      notifications.push({
         userId: student.user.id,
         title,
         message,
@@ -539,11 +539,13 @@ export class SchedulerService {
         channels: ['IN_APP'],
         recipientType: 'INDIVIDUAL',
       });
-
-      sentCount++;
     }
 
-    logger.info('Sent ' + sentCount + ' monthly reports');
+    if (notifications.length > 0) {
+      await createManyNotifications(notifications);
+    }
+
+    logger.info('Sent ' + notifications.length + ' monthly reports');
   }
 
   // ============== BROADCAST API ==============

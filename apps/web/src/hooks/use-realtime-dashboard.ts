@@ -100,8 +100,8 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
       
       // Subscribe to dashboard updates
       newSocket.emit('dashboard:subscribe', {
-        unitIds: unitIds.length > 0 ? unitIds : ['all'],
-        metrics,
+        unitIds: memoizedUnitIds && memoizedUnitIds.length > 0 ? memoizedUnitIds : ['all'],
+        metrics: memoizedMetrics,
       });
     });
 

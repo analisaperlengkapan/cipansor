@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import equal from 'fast-deep-equal';
 
 interface UseUnsavedChangesOptions {
   /**
@@ -136,7 +137,7 @@ export function useUnsavedChanges(
 
   // Track value changes
   const trackValue = useCallback(<T>(current: T, initial: T) => {
-    const isDifferent = JSON.stringify(current) !== JSON.stringify(initial);
+    const isDifferent = !equal(current, initial);
     setHasChanges(isDifferent);
   }, []);
 
@@ -164,5 +165,5 @@ export function useUnsavedChanges(
  * Simple hook to track if a form has been modified
  */
 export function useFormDirty<T>(initialValues: T, currentValues: T): boolean {
-  return JSON.stringify(initialValues) !== JSON.stringify(currentValues);
+  return !equal(initialValues, currentValues);
 }

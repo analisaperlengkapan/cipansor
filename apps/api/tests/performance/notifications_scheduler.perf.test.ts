@@ -140,7 +140,11 @@ describe('SchedulerService Performance', () => {
         data: expect.arrayContaining([
             expect.objectContaining({
                 userId: 'user-0',
-                type: 'ALERT'
+                type: 'ALERT',
+                data: expect.objectContaining({
+                    priority: 'HIGH',
+                    channels: ['IN_APP']
+                })
             })
         ])
     }));

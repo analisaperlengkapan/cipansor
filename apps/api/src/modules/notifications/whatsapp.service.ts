@@ -383,6 +383,8 @@ class WhatsAppService {
 
   /**
    * Send bulk messages
+   * Uses pipelining to respect rate limits (delay) without being blocked by network latency.
+   * Requests are initiated sequentially with the specified delay, but awaited concurrently.
    */
   async sendBulk(
     recipients: Array<{ phone: string; userId?: string }>,

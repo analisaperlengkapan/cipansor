@@ -16,7 +16,6 @@
  */
 
 import { logger } from '../../lib/logger';
-import { prisma } from '../../lib/prisma';
 
 // WhatsApp provider types
 type WhatsAppProvider = 'META' | 'FONNTE' | 'WATROOP' | 'WHACENTER' | 'SIMULATOR';
@@ -389,29 +388,52 @@ class WhatsAppService {
   async sendBulk(
     recipients: Array<{ phone: string; userId?: string }>,
     message: string,
-    delay: number = 1000 // Delay between messages to avoid rate limiting
+    delay: number = 1000, // Delay between messages to avoid rate limiting
+    concurrency: number = 5
   ): Promise<{ success: number; failed: number; results: SendResult[] }> {
-    const promises: Promise<SendResult>[] = [];
+    const results: SendResult[] = new Array(recipients.length);
+    let success = 0;
+    let failed = 0;
 
-    for (const recipient of recipients) {
-      promises.push(
-        this.sendMessage({
+    let currentIndex = 0;
+
+    const worker = async () => {
+      while (currentIndex < recipients.length) {
+        const index = currentIndex++;
+        const recipient = recipients[index];
+
+        const result = await this.sendMessage({
           to: recipient.phone,
           message,
           type: 'text',
-        })
-      );
+        });
 
-      // Add delay between message dispatches
-      if (delay > 0) {
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        results[index] = result;
+        if (result.success) success++;
+        else failed++;
+
+        // Add delay between messages
+        if (delay > 0) {
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
       }
-    }
+    };
 
-    const results = await Promise.all(promises);
+    const workers = Array(Math.min(concurrency, recipients.length))
+      .fill(null)
+      .map(() => worker());
 
-    const success = results.filter((r) => r.success).length;
-    const failed = results.filter((r) => !r.success).length;
+    await Promise.all(workers);
+      }
+    };
+
+    const workers = Array(Math.min(concurrency, recipients.length))
+      .fill(null)
+      .map(() => worker());
+
+    await Promise.all(workers);
+
+
 
     return { success, failed, results };
   }

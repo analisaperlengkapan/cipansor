@@ -106,15 +106,6 @@ export function useUnsavedChanges(
   useEffect(() => {
     if (!enabled || !hasChanges) return;
 
-    // Store the callback for potential use
-    const handleRouteChangeStart = () => {
-      if (allowNavigationRef.current) {
-        allowNavigationRef.current = false;
-        return;
-      }
-      onNavigationAttempt?.();
-    };
-
     // We can use popstate for back/forward navigation
     const handlePopState = (e: PopStateEvent) => {
       if (!hasChanges || allowNavigationRef.current) return;

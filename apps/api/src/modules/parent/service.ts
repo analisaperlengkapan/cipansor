@@ -75,6 +75,7 @@ export class ParentService {
       status: sp.student.status,
       relation: sp.relation,
       isPrimary: sp.isPrimary,
+      unitId: sp.student.unitId,
       unit: sp.student.unit,
       currentClass: sp.student.enrollments[0]?.class || null,
     }));
@@ -754,48 +755,89 @@ export class ParentService {
    */
   async getDashboardSummary(parentId: string) {
     const children = await this.getChildren(parentId);
+    const childrenIds = children.map((c) => c.id);
 
-    const summary = await Promise.all(
-      children.map(async (child) => {
-        // Get recent attendance
-        const recentAttendance = await prisma.attendance.findMany({
-          where: { studentId: child.id },
-          orderBy: { date: 'desc' },
-          take: 7,
-        });
+    // If no children, return empty early
+    if (childrenIds.length === 0) {
+      // Get unread notifications
+      const unreadNotifications = await prisma.notification.count({
+        where: { userId: parentId, status: 'UNREAD' },
+      });
 
-        // Get pending invoices
-        const pendingInvoices = await prisma.invoice.count({
-          where: {
-            studentId: child.id,
-            status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] },
-          },
-        });
+      return {
+        children: [],
+        unreadNotifications,
+        recentAnnouncements: [],
+      };
+    }
 
-        // Get active permits
-        const activePermits = await prisma.permit.count({
-          where: {
-            studentId: child.id,
-            status: { in: ['PENDING', 'APPROVED'] },
-            endDate: { gte: new Date() },
-          },
-        });
+    // 1. Bulk fetch attendance (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-        // Get recent tahfidz
-        const lastTahfidz = await prisma.tahfidzRecord.findFirst({
-          where: { studentId: child.id },
-          orderBy: { recordedAt: 'desc' },
-        });
+    const allAttendances = await prisma.attendance.findMany({
+      where: {
+        studentId: { in: childrenIds },
+        date: { gte: thirtyDaysAgo },
+      },
+      orderBy: { date: 'desc' },
+    });
 
-        return {
-          child,
-          recentAttendance,
-          pendingInvoices,
-          activePermits,
-          lastTahfidz,
-        };
-      })
-    );
+    // 2. Bulk count pending invoices
+    const pendingInvoices = await prisma.invoice.groupBy({
+      by: ['studentId'],
+      where: {
+        studentId: { in: childrenIds },
+        status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] },
+      },
+      _count: { id: true },
+    });
+
+    // 3. Bulk count active permits
+    const activePermits = await prisma.permit.groupBy({
+      by: ['studentId'],
+      where: {
+        studentId: { in: childrenIds },
+        status: { in: ['PENDING', 'APPROVED'] },
+        endDate: { gte: new Date() },
+      },
+      _count: { id: true },
+    });
+
+    // 4. Bulk fetch recent tahfidz (last one per student)
+    const lastTahfidzRecords = await prisma.tahfidzRecord.findMany({
+      where: {
+        studentId: { in: childrenIds },
+      },
+      distinct: ['studentId'],
+      orderBy: [{ studentId: 'asc' }, { recordedAt: 'desc' }],
+    });
+
+    // Map data back to children
+    const summary = children.map((child) => {
+      // Filter recent attendance for this child, take 7
+      const recentAttendance = allAttendances
+        .filter((a) => a.studentId === child.id)
+        .slice(0, 7);
+
+      const pendingInvoiceCount =
+        pendingInvoices.find((p) => p.studentId === child.id)?._count.id || 0;
+
+      const activePermitCount =
+        activePermits.find((p) => p.studentId === child.id)?._count.id || 0;
+
+      const lastTahfidz = lastTahfidzRecords.find(
+        (t) => t.studentId === child.id
+      );
+
+      return {
+        child,
+        recentAttendance,
+        pendingInvoices: pendingInvoiceCount,
+        activePermits: activePermitCount,
+        lastTahfidz: lastTahfidz || null,
+      };
+    });
 
     // Get unread notifications
     const unreadNotifications = await prisma.notification.count({
@@ -803,11 +845,7 @@ export class ParentService {
     });
 
     // Get recent announcements
-    const children2 = await prisma.studentParent.findMany({
-      where: { parentId },
-      include: { student: { select: { unitId: true } } },
-    });
-    const unitIds = [...new Set(children2.map((c) => c.student.unitId))];
+    const unitIds = [...new Set(children.map((c) => c.unitId))];
 
     const recentAnnouncements = await prisma.announcement.findMany({
       where: {

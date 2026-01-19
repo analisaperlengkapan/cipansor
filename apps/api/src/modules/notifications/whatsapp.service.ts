@@ -1,12 +1,12 @@
 /**
  * WhatsApp Notification Service
- * 
+ *
  * Integrasi WhatsApp Business API untuk notifikasi:
  * - Official WhatsApp Cloud API (Meta)
  * - Fonnte (Provider Indonesia)
  * - WATroop (Alternative)
  * - Whacenter (Alternative)
- * 
+ *
  * Fitur:
  * - Send template messages
  * - Send text messages
@@ -91,7 +91,13 @@ _Pesan otomatis dari Sistem Informasi Pesantren Cipansor_`,
   // Notifikasi pelanggaran
   violationAlert: {
     name: 'violation_alert',
-    text: (data: { parentName: string; studentName: string; type: string; description: string; date: string }) =>
+    text: (data: {
+      parentName: string;
+      studentName: string;
+      type: string;
+      description: string;
+      date: string;
+    }) =>
       `Assalamu'alaikum Bapak/Ibu *${data.parentName}*,
 
 📋 *LAPORAN PELANGGARAN*
@@ -127,7 +133,14 @@ _Pesan otomatis dari Sistem Informasi Pesantren Cipansor_`,
   // Update status izin
   permitStatus: {
     name: 'permit_status',
-    text: (data: { parentName: string; studentName: string; permitType: string; status: string; startDate: string; endDate: string }) =>
+    text: (data: {
+      parentName: string;
+      studentName: string;
+      permitType: string;
+      status: string;
+      startDate: string;
+      endDate: string;
+    }) =>
       `Assalamu'alaikum Bapak/Ibu *${data.parentName}*,
 
 📋 *UPDATE STATUS IZIN*
@@ -147,7 +160,15 @@ _Pesan otomatis dari Sistem Informasi Pesantren Cipansor_`,
   // Progress tahfidz
   tahfidzProgress: {
     name: 'tahfidz_progress',
-    text: (data: { parentName: string; studentName: string; surah: string; ayahStart: number; ayahEnd: number; juz: number; score?: string }) =>
+    text: (data: {
+      parentName: string;
+      studentName: string;
+      surah: string;
+      ayahStart: number;
+      ayahEnd: number;
+      juz: number;
+      score?: string;
+    }) =>
       `Assalamu'alaikum Bapak/Ibu *${data.parentName}*,
 
 🕌 *LAPORAN TAHFIDZ*
@@ -168,7 +189,12 @@ _Tim Tahfidz Pesantren Cipansor_`,
   // Raport terbit
   reportCardPublished: {
     name: 'report_card_published',
-    text: (data: { parentName: string; studentName: string; semester: string; academicYear: string }) =>
+    text: (data: {
+      parentName: string;
+      studentName: string;
+      semester: string;
+      academicYear: string;
+    }) =>
       `Assalamu'alaikum Bapak/Ibu *${data.parentName}*,
 
 📊 *PENGUMUMAN RAPORT*
@@ -198,7 +224,13 @@ _Pesantren Cipansor_`,
   // Jadwal kegiatan
   eventReminder: {
     name: 'event_reminder',
-    text: (data: { parentName: string; eventName: string; date: string; time: string; location: string }) =>
+    text: (data: {
+      parentName: string;
+      eventName: string;
+      date: string;
+      time: string;
+      location: string;
+    }) =>
       `Assalamu'alaikum Bapak/Ibu *${data.parentName}*,
 
 📅 *PENGINGAT KEGIATAN*
@@ -217,7 +249,12 @@ _Pesantren Cipansor_`,
   // Konfirmasi registrasi PSB
   psbRegistration: {
     name: 'psb_registration',
-    text: (data: { parentName: string; studentName: string; registrationNo: string; testDate?: string }) =>
+    text: (data: {
+      parentName: string;
+      studentName: string;
+      registrationNo: string;
+      testDate?: string;
+    }) =>
       `Assalamu'alaikum Bapak/Ibu *${data.parentName}*,
 
 ✅ *KONFIRMASI PENDAFTARAN*
@@ -238,7 +275,13 @@ _Panitia PSB Pesantren Cipansor_`,
   // Laporan harian PAUD/TK
   dailyReport: {
     name: 'daily_report',
-    text: (data: { parentName: string; studentName: string; date: string; mood?: string | null; healthStatus?: string | null }) =>
+    text: (data: {
+      parentName: string;
+      studentName: string;
+      date: string;
+      mood?: string | null;
+      healthStatus?: string | null;
+    }) =>
       `Assalamu'alaikum Bapak/Ibu *${data.parentName}*,
 
 📝 *LAPORAN HARIAN*
@@ -340,32 +383,35 @@ class WhatsAppService {
 
   /**
    * Send bulk messages
+   * Uses pipelining to respect rate limits (delay) without being blocked by network latency.
+   * Requests are initiated sequentially with the specified delay, but awaited concurrently.
    */
   async sendBulk(
     recipients: Array<{ phone: string; userId?: string }>,
     message: string,
     delay: number = 1000 // Delay between messages to avoid rate limiting
   ): Promise<{ success: number; failed: number; results: SendResult[] }> {
-    const results: SendResult[] = [];
-    let success = 0;
-    let failed = 0;
+    const promises: Promise<SendResult>[] = [];
 
     for (const recipient of recipients) {
-      const result = await this.sendMessage({
-        to: recipient.phone,
-        message,
-        type: 'text',
-      });
+      promises.push(
+        this.sendMessage({
+          to: recipient.phone,
+          message,
+          type: 'text',
+        })
+      );
 
-      results.push(result);
-      if (result.success) success++;
-      else failed++;
-
-      // Add delay between messages
+      // Add delay between message dispatches
       if (delay > 0) {
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
+
+    const results = await Promise.all(promises);
+
+    const success = results.filter((r) => r.success).length;
+    const failed = results.filter((r) => !r.success).length;
 
     return { success, failed, results };
   }
@@ -383,8 +429,16 @@ class WhatsAppService {
     const message = WA_TEMPLATES.paymentReminder.text({
       parentName: data.parentName,
       studentName: data.studentName,
-      amount: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(data.amount),
-      dueDate: data.dueDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+      amount: new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+      }).format(data.amount),
+      dueDate: data.dueDate.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }),
     });
 
     return this.sendMessage({
@@ -564,8 +618,12 @@ class WhatsAppService {
     const message = WA_TEMPLATES.dailyReport.text({
       parentName: data.parentName,
       studentName: data.studentName,
-      date: data.date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
-      mood: data.mood ? (moodMap[data.mood as string] || data.mood) : undefined,
+      date: data.date.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }),
+      mood: data.mood ? moodMap[data.mood as string] || data.mood : undefined,
       healthStatus: data.healthStatus,
     });
 
@@ -606,12 +664,14 @@ class WhatsAppService {
         body.template = {
           name: templateName,
           language: { code: 'id' },
-          components: templateParams?.length ? [
-            {
-              type: 'body',
-              parameters: templateParams.map((p) => ({ type: 'text', text: p })),
-            },
-          ] : undefined,
+          components: templateParams?.length
+            ? [
+                {
+                  type: 'body',
+                  parameters: templateParams.map((p) => ({ type: 'text', text: p })),
+                },
+              ]
+            : undefined,
         };
       } else {
         body.type = 'text';
@@ -627,7 +687,7 @@ class WhatsAppService {
         body: JSON.stringify(body),
       });
 
-      const data = await response.json() as { messages?: Array<{ id: string }> };
+      const data = (await response.json()) as { messages?: Array<{ id: string }> };
 
       if (response.ok && data.messages?.[0]?.id) {
         return {
@@ -686,7 +746,7 @@ class WhatsAppService {
         body: formData,
       });
 
-      const data = await response.json() as { status: boolean; id?: string };
+      const data = (await response.json()) as { status: boolean; id?: string };
 
       if (data.status) {
         return {
@@ -741,7 +801,7 @@ class WhatsAppService {
         }),
       });
 
-      const data = await response.json() as { success: boolean; messageId?: string };
+      const data = (await response.json()) as { success: boolean; messageId?: string };
 
       return {
         success: data.success,
@@ -787,7 +847,7 @@ class WhatsAppService {
         }),
       });
 
-      const data = await response.json() as { status: boolean; message_id?: string };
+      const data = (await response.json()) as { status: boolean; message_id?: string };
 
       return {
         success: data.status,
@@ -887,9 +947,7 @@ class WhatsAppService {
     testResult?: SendResult;
   }> {
     const configured = Boolean(
-      this.config.provider === 'SIMULATOR' ||
-      this.config.apiKey ||
-      this.config.accessToken
+      this.config.provider === 'SIMULATOR' || this.config.apiKey || this.config.accessToken
     );
 
     return {

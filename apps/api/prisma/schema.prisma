@@ -855,6 +855,7 @@ model Student {
   violations                  Violation[]
   rewards                     Reward[]
   invoices                    Invoice[]
+  borrowings                  Borrowing[]
   registrant                  Registrant? // Link dari pendaftaran PSB
   medicalRecords              MedicalRecord[]
   medicationUsage             MedicationUsageLog[]
@@ -6566,9 +6567,6 @@ model Disposition {
   @@index([senderId])
   @@index([recipientId])
   @@map("dispositions")
-}
-  @@index([date])
-  @@map("marketing_interactions")
 }
 
 // =====================================

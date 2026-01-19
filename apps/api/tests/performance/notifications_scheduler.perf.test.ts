@@ -1,9 +1,8 @@
-
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
-import { SchedulerService } from '../../src/modules/notifications/scheduler.service';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { SchedulerService, notificationScheduler } from '../../src/modules/notifications/scheduler.service';
 import { prisma } from '../../src/lib/prisma';
 import * as notificationService from '../../src/modules/notifications/service';
-import { NotificationType } from '@prisma/client';
+import { NotificationType, AttendanceStatus } from '@prisma/client';
 
 // Mock prisma
 vi.mock('../../src/lib/prisma', () => ({
@@ -12,22 +11,26 @@ vi.mock('../../src/lib/prisma', () => ({
       findMany: vi.fn(),
     },
     notification: {
+      create: vi.fn(),
       createMany: vi.fn(),
+      count: vi.fn(),
+      findMany: vi.fn(),
+      updateMany: vi.fn(),
     },
     invoice: {
-        findMany: vi.fn(),
+      findMany: vi.fn(),
     },
     attendance: {
-        findMany: vi.fn(),
+      findMany: vi.fn(),
     },
     calendarEvent: {
-        findMany: vi.fn(),
+      findMany: vi.fn(),
     },
     user: {
-        findMany: vi.fn(),
+      findMany: vi.fn(),
     },
     student: {
-        findMany: vi.fn(),
+      findMany: vi.fn(),
     }
   },
 }));
@@ -88,5 +91,58 @@ describe('SchedulerService Performance', () => {
     // Verify bulk behavior
     expect(notificationService.createManyNotifications).toHaveBeenCalledTimes(1);
     expect(notificationService.createNotification).toHaveBeenCalledTimes(0);
+  });
+
+  it('measures sendAttendanceSummary performance', async () => {
+    const studentCount = 1000;
+
+    // Generate mock attendance records
+    const attendanceRecords = Array.from({ length: studentCount }).map((_, i) => ({
+      studentId: `student-${i}`,
+      status: AttendanceStatus.ABSENT,
+      date: new Date(),
+      student: {
+        user: {
+          id: `user-${i}`,
+          name: `Student ${i}`,
+          email: `student${i}@example.com`,
+          phone: `0812345678${i}`,
+        },
+      },
+    }));
+
+    // Mock findMany to return these records
+    vi.mocked(prisma.attendance.findMany).mockResolvedValue(attendanceRecords as any);
+
+    // Mock create to resolve successfully
+    vi.mocked(prisma.notification.create).mockResolvedValue({ id: 'notif-id' } as any);
+    vi.mocked(prisma.notification.createMany).mockResolvedValue({ count: studentCount } as any);
+
+    const start = performance.now();
+    await notificationScheduler.runTask('attendance-summary');
+    const end = performance.now();
+    const duration = end - start;
+
+    const createCalls = vi.mocked(prisma.notification.create).mock.calls.length;
+    const createManyCalls = vi.mocked(prisma.notification.createMany).mock.calls.length;
+
+    console.log(`\n[Benchmark] sendAttendanceSummary with ${studentCount} absences:`);
+    console.log(`Time: ${duration.toFixed(2)}ms`);
+    console.log(`prisma.notification.create calls: ${createCalls}`);
+    console.log(`prisma.notification.createMany calls: ${createManyCalls}`);
+
+    // Verify correct data mapping
+    expect(createCalls).toBe(0);
+    expect(createManyCalls).toBe(1);
+
+    // If we were using createMany, we'd verify the payload size
+    expect(vi.mocked(prisma.notification.createMany)).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.arrayContaining([
+            expect.objectContaining({
+                userId: 'user-0',
+                type: 'ALERT'
+            })
+        ])
+    }));
   });
 });

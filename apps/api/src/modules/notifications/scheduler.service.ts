@@ -10,7 +10,7 @@
  */
 
 import { prisma } from '../../lib/prisma';
-import { createNotification, mapTypeToPrisma } from './service';
+import { createNotification, createBulkNotifications, mapTypeToPrisma } from './service';
 import { whatsAppService } from './whatsapp.service';
 import { NotificationType, AttendanceStatus, PaymentStatus, Prisma } from '@prisma/client';
 import { NotificationPriority, NotificationChannel, RecipientType } from '@cipansor/shared';
@@ -624,33 +624,51 @@ export class SchedulerService {
     let sent = 0;
     let failed = 0;
 
-    for (const user of users) {
+    // 1. Bulk DB Insert
+    if (users.length > 0) {
       try {
-        // Create in-app notification
-        await createNotification({
-          userId: user.id,
+        const userIds = users.map((u) => u.id);
+        const result = await createBulkNotifications({
+          userIds,
           title,
           message,
           type,
           priority: 'NORMAL',
           channels: ['IN_APP'],
-          recipientType: 'INDIVIDUAL',
         });
-
-        // Send via WhatsApp if enabled
-        if (useWhatsApp && user.phone) {
-          const waMessage = '*' + title + '*\n\n' + message;
-          await whatsAppService.sendMessage({
-            to: user.phone,
-            message: waMessage,
-            type: 'text',
-          });
-        }
-
-        sent++;
+        sent = result.count;
       } catch (error) {
-        failed++;
-        logger.error('Failed to send notification to user ' + user.id, error);
+        failed = users.length;
+        logger.error('Failed to create bulk notifications', error);
+        // If DB insert fails, abort to ensure consistency (don't send WA without In-App notification)
+        return { total: users.length, sent: 0, failed };
+      }
+    }
+
+    // 2. WhatsApp (Parallel Batched)
+    if (useWhatsApp) {
+      const waUsers = users.filter((u) => u.phone);
+      if (waUsers.length > 0) {
+        const waMessage = '*' + title + '*\n\n' + message;
+
+        // Chunking for concurrency control
+        const CHUNK_SIZE = 50;
+        for (let i = 0; i < waUsers.length; i += CHUNK_SIZE) {
+          const chunk = waUsers.slice(i, i + CHUNK_SIZE);
+          await Promise.all(
+            chunk.map(async (user) => {
+              try {
+                await whatsAppService.sendMessage({
+                  to: user.phone!,
+                  message: waMessage,
+                  type: 'text',
+                });
+              } catch (error) {
+                logger.error('Failed to send WhatsApp to user ' + user.id, error);
+              }
+            })
+          );
+        }
       }
     }
 

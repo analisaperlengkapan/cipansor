@@ -316,19 +316,33 @@ export const dailyReportService = {
       failed: [],
     };
 
-    // 3. Process creations concurrently
-    await Promise.all(data.reports.map(async (report) => {
+    // 3. Separate valid and invalid reports
+    const validReports: typeof data.reports = [];
+
+    for (const report of data.reports) {
       if (existingStudentIds.has(report.studentId)) {
         results.failed.push({
           studentId: report.studentId,
           error: 'Report already exists for this date',
         });
-        return;
+        continue;
       }
 
+      if (!studentInfoMap.has(report.studentId)) {
+        results.failed.push({
+          studentId: report.studentId,
+          error: 'Student not found',
+        });
+        continue;
+      }
+
+      validReports.push(report);
+    }
+
+    if (validReports.length > 0) {
       try {
-        const createdReport = await prisma.dailyStudentReport.create({
-          data: {
+        await prisma.dailyStudentReport.createMany({
+          data: validReports.map((report) => ({
             studentId: report.studentId,
             unitId: data.unitId,
             academicYearId: data.academicYearId,
@@ -337,7 +351,8 @@ export const dailyReportService = {
             arrivalTime: report.arrivalTime,
             mood: report.morningMood as DailyMood | undefined,
             healthStatus: report.healthNotes,
-            hadBreakfast: report.breakfastConsumption === 'FULL' || report.breakfastConsumption === 'HALF',
+            hadBreakfast:
+              report.breakfastConsumption === 'FULL' || report.breakfastConsumption === 'HALF',
             mealStatus: report.lunchConsumption as MealConsumption | undefined,
             activitiesSummary: report.activitiesSummary,
             tahfidzActivity: report.ibadahNotes,
@@ -347,30 +362,43 @@ export const dailyReportService = {
             sholatAshar: report.sholatAshar,
             sholatJamaah: report.sholatJamaah,
             createdById: userId,
-          },
+          })),
         });
 
-        // Send WhatsApp notification
-        const studentInfo = studentInfoMap.get(report.studentId);
-        if (studentInfo?.parentPhone) {
-          whatsAppService.sendDailyReportNotification({
-            parentPhone: studentInfo.parentPhone,
-            parentName: studentInfo.parentName || 'Orang Tua',
-            studentName: studentInfo.user.name,
-            date: reportDate,
-            mood: report.morningMood,
-            healthStatus: report.healthNotes,
-          }).catch(err => logger.error(`Failed to send WA notification in bulk for ${report.studentId}: ${err}`));
-        }
+        // Process successful reports (notifications and results)
+        await Promise.all(
+          validReports.map(async (report) => {
+            results.success.push(report.studentId);
 
-        results.success.push(report.studentId);
+            const studentInfo = studentInfoMap.get(report.studentId);
+            if (studentInfo?.parentPhone) {
+              try {
+                await whatsAppService.sendDailyReportNotification({
+                  parentPhone: studentInfo.parentPhone,
+                  parentName: studentInfo.parentName || 'Orang Tua',
+                  studentName: studentInfo.user.name,
+                  date: reportDate,
+                  mood: report.morningMood,
+                  healthStatus: report.healthNotes,
+                });
+              } catch (err) {
+                logger.error(
+                  `Failed to send WA notification in bulk for ${report.studentId}: ${err}`
+                );
+              }
+            }
+          })
+        );
       } catch (error) {
-        results.failed.push({
-          studentId: report.studentId,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
+        // If createMany fails, all validReports failed
+        for (const report of validReports) {
+          results.failed.push({
+            studentId: report.studentId,
+            error: error instanceof Error ? error.message : 'Batch creation failed',
+          });
+        }
       }
-    }));
+    }
 
     return {
       created: results.success.length,

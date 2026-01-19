@@ -75,6 +75,7 @@ export class ParentService {
       status: sp.student.status,
       relation: sp.relation,
       isPrimary: sp.isPrimary,
+      unitId: sp.student.unitId,
       unit: sp.student.unit,
       currentClass: sp.student.enrollments[0]?.class || null,
     }));
@@ -844,7 +845,7 @@ export class ParentService {
     });
 
     // Get recent announcements
-    const unitIds = [...new Set(children.map((c) => c.unit.id))];
+    const unitIds = [...new Set(children.map((c) => c.unitId))];
 
     const recentAnnouncements = await prisma.announcement.findMany({
       where: {

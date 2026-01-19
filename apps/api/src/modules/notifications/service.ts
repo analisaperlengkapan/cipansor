@@ -233,6 +233,7 @@ export async function createManyNotifications(data: CreateNotificationInput[]) {
       userId: item.userId,
       title: item.title,
       message: item.message,
+
       type: dbType,
       link: item.link,
       data: {
@@ -243,6 +244,9 @@ export async function createManyNotifications(data: CreateNotificationInput[]) {
         channels,
         recipientType,
         ...(recipientIds ? { recipientIds } : {}),
+        ...(item.unitId ? { unitId: item.unitId } : {}),
+        ...(item.classId ? { classId: item.classId } : {}),
+        ...(item.role ? { role: item.role } : {}),
       },
       scheduledAt: item.scheduledAt || null,
     };

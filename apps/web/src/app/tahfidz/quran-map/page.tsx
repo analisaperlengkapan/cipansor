@@ -52,6 +52,7 @@ import { useStudents } from '@/hooks/use-students';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useQuranMap } from '@/hooks/use-quran-map';
 import { QuranSurahStatus, QuranSurahProgress } from '@cipansor/shared';
+import { getJuzForSurah, QURAN_SURAH_JUZ_MAPPING } from '@/lib/quran-data';
 
 export default function QuranMapPage() {
   const [studentSearch, setStudentSearch] = useState('');
@@ -86,31 +87,50 @@ export default function QuranMapPage() {
   const juzStats = useMemo(() => {
     if (!quranMapData) return {};
 
-    // Helper to map surah to juz (simplified, ideally comes from backend or constant)
-    // For now we use the surah number to lookup in the fetched data as backend handles the mapping logic usually,
-    // but here we need to know WHICH juz a surah belongs to if the backend doesn't return it explicitly in the flat list.
-    // The previous implementation had a constant QURAN_SURAHS with juz info. We can reuse that mapping logic or assume backend sends it.
-    // Assuming backend returns surah info including juz (it wasn't in the shared type, let's fix that assumption or use local mapping)
-    // Ideally backend should return it. Since shared type didn't have juz, I'll rely on local constant for mapping juz numbers.
-    const QURAN_CONSTANTS = [
-        { number: 1, juz: 1 }, { number: 2, juz: 1 }, { number: 3, juz: 3 }, { number: 4, juz: 4 },
-        // ... truncated for brevity, using simple approximation or full list
-    ];
-    // Since we can't easily reproduce the full 114 list here without bloating,
-    // let's assume the backend 'surahs' array is sorted 1-114 and we can map visually.
-    // Actually, for the "Per Juz" view to work, we need to know the juz of each surah.
-    // I will disable "Per Juz" view if data is missing, or rely on a simple visual grid.
+    const stats: Record<number, {
+      totalMemorized: number;
+      totalInProgress: number;
+      totalNotStarted: number;
+      totalSurahs: number;
+    }> = {};
 
-    // For now, let's just stick to the 'surah' view which is more detailed.
-    return {};
+    // Initialize stats for 30 juz
+    for (let i = 1; i <= 30; i++) {
+      stats[i] = {
+        totalMemorized: 0,
+        totalInProgress: 0,
+        totalNotStarted: 0,
+        totalSurahs: 0,
+      };
+    }
+
+    quranMapData.surahs.forEach((surah) => {
+      const juzList = getJuzForSurah(surah.surahNumber);
+      juzList.forEach((juz) => {
+        if (stats[juz]) {
+          stats[juz].totalSurahs++;
+          if (surah.status === 'MEMORIZED') stats[juz].totalMemorized++;
+          else if (surah.status === 'IN_PROGRESS') stats[juz].totalInProgress++;
+          else stats[juz].totalNotStarted++;
+        }
+      });
+    });
+
+    return stats;
   }, [quranMapData]);
 
   const filteredSurahs = useMemo(() => {
     if (!quranMapData) return [];
-    // If selectedJuz is active, we need mapping.
-    // If we dropped the local constant, we can't filter by Juz client-side easily without that data.
-    // Let's assume view all for now or re-introduce the constant if needed.
-    return quranMapData.surahs;
+
+    if (selectedJuz === 'all') {
+      return quranMapData.surahs;
+    }
+
+    // If selectedJuz is active, filter using mapping
+    return quranMapData.surahs.filter((surah) => {
+      const juzList = getJuzForSurah(surah.surahNumber);
+      return juzList.includes(selectedJuz);
+    });
   }, [quranMapData, selectedJuz]);
 
   return (

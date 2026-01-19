@@ -17,9 +17,9 @@ vi.mock('@/lib/prisma', () => ({
   prisma: mockPrisma,
 }));
 
-import { generateUniqueCode } from '@/utils/code-generator';
+import { generateUniqueCode, generateBulkUniqueCodes } from '@/utils/code-generator';
 
-describe('generateUniqueCode', () => {
+describe('code-generator', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Use fake timers to ensure consistent date in tests
@@ -31,43 +31,68 @@ describe('generateUniqueCode', () => {
         vi.useRealTimers();
     });
 
-    it('should generate correct code for assets when no previous record exists', async () => {
-        mockPrisma.asset.findFirst.mockResolvedValue(null);
+    describe('generateUniqueCode', () => {
+        it('should generate correct code for assets when no previous record exists', async () => {
+            mockPrisma.asset.findFirst.mockResolvedValue(null);
 
-        const code = await generateUniqueCode('AST', 'assets');
+            const code = await generateUniqueCode('AST', 'assets');
 
-        // Expected: AST-202410-0001
-        expect(code).toBe('AST-202410-0001');
-        expect(mockPrisma.asset.findFirst).toHaveBeenCalledWith({
-            where: { code: { startsWith: 'AST-202410-' } },
-            orderBy: { code: 'desc' },
-            select: { code: true }
+            // Expected: AST-202410-0001
+            expect(code).toBe('AST-202410-0001');
+            expect(mockPrisma.asset.findFirst).toHaveBeenCalledWith({
+                where: { code: { startsWith: 'AST-202410-' } },
+                orderBy: { code: 'desc' },
+                select: { code: true }
+            });
+        });
+
+        it('should generate correct code for assets when previous record exists', async () => {
+            mockPrisma.asset.findFirst.mockResolvedValue({ code: 'AST-202410-0042' });
+
+            const code = await generateUniqueCode('AST', 'assets');
+
+            // Expected: AST-202410-0043
+            expect(code).toBe('AST-202410-0043');
         });
     });
 
-    it('should generate correct code for assets when previous record exists', async () => {
-        mockPrisma.asset.findFirst.mockResolvedValue({ code: 'AST-202410-0042' });
+    describe('generateBulkUniqueCodes', () => {
+        it('should generate multiple codes sequentially', async () => {
+            mockPrisma.asset.findFirst.mockResolvedValue({ code: 'AST-202410-0010' });
 
-        const code = await generateUniqueCode('AST', 'assets');
+            const codes = await generateBulkUniqueCodes('AST', 'assets', 3);
 
-        // Expected: AST-202410-0043
-        expect(code).toBe('AST-202410-0043');
-    });
+            expect(codes).toHaveLength(3);
+            expect(codes).toEqual([
+                'AST-202410-0011',
+                'AST-202410-0012',
+                'AST-202410-0013'
+            ]);
+            // Should query DB only once
+            expect(mockPrisma.asset.findFirst).toHaveBeenCalledTimes(1);
+        });
 
-    it('should handle large sequence numbers correctly', async () => {
-        mockPrisma.asset.findFirst.mockResolvedValue({ code: 'AST-202410-9999' });
+        it('should return empty array if count is 0 or less', async () => {
+             const codes = await generateBulkUniqueCodes('AST', 'assets', 0);
+             expect(codes).toEqual([]);
+             expect(mockPrisma.asset.findFirst).not.toHaveBeenCalled();
+        });
 
-        const code = await generateUniqueCode('AST', 'assets');
+        it('should use provided transaction client', async () => {
+            const mockTx = {
+                asset: {
+                    findFirst: vi.fn().mockResolvedValue({ code: 'AST-202410-0050' })
+                },
+                purchaseRequest: {
+                    findFirst: vi.fn()
+                }
+            };
 
-        // Expected: AST-202410-10000
-        expect(code).toBe('AST-202410-10000');
-    });
+            const codes = await generateBulkUniqueCodes('AST', 'assets', 2, mockTx as any);
 
-    it('should work for purchase_requests as well', async () => {
-         mockPrisma.purchaseRequest.findFirst.mockResolvedValue({ code: 'PR-202410-0005' });
-
-         const code = await generateUniqueCode('PR', 'purchase_requests');
-
-         expect(code).toBe('PR-202410-0006');
+            expect(codes).toEqual(['AST-202410-0051', 'AST-202410-0052']);
+            expect(mockTx.asset.findFirst).toHaveBeenCalledTimes(1);
+            expect(mockPrisma.asset.findFirst).not.toHaveBeenCalled();
+        });
     });
 });

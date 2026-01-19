@@ -8,7 +8,7 @@ import {
 } from '@cipansor/shared';
 import { UserRole, AssetCondition, Prisma } from '@prisma/client';
 import { NotFoundError, ForbiddenError, ValidationError } from '@/middleware/error';
-import { generateUniqueCode } from '@/utils/code-generator';
+import { generateUniqueCode, generateBulkUniqueCodes } from '@/utils/code-generator';
 import { createNotification } from '../notifications/service';
 
 export const procurementService = {
@@ -265,8 +265,16 @@ export const procurementService = {
         const totalItemPrice = fulfillmentItem.quantityReceived * fulfillmentItem.actualPrice;
 
         if (prItem.assetCategoryId) {
+          // Generate codes in bulk for optimization and consistency within transaction
+          const assetCodes = await generateBulkUniqueCodes(
+            'AST',
+            'assets',
+            fulfillmentItem.quantityReceived,
+            tx
+          );
+
           for (let i = 0; i < fulfillmentItem.quantityReceived; i++) {
-            const assetCode = await generateUniqueCode('AST', 'assets');
+            const assetCode = assetCodes[i];
             let condition: AssetCondition = AssetCondition.GOOD;
             if (fulfillmentItem.condition === 'FAIR') condition = AssetCondition.FAIR;
             if (fulfillmentItem.condition === 'POOR') condition = AssetCondition.POOR;

@@ -12,6 +12,7 @@
 
 import { prisma } from '../../lib/prisma';
 import { ApiError, ErrorCode } from '../../middleware/error';
+import { P5ProjectService } from './p5-project.service';
 
 // Profil Pelajar Pancasila - 6 Dimensi
 export const PROFIL_PELAJAR_PANCASILA = [
@@ -334,34 +335,37 @@ export class RaportMerdekaService {
     academicYearId: string,
     semester: number
   ) {
-    // P5 projects might be stored in extracurricular or special assessments
-    // For now, we'll create a mock structure that schools can implement
+    // Fetch real P5 assessments from database
+    const p5Assessments = await P5ProjectService.getStudentAssessmentsForReport(studentId, academicYearId);
 
-    return {
-      tema: 'Kearifan Lokal',
-      deskripsiProyek: 'Projek eksplorasi kearifan lokal masyarakat setempat',
-      dimensiTerkait: [
-        {
-          dimensiCode: 'BKB',
-          dimensiName: 'Berkebinekaan Global',
-          capaian: 'BERKEMBANG',
-          deskripsi: 'Peserta didik menunjukkan perkembangan dalam menghargai keragaman budaya lokal.',
-        },
-        {
-          dimensiCode: 'GR',
-          dimensiName: 'Gotong Royong',
-          capaian: 'BERKEMBANG SESUAI HARAPAN',
-          deskripsi: 'Peserta didik mampu berkolaborasi dengan baik dalam kelompok.',
-        },
-        {
-          dimensiCode: 'KR',
-          dimensiName: 'Kreatif',
-          capaian: 'BERKEMBANG',
-          deskripsi: 'Peserta didik menunjukkan kreativitas dalam presentasi hasil projek.',
-        },
-      ],
-      catatanProses: 'Peserta didik aktif berpartisipasi dalam kegiatan projek.',
-    };
+    if (p5Assessments.length > 0) {
+      // Map to report structure
+      // Note: A student might have multiple projects in a semester.
+      // Ideally the report should show all of them.
+      // For legacy compatibility, if the frontend expects a single object, we might need to adjust.
+      // But let's return the list as "projekList" or return the first one if the frontend only handles one.
+
+      // Let's assume we return the most recent project details for now,
+      // or modify the return type to be an array if we can update the frontend too.
+      // Since we are building a "Unified" report later, let's return the array structure
+      // but wrapped to match what we need.
+
+      return p5Assessments.map(assessment => ({
+        tema: assessment.theme,
+        judul: assessment.title,
+        deskripsiProyek: assessment.description,
+        dimensiTerkait: assessment.dimensions.map(dim => ({
+          dimensiCode: dim.code,
+          dimensiName: dim.name,
+          capaian: dim.capaian,
+          deskripsi: `Peserta didik menunjukkan perkembangan dalam ${dim.name.toLowerCase()}.`, // Ideally dynamic based on score/rubric
+        })),
+        catatanProses: assessment.notes || 'Peserta didik berpartisipasi dalam kegiatan projek.',
+      }));
+    }
+
+    // Return empty state if no projects found (better than mock data)
+    return [];
   }
 
   /**

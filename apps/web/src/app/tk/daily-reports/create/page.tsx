@@ -1,0 +1,301 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/stores/auth';
+import { MainLayout } from '@/components/layout/main-layout';
+import { PageHeader } from '@/components/shared/page-header';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, Save, Loader2, Smile, Meh, Frown } from 'lucide-react';
+import { toast } from 'sonner';
+import { useClasses } from '@/hooks/use-classes';
+import { useStudents } from '@/hooks/use-students';
+import { useBulkCreateDailyReport } from '@/hooks/use-daily-report';
+import { format } from 'date-fns';
+
+const MOODS = [
+  { value: 'HAPPY', label: 'Senang', icon: Smile, color: 'text-green-500' },
+  { value: 'NEUTRAL', label: 'Biasa', icon: Meh, color: 'text-gray-500' },
+  { value: 'SAD', label: 'Sedih', icon: Frown, color: 'text-yellow-500' },
+  { value: 'SICK', label: 'Sakit', icon: Frown, color: 'text-red-500' },
+];
+
+const MEALS = [
+  { value: 'HABIS', label: 'Habis' },
+  { value: 'SETENGAH', label: 'Setengah' },
+  { value: 'SEDIKIT', label: 'Sedikit' },
+  { value: 'TIDAK_MAU', label: 'Tidak Mau' },
+];
+
+interface StudentReportDraft {
+  studentId: string;
+  isPresent: boolean;
+  morningMood: string;
+  healthNotes: string;
+  lunchConsumption: string;
+  surahPractice: string; // Tahfidz note
+  sholatDhuha: boolean;
+  sholatDzuhur: boolean;
+  activitiesSummary: string;
+}
+
+export default function BulkCreateDailyReportPage() {
+  const router = useRouter();
+  const { user } = useAuthStore();
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [reports, setReports] = useState<Record<string, StudentReportDraft>>({});
+
+  const { data: classes } = useClasses({ unitId: user?.unitId });
+  const { data: students, isLoading: isLoadingStudents } = useStudents({
+    classId: selectedClassId || undefined,
+    unitId: user?.unitId,
+    limit: 100,
+    status: 'active',
+  });
+
+  const bulkMutation = useBulkCreateDailyReport();
+
+  // Initialize reports when students are loaded
+  useEffect(() => {
+    if (students?.data) {
+      const initialReports: Record<string, StudentReportDraft> = {};
+      students.data.forEach((student) => {
+        initialReports[student.id] = {
+          studentId: student.id,
+          isPresent: true, // Default present
+          morningMood: 'HAPPY',
+          healthNotes: '',
+          lunchConsumption: 'HABIS',
+          surahPractice: '',
+          sholatDhuha: true, // Optimistic default
+          sholatDzuhur: true,
+          activitiesSummary: '',
+        };
+      });
+      setReports(initialReports);
+    }
+  }, [students]);
+
+  const updateReport = (studentId: string, field: keyof StudentReportDraft, value: any) => {
+    setReports((prev) => ({
+      ...prev,
+      [studentId]: {
+        ...prev[studentId],
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedClassId) {
+      toast.error('Pilih kelas terlebih dahulu');
+      return;
+    }
+
+    const presentStudents = Object.values(reports).filter((r) => r.isPresent);
+
+    if (presentStudents.length === 0) {
+      toast.error('Tidak ada siswa yang hadir untuk dilaporkan');
+      return;
+    }
+
+    try {
+      await bulkMutation.mutateAsync({
+        unitId: user?.unitId || '',
+        academicYearId: user?.academicYearId || '', // Assuming this exists in store
+        reportDate: format(new Date(), 'yyyy-MM-dd'),
+        reports: presentStudents.map((r) => ({
+          studentId: r.studentId,
+          morningMood: r.morningMood,
+          healthNotes: r.healthNotes,
+          lunchConsumption: r.lunchConsumption,
+          activitiesSummary: r.activitiesSummary,
+          ibadahNotes: r.surahPractice, // Mapping Tahfidz to ibadahNotes/tahfidzActivity
+          sholatDhuha: r.sholatDhuha,
+          sholatDzuhur: r.sholatDzuhur,
+          // Defaults for required fields not in bulk form
+          sholatAshar: false,
+          sholatJamaah: false,
+        })),
+      });
+
+      toast.success(`Berhasil membuat ${presentStudents.length} laporan harian`);
+      router.push('/tk');
+    } catch (error) {
+      console.error(error);
+      toast.error('Gagal membuat laporan massal');
+    }
+  };
+
+  return (
+    <MainLayout>
+      <div className="space-y-6 pb-20">
+        <PageHeader
+          title="Input Laporan Harian Massal"
+          description="Input cepat untuk satu kelas"
+          actions={
+            <Button variant="outline" onClick={() => router.back()}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Kembali
+            </Button>
+          }
+        />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Pilih Kelas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+              <SelectTrigger className="w-full md:w-[300px]">
+                <SelectValue placeholder="Pilih Kelas..." />
+              </SelectTrigger>
+              <SelectContent>
+                {classes?.data?.map((cls) => (
+                  <SelectItem key={cls.id} value={cls.id}>
+                    {cls.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+
+        {selectedClassId && students?.data && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Daftar Siswa ({students.data.length})</h3>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {students.data.map((student) => {
+                const report = reports[student.id];
+                if (!report) return null;
+
+                return (
+                  <Card key={student.id} className={`${!report.isPresent ? 'opacity-60 bg-muted' : ''}`}>
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-center">
+                        <CardTitle className="text-base">{student.name}</CardTitle>
+                        <Checkbox
+                          checked={report.isPresent}
+                          onCheckedChange={(checked) => updateReport(student.id, 'isPresent', !!checked)}
+                        />
+                      </div>
+                    </CardHeader>
+
+                    {report.isPresent && (
+                      <CardContent className="space-y-4 text-sm">
+                        {/* Mood */}
+                        <div className="space-y-2">
+                          <Label>Mood Pagi</Label>
+                          <div className="flex gap-2">
+                            {MOODS.map((mood) => {
+                              const Icon = mood.icon;
+                              const isSelected = report.morningMood === mood.value;
+                              return (
+                                <button
+                                  key={mood.value}
+                                  type="button"
+                                  onClick={() => updateReport(student.id, 'morningMood', mood.value)}
+                                  className={`p-2 rounded-full border transition-all ${isSelected ? `bg-accent border-primary ${mood.color}` : 'border-transparent hover:bg-muted'}`}
+                                  title={mood.label}
+                                >
+                                  <Icon className="h-6 w-6" />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Health */}
+                        <div className="space-y-2">
+                          <Label>Kesehatan</Label>
+                          <Input
+                            placeholder="Sehat..."
+                            value={report.healthNotes}
+                            onChange={(e) => updateReport(student.id, 'healthNotes', e.target.value)}
+                            className="h-8"
+                          />
+                        </div>
+
+                        {/* Makan */}
+                        <div className="space-y-2">
+                          <Label>Makan Siang</Label>
+                          <Select
+                            value={report.lunchConsumption}
+                            onValueChange={(val) => updateReport(student.id, 'lunchConsumption', val)}
+                          >
+                            <SelectTrigger className="h-8">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {MEALS.map((m) => (
+                                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Ibadah */}
+                        <div className="space-y-2">
+                          <Label>Ibadah</Label>
+                          <div className="flex gap-4">
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                id={`dhuha-${student.id}`}
+                                checked={report.sholatDhuha}
+                                onCheckedChange={(c) => updateReport(student.id, 'sholatDhuha', !!c)}
+                              />
+                              <label htmlFor={`dhuha-${student.id}`}>Dhuha</label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                id={`dzuhur-${student.id}`}
+                                checked={report.sholatDzuhur}
+                                onCheckedChange={(c) => updateReport(student.id, 'sholatDzuhur', !!c)}
+                              />
+                              <label htmlFor={`dzuhur-${student.id}`}>Dzuhur</label>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Tahfidz/Notes */}
+                        <div className="space-y-2">
+                          <Label>Hafalan/Tahfidz</Label>
+                          <Input
+                            placeholder="Surah..."
+                            value={report.surahPractice}
+                            onChange={(e) => updateReport(student.id, 'surahPractice', e.target.value)}
+                            className="h-8"
+                          />
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Floating Action Button for Save */}
+        {selectedClassId && (
+          <div className="fixed bottom-6 right-6">
+            <Button size="lg" className="shadow-xl" onClick={handleSubmit} disabled={bulkMutation.isPending}>
+              {bulkMutation.isPending ? (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-5 w-5" />
+              )}
+              Simpan Laporan ({Object.values(reports).filter(r => r.isPresent).length})
+            </Button>
+          </div>
+        )}
+      </div>
+    </MainLayout>
+  );
+}

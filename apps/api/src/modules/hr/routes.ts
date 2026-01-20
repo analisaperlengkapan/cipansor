@@ -4,6 +4,8 @@ import * as controller from "./controller";
 import { departmentController } from "./departments.controller";
 import { contractController } from "./contracts.controller";
 import { leaveBalanceController } from "./leave-balances.controller";
+import { employeeDocumentController } from "./employee-documents.controller";
+import { employmentHistoryController } from "./employment-history.controller";
 import { authenticate, authorize } from "../../middleware/auth";
 import { validateQuery } from "../../middleware/error";
 import { queryStaffAttendanceSchema, queryLeaveSchema, queryStaffSchema } from "./schema";
@@ -496,6 +498,17 @@ router.get("/contracts", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), c
 router.get("/contracts/expiring", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), contractController.getExpiring);
 router.get("/contracts/user/:userId", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), contractController.findByUser);
 router.patch("/contracts/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), contractController.update);
+
+// ==================== EMPLOYEE DOCUMENTS ====================
+
+router.get("/employees/:userId/documents", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), employeeDocumentController.findAll);
+router.post("/documents", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), employeeDocumentController.create);
+router.delete("/documents/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), employeeDocumentController.delete);
+
+// ==================== EMPLOYMENT HISTORY ====================
+
+router.get("/employees/:userId/history", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), employmentHistoryController.findAll);
+router.post("/history", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), employmentHistoryController.create);
 
 // ==================== LEAVE BALANCES (ENHANCED) ====================
 

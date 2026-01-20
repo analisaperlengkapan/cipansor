@@ -83,6 +83,8 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { DocumentsTab } from './components/documents-tab';
+import { HistoryTab } from './components/history-tab';
 
 export default function EmployeeDetailPage() {
   const params = useParams();
@@ -312,6 +314,10 @@ export default function EmployeeDetailPage() {
             <TabsTrigger value="documents">
               <FileText className="mr-2 h-4 w-4" />
               Dokumen
+            </TabsTrigger>
+            <TabsTrigger value="history">
+              <Briefcase className="mr-2 h-4 w-4" />
+              Riwayat Karir
             </TabsTrigger>
           </TabsList>
 
@@ -669,33 +675,12 @@ export default function EmployeeDetailPage() {
 
           {/* Documents Tab */}
           <TabsContent value="documents" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Dokumen Karyawan</CardTitle>
-                <CardDescription>Berkas dan dokumen terkait</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {employee.documents?.length ? (
-                  <div className="grid gap-4 md:grid-cols-3">
-                    {employee.documents.map((doc, index) => (
-                      <Card key={index} className="p-4">
-                        <div className="flex items-center gap-3">
-                          <FileText className="h-8 w-8 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium">{doc.name}</p>
-                            <p className="text-sm text-muted-foreground">{doc.type}</p>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    Belum ada dokumen yang diunggah
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <DocumentsTab userId={employee.id} />
+          </TabsContent>
+
+          {/* History Tab */}
+          <TabsContent value="history" className="space-y-4">
+            <HistoryTab userId={employee.id} />
           </TabsContent>
         </Tabs>
 

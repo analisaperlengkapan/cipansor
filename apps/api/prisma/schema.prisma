@@ -306,6 +306,8 @@ model User {
   receivedMessages                  Message[]                   @relation("ReceivedMessages")
   leaveBalances                     LeaveBalance[]
   employmentContracts               EmploymentContract[]
+  employeeDocuments                 EmployeeDocument[]
+  employmentHistory                 EmploymentHistory[]
   managedDepartments                Department[]                @relation("DepartmentManager")
   // Quality Assurance relations
   uploadedEvidences                 QualityEvidence[]           @relation("EvidenceUploader")
@@ -1575,6 +1577,30 @@ enum ContractStatus {
   RENEWED
 }
 
+enum EmployeeDocumentType {
+  KTP
+  KK
+  NPWP
+  IJAZAH
+  TRANSKRIP_NILAI
+  SERTIFIKAT
+  SK_PENGANGKATAN
+  KONTRAK_KERJA
+  CV
+  LAINNYA
+}
+
+enum EmploymentAction {
+  HIRED
+  PROMOTED
+  DEMOTED
+  TRANSFERRED
+  TERMINATED
+  RESIGNED
+  RETIRED
+  SALARY_ADJUSTMENT
+}
+
 /// EmploymentContract - Kontrak Kerja
 model EmploymentContract {
   id            String         @id @default(uuid())
@@ -1596,6 +1622,48 @@ model EmploymentContract {
   @@index([status])
   @@index([endDate])
   @@map("employment_contracts")
+}
+
+/// EmployeeDocument - Dokumen Kepegawaian
+model EmployeeDocument {
+  id         String               @id @default(uuid())
+  userId     String               @map("user_id")
+  name       String
+  type       EmployeeDocumentType
+  fileUrl    String               @map("file_url")
+  expiryDate DateTime?            @map("expiry_date")
+  notes      String?
+  createdAt  DateTime             @default(now()) @map("created_at")
+  updatedAt  DateTime             @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@map("employee_documents")
+}
+
+/// EmploymentHistory - Riwayat Pekerjaan/Karir
+model EmploymentHistory {
+  id                 String           @id @default(uuid())
+  userId             String           @map("user_id")
+  action             EmploymentAction
+  previousPosition   String?          @map("previous_position")
+  newPosition        String           @map("new_position")
+  previousDepartment String?          @map("previous_department")
+  newDepartment      String?          @map("new_department")
+  effectiveDate      DateTime         @map("effective_date")
+  notes              String?
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([effectiveDate])
+  @@map("employment_history")
 }
 
 // =====================================

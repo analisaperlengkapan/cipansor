@@ -56,9 +56,24 @@ export interface AppEvents {
     // Dashboard Events
     'dashboard:refresh': DashboardRefreshEvent;
     'dashboard:alert': DashboardAlertEvent;
+
+    // Health Events
+    'health:medical-record-created': HealthMedicalRecordCreatedEvent;
 }
 
 // Event Payload Types
+export interface HealthMedicalRecordCreatedEvent {
+    id: string;
+    studentId: string;
+    studentName: string;
+    unitId: string;
+    unitName: string;
+    type: string;
+    complaint: string;
+    status: string;
+    recordedAt: Date;
+}
+
 export interface AttendanceCreatedEvent {
     id: string;
     studentId: string;
@@ -438,6 +453,22 @@ export function initializeEventBus(): void {
             timestamp: new Date().toISOString()
         };
         await publishDashboardAlert(alert);
+    });
+
+    // ===== HEALTH EVENT HANDLERS =====
+
+    eventBus.on('health:medical-record-created', async (event) => {
+        logger.info('Medical record created', {
+            studentId: event.studentId,
+            type: event.type
+        });
+
+        // Invalidate dashboard cache to update Health/UKS stats
+        await invalidateDashboardCache(event.unitId);
+
+        // Refresh dashboard metrics
+        const metrics = await getCurrentDashboardMetrics(event.unitId);
+        await publishDashboardMetrics(metrics, event.unitId);
     });
 
     // ===== NOTIFICATION EVENT HANDLERS =====

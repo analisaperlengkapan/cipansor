@@ -59,6 +59,7 @@ import portfolioRoutes from '@/modules/portfolio/routes';
 import ibadahRoutes from '@/modules/ibadah/routes';
 import raporPesantrenRoutes from '@/modules/rapor-pesantren/routes';
 import { procurementRoutes } from '@/modules/procurement/procurement.routes';
+import { supplierRoutes } from '@/modules/suppliers/suppliers.routes';
 import { uploadRoutes } from '@/modules/upload/upload.routes';
 
 // Phase 12 routes
@@ -213,6 +214,7 @@ apiRouter.use('/portfolio', portfolioRoutes);
 apiRouter.use('/ibadah', ibadahRoutes);
 apiRouter.use('/rapor-pesantren', raporPesantrenRoutes);
 apiRouter.use('/procurement', procurementRoutes);
+apiRouter.use('/suppliers', supplierRoutes);
 apiRouter.use('/upload', uploadRoutes);
 
 // Phase 12 routes

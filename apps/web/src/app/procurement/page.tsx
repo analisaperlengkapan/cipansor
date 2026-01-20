@@ -20,7 +20,7 @@ export default function ProcurementPage() {
   const [selectedUnit, setSelectedUnit] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
-  const { units } = useUnits();
+  const { data: units } = useUnits();
   const { requests, isLoading } = useProcurement(
     selectedUnit === 'all' ? undefined : selectedUnit,
     selectedStatus === 'all' ? undefined : (selectedStatus as PurchaseRequestStatus)

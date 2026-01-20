@@ -22,6 +22,30 @@ export const useMarketingStats = (unitId?: string) => {
   });
 };
 
+export const useRecentLeads = (unitId?: string, limit: number = 5) => {
+  return useQuery({
+    queryKey: ['marketing', 'leads', 'recent', unitId, limit],
+    queryFn: async () => {
+      const { data } = await api.get<{ success: boolean; data: any[] }>('/marketing/leads/recent', {
+        params: { unitId, limit },
+      });
+      return data.data;
+    },
+  });
+};
+
+export const useUpcomingFollowUps = (unitId?: string, limit: number = 5) => {
+  return useQuery({
+    queryKey: ['marketing', 'follow-ups', unitId, limit],
+    queryFn: async () => {
+      const { data } = await api.get<{ success: boolean; data: any[] }>('/marketing/follow-ups', {
+        params: { unitId, limit },
+      });
+      return data.data;
+    },
+  });
+};
+
 // Campaigns
 export const useCampaigns = (unitId?: string) => {
   return useQuery({

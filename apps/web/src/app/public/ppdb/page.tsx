@@ -296,7 +296,6 @@ export default function PublicPPDBPage() {
                           Gelombang pendaftaran aktif hingga {format(new Date(activePeriod.endDate), 'd MMMM yyyy', { locale: idLocale })}
                         </p>
                       </div>
-                      {/* @ts-ignore */}
                       <div className="bg-white/50 p-3 rounded-lg border border-green-100 backdrop-blur-sm">
                         <div className="text-sm text-green-800 font-medium">Sisa Waktu</div>
                         <div className="text-2xl font-bold text-green-600">

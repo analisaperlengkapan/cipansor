@@ -125,6 +125,55 @@ export const getDashboardStats = async (unitId?: string) => {
   };
 };
 
+export const getRecentLeads = async (unitId?: string, limit: number = 5) => {
+  const where: Prisma.RegistrantWhereInput = {};
+  if (unitId) {
+    where.admissionPeriod = { unitId };
+  }
+
+  return prisma.registrant.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+    select: {
+      id: true,
+      fullName: true,
+      createdAt: true,
+      status: true,
+      source: true,
+      campaign: {
+        select: { name: true, code: true }
+      }
+    }
+  });
+};
+
+export const getUpcomingFollowUps = async (unitId?: string, limit: number = 5) => {
+  const whereRegistrant: Prisma.RegistrantWhereInput = {};
+  if (unitId) {
+    whereRegistrant.admissionPeriod = { unitId };
+  }
+
+  return prisma.marketingInteraction.findMany({
+    where: {
+      nextActionDate: { gte: new Date() },
+      registrant: whereRegistrant
+    },
+    orderBy: { nextActionDate: 'asc' },
+    take: limit,
+    include: {
+      registrant: {
+        select: {
+          id: true,
+          fullName: true,
+          parentPhone: true,
+          status: true,
+        }
+      }
+    }
+  });
+};
+
 export default {
   createCampaign,
   updateCampaign,
@@ -133,4 +182,6 @@ export default {
   logInteraction,
   getInteractionsByRegistrant,
   getDashboardStats,
+  getRecentLeads,
+  getUpcomingFollowUps,
 };

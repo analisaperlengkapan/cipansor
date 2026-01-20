@@ -16,6 +16,7 @@ export function useSuppliers(params?: { search?: string; category?: string; isAc
       const { data } = await api.get(`/suppliers?${searchParams.toString()}`);
       return data.data as Supplier[];
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -27,6 +28,7 @@ export function useSupplier(id: string) {
       return data.data as Supplier;
     },
     enabled: !!id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 

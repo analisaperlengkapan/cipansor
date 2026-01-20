@@ -7,7 +7,7 @@ import {
   PurchaseRequestItem
 } from "@cipansor/shared";
 import { api } from "@/lib/api";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -67,7 +67,6 @@ export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
   const [open, setOpen] = useState(false);
   const [accounts, setAccounts] = useState<{id: string, name: string, code: string}[]>([]);
   const [rooms, setRooms] = useState<{id: string, name: string, code: string}[]>([]);
-  const { toast } = useToast();
 
   const { data: suppliers } = useSuppliers({ isActive: true });
 
@@ -113,18 +112,11 @@ export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
     try {
       await api.post(`/procurement/${request.id}/fulfill`, values);
 
-      toast({
-        title: "Success",
-        description: "Request fulfilled successfully. Assets created.",
-      });
+      toast.success("Request fulfilled successfully. Assets created.");
       setOpen(false);
       onSuccess();
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.message || "Failed to fulfill request",
-        variant: "destructive",
-      });
+      toast.error(error.response?.data?.message || "Failed to fulfill request");
     }
   };
 

@@ -13,6 +13,32 @@ export const createCampaign = async (req: Request, res: Response, next: NextFunc
   }
 };
 
+export const getRecentLeads = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { unitId, limit } = req.query;
+    const leads = await marketingService.getRecentLeads(
+      unitId as string,
+      limit ? parseInt(limit as string) : 5
+    );
+    res.json({ success: true, data: leads });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getUpcomingFollowUps = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { unitId, limit } = req.query;
+    const tasks = await marketingService.getUpcomingFollowUps(
+      unitId as string,
+      limit ? parseInt(limit as string) : 5
+    );
+    res.json({ success: true, data: tasks });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const updateCampaign = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;

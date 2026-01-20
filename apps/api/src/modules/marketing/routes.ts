@@ -10,6 +10,8 @@ router.use(authenticate);
 
 // Stats
 router.get('/stats', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.YAYASAN_ADMIN), marketingController.getStats);
+router.get('/leads/recent', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.YAYASAN_ADMIN), marketingController.getRecentLeads);
+router.get('/follow-ups', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), marketingController.getUpcomingFollowUps);
 
 // Campaigns
 router.post('/campaigns', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), marketingController.createCampaign);

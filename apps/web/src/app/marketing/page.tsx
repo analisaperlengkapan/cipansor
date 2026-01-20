@@ -2,11 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   useMarketingStats,
   useCampaigns,
   useCreateCampaign,
   useUpdateCampaign,
+  useRecentLeads,
+  useUpcomingFollowUps,
 } from '@/hooks/use-marketing';
 import { useAuth } from '@/hooks/use-auth';
 import {
@@ -138,6 +141,8 @@ export default function MarketingDashboard() {
 
   const { data: stats, isLoading: loadingStats } = useMarketingStats(user?.unitId);
   const { data: campaigns, isLoading: loadingCampaigns } = useCampaigns(user?.unitId);
+  const { data: recentLeads } = useRecentLeads(user?.unitId);
+  const { data: followUps } = useUpcomingFollowUps(user?.unitId);
   const createCampaign = useCreateCampaign();
   const updateCampaign = useUpdateCampaign();
 
@@ -406,6 +411,84 @@ export default function MarketingDashboard() {
                     Belum ada data kampanye
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* New Row: Leads & Tasks */}
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Recent Leads Widget */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Leads Terbaru</CardTitle>
+                <CardDescription>Pendaftar yang baru masuk</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nama</TableHead>
+                      <TableHead>Kampanye</TableHead>
+                      <TableHead className="text-right">Tanggal</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recentLeads?.map((lead: any) => (
+                      <TableRow key={lead.id}>
+                        <TableCell>
+                          <div className="font-medium">{lead.fullName}</div>
+                          <div className="text-xs text-muted-foreground">{lead.status}</div>
+                        </TableCell>
+                        <TableCell>
+                          {lead.campaign ? <Badge variant="outline" className="text-xs">{lead.campaign.code}</Badge> : '-'}
+                        </TableCell>
+                        <TableCell className="text-right text-xs text-muted-foreground">
+                          {format(new Date(lead.createdAt), 'd MMM', { locale: localeId })}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {!recentLeads?.length && (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center text-muted-foreground">Belum ada leads baru</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+                <div className="mt-4 text-center">
+                  <Button variant="link" size="sm" asChild>
+                    <Link href="/marketing/leads">Lihat Semua →</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Upcoming Follow-ups Widget */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Tugas Follow-up</CardTitle>
+                <CardDescription>Jadwal tindak lanjut mendatang</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {followUps?.map((task: any) => (
+                    <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+                      <div>
+                        <div className="font-medium text-sm">{task.registrant.fullName}</div>
+                        <div className="text-xs text-muted-foreground flex gap-2">
+                          <span>{task.registrant.parentPhone}</span>
+                          <span>•</span>
+                          <span>{format(new Date(task.nextActionDate), 'd MMM HH:mm', { locale: localeId })}</span>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline" asChild>
+                        <Link href={`/marketing/leads/${task.registrant.id}`}>Detail</Link>
+                      </Button>
+                    </div>
+                  ))}
+                  {!followUps?.length && (
+                    <div className="text-center text-muted-foreground py-4">Tidak ada tugas follow-up</div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>

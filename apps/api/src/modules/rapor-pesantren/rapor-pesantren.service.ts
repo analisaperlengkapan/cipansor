@@ -18,6 +18,7 @@ import {
   getGradeFromScore,
 } from './rapor-pesantren.schema';
 import type { Prisma } from '@prisma/client';
+import { createNotification } from '../notifications/service';
 
 // =====================
 // CONFIG MANAGEMENT
@@ -787,13 +788,52 @@ export async function listRaporPesantren(query: ListRaporQuery) {
 // =====================
 
 export async function updateRaporPesantren(id: string, data: UpdateRaporInput) {
-  return prisma.raporPesantren.update({
+  const result = await prisma.raporPesantren.update({
     where: { id },
     data: {
       ...data,
       publishedAt: data.status === 'PUBLISHED' ? new Date() : undefined,
     },
+    include: {
+      student: {
+        include: {
+          parents: {
+            include: {
+              parent: true,
+            },
+          },
+          user: true,
+        },
+      },
+      academicYear: true,
+    },
   });
+
+  // Trigger notification if status is changed to PUBLISHED
+  if (data.status === 'PUBLISHED') {
+    const parents = result.student.parents;
+    const studentName = result.student.user.name;
+    const period = result.academicYear.name;
+    const semester = result.semester;
+
+    await Promise.all(
+      parents.map((p) =>
+        createNotification({
+          userId: p.parent.id,
+          type: 'ACADEMIC',
+          title: 'Rapor Pesantren Diterbitkan',
+          message: `Rapor Pesantren ananda ${studentName} untuk periode ${period} Semester ${semester} telah diterbitkan. Silakan cek di portal wali santri.`,
+          link: `/rapor-pesantren/preview?id=${result.id}`,
+          data: {
+            studentId: result.studentId,
+            raporId: result.id,
+          },
+        })
+      )
+    );
+  }
+
+  return result;
 }
 
 // =====================
@@ -1035,11 +1075,33 @@ export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem
 
       overallScore: rapor.overallScore || 0,
       overallGrade: rapor.overallGrade || '-',
-      rank: undefined,
+      rank: undefined as number | undefined,
     };
   });
 
-  return leger;
+  // Calculate Ranks
+  // 1. Sort by overallScore descending to determine rank
+  const sortedByScore = [...leger].sort((a, b) => b.overallScore - a.overallScore);
+
+  // 2. Assign rank
+  sortedByScore.forEach((item, index) => {
+    item.rank = index + 1;
+  });
+
+  // 3. Update the original leger items with their calculated rank
+  // Note: Since objects are passed by reference, modifying sortedByScore items modifies the original leger items
+  // if they share the same object references. However, `toSorted` creates shallow copies in standard JS,
+  // but here we used `[...leger].sort`, so the objects inside are the SAME references.
+  // Wait, `sort` modifies in place? No, `[...leger]` creates a new array, but the *elements* are references.
+  // So modifying `item.rank` in `sortedByScore` SHOULD update the objects.
+  // But to be safe and explicit, let's map back.
+
+  const rankMap = new Map(sortedByScore.map(item => [item.id, item.rank]));
+
+  return leger.map(item => ({
+    ...item,
+    rank: rankMap.get(item.id),
+  }));
 }
 
 // =====================

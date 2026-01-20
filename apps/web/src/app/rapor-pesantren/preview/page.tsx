@@ -28,6 +28,7 @@ import {
   Award,
   AlertCircle,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useClasses } from '@/hooks/use-classes';
 import { useStudents } from '@/hooks/use-students';
 import { useAuthStore } from '@/stores/auth';
@@ -91,6 +92,7 @@ export default function RaporPesantrenPreviewPage() {
     
     // Map API response to display format
     return {
+      id: raporDetail.id,
       student: {
         name: raporDetail.student?.name || '-',
         nis: raporDetail.student?.nis || '-',
@@ -98,48 +100,38 @@ export default function RaporPesantrenPreviewPage() {
       },
       period: {
         semester: raporDetail.semester || 1,
-        academicYear: raporDetail.academicYear?.year || '-',
+        academicYear: raporDetail.academicYear?.name || '-',
       },
-      tahfidz: raporDetail.tahfidzComponent || {
-        totalAyah: 0,
-        surahCount: 0,
-        averageScore: 0,
-        grade: 'maqbul',
-        details: [],
+      tahfidz: {
+        ...raporDetail.tahfidz,
+        surahCount: raporDetail.tahfidz.totalSurah,
+        averageScore: raporDetail.tahfidz.score,
       },
-      ibadah: raporDetail.ibadahComponent || {
-        sholatWajib: 0,
-        sholatSunnah: 0,
-        tilawah: 0,
-        averageScore: 0,
-        grade: 'maqbul',
+      ibadah: {
+        ...raporDetail.ibadah,
+        averageScore: raporDetail.ibadah.score,
+        sholatWajib: raporDetail.ibadah.categoryBreakdown.find(c => c.category.includes('SHOLAT'))?.completionRate || 0,
+        sholatSunnah: raporDetail.ibadah.categoryBreakdown.find(c => c.category.includes('SUNNAH'))?.completionRate || 0,
       },
-      muhadhoroh: raporDetail.muhadhorohComponent || {
-        totalSessions: 0,
-        averageScore: 0,
-        grade: 'maqbul',
-        bestPerformance: '-',
+      muhadhoroh: {
+        ...raporDetail.muhadhoroh,
+        averageScore: raporDetail.muhadhoroh.score,
+        bestPerformance: raporDetail.muhadhoroh.performances[0]?.theme || '-',
       },
-      muhadatsah: raporDetail.muhadatsahComponent || {
-        totalSessions: 0,
-        averageScore: 0,
-        grade: 'maqbul',
+      muhadatsah: {
+        ...raporDetail.muhadatsah,
+        averageScore: raporDetail.muhadatsah.score,
       },
-      kitabProgress: raporDetail.kitabComponent || {
-        kitabCount: 0,
-        completedChapters: 0,
-        averageScore: 0,
-        grade: 'maqbul',
+      kitabProgress: {
+        ...raporDetail.kitabProgress,
+        averageScore: raporDetail.kitabProgress.score,
       },
-      akhlak: raporDetail.akhlakComponent || {
-        attendance: 0,
-        violations: 0,
-        rewards: 0,
-        averageScore: 0,
-        grade: 'maqbul',
+      akhlak: {
+        ...raporDetail.akhlak,
+        averageScore: raporDetail.akhlak.score,
       },
-      finalScore: raporDetail.finalScore || 0,
-      finalGrade: raporDetail.finalGrade || 'maqbul',
+      finalScore: raporDetail.overallScore || 0,
+      finalGrade: raporDetail.overallGrade || 'maqbul',
       recommendation: raporDetail.notes || raporDetail.musyrifNotes || 'Tidak ada catatan',
     };
   }, [raporDetail]);
@@ -169,8 +161,10 @@ export default function RaporPesantrenPreviewPage() {
           title="Preview Rapor Pesantren"
           description="Lihat detail rapor pesantren santri"
           actions={
-            <Button>
-              Download PDF
+            <Button asChild disabled={!rapor}>
+              <Link href={rapor ? `/rapor-pesantren/print/${rapor.id}` : '#'} target="_blank">
+                Cetak / Download PDF
+              </Link>
             </Button>
           }
         />

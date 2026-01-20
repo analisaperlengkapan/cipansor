@@ -297,6 +297,15 @@ export interface RaporPesantren {
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;
+  unit?: {
+    id: string;
+    name: string;
+    address: string;
+    phone: string | null;
+    email: string | null;
+    website: string | null;
+    logoUrl: string | null;
+  };
 }
 
 export interface LegerItem {

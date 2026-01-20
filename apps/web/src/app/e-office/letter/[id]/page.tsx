@@ -56,6 +56,8 @@ export default function LetterDetailPage({ params }: { params: { id: string } })
     }
   };
 
+  const isUpdating = updateDispositionStatus.isPending;
+
   if (isLoading) {
     return <div className="p-6 text-center">Memuat data surat...</div>;
   }
@@ -250,16 +252,18 @@ export default function LetterDetailPage({ params }: { params: { id: string } })
                       className="w-full bg-blue-600 hover:bg-blue-700"
                       size="sm"
                       onClick={() => handleUpdateDisposition('IN_PROGRESS')}
+                      disabled={isUpdating}
                     >
-                      Mulai
+                      {isUpdating ? 'Memproses...' : 'Mulai'}
                     </Button>
                   )}
                   <Button
                     className="w-full bg-green-600 hover:bg-green-700"
                     size="sm"
                     onClick={() => setCompleteDialogOpen(true)}
+                    disabled={isUpdating}
                   >
-                    Selesai
+                    {isUpdating ? 'Memproses...' : 'Selesai'}
                   </Button>
                 </div>
               </CardContent>

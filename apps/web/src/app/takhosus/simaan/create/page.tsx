@@ -1,0 +1,245 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { PageHeader } from '@/components/shared/page-header';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { useStudents } from '@/hooks/use-students';
+import { useTeachers } from '@/hooks/use-teachers';
+import { useCreateSimaan, SIMAAN_TYPES } from '@/hooks/use-simaan';
+import { toast } from 'sonner';
+
+const formSchema = z.object({
+  studentId: z.string().min(1, 'Santri harus dipilih'),
+  simaanType: z.string().min(1, 'Jenis simaan harus dipilih'),
+  examDate: z.string().min(1, 'Tanggal ujian harus diisi'),
+  juzStart: z.coerce.number().min(1).max(30),
+  juzEnd: z.coerce.number().min(1).max(30),
+  examinerId: z.string().min(1, 'Penguji harus dipilih'),
+  notes: z.string().optional(),
+});
+
+export default function CreateSimaanPage() {
+  const router = useRouter();
+  const { mutate: createSimaan, isPending } = useCreateSimaan();
+
+  // Fetch students and teachers for dropdowns
+  const { data: studentsData, isLoading: isLoadingStudents } = useStudents({
+    page: 1,
+    limit: 100
+  });
+
+  const { data: teachersData, isLoading: isLoadingTeachers } = useTeachers({
+    page: 1,
+    limit: 100
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      studentId: '',
+      simaanType: '',
+      examDate: '',
+      juzStart: 1,
+      juzEnd: 1,
+      examinerId: '',
+      notes: '',
+    },
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const studentOptions = studentsData?.data?.map((s: any) => ({
+    value: s.id,
+    label: `${s.user?.name} (${s.nis})`,
+  })) || [];
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const teacherOptions = teachersData?.data?.map((t: any) => ({
+    value: t.id,
+    label: t.user?.name,
+  })) || [];
+
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    createSimaan(
+      {
+        ...values,
+        examiners: [{ examinerId: values.examinerId }],
+      },
+      {
+        onSuccess: () => {
+          toast.success('Jadwal simaan berhasil dibuat');
+          router.push('/takhosus/simaan');
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onError: (error: any) => {
+          toast.error(error?.response?.data?.message || 'Gagal membuat jadwal');
+        },
+      }
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Buat Jadwal Simaan"
+        description="Jadwalkan ujian simaan baru untuk santri."
+        backUrl="/takhosus/simaan"
+      />
+
+      <div className="grid gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Formulir Jadwal</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="studentId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Santri</FormLabel>
+                        <FormControl>
+                          <SearchableSelect
+                            options={studentOptions}
+                            value={field.value}
+                            onSelect={field.onChange}
+                            placeholder="Pilih santri..."
+                            isLoading={isLoadingStudents}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="examinerId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Penguji (Examiner)</FormLabel>
+                        <FormControl>
+                          <SearchableSelect
+                            options={teacherOptions}
+                            value={field.value}
+                            onSelect={field.onChange}
+                            placeholder="Pilih penguji..."
+                            isLoading={isLoadingTeachers}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="simaanType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Jenis Simaan</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih jenis simaan" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {SIMAAN_TYPES.map((type) => (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="examDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tanggal Ujian</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="juzStart"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mulai Juz</FormLabel>
+                        <FormControl>
+                          <Input type="number" min={1} max={30} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="juzEnd"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sampai Juz</FormLabel>
+                        <FormControl>
+                          <Input type="number" min={1} max={30} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.back()}
+                  >
+                    Batal
+                  </Button>
+                  <Button type="submit" disabled={isPending}>
+                    {isPending ? 'Menyimpan...' : 'Simpan Jadwal'}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

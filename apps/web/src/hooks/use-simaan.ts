@@ -209,7 +209,7 @@ export function useSubmitSimaanScores() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: SubmitScoresData }) => {
-      const response = await apiClient.post(`/simaan/${id}/scores`, { simaanId: id, ...data });
+      const response = await apiClient.put(`/simaan/${id}/grade`, data);
       return response.data;
     },
     onSuccess: (_, { id }) => {

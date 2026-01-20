@@ -31,6 +31,7 @@ import {
   useAcademicYears,
   ExamType,
 } from '@/hooks';
+import { useQuestionBanks } from '@/hooks/use-cbt';
 import { useAuthStore } from '@/stores/auth';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -54,6 +55,7 @@ const assessmentSchema = z.object({
   passingScore: z.coerce.number().min(0).max(100).optional(),
   weight: z.coerce.number().min(0.1).max(10).optional(),
   description: z.string().optional(),
+  questionBankId: z.string().optional(),
 });
 
 type AssessmentFormData = z.infer<typeof assessmentSchema>;
@@ -67,8 +69,6 @@ export default function NewAssessmentPage() {
   const { data: subjects } = useSubjects();
   const { data: academicYears } = useAcademicYears();
 
-  const activeAcademicYear = academicYears?.data?.find((ay) => ay.isActive);
-
   const form = useForm<AssessmentFormData>({
     resolver: zodResolver(assessmentSchema),
     defaultValues: {
@@ -76,14 +76,20 @@ export default function NewAssessmentPage() {
       type: undefined,
       classId: '',
       subjectId: '',
-      academicYearId: activeAcademicYear?.id ?? '',
+      academicYearId: academicYears?.data?.find((ay) => ay.isActive)?.id ?? '',
       semester: 1,
       scheduledAt: new Date().toISOString().split('T')[0],
       maxScore: 100,
       passingScore: 70,
       weight: 1,
       description: '',
+      questionBankId: '',
     },
+  });
+
+  const selectedSubject = form.watch('subjectId');
+  const { data: questionBanks } = useQuestionBanks({
+    subjectId: selectedSubject || undefined,
   });
 
   const onSubmit = async (data: AssessmentFormData) => {
@@ -198,6 +204,36 @@ export default function NewAssessmentPage() {
                             {...field}
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* CBT Option */}
+                  <FormField
+                    control={form.control}
+                    name="questionBankId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bank Soal (Opsional - Mode CBT)</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih Bank Soal (Kosongkan jika manual)" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">-- Tidak Menggunakan Bank Soal --</SelectItem>
+                            {questionBanks?.data?.map((bank: any) => (
+                              <SelectItem key={bank.id} value={bank.id}>
+                                {bank.title} ({bank._count?.questions} soal)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Jika dipilih, siswa akan mengerjakan soal secara online (CBT).
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

@@ -605,6 +605,7 @@ model Teacher {
   lessonPlans              LessonPlan[]
   schedules                Schedule[]
   exams                    Exam[]
+  questionBanks            QuestionBank[]
   leaves                   Leave[]
   attendance               StaffAttendance[]
   // New relations for Phase 12
@@ -2306,6 +2307,7 @@ model Subject {
   lessonPlans        LessonPlan[]
   schedules          Schedule[]
   exams              Exam[]
+  questionBanks      QuestionBank[]
   grades             Grade[]
   teacherSubjects    TeacherSubject[]
   // Phase 8: Kurikulum Merdeka
@@ -2460,6 +2462,11 @@ model Exam {
   class        Class        @relation(fields: [classId], references: [id])
   teacher      Teacher      @relation(fields: [teacherId], references: [id])
   grades       Grade[]
+
+  // CBT Relation
+  questionBankId String?       @map("question_bank_id")
+  questionBank   QuestionBank? @relation(fields: [questionBankId], references: [id])
+  attempts       ExamAttempt[]
 
   @@index([unitId])
   @@index([subjectId])
@@ -6798,4 +6805,108 @@ model QualityAuditItem {
   @@index([auditId])
   @@index([indicatorId])
   @@map("quality_audit_items")
+}
+
+// =====================================
+// CBT (COMPUTER BASED TEST) MODELS
+// =====================================
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  ESSAY
+  TRUE_FALSE
+}
+
+enum ExamAttemptStatus {
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
+}
+
+/// QuestionBank - Bank Soal
+model QuestionBank {
+  id          String   @id @default(uuid())
+  unitId      String   @map("unit_id")
+  teacherId   String   @map("teacher_id")
+  subjectId   String?  @map("subject_id")
+  title       String
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  unit      Unit      @relation(fields: [unitId], references: [id])
+  teacher   Teacher   @relation(fields: [teacherId], references: [id])
+  subject   Subject?  @relation(fields: [subjectId], references: [id])
+  questions Question[]
+  exams     Exam[]
+
+  @@index([unitId])
+  @@index([teacherId])
+  @@map("question_banks")
+}
+
+/// Question - Butir Soal
+model Question {
+  id          String       @id @default(uuid())
+  bankId      String       @map("bank_id")
+  type        QuestionType
+  content     String       @db.Text
+  options     Json?        // Array of options for MC
+  answerKey   Json?        @map("answer_key") // Correct answer
+  explanation String?      @db.Text
+  points      Int          @default(1)
+  order       Int          @default(0)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  bank        QuestionBank @relation(fields: [bankId], references: [id], onDelete: Cascade)
+  examAnswers ExamAnswer[]
+
+  @@index([bankId])
+  @@map("questions")
+}
+
+/// ExamAttempt - Sesi Ujian Siswa
+model ExamAttempt {
+  id         String            @id @default(uuid())
+  examId     String            @map("exam_id")
+  studentId  String            @map("student_id")
+  startedAt  DateTime          @default(now()) @map("started_at")
+  finishedAt DateTime?         @map("finished_at")
+  score      Decimal?          @db.Decimal(5, 2)
+  status     ExamAttemptStatus @default(IN_PROGRESS)
+  createdAt  DateTime          @default(now()) @map("created_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  exam    Exam         @relation(fields: [examId], references: [id])
+  student Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  answers ExamAnswer[]
+
+  @@unique([examId, studentId])
+  @@index([examId])
+  @@index([studentId])
+  @@map("exam_attempts")
+}
+
+/// ExamAnswer - Jawaban Siswa
+model ExamAnswer {
+  id         String   @id @default(uuid())
+  attemptId  String   @map("attempt_id")
+  questionId String   @map("question_id")
+  answer     Json?    // Student's answer
+  isCorrect  Boolean? @map("is_correct")
+  score      Decimal? @db.Decimal(5, 2)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  attempt  ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question Question    @relation(fields: [questionId], references: [id])
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@map("exam_answers")
 }

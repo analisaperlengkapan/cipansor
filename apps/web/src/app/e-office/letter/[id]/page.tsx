@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 export default function LetterDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { user } = useAuth();
-  const { useLetter, reviewLetter, createDisposition } = useCorrespondence(user?.unitId);
+  const { useLetter, reviewLetter, createDisposition, updateDispositionStatus } = useCorrespondence(user?.unitId);
   const { data: teachers } = useTeachers({ page: 1, limit: 100, unitId: user?.unitId });
   const { data: letter, isLoading } = useLetter(params.id);
 
@@ -34,6 +34,27 @@ export default function LetterDetailPage({ params }: { params: { id: string } })
     deadline: '',
     notes: ''
   });
+  const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
+  const [completeNotes, setCompleteNotes] = useState('');
+
+  // Find active disposition for current user
+  const activeDisposition = letter?.dispositions?.find(
+    (d) => d.recipientId === user?.id && d.status !== 'COMPLETED'
+  );
+
+  const handleUpdateDisposition = async (status: 'IN_PROGRESS' | 'COMPLETED', notes?: string) => {
+    if (!activeDisposition) return;
+    try {
+      await updateDispositionStatus.mutateAsync({
+        id: activeDisposition.id,
+        status,
+        notes
+      });
+      toast.success('Status disposisi diperbarui');
+    } catch (error) {
+      toast.error('Gagal memperbarui status');
+    }
+  };
 
   if (isLoading) {
     return <div className="p-6 text-center">Memuat data surat...</div>;
@@ -213,6 +234,38 @@ export default function LetterDetailPage({ params }: { params: { id: string } })
         </div>
 
         <div className="space-y-6">
+          {/* Active Disposition Action Card */}
+          {activeDisposition && (
+            <Card className="border-blue-200 bg-blue-50">
+              <CardHeader>
+                <CardTitle className="text-blue-800">Tindak Lanjut Disposisi</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-blue-700">
+                  Instruksi: <strong>"{activeDisposition.instruction}"</strong>
+                </p>
+                <div className="flex gap-2">
+                  {activeDisposition.status === 'PENDING' && (
+                    <Button
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      size="sm"
+                      onClick={() => handleUpdateDisposition('IN_PROGRESS')}
+                    >
+                      Mulai
+                    </Button>
+                  )}
+                  <Button
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    size="sm"
+                    onClick={() => setCompleteDialogOpen(true)}
+                  >
+                    Selesai
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Aksi</CardTitle>

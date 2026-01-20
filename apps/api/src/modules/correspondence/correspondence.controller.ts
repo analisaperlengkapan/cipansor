@@ -26,6 +26,8 @@ export const CorrespondenceController = {
         direction: req.query.direction as any,
         status: req.query.status as any,
         search: req.query.search as string,
+        scope: req.query.scope as any,
+        userId: req.user!.id,
       });
       res.json({ success: true, ...result });
     } catch (error) {
@@ -65,6 +67,21 @@ export const CorrespondenceController = {
         senderId: req.user!.id,
       });
       res.status(201).json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async updateDispositionStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { status, notes } = req.body;
+      const result = await CorrespondenceService.updateDispositionStatus(
+        req.params.id,
+        status,
+        notes,
+        req.user!.id
+      );
+      res.json({ success: true, data: result });
     } catch (error) {
       next(error);
     }

@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LetterStatusBadge } from '@/components/e-office/letter-status-badge';
 import { Plus, Search, Mail, Send } from 'lucide-react';
@@ -34,6 +35,7 @@ export default function InboxPage() {
   const [page, setPage] = useState(1);
   const [direction, setDirection] = useState<LetterDirection>(LetterDirection.INCOMING);
   const [search, setSearch] = useState('');
+  const [scope, setScope] = useState<'ALL' | 'PERSONAL'>('ALL');
 
   const { useLetters } = useCorrespondence(user?.unitId);
   const { data, isLoading } = useLetters({
@@ -41,6 +43,7 @@ export default function InboxPage() {
     limit: 10,
     direction,
     search,
+    scope,
   });
 
   return (
@@ -57,6 +60,13 @@ export default function InboxPage() {
           Buat Surat
         </Button>
       </div>
+
+      <Tabs value={scope} onValueChange={(v) => setScope(v as any)} className="w-full">
+        <TabsList>
+          <TabsTrigger value="ALL">Semua Surat (Unit)</TabsTrigger>
+          <TabsTrigger value="PERSONAL">Inbox Saya (Disposisi)</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setDirection(LetterDirection.INCOMING)}>

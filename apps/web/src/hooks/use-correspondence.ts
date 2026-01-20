@@ -15,6 +15,7 @@ interface GetLettersParams {
   direction?: LetterDirection;
   status?: LetterStatus;
   search?: string;
+  scope?: 'ALL' | 'PERSONAL';
 }
 
 export function useCorrespondence(unitId?: string) {
@@ -81,11 +82,24 @@ export function useCorrespondence(unitId?: string) {
     },
   });
 
+  // Update Disposition Status
+  const updateDispositionStatus = useMutation({
+    mutationFn: async ({ id, status, notes }: { id: string; status: 'IN_PROGRESS' | 'COMPLETED'; notes?: string }) => {
+      const response = await api.patch(`/correspondence/dispositions/${id}/status`, { status, notes });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['letters'] });
+      queryClient.invalidateQueries({ queryKey: ['letter'] });
+    },
+  });
+
   return {
     useLetters,
     useLetter,
     createLetter,
     reviewLetter,
     createDisposition,
+    updateDispositionStatus,
   };
 }

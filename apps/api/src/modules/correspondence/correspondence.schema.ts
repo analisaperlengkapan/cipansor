@@ -37,3 +37,8 @@ export const createDispositionSchema = z.object({
   parentDispositionId: z.string().uuid().optional(),
   notes: z.string().optional(),
 });
+
+export const updateDispositionStatusSchema = z.object({
+  status: z.enum(['IN_PROGRESS', 'COMPLETED']),
+  notes: z.string().optional(),
+});

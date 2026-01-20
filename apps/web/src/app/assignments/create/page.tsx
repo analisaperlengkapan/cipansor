@@ -8,6 +8,7 @@ import { useCreateAssignment } from '@/hooks/use-assignments';
 import { useSubjects } from '@/hooks/use-curriculum';
 import { useClasses } from '@/hooks/use-classes';
 import { useAuthStore } from '@/stores/auth';
+import { useActiveAcademicYear } from '@/hooks/use-academic-years';
 import { toast } from 'sonner';
 
 export default function CreateAssignmentPage() {
@@ -15,15 +16,21 @@ export default function CreateAssignmentPage() {
   const { user } = useAuthStore();
   const createMutation = useCreateAssignment();
 
-  const { data: classesData } = useClasses({ unitId: user?.unitId });
+  const { data: activeAcademicYear } = useActiveAcademicYear(user?.unitId);
+  const { data: classesData } = useClasses({ unitId: user?.unitId, academicYearId: activeAcademicYear?.id });
   const { data: subjectsData } = useSubjects({ unitId: user?.unitId });
 
   const handleSubmit = async (data: any) => {
+    if (!activeAcademicYear?.id) {
+      toast.error('No active academic year found');
+      return;
+    }
+
     try {
       await createMutation.mutateAsync({
         ...data,
         unitId: user?.unitId,
-        academicYearId: user?.academicYearId || 'default-id', // Should get active academic year
+        academicYearId: activeAcademicYear.id,
         teacherId: user?.teacher?.id,
       });
       toast.success('Assignment created');

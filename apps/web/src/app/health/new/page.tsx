@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { ArrowLeft, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -54,6 +55,8 @@ const formSchema = z.object({
   notes: z.string().optional(),
   status: z.string().min(1, 'Status wajib dipilih'),
   followUpDate: z.string().optional(),
+  createAttendance: z.boolean().default(true),
+  notifyParent: z.boolean().default(true),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -87,6 +90,8 @@ export default function NewHealthRecordPage() {
       notes: '',
       status: 'HEALTHY',
       followUpDate: '',
+      createAttendance: true,
+      notifyParent: true,
     },
   });
 
@@ -103,6 +108,8 @@ export default function NewHealthRecordPage() {
         notes: data.notes || undefined,
         status: data.status as HealthStatus,
         followUpDate: data.followUpDate || undefined,
+        createAttendance: data.createAttendance,
+        notifyParent: data.notifyParent,
       });
       toast.success('Rekam kesehatan berhasil dibuat');
       router.push('/health');
@@ -213,6 +220,59 @@ export default function NewHealthRecordPage() {
                     {form.formState.errors.studentId.message}
                   </p>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Integrasi Sistem</CardTitle>
+                <CardDescription>Otomatisasi</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="createAttendance"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Buat Data Absensi (Sakit)
+                        </FormLabel>
+                        <FormDescription>
+                          Otomatis tandai santri 'Sakit' di sistem absensi.
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="notifyParent"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Kirim Notifikasi Wali Santri
+                        </FormLabel>
+                        <FormDescription>
+                          Kirim pesan notifikasi ke orang tua.
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
               </CardContent>
             </Card>
 

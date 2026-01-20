@@ -41,6 +41,7 @@ router.delete("/maintenance/:id", authorize(UserRole.UNIT_ADMIN), controller.del
 // Items
 router.get("/", authorize(UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getItems);
 router.post("/", authorize(UserRole.UNIT_ADMIN, UserRole.STAFF), controller.createItem);
+router.get("/items/:id/qrcode", authorize(UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getQrCode);
 router.get("/:id/depreciation", authorize(UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getDepreciation);
 router.get("/:id", authorize(UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getItemById);
 router.put("/:id", authorize(UserRole.UNIT_ADMIN, UserRole.STAFF), controller.updateItem);

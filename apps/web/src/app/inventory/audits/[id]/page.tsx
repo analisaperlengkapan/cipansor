@@ -27,6 +27,7 @@ export default function AuditDetailPage({ params }: { params: { id: string } }) 
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<AssetAuditItem | null>(null);
+  const [scanInput, setScanInput] = useState('');
 
   const handleMatch = async (item: AssetAuditItem) => {
     try {
@@ -42,6 +43,29 @@ export default function AuditDetailPage({ params }: { params: { id: string } }) 
       toast.success('Item diverifikasi (Match)');
     } catch {
       toast.error('Gagal update item');
+    }
+  };
+
+  const handleScan = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const code = scanInput.trim();
+      if (!code) return;
+
+      // Case insensitive search
+      const item = audit?.items?.find(i => i.asset?.code.toLowerCase() === code.toLowerCase());
+
+      if (item) {
+        if (item.isMatch) {
+          toast.info('Item sudah terverifikasi sebelumnya');
+        } else {
+          await handleMatch(item);
+          toast.success(`Item ditemukan: ${item.asset?.name}`);
+        }
+        setScanInput('');
+      } else {
+        toast.error('Item tidak ditemukan dalam audit ini');
+      }
     }
   };
 
@@ -136,6 +160,26 @@ export default function AuditDetailPage({ params }: { params: { id: string } }) 
           </Button>
         )}
       </div>
+
+      {!isCompleted && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Scan Barcode / QR Code</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4">
+              <Input
+                placeholder="Scan atau ketik kode aset lalu tekan Enter..."
+                value={scanInput}
+                onChange={(e) => setScanInput(e.target.value)}
+                onKeyDown={handleScan}
+                className="max-w-md"
+                autoFocus
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

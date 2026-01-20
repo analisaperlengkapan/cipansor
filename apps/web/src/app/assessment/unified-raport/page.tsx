@@ -40,6 +40,22 @@ export default function UnifiedRaportPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <style jsx global>{`
+        @media print {
+          @page {
+            size: A4;
+            margin: 20mm;
+          }
+          body {
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+          }
+          .break-inside-avoid {
+            page-break-inside: avoid;
+          }
+        }
+      `}</style>
+
       <div className="flex justify-between items-center print:hidden">
         <h1 className="text-2xl font-bold">Unified SD IT Raport</h1>
       </div>

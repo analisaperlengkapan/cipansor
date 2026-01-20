@@ -5,7 +5,21 @@ import { ApiResponse } from '@/utils/response';
 export class P5ProjectController {
   static async createProject(req: Request, res: Response, next: NextFunction) {
     try {
-      const project = await P5ProjectService.createProject(req.body);
+      // Best practice: Use the logged-in user as the default supervisor if not provided,
+      // or validate that the user has permission to assign others.
+      // For now, we'll enforce the creator is the supervisor if not specified,
+      // or we can just override it to ensure accountability.
+      // Let's assume the body might contain it, but we fallback or override.
+      // A safer bet for "best practice" in this context is to ensure the supervisorId
+      // is valid. If we want to allow assigning others, we should check permissions.
+      // Simple approach: Set supervisorId to current user if they are a teacher.
+
+      const supervisorId = req.body.supervisorId || req.user?.id;
+
+      const project = await P5ProjectService.createProject({
+        ...req.body,
+        supervisorId,
+      });
       return res.status(201).json(ApiResponse.success(project, 'P5 Project created successfully'));
     } catch (error) {
       next(error);
@@ -53,7 +67,11 @@ export class P5ProjectController {
 
   static async upsertAssessment(req: Request, res: Response, next: NextFunction) {
     try {
-      const assessment = await P5ProjectService.upsertAssessment(req.body);
+      // Security: Enforce assessorId from the logged-in user
+      const assessment = await P5ProjectService.upsertAssessment({
+        ...req.body,
+        assessorId: req.user?.id,
+      });
       return res.json(ApiResponse.success(assessment, 'Assessment saved successfully'));
     } catch (error) {
       next(error);
@@ -62,7 +80,13 @@ export class P5ProjectController {
 
   static async bulkUpsertAssessments(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await P5ProjectService.bulkUpsertAssessments(req.body.assessments);
+      // Security: Enforce assessorId for all items
+      const assessments = req.body.assessments.map((item: any) => ({
+        ...item,
+        assessorId: req.user?.id,
+      }));
+
+      const result = await P5ProjectService.bulkUpsertAssessments(assessments);
       return res.json(ApiResponse.success(result, 'Bulk assessments saved successfully'));
     } catch (error) {
       next(error);

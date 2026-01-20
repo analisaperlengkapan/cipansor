@@ -54,6 +54,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Badge } from '@/components/ui/badge';
 import { Pagination } from '@/components/shared/pagination';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
@@ -90,6 +92,8 @@ function QuickAdmitCard() {
   const { data: students, isLoading: isLoadingStudents } = useStudentSearch(searchQuery);
   const createMutation = useCreateHealthRecord();
   const [confirmComplaint, setConfirmComplaint] = useState<string | null>(null);
+  const [createAttendance, setCreateAttendance] = useState(true);
+  const [notifyParent, setNotifyParent] = useState(true);
 
   const commonAilments = [
     { label: "Demam", icon: Thermometer, color: "text-red-500 bg-red-50 border-red-200" },
@@ -109,7 +113,9 @@ function QuickAdmitCard() {
         complaint: confirmComplaint,
         visitDate: new Date().toISOString(),
         status: HealthStatus.SICK, // Default status for quick admit
-        notes: "Quick Admit via Dashboard"
+        notes: "Quick Admit via Dashboard",
+        createAttendance,
+        notifyParent
       });
       toast.success(`Berhasil mencatat keluhan ${confirmComplaint} untuk ${selectedStudent.name}`);
       setConfirmComplaint(null);
@@ -202,6 +208,30 @@ function QuickAdmitCard() {
                  </Button>
               ))}
            </div>
+        </div>
+
+        {/* Integration Options */}
+        <div className="space-y-3 pt-2 border-t">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="attendance"
+              checked={createAttendance}
+              onCheckedChange={(c) => setCreateAttendance(!!c)}
+            />
+            <Label htmlFor="attendance" className="text-sm font-medium leading-none cursor-pointer">
+              Catat Absensi Sakit
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="notify"
+              checked={notifyParent}
+              onCheckedChange={(c) => setNotifyParent(!!c)}
+            />
+            <Label htmlFor="notify" className="text-sm font-medium leading-none cursor-pointer">
+              Notifikasi Wali Santri
+            </Label>
+          </div>
         </div>
       </CardContent>
 

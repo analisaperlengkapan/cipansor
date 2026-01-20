@@ -151,6 +151,10 @@ export interface CreateMedicalRecordInput {
   heartRate?: number;
   weight?: number;
   height?: number;
+
+  // Integration flags
+  createAttendance?: boolean;
+  notifyParent?: boolean;
 }
 
 export interface UpdateMedicalRecordInput extends Partial<CreateMedicalRecordInput> {}

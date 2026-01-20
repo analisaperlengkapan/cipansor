@@ -21,6 +21,10 @@ export const createMedicalRecordSchema = z.object({
   heartRate: z.number().optional(),
   weight: z.number().optional(),
   height: z.number().optional(),
+
+  // Integration flags
+  createAttendance: z.boolean().optional(),
+  notifyParent: z.boolean().optional(),
 });
 
 export const updateMedicalRecordSchema = createMedicalRecordSchema.partial().omit({ studentId: true });

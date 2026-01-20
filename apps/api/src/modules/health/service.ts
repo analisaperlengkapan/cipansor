@@ -1,5 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
+import { attendanceService } from "../attendance/attendance.service";
+import { createNotification } from "../notifications/service";
 import type {
   CreateMedicalRecordInput,
   UpdateMedicalRecordInput,
@@ -108,7 +110,7 @@ export async function getMedicalRecordById(id: string) {
 }
 
 export async function createMedicalRecord(data: CreateMedicalRecordInput, recordedById: string) {
-  const { status, temperature, bloodPressure, heartRate, weight, height, ...mainData } = data;
+  const { status, temperature, bloodPressure, heartRate, weight, height, createAttendance, notifyParent, ...mainData } = data;
 
   const record = await prisma.medicalRecord.create({
     data: {
@@ -141,6 +143,55 @@ export async function createMedicalRecord(data: CreateMedicalRecordInput, record
       recordedBy: { select: { id: true, name: true } },
     },
   });
+
+  // Integration: Attendance
+  if (createAttendance) {
+    try {
+      const enrollment = await prisma.classEnrollment.findFirst({
+        where: { studentId: mainData.studentId, status: "active" },
+        select: { classId: true },
+      });
+
+      if (enrollment) {
+        await attendanceService.create({
+          studentId: mainData.studentId,
+          classId: enrollment.classId,
+          date: mainData.visitDate instanceof Date ? mainData.visitDate.toISOString() : mainData.visitDate,
+          status: "SICK" as any,
+          notes: `Sakit: ${mainData.complaint} (via UKS)`
+        }, recordedById);
+      }
+    } catch (error) {
+      console.warn("Failed to create attendance from health record:", error);
+    }
+  }
+
+  // Integration: Notification
+  if (notifyParent) {
+    try {
+      const parents = await prisma.studentParent.findMany({
+        where: { studentId: mainData.studentId },
+        include: { parent: true }
+      });
+
+      const studentName = record.student?.user?.name || "Santri";
+
+      await Promise.all(parents.map(p =>
+        createNotification({
+          userId: p.parentId,
+          type: "HEALTH" as any,
+          title: "Laporan Kesehatan Santri",
+          message: `Ananda ${studentName} tercatat sakit dengan keluhan: ${mainData.complaint}. Kami telah memberikan penanganan awal.`,
+          data: {
+              studentId: mainData.studentId,
+              healthRecordId: record.id
+          }
+        })
+      ));
+    } catch (error) {
+      console.warn("Failed to send parent notifications:", error);
+    }
+  }
 
   return {
     ...record,

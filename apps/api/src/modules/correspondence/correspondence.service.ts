@@ -7,6 +7,7 @@ import {
   LetterStatus,
   UpdateLetterInput,
 } from '@cipansor/shared';
+import { eventBus } from '@/lib/event-bus';
 
 export const CorrespondenceService = {
   // Helper: Generate Auto Number
@@ -307,6 +308,20 @@ export const CorrespondenceService = {
         // logic to mark letter as 'DISPOSED' or 'IN_PROGRESS' if needed
     }
 
+    // Notify Recipient
+    eventBus.emit('notification:send', {
+      userId: data.recipientId,
+      type: 'REMINDER',
+      title: 'Disposisi Baru',
+      message: `Anda menerima disposisi baru: "${data.instruction}"`,
+      data: {
+        entityId: disposition.id,
+        entityType: 'DISPOSITION',
+        letterId: letter.id,
+        link: `/e-office/letter/${letter.id}`
+      }
+    });
+
     return disposition;
   },
 
@@ -335,5 +350,23 @@ export const CorrespondenceService = {
         completedAt: status === 'COMPLETED' ? new Date() : null,
       },
     });
+
+    // Notify Sender if Completed
+    if (status === 'COMPLETED' && disposition.senderId) {
+      eventBus.emit('notification:send', {
+        userId: disposition.senderId,
+        type: 'INFO',
+        title: 'Disposisi Selesai',
+        message: `Disposisi "${disposition.instruction}" telah diselesaikan.`,
+        data: {
+          entityId: disposition.id,
+          entityType: 'DISPOSITION',
+          letterId: disposition.letterId,
+          link: `/e-office/letter/${disposition.letterId}`
+        }
+      });
+    }
+
+    return result;
   },
 };

@@ -3,12 +3,11 @@ import {
   createMaintenanceRequest,
   updateMaintenanceStatus,
   disposeAsset,
-  calculateDepreciation,
   getQrCode
-} from '../../../../../src/modules/inventory/service';
+} from '../../../../src/modules/inventory/service';
 import { AssetStatus, AssetMaintenanceStatus, AssetDisposalReason } from '@prisma/client';
 
-// Mock Enums to avoid undefined errors in Vitest
+// Mock Enums
 vi.mock('@prisma/client', async (importOriginal) => {
   const original = await importOriginal();
   return {
@@ -17,6 +16,7 @@ vi.mock('@prisma/client', async (importOriginal) => {
     AssetStatus: { ACTIVE: 'ACTIVE', DISPOSED: 'DISPOSED', MAINTENANCE: 'MAINTENANCE' },
     AssetMaintenanceStatus: { PENDING: 'PENDING', COMPLETED: 'COMPLETED', IN_PROGRESS: 'IN_PROGRESS' },
     AssetDisposalReason: { SOLD: 'SOLD' },
+    NotificationType: { ALERT: 'ALERT' }
   };
 });
 
@@ -31,7 +31,14 @@ const prismaMock = vi.hoisted(() => ({
     findUnique: vi.fn(),
     update: vi.fn(),
   },
+  user: {
+    findMany: vi.fn(),
+  },
   assetDisposal: {
+    create: vi.fn(),
+  },
+  // Add notification mock to prevent crashes if real code runs
+  notification: {
     create: vi.fn(),
   },
   $transaction: vi.fn((arg) => {
@@ -41,12 +48,16 @@ const prismaMock = vi.hoisted(() => ({
   }),
 }));
 
-// Correct path: 4 levels up to api root, then src/lib/prisma
 vi.mock('../../../../src/lib/prisma', () => ({
   prisma: prismaMock,
 }));
 
-import { prisma } from '../../../../src/lib/prisma';
+// Mock notifications service with correct relative path (4 levels up)
+vi.mock('../../../../src/modules/notifications/service', () => ({
+  createNotification: vi.fn(),
+}));
+
+import { createNotification } from '../../../../src/modules/notifications/service';
 
 describe('Inventory Service', () => {
   beforeEach(() => {
@@ -63,12 +74,21 @@ describe('Inventory Service', () => {
       };
       const userId = 'user-1';
 
+      prismaMock.asset.findUnique.mockResolvedValue({
+        id: 'asset-1',
+        code: 'AST-001',
+        name: 'Laptop',
+        unitId: 'unit-1'
+      });
+
       prismaMock.assetMaintenance.create.mockResolvedValue({
         id: 'maintenance-1',
         ...input,
         status: AssetMaintenanceStatus.PENDING,
         requestedById: userId,
       });
+
+      prismaMock.user.findMany.mockResolvedValue([{ id: 'admin-1' }]);
 
       const result = await createMaintenanceRequest(input, userId);
 
@@ -80,6 +100,14 @@ describe('Inventory Service', () => {
         }),
       });
       expect(result.status).toBe(AssetMaintenanceStatus.PENDING);
+
+      // Allow async promises to settle
+      await new Promise(process.nextTick);
+
+      expect(createNotification).toHaveBeenCalledWith(expect.objectContaining({
+        userId: 'admin-1',
+        type: 'ALERT',
+      }));
     });
   });
 
@@ -133,7 +161,6 @@ describe('Inventory Service', () => {
         residualValue: 0,
       });
 
-      // Mock transaction return
       prismaMock.asset.update.mockResolvedValue({ id: assetId, status: AssetStatus.DISPOSED });
       prismaMock.assetDisposal.create.mockResolvedValue({ id: 'disposal-1', assetId, ...input });
 

@@ -1,6 +1,8 @@
 import QRCode from "qrcode";
-import { Prisma, AssetStatus, AssetCondition, AssetMaintenanceStatus } from "@prisma/client";
+import { createNotification } from "../notifications/service";
+import { Prisma, AssetStatus, AssetCondition, AssetMaintenanceStatus, NotificationType } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
+import { createNotification } from "../notifications/service";
 import type {
   CreateInventoryCategoryInput,
   UpdateInventoryCategoryInput,
@@ -302,7 +304,14 @@ export async function createMaintenance(data: CreateMaintenanceInput) {
 
 // User request
 export async function createMaintenanceRequest(data: CreateMaintenanceRequestInput, userId: string) {
-  return prisma.assetMaintenance.create({
+  const asset = await prisma.asset.findUnique({
+    where: { id: data.assetId },
+    select: { id: true, code: true, name: true, unitId: true }
+  });
+
+  if (!asset) throw new Error("Asset not found");
+
+  const maintenance = await prisma.assetMaintenance.create({
     data: {
       assetId: data.assetId,
       type: data.type,
@@ -314,6 +323,32 @@ export async function createMaintenanceRequest(data: CreateMaintenanceRequestInp
       performedBy: 'Pending Assignment',
     },
   });
+
+  // Notify Unit Admins
+  const admins = await prisma.user.findMany({
+    where: {
+      unitId: asset.unitId,
+      role: 'UNIT_ADMIN',
+      isActive: true,
+    },
+    select: { id: true }
+  });
+
+  // Send notifications asynchronously
+  Promise.all(admins.map(admin =>
+    createNotification({
+      userId: admin.id,
+      type: NotificationType.ALERT,
+      title: 'Permintaan Maintenance Baru',
+      message: `Permintaan maintenance untuk aset ${asset.code} - ${asset.name}: ${data.description}`,
+      link: `/inventory/${asset.id}?tab=maintenance`,
+      priority: 1, // High priority
+      channels: ['APP'],
+      recipientType: 'UNIT_ADMIN'
+    })
+  )).catch(err => console.error("Failed to send maintenance notifications", err));
+
+  return maintenance;
 }
 
 export async function updateMaintenance(id: string, data: UpdateMaintenanceInput) {

@@ -10,6 +10,7 @@ import {
   SIMAAN_GRADES,
   SimaanExam
 } from '@/hooks/use-simaan';
+import { useDebounce } from '@/hooks/use-debounce';
 import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,11 +34,12 @@ export default function SimaanListPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
 
   const { data, isLoading } = useSimaanExams({
     page,
     limit: 10,
-    search
+    search: debouncedSearch
   });
 
   const getSimaanTypeLabel = (type: string) => {

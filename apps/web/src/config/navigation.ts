@@ -311,6 +311,11 @@ const studentNavigation: NavGroup[] = [
     title: 'Akademik',
     items: [
       {
+        title: 'Ujian Online',
+        href: '/student/exams',
+        icon: BookCheck,
+      },
+      {
         title: 'Portfolio Saya',
         href: '/portfolio',
         icon: FolderOpen,
@@ -680,6 +685,11 @@ const adminNavigation: NavGroup[] = [
         title: 'Assessment',
         href: '/assessment',
         icon: ClipboardCheck,
+      },
+      {
+        title: 'Question Banks (CBT)',
+        href: '/cbt/banks',
+        icon: BookCheck,
       },
       {
         title: 'Raport Merdeka',

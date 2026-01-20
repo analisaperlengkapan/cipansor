@@ -47,10 +47,22 @@ export default function RaporPrintPage() {
 
         {/* Header (Kop Surat) */}
         <div className="border-b-4 border-double border-black pb-4 mb-6 text-center">
-          <h1 className="text-xl font-bold uppercase">YAYASAN PESANTREN CIPANSOR</h1>
-          <h2 className="text-2xl font-bold uppercase">SMA QUR'AN CIPANSOR</h2>
-          <p className="text-sm mt-1">Jl. Raya Cipansor No. 1, Desa Cipansor, Kec. Cipansor, Kab. Cipansor</p>
-          <p className="text-sm">Telp: (021) 1234567 | Email: info@cipansor.sch.id | Website: www.cipansor.sch.id</p>
+          <div className="flex items-center justify-center gap-4 mb-2">
+            {rapor.unit?.logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={rapor.unit.logoUrl} alt="Logo" className="h-20 w-20 object-contain" />
+            )}
+            <div>
+              <h1 className="text-xl font-bold uppercase">YAYASAN PESANTREN CIPANSOR</h1>
+              <h2 className="text-2xl font-bold uppercase">{rapor.unit?.name || "SMA QUR'AN CIPANSOR"}</h2>
+            </div>
+          </div>
+          <p className="text-sm mt-1">{rapor.unit?.address || "Jl. Raya Cipansor No. 1, Desa Cipansor, Kec. Cipansor, Kab. Cipansor"}</p>
+          <p className="text-sm">
+            Telp: {rapor.unit?.phone || "(021) 1234567"} |
+            Email: {rapor.unit?.email || "info@cipansor.sch.id"} |
+            Website: {rapor.unit?.website || "www.cipansor.sch.id"}
+          </p>
         </div>
 
         <h3 className="text-xl font-bold text-center mb-6 uppercase underline">

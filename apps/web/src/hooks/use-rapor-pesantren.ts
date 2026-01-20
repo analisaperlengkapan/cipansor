@@ -11,6 +11,15 @@ export interface RaporPesantren {
   id: string;
   studentId: string;
   unitId: string;
+  unit?: {
+    id: string;
+    name: string;
+    address: string;
+    phone: string | null;
+    email: string | null;
+    website: string | null;
+    logoUrl: string | null;
+  };
   academicYearId: string;
   semester: number;
   status: 'DRAFT' | 'FINAL' | 'PUBLISHED';

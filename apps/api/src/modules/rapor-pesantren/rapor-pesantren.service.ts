@@ -806,6 +806,7 @@ export async function updateRaporPesantren(id: string, data: UpdateRaporInput) {
         },
       },
       academicYear: true,
+      unit: true,
     },
   });
 
@@ -916,6 +917,15 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
     id: rapor.id,
     studentId: rapor.studentId,
     unitId: rapor.unitId,
+    unit: {
+      id: rapor.unit.id,
+      name: rapor.unit.name,
+      address: rapor.unit.address,
+      phone: rapor.unit.phone,
+      email: rapor.unit.email,
+      website: rapor.unit.website,
+      logoUrl: rapor.unit.logoUrl,
+    },
     academicYearId: rapor.academicYearId,
     semester: rapor.semester,
     status: rapor.status as RaporPesantren['status'],

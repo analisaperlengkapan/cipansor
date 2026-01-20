@@ -424,14 +424,6 @@ class WhatsAppService {
       .map(() => worker());
 
     await Promise.all(workers);
-      }
-    };
-
-    const workers = Array(Math.min(concurrency, recipients.length))
-      .fill(null)
-      .map(() => worker());
-
-    await Promise.all(workers);
 
 
 

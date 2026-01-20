@@ -92,3 +92,55 @@ export type QueryInvoiceDto = z.infer<typeof queryInvoiceSchema>;
 
 export type CreatePaymentDto = z.infer<typeof createPaymentSchema>;
 export type QueryPaymentDto = z.infer<typeof queryPaymentSchema>;
+
+// =====================================
+// ACCOUNTING SCHEMAS
+// =====================================
+
+export const createAccountSchema = z.object({
+  code: z.string().min(1, "Code is required"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  type: z.string().min(1, "Type is required"),
+  normalBalance: z.enum(["DEBIT", "CREDIT"]),
+  parentId: z.string().uuid().optional(),
+  cashFlowCategory: z.string().optional(),
+  isActive: z.boolean().default(true),
+});
+
+export const updateAccountSchema = createAccountSchema.partial();
+
+export const queryAccountSchema = z.object({
+  search: z.string().optional(),
+  type: z.string().optional(),
+  isActive: z.coerce.boolean().optional(),
+});
+
+export const createJournalSchema = z.object({
+  unitId: z.string().uuid(),
+  date: z.string().datetime(),
+  description: z.string().min(1),
+  entries: z.array(z.object({
+    accountId: z.string().uuid(),
+    debit: z.number().min(0),
+    credit: z.number().min(0),
+  })).min(2),
+});
+
+export const queryJournalSchema = z.object({
+  unitId: z.string().uuid().optional(),
+  accountId: z.string().uuid().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+});
+
+export const queryReportSchema = z.object({
+  unitId: z.string().uuid().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
+
+export type CreateAccountDto = z.infer<typeof createAccountSchema>;
+export type UpdateAccountDto = z.infer<typeof updateAccountSchema>;
+export type CreateJournalDto = z.infer<typeof createJournalSchema>;

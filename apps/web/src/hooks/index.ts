@@ -46,6 +46,7 @@ export * from './use-takhosus';
 export * from './use-kitab-progress';
 export * from './use-ibadah';
 export * from './use-parent-portal';
+export * from './use-accounting';
 
 // Utility hooks
 export * from './use-url-filters';

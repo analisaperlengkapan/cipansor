@@ -18,9 +18,27 @@ import { format } from 'date-fns';
 import {
   ArrowLeft, Pencil, User, Phone, Mail, MapPin, Calendar,
   GraduationCap, Wallet, Home, AlertTriangle, FileText,
-  Activity, CheckCircle, Clock
+  Activity, CheckCircle, Clock, Heart, BookOpen, Star,
+  TrendingUp, TrendingDown, Plus
 } from 'lucide-react';
 import Link from 'next/link';
+import {
+  useStudentCounselingHistory,
+  getCounselingCategoryConfig,
+  getCounselingStatusConfig
+} from '@/hooks/use-counseling';
+import { useStudentBehaviorStats } from '@/hooks/use-students';
+import { useStudentIbadahStats, getCategoryInfo } from '@/hooks/use-ibadah';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const statusColors: Record<string, string> = {
   ACTIVE: 'bg-green-100 text-green-800',
@@ -46,8 +64,26 @@ const formatCurrency = (amount: number | string) => {
 export default function StudentDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const studentId = params.id as string;
+
   // No longer casting to any, utilizing updated Student type
-  const { data: student, isLoading } = useStudent(params.id as string);
+  const { data: student, isLoading } = useStudent(studentId);
+
+  // Fetch additional data for new tabs
+  const { data: counselingHistory, isLoading: counselingLoading } = useStudentCounselingHistory(studentId);
+  const { data: behaviorStats, isLoading: behaviorLoading } = useStudentBehaviorStats(studentId);
+
+  // For Ibadah, we default to current month or rely on backend defaults
+  // Calculating start/end of current month for display context
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+
+  const { data: ibadahStats, isLoading: ibadahLoading } = useStudentIbadahStats({
+    studentId: studentId,
+    startDate: startOfMonth,
+    endDate: endOfMonth
+  });
 
   if (isLoading) {
     return (
@@ -181,6 +217,9 @@ export default function StudentDetailPage() {
             <TabsTrigger value="academic">Academic</TabsTrigger>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
             <TabsTrigger value="tahfidz">Tahfidz</TabsTrigger>
+            <TabsTrigger value="behavior">Behavior</TabsTrigger>
+            <TabsTrigger value="counseling">Counseling</TabsTrigger>
+            <TabsTrigger value="ibadah">Mutabaah</TabsTrigger>
             <TabsTrigger value="finance">Finance</TabsTrigger>
             <TabsTrigger value="boarding">Boarding</TabsTrigger>
           </TabsList>
@@ -297,6 +336,246 @@ export default function StudentDetailPage() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="counseling">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Counseling History</CardTitle>
+                  <CardDescription>Record of counseling sessions and guidance</CardDescription>
+                </div>
+                <Button size="sm" asChild>
+                  <Link href={`/counseling/new?studentId=${studentId}`}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    New Session
+                  </Link>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {counselingLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {counselingHistory?.length ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Category</TableHead>
+                            <TableHead>Title</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Action</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {counselingHistory.map((record) => {
+                            const catConfig = getCounselingCategoryConfig(record.category);
+                            const statusConfig = getCounselingStatusConfig(record.status);
+                            return (
+                              <TableRow key={record.id}>
+                                <TableCell>{format(new Date(record.reportedAt), 'dd MMM yyyy')}</TableCell>
+                                <TableCell>
+                                  <Badge className={catConfig?.color} variant="outline">
+                                    {catConfig?.icon} {catConfig?.label}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="font-medium">{record.title}</TableCell>
+                                <TableCell>
+                                  <Badge className={statusConfig?.color}>{statusConfig?.label}</Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <Button variant="ghost" size="sm" asChild>
+                                    <Link href={`/counseling/${record.id}`}>View</Link>
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <BookOpen className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                        <p>No counseling records found.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="behavior">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Behavior Summary</CardTitle>
+                  <CardDescription>Overview of student discipline and achievements</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {behaviorLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Current Points</p>
+                          <h3 className={`text-2xl font-bold ${behaviorStats?.currentPoints && behaviorStats.currentPoints > 50 ? 'text-destructive' : 'text-primary'}`}>
+                            {behaviorStats?.currentPoints || 0}
+                          </h3>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Total Violations</p>
+                          <h3 className="text-2xl font-bold">{behaviorStats?.totalViolations || 0}</h3>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Total Rewards</p>
+                          <h3 className="text-2xl font-bold">{behaviorStats?.totalRewards || 0}</h3>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="mb-2 text-sm font-semibold">Recent Violations</h4>
+                        {behaviorStats?.recentViolations?.length ? (
+                          <div className="space-y-2">
+                            {behaviorStats.recentViolations.map((v) => (
+                              <div key={v.id} className="flex items-center justify-between rounded-lg border p-2">
+                                <div>
+                                  <p className="text-sm font-medium">{v.type}</p>
+                                  <p className="text-xs text-muted-foreground">{format(new Date(v.date), 'dd MMM yyyy')}</p>
+                                </div>
+                                <Badge variant="destructive">{v.status}</Badge>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No recent violations.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Achievements</CardTitle>
+                  <CardDescription>Recent awards and positive behavior</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {behaviorLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {behaviorStats?.recentRewards?.length ? (
+                        <div className="space-y-2">
+                          {behaviorStats.recentRewards.map((r) => (
+                            <div key={r.id} className="flex items-center justify-between rounded-lg border p-2 bg-green-50">
+                              <div>
+                                <p className="text-sm font-medium">{r.type}</p>
+                                <p className="text-xs text-muted-foreground">{format(new Date(r.date), 'dd MMM yyyy')}</p>
+                              </div>
+                              <Star className="h-4 w-4 text-yellow-500" />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Star className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                          <p>No recent achievements.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="ibadah">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Ibadah Summary</CardTitle>
+                  <CardDescription>Daily worship monitoring for this month</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {ibadahLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center p-4 bg-muted rounded-lg">
+                          <p className="text-sm font-medium text-muted-foreground mb-1">Completion Rate</p>
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-2xl font-bold">{ibadahStats?.summary?.completionRate || 0}%</span>
+                            {Number(ibadahStats?.summary?.completionRate || 0) >= 80 ? (
+                              <TrendingUp className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <TrendingDown className="h-4 w-4 text-red-500" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-center p-4 bg-muted rounded-lg">
+                          <p className="text-sm font-medium text-muted-foreground mb-1">Current Streak</p>
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-2xl font-bold">{ibadahStats?.summary?.currentStreak || 0}</span>
+                            <span className="text-sm text-muted-foreground">days</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-semibold">Category Breakdown</h4>
+                        {ibadahStats?.byCategory?.map((cat) => {
+                          const catInfo = getCategoryInfo(cat.category as any);
+                          return (
+                            <div key={cat.category} className="space-y-1">
+                              <div className="flex justify-between text-sm">
+                                <span className="flex items-center gap-2">
+                                  <span>{catInfo?.icon}</span>
+                                  {catInfo?.label}
+                                </span>
+                                <span className="text-muted-foreground">{cat.completionRate}%</span>
+                              </div>
+                              <Progress value={cat.completionRate} className="h-2" />
+                            </div>
+                          );
+                        })}
+                        {!ibadahStats?.byCategory?.length && (
+                          <p className="text-sm text-muted-foreground">No ibadah data recorded yet.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Activity</CardTitle>
+                  <CardDescription>Latest tracked activities</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col items-center justify-center h-48 text-center text-muted-foreground">
+                    <Heart className="h-10 w-10 mb-3 opacity-20" />
+                    <p>Detailed daily log view is available in the Mutabaah Module.</p>
+                    <Button variant="link" asChild className="mt-2">
+                      <Link href="/ibadah">Go to Mutabaah Dashboard</Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="attendance">

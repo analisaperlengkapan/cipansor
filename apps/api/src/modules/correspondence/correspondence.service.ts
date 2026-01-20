@@ -142,6 +142,8 @@ export const CorrespondenceService = {
       direction?: LetterDirection;
       status?: LetterStatus;
       search?: string;
+      scope?: 'ALL' | 'PERSONAL';
+      userId?: string;
     }
   ) {
     const page = params.page || 1;
@@ -160,6 +162,17 @@ export const CorrespondenceService = {
           ]
         : undefined,
     };
+
+    if (params.scope === 'PERSONAL' && params.userId) {
+      where.AND = [
+        {
+          OR: [
+            { recipients: { some: { userId: params.userId } } },
+            { dispositions: { some: { recipientId: params.userId } } },
+          ],
+        },
+      ];
+    }
 
     const [total, data] = await Promise.all([
       prisma.letter.count({ where }),
@@ -295,5 +308,32 @@ export const CorrespondenceService = {
     }
 
     return disposition;
+  },
+
+  async updateDispositionStatus(
+    id: string,
+    status: string,
+    notes?: string,
+    userId?: string
+  ) {
+    const disposition = await prisma.disposition.findUnique({ where: { id } });
+    if (!disposition) throw new Error('Disposition not found');
+
+    if (userId && disposition.recipientId !== userId) {
+      throw new Error('Unauthorized access to this disposition');
+    }
+
+    return await prisma.disposition.update({
+      where: { id },
+      data: {
+        status,
+        notes: notes
+          ? disposition.notes
+            ? `${disposition.notes}\n\n[UPDATE] ${notes}`
+            : notes
+          : undefined,
+        completedAt: status === 'COMPLETED' ? new Date() : null,
+      },
+    });
   },
 };

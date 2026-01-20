@@ -2,9 +2,20 @@ import { Router } from "express";
 import { UserRole } from "@prisma/client";
 import * as controller from "./controller";
 import { bosController } from "./bos.controller";
+import * as accountingController from "./accounting.controller";
 import { authenticate, authorize } from "../../middleware/auth";
-import { validateQuery } from "../../middleware/error";
-import { queryPaymentTypeSchema, queryInvoiceSchema, queryPaymentSchema } from "./schema";
+import { validate, validateQuery } from "../../middleware/error";
+import {
+  queryPaymentTypeSchema,
+  queryInvoiceSchema,
+  queryPaymentSchema,
+  createAccountSchema,
+  updateAccountSchema,
+  queryAccountSchema,
+  createJournalSchema,
+  queryJournalSchema,
+  queryReportSchema,
+} from "./schema";
 
 const router = Router();
 
@@ -700,5 +711,101 @@ router.get("/bos/quarterly/:unitId/:year/:quarter", authorize(UserRole.SUPER_ADM
  *         description: BOS validation result
  */
 router.get("/bos/validate/:unitId/:year", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), bosController.validateUsage);
+
+// ==================== ACCOUNTING ====================
+
+/**
+ * @swagger
+ * /api/finance/accounting/accounts:
+ *   get:
+ *     summary: List chart of accounts
+ *     tags: [Finance - Accounting]
+ */
+router.get("/accounting/accounts", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), validateQuery(queryAccountSchema), accountingController.getAccounts);
+
+/**
+ * @swagger
+ * /api/finance/accounting/accounts:
+ *   post:
+ *     summary: Create account
+ *     tags: [Finance - Accounting]
+ */
+router.post("/accounting/accounts", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), validate(createAccountSchema), accountingController.createAccount);
+
+/**
+ * @swagger
+ * /api/finance/accounting/accounts/{id}:
+ *   put:
+ *     summary: Update account
+ *     tags: [Finance - Accounting]
+ */
+router.put("/accounting/accounts/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), validate(updateAccountSchema), accountingController.updateAccount);
+
+/**
+ * @swagger
+ * /api/finance/accounting/accounts/{id}:
+ *   get:
+ *     summary: Get account details
+ *     tags: [Finance - Accounting]
+ */
+router.get("/accounting/accounts/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), accountingController.getAccountById);
+
+/**
+ * @swagger
+ * /api/finance/accounting/accounts/{id}:
+ *   delete:
+ *     summary: Delete account
+ *     tags: [Finance - Accounting]
+ */
+router.delete("/accounting/accounts/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), accountingController.deleteAccount);
+
+// ==================== JOURNALS ====================
+
+/**
+ * @swagger
+ * /api/finance/accounting/journals:
+ *   get:
+ *     summary: Get journal entries (General Ledger)
+ *     tags: [Finance - Accounting]
+ */
+router.get("/accounting/journals", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), validateQuery(queryJournalSchema), accountingController.getJournals);
+
+/**
+ * @swagger
+ * /api/finance/accounting/journals:
+ *   post:
+ *     summary: Create manual journal entry
+ *     tags: [Finance - Accounting]
+ */
+router.post("/accounting/journals", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), validate(createJournalSchema), accountingController.createJournal);
+
+// ==================== REPORTS ====================
+
+/**
+ * @swagger
+ * /api/finance/accounting/reports/trial-balance:
+ *   get:
+ *     summary: Get Trial Balance report
+ *     tags: [Finance - Accounting]
+ */
+router.get("/accounting/reports/trial-balance", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), validateQuery(queryReportSchema), accountingController.getTrialBalance);
+
+/**
+ * @swagger
+ * /api/finance/accounting/reports/balance-sheet:
+ *   get:
+ *     summary: Get Balance Sheet report
+ *     tags: [Finance - Accounting]
+ */
+router.get("/accounting/reports/balance-sheet", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), validateQuery(queryReportSchema), accountingController.getBalanceSheet);
+
+/**
+ * @swagger
+ * /api/finance/accounting/reports/income-statement:
+ *   get:
+ *     summary: Get Income Statement report
+ *     tags: [Finance - Accounting]
+ */
+router.get("/accounting/reports/income-statement", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), validateQuery(queryReportSchema), accountingController.getIncomeStatement);
 
 export default router;

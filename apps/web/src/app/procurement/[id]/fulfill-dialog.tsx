@@ -39,6 +39,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
+import { useSuppliers } from "@/hooks/use-suppliers";
 
 interface FulfillDialogProps {
   request: PurchaseRequest;
@@ -50,6 +51,7 @@ const formSchema = z.object({
   receiptDate: z.date(),
   purchaseOrderNo: z.string().optional(),
   supplier: z.string().optional(),
+  supplierId: z.string().optional(),
   items: z.array(z.object({
     itemId: z.string(),
     itemName: z.string(), // Just for display/tracking
@@ -66,6 +68,8 @@ export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
   const [accounts, setAccounts] = useState<{id: string, name: string, code: string}[]>([]);
   const [rooms, setRooms] = useState<{id: string, name: string, code: string}[]>([]);
   const { toast } = useToast();
+
+  const { data: suppliers } = useSuppliers({ isActive: true });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -225,13 +229,34 @@ export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
               />
               <FormField
                 control={form.control}
-                name="supplier"
+                name="supplierId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Supplier (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Vendor Name" {...field} />
-                    </FormControl>
+                    <FormLabel>Supplier</FormLabel>
+                    <Select
+                        onValueChange={(val) => {
+                            field.onChange(val);
+                            // Set legacy string name for compatibility
+                            const selected = suppliers?.find(s => s.id === val);
+                            if (selected) {
+                                form.setValue('supplier', selected.name);
+                            }
+                        }}
+                        defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Supplier" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {suppliers?.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

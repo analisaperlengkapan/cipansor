@@ -89,4 +89,5 @@ export interface FulfillPurchaseRequestInput {
   receiptDate: Date;
   purchaseOrderNo?: string;
   supplier?: string;
+  supplierId?: string;
 }

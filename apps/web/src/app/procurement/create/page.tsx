@@ -19,10 +19,10 @@ import { CreatePurchaseRequestItemInput } from '@cipansor/shared';
 export default function CreateProcurementPage() {
   const router = useRouter();
   const { createRequest, isCreating } = useProcurement();
-  const { units } = useUnits();
+  const { data: units } = useUnits();
   // We'll assume inventory categories hook exists or fetch it differently
   // For now, let's mock or use a generic fetch if hook missing
-  const { data: categories } = useInventoryCategories ? useInventoryCategories() : { data: [] };
+  const { data: categories } = useInventoryCategories();
 
   const [formData, setFormData] = useState({
     unitId: '',

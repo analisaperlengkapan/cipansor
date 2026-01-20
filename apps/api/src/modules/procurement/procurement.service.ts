@@ -7,7 +7,7 @@ import {
   FulfillPurchaseRequestInput
 } from '@cipansor/shared';
 import { UserRole, AssetCondition, Prisma } from '@prisma/client';
-import { NotFoundError, ForbiddenError, ValidationError } from '@/middleware/error';
+import { Errors } from '@/middleware/error';
 import { generateUniqueCode, generateBulkUniqueCodes } from '@/utils/code-generator';
 import { createNotification } from '../notifications/service';
 
@@ -38,9 +38,10 @@ export const procurementService = {
         const availableAmount = Number(budget.amount) - Number(budget.usedAmount);
 
         if (requestedAmount > availableAmount) {
-          throw new ValidationError(
-            `Budget exceeded for budget ID ${budget.id}. Available: ${availableAmount}, Requested: ${requestedAmount}`
-          );
+          throw Errors.validationError([{
+            field: 'items',
+            message: `Budget exceeded for budget ID ${budget.id}. Available: ${availableAmount}, Requested: ${requestedAmount}`
+          }]);
         }
       }
     }
@@ -157,7 +158,7 @@ export const procurementService = {
       }
     });
 
-    if (!request) throw new NotFoundError('Purchase Request not found');
+    if (!request) throw Errors.notFound('Purchase Request');
     return request as unknown as PurchaseRequest;
   },
 
@@ -183,10 +184,10 @@ export const procurementService = {
     approverRole: UserRole
   ) => {
     const request = await prisma.purchaseRequest.findUnique({ where: { id } });
-    if (!request) throw new NotFoundError('Purchase Request not found');
+    if (!request) throw Errors.notFound('Purchase Request');
 
     if (request.status !== PurchaseRequestStatus.PENDING && request.status !== PurchaseRequestStatus.APPROVED) {
-      throw new ValidationError('Cannot update status of processed request');
+      throw Errors.badRequest('Cannot update status of processed request');
     }
 
     // Tiered Approval Logic
@@ -196,7 +197,7 @@ export const procurementService = {
       const isSuperAdmin = approverRole === UserRole.SUPER_ADMIN;
 
       if (isHighValue && !isSuperAdmin) {
-        throw new ForbiddenError(`Requests above ${HIGH_VALUE_THRESHOLD} require Foundation/Yayasan approval.`);
+        throw Errors.forbidden(`Requests above ${HIGH_VALUE_THRESHOLD} require Foundation/Yayasan approval.`);
       }
     }
 
@@ -237,16 +238,16 @@ export const procurementService = {
       include: { items: { include: { assetCategory: true, budget: { include: { account: true } } } } }
     });
 
-    if (!request) throw new NotFoundError('Purchase Request not found');
+    if (!request) throw Errors.notFound('Purchase Request');
     if (request.status !== PurchaseRequestStatus.APPROVED && request.status !== PurchaseRequestStatus.ORDERED) {
-      throw new ValidationError('Request must be Approved or Ordered to be Fulfilled');
+      throw Errors.badRequest('Request must be Approved or Ordered to be Fulfilled');
     }
 
     const paymentAccount = await prisma.accountCode.findUnique({
       where: { id: input.paymentAccountId }
     });
     if (!paymentAccount) {
-      throw new ValidationError('Invalid payment account');
+      throw Errors.badRequest('Invalid payment account');
     }
 
     const result = await prisma.$transaction(async (tx) => {
@@ -292,6 +293,7 @@ export const procurementService = {
                 notes: fulfillmentItem.notes || `Generated from PR: ${request.code}`,
                 purchaseOrderNo: input.purchaseOrderNo,
                 supplier: input.supplier,
+                supplierId: input.supplierId,
                 roomId: fulfillmentItem.roomId
               }
             });
@@ -359,7 +361,7 @@ export const procurementService = {
         message: `Pengajuan pembelian ${request.code} telah diproses dan barang telah diterima.`,
         type: 'INFO',
         link: `/procurement/${request.id}`
-      });
+      } as any);
     } catch (error) {
       console.error('Failed to send notification', error);
     }

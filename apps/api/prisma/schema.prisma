@@ -1844,14 +1844,16 @@ model Medication {
   quantity    Int       @default(0)
   minStock    Int       @default(10) @map("min_stock")
   expiryDate  DateTime? @map("expiry_date")
-  supplier    String?
+  supplier    String? // Deprecated: Use supplierId
+  supplierId  String?   @map("supplier_id")
   notes       String?
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  unit      Unit                 @relation(fields: [unitId], references: [id])
-  usageLogs MedicationUsageLog[]
+  unit        Unit                 @relation(fields: [unitId], references: [id])
+  supplierRel Supplier?            @relation(fields: [supplierId], references: [id])
+  usageLogs   MedicationUsageLog[]
 
   @@index([unitId])
   @@index([name])
@@ -2041,7 +2043,8 @@ model Asset {
   serialNumber   String?        @map("serial_number")
   purchaseDate   DateTime?      @map("purchase_date")
   purchasePrice  Decimal?       @map("purchase_price") @db.Decimal(15, 2)
-  supplier       String?
+  supplier       String? // Deprecated: Use supplierId
+  supplierId     String?        @map("supplier_id")
   location       String? // Lokasi penempatan
   roomId         String?        @map("room_id")
   purchaseOrderNo String?       @map("purchase_order_no")
@@ -2060,6 +2063,7 @@ model Asset {
   unit            Unit               @relation(fields: [unitId], references: [id])
   category        AssetCategory      @relation(fields: [categoryId], references: [id])
   room            FacilityRoom?      @relation(fields: [roomId], references: [id])
+  supplierRel     Supplier?          @relation(fields: [supplierId], references: [id])
   maintenanceLogs AssetMaintenance[]
   assignments     AssetAssignment[]
   auditItems      AssetAuditItem[]
@@ -6172,6 +6176,30 @@ model DashboardHistory {
 // PROCUREMENT (PENGADAAN)
 // =====================================
 
+/// Supplier - Pemasok/Vendor
+model Supplier {
+  id            String   @id @default(uuid())
+  name          String
+  address       String?
+  phone         String?
+  email         String?
+  contactPerson String?  @map("contact_person")
+  category      String?  // STATIONERY, CATERING, SERVICES, etc.
+  rating        Int?     @default(0) // 1-5
+  bankName      String?  @map("bank_name")
+  bankAccount   String?  @map("bank_account")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  assets           Asset[]
+  medications      Medication[]
+  purchaseRequests PurchaseRequest[]
+
+  @@map("suppliers")
+}
+
 enum PurchaseRequestStatus {
   PENDING   // Menunggu persetujuan
   APPROVED  // Disetujui Kepala/Yayasan
@@ -6185,10 +6213,11 @@ enum PurchaseRequestStatus {
 model PurchaseRequest {
   id              String                @id @default(uuid())
   unitId          String                @map("unit_id")
-  code            String                @unique // PR-YYYYMM-XXXX
-  requesterId     String                @map("requester_id")
-  date            DateTime              @default(now())
-  description     String?               @db.Text
+  code                String                @unique // PR-YYYYMM-XXXX
+  requesterId         String                @map("requester_id")
+  preferredSupplierId String?               @map("preferred_supplier_id")
+  date                DateTime              @default(now())
+  description         String?               @db.Text
   totalEstimated  Decimal               @map("total_estimated") @db.Decimal(15, 2)
   status          PurchaseRequestStatus @default(PENDING)
 
@@ -6205,10 +6234,11 @@ model PurchaseRequest {
   updatedAt       DateTime              @updatedAt @map("updated_at")
 
   // Relations
-  unit       Unit                  @relation(fields: [unitId], references: [id])
-  requester  User                  @relation("PRRequester", fields: [requesterId], references: [id])
-  approvedBy User?                 @relation("PRApprover", fields: [approvedById], references: [id])
-  items      PurchaseRequestItem[]
+  unit              Unit                  @relation(fields: [unitId], references: [id])
+  requester         User                  @relation("PRRequester", fields: [requesterId], references: [id])
+  preferredSupplier Supplier?             @relation(fields: [preferredSupplierId], references: [id])
+  approvedBy        User?                 @relation("PRApprover", fields: [approvedById], references: [id])
+  items             PurchaseRequestItem[]
 
   @@index([unitId])
   @@index([status])

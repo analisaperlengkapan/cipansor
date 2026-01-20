@@ -26,3 +26,4 @@ export * from './schemas';
 export * from './types/marketing';
 export * from './types/quality';
 export * from './types/library';
+export * from './types/supplier';

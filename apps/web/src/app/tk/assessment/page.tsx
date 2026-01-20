@@ -9,20 +9,39 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Calendar, Filter } from 'lucide-react';
-import { useTKAssessments, ACHIEVEMENT_COLORS, ACHIEVEMENT_LABELS, ASPECT_LABELS } from '@/hooks/use-tk-assessment';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Plus, Search, Calendar, Filter, Eye, FileEdit, Trash2 } from 'lucide-react';
+import { useTKAssessments, useDeleteTKAssessment, ACHIEVEMENT_COLORS, ACHIEVEMENT_LABELS, ASPECT_LABELS } from '@/hooks/use-tk-assessment';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 export default function TKAssessmentListPage() {
   const router = useRouter();
   const [search, setSearch] = useState('');
-  const [aspect, setAspect] = useState<string>('');
+  const [aspect, setAspect] = useState<string>('ALL');
+  const [date, setDate] = useState<Date | undefined>(undefined);
+
+  const deleteMutation = useDeleteTKAssessment();
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Apakah Anda yakin ingin menghapus penilaian ini?')) {
+      try {
+        await deleteMutation.mutateAsync(id);
+        toast.success('Penilaian berhasil dihapus');
+      } catch (error) {
+        toast.error('Gagal menghapus penilaian');
+      }
+    }
+  };
 
   const { data, isLoading } = useTKAssessments({
     search,
-    aspect: aspect as any,
+    aspect: aspect !== 'ALL' ? aspect as any : undefined,
+    startDate: date ? format(date, 'yyyy-MM-dd') : undefined,
     limit: 20,
   });
 
@@ -67,6 +86,35 @@ export default function TKAssessmentListPage() {
       cell: ({ row }) => (
         <div className="max-w-[200px] truncate text-muted-foreground">
           {row.getValue('notes') || '-'}
+        </div>
+      ),
+    },
+    {
+      id: 'actions',
+      header: 'Aksi',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push(`/tk/assessment/${row.original.id}`)}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push(`/tk/assessment/${row.original.id}/edit`)}
+          >
+            <FileEdit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDelete(row.original.id)}
+          >
+            <Trash2 className="h-4 w-4 text-red-500" />
+          </Button>
         </div>
       ),
     },
@@ -116,6 +164,30 @@ export default function TKAssessmentListPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="w-[240px]">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full justify-start text-left font-normal',
+                      !date && 'text-muted-foreground'
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {date ? format(date, 'PPP', { locale: idLocale }) : 'Pilih Tanggal'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <CalendarComponent
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </CardContent>
         </Card>

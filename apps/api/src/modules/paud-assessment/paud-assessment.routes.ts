@@ -10,6 +10,7 @@ import {
   createAssessmentSchema,
   updateAssessmentSchema,
   bulkCreateAssessmentSchema,
+  bulkCreateClassAssessmentSchema,
   createEvidenceSchema,
   listNarrativeReportsQuerySchema,
   createNarrativeReportSchema,
@@ -290,7 +291,69 @@ router.get('/assessments', validateQuery(listAssessmentsQuerySchema), controller
 
 /**
  * @swagger
- * /api/paud-assessment/assessments/{id}:
+ * /api/paud-assessment/assessments/class:
+ *   post:
+ *     summary: Bulk create assessments for a class (single indicator)
+ *     tags: [PAUD Assessment]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - classId
+ *               - unitId
+ *               - academicYearId
+ *               - aspect
+ *               - assessments
+ *             properties:
+ *               classId:
+ *                 type: string
+ *               unitId:
+ *                 type: string
+ *               academicYearId:
+ *                 type: string
+ *               semester:
+ *                 type: string
+ *                 enum: ["GANJIL", "GENAP"]
+ *               periodType:
+ *                 type: string
+ *                 enum: ["HARIAN", "MINGGUAN", "BULANAN", "SEMESTER"]
+ *               periodDate:
+ *                 type: string
+ *                 format: date
+ *               aspect:
+ *                 type: string
+ *                 enum: [NAM, FM, KOG, BHS, SE, SNI]
+ *               indicatorId:
+ *                 type: string
+ *               assessments:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - studentId
+ *                     - achievementLevel
+ *                   properties:
+ *                     studentId:
+ *                       type: string
+ *                     achievementLevel:
+ *                       type: string
+ *                       enum: [BB, MB, BSH, BSB]
+ *                     narrativeText:
+ *                       type: string
+ *                     teacherNotes:
+ *                       type: string
+ *                     recommendations:
+ *                       type: string
+ *     responses:
+ *       201:
+ *         description: Assessments created
+ */
+router.post('/assessments/class', validate(bulkCreateClassAssessmentSchema), controller.createClassAssessment);
  *   get:
  *     summary: Get assessment by ID
  *     tags: [PAUD Assessment]

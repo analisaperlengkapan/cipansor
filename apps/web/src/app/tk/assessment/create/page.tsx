@@ -12,17 +12,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Save, Loader2, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { useClasses } from '@/hooks/use-classes';
 import { useStudents } from '@/hooks/use-students';
+import { useActiveAcademicYear } from '@/hooks/use-academic-years';
 import {
   useTKIndicators,
+  useCreateClassAssessment,
   ASPECT_LABELS,
-  TKAspect
+  TKAspect,
+  TKAchievementLevel
 } from '@/hooks/use-tk-assessment';
 import { format } from 'date-fns';
-import api from '@/lib/api';
 
 const ACHIEVEMENT_LEVELS = [
   { value: 'BB', label: 'BB', desc: 'Belum Berkembang', color: 'bg-red-100 text-red-800' },
@@ -39,7 +42,6 @@ export default function TKAssessmentCreatePage() {
   const [selectedAspect, setSelectedAspect] = useState<TKAspect>('NAM');
   const [selectedIndicatorId, setSelectedIndicatorId] = useState<string>('');
   const [assessmentDate, setAssessmentDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Local state: studentId -> { achievementLevel, notes }
   const [assessments, setAssessments] = useState<Record<string, { level: string; notes: string }>>({});
@@ -53,10 +55,14 @@ export default function TKAssessmentCreatePage() {
     status: 'active',
   });
 
+  const { data: activeYear } = useActiveAcademicYear();
+
   const { data: indicators, isLoading: isLoadingIndicators } = useTKIndicators({
     aspect: selectedAspect,
     isActive: true
   });
+
+  const createMutation = useCreateClassAssessment();
 
   // Reset assessments when context changes
   useEffect(() => {
@@ -89,39 +95,31 @@ export default function TKAssessmentCreatePage() {
         return;
     }
 
-    setIsSubmitting(true);
-    const loadingToast = toast.loading('Menyimpan penilaian...');
-
     try {
-        const promises = validEntries.map(async ([studentId, data]) => {
-            const payload = {
+        await createMutation.mutateAsync({
+            classId: selectedClassId,
+            unitId: user?.unitId || '',
+            academicYearId: user?.academicYearId || activeYear?.id || '',
+            semester: activeYear?.semester || 'GANJIL',
+            periodType: 'HARIAN',
+            periodDate: assessmentDate,
+            aspect: selectedAspect,
+            indicatorId: selectedIndicatorId,
+            assessments: validEntries.map(([studentId, data]) => ({
                 studentId,
-                indicatorId: selectedIndicatorId,
-                academicYearId: user?.academicYearId,
-                semester: '1',
-                achievementLevel: data.level,
-                assessmentDate: assessmentDate,
-                notes: data.notes,
-                unitId: user?.unitId,
-            };
-
-            await api.post('/paud-assessment/assessments', payload);
+                achievementLevel: data.level as TKAchievementLevel,
+                teacherNotes: data.notes,
+            }))
         });
 
-        await Promise.all(promises);
-
-        toast.dismiss(loadingToast);
         toast.success(`Berhasil menyimpan ${validEntries.length} penilaian`);
 
         setAssessments({});
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (error) {
-        toast.dismiss(loadingToast);
-        toast.error('Gagal menyimpan beberapa penilaian');
+        toast.error('Gagal menyimpan penilaian');
         console.error(error);
-    } finally {
-        setIsSubmitting(false);
     }
   };
 
@@ -259,8 +257,8 @@ export default function TKAssessmentCreatePage() {
 
         {/* Submit Button */}
         <div className="fixed bottom-6 right-6">
-            <Button size="lg" className="shadow-xl" onClick={handleSave} disabled={isSubmitting}>
-                {isSubmitting ? (
+            <Button size="lg" className="shadow-xl" onClick={handleSave} disabled={createMutation.isPending}>
+                {createMutation.isPending ? (
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 ) : (
                     <Save className="mr-2 h-5 w-5" />

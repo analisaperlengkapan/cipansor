@@ -3,11 +3,11 @@ import { apiClient } from '@/lib/api-client';
 
 // Enums
 export const SIMAAN_TYPES = [
-  { value: 'JUZ_AMMA', label: 'Juz Amma (30)' },
-  { value: 'ONE_JUZ', label: '1 Juz' },
-  { value: 'FIVE_JUZ', label: '5 Juz' },
-  { value: 'TEN_JUZ', label: '10 Juz' },
-  { value: 'FULL_QURAN', label: '30 Juz (Khatam)' },
+  { value: 'BIN_NAZHR', label: 'Bin Nazhr (Melihat Mushaf)' },
+  { value: 'BIL_GHAIB', label: 'Bil Ghaib (Hafalan)' },
+  { value: 'TAHDIR', label: 'Tahdir (Persiapan)' },
+  { value: 'TASMI', label: 'Tasmi (Setoran)' },
+  { value: 'KHATAM', label: 'Khatam 30 Juz' },
 ] as const;
 
 export const SIMAAN_GRADES = [
@@ -102,14 +102,10 @@ export interface CreateSimaanData {
   passed?: boolean;
   notes?: string;
   recommendations?: string;
-  examiners?: Array<{
-    examinerId: string;
-    score?: number;
-    notes?: string;
-  }>;
+  examinerIds: string[];
 }
 
-export type UpdateSimaanData = Partial<Omit<CreateSimaanData, 'studentId' | 'examiners'>>;
+export type UpdateSimaanData = Partial<Omit<CreateSimaanData, 'studentId' | 'examinerIds'>>;
 
 export interface SubmitScoresData {
   overallScore: number;

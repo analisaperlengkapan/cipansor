@@ -83,7 +83,7 @@ export default function CreateSimaanPage() {
     createSimaan(
       {
         ...values,
-        examiners: [{ examinerId: values.examinerId }],
+        examinerIds: [values.examinerId],
       },
       {
         onSuccess: () => {

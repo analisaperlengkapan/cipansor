@@ -1,7 +1,8 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 import { attendanceService } from "../attendance/attendance.service";
-import { createNotification } from "../notifications/service";
+import { eventBus } from "../../lib/event-bus";
+import { logger } from "../../lib/logger";
 import type {
   CreateMedicalRecordInput,
   UpdateMedicalRecordInput,
@@ -162,7 +163,7 @@ export async function createMedicalRecord(data: CreateMedicalRecordInput, record
         }, recordedById);
       }
     } catch (error) {
-      console.warn("Failed to create attendance from health record:", error);
+      logger.warn("Failed to create attendance from health record:", { error });
     }
   }
 
@@ -176,10 +177,10 @@ export async function createMedicalRecord(data: CreateMedicalRecordInput, record
 
       const studentName = record.student?.user?.name || "Santri";
 
-      await Promise.all(parents.map(p =>
-        createNotification({
+      parents.forEach(p =>
+        eventBus.emit("notification:send", {
           userId: p.parentId,
-          type: "HEALTH" as any,
+          type: "HEALTH",
           title: "Laporan Kesehatan Santri",
           message: `Ananda ${studentName} tercatat sakit dengan keluhan: ${mainData.complaint}. Kami telah memberikan penanganan awal.`,
           data: {
@@ -187,11 +188,24 @@ export async function createMedicalRecord(data: CreateMedicalRecordInput, record
               healthRecordId: record.id
           }
         })
-      ));
+      );
     } catch (error) {
-      console.warn("Failed to send parent notifications:", error);
+      logger.warn("Failed to trigger parent notifications:", { error });
     }
   }
+
+  // Emit Event for other listeners (e.g., Dashboard)
+  eventBus.emit("health:medical-record-created", {
+    id: record.id,
+    studentId: record.studentId,
+    studentName: record.student?.user?.name || "Unknown",
+    unitId: record.student?.unitId || "unknown",
+    unitName: record.student?.unit?.name || "Unknown",
+    type: record.type,
+    complaint: record.complaint,
+    status: record.status || "UNKNOWN",
+    recordedAt: record.visitDate instanceof Date ? record.visitDate : new Date(record.visitDate)
+  });
 
   return {
     ...record,

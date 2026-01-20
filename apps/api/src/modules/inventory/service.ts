@@ -1,3 +1,4 @@
+import QRCode from "qrcode";
 import { Prisma, AssetStatus, AssetCondition, AssetMaintenanceStatus } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 import type {
@@ -19,6 +20,23 @@ import type {
   QueryAssetAuditInput,
   UpdateAssetAuditItemInput,
 } from "./schema";
+
+export async function getQrCode(id: string) {
+  const asset = await prisma.asset.findUnique({
+    where: { id },
+  });
+
+  if (!asset) throw new Error("Asset not found");
+
+  // Format: "CODE - NAME" or a deep link if preferred
+  // For now, let's use a URL to the frontend detail page
+  // Assumption: Frontend URL is accessible via generic means or just encoding the ID
+  // Let's encode a JSON object or just the URL. A URL is "Best Practice" for scanning.
+  const appUrl = process.env.APP_URL || "http://localhost:3000";
+  const url = `${appUrl}/inventory/${id}`;
+
+  return QRCode.toDataURL(url);
+}
 
 // ==================== ASSET CATEGORY ====================
 

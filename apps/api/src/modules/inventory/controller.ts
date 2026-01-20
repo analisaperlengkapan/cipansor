@@ -173,6 +173,15 @@ export async function deleteCategory(req: Request, res: Response, next: NextFunc
 
 // ==================== INVENTORY ITEM ====================
 
+export async function getQrCode(req: Request, res: Response, next: NextFunction) {
+  try {
+    const qrCode = await service.getQrCode(req.params.id);
+    res.json({ success: true, data: qrCode });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getItems(req: Request, res: Response, next: NextFunction) {
   try {
     const query = queryInventoryItemSchema.parse(req.query);

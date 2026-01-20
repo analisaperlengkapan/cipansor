@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, QrCode, Wrench, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import api from '@/lib/api';
 import {
   useInventoryItem,
   useDeleteInventoryItem,
@@ -23,6 +24,7 @@ import {
   useAssetAssignments,
   useCreateAssignment,
   useReturnAssignment,
+  useCreateMaintenanceRequest,
   AssetCondition,
   AssetStatus
 } from '@/hooks/use-inventory';
@@ -72,12 +74,28 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
 
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [isReturnOpen, setIsReturnOpen] = useState(false);
+  const [isMaintenanceOpen, setIsMaintenanceOpen] = useState(false);
+  const [isPrintOpen, setIsPrintOpen] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>('');
 
   const createAssignmentMutation = useCreateAssignment();
   const returnAssignmentMutation = useReturnAssignment();
+  const createMaintenanceRequestMutation = useCreateMaintenanceRequest();
 
   const unitName = units?.find((u) => u.id === item?.unitId)?.name || '-';
+
+  useEffect(() => {
+    if (isPrintOpen && itemId && !qrCodeUrl) {
+      api.get<{ data: string }>(`/inventory/items/${itemId}/qrcode`)
+        .then(res => setQrCodeUrl(res.data.data))
+        .catch(() => toast.error('Gagal memuat QR Code'));
+    }
+  }, [isPrintOpen, itemId, qrCodeUrl]);
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   const handleDelete = async () => {
     try {
@@ -124,6 +142,23 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
       setIsReturnOpen(false);
     } catch {
       toast.error('Gagal mengembalikan aset');
+    }
+  };
+
+  const handleMaintenanceRequest = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    try {
+      await createMaintenanceRequestMutation.mutateAsync({
+        assetId: itemId,
+        type: formData.get('type') as string,
+        description: formData.get('description') as string,
+        notes: formData.get('notes') as string,
+      });
+      toast.success('Permintaan maintenance berhasil dibuat');
+      setIsMaintenanceOpen(false);
+    } catch {
+      toast.error('Gagal membuat permintaan maintenance');
     }
   };
 
@@ -184,6 +219,48 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
           </div>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsPrintOpen(true)}>
+             <QrCode className="mr-2 h-4 w-4" />
+             Label
+          </Button>
+
+          <Dialog open={isMaintenanceOpen} onOpenChange={setIsMaintenanceOpen}>
+             <DialogTrigger asChild>
+                <Button variant="outline">
+                   <Wrench className="mr-2 h-4 w-4" />
+                   Lapor
+                </Button>
+             </DialogTrigger>
+             <DialogContent>
+                <DialogHeader><DialogTitle>Lapor Kerusakan / Maintenance</DialogTitle></DialogHeader>
+                <form onSubmit={handleMaintenanceRequest} className="space-y-4">
+                   <div className="space-y-2">
+                      <Label>Jenis Masalah</Label>
+                      <Select name="type" required>
+                         <SelectTrigger><SelectValue placeholder="Pilih jenis..." /></SelectTrigger>
+                         <SelectContent>
+                            <SelectItem value="Perbaikan">Perbaikan (Rusak)</SelectItem>
+                            <SelectItem value="Servis Rutin">Servis Rutin</SelectItem>
+                            <SelectItem value="Penggantian Sparepart">Penggantian Sparepart</SelectItem>
+                            <SelectItem value="Lainnya">Lainnya</SelectItem>
+                         </SelectContent>
+                      </Select>
+                   </div>
+                   <div className="space-y-2">
+                      <Label>Deskripsi Masalah</Label>
+                      <Textarea name="description" placeholder="Jelaskan detail kerusakan atau masalah..." required />
+                   </div>
+                   <div className="space-y-2">
+                      <Label>Catatan Tambahan</Label>
+                      <Textarea name="notes" placeholder="Lokasi spesifik, urgensi, dll..." />
+                   </div>
+                   <DialogFooter>
+                      <Button type="submit" disabled={createMaintenanceRequestMutation.isPending}>Kirim Laporan</Button>
+                   </DialogFooter>
+                </form>
+             </DialogContent>
+          </Dialog>
+
           {item.status === 'ACTIVE' && (
              <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
                 <DialogTrigger asChild>
@@ -495,6 +572,59 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Print Label Dialog */}
+      <Dialog open={isPrintOpen} onOpenChange={setIsPrintOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Label Aset</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-lg" id="printable-label">
+            <h3 className="font-bold text-lg text-center">{item.name}</h3>
+            {qrCodeUrl ? (
+               // eslint-disable-next-line @next/next/no-img-element
+               <img src={qrCodeUrl} alt="QR Code" className="w-32 h-32 my-2" />
+            ) : (
+               <div className="w-32 h-32 my-2 bg-muted flex items-center justify-center text-xs">Loading...</div>
+            )}
+            <p className="font-mono font-bold text-sm">{item.code}</p>
+            <p className="text-xs text-muted-foreground mt-1">{unitName}</p>
+          </div>
+          <DialogFooter>
+             <Button onClick={handlePrint} className="w-full">
+                <Printer className="mr-2 h-4 w-4" />
+                Cetak Label
+             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Print Style */}
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #printable-label, #printable-label * {
+            visibility: visible;
+          }
+          #printable-label {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid black !important;
+            border-style: solid !important;
+            width: 300px;
+            height: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -3,9 +3,22 @@ import {
   createMaintenanceRequest,
   updateMaintenanceStatus,
   disposeAsset,
-  calculateDepreciation
+  calculateDepreciation,
+  getQrCode
 } from '../../../../../src/modules/inventory/service';
 import { AssetStatus, AssetMaintenanceStatus, AssetDisposalReason } from '@prisma/client';
+
+// Mock Enums to avoid undefined errors in Vitest
+vi.mock('@prisma/client', async (importOriginal) => {
+  const original = await importOriginal();
+  return {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...(original as any),
+    AssetStatus: { ACTIVE: 'ACTIVE', DISPOSED: 'DISPOSED', MAINTENANCE: 'MAINTENANCE' },
+    AssetMaintenanceStatus: { PENDING: 'PENDING', COMPLETED: 'COMPLETED', IN_PROGRESS: 'IN_PROGRESS' },
+    AssetDisposalReason: { SOLD: 'SOLD' },
+  };
+});
 
 const prismaMock = vi.hoisted(() => ({
   assetMaintenance: {
@@ -138,6 +151,23 @@ describe('Inventory Service', () => {
           approvedById: userId,
         }),
       });
+    });
+  });
+
+  describe('getQrCode', () => {
+    it('should return a data URL for the asset', async () => {
+      const assetId = 'asset-1';
+      prismaMock.asset.findUnique.mockResolvedValue({ id: assetId, code: 'AST-001' });
+
+      const result = await getQrCode(assetId);
+
+      expect(prismaMock.asset.findUnique).toHaveBeenCalledWith({ where: { id: assetId } });
+      expect(result).toContain('data:image/png;base64');
+    });
+
+    it('should throw error if asset not found', async () => {
+      prismaMock.asset.findUnique.mockResolvedValue(null);
+      await expect(getQrCode('invalid-id')).rejects.toThrow('Asset not found');
     });
   });
 });

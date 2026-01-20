@@ -2,6 +2,8 @@ import { Router } from 'express';
 import * as controller from './controller';
 import * as reportsController from './reports.controller';
 import { RaportMerdekaController } from './raport-merdeka.controller';
+import { P5ProjectController } from './p5-project.controller';
+import { UnifiedRaportController } from './unified-raport.controller';
 import { authenticate } from '@/middleware/auth';
 
 const router = Router();
@@ -770,6 +772,21 @@ router.get('/reports/transcripts/bulk', reportsController.getBulkTranscripts);
  *         description: Report card print data
  */
 router.get('/reports/report-cards/:reportCardId/print', reportsController.getReportCardPrintData);
+
+// ==================== P5 PROJECTS ====================
+
+router.post('/p5-projects', P5ProjectController.createProject);
+router.get('/p5-projects', P5ProjectController.getProjects);
+router.get('/p5-projects/:id', P5ProjectController.getProjectById);
+router.patch('/p5-projects/:id', P5ProjectController.updateProject);
+router.delete('/p5-projects/:id', P5ProjectController.deleteProject);
+router.post('/p5-projects/assessments', P5ProjectController.upsertAssessment);
+router.post('/p5-projects/assessments/bulk', P5ProjectController.bulkUpsertAssessments);
+
+// ==================== UNIFIED RAPORT ====================
+
+router.get('/unified-raport/students/:studentId', UnifiedRaportController.generateUnifiedRaport);
+router.get('/unified-raport/print/:studentId', UnifiedRaportController.getPrintData);
 
 // ==================== RAPORT MERDEKA (KURIKULUM MERDEKA) ====================
 

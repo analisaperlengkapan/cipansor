@@ -433,7 +433,7 @@ export default function MarketingDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {recentLeads?.map((lead: any) => (
+                    {recentLeads?.map((lead) => (
                       <TableRow key={lead.id}>
                         <TableCell>
                           <div className="font-medium">{lead.fullName}</div>
@@ -470,7 +470,7 @@ export default function MarketingDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {followUps?.map((task: any) => (
+                  {followUps?.map((task) => (
                     <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
                       <div>
                         <div className="font-medium text-sm">{task.registrant.fullName}</div>

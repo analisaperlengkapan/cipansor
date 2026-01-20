@@ -11,6 +11,7 @@ import {
   CreateTKAssessmentInput,
   UpdateTKAssessmentInput,
   BulkCreateTKAssessmentInput,
+  BulkCreateClassTKAssessmentInput,
 } from '@cipansor/shared';
 
 // Re-export shared types and enums
@@ -117,6 +118,19 @@ export function useCreateTKAssessment() {
   return useMutation({
     mutationFn: async (data: CreateTKAssessmentInput) => {
       const response = await api.post<ApiResponse<TKAssessment>>('/paud-assessment/assessments', data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['paud-assessments'] });
+    },
+  });
+}
+
+export function useCreateClassAssessment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: BulkCreateClassTKAssessmentInput) => {
+      const response = await api.post<ApiResponse<{ created: number; failed: number }>>('/paud-assessment/assessments/class', data);
       return response.data.data;
     },
     onSuccess: () => {

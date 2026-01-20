@@ -231,6 +231,9 @@ export interface BulkCreateClassPAUDAssessmentInput {
   }>;
 }
 
+// Renamed Alias for Frontend Consistency
+export type BulkCreateClassTKAssessmentInput = BulkCreateClassPAUDAssessmentInput;
+
 export interface CreatePAUDEvidenceInput {
   assessmentId: string;
   fileUrl: string;

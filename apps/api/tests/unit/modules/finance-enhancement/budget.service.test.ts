@@ -3,6 +3,18 @@ import { createBudget, updateBudget, getBudgets } from '../../../../src/modules/
 import { prisma } from '../../../../src/lib/prisma';
 import { Prisma } from '@prisma/client';
 
+// Mock Prisma Decimal
+const Decimal = class {
+  constructor(public val: number | string) {}
+  toNumber() { return Number(this.val); }
+  toString() { return String(this.val); }
+  plus(v: any) { return new Decimal(Number(this.val) + Number(v)); }
+  minus(v: any) { return new Decimal(Number(this.val) - Number(v)); }
+};
+
+// @ts-ignore
+Prisma.Decimal = Decimal;
+
 // Mock Prisma
 vi.mock('../../../../src/lib/prisma', () => ({
   prisma: {

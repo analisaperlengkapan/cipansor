@@ -62,6 +62,60 @@ import {
   MuhadhorohStatus,
 } from '@/hooks/use-muhadhoroh';
 
+// Demo data for illustration
+const DEMO_RECORDS = [
+  {
+    id: '1',
+    topic: 'Pentingnya Menuntut Ilmu',
+    student: { id: 's1', nis: '2024001', name: 'Ahmad Fauzi', class: { name: 'IX A' } },
+    scheduledAt: "2024-03-15T08:00:00.000Z",
+    language: 'Indonesian',
+    status: 'SCHEDULED' as MuhadhorohStatus,
+    totalScore: null,
+    grade: null,
+    duration: null,
+  },
+  {
+    id: '2',
+    topic: 'أهمية الصبر في الإسلام',
+    student: { id: 's2', nis: '2024002', name: 'Muhammad Rizki', class: { name: 'IX B' } },
+    scheduledAt: "2024-03-10T08:00:00.000Z",
+    language: 'Arabic',
+    status: 'COMPLETED' as MuhadhorohStatus,
+    totalScore: 85,
+    grade: 'B',
+    duration: 7,
+  },
+  {
+    id: '3',
+    topic: 'The Importance of Honesty',
+    student: { id: 's3', nis: '2024003', name: 'Fatimah Zahra', class: { name: 'VIII A' } },
+    scheduledAt: "2024-03-09T08:00:00.000Z",
+    language: 'English',
+    status: 'COMPLETED' as MuhadhorohStatus,
+    totalScore: 92,
+    grade: 'A',
+    duration: 5,
+  },
+  {
+    id: '4',
+    topic: 'Menjaga Kebersihan Lingkungan',
+    student: { id: 's4', nis: '2024004', name: 'Ibrahim Malik', class: { name: 'VII A' } },
+    scheduledAt: "2024-03-08T08:00:00.000Z",
+    language: 'Indonesian',
+    status: 'CANCELLED' as MuhadhorohStatus,
+    totalScore: null,
+    grade: null,
+    duration: null,
+  },
+];
+
+// Demo upcoming
+const DEMO_UPCOMING_RECORDS = [
+  { id: 'u1', student: { name: 'Ahmad Fauzi' }, topic: 'Pentingnya Menuntut Ilmu', scheduledAt: "2024-03-15T08:00:00.000Z", language: 'Indonesian' },
+  { id: 'u2', student: { name: 'Siti Aisyah' }, topic: 'فضل الصدقة', scheduledAt: "2024-03-16T08:00:00.000Z", language: 'Arabic' },
+];
+
 export default function MuhadhorohPage() {
   // Get user from auth context
   const { user } = useAuthStore();
@@ -85,56 +139,8 @@ export default function MuhadhorohPage() {
   const { data: statsData } = useMuhadhorohStatistics(unitId);
   const { data: topPerformersData } = useTopPerformers(unitId, 5);
 
-  // Demo data for illustration
-  const demoRecords = [
-    {
-      id: '1',
-      topic: 'Pentingnya Menuntut Ilmu',
-      student: { id: 's1', nis: '2024001', name: 'Ahmad Fauzi', class: { name: 'IX A' } },
-      scheduledAt: new Date().toISOString(),
-      language: 'Indonesian',
-      status: 'SCHEDULED' as MuhadhorohStatus,
-      totalScore: null,
-      grade: null,
-      duration: null,
-    },
-    {
-      id: '2',
-      topic: 'أهمية الصبر في الإسلام',
-      student: { id: 's2', nis: '2024002', name: 'Muhammad Rizki', class: { name: 'IX B' } },
-      scheduledAt: new Date(Date.now() - 86400000).toISOString(),
-      language: 'Arabic',
-      status: 'COMPLETED' as MuhadhorohStatus,
-      totalScore: 85,
-      grade: 'B',
-      duration: 7,
-    },
-    {
-      id: '3',
-      topic: 'The Importance of Honesty',
-      student: { id: 's3', nis: '2024003', name: 'Fatimah Zahra', class: { name: 'VIII A' } },
-      scheduledAt: new Date(Date.now() - 172800000).toISOString(),
-      language: 'English',
-      status: 'COMPLETED' as MuhadhorohStatus,
-      totalScore: 92,
-      grade: 'A',
-      duration: 5,
-    },
-    {
-      id: '4',
-      topic: 'Menjaga Kebersihan Lingkungan',
-      student: { id: 's4', nis: '2024004', name: 'Ibrahim Malik', class: { name: 'VII A' } },
-      scheduledAt: new Date(Date.now() - 259200000).toISOString(),
-      language: 'Indonesian',
-      status: 'CANCELLED' as MuhadhorohStatus,
-      totalScore: null,
-      grade: null,
-      duration: null,
-    },
-  ];
-
-  const records = listData?.data || demoRecords;
-  const meta = listData?.meta || { total: demoRecords.length, page: 1, limit: 10, totalPages: 1 };
+  const records = listData?.data || DEMO_RECORDS;
+  const meta = listData?.meta || { total: DEMO_RECORDS.length, page: 1, limit: 10, totalPages: 1 };
 
   // Filter by search
   const filteredRecords = records.filter(record => {
@@ -177,11 +183,7 @@ export default function MuhadhorohPage() {
     { studentId: 's5', name: 'Ibrahim Malik', nis: '2024004', class: 'VII A', averageScore: 80, totalSessions: 11 },
   ];
 
-  // Demo upcoming
-  const upcomingRecords = upcomingData || [
-    { id: 'u1', student: { name: 'Ahmad Fauzi' }, topic: 'Pentingnya Menuntut Ilmu', scheduledAt: new Date().toISOString(), language: 'Indonesian' },
-    { id: 'u2', student: { name: 'Siti Aisyah' }, topic: 'فضل الصدقة', scheduledAt: new Date(Date.now() + 86400000).toISOString(), language: 'Arabic' },
-  ];
+  const upcomingRecords = upcomingData || DEMO_UPCOMING_RECORDS;
 
   return (
     <div className="container mx-auto py-6 space-y-6">

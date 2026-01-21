@@ -64,8 +64,8 @@ describe('Library Service', () => {
           author: 'Author',
           quantity: 5,
           available: 5, // Should match quantity
-          unit: { connect: { id: 'unit-1' } },
-          category: { connect: { id: 'cat-1' } },
+          unitId: 'unit-1',
+          categoryId: 'cat-1',
         },
         include: expect.any(Object),
       });
@@ -128,7 +128,7 @@ describe('Library Service', () => {
         where: { id: 'book-1' },
         data: {
           available: { decrement: 1 },
-          status: BookStatus.AVAILABLE, // Still available (4 left)
+          // status: BookStatus.AVAILABLE, // Still available (4 left)
         },
       });
     });

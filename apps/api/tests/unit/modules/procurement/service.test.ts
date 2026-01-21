@@ -51,6 +51,7 @@ vi.mock('@prisma/client', () => ({
 
 vi.mock('@/utils/code-generator', () => ({
   generateUniqueCode: vi.fn().mockResolvedValue('TEST-CODE'),
+  generateBulkUniqueCodes: vi.fn().mockResolvedValue(['TEST-CODE-1', 'TEST-CODE-2']),
 }));
 
 // Import service AFTER mocks are set up

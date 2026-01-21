@@ -2,7 +2,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { extracurricularService } from '../../../../src/modules/extracurricular/extracurricular.service';
 import { prisma } from '../../../../src/lib/prisma';
-import { UserRole } from '@prisma/client';
+
+// Mock UserRole
+const UserRole = {
+  SUPER_ADMIN: 'SUPER_ADMIN',
+  UNIT_ADMIN: 'UNIT_ADMIN',
+  TEACHER: 'TEACHER',
+  STUDENT: 'STUDENT',
+  PARENT: 'PARENT',
+};
 
 // Mock Prisma
 vi.mock('../../../../src/lib/prisma', () => ({

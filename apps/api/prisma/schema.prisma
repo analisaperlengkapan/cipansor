@@ -521,6 +521,7 @@ model Unit {
   // Quality Assurance
   qualityEvidences       QualityEvidence[]
   qualityAudits          QualityAudit[]
+  assignments            Assignment[]
 
   @@index([type])
   @@index([foundationId])
@@ -625,6 +626,7 @@ model Teacher {
   musyrifs                 Musyrif[]
   // PKG relations
   pkgEvaluations           PKGEvaluation[]
+  assignments              Assignment[]
 
   @@index([unitId])
   @@index([provinceId])
@@ -705,6 +707,7 @@ model AcademicYear {
   leaveBalances         LeaveBalance[]
   qualityEvidences      QualityEvidence[]
   qualityAudits         QualityAudit[]
+  assignments           Assignment[]
 
   @@index([isActive])
   @@map("academic_years")
@@ -743,6 +746,7 @@ model Class {
   teachingModules    TeachingModule[]
   p5Projects         P5Project[]
   merdekaAssessments MerdekaAssessment[]
+  assignments        Assignment[]
 
   @@unique([unitId, academicYearId, name])
   @@index([level])
@@ -915,6 +919,7 @@ model Student {
   immunizationRecords         ImmunizationRecord[]
   visits                      StudentVisit[]
   packages                    StudentPackage[]
+  assignmentSubmissions       AssignmentSubmission[]
 
   @@index([nis])
   @@index([unitId])
@@ -2313,6 +2318,7 @@ model Subject {
   // Phase 8: Kurikulum Merdeka
   learningOutcomes   LearningOutcome[]
   merdekaAssessments MerdekaAssessment[]
+  assignments        Assignment[]
 
   @@unique([unitId, code])
   @@index([unitId])
@@ -6909,4 +6915,81 @@ model ExamAnswer {
   @@unique([attemptId, questionId])
   @@index([attemptId])
   @@map("exam_answers")
+}
+
+// =====================================
+// ASSIGNMENT MODULE (TUGAS/PR)
+// =====================================
+
+enum AssignmentType {
+  INDIVIDUAL
+  GROUP
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  LATE
+  GRADED
+  RETURNED
+}
+
+/// Assignment - Tugas/Pekerjaan Rumah
+model Assignment {
+  id             String         @id @default(uuid())
+  unitId         String         @map("unit_id")
+  academicYearId String         @map("academic_year_id")
+  teacherId      String         @map("teacher_id")
+  subjectId      String         @map("subject_id")
+  classId        String?        @map("class_id")
+
+  title          String
+  description    String?        @db.Text
+  type           AssignmentType @default(INDIVIDUAL)
+  dueDate        DateTime       @map("due_date")
+  attachments    Json?          // Array of file URLs
+
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  unit         Unit                   @relation(fields: [unitId], references: [id])
+  academicYear AcademicYear           @relation(fields: [academicYearId], references: [id])
+  teacher      Teacher                @relation(fields: [teacherId], references: [id])
+  subject      Subject                @relation(fields: [subjectId], references: [id])
+  class        Class?                 @relation(fields: [classId], references: [id])
+  submissions  AssignmentSubmission[]
+
+  @@index([unitId])
+  @@index([teacherId])
+  @@index([subjectId])
+  @@index([classId])
+  @@map("assignments")
+}
+
+/// AssignmentSubmission - Pengumpulan Tugas
+model AssignmentSubmission {
+  id           String           @id @default(uuid())
+  assignmentId String           @map("assignment_id")
+  studentId    String           @map("student_id")
+
+  content      String?          @db.Text
+  attachments  Json?            // Array of file URLs
+
+  submittedAt  DateTime         @default(now()) @map("submitted_at")
+  status       SubmissionStatus @default(SUBMITTED)
+
+  grade        Decimal?         @db.Decimal(5, 2)
+  feedback     String?          @db.Text
+
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, studentId])
+  @@index([assignmentId])
+  @@index([studentId])
+  @@map("assignment_submissions")
 }

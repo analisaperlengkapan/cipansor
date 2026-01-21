@@ -19,7 +19,13 @@ export const muhasabahController = {
         endDate: endDate as string,
       });
 
-      res.json(ApiResponse.success(result.data, 'Muhasabah records retrieved successfully', result.pagination));
+      res.json(
+        ApiResponse.success(
+          result.data,
+          'Muhasabah records retrieved successfully',
+          result.pagination
+        )
+      );
     } catch (error) {
       next(error);
     }
@@ -63,7 +69,9 @@ export const muhasabahController = {
         endDate: endDate as string,
       });
 
-      res.json(ApiResponse.success(result.data, 'My muhasabah records retrieved', result.pagination));
+      res.json(
+        ApiResponse.success(result.data, 'My muhasabah records retrieved', result.pagination)
+      );
     } catch (error) {
       next(error);
     }

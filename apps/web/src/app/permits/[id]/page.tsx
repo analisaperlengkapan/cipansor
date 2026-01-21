@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
   Check,
@@ -15,14 +15,20 @@ import {
   User,
   Edit,
   Trash2,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { toast } from "sonner";
 import {
   usePermit,
   useDeletePermit,
@@ -30,18 +36,20 @@ import {
   useRejectPermit,
   PERMIT_TYPES,
   PERMIT_STATUSES,
-} from '@/hooks/use-permits';
+} from "@/hooks/use-permits";
 
-function getStatusVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
+function getStatusVariant(
+  status: string,
+): "default" | "secondary" | "destructive" | "outline" {
   switch (status) {
-    case 'APPROVED':
-      return 'default';
-    case 'PENDING':
-      return 'secondary';
-    case 'REJECTED':
-      return 'destructive';
+    case "APPROVED":
+      return "default";
+    case "PENDING":
+      return "secondary";
+    case "REJECTED":
+      return "destructive";
     default:
-      return 'outline';
+      return "outline";
   }
 }
 
@@ -66,28 +74,31 @@ export default function PermitDetailPage() {
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(permitId);
-      toast.success('Izin berhasil dihapus');
-      router.push('/permits');
+      toast.success("Izin berhasil dihapus");
+      router.push("/permits");
     } catch {
-      toast.error('Gagal menghapus izin');
+      toast.error("Gagal menghapus izin");
     }
   };
 
   const handleApprove = async () => {
     try {
       await approveMutation.mutateAsync(permitId);
-      toast.success('Izin berhasil disetujui');
+      toast.success("Izin berhasil disetujui");
     } catch {
-      toast.error('Gagal menyetujui izin');
+      toast.error("Gagal menyetujui izin");
     }
   };
 
   const handleReject = async () => {
     try {
-      await rejectMutation.mutateAsync({ id: permitId, reason: 'Ditolak oleh admin' });
-      toast.success('Izin berhasil ditolak');
+      await rejectMutation.mutateAsync({
+        id: permitId,
+        reason: "Ditolak oleh admin",
+      });
+      toast.success("Izin berhasil ditolak");
     } catch {
-      toast.error('Gagal menolak izin');
+      toast.error("Gagal menolak izin");
     }
   };
 
@@ -120,7 +131,7 @@ export default function PermitDetailPage() {
     );
   }
 
-  const isPending = permit.status === 'PENDING';
+  const isPending = permit.status === "PENDING";
 
   return (
     <div className="space-y-6">
@@ -217,8 +228,13 @@ export default function PermitDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Tanggal</p>
                 <p className="font-medium">
-                  {format(new Date(permit.startDate), 'dd MMMM yyyy', { locale: localeId })} -{' '}
-                  {format(new Date(permit.endDate), 'dd MMMM yyyy', { locale: localeId })}
+                  {format(new Date(permit.startDate), "dd MMMM yyyy", {
+                    locale: localeId,
+                  })}{" "}
+                  -{" "}
+                  {format(new Date(permit.endDate), "dd MMMM yyyy", {
+                    locale: localeId,
+                  })}
                 </p>
               </div>
             </div>
@@ -253,7 +269,9 @@ export default function PermitDetailPage() {
                     <Phone className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">No. HP Penjemput</p>
+                    <p className="text-sm text-muted-foreground">
+                      No. HP Penjemput
+                    </p>
                     <p className="font-medium">{permit.parentPhone}</p>
                   </div>
                 </div>
@@ -288,7 +306,9 @@ export default function PermitDetailPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Kelas</p>
-                <p className="font-medium">{permit.student?.class?.name || '-'}</p>
+                <p className="font-medium">
+                  {permit.student?.class?.name || "-"}
+                </p>
               </div>
             </div>
 
@@ -297,12 +317,16 @@ export default function PermitDetailPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Unit</p>
-                <p className="font-medium">{permit.student?.unit?.name || '-'}</p>
+                <p className="font-medium">
+                  {permit.student?.unit?.name || "-"}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Jenis Kelamin</p>
                 <p className="font-medium">
-                  {permit.student?.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}
+                  {permit.student?.gender === "MALE"
+                    ? "Laki-laki"
+                    : "Perempuan"}
                 </p>
               </div>
             </div>
@@ -311,7 +335,9 @@ export default function PermitDetailPage() {
 
             <div className="flex justify-end">
               <Button variant="outline" asChild>
-                <Link href={`/students/${permit.studentId}`}>Lihat Profil Santri</Link>
+                <Link href={`/students/${permit.studentId}`}>
+                  Lihat Profil Santri
+                </Link>
               </Button>
             </div>
           </CardContent>
@@ -336,22 +362,24 @@ export default function PermitDetailPage() {
               <div className="pb-4">
                 <p className="font-medium">Izin Dibuat</p>
                 <p className="text-sm text-muted-foreground">
-                  {format(new Date(permit.createdAt), 'dd MMMM yyyy HH:mm', { locale: localeId })}
+                  {format(new Date(permit.createdAt), "dd MMMM yyyy HH:mm", {
+                    locale: localeId,
+                  })}
                 </p>
               </div>
             </div>
 
-            {permit.status !== 'PENDING' && (
+            {permit.status !== "PENDING" && (
               <div className="flex gap-4">
                 <div className="flex flex-col items-center">
                   <div
                     className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                      permit.status === 'APPROVED'
-                        ? 'bg-green-500 text-white'
-                        : 'bg-red-500 text-white'
+                      permit.status === "APPROVED"
+                        ? "bg-green-500 text-white"
+                        : "bg-red-500 text-white"
                     }`}
                   >
-                    {permit.status === 'APPROVED' ? (
+                    {permit.status === "APPROVED" ? (
                       <Check className="h-4 w-4" />
                     ) : (
                       <X className="h-4 w-4" />
@@ -360,10 +388,12 @@ export default function PermitDetailPage() {
                 </div>
                 <div>
                   <p className="font-medium">
-                    {permit.status === 'APPROVED' ? 'Disetujui' : 'Ditolak'}
+                    {permit.status === "APPROVED" ? "Disetujui" : "Ditolak"}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {format(new Date(permit.updatedAt), 'dd MMMM yyyy HH:mm', { locale: localeId })}
+                    {format(new Date(permit.updatedAt), "dd MMMM yyyy HH:mm", {
+                      locale: localeId,
+                    })}
                   </p>
                   {permit.approver && (
                     <p className="text-sm text-muted-foreground">

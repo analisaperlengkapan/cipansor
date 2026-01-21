@@ -1,9 +1,9 @@
-import { Router } from "express";
-import { UserRole } from "@prisma/client";
-import * as controller from "./controller";
-import { authenticate, authorize } from "../../middleware/auth";
-import { validateQuery } from "../../middleware/error";
-import { queryRewardSchema } from "./schema";
+import { Router } from 'express';
+import { UserRole } from '@prisma/client';
+import * as controller from './controller';
+import { authenticate, authorize } from '../../middleware/auth';
+import { validateQuery } from '../../middleware/error';
+import { queryRewardSchema } from './schema';
 
 const router = Router();
 
@@ -38,7 +38,12 @@ router.use(authenticate);
  *       200:
  *         description: List of rewards
  */
-router.get("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), validateQuery(queryRewardSchema), controller.getRewards);
+router.get(
+  '/',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  validateQuery(queryRewardSchema),
+  controller.getRewards
+);
 
 /**
  * @swagger
@@ -52,7 +57,11 @@ router.get("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TE
  *       200:
  *         description: List of reward categories with points
  */
-router.get("/categories", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getRewardCategories);
+router.get(
+  '/categories',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  controller.getRewardCategories
+);
 
 /**
  * @swagger
@@ -76,7 +85,11 @@ router.get("/categories", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, U
  *       200:
  *         description: List of top students by reward points
  */
-router.get("/top-students", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.getTopStudentsByPoints);
+router.get(
+  '/top-students',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.getTopStudentsByPoints
+);
 
 /**
  * @swagger
@@ -109,7 +122,11 @@ router.get("/top-students", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN)
  *       201:
  *         description: Reward given
  */
-router.post("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.createReward);
+router.post(
+  '/',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  controller.createReward
+);
 
 /**
  * @swagger
@@ -129,7 +146,11 @@ router.post("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.T
  *       200:
  *         description: Student's reward summary (total rewards, points earned)
  */
-router.get("/student/:studentId/summary", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.PARENT), controller.getStudentRewardSummary);
+router.get(
+  '/student/:studentId/summary',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.PARENT),
+  controller.getStudentRewardSummary
+);
 
 /**
  * @swagger
@@ -149,7 +170,11 @@ router.get("/student/:studentId/summary", authorize(UserRole.SUPER_ADMIN, UserRo
  *       200:
  *         description: Student's current point balance
  */
-router.get("/student/:studentId/balance", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.PARENT), controller.getStudentPointBalance);
+router.get(
+  '/student/:studentId/balance',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.PARENT),
+  controller.getStudentPointBalance
+);
 
 /**
  * @swagger
@@ -171,7 +196,11 @@ router.get("/student/:studentId/balance", authorize(UserRole.SUPER_ADMIN, UserRo
  *       404:
  *         description: Reward not found
  */
-router.get("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getRewardById);
+router.get(
+  '/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  controller.getRewardById
+);
 
 /**
  * @swagger
@@ -191,7 +220,7 @@ router.get("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole
  *       200:
  *         description: Reward updated
  */
-router.put("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.updateReward);
+router.put('/:id', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.updateReward);
 
 /**
  * @swagger
@@ -211,6 +240,10 @@ router.put("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), control
  *       204:
  *         description: Reward deleted
  */
-router.delete("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteReward);
+router.delete(
+  '/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.deleteReward
+);
 
 export default router;

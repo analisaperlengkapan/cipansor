@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -17,35 +23,35 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { toast } from "sonner";
 import {
   useUpdateInventoryItem,
   useInventoryItem,
   useInventoryCategories,
   AssetCondition,
   AssetStatus,
-} from '@/hooks/use-inventory';
-import { useUnits } from '@/hooks/use-units';
+} from "@/hooks/use-inventory";
+import { useUnits } from "@/hooks/use-units";
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Nama wajib diisi'),
-  code: z.string().min(1, 'Kode wajib diisi'),
-  categoryId: z.string().uuid('Kategori wajib dipilih'),
+  name: z.string().min(1, "Nama wajib diisi"),
+  code: z.string().min(1, "Kode wajib diisi"),
+  categoryId: z.string().uuid("Kategori wajib dipilih"),
   description: z.string().optional(),
   condition: z.nativeEnum(AssetCondition),
   status: z.nativeEnum(AssetStatus),
   location: z.string().optional(),
-  unitId: z.string().uuid('Unit wajib dipilih'),
+  unitId: z.string().uuid("Unit wajib dipilih"),
   purchaseDate: z.string().optional(),
   purchasePrice: z.coerce.number().optional(),
   warrantyExpiry: z.string().optional(),
@@ -57,7 +63,11 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function EditInventoryPage({ params }: { params: { id: string } }) {
+export default function EditInventoryPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const router = useRouter();
   const itemId = params.id;
   const updateMutation = useUpdateInventoryItem();
@@ -68,21 +78,21 @@ export default function EditInventoryPage({ params }: { params: { id: string } }
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      code: '',
-      categoryId: '',
-      description: '',
+      name: "",
+      code: "",
+      categoryId: "",
+      description: "",
       condition: AssetCondition.GOOD,
       status: AssetStatus.ACTIVE,
-      location: '',
-      unitId: '',
-      purchaseDate: '',
+      location: "",
+      unitId: "",
+      purchaseDate: "",
       purchasePrice: undefined,
-      warrantyExpiry: '',
-      notes: '',
-      brand: '',
-      model: '',
-      serialNumber: '',
+      warrantyExpiry: "",
+      notes: "",
+      brand: "",
+      model: "",
+      serialNumber: "",
     },
   });
 
@@ -91,19 +101,25 @@ export default function EditInventoryPage({ params }: { params: { id: string } }
       form.reset({
         name: item.name,
         code: item.code,
-        categoryId: item.categoryId || '',
-        description: item.notes || '', // Map notes/description appropriately if separate
+        categoryId: item.categoryId || "",
+        description: item.notes || "", // Map notes/description appropriately if separate
         condition: item.condition,
         status: item.status,
-        location: item.location || '',
+        location: item.location || "",
         unitId: item.unitId,
-        purchaseDate: item.purchaseDate ? new Date(item.purchaseDate).toISOString().split('T')[0] : '',
-        purchasePrice: item.purchasePrice ? Number(item.purchasePrice) : undefined,
-        warrantyExpiry: item.warrantyExpiry ? new Date(item.warrantyExpiry).toISOString().split('T')[0] : '',
-        notes: item.notes || '',
-        brand: item.brand || '',
-        model: item.model || '',
-        serialNumber: item.serialNumber || '',
+        purchaseDate: item.purchaseDate
+          ? new Date(item.purchaseDate).toISOString().split("T")[0]
+          : "",
+        purchasePrice: item.purchasePrice
+          ? Number(item.purchasePrice)
+          : undefined,
+        warrantyExpiry: item.warrantyExpiry
+          ? new Date(item.warrantyExpiry).toISOString().split("T")[0]
+          : "",
+        notes: item.notes || "",
+        brand: item.brand || "",
+        model: item.model || "",
+        serialNumber: item.serialNumber || "",
       });
     }
   }, [item, form]);
@@ -115,19 +131,23 @@ export default function EditInventoryPage({ params }: { params: { id: string } }
         data: {
           ...data,
           location: data.location || undefined,
-          purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : undefined,
+          purchaseDate: data.purchaseDate
+            ? new Date(data.purchaseDate)
+            : undefined,
           purchasePrice: data.purchasePrice || undefined,
-          warrantyExpiry: data.warrantyExpiry ? new Date(data.warrantyExpiry) : undefined,
+          warrantyExpiry: data.warrantyExpiry
+            ? new Date(data.warrantyExpiry)
+            : undefined,
           notes: data.notes || data.description || undefined,
           brand: data.brand || undefined,
           model: data.model || undefined,
           serialNumber: data.serialNumber || undefined,
         },
       });
-      toast.success('Inventaris berhasil diperbarui');
+      toast.success("Inventaris berhasil diperbarui");
       router.push(`/inventory/${itemId}`);
     } catch {
-      toast.error('Gagal memperbarui inventaris');
+      toast.error("Gagal memperbarui inventaris");
     }
   };
 
@@ -254,7 +274,10 @@ export default function EditInventoryPage({ params }: { params: { id: string } }
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Kategori</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih kategori" />
@@ -298,7 +321,10 @@ export default function EditInventoryPage({ params }: { params: { id: string } }
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Kondisi</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih kondisi" />
@@ -323,7 +349,10 @@ export default function EditInventoryPage({ params }: { params: { id: string } }
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Status</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih status" />
@@ -349,7 +378,9 @@ export default function EditInventoryPage({ params }: { params: { id: string } }
             <Card>
               <CardHeader>
                 <CardTitle>Lokasi & Pembelian</CardTitle>
-                <CardDescription>Informasi lokasi dan pembelian</CardDescription>
+                <CardDescription>
+                  Informasi lokasi dan pembelian
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -372,7 +403,10 @@ export default function EditInventoryPage({ params }: { params: { id: string } }
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Unit</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih unit" />
@@ -386,7 +420,9 @@ export default function EditInventoryPage({ params }: { params: { id: string } }
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormDescription>Unit yang memiliki aset ini</FormDescription>
+                      <FormDescription>
+                        Unit yang memiliki aset ini
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -418,7 +454,7 @@ export default function EditInventoryPage({ params }: { params: { id: string } }
                             type="number"
                             placeholder="0"
                             {...field}
-                            value={field.value || ''}
+                            value={field.value || ""}
                           />
                         </FormControl>
                         <FormMessage />
@@ -468,7 +504,7 @@ export default function EditInventoryPage({ params }: { params: { id: string } }
               <Link href={`/inventory/${itemId}`}>Batal</Link>
             </Button>
             <Button type="submit" disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
+              {updateMutation.isPending ? "Menyimpan..." : "Simpan Perubahan"}
             </Button>
           </div>
         </form>

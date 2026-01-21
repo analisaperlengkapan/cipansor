@@ -1,85 +1,89 @@
-import { test, expect } from './fixtures/auth.fixture';
-import { LoginPage } from './page-objects';
+import { test, expect } from "./fixtures/auth.fixture";
+import { LoginPage } from "./page-objects";
 
 /**
  * Academic Years Module E2E Tests
  * Tests academic year management and configuration
  */
 
-test.describe('Academic Years - Navigation', () => {
-  test('should navigate to academic years page', async ({ page }) => {
+test.describe("Academic Years - Navigation", () => {
+  test("should navigate to academic years page", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/academic-years');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/academic-years");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     expect(page.url()).toMatch(/academic-years/);
   });
 
-  test('should display academic years interface', async ({ page }) => {
+  test("should display academic years interface", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/academic-years');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/academic-years");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     const content = await page.content();
     expect(content.length).toBeGreaterThan(1000);
   });
 });
 
-test.describe('Academic Years - Features', () => {
-  test('should display academic year list', async ({ page }) => {
+test.describe("Academic Years - Features", () => {
+  test("should display academic year list", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/academic-years');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
-    const hasYearList = await page.locator('table, [class*="year"], [class*="tahun"]')
+    await page.goto("/academic-years");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
+    const hasYearList = await page
+      .locator('table, [class*="year"], [class*="tahun"]')
       .first()
-      .isVisible({ timeout: 5000 }).catch(() => false);
-    
-    expect(hasYearList || page.url().includes('academic-years')).toBeTruthy();
+      .isVisible({ timeout: 5000 })
+      .catch(() => false);
+
+    expect(hasYearList || page.url().includes("academic-years")).toBeTruthy();
   });
 
-  test('should have add year functionality', async ({ page }) => {
+  test("should have add year functionality", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/academic-years');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
-    const hasAddButton = await page.locator('button:has-text("Tambah"), button:has-text("Add")')
+    await page.goto("/academic-years");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
+    const hasAddButton = await page
+      .locator('button:has-text("Tambah"), button:has-text("Add")')
       .first()
-      .isVisible({ timeout: 5000 }).catch(() => false);
-    
-    expect(hasAddButton || page.url().includes('academic-years')).toBeTruthy();
+      .isVisible({ timeout: 5000 })
+      .catch(() => false);
+
+    expect(hasAddButton || page.url().includes("academic-years")).toBeTruthy();
   });
 });
 
-test.describe('Academic Years - Performance', () => {
-  test('should load quickly', async ({ page }) => {
+test.describe("Academic Years - Performance", () => {
+  test("should load quickly", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    
+
     const startTime = Date.now();
-    await page.goto('/academic-years');
-    await page.waitForLoadState('domcontentloaded', { timeout: 15000 });
+    await page.goto("/academic-years");
+    await page.waitForLoadState("domcontentloaded", { timeout: 15000 });
     const loadTime = Date.now() - startTime;
-    
+
     expect(loadTime).toBeLessThan(15000);
   });
 });

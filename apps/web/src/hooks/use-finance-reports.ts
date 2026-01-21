@@ -5,16 +5,16 @@ import {
   IncomeExpenseReport,
   TrialBalanceReport,
   GeneralLedgerReport,
-  CashFlowReport
+  CashFlowReport,
 } from "@cipansor/shared";
 
 export function useBalanceSheet(unitId: string, date: Date) {
   return useQuery({
-    queryKey: ['balance-sheet', unitId, date],
+    queryKey: ["balance-sheet", unitId, date],
     queryFn: async () => {
       const { data } = await api.get<{ data: BalanceSheetReport }>(
         `/finance-enhancement/reports/balance-sheet`,
-        { params: { unitId, date: date.toISOString() } }
+        { params: { unitId, date: date.toISOString() } },
       );
       return data.data;
     },
@@ -22,13 +22,23 @@ export function useBalanceSheet(unitId: string, date: Date) {
   });
 }
 
-export function useIncomeStatement(unitId: string, startDate: Date, endDate: Date) {
+export function useIncomeStatement(
+  unitId: string,
+  startDate: Date,
+  endDate: Date,
+) {
   return useQuery({
-    queryKey: ['income-statement', unitId, startDate, endDate],
+    queryKey: ["income-statement", unitId, startDate, endDate],
     queryFn: async () => {
       const { data } = await api.get<{ data: IncomeExpenseReport }>(
         `/finance-enhancement/reports/income-statement`,
-        { params: { unitId, startDate: startDate.toISOString(), endDate: endDate.toISOString() } }
+        {
+          params: {
+            unitId,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          },
+        },
       );
       return data.data;
     },
@@ -36,13 +46,23 @@ export function useIncomeStatement(unitId: string, startDate: Date, endDate: Dat
   });
 }
 
-export function useTrialBalance(unitId: string, startDate: Date, endDate: Date) {
+export function useTrialBalance(
+  unitId: string,
+  startDate: Date,
+  endDate: Date,
+) {
   return useQuery({
-    queryKey: ['trial-balance', unitId, startDate, endDate],
+    queryKey: ["trial-balance", unitId, startDate, endDate],
     queryFn: async () => {
       const { data } = await api.get<{ data: TrialBalanceReport }>(
         `/finance-enhancement/reports/trial-balance`,
-        { params: { unitId, startDate: startDate.toISOString(), endDate: endDate.toISOString() } }
+        {
+          params: {
+            unitId,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          },
+        },
       );
       return data.data;
     },
@@ -50,13 +70,25 @@ export function useTrialBalance(unitId: string, startDate: Date, endDate: Date) 
   });
 }
 
-export function useGeneralLedger(unitId: string, accountId: string, startDate: Date, endDate: Date) {
+export function useGeneralLedger(
+  unitId: string,
+  accountId: string,
+  startDate: Date,
+  endDate: Date,
+) {
   return useQuery({
-    queryKey: ['general-ledger', unitId, accountId, startDate, endDate],
+    queryKey: ["general-ledger", unitId, accountId, startDate, endDate],
     queryFn: async () => {
       const { data } = await api.get<{ data: GeneralLedgerReport }>(
         `/finance-enhancement/reports/general-ledger`,
-        { params: { unitId, accountId, startDate: startDate.toISOString(), endDate: endDate.toISOString() } }
+        {
+          params: {
+            unitId,
+            accountId,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          },
+        },
       );
       return data.data;
     },
@@ -64,13 +96,23 @@ export function useGeneralLedger(unitId: string, accountId: string, startDate: D
   });
 }
 
-export function useCashFlowStatement(unitId: string, startDate: Date, endDate: Date) {
+export function useCashFlowStatement(
+  unitId: string,
+  startDate: Date,
+  endDate: Date,
+) {
   return useQuery({
-    queryKey: ['cash-flow', unitId, startDate, endDate],
+    queryKey: ["cash-flow", unitId, startDate, endDate],
     queryFn: async () => {
       const { data } = await api.get<{ data: CashFlowReport }>(
         `/finance-enhancement/reports/cash-flow`,
-        { params: { unitId, startDate: startDate.toISOString(), endDate: endDate.toISOString() } }
+        {
+          params: {
+            unitId,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          },
+        },
       );
       return data.data;
     },

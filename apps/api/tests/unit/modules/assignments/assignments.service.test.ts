@@ -15,13 +15,13 @@ vi.mock('@/lib/prisma', () => ({
       delete: vi.fn(),
     },
     assignmentSubmission: {
-        findMany: vi.fn(),
-        upsert: vi.fn(),
-        update: vi.fn(),
+      findMany: vi.fn(),
+      upsert: vi.fn(),
+      update: vi.fn(),
     },
     classEnrollment: {
-        findMany: vi.fn(),
-    }
+      findMany: vi.fn(),
+    },
   },
 }));
 

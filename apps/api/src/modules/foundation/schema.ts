@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 // Foundation schemas
 export const createFoundationSchema = z.object({
@@ -35,13 +35,18 @@ export const createBoardMemberSchema = z.object({
   endDate: z.string().datetime().optional(),
 });
 
-export const updateBoardMemberSchema = createBoardMemberSchema.partial().omit({ foundationId: true });
+export const updateBoardMemberSchema = createBoardMemberSchema
+  .partial()
+  .omit({ foundationId: true });
 
 export const queryBoardMemberSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
   foundationId: z.string().uuid().optional(),
-  isActive: z.enum(["true", "false"]).transform((v) => v === "true").optional(),
+  isActive: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
   search: z.string().optional(),
 });
 
@@ -49,7 +54,7 @@ export const queryBoardMemberSchema = z.object({
 export const createDocumentSchema = z.object({
   foundationId: z.string().uuid(),
   name: z.string().min(2).max(200),
-  type: z.enum(["akta", "sk", "sertifikat", "perizinan", "lainnya"]),
+  type: z.enum(['akta', 'sk', 'sertifikat', 'perizinan', 'lainnya']),
   documentNo: z.string().max(100).optional(),
   issueDate: z.string().datetime(),
   expiryDate: z.string().datetime().optional(),
@@ -63,7 +68,7 @@ export const queryDocumentSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
   foundationId: z.string().uuid().optional(),
-  type: z.enum(["akta", "sk", "sertifikat", "perizinan", "lainnya"]).optional(),
+  type: z.enum(['akta', 'sk', 'sertifikat', 'perizinan', 'lainnya']).optional(),
   search: z.string().optional(),
 });
 

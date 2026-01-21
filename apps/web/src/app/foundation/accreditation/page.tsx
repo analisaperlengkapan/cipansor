@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { Slider } from '@/components/ui/slider';
+import { useState } from "react";
+import { MainLayout } from "@/components/layout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
 import {
   Table,
   TableBody,
@@ -15,7 +21,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Award,
   BookOpen,
@@ -32,11 +38,11 @@ import {
   FileText,
   Calculator,
   Target,
-} from 'lucide-react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { api } from '@/lib/api';
-import { useCurrentUnit } from '@/hooks';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { useCurrentUnit } from "@/hooks";
+import { toast } from "sonner";
 
 // 8 Standar Nasional Pendidikan
 const SNP_ICONS: Record<string, React.ReactNode> = {
@@ -51,17 +57,17 @@ const SNP_ICONS: Record<string, React.ReactNode> = {
 };
 
 const GRADE_COLORS: Record<string, string> = {
-  A: 'bg-green-500',
-  B: 'bg-blue-500',
-  C: 'bg-yellow-500',
-  TT: 'bg-red-500',
+  A: "bg-green-500",
+  B: "bg-blue-500",
+  C: "bg-yellow-500",
+  TT: "bg-red-500",
 };
 
 const GRADE_TEXT_COLORS: Record<string, string> = {
-  A: 'text-green-600',
-  B: 'text-blue-600',
-  C: 'text-yellow-600',
-  TT: 'text-red-600',
+  A: "text-green-600",
+  B: "text-blue-600",
+  C: "text-yellow-600",
+  TT: "text-red-600",
 };
 
 interface Standard {
@@ -79,8 +85,10 @@ interface Standard {
 export default function AccreditationPage() {
   const { data: currentUnit } = useCurrentUnit();
   const unitId = currentUnit?.id;
-  
-  const [simulationScores, setSimulationScores] = useState<Record<string, number>>({
+
+  const [simulationScores, setSimulationScores] = useState<
+    Record<string, number>
+  >({
     SKL: 75,
     SI: 80,
     SPR: 70,
@@ -92,19 +100,23 @@ export default function AccreditationPage() {
   });
 
   // Fetch standards
-  const { data: standards, isLoading: standardsLoading } = useQuery<Standard[]>({
-    queryKey: ['accreditation-standards'],
-    queryFn: async () => {
-      const res = await api.get('/foundation/accreditation/standards');
-      return res.data.data;
+  const { data: standards, isLoading: standardsLoading } = useQuery<Standard[]>(
+    {
+      queryKey: ["accreditation-standards"],
+      queryFn: async () => {
+        const res = await api.get("/foundation/accreditation/standards");
+        return res.data.data;
+      },
     },
-  });
+  );
 
   // Fetch dashboard data
   const { data: dashboard, isLoading: dashboardLoading } = useQuery({
-    queryKey: ['accreditation-dashboard', unitId],
+    queryKey: ["accreditation-dashboard", unitId],
     queryFn: async () => {
-      const res = await api.get(`/foundation/accreditation/units/${unitId}/dashboard`);
+      const res = await api.get(
+        `/foundation/accreditation/units/${unitId}/dashboard`,
+      );
       return res.data.data;
     },
     enabled: !!unitId,
@@ -113,7 +125,10 @@ export default function AccreditationPage() {
   // Simulate score mutation
   const simulateMutation = useMutation({
     mutationFn: async (scores: Record<string, number>) => {
-      const res = await api.post(`/foundation/accreditation/units/${unitId}/simulate`, { scores });
+      const res = await api.post(
+        `/foundation/accreditation/units/${unitId}/simulate`,
+        { scores },
+      );
       return res.data.data;
     },
   });
@@ -139,14 +154,17 @@ export default function AccreditationPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Evaluasi Diri Akreditasi</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Evaluasi Diri Akreditasi
+            </h1>
             <p className="text-muted-foreground">
               Penilaian mandiri berdasarkan 8 Standar Nasional Pendidikan (SNP)
             </p>
           </div>
           <Badge variant="outline" className="text-lg py-2 px-4">
             <Award className="h-5 w-5 mr-2" />
-            Akreditasi Saat Ini: {dashboard?.unit?.currentAccreditation ?? 'Belum Terakreditasi'}
+            Akreditasi Saat Ini:{" "}
+            {dashboard?.unit?.currentAccreditation ?? "Belum Terakreditasi"}
           </Badge>
         </div>
 
@@ -164,46 +182,69 @@ export default function AccreditationPage() {
             <div className="grid gap-4 md:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Guru</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Total Guru
+                  </CardTitle>
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{dashboard?.statistics?.teachers?.total ?? 0}</div>
+                  <div className="text-2xl font-bold">
+                    {dashboard?.statistics?.teachers?.total ?? 0}
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    {dashboard?.statistics?.teachers?.certified ?? 0} bersertifikasi ({dashboard?.statistics?.teachers?.certificationRate ?? 0}%)
+                    {dashboard?.statistics?.teachers?.certified ?? 0}{" "}
+                    bersertifikasi (
+                    {dashboard?.statistics?.teachers?.certificationRate ?? 0}%)
                   </p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Siswa</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Total Siswa
+                  </CardTitle>
                   <GraduationCap className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{dashboard?.statistics?.students?.total ?? 0}</div>
+                  <div className="text-2xl font-bold">
+                    {dashboard?.statistics?.students?.total ?? 0}
+                  </div>
                   <p className="text-xs text-muted-foreground">Siswa aktif</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Ruang Kelas</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Ruang Kelas
+                  </CardTitle>
                   <Building2 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{dashboard?.statistics?.facilities?.classes ?? 0}</div>
+                  <div className="text-2xl font-bold">
+                    {dashboard?.statistics?.facilities?.classes ?? 0}
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    {dashboard?.statistics?.facilities?.dormitories ?? 0} asrama, {dashboard?.statistics?.facilities?.totalRooms ?? 0} kamar
+                    {dashboard?.statistics?.facilities?.dormitories ?? 0}{" "}
+                    asrama, {dashboard?.statistics?.facilities?.totalRooms ?? 0}{" "}
+                    kamar
                   </p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Kesiapan</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Kesiapan
+                  </CardTitle>
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{dashboard?.overallReadiness ?? 0}%</div>
-                  <Progress value={dashboard?.overallReadiness ?? 0} className="mt-2" />
+                  <div className="text-2xl font-bold">
+                    {dashboard?.overallReadiness ?? 0}%
+                  </div>
+                  <Progress
+                    value={dashboard?.overallReadiness ?? 0}
+                    className="mt-2"
+                  />
                 </CardContent>
               </Card>
             </div>
@@ -223,11 +264,17 @@ export default function AccreditationPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {SNP_ICONS[score.standardCode]}
-                          <span className="font-medium">{score.standardCode}</span>
-                          <span className="text-sm text-muted-foreground">- {score.standardName}</span>
+                          <span className="font-medium">
+                            {score.standardCode}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            - {score.standardName}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={`font-bold ${score.autoScore >= 70 ? 'text-green-600' : 'text-yellow-600'}`}>
+                          <span
+                            className={`font-bold ${score.autoScore >= 70 ? "text-green-600" : "text-yellow-600"}`}
+                          >
                             {score.autoScore}%
                           </span>
                           {score.needsManualAssessment && (
@@ -256,12 +303,14 @@ export default function AccreditationPage() {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {dashboard.recommendedActions.map((action: string, index: number) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <CheckCircle2 className="h-4 w-4 mt-1 text-muted-foreground" />
-                        <span>{action}</span>
-                      </li>
-                    ))}
+                    {dashboard.recommendedActions.map(
+                      (action: string, index: number) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <CheckCircle2 className="h-4 w-4 mt-1 text-muted-foreground" />
+                          <span>{action}</span>
+                        </li>
+                      ),
+                    )}
                   </ul>
                 </CardContent>
               </Card>
@@ -280,19 +329,30 @@ export default function AccreditationPage() {
                           {SNP_ICONS[std.code]}
                         </div>
                         <div>
-                          <CardTitle className="text-base">{std.code} - {std.name}</CardTitle>
-                          <Badge variant="outline" className="mt-1">Bobot: {std.weight}%</Badge>
+                          <CardTitle className="text-base">
+                            {std.code} - {std.name}
+                          </CardTitle>
+                          <Badge variant="outline" className="mt-1">
+                            Bobot: {std.weight}%
+                          </Badge>
                         </div>
                       </div>
                     </div>
-                    <CardDescription className="mt-2">{std.description}</CardDescription>
+                    <CardDescription className="mt-2">
+                      {std.description}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      <p className="text-sm font-medium">Indikator ({std.indicators.length}):</p>
+                      <p className="text-sm font-medium">
+                        Indikator ({std.indicators.length}):
+                      </p>
                       <ul className="text-sm text-muted-foreground space-y-1">
                         {std.indicators.slice(0, 3).map((ind) => (
-                          <li key={ind.code} className="flex items-center gap-2">
+                          <li
+                            key={ind.code}
+                            className="flex items-center gap-2"
+                          >
                             <span className="w-2 h-2 bg-primary rounded-full" />
                             {ind.name}
                           </li>
@@ -319,7 +379,8 @@ export default function AccreditationPage() {
                   Simulator Nilai Akreditasi
                 </CardTitle>
                 <CardDescription>
-                  Geser slider untuk memproyeksikan nilai akreditasi berdasarkan estimasi skor per standar
+                  Geser slider untuk memproyeksikan nilai akreditasi berdasarkan
+                  estimasi skor per standar
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -329,13 +390,22 @@ export default function AccreditationPage() {
                       <div className="flex items-center gap-2">
                         {SNP_ICONS[std.code]}
                         <span className="font-medium">{std.name}</span>
-                        <Badge variant="outline" className="text-xs">Bobot {std.weight}%</Badge>
+                        <Badge variant="outline" className="text-xs">
+                          Bobot {std.weight}%
+                        </Badge>
                       </div>
-                      <span className="font-bold text-lg">{simulationScores[std.code]}%</span>
+                      <span className="font-bold text-lg">
+                        {simulationScores[std.code]}%
+                      </span>
                     </div>
                     <Slider
                       value={[simulationScores[std.code]]}
-                      onValueChange={(value) => setSimulationScores((prev) => ({ ...prev, [std.code]: value[0] }))}
+                      onValueChange={(value) =>
+                        setSimulationScores((prev) => ({
+                          ...prev,
+                          [std.code]: value[0],
+                        }))
+                      }
                       min={0}
                       max={100}
                       step={5}
@@ -345,7 +415,10 @@ export default function AccreditationPage() {
                 ))}
 
                 <div className="pt-4 border-t">
-                  <Button onClick={handleSimulate} disabled={simulateMutation.isPending}>
+                  <Button
+                    onClick={handleSimulate}
+                    disabled={simulateMutation.isPending}
+                  >
                     {simulateMutation.isPending ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
@@ -358,18 +431,29 @@ export default function AccreditationPage() {
                 {simulateMutation.data && (
                   <Card className="mt-4 bg-muted/50">
                     <CardHeader>
-                      <CardTitle className="text-center">Hasil Simulasi</CardTitle>
+                      <CardTitle className="text-center">
+                        Hasil Simulasi
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="text-center space-y-4">
                         <div>
-                          <p className="text-sm text-muted-foreground">Total Skor</p>
-                          <p className="text-4xl font-bold">{simulateMutation.data.totalScore.toFixed(2)}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Total Skor
+                          </p>
+                          <p className="text-4xl font-bold">
+                            {simulateMutation.data.totalScore.toFixed(2)}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Predikat</p>
-                          <Badge className={`text-lg py-2 px-6 ${GRADE_COLORS[simulateMutation.data.grade]}`}>
-                            {simulateMutation.data.grade} - {simulateMutation.data.gradeDescription}
+                          <p className="text-sm text-muted-foreground">
+                            Predikat
+                          </p>
+                          <Badge
+                            className={`text-lg py-2 px-6 ${GRADE_COLORS[simulateMutation.data.grade]}`}
+                          >
+                            {simulateMutation.data.grade} -{" "}
+                            {simulateMutation.data.gradeDescription}
                           </Badge>
                         </div>
                       </div>
@@ -380,15 +464,23 @@ export default function AccreditationPage() {
                             <TableHead>Standar</TableHead>
                             <TableHead className="text-right">Skor</TableHead>
                             <TableHead className="text-right">Bobot</TableHead>
-                            <TableHead className="text-right">Nilai Terbobot</TableHead>
+                            <TableHead className="text-right">
+                              Nilai Terbobot
+                            </TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {simulateMutation.data.breakdown.map((b: any) => (
                             <TableRow key={b.standardCode}>
-                              <TableCell className="font-medium">{b.standardCode}</TableCell>
-                              <TableCell className="text-right">{b.score}%</TableCell>
-                              <TableCell className="text-right">12.5%</TableCell>
+                              <TableCell className="font-medium">
+                                {b.standardCode}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {b.score}%
+                              </TableCell>
+                              <TableCell className="text-right">
+                                12.5%
+                              </TableCell>
                               <TableCell className="text-right font-semibold">
                                 {b.weightedScore.toFixed(2)}
                               </TableCell>
@@ -412,7 +504,8 @@ export default function AccreditationPage() {
                   Evaluasi Diri
                 </CardTitle>
                 <CardDescription>
-                  Lengkapi penilaian untuk setiap indikator dengan bukti pendukung
+                  Lengkapi penilaian untuk setiap indikator dengan bukti
+                  pendukung
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -420,8 +513,9 @@ export default function AccreditationPage() {
                   <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p className="text-lg font-medium">Form Evaluasi Diri</p>
                   <p className="text-sm mt-2">
-                    Fitur ini memungkinkan Anda untuk melengkapi evaluasi diri akreditasi
-                    dengan mengisi skor dan bukti untuk setiap indikator.
+                    Fitur ini memungkinkan Anda untuk melengkapi evaluasi diri
+                    akreditasi dengan mengisi skor dan bukti untuk setiap
+                    indikator.
                   </p>
                   <Button className="mt-4" disabled>
                     Mulai Evaluasi Diri
@@ -440,22 +534,22 @@ export default function AccreditationPage() {
           <CardContent>
             <div className="grid grid-cols-4 gap-4 text-center">
               <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <Badge className={GRADE_COLORS['A']}>A</Badge>
+                <Badge className={GRADE_COLORS["A"]}>A</Badge>
                 <p className="font-semibold mt-2">Unggul</p>
                 <p className="text-sm text-muted-foreground">Skor ≥ 91</p>
               </div>
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <Badge className={GRADE_COLORS['B']}>B</Badge>
+                <Badge className={GRADE_COLORS["B"]}>B</Badge>
                 <p className="font-semibold mt-2">Baik</p>
                 <p className="text-sm text-muted-foreground">Skor 81-90</p>
               </div>
               <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                <Badge className={GRADE_COLORS['C']}>C</Badge>
+                <Badge className={GRADE_COLORS["C"]}>C</Badge>
                 <p className="font-semibold mt-2">Cukup</p>
                 <p className="text-sm text-muted-foreground">Skor 71-80</p>
               </div>
               <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-                <Badge className={GRADE_COLORS['TT']}>TT</Badge>
+                <Badge className={GRADE_COLORS["TT"]}>TT</Badge>
                 <p className="font-semibold mt-2">Tidak Terakreditasi</p>
                 <p className="text-sm text-muted-foreground">Skor &lt; 71</p>
               </div>

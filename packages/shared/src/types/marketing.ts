@@ -1,4 +1,3 @@
-
 export interface MarketingCampaign {
   id: string;
   unitId?: string | null;

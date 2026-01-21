@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
-import { Plus, ArrowLeft, ChevronRight, Home } from 'lucide-react';
-import Link from 'next/link';
+import { Button } from "@/components/ui/button";
+import { Plus, ArrowLeft, ChevronRight, Home } from "lucide-react";
+import Link from "next/link";
 
 export interface BreadcrumbItem {
   label: string;
@@ -13,12 +13,14 @@ export interface PageHeaderProps {
   title: string | React.ReactNode;
   description?: string;
   icon?: React.ComponentType<{ className?: string }>;
-  action?: {
-    label: string;
-    href?: string;
-    onClick?: () => void;
-    icon?: React.ReactNode;
-  } | React.ReactNode;
+  action?:
+    | {
+        label: string;
+        href?: string;
+        onClick?: () => void;
+        icon?: React.ReactNode;
+      }
+    | React.ReactNode;
   backHref?: string;
   backLabel?: string;
   breadcrumbs?: BreadcrumbItem[];
@@ -26,8 +28,19 @@ export interface PageHeaderProps {
   children?: React.ReactNode;
 }
 
-export function PageHeader({ title, description, icon: Icon, action, actions, backHref, backLabel, breadcrumbs, children }: PageHeaderProps) {
-  const isActionObject = action && typeof action === 'object' && 'label' in action;
+export function PageHeader({
+  title,
+  description,
+  icon: Icon,
+  action,
+  actions,
+  backHref,
+  backLabel,
+  breadcrumbs,
+  children,
+}: PageHeaderProps) {
+  const isActionObject =
+    action && typeof action === "object" && "label" in action;
 
   return (
     <div className="mb-6">
@@ -45,7 +58,9 @@ export function PageHeader({ title, description, icon: Icon, action, actions, ba
                   {item.label}
                 </Link>
               ) : (
-                <span className="text-foreground font-medium">{item.label}</span>
+                <span className="text-foreground font-medium">
+                  {item.label}
+                </span>
               )}
             </span>
           ))}
@@ -59,7 +74,7 @@ export function PageHeader({ title, description, icon: Icon, action, actions, ba
             <Button variant="ghost" size="sm" asChild>
               <Link href={backHref}>
                 <ArrowLeft className="h-4 w-4 mr-1" />
-                {backLabel || 'Kembali'}
+                {backLabel || "Kembali"}
               </Link>
             </Button>
           )}
@@ -79,20 +94,33 @@ export function PageHeader({ title, description, icon: Icon, action, actions, ba
           {actions}
           {children}
           {isActionObject ? (
-            (action as { label: string; href?: string; onClick?: () => void; icon?: React.ReactNode }).href ? (
+            (
+              action as {
+                label: string;
+                href?: string;
+                onClick?: () => void;
+                icon?: React.ReactNode;
+              }
+            ).href ? (
               <Button asChild>
                 <Link href={(action as { href: string }).href}>
-                  {(action as { icon?: React.ReactNode }).icon || <Plus className="mr-2 h-4 w-4" />}
+                  {(action as { icon?: React.ReactNode }).icon || (
+                    <Plus className="mr-2 h-4 w-4" />
+                  )}
                   {(action as { label: string }).label}
                 </Link>
               </Button>
             ) : (
               <Button onClick={(action as { onClick?: () => void }).onClick}>
-                {(action as { icon?: React.ReactNode }).icon || <Plus className="mr-2 h-4 w-4" />}
+                {(action as { icon?: React.ReactNode }).icon || (
+                  <Plus className="mr-2 h-4 w-4" />
+                )}
                 {(action as { label: string }).label}
               </Button>
             )
-          ) : action}
+          ) : (
+            action
+          )}
         </div>
       </div>
     </div>

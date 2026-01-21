@@ -1,6 +1,6 @@
 /**
  * PKG Service - Penilaian Kinerja Guru (Teacher Performance Evaluation)
- * 
+ *
  * Implementasi sesuai Permendiknas No. 35 Tahun 2010
  * 4 Kompetensi Utama:
  * - Pedagogik: Kompetensi mengelola pembelajaran
@@ -24,22 +24,37 @@ export const PKG_INDICATORS = {
     { code: 'P7', name: 'Penilaian dan evaluasi' },
   ],
   KEPRIBADIAN: [
-    { code: 'K1', name: 'Bertindak sesuai dengan norma agama, hukum, sosial dan kebudayaan nasional' },
+    {
+      code: 'K1',
+      name: 'Bertindak sesuai dengan norma agama, hukum, sosial dan kebudayaan nasional',
+    },
     { code: 'K2', name: 'Menunjukkan pribadi yang dewasa dan teladan' },
     { code: 'K3', name: 'Etos kerja, tanggung jawab yang tinggi, rasa bangga menjadi guru' },
   ],
   SOSIAL: [
     { code: 'S1', name: 'Bersikap inklusif, bertindak objektif, serta tidak diskriminatif' },
-    { code: 'S2', name: 'Komunikasi dengan sesama guru, tenaga kependidikan, orang tua, peserta didik, dan masyarakat' },
+    {
+      code: 'S2',
+      name: 'Komunikasi dengan sesama guru, tenaga kependidikan, orang tua, peserta didik, dan masyarakat',
+    },
   ],
   PROFESIONAL: [
-    { code: 'PR1', name: 'Penguasaan materi, struktur, konsep, dan pola pikir keilmuan yang mendukung mata pelajaran' },
+    {
+      code: 'PR1',
+      name: 'Penguasaan materi, struktur, konsep, dan pola pikir keilmuan yang mendukung mata pelajaran',
+    },
     { code: 'PR2', name: 'Mengembangkan keprofesionalan melalui tindakan yang reflektif' },
   ],
 };
 
 // Status types
-export const PKG_STATUS = ['DRAFT', 'SELF_ASSESSMENT', 'OBSERVATION', 'REVIEW', 'APPROVED'] as const;
+export const PKG_STATUS = [
+  'DRAFT',
+  'SELF_ASSESSMENT',
+  'OBSERVATION',
+  'REVIEW',
+  'APPROVED',
+] as const;
 export const PERIOD_STATUS = ['DRAFT', 'ACTIVE', 'COMPLETED', 'ARCHIVED'] as const;
 
 // =====================================
@@ -366,11 +381,7 @@ export async function calculateCompetencyScores(evaluationId: string) {
 // STATUS MANAGEMENT
 // =====================================
 
-export async function updateEvaluationStatus(
-  id: string,
-  status: string,
-  _userId?: string
-) {
+export async function updateEvaluationStatus(id: string, status: string, _userId?: string) {
   const data: any = { status };
 
   // Set timestamps based on status
@@ -437,10 +448,7 @@ export async function getTeacherPKGHistory(teacherId: string) {
 // STATISTICS
 // =====================================
 
-export async function getPKGStatistics(params: {
-  unitId?: string;
-  periodId?: string;
-}) {
+export async function getPKGStatistics(params: { unitId?: string; periodId?: string }) {
   const { unitId, periodId } = params;
 
   const where: any = {};
@@ -496,18 +504,18 @@ export async function getPKGStatistics(params: {
 
 export async function createBulkEvaluations(periodId: string, teacherIds: string[]) {
   const results = [];
-  
+
   for (const teacherId of teacherIds) {
     // Check if already exists
     const existing = await prisma.pKGEvaluation.findUnique({
       where: { periodId_teacherId: { periodId, teacherId } },
     });
-    
+
     if (!existing) {
       const evaluation = await createEvaluation({ periodId, teacherId });
       results.push(evaluation);
     }
   }
-  
+
   return results;
 }

@@ -1,14 +1,14 @@
-import { format } from 'date-fns';
-import { Star } from 'lucide-react';
-import { useStudentBehaviorStats } from '@/hooks/use-students';
+import { format } from "date-fns";
+import { Star } from "lucide-react";
+import { useStudentBehaviorStats } from "@/hooks/use-students";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface StudentBehaviorTabProps {
   studentId: string;
@@ -22,7 +22,9 @@ export function StudentBehaviorTab({ studentId }: StudentBehaviorTabProps) {
       <Card>
         <CardHeader>
           <CardTitle>Behavior Summary</CardTitle>
-          <CardDescription>Overview of student discipline and achievements</CardDescription>
+          <CardDescription>
+            Overview of student discipline and achievements
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -33,37 +35,58 @@ export function StudentBehaviorTab({ studentId }: StudentBehaviorTabProps) {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Current Points</p>
-                  <h3 className={`text-2xl font-bold ${behaviorStats?.currentPoints && behaviorStats.currentPoints > 50 ? 'text-destructive' : 'text-primary'}`}>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Current Points
+                  </p>
+                  <h3
+                    className={`text-2xl font-bold ${behaviorStats?.currentPoints && behaviorStats.currentPoints > 50 ? "text-destructive" : "text-primary"}`}
+                  >
                     {behaviorStats?.currentPoints || 0}
                   </h3>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Violations</p>
-                  <h3 className="text-2xl font-bold">{behaviorStats?.totalViolations || 0}</h3>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Total Violations
+                  </p>
+                  <h3 className="text-2xl font-bold">
+                    {behaviorStats?.totalViolations || 0}
+                  </h3>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Rewards</p>
-                  <h3 className="text-2xl font-bold">{behaviorStats?.totalRewards || 0}</h3>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Total Rewards
+                  </p>
+                  <h3 className="text-2xl font-bold">
+                    {behaviorStats?.totalRewards || 0}
+                  </h3>
                 </div>
               </div>
 
               <div>
-                <h4 className="mb-2 text-sm font-semibold">Recent Violations</h4>
+                <h4 className="mb-2 text-sm font-semibold">
+                  Recent Violations
+                </h4>
                 {behaviorStats?.recentViolations?.length ? (
                   <div className="space-y-2">
                     {behaviorStats.recentViolations.map((v) => (
-                      <div key={v.id} className="flex items-center justify-between rounded-lg border p-2">
+                      <div
+                        key={v.id}
+                        className="flex items-center justify-between rounded-lg border p-2"
+                      >
                         <div>
                           <p className="text-sm font-medium">{v.type}</p>
-                          <p className="text-xs text-muted-foreground">{format(new Date(v.date), 'dd MMM yyyy')}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(v.date), "dd MMM yyyy")}
+                          </p>
                         </div>
                         <Badge variant="destructive">{v.status}</Badge>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No recent violations.</p>
+                  <p className="text-sm text-muted-foreground">
+                    No recent violations.
+                  </p>
                 )}
               </div>
             </div>
@@ -86,10 +109,15 @@ export function StudentBehaviorTab({ studentId }: StudentBehaviorTabProps) {
               {behaviorStats?.recentRewards?.length ? (
                 <div className="space-y-2">
                   {behaviorStats.recentRewards.map((r) => (
-                    <div key={r.id} className="flex items-center justify-between rounded-lg border p-2 bg-green-50 dark:bg-green-900/10">
+                    <div
+                      key={r.id}
+                      className="flex items-center justify-between rounded-lg border p-2 bg-green-50 dark:bg-green-900/10"
+                    >
                       <div>
                         <p className="text-sm font-medium">{r.type}</p>
-                        <p className="text-xs text-muted-foreground">{format(new Date(r.date), 'dd MMM yyyy')}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(r.date), "dd MMM yyyy")}
+                        </p>
                       </div>
                       <Star className="h-4 w-4 text-yellow-500" />
                     </div>

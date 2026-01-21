@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { AxiosError } from 'axios';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { useState } from "react";
+import { toast } from "sonner";
+import { AxiosError } from "axios";
 
 /**
  * Global error handler for API errors
@@ -17,27 +17,27 @@ function handleQueryError(error: unknown) {
     // Handle specific status codes
     switch (status) {
       case 401:
-        toast.error('Sesi Anda telah berakhir. Silakan login kembali.');
+        toast.error("Sesi Anda telah berakhir. Silakan login kembali.");
         break;
       case 403:
-        toast.error('Anda tidak memiliki akses untuk melakukan tindakan ini.');
+        toast.error("Anda tidak memiliki akses untuk melakukan tindakan ini.");
         break;
       case 404:
-        toast.error('Data tidak ditemukan.');
+        toast.error("Data tidak ditemukan.");
         break;
       case 422:
         toast.error(`Validasi gagal: ${message}`);
         break;
       case 429:
-        toast.error('Terlalu banyak permintaan. Silakan coba lagi nanti.');
+        toast.error("Terlalu banyak permintaan. Silakan coba lagi nanti.");
         break;
       case 500:
       case 502:
       case 503:
-        toast.error('Server sedang bermasalah. Silakan coba lagi nanti.');
+        toast.error("Server sedang bermasalah. Silakan coba lagi nanti.");
         break;
       default:
-        toast.error(message || 'Terjadi kesalahan. Silakan coba lagi.');
+        toast.error(message || "Terjadi kesalahan. Silakan coba lagi.");
     }
   } else if (error instanceof Error) {
     toast.error(error.message);
@@ -68,7 +68,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             onError: handleQueryError,
           },
         },
-      })
+      }),
   );
 
   return (

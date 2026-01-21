@@ -1,19 +1,25 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { api } from '@/lib/api';
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { api } from "@/lib/api";
 import {
   Bell,
   Megaphone,
   AlertTriangle,
   CheckCircle,
   Clock,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface Announcement {
   id: string;
@@ -43,20 +49,20 @@ export default function AnnouncementsPage() {
   const [loading, setLoading] = useState(true);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [activeTab, setActiveTab] = useState('announcements');
+  const [activeTab, setActiveTab] = useState("announcements");
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         const [announcementsRes, notificationsRes] = await Promise.all([
-          api.get('/parent/announcements'),
-          api.get('/parent/notifications'),
+          api.get("/parent/announcements"),
+          api.get("/parent/notifications"),
         ]);
         setAnnouncements(announcementsRes.data.data || []);
         setNotifications(notificationsRes.data.data || []);
       } catch (err) {
-        console.error('Failed to fetch data:', err);
+        console.error("Failed to fetch data:", err);
       } finally {
         setLoading(false);
       }
@@ -68,22 +74,32 @@ export default function AnnouncementsPage() {
   const markAsRead = async (notificationId: string) => {
     try {
       await api.post(`/parent/notifications/${notificationId}/read`);
-      setNotifications(notifications.map(n => 
-        n.id === notificationId 
-          ? { ...n, status: 'READ', readAt: new Date().toISOString() }
-          : n
-      ));
+      setNotifications(
+        notifications.map((n) =>
+          n.id === notificationId
+            ? { ...n, status: "READ", readAt: new Date().toISOString() }
+            : n,
+        ),
+      );
     } catch (err) {
-      console.error('Failed to mark as read:', err);
+      console.error("Failed to mark as read:", err);
     }
   };
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
-      case 'HIGH':
-        return <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" /> Penting</Badge>;
-      case 'MEDIUM':
-        return <Badge className="bg-yellow-500"><Clock className="h-3 w-3 mr-1" /> Sedang</Badge>;
+      case "HIGH":
+        return (
+          <Badge variant="destructive">
+            <AlertTriangle className="h-3 w-3 mr-1" /> Penting
+          </Badge>
+        );
+      case "MEDIUM":
+        return (
+          <Badge className="bg-yellow-500">
+            <Clock className="h-3 w-3 mr-1" /> Sedang
+          </Badge>
+        );
       default:
         return <Badge variant="secondary">Biasa</Badge>;
     }
@@ -91,28 +107,28 @@ export default function AnnouncementsPage() {
 
   const getNotificationTypeIcon = (type: string) => {
     switch (type) {
-      case 'ACADEMIC':
+      case "ACADEMIC":
         return <Bell className="h-4 w-4 text-blue-500" />;
-      case 'FINANCE':
+      case "FINANCE":
         return <Bell className="h-4 w-4 text-green-500" />;
-      case 'HEALTH':
+      case "HEALTH":
         return <Bell className="h-4 w-4 text-pink-500" />;
-      case 'ANNOUNCEMENT':
+      case "ANNOUNCEMENT":
         return <Megaphone className="h-4 w-4 text-purple-500" />;
       default:
         return <Bell className="h-4 w-4 text-gray-500" />;
     }
   };
 
-  const unreadCount = notifications.filter(n => n.status === 'UNREAD').length;
+  const unreadCount = notifications.filter((n) => n.status === "UNREAD").length;
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Pengumuman & Notifikasi</h1>
-        <p className="text-muted-foreground">
-          Informasi penting dari sekolah
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Pengumuman & Notifikasi
+        </h1>
+        <p className="text-muted-foreground">Informasi penting dari sekolah</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -125,7 +141,10 @@ export default function AnnouncementsPage() {
             <Bell className="h-4 w-4" />
             Notifikasi
             {unreadCount > 0 && (
-              <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+              <Badge
+                variant="destructive"
+                className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
+              >
                 {unreadCount}
               </Badge>
             )}
@@ -162,29 +181,35 @@ export default function AnnouncementsPage() {
                           {getPriorityBadge(announcement.priority)}
                         </CardTitle>
                         <CardDescription className="mt-1">
-                          {announcement.unit?.name || 'Semua Unit'} •{' '}
-                          {new Date(announcement.createdAt).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          })}
+                          {announcement.unit?.name || "Semua Unit"} •{" "}
+                          {new Date(announcement.createdAt).toLocaleDateString(
+                            "id-ID",
+                            {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            },
+                          )}
                         </CardDescription>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div 
+                    <div
                       className="prose prose-sm max-w-none text-foreground"
                       dangerouslySetInnerHTML={{ __html: announcement.content }}
                     />
                     {announcement.endDate && (
                       <p className="text-sm text-muted-foreground mt-4">
-                        Berlaku hingga:{' '}
-                        {new Date(announcement.endDate).toLocaleDateString('id-ID', {
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric',
-                        })}
+                        Berlaku hingga:{" "}
+                        {new Date(announcement.endDate).toLocaleDateString(
+                          "id-ID",
+                          {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          },
+                        )}
                       </p>
                     )}
                   </CardContent>
@@ -215,9 +240,13 @@ export default function AnnouncementsPage() {
           ) : (
             <div className="space-y-2">
               {notifications.map((notification) => (
-                <Card 
+                <Card
                   key={notification.id}
-                  className={notification.status === 'UNREAD' ? 'border-primary/50 bg-primary/5' : ''}
+                  className={
+                    notification.status === "UNREAD"
+                      ? "border-primary/50 bg-primary/5"
+                      : ""
+                  }
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
@@ -227,8 +256,10 @@ export default function AnnouncementsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <p className="font-medium">{notification.title}</p>
-                          {notification.status === 'UNREAD' && (
-                            <Badge variant="default" className="ml-2">Baru</Badge>
+                          {notification.status === "UNREAD" && (
+                            <Badge variant="default" className="ml-2">
+                              Baru
+                            </Badge>
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
@@ -236,17 +267,19 @@ export default function AnnouncementsPage() {
                         </p>
                         <div className="flex items-center justify-between mt-2">
                           <p className="text-xs text-muted-foreground">
-                            {new Date(notification.createdAt).toLocaleDateString('id-ID', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
+                            {new Date(
+                              notification.createdAt,
+                            ).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
                             })}
                           </p>
-                          {notification.status === 'UNREAD' && (
-                            <Button 
-                              variant="ghost" 
+                          {notification.status === "UNREAD" && (
+                            <Button
+                              variant="ghost"
                               size="sm"
                               onClick={() => markAsRead(notification.id)}
                             >

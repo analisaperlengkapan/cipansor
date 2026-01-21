@@ -1,17 +1,23 @@
-'use client';
+"use client";
 
-import { use, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, GraduationCap } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+import { use, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Save, GraduationCap } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Form,
   FormControl,
@@ -20,32 +26,39 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
-import { useCurriculum, useUpdateCurriculum } from '@/hooks/use-curriculum';
-import { useUnits } from '@/hooks/use-units';
-import { useAcademicYears } from '@/hooks/use-academic-years';
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { useCurriculum, useUpdateCurriculum } from "@/hooks/use-curriculum";
+import { useUnits } from "@/hooks/use-units";
+import { useAcademicYears } from "@/hooks/use-academic-years";
 
 const curriculumSchema = z.object({
-  code: z.string().min(1, 'Kode kurikulum wajib diisi'),
-  name: z.string().min(1, 'Nama kurikulum wajib diisi'),
+  code: z.string().min(1, "Kode kurikulum wajib diisi"),
+  name: z.string().min(1, "Nama kurikulum wajib diisi"),
   description: z.string().optional(),
-  unitId: z.string().min(1, 'Unit wajib dipilih'),
-  academicYearId: z.string().min(1, 'Tahun ajaran wajib dipilih'),
-  gradeLevel: z.coerce.number().min(1, 'Tingkat kelas wajib diisi').max(12, 'Maksimal kelas 12'),
+  unitId: z.string().min(1, "Unit wajib dipilih"),
+  academicYearId: z.string().min(1, "Tahun ajaran wajib dipilih"),
+  gradeLevel: z.coerce
+    .number()
+    .min(1, "Tingkat kelas wajib diisi")
+    .max(12, "Maksimal kelas 12"),
   isActive: z.boolean(),
 });
 
 type CurriculumFormData = z.infer<typeof curriculumSchema>;
 
-export default function EditCurriculumPage({ params }: { params: Promise<{ id: string }> }) {
+export default function EditCurriculumPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const router = useRouter();
   const { data: curriculum, isLoading } = useCurriculum(id);
@@ -58,11 +71,11 @@ export default function EditCurriculumPage({ params }: { params: Promise<{ id: s
   const form = useForm<CurriculumFormData>({
     resolver: zodResolver(curriculumSchema),
     defaultValues: {
-      code: '',
-      name: '',
-      description: '',
-      unitId: '',
-      academicYearId: '',
+      code: "",
+      name: "",
+      description: "",
+      unitId: "",
+      academicYearId: "",
       gradeLevel: 1,
       isActive: true,
     },
@@ -73,7 +86,7 @@ export default function EditCurriculumPage({ params }: { params: Promise<{ id: s
       form.reset({
         code: curriculum.code,
         name: curriculum.name,
-        description: curriculum.description || '',
+        description: curriculum.description || "",
         unitId: curriculum.unitId,
         academicYearId: curriculum.academicYearId,
         gradeLevel: curriculum.gradeLevel,
@@ -96,10 +109,10 @@ export default function EditCurriculumPage({ params }: { params: Promise<{ id: s
           isActive: data.isActive,
         },
       });
-      toast.success('Kurikulum berhasil diperbarui');
+      toast.success("Kurikulum berhasil diperbarui");
       router.push(`/curriculum/curriculums/${id}`);
     } catch {
-      toast.error('Gagal memperbarui kurikulum');
+      toast.error("Gagal memperbarui kurikulum");
     }
   };
 
@@ -171,7 +184,10 @@ export default function EditCurriculumPage({ params }: { params: Promise<{ id: s
                       <FormItem>
                         <FormLabel>Nama *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Kurikulum Merdeka SD Kelas 1" {...field} />
+                          <Input
+                            placeholder="Kurikulum Merdeka SD Kelas 1"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -204,7 +220,10 @@ export default function EditCurriculumPage({ params }: { params: Promise<{ id: s
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Unit *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih unit" />
@@ -239,11 +258,16 @@ export default function EditCurriculumPage({ params }: { params: Promise<{ id: s
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {Array.from({ length: 12 }, (_, i) => i + 1).map((level) => (
-                              <SelectItem key={level} value={level.toString()}>
-                                Kelas {level}
-                              </SelectItem>
-                            ))}
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                              (level) => (
+                                <SelectItem
+                                  key={level}
+                                  value={level.toString()}
+                                >
+                                  Kelas {level}
+                                </SelectItem>
+                              ),
+                            )}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -267,7 +291,10 @@ export default function EditCurriculumPage({ params }: { params: Promise<{ id: s
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tahun Ajaran *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih tahun ajaran" />
@@ -276,7 +303,7 @@ export default function EditCurriculumPage({ params }: { params: Promise<{ id: s
                           <SelectContent>
                             {academicYears.map((ay) => (
                               <SelectItem key={ay.id} value={ay.id}>
-                                {ay.name} {ay.isActive && '(Aktif)'}
+                                {ay.name} {ay.isActive && "(Aktif)"}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -323,7 +350,9 @@ export default function EditCurriculumPage({ params }: { params: Promise<{ id: s
                 <CardContent className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Total Mapel</span>
-                    <span className="font-medium">{curriculum.subjects?.length || 0}</span>
+                    <span className="font-medium">
+                      {curriculum.subjects?.length || 0}
+                    </span>
                   </div>
                 </CardContent>
               </Card>

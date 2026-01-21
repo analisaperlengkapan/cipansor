@@ -1,7 +1,7 @@
 /**
  * Email/SMS Notification Service
  * Phase 7A.2 - Notification Integration
- * 
+ *
  * Supports:
  * - Email notifications via SMTP/SendGrid/AWS SES
  * - SMS notifications via Twilio/AWS SNS
@@ -57,7 +57,13 @@ const templates = {
   // Payment reminder
   paymentReminder: {
     subject: 'Pengingat Pembayaran - Cipansor',
-    html: (data: { parentName: string; studentName: string; invoiceNumber: string; amount: string; dueDate: string }) => `
+    html: (data: {
+      parentName: string;
+      studentName: string;
+      invoiceNumber: string;
+      amount: string;
+      dueDate: string;
+    }) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #1e40af;">Pengingat Pembayaran</h2>
         <p>Yth. Bapak/Ibu ${data.parentName},</p>
@@ -77,7 +83,14 @@ const templates = {
   // Violation notification to parent
   violationNotification: {
     subject: 'Pemberitahuan Pelanggaran Siswa - Cipansor',
-    html: (data: { parentName: string; studentName: string; violationType: string; description: string; points: number; date: string }) => `
+    html: (data: {
+      parentName: string;
+      studentName: string;
+      violationType: string;
+      description: string;
+      points: number;
+      date: string;
+    }) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #dc2626;">Pemberitahuan Pelanggaran</h2>
         <p>Yth. Bapak/Ibu ${data.parentName},</p>
@@ -98,7 +111,13 @@ const templates = {
   // Attendance alert
   attendanceAlert: {
     subject: 'Pemberitahuan Kehadiran Siswa - Cipansor',
-    html: (data: { parentName: string; studentName: string; status: string; date: string; notes?: string }) => `
+    html: (data: {
+      parentName: string;
+      studentName: string;
+      status: string;
+      date: string;
+      notes?: string;
+    }) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #1e40af;">Pemberitahuan Kehadiran</h2>
         <p>Yth. Bapak/Ibu ${data.parentName},</p>
@@ -117,7 +136,15 @@ const templates = {
   // Permit status update
   permitStatusUpdate: {
     subject: 'Update Status Izin - Cipansor',
-    html: (data: { parentName: string; studentName: string; status: string; permitType: string; startDate: string; endDate: string; notes?: string }) => `
+    html: (data: {
+      parentName: string;
+      studentName: string;
+      status: string;
+      permitType: string;
+      startDate: string;
+      endDate: string;
+      notes?: string;
+    }) => `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #1e40af;">Update Status Izin</h2>
         <p>Yth. Bapak/Ibu ${data.parentName},</p>
@@ -167,10 +194,24 @@ const smsTemplates = {
 };
 
 export type NotificationChannel = 'EMAIL' | 'SMS' | 'PUSH' | 'IN_APP';
-export type ServiceNotificationType = 'WELCOME' | 'PASSWORD_RESET' | 'PAYMENT_REMINDER' | 'VIOLATION' | 'ATTENDANCE' | 'PERMIT_STATUS' | 'ANNOUNCEMENT' | 'GENERAL';
+export type ServiceNotificationType =
+  | 'WELCOME'
+  | 'PASSWORD_RESET'
+  | 'PAYMENT_REMINDER'
+  | 'VIOLATION'
+  | 'ATTENDANCE'
+  | 'PERMIT_STATUS'
+  | 'ANNOUNCEMENT'
+  | 'GENERAL';
 
 // Prisma NotificationType enum values
-type PrismaNotificationType = 'INFO' | 'ANNOUNCEMENT' | 'REMINDER' | 'ALERT' | 'PAYMENT' | 'ACADEMIC';
+type PrismaNotificationType =
+  | 'INFO'
+  | 'ANNOUNCEMENT'
+  | 'REMINDER'
+  | 'ALERT'
+  | 'PAYMENT'
+  | 'ACADEMIC';
 
 interface SendNotificationOptions {
   userId?: string;
@@ -289,25 +330,39 @@ class NotificationService {
       // Type-safe template rendering based on key
       switch (templateKey) {
         case 'welcome':
-          htmlContent = templates.welcome.html(templateData as Parameters<typeof templates.welcome.html>[0]);
+          htmlContent = templates.welcome.html(
+            templateData as Parameters<typeof templates.welcome.html>[0]
+          );
           break;
         case 'passwordReset':
-          htmlContent = templates.passwordReset.html(templateData as Parameters<typeof templates.passwordReset.html>[0]);
+          htmlContent = templates.passwordReset.html(
+            templateData as Parameters<typeof templates.passwordReset.html>[0]
+          );
           break;
         case 'paymentReminder':
-          htmlContent = templates.paymentReminder.html(templateData as Parameters<typeof templates.paymentReminder.html>[0]);
+          htmlContent = templates.paymentReminder.html(
+            templateData as Parameters<typeof templates.paymentReminder.html>[0]
+          );
           break;
         case 'violationNotification':
-          htmlContent = templates.violationNotification.html(templateData as Parameters<typeof templates.violationNotification.html>[0]);
+          htmlContent = templates.violationNotification.html(
+            templateData as Parameters<typeof templates.violationNotification.html>[0]
+          );
           break;
         case 'attendanceAlert':
-          htmlContent = templates.attendanceAlert.html(templateData as Parameters<typeof templates.attendanceAlert.html>[0]);
+          htmlContent = templates.attendanceAlert.html(
+            templateData as Parameters<typeof templates.attendanceAlert.html>[0]
+          );
           break;
         case 'permitStatusUpdate':
-          htmlContent = templates.permitStatusUpdate.html(templateData as Parameters<typeof templates.permitStatusUpdate.html>[0]);
+          htmlContent = templates.permitStatusUpdate.html(
+            templateData as Parameters<typeof templates.permitStatusUpdate.html>[0]
+          );
           break;
         case 'announcement':
-          htmlContent = templates.announcement.html(templateData as Parameters<typeof templates.announcement.html>[0]);
+          htmlContent = templates.announcement.html(
+            templateData as Parameters<typeof templates.announcement.html>[0]
+          );
           break;
       }
     }
@@ -364,7 +419,7 @@ class NotificationService {
 
     if (!accountSid || !authToken || !phoneNumber) {
       logger.warn(
-        'SMS not configured - TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, or TWILIO_PHONE_NUMBER not set. SMS logged only.',
+        'SMS not configured - TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, or TWILIO_PHONE_NUMBER not set. SMS logged only.'
       );
       return { success: true, channel: 'SMS', messageId: `log_${Date.now()}` };
     }
@@ -445,8 +500,14 @@ class NotificationService {
           parentName: sp.parent.name,
           studentName: invoice.student.name,
           invoiceNumber: invoice.invoiceNumber,
-          amount: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(invoice.amount),
-          dueDate: invoice.dueDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+          amount: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(
+            invoice.amount
+          ),
+          dueDate: invoice.dueDate.toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          }),
         },
         priority: 'HIGH',
       });
@@ -461,7 +522,11 @@ class NotificationService {
           title: 'Pengingat Pembayaran',
           message: smsTemplates.paymentReminder({
             studentName: invoice.student.name,
-            amount: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(invoice.amount),
+            amount: new Intl.NumberFormat('id-ID', {
+              style: 'currency',
+              currency: 'IDR',
+              minimumFractionDigits: 0,
+            }).format(invoice.amount),
             dueDate: invoice.dueDate.toLocaleDateString('id-ID'),
           }),
         });
@@ -644,7 +709,7 @@ class NotificationService {
 
           if (result.success) sent++;
           else failed++;
-        }),
+        })
       );
     }
 

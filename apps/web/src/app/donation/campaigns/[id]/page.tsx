@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { use } from 'react';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { use } from "react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   Heart,
   Pencil,
@@ -15,21 +15,21 @@ import {
   Clock,
   XCircle,
   ArrowLeft,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   Table,
   TableBody,
@@ -37,7 +37,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   useCampaign,
   useDonations,
@@ -48,7 +48,7 @@ import {
   formatCurrency,
   calculateProgress,
   DonationStatus,
-} from '@/hooks/use-donation';
+} from "@/hooks/use-donation";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -64,14 +64,22 @@ export default function CampaignDetailPage({ params }: Props) {
   const verifyDonation = useVerifyDonation();
 
   const donations = donationsData?.data || [];
-  const progress = campaign ? calculateProgress(campaign.collectedAmount, campaign.targetAmount) : 0;
+  const progress = campaign
+    ? calculateProgress(campaign.collectedAmount, campaign.targetAmount)
+    : 0;
 
-  const handleVerifyDonation = async (donationId: string, status: DonationStatus) => {
+  const handleVerifyDonation = async (
+    donationId: string,
+    status: DonationStatus,
+  ) => {
     try {
       await verifyDonation.mutateAsync({ id: donationId, status });
-      toast.success(status === 'VERIFIED' ? 'Donasi terverifikasi' : 'Donasi dibatalkan');
+      toast.success(
+        status === "VERIFIED" ? "Donasi terverifikasi" : "Donasi dibatalkan",
+      );
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal memverifikasi donasi';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal memverifikasi donasi";
       toast.error(errorMessage);
     }
   };
@@ -126,15 +134,18 @@ export default function CampaignDetailPage({ params }: Props) {
   }
 
   // Calculate stats
-  const verifiedDonations = donations.filter((d) => d.status === 'VERIFIED');
-  const pendingDonations = donations.filter((d) => d.status === 'PENDING');
-  const verifiedAmount = verifiedDonations.reduce((sum, d) => sum + d.amount, 0);
+  const verifiedDonations = donations.filter((d) => d.status === "VERIFIED");
+  const pendingDonations = donations.filter((d) => d.status === "PENDING");
+  const verifiedAmount = verifiedDonations.reduce(
+    (sum, d) => sum + d.amount,
+    0,
+  );
 
   return (
     <MainLayout>
       <PageHeader
         title={campaign.title}
-        description={`Campaign donasi ${campaign.unit?.name || 'Yayasan'}`}
+        description={`Campaign donasi ${campaign.unit?.name || "Yayasan"}`}
         backHref="/donation"
         backLabel="Kembali"
         action={
@@ -201,7 +212,7 @@ export default function CampaignDetailPage({ params }: Props) {
             </CardHeader>
             <CardContent>
               <p className="whitespace-pre-line">
-                {campaign.description || 'Tidak ada deskripsi'}
+                {campaign.description || "Tidak ada deskripsi"}
               </p>
             </CardContent>
           </Card>
@@ -245,39 +256,53 @@ export default function CampaignDetailPage({ params }: Props) {
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8">
                         <Heart className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-muted-foreground">Belum ada donasi</p>
+                        <p className="text-muted-foreground">
+                          Belum ada donasi
+                        </p>
                       </TableCell>
                     </TableRow>
                   ) : (
                     donations.map((donation) => (
                       <TableRow key={donation.id}>
                         <TableCell>
-                          {format(new Date(donation.createdAt), 'd MMM yyyy', { locale: localeId })}
+                          {format(new Date(donation.createdAt), "d MMM yyyy", {
+                            locale: localeId,
+                          })}
                         </TableCell>
                         <TableCell>
                           <div>
                             <p className="font-medium">
-                              {donation.isAnonymous ? 'Hamba Allah' : donation.donorName}
+                              {donation.isAnonymous
+                                ? "Hamba Allah"
+                                : donation.donorName}
                             </p>
                             {!donation.isAnonymous && donation.donorPhone && (
-                              <p className="text-sm text-muted-foreground">{donation.donorPhone}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {donation.donorPhone}
+                              </p>
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{getDonationTypeLabel(donation.type)}</Badge>
+                          <Badge variant="outline">
+                            {getDonationTypeLabel(donation.type)}
+                          </Badge>
                         </TableCell>
                         <TableCell className="font-medium text-green-600">
                           {formatCurrency(donation.amount)}
                         </TableCell>
-                        <TableCell>{getDonationStatusBadge(donation.status)}</TableCell>
                         <TableCell>
-                          {donation.status === 'PENDING' && (
+                          {getDonationStatusBadge(donation.status)}
+                        </TableCell>
+                        <TableCell>
+                          {donation.status === "PENDING" && (
                             <div className="flex items-center gap-1">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleVerifyDonation(donation.id, 'VERIFIED')}
+                                onClick={() =>
+                                  handleVerifyDonation(donation.id, "VERIFIED")
+                                }
                                 className="text-green-600 hover:text-green-700"
                               >
                                 <CheckCircle2 className="h-4 w-4" />
@@ -285,7 +310,9 @@ export default function CampaignDetailPage({ params }: Props) {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleVerifyDonation(donation.id, 'CANCELLED')}
+                                onClick={() =>
+                                  handleVerifyDonation(donation.id, "CANCELLED")
+                                }
                                 className="text-red-600 hover:text-red-700"
                               >
                                 <XCircle className="h-4 w-4" />
@@ -316,7 +343,9 @@ export default function CampaignDetailPage({ params }: Props) {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Unit</span>
-                <span className="font-medium">{campaign.unit?.name || 'Yayasan'}</span>
+                <span className="font-medium">
+                  {campaign.unit?.name || "Yayasan"}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -334,16 +363,22 @@ export default function CampaignDetailPage({ params }: Props) {
                 <p className="text-sm text-muted-foreground">Tanggal Mulai</p>
                 <p className="font-medium">
                   {campaign.startDate
-                    ? format(new Date(campaign.startDate), 'd MMMM yyyy', { locale: localeId })
-                    : '-'}
+                    ? format(new Date(campaign.startDate), "d MMMM yyyy", {
+                        locale: localeId,
+                      })
+                    : "-"}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Tanggal Berakhir</p>
+                <p className="text-sm text-muted-foreground">
+                  Tanggal Berakhir
+                </p>
                 <p className="font-medium">
                   {campaign.endDate
-                    ? format(new Date(campaign.endDate), 'd MMMM yyyy', { locale: localeId })
-                    : 'Tanpa batas waktu'}
+                    ? format(new Date(campaign.endDate), "d MMMM yyyy", {
+                        locale: localeId,
+                      })
+                    : "Tanpa batas waktu"}
                 </p>
               </div>
             </CardContent>
@@ -367,20 +402,26 @@ export default function CampaignDetailPage({ params }: Props) {
                   <CheckCircle2 className="h-4 w-4 text-green-500" />
                   <span className="text-muted-foreground">Terverifikasi</span>
                 </div>
-                <span className="font-bold text-green-600">{verifiedDonations.length}</span>
+                <span className="font-bold text-green-600">
+                  {verifiedDonations.length}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-yellow-500" />
                   <span className="text-muted-foreground">Pending</span>
                 </div>
-                <span className="font-bold text-yellow-600">{pendingDonations.length}</span>
+                <span className="font-bold text-yellow-600">
+                  {pendingDonations.length}
+                </span>
               </div>
               <div className="border-t pt-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Target className="h-4 w-4 text-green-500" />
-                    <span className="text-muted-foreground">Dana Terverifikasi</span>
+                    <span className="text-muted-foreground">
+                      Dana Terverifikasi
+                    </span>
                   </div>
                 </div>
                 <p className="text-xl font-bold text-green-600 mt-1">

@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useState, use } from 'react';
+import { useState, use } from "react";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -15,9 +15,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -25,17 +25,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Wallet,
   ArrowUpRight,
@@ -52,9 +52,9 @@ import {
   QrCode,
   Calendar,
   Download,
-} from 'lucide-react';
-import Link from 'next/link';
-import { toast } from 'sonner';
+} from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
 import {
   useWallet,
   useStudentWalletTransactions,
@@ -72,7 +72,7 @@ import {
   TransactionType,
   ReferenceType,
   PaymentMethod,
-} from '@/hooks/use-wallet';
+} from "@/hooks/use-wallet";
 
 interface PageProps {
   params: Promise<{ studentId: string }>;
@@ -81,26 +81,31 @@ interface PageProps {
 export default function WalletDetailPage({ params }: PageProps) {
   const { studentId } = use(params);
   const [page, setPage] = useState(1);
-  const [transactionType, setTransactionType] = useState<string>('');
-  
+  const [transactionType, setTransactionType] = useState<string>("");
+
   // Dialogs
   const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
   const [deductDialogOpen, setDeductDialogOpen] = useState(false);
   const [refundDialogOpen, setRefundDialogOpen] = useState(false);
-  
+
   // Forms
   const [amount, setAmount] = useState<number>(0);
-  const [description, setDescription] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
-  const [referenceType, setReferenceType] = useState<ReferenceType>('OTHER');
+  const [description, setDescription] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
+  const [referenceType, setReferenceType] = useState<ReferenceType>("OTHER");
 
   // Queries
-  const { data: wallet, isLoading: walletLoading, refetch: refetchWallet } = useWallet(studentId);
-  const { data: transactionsData, isLoading: transactionsLoading } = useStudentWalletTransactions(studentId, {
-    page,
-    limit: 20,
-    type: transactionType as TransactionType || undefined,
-  });
+  const {
+    data: wallet,
+    isLoading: walletLoading,
+    refetch: refetchWallet,
+  } = useWallet(studentId);
+  const { data: transactionsData, isLoading: transactionsLoading } =
+    useStudentWalletTransactions(studentId, {
+      page,
+      limit: 20,
+      type: (transactionType as TransactionType) || undefined,
+    });
 
   // Mutations
   const topUpMutation = useTopUpWallet();
@@ -110,25 +115,25 @@ export default function WalletDetailPage({ params }: PageProps) {
   // Reset form
   const resetForm = () => {
     setAmount(0);
-    setDescription('');
-    setPaymentMethod('CASH');
-    setReferenceType('OTHER');
+    setDescription("");
+    setPaymentMethod("CASH");
+    setReferenceType("OTHER");
   };
 
   // Handle Top Up
   const handleTopUp = async () => {
     if (amount <= 0) {
-      toast.error('Masukkan nominal yang valid');
+      toast.error("Masukkan nominal yang valid");
       return;
     }
-    
+
     await topUpMutation.mutateAsync({
       studentId,
       amount,
       description: description || undefined,
       paymentMethod,
     });
-    
+
     setTopUpDialogOpen(false);
     resetForm();
     refetchWallet();
@@ -137,22 +142,22 @@ export default function WalletDetailPage({ params }: PageProps) {
   // Handle Deduct
   const handleDeduct = async () => {
     if (amount <= 0) {
-      toast.error('Masukkan nominal yang valid');
+      toast.error("Masukkan nominal yang valid");
       return;
     }
-    
+
     if (wallet && amount > wallet.balance) {
-      toast.error('Saldo tidak mencukupi');
+      toast.error("Saldo tidak mencukupi");
       return;
     }
-    
+
     await deductMutation.mutateAsync({
       studentId,
       amount,
       description: description || undefined,
       referenceType,
     });
-    
+
     setDeductDialogOpen(false);
     resetForm();
     refetchWallet();
@@ -161,17 +166,17 @@ export default function WalletDetailPage({ params }: PageProps) {
   // Handle Refund
   const handleRefund = async () => {
     if (amount <= 0 || !description) {
-      toast.error('Lengkapi semua field yang diperlukan');
+      toast.error("Lengkapi semua field yang diperlukan");
       return;
     }
-    
+
     await refundMutation.mutateAsync({
       studentId,
       amount,
       description,
       referenceType,
     });
-    
+
     setRefundDialogOpen(false);
     resetForm();
     refetchWallet();
@@ -180,16 +185,16 @@ export default function WalletDetailPage({ params }: PageProps) {
   // Calculate stats from transactions
   const transactionStats = transactionsData?.data?.reduce(
     (acc, tx) => {
-      if (tx.type === 'TOPUP') {
+      if (tx.type === "TOPUP") {
         acc.totalTopUp += tx.amount;
         acc.topUpCount++;
-      } else if (tx.type === 'PURCHASE') {
+      } else if (tx.type === "PURCHASE") {
         acc.totalPurchase += tx.amount;
         acc.purchaseCount++;
       }
       return acc;
     },
-    { totalTopUp: 0, totalPurchase: 0, topUpCount: 0, purchaseCount: 0 }
+    { totalTopUp: 0, totalPurchase: 0, topUpCount: 0, purchaseCount: 0 },
   ) || { totalTopUp: 0, totalPurchase: 0, topUpCount: 0, purchaseCount: 0 };
 
   if (walletLoading) {
@@ -206,7 +211,9 @@ export default function WalletDetailPage({ params }: PageProps) {
         <Card>
           <CardContent className="p-8 text-center">
             <Wallet className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Wallet Tidak Ditemukan</h2>
+            <h2 className="text-xl font-semibold mb-2">
+              Wallet Tidak Ditemukan
+            </h2>
             <p className="text-muted-foreground mb-4">
               Wallet untuk santri ini belum tersedia.
             </p>
@@ -257,10 +264,7 @@ export default function WalletDetailPage({ params }: PageProps) {
             <ArrowDownRight className="h-4 w-4 mr-2" />
             Kurangi
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => setRefundDialogOpen(true)}
-          >
+          <Button variant="outline" onClick={() => setRefundDialogOpen(true)}>
             <ArrowLeftRight className="h-4 w-4 mr-2" />
             Refund
           </Button>
@@ -280,26 +284,28 @@ export default function WalletDetailPage({ params }: PageProps) {
           <CardContent className="space-y-4">
             <div>
               <p className="text-sm text-muted-foreground">Nama</p>
-              <p className="font-semibold text-lg">{wallet.student?.name || '-'}</p>
+              <p className="font-semibold text-lg">
+                {wallet.student?.name || "-"}
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">NIS</p>
-                <p className="font-mono">{wallet.student?.nis || '-'}</p>
+                <p className="font-mono">{wallet.student?.nis || "-"}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Kelas</p>
-                <p>{wallet.student?.class?.name || '-'}</p>
+                <p>{wallet.student?.class?.name || "-"}</p>
               </div>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Unit</p>
-              <p>{wallet.student?.unit?.name || '-'}</p>
+              <p>{wallet.student?.unit?.name || "-"}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Status</p>
-              <Badge variant={wallet.isActive ? 'default' : 'secondary'}>
-                {wallet.isActive ? 'Aktif' : 'Nonaktif'}
+              <Badge variant={wallet.isActive ? "default" : "secondary"}>
+                {wallet.isActive ? "Aktif" : "Nonaktif"}
               </Badge>
             </div>
           </CardContent>
@@ -319,12 +325,15 @@ export default function WalletDetailPage({ params }: PageProps) {
               <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
                 <Wallet className="h-8 w-8 mx-auto text-green-600 mb-2" />
                 <p className="text-sm text-muted-foreground">Saldo Saat Ini</p>
-                <p className={`text-3xl font-bold ${wallet.balance < 10000 ? 'text-red-600' : 'text-green-600'}`}>
+                <p
+                  className={`text-3xl font-bold ${wallet.balance < 10000 ? "text-red-600" : "text-green-600"}`}
+                >
                   {formatCurrency(wallet.balance)}
                 </p>
                 {wallet.lastTopUp && (
                   <p className="text-xs text-muted-foreground mt-2">
-                    Top up terakhir: {new Date(wallet.lastTopUp).toLocaleDateString('id-ID')}
+                    Top up terakhir:{" "}
+                    {new Date(wallet.lastTopUp).toLocaleDateString("id-ID")}
                   </p>
                 )}
               </div>
@@ -424,35 +433,49 @@ export default function WalletDetailPage({ params }: PageProps) {
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm">
-                          {new Date(tx.createdAt).toLocaleString('id-ID', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
+                          {new Date(tx.createdAt).toLocaleString("id-ID", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
                           })}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge className={getTransactionTypeColor(tx.type)}>
-                        {tx.type === 'TOPUP' && <ArrowUpRight className="h-3 w-3 mr-1" />}
-                        {tx.type === 'PURCHASE' && <ArrowDownRight className="h-3 w-3 mr-1" />}
-                        {tx.type === 'REFUND' && <ArrowLeftRight className="h-3 w-3 mr-1" />}
-                        {tx.type === 'TRANSFER' && <ArrowLeftRight className="h-3 w-3 mr-1" />}
+                        {tx.type === "TOPUP" && (
+                          <ArrowUpRight className="h-3 w-3 mr-1" />
+                        )}
+                        {tx.type === "PURCHASE" && (
+                          <ArrowDownRight className="h-3 w-3 mr-1" />
+                        )}
+                        {tx.type === "REFUND" && (
+                          <ArrowLeftRight className="h-3 w-3 mr-1" />
+                        )}
+                        {tx.type === "TRANSFER" && (
+                          <ArrowLeftRight className="h-3 w-3 mr-1" />
+                        )}
                         {getTransactionTypeLabel(tx.type)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm">
-                      {tx.referenceType ? getReferenceTypeLabel(tx.referenceType) : '-'}
+                      {tx.referenceType
+                        ? getReferenceTypeLabel(tx.referenceType)
+                        : "-"}
                     </TableCell>
                     <TableCell className="text-right font-bold">
-                      <span className={
-                        tx.type === 'TOPUP' || tx.type === 'REFUND'
-                          ? 'text-green-600'
-                          : 'text-red-600'
-                      }>
-                        {tx.type === 'TOPUP' || tx.type === 'REFUND' ? '+' : '-'}
+                      <span
+                        className={
+                          tx.type === "TOPUP" || tx.type === "REFUND"
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }
+                      >
+                        {tx.type === "TOPUP" || tx.type === "REFUND"
+                          ? "+"
+                          : "-"}
                         {formatCurrency(tx.amount)}
                       </span>
                     </TableCell>
@@ -463,7 +486,7 @@ export default function WalletDetailPage({ params }: PageProps) {
                       {formatCurrency(tx.balanceAfter)}
                     </TableCell>
                     <TableCell className="max-w-xs truncate text-sm text-muted-foreground">
-                      {tx.description || '-'}
+                      {tx.description || "-"}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -497,10 +520,13 @@ export default function WalletDetailPage({ params }: PageProps) {
       </Card>
 
       {/* Top Up Dialog */}
-      <Dialog open={topUpDialogOpen} onOpenChange={(open) => {
-        setTopUpDialogOpen(open);
-        if (!open) resetForm();
-      }}>
+      <Dialog
+        open={topUpDialogOpen}
+        onOpenChange={(open) => {
+          setTopUpDialogOpen(open);
+          if (!open) resetForm();
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -514,15 +540,17 @@ export default function WalletDetailPage({ params }: PageProps) {
           <div className="space-y-4">
             <div className="p-4 bg-muted rounded-lg">
               <p className="text-sm text-muted-foreground">Saldo Saat Ini</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(wallet.balance)}</p>
+              <p className="text-2xl font-bold text-green-600">
+                {formatCurrency(wallet.balance)}
+              </p>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Nominal Top Up</Label>
               <Input
                 type="number"
                 placeholder="Masukkan nominal..."
-                value={amount || ''}
+                value={amount || ""}
                 onChange={(e) => setAmount(Number(e.target.value))}
               />
               <div className="flex gap-2 flex-wrap">
@@ -547,13 +575,19 @@ export default function WalletDetailPage({ params }: PageProps) {
                   <Button
                     key={method.value}
                     type="button"
-                    variant={paymentMethod === method.value ? 'default' : 'outline'}
+                    variant={
+                      paymentMethod === method.value ? "default" : "outline"
+                    }
                     className="flex items-center gap-2"
                     onClick={() => setPaymentMethod(method.value)}
                   >
-                    {method.value === 'CASH' && <Banknote className="h-4 w-4" />}
-                    {method.value === 'BANK_TRANSFER' && <CreditCard className="h-4 w-4" />}
-                    {method.value === 'QRIS' && <QrCode className="h-4 w-4" />}
+                    {method.value === "CASH" && (
+                      <Banknote className="h-4 w-4" />
+                    )}
+                    {method.value === "BANK_TRANSFER" && (
+                      <CreditCard className="h-4 w-4" />
+                    )}
+                    {method.value === "QRIS" && <QrCode className="h-4 w-4" />}
                     {method.label}
                   </Button>
                 ))}
@@ -571,7 +605,9 @@ export default function WalletDetailPage({ params }: PageProps) {
 
             {amount > 0 && (
               <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-sm text-muted-foreground">Saldo Setelah Top Up</p>
+                <p className="text-sm text-muted-foreground">
+                  Saldo Setelah Top Up
+                </p>
                 <p className="text-2xl font-bold text-green-600">
                   {formatCurrency(wallet.balance + amount)}
                 </p>
@@ -597,10 +633,13 @@ export default function WalletDetailPage({ params }: PageProps) {
       </Dialog>
 
       {/* Deduct Dialog */}
-      <Dialog open={deductDialogOpen} onOpenChange={(open) => {
-        setDeductDialogOpen(open);
-        if (!open) resetForm();
-      }}>
+      <Dialog
+        open={deductDialogOpen}
+        onOpenChange={(open) => {
+          setDeductDialogOpen(open);
+          if (!open) resetForm();
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -614,15 +653,17 @@ export default function WalletDetailPage({ params }: PageProps) {
           <div className="space-y-4">
             <div className="p-4 bg-muted rounded-lg">
               <p className="text-sm text-muted-foreground">Saldo Saat Ini</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(wallet.balance)}</p>
+              <p className="text-2xl font-bold text-green-600">
+                {formatCurrency(wallet.balance)}
+              </p>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Nominal</Label>
               <Input
                 type="number"
                 placeholder="Masukkan nominal..."
-                value={amount || ''}
+                value={amount || ""}
                 onChange={(e) => setAmount(Number(e.target.value))}
               />
               {amount > wallet.balance && (
@@ -632,7 +673,10 @@ export default function WalletDetailPage({ params }: PageProps) {
 
             <div className="space-y-2">
               <Label>Tipe Referensi</Label>
-              <Select value={referenceType} onValueChange={(val) => setReferenceType(val as ReferenceType)}>
+              <Select
+                value={referenceType}
+                onValueChange={(val) => setReferenceType(val as ReferenceType)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -657,7 +701,9 @@ export default function WalletDetailPage({ params }: PageProps) {
 
             {amount > 0 && amount <= wallet.balance && (
               <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-                <p className="text-sm text-muted-foreground">Saldo Setelah Pengurangan</p>
+                <p className="text-sm text-muted-foreground">
+                  Saldo Setelah Pengurangan
+                </p>
                 <p className="text-2xl font-bold text-red-600">
                   {formatCurrency(wallet.balance - amount)}
                 </p>
@@ -665,12 +711,19 @@ export default function WalletDetailPage({ params }: PageProps) {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeductDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setDeductDialogOpen(false)}
+            >
               Batal
             </Button>
             <Button
               onClick={handleDeduct}
-              disabled={deductMutation.isPending || amount <= 0 || amount > wallet.balance}
+              disabled={
+                deductMutation.isPending ||
+                amount <= 0 ||
+                amount > wallet.balance
+              }
               variant="destructive"
             >
               {deductMutation.isPending && (
@@ -683,10 +736,13 @@ export default function WalletDetailPage({ params }: PageProps) {
       </Dialog>
 
       {/* Refund Dialog */}
-      <Dialog open={refundDialogOpen} onOpenChange={(open) => {
-        setRefundDialogOpen(open);
-        if (!open) resetForm();
-      }}>
+      <Dialog
+        open={refundDialogOpen}
+        onOpenChange={(open) => {
+          setRefundDialogOpen(open);
+          if (!open) resetForm();
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -700,22 +756,27 @@ export default function WalletDetailPage({ params }: PageProps) {
           <div className="space-y-4">
             <div className="p-4 bg-muted rounded-lg">
               <p className="text-sm text-muted-foreground">Saldo Saat Ini</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(wallet.balance)}</p>
+              <p className="text-2xl font-bold text-green-600">
+                {formatCurrency(wallet.balance)}
+              </p>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Nominal Refund</Label>
               <Input
                 type="number"
                 placeholder="Masukkan nominal..."
-                value={amount || ''}
+                value={amount || ""}
                 onChange={(e) => setAmount(Number(e.target.value))}
               />
             </div>
 
             <div className="space-y-2">
               <Label>Tipe Referensi</Label>
-              <Select value={referenceType} onValueChange={(val) => setReferenceType(val as ReferenceType)}>
+              <Select
+                value={referenceType}
+                onValueChange={(val) => setReferenceType(val as ReferenceType)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -741,7 +802,9 @@ export default function WalletDetailPage({ params }: PageProps) {
 
             {amount > 0 && (
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-sm text-muted-foreground">Saldo Setelah Refund</p>
+                <p className="text-sm text-muted-foreground">
+                  Saldo Setelah Refund
+                </p>
                 <p className="text-2xl font-bold text-blue-600">
                   {formatCurrency(wallet.balance + amount)}
                 </p>
@@ -749,7 +812,10 @@ export default function WalletDetailPage({ params }: PageProps) {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRefundDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setRefundDialogOpen(false)}
+            >
               Batal
             </Button>
             <Button

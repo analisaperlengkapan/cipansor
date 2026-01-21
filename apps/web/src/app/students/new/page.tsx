@@ -1,37 +1,37 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { useCreateStudent } from '@/hooks/use-students';
-import { useUnits } from '@/hooks/use-units';
-import { useAuthStore } from '@/stores/auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import { useCreateStudent } from "@/hooks/use-students";
+import { useUnits } from "@/hooks/use-units";
+import { useAuthStore } from "@/stores/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { toast } from 'sonner';
-import { Loader2, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+} from "@/components/ui/card";
+import { toast } from "sonner";
+import { Loader2, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
-import { createStudentSchema, type CreateStudentInput } from '@cipansor/shared';
+import { createStudentSchema, type CreateStudentInput } from "@cipansor/shared";
 
 // Use strict validation from shared
 // We can extend here if needed for UI-specific validaton (e.g. terms acceptance)
@@ -54,8 +54,8 @@ export default function NewStudentPage() {
   } = useForm<StudentForm>({
     resolver: zodResolver(studentSchema) as any,
     defaultValues: {
-      unitId: user?.role !== 'SUPER_ADMIN' ? user?.unitId : '',
-      enrollmentDate: new Date().toISOString().split('T')[0] as any,
+      unitId: user?.role !== "SUPER_ADMIN" ? user?.unitId : "",
+      enrollmentDate: new Date().toISOString().split("T")[0] as any,
     },
   });
 
@@ -63,20 +63,26 @@ export default function NewStudentPage() {
     try {
       await createMutation.mutateAsync({
         ...data,
-        birthDate: data.birthDate instanceof Date ? data.birthDate.toISOString() : data.birthDate,
-        enrollmentDate: data.enrollmentDate instanceof Date ? data.enrollmentDate.toISOString() : data.enrollmentDate,
+        birthDate:
+          data.birthDate instanceof Date
+            ? data.birthDate.toISOString()
+            : data.birthDate,
+        enrollmentDate:
+          data.enrollmentDate instanceof Date
+            ? data.enrollmentDate.toISOString()
+            : data.enrollmentDate,
         email: data.email || undefined,
         phone: data.phone || undefined,
       });
-      toast.success('Student created successfully');
-      router.push('/students');
+      toast.success("Student created successfully");
+      router.push("/students");
     } catch {
-      toast.error('Failed to create student');
+      toast.error("Failed to create student");
     }
   };
 
   return (
-    <MainLayout allowedRoles={['SUPER_ADMIN', 'UNIT_ADMIN']}>
+    <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN"]}>
       <div className="space-y-6">
         <PageHeader
           title="Add New Student"
@@ -100,25 +106,31 @@ export default function NewStudentPage() {
             <CardContent className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="nis">NIS (Student ID) *</Label>
-                <Input id="nis" {...register('nis')} />
+                <Input id="nis" {...register("nis")} />
                 {errors.nis && (
-                  <p className="text-sm text-destructive">{errors.nis.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.nis.message}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name *</Label>
-                <Input id="name" {...register('name')} />
+                <Input id="name" {...register("name")} />
                 {errors.name && (
-                  <p className="text-sm text-destructive">{errors.name.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.name.message}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <Label>Gender *</Label>
                 <Select
-                  value={watch('gender')}
-                  onValueChange={(value) => setValue('gender', value as 'MALE' | 'FEMALE')}
+                  value={watch("gender")}
+                  onValueChange={(value) =>
+                    setValue("gender", value as "MALE" | "FEMALE")
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select gender" />
@@ -129,32 +141,38 @@ export default function NewStudentPage() {
                   </SelectContent>
                 </Select>
                 {errors.gender && (
-                  <p className="text-sm text-destructive">{errors.gender.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.gender.message}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="birthDate">Birth Date *</Label>
-                <Input id="birthDate" type="date" {...register('birthDate')} />
+                <Input id="birthDate" type="date" {...register("birthDate")} />
                 {errors.birthDate && (
-                  <p className="text-sm text-destructive">{errors.birthDate.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.birthDate.message}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="birthPlace">Birth Place *</Label>
-                <Input id="birthPlace" {...register('birthPlace')} />
+                <Input id="birthPlace" {...register("birthPlace")} />
                 {errors.birthPlace && (
-                  <p className="text-sm text-destructive">{errors.birthPlace.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.birthPlace.message}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <Label>Unit *</Label>
                 <Select
-                  value={watch('unitId')}
-                  onValueChange={(value) => setValue('unitId', value)}
-                  disabled={user?.role !== 'SUPER_ADMIN'}
+                  value={watch("unitId")}
+                  onValueChange={(value) => setValue("unitId", value)}
+                  disabled={user?.role !== "SUPER_ADMIN"}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select unit" />
@@ -168,15 +186,19 @@ export default function NewStudentPage() {
                   </SelectContent>
                 </Select>
                 {errors.unitId && (
-                  <p className="text-sm text-destructive">{errors.unitId.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.unitId.message}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="address">Address *</Label>
-                <Textarea id="address" rows={3} {...register('address')} />
+                <Textarea id="address" rows={3} {...register("address")} />
                 {errors.address && (
-                  <p className="text-sm text-destructive">{errors.address.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.address.message}
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -186,35 +208,43 @@ export default function NewStudentPage() {
           <Card>
             <CardHeader>
               <CardTitle>Contact Information</CardTitle>
-              <CardDescription>Student and parent contact details</CardDescription>
+              <CardDescription>
+                Student and parent contact details
+              </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" {...register('phone')} />
+                <Input id="phone" {...register("phone")} />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" {...register('email')} />
+                <Input id="email" type="email" {...register("email")} />
                 {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.email.message}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="parentName">Parent Name *</Label>
-                <Input id="parentName" {...register('parentName')} />
+                <Input id="parentName" {...register("parentName")} />
                 {errors.parentName && (
-                  <p className="text-sm text-destructive">{errors.parentName.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.parentName.message}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="parentPhone">Parent Phone *</Label>
-                <Input id="parentPhone" {...register('parentPhone')} />
+                <Input id="parentPhone" {...register("parentPhone")} />
                 {errors.parentPhone && (
-                  <p className="text-sm text-destructive">{errors.parentPhone.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.parentPhone.message}
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -229,18 +259,28 @@ export default function NewStudentPage() {
             <CardContent>
               <div className="space-y-2 md:w-1/2">
                 <Label htmlFor="enrollmentDate">Enrollment Date</Label>
-                <Input id="enrollmentDate" type="date" {...register('enrollmentDate')} />
+                <Input
+                  id="enrollmentDate"
+                  type="date"
+                  {...register("enrollmentDate")}
+                />
               </div>
             </CardContent>
           </Card>
 
           {/* Actions */}
           <div className="flex justify-end gap-4">
-            <Button type="button" variant="outline" onClick={() => router.back()}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={createMutation.isPending}>
-              {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {createMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Create Student
             </Button>
           </div>

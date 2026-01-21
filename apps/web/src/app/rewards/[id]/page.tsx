@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
   Award,
@@ -15,19 +15,19 @@ import {
   Loader2,
   Star,
   FileText,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { toast } from "sonner";
 import {
   useReward,
   useDeleteReward,
   REWARD_CATEGORIES,
   RewardCategory,
-} from '@/hooks/use-rewards';
+} from "@/hooks/use-rewards";
 
 function getCategoryBadge(category: RewardCategory) {
   const cat = REWARD_CATEGORIES.find((c) => c.value === category);
@@ -50,10 +50,10 @@ export default function RewardDetailPage() {
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(id);
-      toast.success('Penghargaan berhasil dihapus');
-      router.push('/rewards');
+      toast.success("Penghargaan berhasil dihapus");
+      router.push("/rewards");
     } catch {
-      toast.error('Gagal menghapus penghargaan');
+      toast.error("Gagal menghapus penghargaan");
     }
   };
 
@@ -69,7 +69,9 @@ export default function RewardDetailPage() {
     return (
       <div className="text-center py-12">
         <Award className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-        <p className="text-muted-foreground">Data penghargaan tidak ditemukan</p>
+        <p className="text-muted-foreground">
+          Data penghargaan tidak ditemukan
+        </p>
         <Button variant="link" asChild>
           <Link href="/rewards">Kembali ke daftar</Link>
         </Button>
@@ -90,10 +92,13 @@ export default function RewardDetailPage() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold">Detail Penghargaan</h1>
-              {reward.rewardType && getCategoryBadge(reward.rewardType.category)}
+              {reward.rewardType &&
+                getCategoryBadge(reward.rewardType.category)}
             </div>
             <p className="text-muted-foreground">
-              {format(new Date(reward.date), 'd MMMM yyyy', { locale: localeId })}
+              {format(new Date(reward.date), "d MMMM yyyy", {
+                locale: localeId,
+              })}
             </p>
           </div>
         </div>
@@ -127,13 +132,17 @@ export default function RewardDetailPage() {
                 <User className="h-6 w-6 text-muted-foreground" />
               </div>
               <div>
-                <p className="font-semibold text-lg">{reward.student?.name || '-'}</p>
-                <p className="text-sm text-muted-foreground">NIS: {reward.student?.nis || '-'}</p>
+                <p className="font-semibold text-lg">
+                  {reward.student?.name || "-"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  NIS: {reward.student?.nis || "-"}
+                </p>
               </div>
             </div>
             {reward.student?.class && (
               <div className="text-sm">
-                <span className="text-muted-foreground">Kelas:</span>{' '}
+                <span className="text-muted-foreground">Kelas:</span>{" "}
                 <span className="font-medium">{reward.student.class.name}</span>
               </div>
             )}
@@ -155,7 +164,9 @@ export default function RewardDetailPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="font-semibold text-lg">{reward.rewardType?.name || '-'}</p>
+              <p className="font-semibold text-lg">
+                {reward.rewardType?.name || "-"}
+              </p>
               {reward.rewardType?.description && (
                 <p className="text-sm text-muted-foreground mt-1">
                   {reward.rewardType.description}
@@ -166,7 +177,8 @@ export default function RewardDetailPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Kategori</p>
-                {reward.rewardType && getCategoryBadge(reward.rewardType.category)}
+                {reward.rewardType &&
+                  getCategoryBadge(reward.rewardType.category)}
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Poin</p>
@@ -190,7 +202,9 @@ export default function RewardDetailPage() {
             <div>
               <p className="text-sm text-muted-foreground">Tanggal Pemberian</p>
               <p className="font-medium">
-                {format(new Date(reward.date), 'EEEE, d MMMM yyyy', { locale: localeId })}
+                {format(new Date(reward.date), "EEEE, d MMMM yyyy", {
+                  locale: localeId,
+                })}
               </p>
             </div>
             {reward.givenBy && (
@@ -203,7 +217,9 @@ export default function RewardDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Dicatat</p>
                 <p className="text-sm">
-                  {format(new Date(reward.createdAt), 'd MMMM yyyy, HH:mm', { locale: localeId })}
+                  {format(new Date(reward.createdAt), "d MMMM yyyy, HH:mm", {
+                    locale: localeId,
+                  })}
                 </p>
               </div>
             )}
@@ -230,7 +246,9 @@ export default function RewardDetailPage() {
             </div>
             {reward.student?.totalRewardPoints !== undefined && (
               <div className="text-sm">
-                <span className="text-muted-foreground">Total Poin Penghargaan Santri:</span>{' '}
+                <span className="text-muted-foreground">
+                  Total Poin Penghargaan Santri:
+                </span>{" "}
                 <span className="font-semibold text-green-600">
                   {reward.student.totalRewardPoints} poin
                 </span>

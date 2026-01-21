@@ -77,7 +77,9 @@ export const waveController = {
         status: status as string,
       });
 
-      res.json(ApiResponse.success(result.data, 'Registrants retrieved successfully', result.pagination));
+      res.json(
+        ApiResponse.success(result.data, 'Registrants retrieved successfully', result.pagination)
+      );
     } catch (error) {
       next(error);
     }

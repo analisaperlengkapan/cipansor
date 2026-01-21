@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import {
   CreateQualityEvidenceInput,
   QualityDashboardSummary,
-  QualityStandardType
+  QualityStandardType,
 } from '@cipansor/shared';
 
 export const qualityService = {
@@ -14,12 +14,12 @@ export const qualityService = {
           orderBy: { sortOrder: 'asc' },
           include: {
             _count: {
-              select: { evidences: true }
-            }
-          }
-        }
+              select: { evidences: true },
+            },
+          },
+        },
       },
-      orderBy: { type: 'asc' }
+      orderBy: { type: 'asc' },
     });
   },
 
@@ -34,17 +34,17 @@ export const qualityService = {
             evidences: {
               where: {
                 unitId,
-                academicYearId
+                academicYearId,
               },
               include: {
                 uploadedBy: {
-                  select: { id: true, name: true }
-                }
-              }
-            }
-          }
-        }
-      }
+                  select: { id: true, name: true },
+                },
+              },
+            },
+          },
+        },
+      },
     });
   },
 
@@ -58,20 +58,23 @@ export const qualityService = {
         name: data.name,
         fileUrl: data.fileUrl,
         description: data.description,
-        uploadedById: userId
-      }
+        uploadedById: userId,
+      },
     });
   },
 
   // Delete evidence
   deleteEvidence: async (evidenceId: string) => {
     return prisma.qualityEvidence.delete({
-      where: { id: evidenceId }
+      where: { id: evidenceId },
     });
   },
 
   // Get dashboard summary (compliance per standard)
-  getDashboardSummary: async (unitId: string, academicYearId: string): Promise<QualityDashboardSummary[]> => {
+  getDashboardSummary: async (
+    unitId: string,
+    academicYearId: string
+  ): Promise<QualityDashboardSummary[]> => {
     const standards = await prisma.qualityStandard.findMany({
       include: {
         indicators: {
@@ -81,20 +84,20 @@ export const qualityService = {
                 evidences: {
                   where: {
                     unitId,
-                    academicYearId
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                    academicYearId,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
-    return standards.map(std => {
+    return standards.map((std) => {
       const totalIndicators = std.indicators.length;
       // An indicator is "compliant" if it has at least one evidence uploaded
-      const compliantIndicators = std.indicators.filter(ind => ind._count.evidences > 0).length;
+      const compliantIndicators = std.indicators.filter((ind) => ind._count.evidences > 0).length;
 
       return {
         id: std.id,
@@ -102,8 +105,9 @@ export const qualityService = {
         standardName: std.name,
         totalIndicators,
         uploadedEvidenceCount: std.indicators.reduce((acc, curr) => acc + curr._count.evidences, 0),
-        compliancePercentage: totalIndicators > 0 ? (compliantIndicators / totalIndicators) * 100 : 0
+        compliancePercentage:
+          totalIndicators > 0 ? (compliantIndicators / totalIndicators) * 100 : 0,
       };
     });
-  }
+  },
 };

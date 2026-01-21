@@ -1,28 +1,38 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { PageHeader, DataTable } from '@/components/shared';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { PageHeader, DataTable } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useDailyReports } from '@/hooks/use-daily-report';
-import { useClasses } from '@/hooks/use-classes';
-import { ColumnDef } from '@tanstack/react-table';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+} from "@/components/ui/select";
+import { useDailyReports } from "@/hooks/use-daily-report";
+import { useClasses } from "@/hooks/use-classes";
+import { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 import {
   Users,
   CalendarIcon,
@@ -36,7 +46,7 @@ import {
   Frown,
   UserCheck,
   UserX,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface DailyReport {
   id: string;
@@ -65,17 +75,17 @@ const moodIcons: Record<string, React.ReactNode> = {
 };
 
 const moodLabels: Record<string, string> = {
-  EXCELLENT: 'Sangat Baik',
-  GOOD: 'Baik',
-  NEUTRAL: 'Biasa',
-  LOW: 'Kurang',
-  STRUGGLING: 'Sangat Kurang',
+  EXCELLENT: "Sangat Baik",
+  GOOD: "Baik",
+  NEUTRAL: "Biasa",
+  LOW: "Kurang",
+  STRUGGLING: "Sangat Kurang",
 };
 
 export default function ClassDailyReportsPage() {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedClass, setSelectedClass] = useState<string>('');
+  const [selectedClass, setSelectedClass] = useState<string>("");
 
   const { data: classesData } = useClasses({ limit: 100 });
   const { data, isLoading } = useDailyReports({
@@ -86,14 +96,17 @@ export default function ClassDailyReportsPage() {
 
   // Calculate statistics
   const totalStudents = reports.length;
-  const presentCount = reports.filter((r: DailyReport) => r.attendanceStatus === 'HADIR').length;
+  const presentCount = reports.filter(
+    (r: DailyReport) => r.attendanceStatus === "HADIR",
+  ).length;
   const absentCount = totalStudents - presentCount;
-  const attendanceRate = totalStudents > 0 ? Math.round((presentCount / totalStudents) * 100) : 0;
+  const attendanceRate =
+    totalStudents > 0 ? Math.round((presentCount / totalStudents) * 100) : 0;
 
   const columns: ColumnDef<DailyReport>[] = [
     {
-      accessorKey: 'student',
-      header: 'Santri',
+      accessorKey: "student",
+      header: "Santri",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
@@ -104,20 +117,26 @@ export default function ClassDailyReportsPage() {
           </Avatar>
           <div>
             <div className="font-medium">{row.original.student?.name}</div>
-            <div className="text-sm text-muted-foreground">{row.original.student?.nis}</div>
+            <div className="text-sm text-muted-foreground">
+              {row.original.student?.nis}
+            </div>
           </div>
         </div>
       ),
     },
     {
-      accessorKey: 'attendanceStatus',
-      header: 'Kehadiran',
+      accessorKey: "attendanceStatus",
+      header: "Kehadiran",
       cell: ({ row }) => (
         <Badge
-          variant={row.original.attendanceStatus === 'HADIR' ? 'default' : 'destructive'}
+          variant={
+            row.original.attendanceStatus === "HADIR"
+              ? "default"
+              : "destructive"
+          }
           className="flex items-center gap-1 w-fit"
         >
-          {row.original.attendanceStatus === 'HADIR' ? (
+          {row.original.attendanceStatus === "HADIR" ? (
             <CheckCircle className="h-3 w-3" />
           ) : (
             <XCircle className="h-3 w-3" />
@@ -127,8 +146,8 @@ export default function ClassDailyReportsPage() {
       ),
     },
     {
-      accessorKey: 'mood',
-      header: 'Kondisi',
+      accessorKey: "mood",
+      header: "Kondisi",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           {moodIcons[row.original.mood]}
@@ -137,28 +156,28 @@ export default function ClassDailyReportsPage() {
       ),
     },
     {
-      accessorKey: 'checkInTime',
-      header: 'Check-in',
+      accessorKey: "checkInTime",
+      header: "Check-in",
       cell: ({ row }) =>
         row.original.checkInTime ? (
-          <span>{format(new Date(row.original.checkInTime), 'HH:mm')}</span>
+          <span>{format(new Date(row.original.checkInTime), "HH:mm")}</span>
         ) : (
           <span className="text-muted-foreground">-</span>
         ),
     },
     {
-      accessorKey: 'checkOutTime',
-      header: 'Check-out',
+      accessorKey: "checkOutTime",
+      header: "Check-out",
       cell: ({ row }) =>
         row.original.checkOutTime ? (
-          <span>{format(new Date(row.original.checkOutTime), 'HH:mm')}</span>
+          <span>{format(new Date(row.original.checkOutTime), "HH:mm")}</span>
         ) : (
           <span className="text-muted-foreground">-</span>
         ),
     },
     {
-      accessorKey: 'notes',
-      header: 'Catatan',
+      accessorKey: "notes",
+      header: "Catatan",
       cell: ({ row }) =>
         row.original.notes ? (
           <div className="max-w-[200px] truncate">{row.original.notes}</div>
@@ -167,20 +186,24 @@ export default function ClassDailyReportsPage() {
         ),
     },
     {
-      id: 'actions',
+      id: "actions",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push(`/paud/daily-reports/${row.original.id}`)}
+            onClick={() =>
+              router.push(`/paud/daily-reports/${row.original.id}`)
+            }
           >
             <Eye className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push(`/paud/daily-reports/${row.original.id}/edit`)}
+            onClick={() =>
+              router.push(`/paud/daily-reports/${row.original.id}/edit`)
+            }
           >
             <FileEdit className="h-4 w-4" />
           </Button>
@@ -206,9 +229,14 @@ export default function ClassDailyReportsPage() {
                 <span className="text-muted-foreground">Tanggal:</span>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
+                    <Button
+                      variant="outline"
+                      className="w-[240px] justify-start text-left font-normal"
+                    >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {format(selectedDate, 'EEEE, dd MMMM yyyy', { locale: id })}
+                      {format(selectedDate, "EEEE, dd MMMM yyyy", {
+                        locale: id,
+                      })}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -307,20 +335,22 @@ export default function ClassDailyReportsPage() {
             <CardHeader>
               <CardTitle>Daftar Laporan</CardTitle>
               <CardDescription>
-                {format(selectedDate, 'EEEE, dd MMMM yyyy', { locale: id })}
+                {format(selectedDate, "EEEE, dd MMMM yyyy", { locale: id })}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {reports.length === 0 ? (
                 <div className="text-center py-12">
                   <Clock className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-4 text-lg font-semibold">Belum Ada Laporan</h3>
+                  <h3 className="mt-4 text-lg font-semibold">
+                    Belum Ada Laporan
+                  </h3>
                   <p className="text-muted-foreground">
                     Laporan untuk tanggal ini belum tersedia
                   </p>
                   <Button
                     className="mt-4"
-                    onClick={() => router.push('/paud/daily-reports/check-in')}
+                    onClick={() => router.push("/paud/daily-reports/check-in")}
                   >
                     Buat Laporan
                   </Button>

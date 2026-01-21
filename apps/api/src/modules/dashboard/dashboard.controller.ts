@@ -9,34 +9,34 @@ import { dashboardService } from './dashboard.service';
 import { logger } from '@/lib/logger';
 import { ApiError, ErrorCode } from '@/middleware/error';
 import {
-    dashboardStatsQuerySchema,
-    dashboardMetricsQuerySchema,
-    attendanceStatsQuerySchema,
-    financeStatsQuerySchema,
-    tahfidzStatsQuerySchema,
-    violationRewardStatsQuerySchema
+  dashboardStatsQuerySchema,
+  dashboardMetricsQuerySchema,
+  attendanceStatsQuerySchema,
+  financeStatsQuerySchema,
+  tahfidzStatsQuerySchema,
+  violationRewardStatsQuerySchema,
 } from './dashboard.schema';
 
 /**
  * Helper to extract context from request
  */
 function getContext(req: Request) {
-    const user = (req as any).user;
-    return {
-        userId: user?.id,
-        unitId: typeof req.query.unitId === 'string' ? req.query.unitId : undefined,
-        role: user?.role
-    };
+  const user = (req as any).user;
+  return {
+    userId: user?.id,
+    unitId: typeof req.query.unitId === 'string' ? req.query.unitId : undefined,
+    role: user?.role,
+  };
 }
 
 /**
  * Verify user has access to the requested unit
  */
 function verifyUnitAccess(req: Request, unitId?: string): boolean {
-    if (!unitId) return true;
-    
-    const user = (req as any).user;
-    return user?.unitId === unitId || user?.role === 'SUPER_ADMIN';
+  if (!unitId) return true;
+
+  const user = (req as any).user;
+  return user?.unitId === unitId || user?.role === 'SUPER_ADMIN';
 }
 
 /**
@@ -44,32 +44,29 @@ function verifyUnitAccess(req: Request, unitId?: string): boolean {
  * @route GET /api/dashboard/metrics
  */
 export async function getDashboardMetrics(
-    req: Request,
-    res: Response,
-    next: NextFunction
+  req: Request,
+  res: Response,
+  next: NextFunction
 ): Promise<void> {
-    try {
-        const query = dashboardMetricsQuerySchema.parse(req.query);
-        
-        if (!verifyUnitAccess(req, query.unitId)) {
-            throw new ApiError(
-                ErrorCode.FORBIDDEN,
-                'You do not have access to this unit'
-            );
-        }
+  try {
+    const query = dashboardMetricsQuerySchema.parse(req.query);
 
-        const context = getContext(req);
-        context.unitId = query.unitId;
-        
-        const result = await dashboardService.getMetrics(context);
-
-        res.json({
-            success: true,
-            data: result
-        });
-    } catch (error) {
-        next(error);
+    if (!verifyUnitAccess(req, query.unitId)) {
+      throw new ApiError(ErrorCode.FORBIDDEN, 'You do not have access to this unit');
     }
+
+    const context = getContext(req);
+    context.unitId = query.unitId;
+
+    const result = await dashboardService.getMetrics(context);
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -77,46 +74,42 @@ export async function getDashboardMetrics(
  * @route GET /api/dashboard/quick-stats
  */
 export async function getQuickStats(
-    req: Request,
-    res: Response,
-    next: NextFunction
+  req: Request,
+  res: Response,
+  next: NextFunction
 ): Promise<void> {
-    try {
-        const context = getContext(req);
-        const result = await dashboardService.getQuickStats(context);
+  try {
+    const context = getContext(req);
+    const result = await dashboardService.getQuickStats(context);
 
-        res.json({
-            success: true,
-            data: result
-        });
-    } catch (error) {
-        next(error);
-    }
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
  * Get dashboard main stats
  * @route GET /api/dashboard/stats
  */
-export async function getStats(
-    req: Request,
-    res: Response,
-    next: NextFunction
-): Promise<void> {
-    try {
-        const query = dashboardStatsQuerySchema.parse(req.query);
-        const context = getContext(req);
-        context.unitId = query.unitId;
-        
-        const result = await dashboardService.getStats(context);
+export async function getStats(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const query = dashboardStatsQuerySchema.parse(req.query);
+    const context = getContext(req);
+    context.unitId = query.unitId;
 
-        res.json({
-            success: true,
-            data: result
-        });
-    } catch (error) {
-        next(error);
-    }
+    const result = await dashboardService.getStats(context);
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -124,29 +117,29 @@ export async function getStats(
  * @route GET /api/dashboard/attendance
  */
 export async function getAttendanceStats(
-    req: Request,
-    res: Response,
-    next: NextFunction
+  req: Request,
+  res: Response,
+  next: NextFunction
 ): Promise<void> {
-    try {
-        const query = attendanceStatsQuerySchema.parse(req.query);
-        const context = getContext(req);
-        context.unitId = query.unitId;
+  try {
+    const query = attendanceStatsQuerySchema.parse(req.query);
+    const context = getContext(req);
+    context.unitId = query.unitId;
 
-        const dateRange = {
-            startDate: query.startDate ? new Date(query.startDate) : undefined,
-            endDate: query.endDate ? new Date(query.endDate) : undefined
-        };
+    const dateRange = {
+      startDate: query.startDate ? new Date(query.startDate) : undefined,
+      endDate: query.endDate ? new Date(query.endDate) : undefined,
+    };
 
-        const result = await dashboardService.getAttendanceStats(context, dateRange);
+    const result = await dashboardService.getAttendanceStats(context, dateRange);
 
-        res.json({
-            success: true,
-            data: result
-        });
-    } catch (error) {
-        next(error);
-    }
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -154,24 +147,24 @@ export async function getAttendanceStats(
  * @route GET /api/dashboard/finance
  */
 export async function getFinanceStats(
-    req: Request,
-    res: Response,
-    next: NextFunction
+  req: Request,
+  res: Response,
+  next: NextFunction
 ): Promise<void> {
-    try {
-        const query = financeStatsQuerySchema.parse(req.query);
-        const context = getContext(req);
-        context.unitId = query.unitId;
+  try {
+    const query = financeStatsQuerySchema.parse(req.query);
+    const context = getContext(req);
+    context.unitId = query.unitId;
 
-        const result = await dashboardService.getFinanceStats(context);
+    const result = await dashboardService.getFinanceStats(context);
 
-        res.json({
-            success: true,
-            data: result
-        });
-    } catch (error) {
-        next(error);
-    }
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -179,26 +172,26 @@ export async function getFinanceStats(
  * @route GET /api/dashboard/tahfidz
  */
 export async function getTahfidzStats(
-    req: Request,
-    res: Response,
-    next: NextFunction
+  req: Request,
+  res: Response,
+  next: NextFunction
 ): Promise<void> {
-    try {
-        const query = tahfidzStatsQuerySchema.parse(req.query);
-        const context = getContext(req);
-        context.unitId = query.unitId;
+  try {
+    const query = tahfidzStatsQuerySchema.parse(req.query);
+    const context = getContext(req);
+    context.unitId = query.unitId;
 
-        const result = await dashboardService.getTahfidzStats(context, {
-            period: query.period
-        });
+    const result = await dashboardService.getTahfidzStats(context, {
+      period: query.period,
+    });
 
-        res.json({
-            success: true,
-            data: result
-        });
-    } catch (error) {
-        next(error);
-    }
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -206,24 +199,24 @@ export async function getTahfidzStats(
  * @route GET /api/dashboard/violation-reward
  */
 export async function getViolationRewardStats(
-    req: Request,
-    res: Response,
-    next: NextFunction
+  req: Request,
+  res: Response,
+  next: NextFunction
 ): Promise<void> {
-    try {
-        const query = violationRewardStatsQuerySchema.parse(req.query);
-        const context = getContext(req);
-        context.unitId = query.unitId;
+  try {
+    const query = violationRewardStatsQuerySchema.parse(req.query);
+    const context = getContext(req);
+    context.unitId = query.unitId;
 
-        const result = await dashboardService.getViolationRewardStats(context, {
-            period: query.period
-        });
+    const result = await dashboardService.getViolationRewardStats(context, {
+      period: query.period,
+    });
 
-        res.json({
-            success: true,
-            data: result
-        });
-    } catch (error) {
-        next(error);
-    }
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
 }

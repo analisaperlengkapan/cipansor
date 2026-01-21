@@ -1,5 +1,5 @@
-import { prisma } from "../../lib/prisma";
-import { CreateFinancialPeriodInput } from "@cipansor/shared";
+import { prisma } from '../../lib/prisma';
+import { CreateFinancialPeriodInput } from '@cipansor/shared';
 
 export async function createFinancialPeriod(data: CreateFinancialPeriodInput) {
   const { unitId, name, startDate, endDate, notes } = data;
@@ -8,14 +8,12 @@ export async function createFinancialPeriod(data: CreateFinancialPeriodInput) {
   const overlap = await prisma.financialPeriod.findFirst({
     where: {
       unitId,
-      OR: [
-        { startDate: { lte: new Date(endDate) }, endDate: { gte: new Date(startDate) } }
-      ]
-    }
+      OR: [{ startDate: { lte: new Date(endDate) }, endDate: { gte: new Date(startDate) } }],
+    },
   });
 
   if (overlap) {
-    throw new Error("Financial period overlaps with an existing period");
+    throw new Error('Financial period overlaps with an existing period');
   }
 
   return prisma.financialPeriod.create({
@@ -25,7 +23,7 @@ export async function createFinancialPeriod(data: CreateFinancialPeriodInput) {
       startDate: new Date(startDate),
       endDate: new Date(endDate),
       notes,
-    }
+    },
   });
 }
 
@@ -35,8 +33,8 @@ export async function closePeriod(id: string, closedById: string) {
     data: {
       isClosed: true,
       closedAt: new Date(),
-      closedBy: { connect: { id: closedById } }
-    }
+      closedBy: { connect: { id: closedById } },
+    },
   });
 }
 
@@ -46,12 +44,16 @@ export async function reopenPeriod(id: string) {
     data: {
       isClosed: false,
       closedAt: null,
-      closedById: null
-    }
+      closedById: null,
+    },
   });
 }
 
-export async function getFinancialPeriods(query: { unitId?: string; page?: number; limit?: number }) {
+export async function getFinancialPeriods(query: {
+  unitId?: string;
+  page?: number;
+  limit?: number;
+}) {
   const { unitId, page = 1, limit = 20 } = query;
   const skip = (page - 1) * limit;
 
@@ -63,7 +65,7 @@ export async function getFinancialPeriods(query: { unitId?: string; page?: numbe
     prisma.financialPeriod.findMany({
       where,
       include: { closedBy: { select: { id: true, name: true } } },
-      orderBy: { startDate: "desc" },
+      orderBy: { startDate: 'desc' },
       skip,
       take: limit,
     }),
@@ -82,7 +84,7 @@ export async function checkPeriodStatus(unitId: string, date: Date) {
       unitId,
       startDate: { lte: date },
       endDate: { gte: date },
-    }
+    },
   });
 
   if (period && period.isClosed) {

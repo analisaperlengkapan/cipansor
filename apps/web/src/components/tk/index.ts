@@ -1,1 +1,1 @@
-export { TKRadarChart, TKRadarChartCompact } from './RadarChart';
+export { TKRadarChart, TKRadarChartCompact } from "./RadarChart";

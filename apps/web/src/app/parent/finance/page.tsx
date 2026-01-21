@@ -1,14 +1,26 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -16,8 +28,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { api } from '@/lib/api';
+} from "@/components/ui/table";
+import { api } from "@/lib/api";
 import {
   Receipt,
   CreditCard,
@@ -34,8 +46,8 @@ import {
   RefreshCw,
   Plus,
   ShieldAlert,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
 interface Child {
   id: string;
@@ -83,7 +95,7 @@ interface WalletData {
   balance: number;
   transactions: Array<{
     id: string;
-    type: 'TOP_UP' | 'DEDUCT' | 'TRANSFER' | 'REFUND';
+    type: "TOP_UP" | "DEDUCT" | "TRANSFER" | "REFUND";
     amount: number;
     balanceAfter: number;
     referenceType?: string;
@@ -95,11 +107,11 @@ interface WalletData {
 
 export default function FinancePage() {
   const searchParams = useSearchParams();
-  const selectedStudentId = searchParams.get('studentId');
+  const selectedStudentId = searchParams.get("studentId");
 
   const [loading, setLoading] = useState(true);
   const [children, setChildren] = useState<Child[]>([]);
-  const [selectedChild, setSelectedChild] = useState<string>('');
+  const [selectedChild, setSelectedChild] = useState<string>("");
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
   const [wallet, setWallet] = useState<WalletData | null>(null);
@@ -108,18 +120,20 @@ export default function FinancePage() {
   useEffect(() => {
     const fetchChildren = async () => {
       try {
-        const res = await api.get('/parent/children');
+        const res = await api.get("/parent/children");
         const childrenData = res.data.data || [];
         setChildren(childrenData);
-        
+
         if (childrenData.length > 0) {
-          const defaultChild = selectedStudentId 
-            ? childrenData.find((c: Child) => c.student.id === selectedStudentId)?.student.id
+          const defaultChild = selectedStudentId
+            ? childrenData.find(
+                (c: Child) => c.student.id === selectedStudentId,
+              )?.student.id
             : childrenData[0].student.id;
           setSelectedChild(defaultChild || childrenData[0].student.id);
         }
       } catch (err) {
-        console.error('Failed to fetch children:', err);
+        console.error("Failed to fetch children:", err);
       }
     };
 
@@ -136,7 +150,7 @@ export default function FinancePage() {
         setInvoices(res.data.data.invoices || []);
         setSummary(res.data.data.summary || null);
       } catch (err) {
-        console.error('Failed to fetch finance:', err);
+        console.error("Failed to fetch finance:", err);
       } finally {
         setLoading(false);
       }
@@ -147,7 +161,9 @@ export default function FinancePage() {
       try {
         const res = await api.get(`/wallet/student/${selectedChild}`);
         if (res.data.data) {
-          const txRes = await api.get(`/wallet/${res.data.data.id}/transactions?limit=10`);
+          const txRes = await api.get(
+            `/wallet/${res.data.data.id}/transactions?limit=10`,
+          );
           setWallet({
             id: res.data.data.id,
             balance: res.data.data.balance,
@@ -156,7 +172,7 @@ export default function FinancePage() {
           });
         }
       } catch (err) {
-        console.error('Failed to fetch wallet:', err);
+        console.error("Failed to fetch wallet:", err);
         setWallet(null);
       } finally {
         setWalletLoading(false);
@@ -168,23 +184,39 @@ export default function FinancePage() {
   }, [selectedChild]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
       minimumFractionDigits: 0,
     }).format(amount);
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'PAID':
-        return <Badge className="bg-green-500"><CheckCircle className="h-3 w-3 mr-1" /> Lunas</Badge>;
-      case 'PARTIAL':
-        return <Badge className="bg-yellow-500"><Clock className="h-3 w-3 mr-1" /> Sebagian</Badge>;
-      case 'PENDING':
-        return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" /> Belum Bayar</Badge>;
-      case 'OVERDUE':
-        return <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" /> Jatuh Tempo</Badge>;
+      case "PAID":
+        return (
+          <Badge className="bg-green-500">
+            <CheckCircle className="h-3 w-3 mr-1" /> Lunas
+          </Badge>
+        );
+      case "PARTIAL":
+        return (
+          <Badge className="bg-yellow-500">
+            <Clock className="h-3 w-3 mr-1" /> Sebagian
+          </Badge>
+        );
+      case "PENDING":
+        return (
+          <Badge variant="secondary">
+            <Clock className="h-3 w-3 mr-1" /> Belum Bayar
+          </Badge>
+        );
+      case "OVERDUE":
+        return (
+          <Badge variant="destructive">
+            <AlertTriangle className="h-3 w-3 mr-1" /> Jatuh Tempo
+          </Badge>
+        );
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -236,8 +268,12 @@ export default function FinancePage() {
                       <Receipt className="h-6 w-6 text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Total Tagihan</p>
-                      <p className="text-xl font-bold">{formatCurrency(summary.totalAmount)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Total Tagihan
+                      </p>
+                      <p className="text-xl font-bold">
+                        {formatCurrency(summary.totalAmount)}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -249,8 +285,12 @@ export default function FinancePage() {
                       <CheckCircle className="h-6 w-6 text-green-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Sudah Dibayar</p>
-                      <p className="text-xl font-bold text-green-600">{formatCurrency(summary.totalPaid)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Sudah Dibayar
+                      </p>
+                      <p className="text-xl font-bold text-green-600">
+                        {formatCurrency(summary.totalPaid)}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -262,8 +302,12 @@ export default function FinancePage() {
                       <Clock className="h-6 w-6 text-yellow-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Belum Lunas</p>
-                      <p className="text-xl font-bold text-yellow-600">{formatCurrency(summary.totalOutstanding)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Belum Lunas
+                      </p>
+                      <p className="text-xl font-bold text-yellow-600">
+                        {formatCurrency(summary.totalOutstanding)}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -275,8 +319,12 @@ export default function FinancePage() {
                       <AlertTriangle className="h-6 w-6 text-red-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Jatuh Tempo</p>
-                      <p className="text-xl font-bold text-red-600">{summary.overdueCount}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Jatuh Tempo
+                      </p>
+                      <p className="text-xl font-bold text-red-600">
+                        {summary.overdueCount}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -288,9 +336,11 @@ export default function FinancePage() {
                       <Wallet className="h-6 w-6 text-indigo-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Saldo Dompet</p>
+                      <p className="text-sm text-muted-foreground">
+                        Saldo Dompet
+                      </p>
                       <p className="text-xl font-bold text-indigo-600">
-                        {wallet ? formatCurrency(wallet.balance) : '-'}
+                        {wallet ? formatCurrency(wallet.balance) : "-"}
                       </p>
                     </div>
                   </div>
@@ -340,30 +390,43 @@ export default function FinancePage() {
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <p className="font-medium">{invoice.paymentType.name}</p>
+                                  <p className="font-medium">
+                                    {invoice.paymentType.name}
+                                  </p>
                                   {getStatusBadge(invoice.status)}
                                 </div>
                                 <p className="text-sm text-muted-foreground">
                                   {invoice.invoiceNumber}
                                 </p>
                                 <p className="text-sm text-muted-foreground">
-                                  Jatuh tempo: {new Date(invoice.dueDate).toLocaleDateString('id-ID', {
-                                    day: 'numeric',
-                                    month: 'long',
-                                    year: 'numeric',
-                                  })}
+                                  Jatuh tempo:{" "}
+                                  {new Date(invoice.dueDate).toLocaleDateString(
+                                    "id-ID",
+                                    {
+                                      day: "numeric",
+                                      month: "long",
+                                      year: "numeric",
+                                    },
+                                  )}
                                 </p>
                               </div>
                               <div className="text-right">
-                                <p className="text-lg font-bold">{formatCurrency(Number(invoice.amount))}</p>
-                                {invoice.status === 'PARTIAL' && (
+                                <p className="text-lg font-bold">
+                                  {formatCurrency(Number(invoice.amount))}
+                                </p>
+                                {invoice.status === "PARTIAL" && (
                                   <p className="text-sm text-muted-foreground">
-                                    Dibayar: {formatCurrency(Number(invoice.paidAmount))}
+                                    Dibayar:{" "}
+                                    {formatCurrency(Number(invoice.paidAmount))}
                                   </p>
                                 )}
-                                {invoice.status !== 'PAID' && (
+                                {invoice.status !== "PAID" && (
                                   <p className="text-sm text-yellow-600">
-                                    Sisa: {formatCurrency(Number(invoice.amount) - Number(invoice.paidAmount))}
+                                    Sisa:{" "}
+                                    {formatCurrency(
+                                      Number(invoice.amount) -
+                                        Number(invoice.paidAmount),
+                                    )}
                                   </p>
                                 )}
                               </div>
@@ -372,12 +435,21 @@ export default function FinancePage() {
                             {/* Payment History */}
                             {invoice.payments.length > 0 && (
                               <div className="mt-4 pt-4 border-t">
-                                <p className="text-sm font-medium mb-2">Riwayat Pembayaran:</p>
+                                <p className="text-sm font-medium mb-2">
+                                  Riwayat Pembayaran:
+                                </p>
                                 <div className="space-y-2">
                                   {invoice.payments.map((payment) => (
-                                    <div key={payment.id} className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded">
+                                    <div
+                                      key={payment.id}
+                                      className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded"
+                                    >
                                       <div>
-                                        <span>{new Date(payment.paidAt).toLocaleDateString('id-ID')}</span>
+                                        <span>
+                                          {new Date(
+                                            payment.paidAt,
+                                          ).toLocaleDateString("id-ID")}
+                                        </span>
                                         {payment.receiptNumber && (
                                           <span className="text-muted-foreground ml-2">
                                             ({payment.receiptNumber})
@@ -386,15 +458,20 @@ export default function FinancePage() {
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <span className="font-medium text-green-600">
-                                          {formatCurrency(Number(payment.amount))}
+                                          {formatCurrency(
+                                            Number(payment.amount),
+                                          )}
                                         </span>
-                                        <Button 
-                                          variant="ghost" 
+                                        <Button
+                                          variant="ghost"
                                           size="sm"
                                           asChild
                                           title="Cetak Kwitansi"
                                         >
-                                          <Link href={`/finance/payments/${payment.id}/receipt`} target="_blank">
+                                          <Link
+                                            href={`/finance/payments/${payment.id}/receipt`}
+                                            target="_blank"
+                                          >
                                             <Printer className="h-4 w-4" />
                                           </Link>
                                         </Button>
@@ -448,48 +525,66 @@ export default function FinancePage() {
                           {formatCurrency(wallet.balance)}
                         </p>
                         <p className="text-blue-200 text-xs mt-2">
-                          Dapat digunakan untuk pembayaran di kantin, laundry, dll
+                          Dapat digunakan untuk pembayaran di kantin, laundry,
+                          dll
                         </p>
                         <div className="mt-4 flex gap-3">
-                           <Button 
-                             className="bg-white text-blue-600 hover:bg-blue-50"
-                             onClick={() => toast.info('Fitur Top Up Online akan segera hadir. Silakan Top Up melalui Admin/Kasir.')}
-                           >
-                             <Plus className="h-4 w-4 mr-2" />
-                             Top Up Saldo
-                           </Button>
+                          <Button
+                            className="bg-white text-blue-600 hover:bg-blue-50"
+                            onClick={() =>
+                              toast.info(
+                                "Fitur Top Up Online akan segera hadir. Silakan Top Up melalui Admin/Kasir.",
+                              )
+                            }
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Top Up Saldo
+                          </Button>
                         </div>
                       </div>
 
                       {/* Limit & Alerts */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                         {wallet.spendingLimit ? (
-                           <div className="p-4 border rounded-lg bg-slate-50 flex items-center gap-3">
-                              <ShieldAlert className="h-8 w-8 text-orange-500" />
-                              <div>
-                                <p className="text-sm font-medium">Limit Belanja Harian</p>
-                                <p className="text-lg font-bold">{formatCurrency(wallet.spendingLimit)}</p>
-                              </div>
-                           </div>
-                         ) : (
-                           <div className="p-4 border rounded-lg bg-slate-50 flex items-center gap-3">
-                              <CheckCircle className="h-8 w-8 text-green-500" />
-                              <div>
-                                <p className="text-sm font-medium">Limit Belanja</p>
-                                <p className="text-sm text-muted-foreground">Tidak ada batasan</p>
-                              </div>
-                           </div>
-                         )}
-                         
-                         {wallet.balance < 20000 && (
-                            <div className="p-4 border rounded-lg bg-red-50 flex items-center gap-3">
-                              <AlertTriangle className="h-8 w-8 text-red-500" />
-                              <div>
-                                <p className="text-sm font-medium text-red-700">Saldo Menipis</p>
-                                <p className="text-xs text-red-600">Segera lakukan Top Up agar santri dapat berbelanja.</p>
-                              </div>
+                        {wallet.spendingLimit ? (
+                          <div className="p-4 border rounded-lg bg-slate-50 flex items-center gap-3">
+                            <ShieldAlert className="h-8 w-8 text-orange-500" />
+                            <div>
+                              <p className="text-sm font-medium">
+                                Limit Belanja Harian
+                              </p>
+                              <p className="text-lg font-bold">
+                                {formatCurrency(wallet.spendingLimit)}
+                              </p>
                             </div>
-                         )}
+                          </div>
+                        ) : (
+                          <div className="p-4 border rounded-lg bg-slate-50 flex items-center gap-3">
+                            <CheckCircle className="h-8 w-8 text-green-500" />
+                            <div>
+                              <p className="text-sm font-medium">
+                                Limit Belanja
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Tidak ada batasan
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {wallet.balance < 20000 && (
+                          <div className="p-4 border rounded-lg bg-red-50 flex items-center gap-3">
+                            <AlertTriangle className="h-8 w-8 text-red-500" />
+                            <div>
+                              <p className="text-sm font-medium text-red-700">
+                                Saldo Menipis
+                              </p>
+                              <p className="text-xs text-red-600">
+                                Segera lakukan Top Up agar santri dapat
+                                berbelanja.
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Transactions */}
@@ -507,12 +602,16 @@ export default function FinancePage() {
                                 className="flex items-center justify-between p-3 rounded-lg border"
                               >
                                 <div className="flex items-center gap-3">
-                                  <div className={`p-2 rounded-full ${
-                                    tx.type === 'TOP_UP' || tx.type === 'REFUND'
-                                      ? 'bg-green-100 text-green-600'
-                                      : 'bg-red-100 text-red-600'
-                                  }`}>
-                                    {tx.type === 'TOP_UP' || tx.type === 'REFUND' ? (
+                                  <div
+                                    className={`p-2 rounded-full ${
+                                      tx.type === "TOP_UP" ||
+                                      tx.type === "REFUND"
+                                        ? "bg-green-100 text-green-600"
+                                        : "bg-red-100 text-red-600"
+                                    }`}
+                                  >
+                                    {tx.type === "TOP_UP" ||
+                                    tx.type === "REFUND" ? (
                                       <ArrowDownRight className="h-4 w-4" />
                                     ) : (
                                       <ArrowUpRight className="h-4 w-4" />
@@ -520,32 +619,42 @@ export default function FinancePage() {
                                   </div>
                                   <div>
                                     <p className="font-medium text-sm">
-                                      {tx.type === 'TOP_UP' && 'Top Up'}
-                                      {tx.type === 'DEDUCT' && 'Pembayaran'}
-                                      {tx.type === 'TRANSFER' && 'Transfer'}
-                                      {tx.type === 'REFUND' && 'Pengembalian'}
+                                      {tx.type === "TOP_UP" && "Top Up"}
+                                      {tx.type === "DEDUCT" && "Pembayaran"}
+                                      {tx.type === "TRANSFER" && "Transfer"}
+                                      {tx.type === "REFUND" && "Pengembalian"}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
-                                      {tx.description || tx.referenceType || '-'}
+                                      {tx.description ||
+                                        tx.referenceType ||
+                                        "-"}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
-                                      {new Date(tx.createdAt).toLocaleDateString('id-ID', {
-                                        day: 'numeric',
-                                        month: 'short',
-                                        year: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit',
+                                      {new Date(
+                                        tx.createdAt,
+                                      ).toLocaleDateString("id-ID", {
+                                        day: "numeric",
+                                        month: "short",
+                                        year: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
                                       })}
                                     </p>
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <p className={`font-bold ${
-                                    tx.type === 'TOP_UP' || tx.type === 'REFUND'
-                                      ? 'text-green-600'
-                                      : 'text-red-600'
-                                  }`}>
-                                    {tx.type === 'TOP_UP' || tx.type === 'REFUND' ? '+' : '-'}
+                                  <p
+                                    className={`font-bold ${
+                                      tx.type === "TOP_UP" ||
+                                      tx.type === "REFUND"
+                                        ? "text-green-600"
+                                        : "text-red-600"
+                                    }`}
+                                  >
+                                    {tx.type === "TOP_UP" ||
+                                    tx.type === "REFUND"
+                                      ? "+"
+                                      : "-"}
                                     {formatCurrency(tx.amount)}
                                   </p>
                                   <p className="text-xs text-muted-foreground">
@@ -575,7 +684,7 @@ export default function FinancePage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
-                  {invoices.flatMap(i => i.payments).length === 0 ? (
+                  {invoices.flatMap((i) => i.payments).length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">
                       Belum ada pembayaran
                     </p>
@@ -593,47 +702,61 @@ export default function FinancePage() {
                       </TableHeader>
                       <TableBody>
                         {invoices
-                          .flatMap(invoice => 
-                            invoice.payments.map(payment => ({
+                          .flatMap((invoice) =>
+                            invoice.payments.map((payment) => ({
                               ...payment,
                               invoiceType: invoice.paymentType.name,
                               invoiceNumber: invoice.invoiceNumber,
-                            }))
+                            })),
                           )
-                          .sort((a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime())
+                          .sort(
+                            (a, b) =>
+                              new Date(b.paidAt).getTime() -
+                              new Date(a.paidAt).getTime(),
+                          )
                           .map((payment) => (
                             <TableRow key={payment.id}>
                               <TableCell>
-                                {new Date(payment.paidAt).toLocaleDateString('id-ID', {
-                                  day: 'numeric',
-                                  month: 'short',
-                                  year: 'numeric',
-                                })}
+                                {new Date(payment.paidAt).toLocaleDateString(
+                                  "id-ID",
+                                  {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  },
+                                )}
                               </TableCell>
                               <TableCell className="font-mono text-sm">
-                                {payment.receiptNumber || '-'}
+                                {payment.receiptNumber || "-"}
                               </TableCell>
                               <TableCell>{payment.invoiceType}</TableCell>
                               <TableCell>
                                 <Badge variant="outline">
-                                  {payment.method === 'CASH' ? 'Tunai' :
-                                   payment.method === 'TRANSFER' ? 'Transfer' :
-                                   payment.method === 'QRIS' ? 'QRIS' :
-                                   payment.method === 'VA' ? 'Virtual Account' :
-                                   payment.method}
+                                  {payment.method === "CASH"
+                                    ? "Tunai"
+                                    : payment.method === "TRANSFER"
+                                      ? "Transfer"
+                                      : payment.method === "QRIS"
+                                        ? "QRIS"
+                                        : payment.method === "VA"
+                                          ? "Virtual Account"
+                                          : payment.method}
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-right font-medium text-green-600">
                                 {formatCurrency(Number(payment.amount))}
                               </TableCell>
                               <TableCell>
-                                <Button 
-                                  variant="ghost" 
+                                <Button
+                                  variant="ghost"
                                   size="sm"
                                   asChild
                                   title="Cetak Kwitansi"
                                 >
-                                  <Link href={`/finance/payments/${payment.id}/receipt`} target="_blank">
+                                  <Link
+                                    href={`/finance/payments/${payment.id}/receipt`}
+                                    target="_blank"
+                                  >
                                     <Printer className="h-4 w-4" />
                                   </Link>
                                 </Button>

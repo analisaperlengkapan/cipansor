@@ -1,15 +1,21 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -18,23 +24,27 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from 'sonner';
-import { useCreateSanad, useEnrollments } from '@/hooks/use-takhosus';
-import { useTeachers } from '@/hooks/use-teachers';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { useCreateSanad, useEnrollments } from "@/hooks/use-takhosus";
+import { useTeachers } from "@/hooks/use-teachers";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
   BookOpen,
@@ -43,16 +53,16 @@ import {
   Loader2,
   User,
   GraduationCap,
-} from 'lucide-react';
+} from "lucide-react";
 
 const formSchema = z.object({
-  enrollmentId: z.string().min(1, 'Enrollment wajib dipilih'),
-  teacherId: z.string().min(1, 'Pensahih wajib dipilih'),
-  juz: z.coerce.number().min(1, 'Juz minimal 1').max(30, 'Juz maksimal 30'),
+  enrollmentId: z.string().min(1, "Enrollment wajib dipilih"),
+  teacherId: z.string().min(1, "Pensahih wajib dipilih"),
+  juz: z.coerce.number().min(1, "Juz minimal 1").max(30, "Juz maksimal 30"),
   surahStart: z.coerce.number().min(1).max(114).optional(),
   surahEnd: z.coerce.number().min(1).max(114).optional(),
   certifiedAt: z.date({
-    required_error: 'Tanggal pengesahan wajib diisi',
+    required_error: "Tanggal pengesahan wajib diisi",
   }),
   grade: z.string().optional(),
   notes: z.string().optional(),
@@ -64,10 +74,11 @@ export default function NewSanadPage() {
   const router = useRouter();
 
   // Fetch enrollments from API
-  const { data: enrollmentsData, isLoading: isLoadingEnrollments } = useEnrollments({ 
-    limit: 100, 
-    status: 'active' 
-  });
+  const { data: enrollmentsData, isLoading: isLoadingEnrollments } =
+    useEnrollments({
+      limit: 100,
+      status: "active",
+    });
   const { data: teachersData, isLoading: isLoadingTeachers } = useTeachers();
   const createMutation = useCreateSanad();
 
@@ -78,7 +89,7 @@ export default function NewSanadPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       juz: 1,
-      notes: '',
+      notes: "",
       certifiedAt: new Date(),
     },
   });
@@ -92,13 +103,13 @@ export default function NewSanadPage() {
         surahStart: data.surahStart,
         surahEnd: data.surahEnd,
         certifiedAt: data.certifiedAt.toISOString(),
-        grade: data.grade || '',
-        notes: data.notes || '',
+        grade: data.grade || "",
+        notes: data.notes || "",
       });
-      toast.success('Sanad hafidz berhasil ditambahkan');
-      router.push('/tahfidz/sanad');
+      toast.success("Sanad hafidz berhasil ditambahkan");
+      router.push("/tahfidz/sanad");
     } catch {
-      toast.error('Gagal menambahkan sanad hafidz');
+      toast.error("Gagal menambahkan sanad hafidz");
     }
   };
 
@@ -107,7 +118,11 @@ export default function NewSanadPage() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push('/tahfidz/sanad')}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push("/tahfidz/sanad")}
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <PageHeader
@@ -126,7 +141,9 @@ export default function NewSanadPage() {
                   <User className="h-5 w-5" />
                   Santri
                 </CardTitle>
-                <CardDescription>Pilih santri yang hafalannya disahkan</CardDescription>
+                <CardDescription>
+                  Pilih santri yang hafalannya disahkan
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <FormField
@@ -135,10 +152,19 @@ export default function NewSanadPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Santri (Enrollment) *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder={isLoadingEnrollments ? 'Memuat...' : 'Pilih santri'} />
+                            <SelectValue
+                              placeholder={
+                                isLoadingEnrollments
+                                  ? "Memuat..."
+                                  : "Pilih santri"
+                              }
+                            />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -152,8 +178,14 @@ export default function NewSanadPage() {
                             </div>
                           ) : (
                             enrollments.map((enrollment) => (
-                              <SelectItem key={enrollment.id} value={enrollment.id}>
-                                {enrollment.student?.user?.name || enrollment.student?.name || 'Unknown'} - {enrollment.student?.nis || '—'}
+                              <SelectItem
+                                key={enrollment.id}
+                                value={enrollment.id}
+                              >
+                                {enrollment.student?.user?.name ||
+                                  enrollment.student?.name ||
+                                  "Unknown"}{" "}
+                                - {enrollment.student?.nis || "—"}
                               </SelectItem>
                             ))
                           )}
@@ -196,11 +228,13 @@ export default function NewSanadPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {Array.from({ length: 30 }, (_, i) => i + 1).map((juz) => (
-                              <SelectItem key={juz} value={String(juz)}>
-                                Juz {juz}
-                              </SelectItem>
-                            ))}
+                            {Array.from({ length: 30 }, (_, i) => i + 1).map(
+                              (juz) => (
+                                <SelectItem key={juz} value={String(juz)}>
+                                  Juz {juz}
+                                </SelectItem>
+                              ),
+                            )}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -272,7 +306,10 @@ export default function NewSanadPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Pensahih (Musyrif/Syeikh) *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih pensahih" />
@@ -310,12 +347,14 @@ export default function NewSanadPage() {
                               <Button
                                 variant="outline"
                                 className={cn(
-                                  'w-full pl-3 text-left font-normal',
-                                  !field.value && 'text-muted-foreground'
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground",
                                 )}
                               >
                                 {field.value ? (
-                                  format(field.value, 'EEEE, dd MMMM yyyy', { locale: id })
+                                  format(field.value, "EEEE, dd MMMM yyyy", {
+                                    locale: id,
+                                  })
                                 ) : (
                                   <span>Pilih tanggal</span>
                                 )}
@@ -346,15 +385,22 @@ export default function NewSanadPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Predikat/Nilai</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih predikat" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Mumtaz">Mumtaz (Istimewa)</SelectItem>
-                          <SelectItem value="Jayyid Jiddan">Jayyid Jiddan (Sangat Baik)</SelectItem>
+                          <SelectItem value="Mumtaz">
+                            Mumtaz (Istimewa)
+                          </SelectItem>
+                          <SelectItem value="Jayyid Jiddan">
+                            Jayyid Jiddan (Sangat Baik)
+                          </SelectItem>
                           <SelectItem value="Jayyid">Jayyid (Baik)</SelectItem>
                           <SelectItem value="Maqbul">Maqbul (Cukup)</SelectItem>
                         </SelectContent>
@@ -393,7 +439,11 @@ export default function NewSanadPage() {
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => router.push('/tahfidz/sanad')}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push("/tahfidz/sanad")}
+              >
                 Batal
               </Button>
               <Button type="submit" disabled={createMutation.isPending}>

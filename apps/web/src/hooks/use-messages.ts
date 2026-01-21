@@ -1,31 +1,31 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
-import { Message, CreateMessageInput, MessageCategory } from '@cipansor/shared';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { Message, CreateMessageInput, MessageCategory } from "@cipansor/shared";
 
 export function useMessages(params?: {
   page?: number;
   limit?: number;
-  type?: 'inbox' | 'sent' | 'all';
+  type?: "inbox" | "sent" | "all";
   category?: MessageCategory;
 }) {
   const queryClient = useQueryClient();
-  const queryKey = ['messages', params];
+  const queryKey = ["messages", params];
 
   const query = useQuery({
     queryKey,
     queryFn: async () => {
-      const response = await api.get('/messages', { params });
+      const response = await api.get("/messages", { params });
       return response.data;
     },
   });
 
   const createMessage = useMutation({
     mutationFn: async (data: CreateMessageInput) => {
-      const response = await api.post('/messages', data);
+      const response = await api.post("/messages", data);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
     },
   });
 
@@ -35,7 +35,7 @@ export function useMessages(params?: {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
     },
   });
 
@@ -45,8 +45,8 @@ export function useMessages(params?: {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['messages'] });
-      queryClient.invalidateQueries({ queryKey: ['unread-messages-count'] });
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+      queryClient.invalidateQueries({ queryKey: ["unread-messages-count"] });
     },
   });
 
@@ -60,9 +60,9 @@ export function useMessages(params?: {
 
 export function useUnreadMessagesCount() {
   return useQuery({
-    queryKey: ['unread-messages-count'],
+    queryKey: ["unread-messages-count"],
     queryFn: async () => {
-      const response = await api.get('/messages/unread-count');
+      const response = await api.get("/messages/unread-count");
       return response.data.data.unreadCount as number;
     },
     // Poll every minute

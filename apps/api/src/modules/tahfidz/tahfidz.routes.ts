@@ -2,7 +2,11 @@ import { Router } from 'express';
 import { TahfidzController } from './tahfidz.controller';
 import { authenticate, authorize } from '@/middleware/auth';
 import { validate } from '@/middleware/validate';
-import { createTahfidzSchema, updateTahfidzSchema, generateCertificateSchema } from './tahfidz.schema';
+import {
+  createTahfidzSchema,
+  updateTahfidzSchema,
+  generateCertificateSchema,
+} from './tahfidz.schema';
 import { UserRole } from '@prisma/client';
 
 const router = Router();
@@ -27,7 +31,8 @@ router.put('/:id', validate(updateTahfidzSchema), controller.update);
 router.delete('/:id', controller.delete);
 
 // Certificates
-router.post('/certificates/generate',
+router.post(
+  '/certificates/generate',
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
   validate(generateCertificateSchema),
   controller.generateCertificate

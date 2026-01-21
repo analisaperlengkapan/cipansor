@@ -1,18 +1,53 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useEmployeeDocuments, useCreateEmployeeDocument, useDeleteEmployeeDocument, EmployeeDocumentType } from '@/hooks/use-employee-documents';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, FileText, Upload } from 'lucide-react';
-import { format } from 'date-fns';
-import api from '@/lib/api';
+import { useState } from "react";
+import {
+  useEmployeeDocuments,
+  useCreateEmployeeDocument,
+  useDeleteEmployeeDocument,
+  EmployeeDocumentType,
+} from "@/hooks/use-employee-documents";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Trash2, FileText, Upload } from "lucide-react";
+import { format } from "date-fns";
+import api from "@/lib/api";
 
-const DOCUMENT_TYPES: EmployeeDocumentType[] = ['KTP', 'KK', 'NPWP', 'IJAZAH', 'TRANSKRIP_NILAI', 'SERTIFIKAT', 'SK_PENGANGKATAN', 'KONTRAK_KERJA', 'CV', 'LAINNYA'];
+const DOCUMENT_TYPES: EmployeeDocumentType[] = [
+  "KTP",
+  "KK",
+  "NPWP",
+  "IJAZAH",
+  "TRANSKRIP_NILAI",
+  "SERTIFIKAT",
+  "SK_PENGANGKATAN",
+  "KONTRAK_KERJA",
+  "CV",
+  "LAINNYA",
+];
 
 export function DocumentsTab({ userId }: { userId: string }) {
   const { data: documents, isLoading } = useEmployeeDocuments(userId);
@@ -22,9 +57,9 @@ export function DocumentsTab({ userId }: { userId: string }) {
   const [uploading, setUploading] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: '',
-    type: 'LAINNYA' as EmployeeDocumentType,
-    expiryDate: '',
+    name: "",
+    type: "LAINNYA" as EmployeeDocumentType,
+    expiryDate: "",
     file: null as File | null,
   });
 
@@ -42,10 +77,10 @@ export function DocumentsTab({ userId }: { userId: string }) {
       setUploading(true);
       // 1. Upload File
       const uploadFormData = new FormData();
-      uploadFormData.append('file', formData.file);
+      uploadFormData.append("file", formData.file);
 
-      const uploadRes = await api.post('/upload', uploadFormData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const uploadRes = await api.post("/upload", uploadFormData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       // Handle response structure { success: true, data: { url: ... } }
@@ -57,14 +92,16 @@ export function DocumentsTab({ userId }: { userId: string }) {
         name: formData.name,
         type: formData.type,
         fileUrl,
-        expiryDate: formData.expiryDate ? new Date(formData.expiryDate).toISOString() : undefined,
+        expiryDate: formData.expiryDate
+          ? new Date(formData.expiryDate).toISOString()
+          : undefined,
       });
 
       setIsOpen(false);
-      setFormData({ name: '', type: 'LAINNYA', expiryDate: '', file: null });
+      setFormData({ name: "", type: "LAINNYA", expiryDate: "", file: null });
     } catch (error) {
-      console.error('Upload failed', error);
-      alert('Upload failed. Check console for details.');
+      console.error("Upload failed", error);
+      alert("Upload failed. Check console for details.");
     } finally {
       setUploading(false);
     }
@@ -78,7 +115,9 @@ export function DocumentsTab({ userId }: { userId: string }) {
         <h3 className="text-lg font-medium">Dokumen Kepegawaian</h3>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button><Upload className="w-4 h-4 mr-2" /> Upload Dokumen</Button>
+            <Button>
+              <Upload className="w-4 h-4 mr-2" /> Upload Dokumen
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -89,7 +128,9 @@ export function DocumentsTab({ userId }: { userId: string }) {
                 <Label>Nama Dokumen</Label>
                 <Input
                   value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   placeholder="Contoh: Ijazah S1"
                   required
                 />
@@ -98,14 +139,21 @@ export function DocumentsTab({ userId }: { userId: string }) {
                 <Label>Jenis Dokumen</Label>
                 <Select
                   value={formData.type}
-                  onValueChange={(val) => setFormData({...formData, type: val as EmployeeDocumentType})}
+                  onValueChange={(val) =>
+                    setFormData({
+                      ...formData,
+                      type: val as EmployeeDocumentType,
+                    })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {DOCUMENT_TYPES.map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    {DOCUMENT_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -115,7 +163,9 @@ export function DocumentsTab({ userId }: { userId: string }) {
                 <Input
                   type="date"
                   value={formData.expiryDate}
-                  onChange={(e) => setFormData({...formData, expiryDate: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, expiryDate: e.target.value })
+                  }
                 />
               </div>
               <div>
@@ -123,7 +173,7 @@ export function DocumentsTab({ userId }: { userId: string }) {
                 <Input type="file" onChange={handleFileChange} required />
               </div>
               <Button type="submit" disabled={uploading} className="w-full">
-                {uploading ? 'Mengunggah...' : 'Simpan'}
+                {uploading ? "Mengunggah..." : "Simpan"}
               </Button>
             </form>
           </DialogContent>
@@ -144,24 +194,45 @@ export function DocumentsTab({ userId }: { userId: string }) {
           <TableBody>
             {documents?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">Tidak ada dokumen</TableCell>
+                <TableCell
+                  colSpan={5}
+                  className="text-center py-4 text-muted-foreground"
+                >
+                  Tidak ada dokumen
+                </TableCell>
               </TableRow>
             )}
             {documents?.map((doc) => (
               <TableRow key={doc.id}>
                 <TableCell className="font-medium">
-                  <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="flex items-center hover:underline text-blue-600">
+                  <a
+                    href={doc.fileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center hover:underline text-blue-600"
+                  >
                     <FileText className="w-4 h-4 mr-2" />
                     {doc.name}
                   </a>
                 </TableCell>
                 <TableCell>{doc.type}</TableCell>
-                <TableCell>{doc.expiryDate ? format(new Date(doc.expiryDate), 'dd MMM yyyy') : '-'}</TableCell>
-                <TableCell>{format(new Date(doc.createdAt), 'dd MMM yyyy')}</TableCell>
+                <TableCell>
+                  {doc.expiryDate
+                    ? format(new Date(doc.expiryDate), "dd MMM yyyy")
+                    : "-"}
+                </TableCell>
+                <TableCell>
+                  {format(new Date(doc.createdAt), "dd MMM yyyy")}
+                </TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => {
-                    if (confirm('Hapus dokumen ini?')) deleteDocument.mutate(doc.id);
-                  }}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      if (confirm("Hapus dokumen ini?"))
+                        deleteDocument.mutate(doc.id);
+                    }}
+                  >
                     <Trash2 className="w-4 h-4 text-red-500" />
                   </Button>
                 </TableCell>

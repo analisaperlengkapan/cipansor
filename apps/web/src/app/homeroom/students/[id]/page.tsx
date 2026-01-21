@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { 
-  ArrowLeft, 
+import { useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import {
+  ArrowLeft,
   User,
   Phone,
   Mail,
@@ -19,33 +19,42 @@ import {
   MessageCircle,
   FileText,
   Edit,
-  Loader2
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useHomeroomStudentDetail, useHomeroomStudentNotes } from '@/hooks/use-homeroom';
+  Loader2,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  useHomeroomStudentDetail,
+  useHomeroomStudentNotes,
+} from "@/hooks/use-homeroom";
 
 // Fallback demo data for when API returns empty
 const FALLBACK_STUDENT = {
-  id: '',
-  nis: '—',
-  name: 'Loading...',
-  gender: 'MALE' as const,
-  birthDate: '2011-01-01',
-  birthPlace: '—',
-  address: '—',
-  phone: '',
-  email: '',
-  parentName: '—',
-  parentPhone: '',
-  motherName: '',
-  motherPhone: '',
-  enrollmentDate: '',
+  id: "",
+  nis: "—",
+  name: "Loading...",
+  gender: "MALE" as const,
+  birthDate: "2011-01-01",
+  birthPlace: "—",
+  address: "—",
+  phone: "",
+  email: "",
+  parentName: "—",
+  parentPhone: "",
+  motherName: "",
+  motherPhone: "",
+  enrollmentDate: "",
   photo: null as string | null,
   enrollments: [] as Array<{ class?: { name: string; grade?: number } }>,
   tahfidzRecords: [] as Array<{
@@ -89,35 +98,43 @@ const FALLBACK_ACADEMIC = {
 
 // Fallback extracurricular data
 const FALLBACK_EXTRACURRICULAR = [
-  { name: 'Pramuka', status: 'Aktif', achievement: null },
+  { name: "Pramuka", status: "Aktif", achievement: null },
 ];
 
 export default function StudentDetailPage() {
   const params = useParams();
   const studentId = params.id as string;
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
 
   // Fetch student detail from API
-  const { data: studentData, isLoading: isLoadingStudent } = useHomeroomStudentDetail(studentId);
-  const { data: notesData, isLoading: isLoadingNotes } = useHomeroomStudentNotes(studentId);
+  const { data: studentData, isLoading: isLoadingStudent } =
+    useHomeroomStudentDetail(studentId);
+  const { data: notesData, isLoading: isLoadingNotes } =
+    useHomeroomStudentNotes(studentId);
 
   // Use API data or fallback
   const student = studentData || FALLBACK_STUDENT;
-  const className = student.enrollments?.[0]?.class?.name || '—';
+  const className = student.enrollments?.[0]?.class?.name || "—";
   const classGrade = student.enrollments?.[0]?.class?.grade || 0;
 
   // Compute attendance summary from records
   const attendances = student.attendances || [];
   const attendance = {
     totalDays: attendances.length || FALLBACK_ATTENDANCE.totalDays,
-    present: attendances.filter(a => a.status === 'PRESENT').length,
-    absent: attendances.filter(a => a.status === 'ABSENT').length,
-    sick: attendances.filter(a => a.status === 'SICK').length,
-    permitted: attendances.filter(a => a.status === 'EXCUSED').length,
-    late: attendances.filter(a => a.status === 'LATE').length,
-    attendanceRate: attendances.length > 0 
-      ? Math.round((attendances.filter(a => a.status === 'PRESENT').length / attendances.length) * 100 * 10) / 10
-      : 0,
+    present: attendances.filter((a) => a.status === "PRESENT").length,
+    absent: attendances.filter((a) => a.status === "ABSENT").length,
+    sick: attendances.filter((a) => a.status === "SICK").length,
+    permitted: attendances.filter((a) => a.status === "EXCUSED").length,
+    late: attendances.filter((a) => a.status === "LATE").length,
+    attendanceRate:
+      attendances.length > 0
+        ? Math.round(
+            (attendances.filter((a) => a.status === "PRESENT").length /
+              attendances.length) *
+              100 *
+              10,
+          ) / 10
+        : 0,
   };
 
   // Academic data (would need separate API in production)
@@ -127,26 +144,33 @@ export default function StudentDetailPage() {
   const tahfidzRecords = student.tahfidzRecords || [];
   const tahfidz = {
     totalJuz: 30,
-    memorized: new Set(tahfidzRecords.filter(t => t.activityType === 'ZIYADAH').map(t => t.juz)).size,
+    memorized: new Set(
+      tahfidzRecords
+        .filter((t) => t.activityType === "ZIYADAH")
+        .map((t) => t.juz),
+    ).size,
     inProgress: 1,
-    currentSurah: tahfidzRecords[0]?.surahName || '—',
+    currentSurah: tahfidzRecords[0]?.surahName || "—",
     currentAyat: tahfidzRecords[0]?.ayatEnd || 0,
-    lastAssessment: tahfidzRecords.find(t => t.activityType === 'ASSESSMENT')?.recordedAt || '',
-    lastGrade: tahfidzRecords.find(t => t.activityType === 'ASSESSMENT')?.grade || '—',
+    lastAssessment:
+      tahfidzRecords.find((t) => t.activityType === "ASSESSMENT")?.recordedAt ||
+      "",
+    lastGrade:
+      tahfidzRecords.find((t) => t.activityType === "ASSESSMENT")?.grade || "—",
   };
 
   // Behavior notes from API
   const behaviorNotes = [
-    ...(notesData?.rewards || []).map(r => ({
+    ...(notesData?.rewards || []).map((r) => ({
       id: r.id,
-      type: 'POSITIVE' as const,
+      type: "POSITIVE" as const,
       description: r.description,
       date: r.givenAt,
       points: r.points,
     })),
-    ...(notesData?.violations || []).map(v => ({
+    ...(notesData?.violations || []).map((v) => ({
       id: v.id,
-      type: 'NEGATIVE' as const,
+      type: "NEGATIVE" as const,
       description: v.description,
       date: v.occurredAt,
       points: -v.points,
@@ -160,20 +184,26 @@ export default function StudentDetailPage() {
     const birth = new Date(birthDate);
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birth.getDate())
+    ) {
       age--;
     }
     return age;
   };
 
   const getGradeColor = (grade: string) => {
-    if (grade.startsWith('A')) return 'text-green-600';
-    if (grade.startsWith('B')) return 'text-blue-600';
-    if (grade.startsWith('C')) return 'text-yellow-600';
-    return 'text-red-600';
+    if (grade.startsWith("A")) return "text-green-600";
+    if (grade.startsWith("B")) return "text-blue-600";
+    if (grade.startsWith("C")) return "text-yellow-600";
+    return "text-red-600";
   };
 
-  const totalPoints = behaviorNotes.reduce((sum, note) => sum + (note.points || 0), 0);
+  const totalPoints = behaviorNotes.reduce(
+    (sum, note) => sum + (note.points || 0),
+    0,
+  );
 
   // Loading state
   if (isLoadingStudent) {
@@ -213,7 +243,7 @@ export default function StudentDetailPage() {
           </CardContent>
         </Card>
         <div className="grid gap-4 md:grid-cols-4">
-          {[1, 2, 3, 4].map(i => (
+          {[1, 2, 3, 4].map((i) => (
             <Card key={i}>
               <CardContent className="pt-4">
                 <Skeleton className="h-12 w-full" />
@@ -254,14 +284,22 @@ export default function StudentDetailPage() {
             <div className="flex flex-col items-center md:items-start gap-4">
               <Avatar className="h-32 w-32">
                 <AvatarImage src={student.photo || undefined} />
-                <AvatarFallback className="text-4xl">{student.name?.charAt(0) || '?'}</AvatarFallback>
+                <AvatarFallback className="text-4xl">
+                  {student.name?.charAt(0) || "?"}
+                </AvatarFallback>
               </Avatar>
               <div className="text-center md:text-left">
-                <h2 className="text-2xl font-bold">{student.name || student.user?.name || '—'}</h2>
+                <h2 className="text-2xl font-bold">
+                  {student.name || student.user?.name || "—"}
+                </h2>
                 <p className="text-muted-foreground font-mono">{student.nis}</p>
                 <div className="flex gap-2 mt-2">
-                  <Badge variant={student.gender === 'MALE' ? 'default' : 'secondary'}>
-                    {student.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}
+                  <Badge
+                    variant={
+                      student.gender === "MALE" ? "default" : "secondary"
+                    }
+                  >
+                    {student.gender === "MALE" ? "Laki-laki" : "Perempuan"}
                   </Badge>
                   <Badge variant="outline">{className}</Badge>
                 </div>
@@ -276,24 +314,40 @@ export default function StudentDetailPage() {
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span>
-                      {student.birthPlace || '—'}, {student.birthDate ? new Date(student.birthDate).toLocaleDateString('id-ID') : '—'} 
-                      {student.birthDate && ` (${calculateAge(student.birthDate)} tahun)`}
+                      {student.birthPlace || "—"},{" "}
+                      {student.birthDate
+                        ? new Date(student.birthDate).toLocaleDateString(
+                            "id-ID",
+                          )
+                        : "—"}
+                      {student.birthDate &&
+                        ` (${calculateAge(student.birthDate)} tahun)`}
                     </span>
                   </div>
                   <div className="flex items-start gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
-                    <span>{student.address || '—'}</span>
+                    <span>{student.address || "—"}</span>
                   </div>
                   {student.phone && (
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-muted-foreground" />
-                      <a href={`tel:${student.phone}`} className="text-blue-600 hover:underline">{student.phone}</a>
+                      <a
+                        href={`tel:${student.phone}`}
+                        className="text-blue-600 hover:underline"
+                      >
+                        {student.phone}
+                      </a>
                     </div>
                   )}
                   {student.email && (
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-muted-foreground" />
-                      <a href={`mailto:${student.email}`} className="text-blue-600 hover:underline">{student.email}</a>
+                      <a
+                        href={`mailto:${student.email}`}
+                        className="text-blue-600 hover:underline"
+                      >
+                        {student.email}
+                      </a>
                     </div>
                   )}
                 </div>
@@ -304,24 +358,38 @@ export default function StudentDetailPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span><strong>Ayah:</strong> {student.parentName || '—'}</span>
+                    <span>
+                      <strong>Ayah:</strong> {student.parentName || "—"}
+                    </span>
                   </div>
                   {student.parentPhone && (
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-muted-foreground" />
-                      <a href={`tel:${student.parentPhone}`} className="text-blue-600 hover:underline">{student.parentPhone}</a>
+                      <a
+                        href={`tel:${student.parentPhone}`}
+                        className="text-blue-600 hover:underline"
+                      >
+                        {student.parentPhone}
+                      </a>
                     </div>
                   )}
                   {student.motherName && (
                     <>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <span><strong>Ibu:</strong> {student.motherName}</span>
+                        <span>
+                          <strong>Ibu:</strong> {student.motherName}
+                        </span>
                       </div>
                       {student.motherPhone && (
                         <div className="flex items-center gap-2">
                           <Phone className="h-4 w-4 text-muted-foreground" />
-                          <a href={`tel:${student.motherPhone}`} className="text-blue-600 hover:underline">{student.motherPhone}</a>
+                          <a
+                            href={`tel:${student.motherPhone}`}
+                            className="text-blue-600 hover:underline"
+                          >
+                            {student.motherPhone}
+                          </a>
                         </div>
                       )}
                     </>
@@ -342,7 +410,9 @@ export default function StudentDetailPage() {
                 <Calendar className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{attendance.attendanceRate}%</p>
+                <p className="text-2xl font-bold">
+                  {attendance.attendanceRate}%
+                </p>
                 <p className="text-sm text-muted-foreground">Kehadiran</p>
               </div>
             </div>
@@ -377,7 +447,9 @@ export default function StudentDetailPage() {
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${totalPoints >= 0 ? 'bg-green-100 dark:bg-green-900/20' : 'bg-red-100 dark:bg-red-900/20'}`}>
+              <div
+                className={`p-2 rounded-full ${totalPoints >= 0 ? "bg-green-100 dark:bg-green-900/20" : "bg-red-100 dark:bg-red-900/20"}`}
+              >
                 {totalPoints >= 0 ? (
                   <TrendingUp className="h-5 w-5 text-green-600" />
                 ) : (
@@ -385,8 +457,11 @@ export default function StudentDetailPage() {
                 )}
               </div>
               <div>
-                <p className={`text-2xl font-bold ${totalPoints >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {totalPoints > 0 ? '+' : ''}{totalPoints}
+                <p
+                  className={`text-2xl font-bold ${totalPoints >= 0 ? "text-green-600" : "text-red-600"}`}
+                >
+                  {totalPoints > 0 ? "+" : ""}
+                  {totalPoints}
                 </p>
                 <p className="text-sm text-muted-foreground">Poin Perilaku</p>
               </div>
@@ -419,11 +494,15 @@ export default function StudentDetailPage() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span>Rata-rata Nilai</span>
-                  <span className="text-2xl font-bold">{academic.averageScore}</span>
+                  <span className="text-2xl font-bold">
+                    {academic.averageScore}
+                  </span>
                 </div>
                 <Progress value={academic.averageScore} className="h-3" />
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Peringkat: {academic.rank} dari {academic.totalStudents}</span>
+                  <span>
+                    Peringkat: {academic.rank} dari {academic.totalStudents}
+                  </span>
                   <span>Semester {academic.semester}</span>
                 </div>
                 <div className="pt-4 border-t">
@@ -434,7 +513,9 @@ export default function StudentDetailPage() {
                     .map((subject, idx) => (
                       <div key={idx} className="flex justify-between py-1">
                         <span>{subject.name}</span>
-                        <span className={`font-medium ${getGradeColor(subject.grade)}`}>
+                        <span
+                          className={`font-medium ${getGradeColor(subject.grade)}`}
+                        >
                           {subject.score} ({subject.grade})
                         </span>
                       </div>
@@ -454,21 +535,39 @@ export default function StudentDetailPage() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span>Hafalan</span>
-                  <span className="text-2xl font-bold">{tahfidz.memorized} / {tahfidz.totalJuz} Juz</span>
+                  <span className="text-2xl font-bold">
+                    {tahfidz.memorized} / {tahfidz.totalJuz} Juz
+                  </span>
                 </div>
-                <Progress value={(tahfidz.memorized / tahfidz.totalJuz) * 100} className="h-3" />
+                <Progress
+                  value={(tahfidz.memorized / tahfidz.totalJuz) * 100}
+                  className="h-3"
+                />
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Sedang dihafal</span>
-                    <span>Juz {tahfidz.memorized + 1} ({tahfidz.currentSurah} ayat {tahfidz.currentAyat})</span>
+                    <span className="text-muted-foreground">
+                      Sedang dihafal
+                    </span>
+                    <span>
+                      Juz {tahfidz.memorized + 1} ({tahfidz.currentSurah} ayat{" "}
+                      {tahfidz.currentAyat})
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Penilaian terakhir</span>
-                    <span>{new Date(tahfidz.lastAssessment).toLocaleDateString('id-ID')}</span>
+                    <span className="text-muted-foreground">
+                      Penilaian terakhir
+                    </span>
+                    <span>
+                      {new Date(tahfidz.lastAssessment).toLocaleDateString(
+                        "id-ID",
+                      )}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Predikat</span>
-                    <Badge className="bg-green-100 text-green-800">{tahfidz.lastGrade}</Badge>
+                    <Badge className="bg-green-100 text-green-800">
+                      {tahfidz.lastGrade}
+                    </Badge>
                   </div>
                 </div>
               </CardContent>
@@ -481,7 +580,8 @@ export default function StudentDetailPage() {
             <CardHeader>
               <CardTitle>Nilai Semester {academic.semester}</CardTitle>
               <CardDescription>
-                Rata-rata: {academic.averageScore} | Peringkat: {academic.rank} dari {academic.totalStudents} siswa
+                Rata-rata: {academic.averageScore} | Peringkat: {academic.rank}{" "}
+                dari {academic.totalStudents} siswa
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -501,13 +601,21 @@ export default function StudentDetailPage() {
                       <tr key={index} className="border-b">
                         <td className="py-3 px-2">{index + 1}</td>
                         <td className="py-3 px-2">{subject.name}</td>
-                        <td className="py-3 px-2 text-center font-medium">{subject.score}</td>
-                        <td className={`py-3 px-2 text-center font-bold ${getGradeColor(subject.grade)}`}>
+                        <td className="py-3 px-2 text-center font-medium">
+                          {subject.score}
+                        </td>
+                        <td
+                          className={`py-3 px-2 text-center font-bold ${getGradeColor(subject.grade)}`}
+                        >
                           {subject.grade}
                         </td>
                         <td className="py-3 px-2 text-center">
-                          <Badge variant={subject.score >= 75 ? 'default' : 'destructive'}>
-                            {subject.score >= 75 ? 'Tuntas' : 'Belum Tuntas'}
+                          <Badge
+                            variant={
+                              subject.score >= 75 ? "default" : "destructive"
+                            }
+                          >
+                            {subject.score >= 75 ? "Tuntas" : "Belum Tuntas"}
                           </Badge>
                         </td>
                       </tr>
@@ -523,32 +631,46 @@ export default function StudentDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle>Rekap Kehadiran</CardTitle>
-              <CardDescription>Total {attendance.totalDays} hari efektif</CardDescription>
+              <CardDescription>
+                Total {attendance.totalDays} hari efektif
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-6 mb-6">
                 <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-green-600">{attendance.present}</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {attendance.present}
+                  </p>
                   <p className="text-sm text-muted-foreground">Hadir</p>
                 </div>
                 <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-yellow-600">{attendance.late}</p>
+                  <p className="text-2xl font-bold text-yellow-600">
+                    {attendance.late}
+                  </p>
                   <p className="text-sm text-muted-foreground">Terlambat</p>
                 </div>
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-blue-600">{attendance.sick}</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {attendance.sick}
+                  </p>
                   <p className="text-sm text-muted-foreground">Sakit</p>
                 </div>
                 <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-purple-600">{attendance.permitted}</p>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {attendance.permitted}
+                  </p>
                   <p className="text-sm text-muted-foreground">Izin</p>
                 </div>
                 <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-red-600">{attendance.absent}</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {attendance.absent}
+                  </p>
                   <p className="text-sm text-muted-foreground">Alpha</p>
                 </div>
                 <div className="p-4 bg-gray-50 dark:bg-gray-900/20 rounded-lg text-center">
-                  <p className="text-2xl font-bold">{attendance.attendanceRate}%</p>
+                  <p className="text-2xl font-bold">
+                    {attendance.attendanceRate}%
+                  </p>
                   <p className="text-sm text-muted-foreground">Persentase</p>
                 </div>
               </div>
@@ -562,7 +684,8 @@ export default function StudentDetailPage() {
             <CardHeader>
               <CardTitle>Progress Tahfidz Al-Quran</CardTitle>
               <CardDescription>
-                Target: {tahfidz.totalJuz} Juz | Tercapai: {tahfidz.memorized} Juz
+                Target: {tahfidz.totalJuz} Juz | Tercapai: {tahfidz.memorized}{" "}
+                Juz
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -570,29 +693,51 @@ export default function StudentDetailPage() {
                 <div>
                   <div className="flex justify-between mb-2">
                     <span>Progress Keseluruhan</span>
-                    <span className="font-medium">{((tahfidz.memorized / tahfidz.totalJuz) * 100).toFixed(1)}%</span>
+                    <span className="font-medium">
+                      {((tahfidz.memorized / tahfidz.totalJuz) * 100).toFixed(
+                        1,
+                      )}
+                      %
+                    </span>
                   </div>
-                  <Progress value={(tahfidz.memorized / tahfidz.totalJuz) * 100} className="h-4" />
+                  <Progress
+                    value={(tahfidz.memorized / tahfidz.totalJuz) * 100}
+                    className="h-4"
+                  />
                 </div>
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="p-4 border rounded-lg">
                     <p className="text-sm text-muted-foreground">Juz Selesai</p>
-                    <p className="text-2xl font-bold text-green-600">{tahfidz.memorized}</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {tahfidz.memorized}
+                    </p>
                   </div>
                   <div className="p-4 border rounded-lg">
-                    <p className="text-sm text-muted-foreground">Sedang Dihafal</p>
-                    <p className="text-2xl font-bold text-blue-600">{tahfidz.inProgress}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Sedang Dihafal
+                    </p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {tahfidz.inProgress}
+                    </p>
                   </div>
                   <div className="p-4 border rounded-lg">
-                    <p className="text-sm text-muted-foreground">Belum Dimulai</p>
-                    <p className="text-2xl font-bold text-gray-600">{tahfidz.totalJuz - tahfidz.memorized - tahfidz.inProgress}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Belum Dimulai
+                    </p>
+                    <p className="text-2xl font-bold text-gray-600">
+                      {tahfidz.totalJuz -
+                        tahfidz.memorized -
+                        tahfidz.inProgress}
+                    </p>
                   </div>
                 </div>
                 <div className="pt-4 border-t">
                   <h4 className="font-medium mb-3">Posisi Hafalan Saat Ini</h4>
                   <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                     <BookOpen className="h-5 w-5 text-muted-foreground" />
-                    <span>Surah {tahfidz.currentSurah}, Ayat {tahfidz.currentAyat}</span>
+                    <span>
+                      Surah {tahfidz.currentSurah}, Ayat {tahfidz.currentAyat}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -605,23 +750,32 @@ export default function StudentDetailPage() {
             <CardHeader>
               <CardTitle>Catatan Perilaku</CardTitle>
               <CardDescription>
-                Total Poin: <span className={totalPoints >= 0 ? 'text-green-600' : 'text-red-600'}>{totalPoints > 0 ? '+' : ''}{totalPoints}</span>
+                Total Poin:{" "}
+                <span
+                  className={
+                    totalPoints >= 0 ? "text-green-600" : "text-red-600"
+                  }
+                >
+                  {totalPoints > 0 ? "+" : ""}
+                  {totalPoints}
+                </span>
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {behaviorNotes.map(note => (
-                  <div 
-                    key={note.id} 
+                {behaviorNotes.map((note) => (
+                  <div
+                    key={note.id}
                     className={`p-4 rounded-lg border ${
-                      note.type === 'POSITIVE' || note.type === 'ACHIEVEMENT' 
-                        ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' 
-                        : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
+                      note.type === "POSITIVE" || note.type === "ACHIEVEMENT"
+                        ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800"
+                        : "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800"
                     }`}
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex items-start gap-3">
-                        {note.type === 'POSITIVE' || note.type === 'ACHIEVEMENT' ? (
+                        {note.type === "POSITIVE" ||
+                        note.type === "ACHIEVEMENT" ? (
                           <Award className="h-5 w-5 text-green-600 mt-0.5" />
                         ) : (
                           <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
@@ -629,17 +783,22 @@ export default function StudentDetailPage() {
                         <div>
                           <p className="font-medium">{note.description}</p>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(note.date).toLocaleDateString('id-ID', { 
-                              weekday: 'long', 
-                              year: 'numeric', 
-                              month: 'long', 
-                              day: 'numeric' 
+                            {new Date(note.date).toLocaleDateString("id-ID", {
+                              weekday: "long",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
                             })}
                           </p>
                         </div>
                       </div>
-                      <Badge className={note.points > 0 ? 'bg-green-600' : 'bg-red-600'}>
-                        {note.points > 0 ? '+' : ''}{note.points} poin
+                      <Badge
+                        className={
+                          note.points > 0 ? "bg-green-600" : "bg-red-600"
+                        }
+                      >
+                        {note.points > 0 ? "+" : ""}
+                        {note.points} poin
                       </Badge>
                     </div>
                   </div>
@@ -661,7 +820,11 @@ export default function StudentDetailPage() {
                   <div key={idx} className="p-4 border rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-medium">{ekskul.name}</h4>
-                      <Badge variant={ekskul.status === 'Aktif' ? 'default' : 'secondary'}>
+                      <Badge
+                        variant={
+                          ekskul.status === "Aktif" ? "default" : "secondary"
+                        }
+                      >
                         {ekskul.status}
                       </Badge>
                     </div>

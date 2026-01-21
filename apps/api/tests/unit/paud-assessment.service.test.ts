@@ -53,7 +53,7 @@ const mocks = vi.hoisted(() => {
         findUnique: vi.fn(),
       },
       $transaction: vi.fn((callback) => callback(mocks.mockPrisma)),
-    }
+    },
   };
 });
 
@@ -163,7 +163,7 @@ describe('PAUD Assessment Service - Indicators', () => {
         aspect: PAUDAspect.NAM,
         code: 'NAM-1',
         name: 'Test Indicator',
-        unit: { id: 'unit-1', name: 'TK Qur\'an' },
+        unit: { id: 'unit-1', name: "TK Qur'an" },
       };
 
       mocks.mockPrisma.pAUDDevelopmentIndicator.findUnique.mockResolvedValue(mockIndicator);
@@ -287,7 +287,10 @@ describe('PAUD Assessment Service - Assessments', () => {
         assessedById: 'teacher-1',
       };
 
-      mocks.mockPrisma.student.findUnique.mockResolvedValue({ id: 'student-1', name: 'Test Student' });
+      mocks.mockPrisma.student.findUnique.mockResolvedValue({
+        id: 'student-1',
+        name: 'Test Student',
+      });
       mocks.mockPrisma.pAUDDevelopmentIndicator.findUnique.mockResolvedValue({
         id: 'indicator-1',
         code: 'NAM-1',
@@ -339,13 +342,13 @@ describe('PAUD Assessment Service - Assessments', () => {
       };
 
       mocks.mockPrisma.student.findUnique.mockResolvedValue({
-        id: 'student-1', 
-        unitId: 'unit-1' 
+        id: 'student-1',
+        unitId: 'unit-1',
       });
-      
+
       // Mock transaction to return array of created assessments
       mocks.mockPrisma.$transaction.mockResolvedValue([
-        { id: 'assessment-1', ...input.assessments[0] }
+        { id: 'assessment-1', ...input.assessments[0] },
       ]);
 
       const result = await paudAssessmentService.bulkCreateAssessments(input, 'teacher-1');

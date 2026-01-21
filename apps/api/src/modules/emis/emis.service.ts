@@ -78,14 +78,42 @@ interface EmisInstitutionData {
 
 // BOS Component Categories (8 Komponen sesuai Permendikbud)
 export const BOS_COMPONENTS = [
-  { code: 'BOS-01', name: 'Pengembangan Perpustakaan', description: 'Pembelian buku, e-book, akses jurnal' },
-  { code: 'BOS-02', name: 'Penerimaan Peserta Didik Baru', description: 'Biaya PPDB, formulir, seleksi' },
-  { code: 'BOS-03', name: 'Kegiatan Pembelajaran dan Ekstrakurikuler', description: 'Alat pembelajaran, ekskul' },
-  { code: 'BOS-04', name: 'Kegiatan Evaluasi Pembelajaran', description: 'Ujian, ulangan, penilaian' },
+  {
+    code: 'BOS-01',
+    name: 'Pengembangan Perpustakaan',
+    description: 'Pembelian buku, e-book, akses jurnal',
+  },
+  {
+    code: 'BOS-02',
+    name: 'Penerimaan Peserta Didik Baru',
+    description: 'Biaya PPDB, formulir, seleksi',
+  },
+  {
+    code: 'BOS-03',
+    name: 'Kegiatan Pembelajaran dan Ekstrakurikuler',
+    description: 'Alat pembelajaran, ekskul',
+  },
+  {
+    code: 'BOS-04',
+    name: 'Kegiatan Evaluasi Pembelajaran',
+    description: 'Ujian, ulangan, penilaian',
+  },
   { code: 'BOS-05', name: 'Pengelolaan Sekolah', description: 'ATK, administrasi, manajemen' },
-  { code: 'BOS-06', name: 'Pengembangan Profesi Guru', description: 'Pelatihan, workshop, sertifikasi' },
-  { code: 'BOS-07', name: 'Langganan Daya dan Jasa', description: 'Listrik, air, internet, telepon' },
-  { code: 'BOS-08', name: 'Pemeliharaan dan Perawatan', description: 'Perbaikan gedung, peralatan' },
+  {
+    code: 'BOS-06',
+    name: 'Pengembangan Profesi Guru',
+    description: 'Pelatihan, workshop, sertifikasi',
+  },
+  {
+    code: 'BOS-07',
+    name: 'Langganan Daya dan Jasa',
+    description: 'Listrik, air, internet, telepon',
+  },
+  {
+    code: 'BOS-08',
+    name: 'Pemeliharaan dan Perawatan',
+    description: 'Perbaikan gedung, peralatan',
+  },
 ];
 
 export class EmisService {
@@ -93,7 +121,10 @@ export class EmisService {
   // STUDENT EXPORT
   // ==================
 
-  async exportStudentData(options: EmisExportOptions, currentUser: AuthenticatedUser): Promise<EmisStudentData[]> {
+  async exportStudentData(
+    options: EmisExportOptions,
+    currentUser: AuthenticatedUser
+  ): Promise<EmisStudentData[]> {
     const { unitId, academicYearId, includeInactive } = options;
 
     // Access control
@@ -143,8 +174,8 @@ export class EmisService {
     // Transform to EMIS format
     const emisData: EmisStudentData[] = students.map((student, index) => {
       const enrollment = student.enrollments[0];
-      const fatherParent = student.parents.find(p => p.relation === 'father');
-      const motherParent = student.parents.find(p => p.relation === 'mother');
+      const fatherParent = student.parents.find((p) => p.relation === 'father');
+      const motherParent = student.parents.find((p) => p.relation === 'mother');
 
       return {
         no: index + 1,
@@ -175,7 +206,10 @@ export class EmisService {
   // TEACHER EXPORT
   // ==================
 
-  async exportTeacherData(options: EmisExportOptions, currentUser: AuthenticatedUser): Promise<EmisTeacherData[]> {
+  async exportTeacherData(
+    options: EmisExportOptions,
+    currentUser: AuthenticatedUser
+  ): Promise<EmisTeacherData[]> {
     const { unitId, includeInactive } = options;
 
     // Access control
@@ -239,7 +273,10 @@ export class EmisService {
   // INSTITUTION EXPORT
   // ==================
 
-  async exportInstitutionData(unitId: string, currentUser: AuthenticatedUser): Promise<EmisInstitutionData> {
+  async exportInstitutionData(
+    unitId: string,
+    currentUser: AuthenticatedUser
+  ): Promise<EmisInstitutionData> {
     // Access control
     if (currentUser.role !== UserRole.SUPER_ADMIN && currentUser.unitId !== unitId) {
       throw Errors.forbidden('Access denied');
@@ -267,7 +304,7 @@ export class EmisService {
       throw Errors.notFound('Unit not found');
     }
 
-    const activeClasses = classes.filter(c => c.academicYear?.isActive);
+    const activeClasses = classes.filter((c) => c.academicYear?.isActive);
 
     // Map unit type to jenjang
     const jenjangMap: Record<UnitType, string> = {
@@ -353,20 +390,17 @@ export class EmisService {
         male: maleStudents,
         female: femaleStudents,
         withNisn: studentsWithNisn,
-        nisnCompletionRate: activeStudents > 0
-          ? Math.round((studentsWithNisn / activeStudents) * 100)
-          : 0,
+        nisnCompletionRate:
+          activeStudents > 0 ? Math.round((studentsWithNisn / activeStudents) * 100) : 0,
       },
       teachers: {
         total: totalTeachers,
         certified: certifiedTeachers,
         withNuptk: teachersWithNuptk,
-        nuptkCompletionRate: totalTeachers > 0
-          ? Math.round((teachersWithNuptk / totalTeachers) * 100)
-          : 0,
-        certificationRate: totalTeachers > 0
-          ? Math.round((certifiedTeachers / totalTeachers) * 100)
-          : 0,
+        nuptkCompletionRate:
+          totalTeachers > 0 ? Math.round((teachersWithNuptk / totalTeachers) * 100) : 0,
+        certificationRate:
+          totalTeachers > 0 ? Math.round((certifiedTeachers / totalTeachers) * 100) : 0,
       },
       classes: {
         total: totalClasses,
@@ -388,7 +422,12 @@ export class EmisService {
       throw Errors.forbidden('Access denied');
     }
 
-    const issues: Array<{ type: string; severity: 'error' | 'warning'; message: string; count: number }> = [];
+    const issues: Array<{
+      type: string;
+      severity: 'error' | 'warning';
+      message: string;
+      count: number;
+    }> = [];
 
     // Check students without NISN
     const studentsWithoutNisn = await prisma.student.count({
@@ -446,10 +485,10 @@ export class EmisService {
     }
 
     return {
-      isReady: issues.filter(i => i.severity === 'error').length === 0,
+      isReady: issues.filter((i) => i.severity === 'error').length === 0,
       totalIssues: issues.length,
-      errorCount: issues.filter(i => i.severity === 'error').length,
-      warningCount: issues.filter(i => i.severity === 'warning').length,
+      errorCount: issues.filter((i) => i.severity === 'error').length,
+      warningCount: issues.filter((i) => i.severity === 'warning').length,
       issues,
     };
   }

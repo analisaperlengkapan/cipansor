@@ -1,32 +1,32 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { ApiResponse, PaginatedResponse } from "@/lib/api";
 
 // Types
-export type CounselingCategory = 
-  | 'ACADEMIC'      // Masalah akademik
-  | 'SOCIAL'        // Masalah sosial/pertemanan
-  | 'PERSONAL'      // Masalah pribadi
-  | 'CAREER'        // Bimbingan karir
-  | 'FAMILY'        // Masalah keluarga
-  | 'BEHAVIOR'      // Masalah perilaku
-  | 'RELIGIOUS'     // Bimbingan keagamaan
-  | 'OTHER';
+export type CounselingCategory =
+  | "ACADEMIC" // Masalah akademik
+  | "SOCIAL" // Masalah sosial/pertemanan
+  | "PERSONAL" // Masalah pribadi
+  | "CAREER" // Bimbingan karir
+  | "FAMILY" // Masalah keluarga
+  | "BEHAVIOR" // Masalah perilaku
+  | "RELIGIOUS" // Bimbingan keagamaan
+  | "OTHER";
 
-export type CounselingStatus = 
-  | 'OPEN'          // Kasus masih terbuka
-  | 'IN_PROGRESS'   // Sedang ditangani
-  | 'FOLLOW_UP'     // Perlu follow up
-  | 'RESOLVED'      // Selesai
-  | 'REFERRED';     // Dirujuk ke pihak lain
+export type CounselingStatus =
+  | "OPEN" // Kasus masih terbuka
+  | "IN_PROGRESS" // Sedang ditangani
+  | "FOLLOW_UP" // Perlu follow up
+  | "RESOLVED" // Selesai
+  | "REFERRED"; // Dirujuk ke pihak lain
 
-export type CounselingPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+export type CounselingPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 
-export type SessionType = 
-  | 'INDIVIDUAL'    // Konseling individu
-  | 'GROUP'         // Konseling kelompok
-  | 'PARENT'        // Konseling dengan orang tua
-  | 'HOME_VISIT'    // Kunjungan rumah
-  | 'REFERRAL';     // Rujukan eksternal
+export type SessionType =
+  | "INDIVIDUAL" // Konseling individu
+  | "GROUP" // Konseling kelompok
+  | "PARENT" // Konseling dengan orang tua
+  | "HOME_VISIT" // Kunjungan rumah
+  | "REFERRAL"; // Rujukan eksternal
 
 export interface CounselingRecord {
   id: string;
@@ -157,61 +157,61 @@ export const COUNSELING_CATEGORIES: Array<{
   color: string;
   description: string;
 }> = [
-  { 
-    value: 'ACADEMIC', 
-    label: 'Akademik', 
-    icon: '📚', 
-    color: 'bg-blue-100 text-blue-800',
-    description: 'Masalah terkait belajar, nilai, motivasi belajar'
+  {
+    value: "ACADEMIC",
+    label: "Akademik",
+    icon: "📚",
+    color: "bg-blue-100 text-blue-800",
+    description: "Masalah terkait belajar, nilai, motivasi belajar",
   },
-  { 
-    value: 'SOCIAL', 
-    label: 'Sosial', 
-    icon: '👥', 
-    color: 'bg-green-100 text-green-800',
-    description: 'Masalah pertemanan, bullying, adaptasi sosial'
+  {
+    value: "SOCIAL",
+    label: "Sosial",
+    icon: "👥",
+    color: "bg-green-100 text-green-800",
+    description: "Masalah pertemanan, bullying, adaptasi sosial",
   },
-  { 
-    value: 'PERSONAL', 
-    label: 'Pribadi', 
-    icon: '🔒', 
-    color: 'bg-purple-100 text-purple-800',
-    description: 'Masalah pribadi, kepercayaan diri, kecemasan'
+  {
+    value: "PERSONAL",
+    label: "Pribadi",
+    icon: "🔒",
+    color: "bg-purple-100 text-purple-800",
+    description: "Masalah pribadi, kepercayaan diri, kecemasan",
   },
-  { 
-    value: 'CAREER', 
-    label: 'Karir', 
-    icon: '🎯', 
-    color: 'bg-amber-100 text-amber-800',
-    description: 'Bimbingan karir, pilihan jurusan, minat bakat'
+  {
+    value: "CAREER",
+    label: "Karir",
+    icon: "🎯",
+    color: "bg-amber-100 text-amber-800",
+    description: "Bimbingan karir, pilihan jurusan, minat bakat",
   },
-  { 
-    value: 'FAMILY', 
-    label: 'Keluarga', 
-    icon: '🏠', 
-    color: 'bg-pink-100 text-pink-800',
-    description: 'Masalah keluarga, orang tua, ekonomi'
+  {
+    value: "FAMILY",
+    label: "Keluarga",
+    icon: "🏠",
+    color: "bg-pink-100 text-pink-800",
+    description: "Masalah keluarga, orang tua, ekonomi",
   },
-  { 
-    value: 'BEHAVIOR', 
-    label: 'Perilaku', 
-    icon: '⚠️', 
-    color: 'bg-red-100 text-red-800',
-    description: 'Masalah perilaku, disiplin, kebiasaan buruk'
+  {
+    value: "BEHAVIOR",
+    label: "Perilaku",
+    icon: "⚠️",
+    color: "bg-red-100 text-red-800",
+    description: "Masalah perilaku, disiplin, kebiasaan buruk",
   },
-  { 
-    value: 'RELIGIOUS', 
-    label: 'Keagamaan', 
-    icon: '📿', 
-    color: 'bg-emerald-100 text-emerald-800',
-    description: 'Bimbingan ibadah, akhlak, spiritual'
+  {
+    value: "RELIGIOUS",
+    label: "Keagamaan",
+    icon: "📿",
+    color: "bg-emerald-100 text-emerald-800",
+    description: "Bimbingan ibadah, akhlak, spiritual",
   },
-  { 
-    value: 'OTHER', 
-    label: 'Lainnya', 
-    icon: '📋', 
-    color: 'bg-gray-100 text-gray-800',
-    description: 'Kategori lainnya'
+  {
+    value: "OTHER",
+    label: "Lainnya",
+    icon: "📋",
+    color: "bg-gray-100 text-gray-800",
+    description: "Kategori lainnya",
   },
 ];
 
@@ -220,11 +220,15 @@ export const COUNSELING_STATUSES: Array<{
   label: string;
   color: string;
 }> = [
-  { value: 'OPEN', label: 'Terbuka', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'IN_PROGRESS', label: 'Proses', color: 'bg-blue-100 text-blue-800' },
-  { value: 'FOLLOW_UP', label: 'Follow Up', color: 'bg-purple-100 text-purple-800' },
-  { value: 'RESOLVED', label: 'Selesai', color: 'bg-green-100 text-green-800' },
-  { value: 'REFERRED', label: 'Dirujuk', color: 'bg-gray-100 text-gray-800' },
+  { value: "OPEN", label: "Terbuka", color: "bg-yellow-100 text-yellow-800" },
+  { value: "IN_PROGRESS", label: "Proses", color: "bg-blue-100 text-blue-800" },
+  {
+    value: "FOLLOW_UP",
+    label: "Follow Up",
+    color: "bg-purple-100 text-purple-800",
+  },
+  { value: "RESOLVED", label: "Selesai", color: "bg-green-100 text-green-800" },
+  { value: "REFERRED", label: "Dirujuk", color: "bg-gray-100 text-gray-800" },
 ];
 
 export const COUNSELING_PRIORITIES: Array<{
@@ -232,10 +236,10 @@ export const COUNSELING_PRIORITIES: Array<{
   label: string;
   color: string;
 }> = [
-  { value: 'LOW', label: 'Rendah', color: 'bg-gray-100 text-gray-800' },
-  { value: 'MEDIUM', label: 'Sedang', color: 'bg-blue-100 text-blue-800' },
-  { value: 'HIGH', label: 'Tinggi', color: 'bg-amber-100 text-amber-800' },
-  { value: 'URGENT', label: 'Urgent', color: 'bg-red-100 text-red-800' },
+  { value: "LOW", label: "Rendah", color: "bg-gray-100 text-gray-800" },
+  { value: "MEDIUM", label: "Sedang", color: "bg-blue-100 text-blue-800" },
+  { value: "HIGH", label: "Tinggi", color: "bg-amber-100 text-amber-800" },
+  { value: "URGENT", label: "Urgent", color: "bg-red-100 text-red-800" },
 ];
 
 export const SESSION_TYPES: Array<{
@@ -243,19 +247,22 @@ export const SESSION_TYPES: Array<{
   label: string;
   icon: string;
 }> = [
-  { value: 'INDIVIDUAL', label: 'Konseling Individu', icon: '👤' },
-  { value: 'GROUP', label: 'Konseling Kelompok', icon: '👥' },
-  { value: 'PARENT', label: 'Konseling Orang Tua', icon: '👨‍👩‍👧' },
-  { value: 'HOME_VISIT', label: 'Kunjungan Rumah', icon: '🏠' },
-  { value: 'REFERRAL', label: 'Rujukan Eksternal', icon: '🏥' },
+  { value: "INDIVIDUAL", label: "Konseling Individu", icon: "👤" },
+  { value: "GROUP", label: "Konseling Kelompok", icon: "👥" },
+  { value: "PARENT", label: "Konseling Orang Tua", icon: "👨‍👩‍👧" },
+  { value: "HOME_VISIT", label: "Kunjungan Rumah", icon: "🏠" },
+  { value: "REFERRAL", label: "Rujukan Eksternal", icon: "🏥" },
 ];
 
 // Hooks
 export function useCounselingRecords(params: CounselingListParams = {}) {
   return useQuery({
-    queryKey: ['counseling-records', params],
+    queryKey: ["counseling-records", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<CounselingRecord>>('/counseling', { params });
+      const response = await api.get<PaginatedResponse<CounselingRecord>>(
+        "/counseling",
+        { params },
+      );
       return response.data;
     },
   });
@@ -263,9 +270,11 @@ export function useCounselingRecords(params: CounselingListParams = {}) {
 
 export function useCounselingRecord(id: string) {
   return useQuery({
-    queryKey: ['counseling-records', id],
+    queryKey: ["counseling-records", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<CounselingRecord>>(`/counseling/${id}`);
+      const response = await api.get<ApiResponse<CounselingRecord>>(
+        `/counseling/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -274,11 +283,14 @@ export function useCounselingRecord(id: string) {
 
 export function useCounselingStats(unitId?: string) {
   return useQuery({
-    queryKey: ['counseling-stats', unitId],
+    queryKey: ["counseling-stats", unitId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<CounselingStats>>('/counseling/stats', {
-        params: { unitId },
-      });
+      const response = await api.get<ApiResponse<CounselingStats>>(
+        "/counseling/stats",
+        {
+          params: { unitId },
+        },
+      );
       return response.data.data;
     },
   });
@@ -286,9 +298,11 @@ export function useCounselingStats(unitId?: string) {
 
 export function useStudentCounselingHistory(studentId: string) {
   return useQuery({
-    queryKey: ['student-counseling-history', studentId],
+    queryKey: ["student-counseling-history", studentId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<CounselingRecord[]>>(`/counseling/student/${studentId}`);
+      const response = await api.get<ApiResponse<CounselingRecord[]>>(
+        `/counseling/student/${studentId}`,
+      );
       return response.data.data;
     },
     enabled: !!studentId,
@@ -300,12 +314,15 @@ export function useCreateCounselingRecord() {
 
   return useMutation({
     mutationFn: async (data: CreateCounselingInput) => {
-      const response = await api.post<ApiResponse<CounselingRecord>>('/counseling', data);
+      const response = await api.post<ApiResponse<CounselingRecord>>(
+        "/counseling",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['counseling-records'] });
-      queryClient.invalidateQueries({ queryKey: ['counseling-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["counseling-records"] });
+      queryClient.invalidateQueries({ queryKey: ["counseling-stats"] });
     },
   });
 }
@@ -315,13 +332,18 @@ export function useUpdateCounselingRecord() {
 
   return useMutation({
     mutationFn: async ({ id, ...data }: UpdateCounselingInput) => {
-      const response = await api.put<ApiResponse<CounselingRecord>>(`/counseling/${id}`, data);
+      const response = await api.put<ApiResponse<CounselingRecord>>(
+        `/counseling/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['counseling-records'] });
-      queryClient.invalidateQueries({ queryKey: ['counseling-records', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['counseling-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["counseling-records"] });
+      queryClient.invalidateQueries({
+        queryKey: ["counseling-records", variables.id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["counseling-stats"] });
     },
   });
 }
@@ -330,16 +352,27 @@ export function useResolveCounselingRecord() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, resolutionNotes }: { id: string; resolutionNotes: string }) => {
-      const response = await api.post<ApiResponse<CounselingRecord>>(`/counseling/${id}/resolve`, { 
-        resolutionNotes 
-      });
+    mutationFn: async ({
+      id,
+      resolutionNotes,
+    }: {
+      id: string;
+      resolutionNotes: string;
+    }) => {
+      const response = await api.post<ApiResponse<CounselingRecord>>(
+        `/counseling/${id}/resolve`,
+        {
+          resolutionNotes,
+        },
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['counseling-records'] });
-      queryClient.invalidateQueries({ queryKey: ['counseling-records', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['counseling-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["counseling-records"] });
+      queryClient.invalidateQueries({
+        queryKey: ["counseling-records", variables.id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["counseling-stats"] });
     },
   });
 }
@@ -352,8 +385,8 @@ export function useDeleteCounselingRecord() {
       await api.delete(`/counseling/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['counseling-records'] });
-      queryClient.invalidateQueries({ queryKey: ['counseling-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["counseling-records"] });
+      queryClient.invalidateQueries({ queryKey: ["counseling-stats"] });
     },
   });
 }
@@ -366,12 +399,14 @@ export function useAddCounselingSession() {
     mutationFn: async (data: CreateSessionInput) => {
       const response = await api.post<ApiResponse<CounselingSession>>(
         `/counseling/${data.recordId}/sessions`,
-        data
+        data,
       );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['counseling-records', variables.recordId] });
+      queryClient.invalidateQueries({
+        queryKey: ["counseling-records", variables.recordId],
+      });
     },
   });
 }
@@ -380,14 +415,25 @@ export function useNotifyParent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ recordId, message }: { recordId: string; message: string }) => {
-      const response = await api.post<ApiResponse<void>>(`/counseling/${recordId}/notify-parent`, { 
-        message 
-      });
+    mutationFn: async ({
+      recordId,
+      message,
+    }: {
+      recordId: string;
+      message: string;
+    }) => {
+      const response = await api.post<ApiResponse<void>>(
+        `/counseling/${recordId}/notify-parent`,
+        {
+          message,
+        },
+      );
       return response.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['counseling-records', variables.recordId] });
+      queryClient.invalidateQueries({
+        queryKey: ["counseling-records", variables.recordId],
+      });
     },
   });
 }

@@ -14,7 +14,7 @@ vi.mock('../../src/lib/prisma', () => ({
     },
     user: {
       findMany: vi.fn(),
-    }
+    },
   },
 }));
 
@@ -41,11 +41,11 @@ describe('Payment Reminder Performance', () => {
           name: `Student ${i}`,
           email: `student${i}@example.com`,
           phone: `0812345678${i}`,
-        }
+        },
       },
       paymentType: {
         name: 'SPP',
-      }
+      },
     }));
 
     vi.mocked(prisma.invoice.findMany).mockResolvedValue(invoices as any);
@@ -57,7 +57,9 @@ describe('Payment Reminder Performance', () => {
     const end = performance.now();
     const duration = end - start;
 
-    process.stdout.write(`\n[Benchmark] Processing ${invoiceCount} invoices took ${duration.toFixed(2)}ms\n`);
+    process.stdout.write(
+      `\n[Benchmark] Processing ${invoiceCount} invoices took ${duration.toFixed(2)}ms\n`
+    );
 
     const createCalls = vi.mocked(prisma.notification.create).mock.calls.length;
     const createManyCalls = vi.mocked(prisma.notification.createMany).mock.calls.length;
@@ -71,10 +73,14 @@ describe('Payment Reminder Performance', () => {
         const firstItem = data[0];
         const extraData = firstItem.data as any;
         if (extraData?.priority === 'HIGH' && extraData?.channels?.includes('EMAIL')) {
-             process.stdout.write(`[Validation] Payload has priority and channels preserved in data field.\n`);
+          process.stdout.write(
+            `[Validation] Payload has priority and channels preserved in data field.\n`
+          );
         } else {
-             process.stdout.write(`[Validation] FAILED: Payload missing priority or channels in data field.\n`);
-             console.log('Received data:', JSON.stringify(extraData, null, 2));
+          process.stdout.write(
+            `[Validation] FAILED: Payload missing priority or channels in data field.\n`
+          );
+          console.log('Received data:', JSON.stringify(extraData, null, 2));
         }
       }
     }

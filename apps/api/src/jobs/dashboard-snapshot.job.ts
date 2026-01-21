@@ -260,7 +260,10 @@ export async function createWeeklySummary(): Promise<void> {
 
         logger.debug(`[${jobName}] Created weekly summary for unit: ${unit.name}`);
       } catch (unitError) {
-        logger.error(`[${jobName}] Error creating weekly summary for unit ${unit.name}:`, unitError);
+        logger.error(
+          `[${jobName}] Error creating weekly summary for unit ${unit.name}:`,
+          unitError
+        );
       }
     }
 
@@ -300,9 +303,9 @@ export async function cleanupOldSnapshots(): Promise<void> {
     const historyResult = await prisma.dashboardHistory.deleteMany({
       where: {
         createdAt: {
-          lt: historyCutoff
-        }
-      }
+          lt: historyCutoff,
+        },
+      },
     });
 
     logger.info(`[${jobName}] Deleted ${historyResult.count} old history records`);

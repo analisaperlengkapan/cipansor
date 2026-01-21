@@ -1,7 +1,15 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
 
-export type EmploymentAction = 'HIRED' | 'PROMOTED' | 'DEMOTED' | 'TRANSFERRED' | 'TERMINATED' | 'RESIGNED' | 'RETIRED' | 'SALARY_ADJUSTMENT';
+export type EmploymentAction =
+  | "HIRED"
+  | "PROMOTED"
+  | "DEMOTED"
+  | "TRANSFERRED"
+  | "TERMINATED"
+  | "RESIGNED"
+  | "RETIRED"
+  | "SALARY_ADJUSTMENT";
 
 export interface EmploymentHistory {
   id: string;
@@ -18,7 +26,7 @@ export interface EmploymentHistory {
 
 export function useEmploymentHistory(userId: string) {
   return useQuery({
-    queryKey: ['employment-history', userId],
+    queryKey: ["employment-history", userId],
     queryFn: async () => {
       const response = await api.get(`/hr/employees/${userId}/history`);
       return response.data.data as EmploymentHistory[];
@@ -32,12 +40,14 @@ export function useCreateEmploymentHistory() {
 
   return useMutation({
     mutationFn: async (data: Partial<EmploymentHistory>) => {
-      const response = await api.post('/hr/history', data);
+      const response = await api.post("/hr/history", data);
       return response.data.data;
     },
     onSuccess: (_, variables) => {
       if (variables.userId) {
-        queryClient.invalidateQueries({ queryKey: ['employment-history', variables.userId] });
+        queryClient.invalidateQueries({
+          queryKey: ["employment-history", variables.userId],
+        });
       }
     },
   });

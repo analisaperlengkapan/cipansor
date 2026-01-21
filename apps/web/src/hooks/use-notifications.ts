@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
 import {
   type NotificationType,
   type NotificationPriority,
@@ -9,7 +9,7 @@ import {
   type UserNotification,
   type NotificationTemplate,
   type NotificationStats,
-} from '@cipansor/shared';
+} from "@cipansor/shared";
 
 // Re-export types from shared
 export type {
@@ -26,54 +26,75 @@ export type {
 // CONSTANTS (Duplicate from shared if needed or move constants to shared eventually)
 // Ideally these should come from shared constants, but for now we define them here to match UI labels
 export const NOTIFICATION_TYPES: NotificationType[] = [
-  'ANNOUNCEMENT',
-  'ATTENDANCE',
-  'FINANCE',
-  'ACADEMIC',
-  'PERMIT',
-  'HEALTH',
-  'VIOLATION',
-  'REWARD',
-  'SYSTEM',
+  "ANNOUNCEMENT",
+  "ATTENDANCE",
+  "FINANCE",
+  "ACADEMIC",
+  "PERMIT",
+  "HEALTH",
+  "VIOLATION",
+  "REWARD",
+  "SYSTEM",
 ];
 
-export const NOTIFICATION_PRIORITIES: NotificationPriority[] = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
-export const NOTIFICATION_CHANNELS: NotificationChannel[] = ['IN_APP', 'EMAIL', 'SMS', 'PUSH', 'WHATSAPP'];
-export const RECIPIENT_TYPES: RecipientType[] = ['ALL', 'UNIT', 'CLASS', 'ROLE', 'INDIVIDUAL'];
+export const NOTIFICATION_PRIORITIES: NotificationPriority[] = [
+  "LOW",
+  "NORMAL",
+  "HIGH",
+  "URGENT",
+];
+export const NOTIFICATION_CHANNELS: NotificationChannel[] = [
+  "IN_APP",
+  "EMAIL",
+  "SMS",
+  "PUSH",
+  "WHATSAPP",
+];
+export const RECIPIENT_TYPES: RecipientType[] = [
+  "ALL",
+  "UNIT",
+  "CLASS",
+  "ROLE",
+  "INDIVIDUAL",
+];
 
 export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
-  ANNOUNCEMENT: 'Pengumuman',
-  ATTENDANCE: 'Kehadiran',
-  FINANCE: 'Keuangan',
-  ACADEMIC: 'Akademik',
-  PERMIT: 'Izin',
-  HEALTH: 'Kesehatan',
-  VIOLATION: 'Pelanggaran',
-  REWARD: 'Penghargaan',
-  SYSTEM: 'Sistem',
+  ANNOUNCEMENT: "Pengumuman",
+  ATTENDANCE: "Kehadiran",
+  FINANCE: "Keuangan",
+  ACADEMIC: "Akademik",
+  PERMIT: "Izin",
+  HEALTH: "Kesehatan",
+  VIOLATION: "Pelanggaran",
+  REWARD: "Penghargaan",
+  SYSTEM: "Sistem",
 };
 
-export const NOTIFICATION_PRIORITY_LABELS: Record<NotificationPriority, string> = {
-  LOW: 'Rendah',
-  NORMAL: 'Normal',
-  HIGH: 'Tinggi',
-  URGENT: 'Mendesak',
+export const NOTIFICATION_PRIORITY_LABELS: Record<
+  NotificationPriority,
+  string
+> = {
+  LOW: "Rendah",
+  NORMAL: "Normal",
+  HIGH: "Tinggi",
+  URGENT: "Mendesak",
 };
 
-export const NOTIFICATION_CHANNEL_LABELS: Record<NotificationChannel, string> = {
-  IN_APP: 'Aplikasi',
-  EMAIL: 'Email',
-  SMS: 'SMS',
-  PUSH: 'Push Notification',
-  WHATSAPP: 'WhatsApp',
-};
+export const NOTIFICATION_CHANNEL_LABELS: Record<NotificationChannel, string> =
+  {
+    IN_APP: "Aplikasi",
+    EMAIL: "Email",
+    SMS: "SMS",
+    PUSH: "Push Notification",
+    WHATSAPP: "WhatsApp",
+  };
 
 export const RECIPIENT_TYPE_LABELS: Record<RecipientType, string> = {
-  ALL: 'Semua',
-  UNIT: 'Per Unit',
-  CLASS: 'Per Kelas',
-  ROLE: 'Per Role',
-  INDIVIDUAL: 'Individual',
+  ALL: "Semua",
+  UNIT: "Per Unit",
+  CLASS: "Per Kelas",
+  ROLE: "Per Role",
+  INDIVIDUAL: "Individual",
 };
 
 // ==================== ADMIN QUERIES ====================
@@ -87,13 +108,18 @@ export function useNotifications(params?: {
   limit?: number;
 }) {
   return useQuery({
-    queryKey: ['notifications', params],
+    queryKey: ["notifications", params],
     queryFn: async () => {
       // Updated to point to /notifications/admin for the management list
-      const response = await api.get('/notifications/admin', { params });
+      const response = await api.get("/notifications/admin", { params });
       return response.data as {
         data: AppNotification[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
+        meta: {
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        };
       };
     },
   });
@@ -101,7 +127,7 @@ export function useNotifications(params?: {
 
 export function useNotification(id: string) {
   return useQuery({
-    queryKey: ['notification', id],
+    queryKey: ["notification", id],
     queryFn: async () => {
       // Confirmed: Backend enforces ownership check OR admin role.
       // Admins can access any notification via this endpoint.
@@ -114,9 +140,9 @@ export function useNotification(id: string) {
 
 export function useNotificationStats() {
   return useQuery({
-    queryKey: ['notification-stats'],
+    queryKey: ["notification-stats"],
     queryFn: async () => {
-      const response = await api.get('/notifications/stats');
+      const response = await api.get("/notifications/stats");
       return response.data.data as NotificationStats;
     },
   });
@@ -127,12 +153,12 @@ export function useCreateNotification() {
 
   return useMutation({
     mutationFn: async (data: Partial<AppNotification>) => {
-      const response = await api.post('/notifications', data);
+      const response = await api.post("/notifications", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notification-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notification-stats"] });
     },
   });
 }
@@ -146,8 +172,8 @@ export function useSendNotification() {
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notification-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notification-stats"] });
     },
   });
 }
@@ -156,12 +182,20 @@ export function useScheduleNotification() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, scheduledAt }: { id: string; scheduledAt: string }) => {
-      const response = await api.post(`/notifications/${id}/schedule`, { scheduledAt });
+    mutationFn: async ({
+      id,
+      scheduledAt,
+    }: {
+      id: string;
+      scheduledAt: string;
+    }) => {
+      const response = await api.post(`/notifications/${id}/schedule`, {
+        scheduledAt,
+      });
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 }
@@ -174,8 +208,8 @@ export function useDeleteNotification() {
       await api.delete(`/notifications/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notification-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notification-stats"] });
     },
   });
 }
@@ -189,13 +223,19 @@ export function useUserNotifications(params?: {
   limit?: number;
 }) {
   return useQuery({
-    queryKey: ['user-notifications', params],
+    queryKey: ["user-notifications", params],
     queryFn: async () => {
       // Updated: Use /notifications for inbox (getMyNotifications)
-      const response = await api.get('/notifications', { params });
+      const response = await api.get("/notifications", { params });
       return response.data as {
         data: UserNotification[];
-        meta: { total: number; page: number; limit: number; totalPages: number; unreadCount: number };
+        meta: {
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+          unreadCount: number;
+        };
       };
     },
   });
@@ -203,7 +243,7 @@ export function useUserNotifications(params?: {
 
 export function useUnreadNotificationCount() {
   return useQuery({
-    queryKey: ['unread-notification-count'],
+    queryKey: ["unread-notification-count"],
     queryFn: async () => {
       // Check if this endpoint exists, or if we extract it from metadata of /notifications
       // The service returns unreadCount in metadata of getMyNotifications.
@@ -211,7 +251,9 @@ export function useUnreadNotificationCount() {
       // For now, assume /notifications/inbox/unread-count does NOT exist unless we added it.
       // We didn't add it to routes.ts explicitly as a separate endpoint, but we added /read-all.
       // We can use a query to /notifications with limit=0 to get meta?
-      const response = await api.get('/notifications', { params: { limit: 1 } });
+      const response = await api.get("/notifications", {
+        params: { limit: 1 },
+      });
       return { count: response.data.meta.unreadCount };
     },
     refetchInterval: 30000, // Refetch every 30 seconds
@@ -228,8 +270,10 @@ export function useMarkNotificationAsRead() {
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['unread-notification-count'] });
+      queryClient.invalidateQueries({ queryKey: ["user-notifications"] });
+      queryClient.invalidateQueries({
+        queryKey: ["unread-notification-count"],
+      });
     },
   });
 }
@@ -239,23 +283,28 @@ export function useMarkAllNotificationsAsRead() {
 
   return useMutation({
     mutationFn: async () => {
-      const response = await api.post('/notifications/read-all');
+      const response = await api.post("/notifications/read-all");
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['unread-notification-count'] });
+      queryClient.invalidateQueries({ queryKey: ["user-notifications"] });
+      queryClient.invalidateQueries({
+        queryKey: ["unread-notification-count"],
+      });
     },
   });
 }
 
 // ==================== TEMPLATES ====================
 
-export function useNotificationTemplates(params?: { type?: NotificationType; isActive?: boolean }) {
+export function useNotificationTemplates(params?: {
+  type?: NotificationType;
+  isActive?: boolean;
+}) {
   return useQuery({
-    queryKey: ['notification-templates', params],
+    queryKey: ["notification-templates", params],
     queryFn: async () => {
-      const response = await api.get('/notifications/templates', { params });
+      const response = await api.get("/notifications/templates", { params });
       return response.data.data as NotificationTemplate[];
     },
   });
@@ -263,7 +312,7 @@ export function useNotificationTemplates(params?: { type?: NotificationType; isA
 
 export function useNotificationTemplate(id: string) {
   return useQuery({
-    queryKey: ['notification-template', id],
+    queryKey: ["notification-template", id],
     queryFn: async () => {
       const response = await api.get(`/notifications/templates/${id}`);
       return response.data.data as NotificationTemplate;
@@ -277,11 +326,11 @@ export function useCreateNotificationTemplate() {
 
   return useMutation({
     mutationFn: async (data: Partial<NotificationTemplate>) => {
-      const response = await api.post('/notifications/templates', data);
+      const response = await api.post("/notifications/templates", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notification-templates'] });
+      queryClient.invalidateQueries({ queryKey: ["notification-templates"] });
     },
   });
 }
@@ -290,12 +339,18 @@ export function useUpdateNotificationTemplate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<NotificationTemplate> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<NotificationTemplate>;
+    }) => {
       const response = await api.put(`/notifications/templates/${id}`, data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notification-templates'] });
+      queryClient.invalidateQueries({ queryKey: ["notification-templates"] });
     },
   });
 }
@@ -308,7 +363,7 @@ export function useDeleteNotificationTemplate() {
       await api.delete(`/notifications/templates/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notification-templates'] });
+      queryClient.invalidateQueries({ queryKey: ["notification-templates"] });
     },
   });
 }

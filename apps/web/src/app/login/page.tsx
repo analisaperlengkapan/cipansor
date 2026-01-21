@@ -1,21 +1,36 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useAuthStore } from '@/stores/auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Eye, EyeOff, ShieldCheck, Building2, GraduationCap, Users, UserCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useAuthStore } from "@/stores/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Loader2,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Building2,
+  GraduationCap,
+  Users,
+  UserCircle,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -24,91 +39,91 @@ type LoginForm = z.infer<typeof loginSchema>;
 const demoCredentials = [
   // Global
   {
-    role: 'Super Admin',
-    email: 'superadmin@cipansor.id',
-    password: 'SuperAdmin123!',
-    description: 'Akses penuh seluruh sistem',
-    realm: 'GLOBAL',
+    role: "Super Admin",
+    email: "superadmin@cipansor.id",
+    password: "SuperAdmin123!",
+    description: "Akses penuh seluruh sistem",
+    realm: "GLOBAL",
     icon: ShieldCheck,
-    color: 'bg-purple-600',
+    color: "bg-purple-600",
   },
   // Yayasan
   {
-    role: 'Ketua Yayasan',
-    email: 'ketua@cipansor.id',
-    password: 'Ketua123!',
-    description: 'Ketua pengurus yayasan',
-    realm: 'YAYASAN',
+    role: "Ketua Yayasan",
+    email: "ketua@cipansor.id",
+    password: "Ketua123!",
+    description: "Ketua pengurus yayasan",
+    realm: "YAYASAN",
     icon: Building2,
-    color: 'bg-amber-500',
+    color: "bg-amber-500",
   },
   // SMP IT
   {
-    role: 'Admin SMP IT',
-    email: 'admin@smpit.sch.id',
-    password: 'Admin123!',
-    description: 'Administrator SMP IT',
-    realm: 'SMP_IT',
+    role: "Admin SMP IT",
+    email: "admin@smpit.sch.id",
+    password: "Admin123!",
+    description: "Administrator SMP IT",
+    realm: "SMP_IT",
     icon: Building2,
-    color: 'bg-blue-500',
+    color: "bg-blue-500",
   },
   {
-    role: 'Kepala SMP IT',
-    email: 'kepala@smpit.sch.id',
-    password: 'Kepala123!',
-    description: 'Kepala Sekolah + Guru',
-    realm: 'SMP_IT',
+    role: "Kepala SMP IT",
+    email: "kepala@smpit.sch.id",
+    password: "Kepala123!",
+    description: "Kepala Sekolah + Guru",
+    realm: "SMP_IT",
     icon: GraduationCap,
-    color: 'bg-blue-600',
+    color: "bg-blue-600",
   },
   {
-    role: 'Guru SMP IT',
-    email: 'ahmad@smpit.sch.id',
-    password: 'Teacher123!',
-    description: 'Guru SMP IT',
-    realm: 'SMP_IT',
+    role: "Guru SMP IT",
+    email: "ahmad@smpit.sch.id",
+    password: "Teacher123!",
+    description: "Guru SMP IT",
+    realm: "SMP_IT",
     icon: GraduationCap,
-    color: 'bg-green-500',
+    color: "bg-green-500",
   },
   {
-    role: 'Orang Tua SMP IT',
-    email: 'parent1@smpit.sch.id',
-    password: 'Parent123!',
-    description: 'Orang tua siswa SMP IT',
-    realm: 'SMP_IT',
+    role: "Orang Tua SMP IT",
+    email: "parent1@smpit.sch.id",
+    password: "Parent123!",
+    description: "Orang tua siswa SMP IT",
+    realm: "SMP_IT",
     icon: Users,
-    color: 'bg-orange-500',
+    color: "bg-orange-500",
   },
   {
-    role: 'Siswa SMP IT',
-    email: 'student1@smpit.sch.id',
-    password: 'Student123!',
-    description: 'Siswa SMP IT',
-    realm: 'SMP_IT',
+    role: "Siswa SMP IT",
+    email: "student1@smpit.sch.id",
+    password: "Student123!",
+    description: "Siswa SMP IT",
+    realm: "SMP_IT",
     icon: UserCircle,
-    color: 'bg-cyan-500',
+    color: "bg-cyan-500",
   },
   // SD IT
   {
-    role: 'Admin SD IT',
-    email: 'admin@sdit.sch.id',
-    password: 'Admin123!',
-    description: 'Administrator SD IT',
-    realm: 'SD_IT',
+    role: "Admin SD IT",
+    email: "admin@sdit.sch.id",
+    password: "Admin123!",
+    description: "Administrator SD IT",
+    realm: "SD_IT",
     icon: Building2,
-    color: 'bg-green-600',
+    color: "bg-green-600",
   },
 ];
 
 // Group credentials by realm for display
 const realmLabels: Record<string, string> = {
-  GLOBAL: 'Global',
-  YAYASAN: 'Yayasan',
-  SMP_IT: 'SMP IT',
-  SD_IT: 'SD IT',
-  TK_QURAN: 'TK Qur\'an',
-  SMA_QURAN: 'SMA Qur\'an',
-  PESANTREN: 'Pesantren',
+  GLOBAL: "Global",
+  YAYASAN: "Yayasan",
+  SMP_IT: "SMP IT",
+  SD_IT: "SD IT",
+  TK_QURAN: "TK Qur'an",
+  SMA_QURAN: "SMA Qur'an",
+  PESANTREN: "Pesantren",
 };
 
 export default function LoginPage() {
@@ -130,25 +145,25 @@ export default function LoginPage() {
     try {
       clearError();
       await login(data);
-      router.push('/dashboard');
+      router.push("/dashboard");
     } catch {
       // Error is handled in store
     }
   };
 
-  const handleDemoLogin = (credential: typeof demoCredentials[0]) => {
+  const handleDemoLogin = (credential: (typeof demoCredentials)[0]) => {
     clearError();
     setSelectedDemo(credential.role);
-    setValue('email', credential.email);
-    setValue('password', credential.password);
+    setValue("email", credential.email);
+    setValue("password", credential.password);
   };
 
-  const handleQuickLogin = async (credential: typeof demoCredentials[0]) => {
+  const handleQuickLogin = async (credential: (typeof demoCredentials)[0]) => {
     try {
       clearError();
       setSelectedDemo(credential.role);
       await login({ email: credential.email, password: credential.password });
-      router.push('/dashboard');
+      router.push("/dashboard");
     } catch {
       // Error is handled in store
     }
@@ -163,9 +178,10 @@ export default function LoginPage() {
             Demo Credentials
           </h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
-            Click any role to try the demo. Each role has different access levels.
+            Click any role to try the demo. Each role has different access
+            levels.
           </p>
-          
+
           <div className="grid gap-3">
             {demoCredentials.map((cred) => {
               const Icon = cred.icon;
@@ -175,15 +191,15 @@ export default function LoginPage() {
                   onClick={() => handleQuickLogin(cred)}
                   disabled={isLoading}
                   className={cn(
-                    'flex items-center gap-3 p-3 rounded-lg border text-left transition-all',
-                    'hover:bg-white hover:shadow-md dark:hover:bg-gray-800',
-                    'disabled:opacity-50 disabled:cursor-not-allowed',
+                    "flex items-center gap-3 p-3 rounded-lg border text-left transition-all",
+                    "hover:bg-white hover:shadow-md dark:hover:bg-gray-800",
+                    "disabled:opacity-50 disabled:cursor-not-allowed",
                     selectedDemo === cred.role && isLoading
-                      ? 'bg-white shadow-md ring-2 ring-primary dark:bg-gray-800'
-                      : 'bg-white/50 dark:bg-gray-800/50'
+                      ? "bg-white shadow-md ring-2 ring-primary dark:bg-gray-800"
+                      : "bg-white/50 dark:bg-gray-800/50",
                   )}
                 >
-                  <div className={cn('p-2 rounded-lg text-white', cred.color)}>
+                  <div className={cn("p-2 rounded-lg text-white", cred.color)}>
                     <Icon className="h-5 w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -204,8 +220,8 @@ export default function LoginPage() {
 
           <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700">
             <p className="text-sm text-amber-800 dark:text-amber-200">
-              <strong>Note:</strong> This is a demo environment. All data is sample data 
-              and will be reset periodically.
+              <strong>Note:</strong> This is a demo environment. All data is
+              sample data and will be reset periodically.
             </p>
           </div>
         </div>
@@ -237,10 +253,12 @@ export default function LoginPage() {
                   id="email"
                   type="email"
                   placeholder="email@example.com"
-                  {...register('email')}
+                  {...register("email")}
                 />
                 {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.email.message}
+                  </p>
                 )}
               </div>
 
@@ -249,9 +267,9 @@ export default function LoginPage() {
                 <div className="relative">
                   <Input
                     id="password"
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
-                    {...register('password')}
+                    {...register("password")}
                   />
                   <Button
                     type="button"
@@ -268,7 +286,9 @@ export default function LoginPage() {
                   </Button>
                 </div>
                 {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.password.message}
+                  </p>
                 )}
               </div>
 
@@ -292,11 +312,13 @@ export default function LoginPage() {
                       onClick={() => handleDemoLogin(cred)}
                       disabled={isLoading}
                       className={cn(
-                        'flex items-center gap-2 p-2 rounded-lg border text-left transition-all text-sm',
-                        'hover:bg-muted disabled:opacity-50'
+                        "flex items-center gap-2 p-2 rounded-lg border text-left transition-all text-sm",
+                        "hover:bg-muted disabled:opacity-50",
                       )}
                     >
-                      <div className={cn('p-1.5 rounded text-white', cred.color)}>
+                      <div
+                        className={cn("p-1.5 rounded text-white", cred.color)}
+                      >
                         <Icon className="h-3.5 w-3.5" />
                       </div>
                       <span className="font-medium truncate">{cred.role}</span>
@@ -313,11 +335,13 @@ export default function LoginPage() {
                       onClick={() => handleDemoLogin(cred)}
                       disabled={isLoading}
                       className={cn(
-                        'flex-1 flex items-center gap-2 p-2 rounded-lg border text-left transition-all text-sm',
-                        'hover:bg-muted disabled:opacity-50'
+                        "flex-1 flex items-center gap-2 p-2 rounded-lg border text-left transition-all text-sm",
+                        "hover:bg-muted disabled:opacity-50",
                       )}
                     >
-                      <div className={cn('p-1.5 rounded text-white', cred.color)}>
+                      <div
+                        className={cn("p-1.5 rounded text-white", cred.color)}
+                      >
                         <Icon className="h-3.5 w-3.5" />
                       </div>
                       <span className="font-medium truncate">{cred.role}</span>

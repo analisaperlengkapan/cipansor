@@ -1,11 +1,17 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Shield,
   Search,
@@ -13,11 +19,11 @@ import {
   Award,
   CheckCircle,
   AlertCircle,
-} from 'lucide-react';
+} from "lucide-react";
 
 export default function VerifyPage() {
   const router = useRouter();
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
   const handleVerify = () => {
@@ -35,7 +41,8 @@ export default function VerifyPage() {
           </div>
           <h1 className="text-3xl font-bold">Verifikasi Sertifikat</h1>
           <p className="text-muted-foreground mt-2">
-            Pastikan keaslian sertifikat digital yang diterbitkan oleh lembaga kami
+            Pastikan keaslian sertifikat digital yang diterbitkan oleh lembaga
+            kami
           </p>
         </div>
 
@@ -46,7 +53,8 @@ export default function VerifyPage() {
               Masukkan Kode Verifikasi
             </CardTitle>
             <CardDescription>
-              Kode verifikasi dapat ditemukan pada QR Code atau bagian bawah sertifikat
+              Kode verifikasi dapat ditemukan pada QR Code atau bagian bawah
+              sertifikat
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -55,10 +63,13 @@ export default function VerifyPage() {
                 placeholder="Contoh: CERT-2024-XXXX-XXXX"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
+                onKeyDown={(e) => e.key === "Enter" && handleVerify()}
                 className="font-mono"
               />
-              <Button onClick={handleVerify} disabled={!code.trim() || isSearching}>
+              <Button
+                onClick={handleVerify}
+                disabled={!code.trim() || isSearching}
+              >
                 <Search className="mr-2 h-4 w-4" />
                 Verifikasi
               </Button>
@@ -101,8 +112,8 @@ export default function VerifyPage() {
                 <div>
                   <h4 className="font-medium">Sertifikat Valid</h4>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Jika sertifikat valid, akan muncul informasi lengkap penerima dan detail
-                    sertifikat
+                    Jika sertifikat valid, akan muncul informasi lengkap
+                    penerima dan detail sertifikat
                   </p>
                 </div>
               </div>
@@ -118,7 +129,8 @@ export default function VerifyPage() {
                 <div>
                   <h4 className="font-medium">Sertifikat Tidak Valid</h4>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Jika sertifikat tidak valid, kemungkinan dokumen tersebut palsu atau kode salah
+                    Jika sertifikat tidak valid, kemungkinan dokumen tersebut
+                    palsu atau kode salah
                   </p>
                 </div>
               </div>

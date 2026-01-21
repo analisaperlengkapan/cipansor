@@ -29,7 +29,7 @@ export const leaveBalanceController = {
 
       const result = await leaveBalanceService.initializeBalance({
         ...req.body,
-        unitId
+        unitId,
       });
       sendResponse(res, result, 'Leave balance initialized successfully', 201);
     } catch (error) {
@@ -46,5 +46,5 @@ export const leaveBalanceController = {
     } catch (error) {
       next(error);
     }
-  }
+  },
 };

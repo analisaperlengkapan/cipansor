@@ -257,20 +257,20 @@ export const muhasabahService = {
     }
 
     const totalRecords = records.length;
-    
+
     // Count complete sholat wajib (all 5 prayers)
-    const completeSholatWajib = records.filter(r => 
-      r.sholatSubuh && r.sholatDzuhur && r.sholatAshar && r.sholatMaghrib && r.sholatIsya
+    const completeSholatWajib = records.filter(
+      (r) => r.sholatSubuh && r.sholatDzuhur && r.sholatAshar && r.sholatMaghrib && r.sholatIsya
     ).length;
-    
-    const tahajudDone = records.filter(r => r.sholatTahajud).length;
+
+    const tahajudDone = records.filter((r) => r.sholatTahajud).length;
     const totalTilawahPages = records.reduce((sum, r) => sum + r.tilawahPages, 0);
     const totalIstighfar = records.reduce((sum, r) => sum + r.istighfar, 0);
     const totalShalawat = records.reduce((sum, r) => sum + r.shalawat, 0);
 
     // Mood breakdown
     const moodBreakdown: Record<string, number> = {};
-    records.forEach(r => {
+    records.forEach((r) => {
       moodBreakdown[r.mood] = (moodBreakdown[r.mood] || 0) + 1;
     });
 
@@ -309,7 +309,7 @@ export const muhasabahService = {
       select: { id: true },
     });
 
-    const studentIds = students.map(s => s.id);
+    const studentIds = students.map((s) => s.id);
 
     // If halaqohId, filter by takhosus enrollment
     let filteredStudentIds = studentIds;
@@ -321,7 +321,7 @@ export const muhasabahService = {
         },
         select: { studentId: true },
       });
-      filteredStudentIds = enrollments.map(e => e.studentId);
+      filteredStudentIds = enrollments.map((e) => e.studentId);
     }
 
     const records = await prisma.dailyMuhasabah.findMany({
@@ -339,8 +339,11 @@ export const muhasabahService = {
     });
 
     // Group by student
-    const studentStats: Record<string, { recordCount: number; completeSholat: number; tahajud: number; tilawahPages: number }> = {};
-    filteredStudentIds.forEach(id => {
+    const studentStats: Record<
+      string,
+      { recordCount: number; completeSholat: number; tahajud: number; tilawahPages: number }
+    > = {};
+    filteredStudentIds.forEach((id) => {
       studentStats[id] = {
         recordCount: 0,
         completeSholat: 0,
@@ -349,7 +352,7 @@ export const muhasabahService = {
       };
     });
 
-    records.forEach(r => {
+    records.forEach((r) => {
       if (studentStats[r.studentId]) {
         studentStats[r.studentId].recordCount++;
         if (r.sholatSubuh && r.sholatDzuhur && r.sholatAshar && r.sholatMaghrib && r.sholatIsya) {
@@ -364,16 +367,22 @@ export const muhasabahService = {
     const studentCompletionRates = Object.entries(studentStats).map(([studentId, stats]) => ({
       studentId,
       completionRate: Math.round((stats.recordCount / days) * 100),
-      sholatRate: stats.recordCount > 0 ? Math.round((stats.completeSholat / stats.recordCount) * 100) : 0,
-      tahajudRate: stats.recordCount > 0 ? Math.round((stats.tahajud / stats.recordCount) * 100) : 0,
-      avgTilawahPages: stats.recordCount > 0 ? Math.round((stats.tilawahPages / stats.recordCount) * 10) / 10 : 0,
+      sholatRate:
+        stats.recordCount > 0 ? Math.round((stats.completeSholat / stats.recordCount) * 100) : 0,
+      tahajudRate:
+        stats.recordCount > 0 ? Math.round((stats.tahajud / stats.recordCount) * 100) : 0,
+      avgTilawahPages:
+        stats.recordCount > 0 ? Math.round((stats.tilawahPages / stats.recordCount) * 10) / 10 : 0,
     }));
 
     // Overall stats
     const totalStudents = filteredStudentIds.length;
-    const avgCompletion = studentCompletionRates.reduce((sum, s) => sum + s.completionRate, 0) / (totalStudents || 1);
-    const avgSholat = studentCompletionRates.reduce((sum, s) => sum + s.sholatRate, 0) / (totalStudents || 1);
-    const avgTahajud = studentCompletionRates.reduce((sum, s) => sum + s.tahajudRate, 0) / (totalStudents || 1);
+    const avgCompletion =
+      studentCompletionRates.reduce((sum, s) => sum + s.completionRate, 0) / (totalStudents || 1);
+    const avgSholat =
+      studentCompletionRates.reduce((sum, s) => sum + s.sholatRate, 0) / (totalStudents || 1);
+    const avgTahajud =
+      studentCompletionRates.reduce((sum, s) => sum + s.tahajudRate, 0) / (totalStudents || 1);
 
     return {
       period: { days, startDate, endDate: new Date() },
@@ -403,7 +412,7 @@ export const muhasabahService = {
         },
         select: { studentId: true },
       });
-      studentIds = enrollments.map(e => e.studentId);
+      studentIds = enrollments.map((e) => e.studentId);
     }
 
     const records = await prisma.dailyMuhasabah.findMany({
@@ -425,11 +434,12 @@ export const muhasabahService = {
     return {
       date: startOfDay,
       totalRecords: records.length,
-      records: records.map(r => ({
+      records: records.map((r) => ({
         id: r.id,
         student: r.student,
         mood: r.mood,
-        sholatWajibComplete: r.sholatSubuh && r.sholatDzuhur && r.sholatAshar && r.sholatMaghrib && r.sholatIsya,
+        sholatWajibComplete:
+          r.sholatSubuh && r.sholatDzuhur && r.sholatAshar && r.sholatMaghrib && r.sholatIsya,
         sholatTahajud: r.sholatTahajud,
         tilawahPages: r.tilawahPages,
         gratitude: r.gratitude,

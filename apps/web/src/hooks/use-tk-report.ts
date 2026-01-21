@@ -1,11 +1,11 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { PaginatedResponse, ApiResponse } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { PaginatedResponse, ApiResponse } from "@/lib/api";
 
 // ============================================
 // TYPES
 // ============================================
 
-export type ReportStatus = 'DRAFT' | 'FINALIZED' | 'PRINTED';
+export type ReportStatus = "DRAFT" | "FINALIZED" | "PRINTED";
 
 export interface TKReportPhoto {
   id: string;
@@ -21,7 +21,7 @@ export interface TKNarrativeReport {
   studentId: string;
   unitId: string;
   academicYearId: string;
-  semester: 'GANJIL' | 'GENAP';
+  semester: "GANJIL" | "GENAP";
   narrativeNAM?: string;
   narrativeFM?: string;
   narrativeKOG?: string;
@@ -47,7 +47,7 @@ export interface TKNarrativeReport {
     photoUrl?: string;
     birthDate?: string;
     birthPlace?: string;
-    gender?: 'MALE' | 'FEMALE';
+    gender?: "MALE" | "FEMALE";
     enrollments?: Array<{
       class?: { id: string; name: string };
     }>;
@@ -90,7 +90,7 @@ export interface ReportListParams {
   classId?: string;
   academicYearId?: string;
   unitId?: string;
-  semester?: 'GANJIL' | 'GENAP';
+  semester?: "GANJIL" | "GENAP";
   status?: ReportStatus;
   search?: string;
 }
@@ -99,7 +99,7 @@ export interface CreateReportData {
   studentId: string;
   unitId: string;
   academicYearId: string;
-  semester: 'GANJIL' | 'GENAP';
+  semester: "GANJIL" | "GENAP";
   narrativeNAM?: string;
   narrativeFM?: string;
   narrativeKOG?: string;
@@ -133,7 +133,7 @@ export interface GenerateReportData {
   studentId: string;
   unitId: string;
   academicYearId: string;
-  semester: 'GANJIL' | 'GENAP';
+  semester: "GANJIL" | "GENAP";
   regenerate?: boolean;
 }
 
@@ -141,7 +141,7 @@ export interface BulkGenerateReportData {
   classId: string;
   unitId: string;
   academicYearId: string;
-  semester: 'GANJIL' | 'GENAP';
+  semester: "GANJIL" | "GENAP";
   regenerate?: boolean;
 }
 
@@ -156,9 +156,12 @@ export interface FinalizeReportData {
 
 export function useTKReports(params: ReportListParams = {}) {
   return useQuery({
-    queryKey: ['paud-reports', params],
+    queryKey: ["paud-reports", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<TKNarrativeReport>>('/paud-report', { params });
+      const response = await api.get<PaginatedResponse<TKNarrativeReport>>(
+        "/paud-report",
+        { params },
+      );
       return response.data;
     },
     staleTime: 5 * 60 * 1000,
@@ -167,9 +170,11 @@ export function useTKReports(params: ReportListParams = {}) {
 
 export function useTKReport(id: string) {
   return useQuery({
-    queryKey: ['paud-reports', id],
+    queryKey: ["paud-reports", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<TKNarrativeReport>>(`/paud-report/${id}`);
+      const response = await api.get<ApiResponse<TKNarrativeReport>>(
+        `/paud-report/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -181,11 +186,14 @@ export function useCreateTKReport() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: CreateReportData) => {
-      const response = await api.post<ApiResponse<TKNarrativeReport>>('/paud-report', data);
+      const response = await api.post<ApiResponse<TKNarrativeReport>>(
+        "/paud-report",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['paud-reports'] });
+      queryClient.invalidateQueries({ queryKey: ["paud-reports"] });
     },
   });
 }
@@ -193,13 +201,22 @@ export function useCreateTKReport() {
 export function useUpdateTKReport() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateReportData }) => {
-      const response = await api.put<ApiResponse<TKNarrativeReport>>(`/paud-report/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdateReportData;
+    }) => {
+      const response = await api.put<ApiResponse<TKNarrativeReport>>(
+        `/paud-report/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['paud-reports'] });
-      queryClient.invalidateQueries({ queryKey: ['paud-reports', id] });
+      queryClient.invalidateQueries({ queryKey: ["paud-reports"] });
+      queryClient.invalidateQueries({ queryKey: ["paud-reports", id] });
     },
   });
 }
@@ -211,7 +228,7 @@ export function useDeleteTKReport() {
       await api.delete(`/paud-report/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['paud-reports'] });
+      queryClient.invalidateQueries({ queryKey: ["paud-reports"] });
     },
   });
 }
@@ -220,11 +237,14 @@ export function useGenerateTKReport() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: GenerateReportData) => {
-      const response = await api.post<ApiResponse<TKNarrativeReport>>('/paud-report/generate', data);
+      const response = await api.post<ApiResponse<TKNarrativeReport>>(
+        "/paud-report/generate",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['paud-reports'] });
+      queryClient.invalidateQueries({ queryKey: ["paud-reports"] });
     },
   });
 }
@@ -233,16 +253,22 @@ export function useBulkGenerateTKReports() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: BulkGenerateReportData) => {
-      const response = await api.post<ApiResponse<{
-        success: number;
-        failed: number;
-        skipped: number;
-        errors: Array<{ studentId: string; studentName: string; error: string }>;
-      }>>('/paud-report/bulk-generate', data);
+      const response = await api.post<
+        ApiResponse<{
+          success: number;
+          failed: number;
+          skipped: number;
+          errors: Array<{
+            studentId: string;
+            studentName: string;
+            error: string;
+          }>;
+        }>
+      >("/paud-report/bulk-generate", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['paud-reports'] });
+      queryClient.invalidateQueries({ queryKey: ["paud-reports"] });
     },
   });
 }
@@ -250,13 +276,22 @@ export function useBulkGenerateTKReports() {
 export function useFinalizeTKReport() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: FinalizeReportData }) => {
-      const response = await api.post<ApiResponse<TKNarrativeReport>>(`/paud-report/${id}/finalize`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: FinalizeReportData;
+    }) => {
+      const response = await api.post<ApiResponse<TKNarrativeReport>>(
+        `/paud-report/${id}/finalize`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['paud-reports'] });
-      queryClient.invalidateQueries({ queryKey: ['paud-reports', id] });
+      queryClient.invalidateQueries({ queryKey: ["paud-reports"] });
+      queryClient.invalidateQueries({ queryKey: ["paud-reports", id] });
     },
   });
 }
@@ -265,12 +300,14 @@ export function useMarkPAUDReportPrinted() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<ApiResponse<TKNarrativeReport>>(`/paud-report/${id}/print`);
+      const response = await api.post<ApiResponse<TKNarrativeReport>>(
+        `/paud-report/${id}/print`,
+      );
       return response.data.data;
     },
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['paud-reports'] });
-      queryClient.invalidateQueries({ queryKey: ['paud-reports', id] });
+      queryClient.invalidateQueries({ queryKey: ["paud-reports"] });
+      queryClient.invalidateQueries({ queryKey: ["paud-reports", id] });
     },
   });
 }
@@ -282,12 +319,21 @@ export function useMarkPAUDReportPrinted() {
 export function useAddReportPhoto() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ reportId, data }: { reportId: string; data: { photoUrl: string; caption?: string } }) => {
-      const response = await api.post<ApiResponse<TKReportPhoto>>(`/paud-report/${reportId}/photos`, data);
+    mutationFn: async ({
+      reportId,
+      data,
+    }: {
+      reportId: string;
+      data: { photoUrl: string; caption?: string };
+    }) => {
+      const response = await api.post<ApiResponse<TKReportPhoto>>(
+        `/paud-report/${reportId}/photos`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, { reportId }) => {
-      queryClient.invalidateQueries({ queryKey: ['paud-reports', reportId] });
+      queryClient.invalidateQueries({ queryKey: ["paud-reports", reportId] });
     },
   });
 }
@@ -295,12 +341,21 @@ export function useAddReportPhoto() {
 export function useUpdateReportPhoto() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ photoId, data }: { photoId: string; data: { caption?: string; orderNumber?: number } }) => {
-      const response = await api.put<ApiResponse<TKReportPhoto>>(`/paud-report/photos/${photoId}`, data);
+    mutationFn: async ({
+      photoId,
+      data,
+    }: {
+      photoId: string;
+      data: { caption?: string; orderNumber?: number };
+    }) => {
+      const response = await api.put<ApiResponse<TKReportPhoto>>(
+        `/paud-report/photos/${photoId}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['paud-reports'] });
+      queryClient.invalidateQueries({ queryKey: ["paud-reports"] });
     },
   });
 }
@@ -312,7 +367,7 @@ export function useDeleteReportPhoto() {
       await api.delete(`/paud-report/photos/${photoId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['paud-reports'] });
+      queryClient.invalidateQueries({ queryKey: ["paud-reports"] });
     },
   });
 }
@@ -323,10 +378,10 @@ export function useDeleteReportPhoto() {
 
 export function useTKReportPdf(id: string) {
   return useQuery({
-    queryKey: ['paud-reports', id, 'pdf'],
+    queryKey: ["paud-reports", id, "pdf"],
     queryFn: async () => {
       const response = await api.get(`/paud-report/${id}/pdf`, {
-        responseType: 'text',
+        responseType: "text",
       });
       return response.data as string;
     },

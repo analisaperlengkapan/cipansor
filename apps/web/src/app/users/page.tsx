@@ -1,62 +1,74 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { ColumnDef } from '@tanstack/react-table';
-import { MainLayout } from '@/components/layout';
-import { PageHeader, DataTable, SearchInput, ConfirmDialog } from '@/components/shared';
-import { useUsers, useDeleteUser, useUnits } from '@/hooks';
-import { realmDisplayNames, realmColors } from '@/hooks/use-roles';
-import { User, UserRole } from '@/lib/api';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { ColumnDef } from "@tanstack/react-table";
+import { MainLayout } from "@/components/layout";
+import {
+  PageHeader,
+  DataTable,
+  SearchInput,
+  ConfirmDialog,
+} from "@/components/shared";
+import { useUsers, useDeleteUser, useUnits } from "@/hooks";
+import { realmDisplayNames, realmColors } from "@/hooks/use-roles";
+import { User, UserRole } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { MoreHorizontal, Eye, Pencil, Trash2, Shield, Building2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { toast } from 'sonner';
-import { useAuthStore } from '@/stores/auth';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/tooltip";
+import {
+  MoreHorizontal,
+  Eye,
+  Pencil,
+  Trash2,
+  Shield,
+  Building2,
+} from "lucide-react";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import { useAuthStore } from "@/stores/auth";
+import { cn } from "@/lib/utils";
 
 // Realm filter options
 const realmOptions = [
-  { value: 'ALL', label: 'All Realms' },
-  { value: 'GLOBAL', label: 'Global' },
-  { value: 'YAYASAN', label: 'Yayasan' },
-  { value: 'TK_QURAN', label: 'TK Qur\'an' },
-  { value: 'SD_IT', label: 'SD IT' },
-  { value: 'SMP_IT', label: 'SMP IT' },
-  { value: 'SMA_QURAN', label: 'SMA Qur\'an' },
-  { value: 'PESANTREN', label: 'Pesantren' },
+  { value: "ALL", label: "All Realms" },
+  { value: "GLOBAL", label: "Global" },
+  { value: "YAYASAN", label: "Yayasan" },
+  { value: "TK_QURAN", label: "TK Qur'an" },
+  { value: "SD_IT", label: "SD IT" },
+  { value: "SMP_IT", label: "SMP IT" },
+  { value: "SMA_QURAN", label: "SMA Qur'an" },
+  { value: "PESANTREN", label: "Pesantren" },
 ];
 
 // Role badge colors
 const roleBadgeColors: Record<string, string> = {
-  GLOBAL: 'bg-purple-100 text-purple-800 border-purple-200',
-  YAYASAN: 'bg-amber-100 text-amber-800 border-amber-200',
-  TK_QURAN: 'bg-pink-100 text-pink-800 border-pink-200',
-  SD_IT: 'bg-green-100 text-green-800 border-green-200',
-  SMP_IT: 'bg-blue-100 text-blue-800 border-blue-200',
-  SMA_QURAN: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-  PESANTREN: 'bg-orange-100 text-orange-800 border-orange-200',
+  GLOBAL: "bg-purple-100 text-purple-800 border-purple-200",
+  YAYASAN: "bg-amber-100 text-amber-800 border-amber-200",
+  TK_QURAN: "bg-pink-100 text-pink-800 border-pink-200",
+  SD_IT: "bg-green-100 text-green-800 border-green-200",
+  SMP_IT: "bg-blue-100 text-blue-800 border-blue-200",
+  SMA_QURAN: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  PESANTREN: "bg-orange-100 text-orange-800 border-orange-200",
 };
 
 // UserRoles display component
@@ -64,12 +76,14 @@ function UserRolesBadges({ userRoles }: { userRoles?: UserRole[] }) {
   if (!userRoles || userRoles.length === 0) {
     return <span className="text-muted-foreground text-sm">No roles</span>;
   }
-  
-  const primaryRole = userRoles.find(r => r.isPrimary);
-  const otherRoles = userRoles.filter(r => !r.isPrimary);
-  const displayedRoles = primaryRole ? [primaryRole, ...otherRoles.slice(0, 1)] : otherRoles.slice(0, 2);
+
+  const primaryRole = userRoles.find((r) => r.isPrimary);
+  const otherRoles = userRoles.filter((r) => !r.isPrimary);
+  const displayedRoles = primaryRole
+    ? [primaryRole, ...otherRoles.slice(0, 1)]
+    : otherRoles.slice(0, 2);
   const remainingCount = userRoles.length - displayedRoles.length;
-  
+
   return (
     <TooltipProvider>
       <div className="flex flex-wrap gap-1 items-center">
@@ -79,9 +93,9 @@ function UserRolesBadges({ userRoles }: { userRoles?: UserRole[] }) {
               <Badge
                 variant="outline"
                 className={cn(
-                  'text-xs',
-                  roleBadgeColors[ur.role.realm] || 'bg-gray-100 text-gray-800',
-                  ur.isPrimary && 'ring-1 ring-offset-1 ring-primary'
+                  "text-xs",
+                  roleBadgeColors[ur.role.realm] || "bg-gray-100 text-gray-800",
+                  ur.isPrimary && "ring-1 ring-offset-1 ring-primary",
                 )}
               >
                 {ur.role.name}
@@ -90,14 +104,18 @@ function UserRolesBadges({ userRoles }: { userRoles?: UserRole[] }) {
             <TooltipContent>
               <div className="text-xs">
                 <p className="font-medium">{ur.role.name}</p>
-                <p className="text-muted-foreground">{realmDisplayNames[ur.role.realm] || ur.role.realm}</p>
+                <p className="text-muted-foreground">
+                  {realmDisplayNames[ur.role.realm] || ur.role.realm}
+                </p>
                 {ur.unit && (
                   <p className="flex items-center gap-1">
                     <Building2 className="h-3 w-3" />
                     {ur.unit.name}
                   </p>
                 )}
-                {ur.isPrimary && <p className="text-primary font-medium">Primary Role</p>}
+                {ur.isPrimary && (
+                  <p className="text-primary font-medium">Primary Role</p>
+                )}
               </div>
             </TooltipContent>
           </Tooltip>
@@ -128,18 +146,18 @@ export default function UsersPage() {
   const { user: currentUser } = useAuthStore();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [search, setSearch] = useState('');
-  const [realmFilter, setRealmFilter] = useState<string>('');
-  const [unitFilter, setUnitFilter] = useState<string>('');
+  const [search, setSearch] = useState("");
+  const [realmFilter, setRealmFilter] = useState<string>("");
+  const [unitFilter, setUnitFilter] = useState<string>("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // Get active role from current user
   const activeUserRole = useMemo(() => {
     const userRoles = currentUser?.userRoles as UserRole[] | undefined;
-    return userRoles?.find(r => r.isPrimary) || userRoles?.[0];
+    return userRoles?.find((r) => r.isPrimary) || userRoles?.[0];
   }, [currentUser?.userRoles]);
 
-  const isSuperAdmin = activeUserRole?.role.code === 'SUPER_ADMIN';
+  const isSuperAdmin = activeUserRole?.role.code === "SUPER_ADMIN";
 
   const { data: units } = useUnits();
   const { data, isLoading } = useUsers({
@@ -155,30 +173,29 @@ export default function UsersPage() {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      toast.success('User deleted successfully');
+      toast.success("User deleted successfully");
       setDeleteId(null);
     } catch {
-      toast.error('Failed to delete user');
+      toast.error("Failed to delete user");
     }
   };
 
   // Filter users by realm if selected
   const filteredData = useMemo(() => {
     if (!data?.data || !realmFilter) return data?.data || [];
-    
+
     return data.data.filter((user) => {
       const userRoles = user.userRoles as UserRole[] | undefined;
       if (!userRoles) return false;
-      return userRoles.some(ur => ur.role.realm === realmFilter);
+      return userRoles.some((ur) => ur.role.realm === realmFilter);
     });
     // We explicitly only want to re-run when data or filter changes
-
   }, [data?.data, realmFilter]);
 
   const columns: ColumnDef<User>[] = [
     {
-      accessorKey: 'name',
-      header: 'Name',
+      accessorKey: "name",
+      header: "Name",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-medium">
@@ -186,48 +203,52 @@ export default function UsersPage() {
           </div>
           <div>
             <p className="font-medium">{row.original.name}</p>
-            <p className="text-xs text-muted-foreground">{row.original.email}</p>
+            <p className="text-xs text-muted-foreground">
+              {row.original.email}
+            </p>
           </div>
         </div>
       ),
     },
     {
-      accessorKey: 'userRoles',
-      header: 'Roles',
+      accessorKey: "userRoles",
+      header: "Roles",
       cell: ({ row }) => (
-        <UserRolesBadges userRoles={row.original.userRoles as UserRole[] | undefined} />
+        <UserRolesBadges
+          userRoles={row.original.userRoles as UserRole[] | undefined}
+        />
       ),
     },
     {
-      accessorKey: 'unit',
-      header: 'Unit',
+      accessorKey: "unit",
+      header: "Unit",
       cell: ({ row }) => (
-        <span className="text-sm">{row.original.unit?.name || '-'}</span>
+        <span className="text-sm">{row.original.unit?.name || "-"}</span>
       ),
     },
     {
-      accessorKey: 'isActive',
-      header: 'Status',
+      accessorKey: "isActive",
+      header: "Status",
       cell: ({ row }) => (
-        <Badge variant={row.original.isActive ? 'default' : 'secondary'}>
-          {row.original.isActive ? 'Active' : 'Inactive'}
+        <Badge variant={row.original.isActive ? "default" : "secondary"}>
+          {row.original.isActive ? "Active" : "Inactive"}
         </Badge>
       ),
     },
     {
-      accessorKey: 'createdAt',
-      header: 'Created',
+      accessorKey: "createdAt",
+      header: "Created",
       cell: ({ row }) => (
         <span className="text-sm">
-          {format(new Date(row.original.createdAt), 'dd MMM yyyy')}
+          {format(new Date(row.original.createdAt), "dd MMM yyyy")}
         </span>
       ),
     },
     {
-      id: 'actions',
+      id: "actions",
       cell: ({ row }) => {
         const isSelf = row.original.id === currentUser?.id;
-        
+
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -236,15 +257,21 @@ export default function UsersPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => router.push(`/users/${row.original.id}`)}>
+              <DropdownMenuItem
+                onClick={() => router.push(`/users/${row.original.id}`)}
+              >
                 <Eye className="mr-2 h-4 w-4" />
                 View
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push(`/users/${row.original.id}/edit`)}>
+              <DropdownMenuItem
+                onClick={() => router.push(`/users/${row.original.id}/edit`)}
+              >
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push(`/users/${row.original.id}/roles`)}>
+              <DropdownMenuItem
+                onClick={() => router.push(`/users/${row.original.id}/roles`)}
+              >
                 <Shield className="mr-2 h-4 w-4" />
                 Manage Roles
               </DropdownMenuItem>
@@ -266,14 +293,14 @@ export default function UsersPage() {
   ];
 
   return (
-    <MainLayout allowedRoles={['SUPER_ADMIN', 'UNIT_ADMIN']}>
+    <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN"]}>
       <div className="space-y-6">
         <PageHeader
           title="Users & Roles"
           description="Manage system users and their role assignments"
           action={{
-            label: 'Add User',
-            href: '/users/new',
+            label: "Add User",
+            href: "/users/new",
           }}
         />
 
@@ -286,7 +313,10 @@ export default function UsersPage() {
               onChange={setSearch}
             />
           </div>
-          <Select value={realmFilter} onValueChange={(v) => setRealmFilter(v === 'ALL' ? '' : v)}>
+          <Select
+            value={realmFilter}
+            onValueChange={(v) => setRealmFilter(v === "ALL" ? "" : v)}
+          >
             <SelectTrigger className="w-full md:w-44">
               <SelectValue placeholder="All Realms" />
             </SelectTrigger>
@@ -299,7 +329,10 @@ export default function UsersPage() {
             </SelectContent>
           </Select>
           {isSuperAdmin && (
-            <Select value={unitFilter} onValueChange={(v) => setUnitFilter(v === 'ALL' ? '' : v)}>
+            <Select
+              value={unitFilter}
+              onValueChange={(v) => setUnitFilter(v === "ALL" ? "" : v)}
+            >
               <SelectTrigger className="w-full md:w-48">
                 <SelectValue placeholder="All Units" />
               </SelectTrigger>

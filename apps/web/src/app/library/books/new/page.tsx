@@ -1,16 +1,22 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, BookOpen, Save } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, BookOpen, Save } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -19,28 +25,47 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
-import { useCreateBook, BOOK_CATEGORIES, BookCategory } from '@/hooks/use-library';
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import {
+  useCreateBook,
+  BOOK_CATEGORIES,
+  BookCategory,
+} from "@/hooks/use-library";
 
 const bookSchema = z.object({
-  title: z.string().min(1, 'Judul buku wajib diisi'),
-  author: z.string().min(1, 'Nama penulis wajib diisi'),
+  title: z.string().min(1, "Judul buku wajib diisi"),
+  author: z.string().min(1, "Nama penulis wajib diisi"),
   isbn: z.string().optional(),
   publisher: z.string().optional(),
-  publishYear: z.coerce.number().min(1900).max(new Date().getFullYear()).optional().or(z.literal('')),
-  category: z.enum(['ISLAMIC', 'ACADEMIC', 'FICTION', 'NON_FICTION', 'REFERENCE', 'OTHER'] as const, {
-    required_error: 'Kategori wajib dipilih',
-  }),
+  publishYear: z.coerce
+    .number()
+    .min(1900)
+    .max(new Date().getFullYear())
+    .optional()
+    .or(z.literal("")),
+  category: z.enum(
+    [
+      "ISLAMIC",
+      "ACADEMIC",
+      "FICTION",
+      "NON_FICTION",
+      "REFERENCE",
+      "OTHER",
+    ] as const,
+    {
+      required_error: "Kategori wajib dipilih",
+    },
+  ),
   description: z.string().optional(),
-  quantity: z.coerce.number().min(1, 'Minimal 1 eksemplar'),
+  quantity: z.coerce.number().min(1, "Minimal 1 eksemplar"),
   location: z.string().optional(),
 });
 
@@ -53,15 +78,15 @@ export default function NewBookPage() {
   const form = useForm<BookFormData>({
     resolver: zodResolver(bookSchema),
     defaultValues: {
-      title: '',
-      author: '',
-      isbn: '',
-      publisher: '',
-      publishYear: '',
+      title: "",
+      author: "",
+      isbn: "",
+      publisher: "",
+      publishYear: "",
       category: undefined,
-      description: '',
+      description: "",
       quantity: 1,
-      location: '',
+      location: "",
     },
   });
 
@@ -80,10 +105,10 @@ export default function NewBookPage() {
       };
 
       await createMutation.mutateAsync(payload);
-      toast.success('Buku berhasil ditambahkan');
-      router.push('/library');
+      toast.success("Buku berhasil ditambahkan");
+      router.push("/library");
     } catch {
-      toast.error('Gagal menambahkan buku');
+      toast.error("Gagal menambahkan buku");
     }
   };
 
@@ -97,8 +122,12 @@ export default function NewBookPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tambah Buku Baru</h1>
-          <p className="text-muted-foreground">Tambahkan koleksi buku baru ke perpustakaan</p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Tambah Buku Baru
+          </h1>
+          <p className="text-muted-foreground">
+            Tambahkan koleksi buku baru ke perpustakaan
+          </p>
         </div>
       </div>
 
@@ -109,7 +138,9 @@ export default function NewBookPage() {
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle>Informasi Buku</CardTitle>
-                <CardDescription>Masukkan detail informasi buku</CardDescription>
+                <CardDescription>
+                  Masukkan detail informasi buku
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -225,7 +256,10 @@ export default function NewBookPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Kategori *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih kategori" />
@@ -253,7 +287,9 @@ export default function NewBookPage() {
                         <FormControl>
                           <Input type="number" min={1} {...field} />
                         </FormControl>
-                        <FormDescription>Jumlah buku yang tersedia</FormDescription>
+                        <FormDescription>
+                          Jumlah buku yang tersedia
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -268,7 +304,9 @@ export default function NewBookPage() {
                         <FormControl>
                           <Input placeholder="A1-01" {...field} />
                         </FormControl>
-                        <FormDescription>Lokasi penyimpanan buku</FormDescription>
+                        <FormDescription>
+                          Lokasi penyimpanan buku
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -287,14 +325,18 @@ export default function NewBookPage() {
                       <BookOpen className="h-10 w-10 text-muted-foreground" />
                     </div>
                     <p className="font-semibold">
-                      {form.watch('title') || 'Judul Buku'}
+                      {form.watch("title") || "Judul Buku"}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {form.watch('author') || 'Nama Penulis'}
+                      {form.watch("author") || "Nama Penulis"}
                     </p>
-                    {form.watch('category') && (
+                    {form.watch("category") && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        {BOOK_CATEGORIES.find((c) => c.value === form.watch('category'))?.label}
+                        {
+                          BOOK_CATEGORIES.find(
+                            (c) => c.value === form.watch("category"),
+                          )?.label
+                        }
                       </p>
                     )}
                   </div>

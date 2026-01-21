@@ -175,7 +175,7 @@ export class StudentService {
             paymentType: true,
           },
           take: 5,
-        }
+        },
       },
     });
 
@@ -193,12 +193,12 @@ export class StudentService {
       prisma.invoice.aggregate({
         where: { studentId: id, status: { not: 'PAID' } },
         _sum: { amount: true, paidAmount: true },
-        _count: { id: true }
+        _count: { id: true },
       }),
     ]);
 
     // Find active enrollment for current class
-    const currentEnrollment = student.enrollments.find(e => e.status === 'active');
+    const currentEnrollment = student.enrollments.find((e) => e.status === 'active');
     const currentClass = currentEnrollment?.class
       ? {
           id: currentEnrollment.class.id,
@@ -212,14 +212,17 @@ export class StudentService {
     // Calculate summaries from aggregation results
     const totalViolationPoints = violationStats._sum.points || 0;
     const unpaidInvoicesCount = invoiceStats._count.id;
-    const unpaidInvoicesTotal = (Number(invoiceStats._sum.amount) || 0) - (Number(invoiceStats._sum.paidAmount) || 0);
+    const unpaidInvoicesTotal =
+      (Number(invoiceStats._sum.amount) || 0) - (Number(invoiceStats._sum.paidAmount) || 0);
 
     // Boarding info
-    const boarding = student.roomAssignments[0] ? {
-      dormitoryName: student.roomAssignments[0].room.dormitory.name,
-      roomName: student.roomAssignments[0].room.name,
-      assignedAt: student.roomAssignments[0].assignedAt,
-    } : null;
+    const boarding = student.roomAssignments[0]
+      ? {
+          dormitoryName: student.roomAssignments[0].room.dormitory.name,
+          roomName: student.roomAssignments[0].room.name,
+          assignedAt: student.roomAssignments[0].assignedAt,
+        }
+      : null;
 
     return {
       ...student,
@@ -231,8 +234,8 @@ export class StudentService {
         unpaidInvoices: {
           count: unpaidInvoicesCount,
           total: unpaidInvoicesTotal,
-        }
-      }
+        },
+      },
     };
   }
 
@@ -263,7 +266,7 @@ export class StudentService {
     if (!input.unitId) {
       throw Errors.badRequest('Unit ID is required');
     }
-    
+
     const unit = await prisma.unit.findFirst({
       where: { id: input.unitId, deletedAt: null },
     });
@@ -271,9 +274,9 @@ export class StudentService {
     if (!unit) {
       throw Errors.notFound('Unit');
     }
-    
+
     const unitId = input.unitId; // TypeScript narrowing
-    
+
     // Generate email if not provided
     const email = input.email || `${input.nis}@student.cipansor.local`;
 

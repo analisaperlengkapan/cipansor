@@ -1,15 +1,27 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
+import { useState, useMemo } from "react";
+import { MainLayout } from "@/components/layout/main-layout";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
   useTodayMenus,
   useWeeklyMenus,
   useMealStats,
@@ -17,10 +29,10 @@ import {
   MEAL_TYPES,
   MEAL_TYPE_LABELS,
   MealType,
-} from '@/hooks/use-meals';
-import { useUnits } from '@/hooks/use-units';
-import { 
-  UtensilsCrossed, 
+} from "@/hooks/use-meals";
+import { useUnits } from "@/hooks/use-units";
+import {
+  UtensilsCrossed,
   Calendar,
   Sun,
   Sunset,
@@ -39,12 +51,19 @@ import {
   GlassWater,
   Clock,
   Building2,
-  Printer
-} from 'lucide-react';
-import { format, addDays, startOfWeek, endOfWeek, isToday, parseISO } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { toast } from 'sonner';
-import Link from 'next/link';
+  Printer,
+} from "lucide-react";
+import {
+  format,
+  addDays,
+  startOfWeek,
+  endOfWeek,
+  isToday,
+  parseISO,
+} from "date-fns";
+import { id } from "date-fns/locale";
+import { toast } from "sonner";
+import Link from "next/link";
 
 const MEAL_ICONS: Record<MealType, React.ReactNode> = {
   BREAKFAST: <Sun className="h-5 w-5" />,
@@ -54,27 +73,29 @@ const MEAL_ICONS: Record<MealType, React.ReactNode> = {
 };
 
 const MEAL_COLORS: Record<MealType, string> = {
-  BREAKFAST: 'bg-amber-50 border-amber-200 text-amber-800',
-  LUNCH: 'bg-orange-50 border-orange-200 text-orange-800',
-  DINNER: 'bg-indigo-50 border-indigo-200 text-indigo-800',
-  SNACK: 'bg-green-50 border-green-200 text-green-800',
+  BREAKFAST: "bg-amber-50 border-amber-200 text-amber-800",
+  LUNCH: "bg-orange-50 border-orange-200 text-orange-800",
+  DINNER: "bg-indigo-50 border-indigo-200 text-indigo-800",
+  SNACK: "bg-green-50 border-green-200 text-green-800",
 };
 
 const MEAL_TIMES: Record<MealType, string> = {
-  BREAKFAST: '06:30 - 07:00',
-  LUNCH: '12:00 - 12:30',
-  DINNER: '18:30 - 19:00',
-  SNACK: '15:00 - 15:30',
+  BREAKFAST: "06:30 - 07:00",
+  LUNCH: "12:00 - 12:30",
+  DINNER: "18:30 - 19:00",
+  SNACK: "15:00 - 15:30",
 };
 
 function MealCard({ menu, mealType }: { menu?: MealMenu; mealType: MealType }) {
   return (
-    <Card className={`${menu ? MEAL_COLORS[mealType] : 'bg-gray-50'} border`}>
+    <Card className={`${menu ? MEAL_COLORS[mealType] : "bg-gray-50"} border`}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {MEAL_ICONS[mealType]}
-            <CardTitle className="text-base">{MEAL_TYPE_LABELS[mealType]}</CardTitle>
+            <CardTitle className="text-base">
+              {MEAL_TYPE_LABELS[mealType]}
+            </CardTitle>
           </div>
           <Badge variant="outline" className="text-xs">
             <Clock className="h-3 w-3 mr-1" />
@@ -138,17 +159,17 @@ function MealCard({ menu, mealType }: { menu?: MealMenu; mealType: MealType }) {
 }
 
 export default function MealsPage() {
-  const [selectedUnitId, setSelectedUnitId] = useState<string>('ALL');
+  const [selectedUnitId, setSelectedUnitId] = useState<string>("ALL");
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(
-    startOfWeek(new Date(), { weekStartsOn: 1 })
+    startOfWeek(new Date(), { weekStartsOn: 1 }),
   );
 
   const { data: units = [] } = useUnits();
-  const unitId = selectedUnitId === 'ALL' ? undefined : selectedUnitId;
+  const unitId = selectedUnitId === "ALL" ? undefined : selectedUnitId;
   const { data: todayMenus, isLoading: todayLoading } = useTodayMenus(unitId);
   const { data: weeklyMenus = [], isLoading: weeklyLoading } = useWeeklyMenus({
     unitId,
-    weekStart: format(currentWeekStart, 'yyyy-MM-dd'),
+    weekStart: format(currentWeekStart, "yyyy-MM-dd"),
   });
 
   // Generate week days
@@ -163,9 +184,9 @@ export default function MealsPage() {
   // Group menus by day and meal type
   const menusByDayAndType = useMemo(() => {
     const grouped: Record<string, Record<MealType, MealMenu | undefined>> = {};
-    
-    weekDays.forEach(day => {
-      const dateKey = format(day, 'yyyy-MM-dd');
+
+    weekDays.forEach((day) => {
+      const dateKey = format(day, "yyyy-MM-dd");
       grouped[dateKey] = {
         BREAKFAST: undefined,
         LUNCH: undefined,
@@ -174,7 +195,7 @@ export default function MealsPage() {
       };
     });
 
-    (weeklyMenus || []).forEach(menu => {
+    (weeklyMenus || []).forEach((menu) => {
       const dateKey = menu.date;
       if (grouped[dateKey]) {
         grouped[dateKey][menu.mealType] = menu;
@@ -184,15 +205,15 @@ export default function MealsPage() {
     return grouped;
   }, [weekDays, weeklyMenus]);
 
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    setCurrentWeekStart(prev => 
-      direction === 'next' ? addDays(prev, 7) : addDays(prev, -7)
+  const navigateWeek = (direction: "prev" | "next") => {
+    setCurrentWeekStart((prev) =>
+      direction === "next" ? addDays(prev, 7) : addDays(prev, -7),
     );
   };
 
   const handlePrint = () => {
     window.print();
-    toast.success('Menu mingguan siap dicetak');
+    toast.success("Menu mingguan siap dicetak");
   };
 
   // Demo stats
@@ -239,13 +260,16 @@ export default function MealsPage() {
             <div className="flex flex-col md:flex-row gap-4 items-end">
               <div className="flex-1 min-w-[200px]">
                 <label className="text-sm font-medium mb-2 block">Unit</label>
-                <Select value={selectedUnitId} onValueChange={setSelectedUnitId}>
+                <Select
+                  value={selectedUnitId}
+                  onValueChange={setSelectedUnitId}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Semua Unit" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ALL">Semua Unit</SelectItem>
-                    {units.map(unit => (
+                    {units.map((unit) => (
                       <SelectItem key={unit.id} value={unit.id}>
                         {unit.name}
                       </SelectItem>
@@ -253,19 +277,25 @@ export default function MealsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               {/* Stats */}
               <div className="flex gap-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-emerald-600">{stats.mealToday.breakfast.present}</p>
+                  <p className="text-2xl font-bold text-emerald-600">
+                    {stats.mealToday.breakfast.present}
+                  </p>
                   <p className="text-xs text-muted-foreground">Sarapan</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-orange-600">{stats.mealToday.lunch.present}</p>
+                  <p className="text-2xl font-bold text-orange-600">
+                    {stats.mealToday.lunch.present}
+                  </p>
                   <p className="text-xs text-muted-foreground">Makan Siang</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-indigo-600">{stats.mealToday.dinner.present}</p>
+                  <p className="text-2xl font-bold text-indigo-600">
+                    {stats.mealToday.dinner.present}
+                  </p>
                   <p className="text-xs text-muted-foreground">Makan Malam</p>
                 </div>
               </div>
@@ -289,24 +319,30 @@ export default function MealsPage() {
           <TabsContent value="today" className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">
-                {format(new Date(), 'EEEE, d MMMM yyyy', { locale: id })}
+                {format(new Date(), "EEEE, d MMMM yyyy", { locale: id })}
               </h2>
-              <Badge className="bg-emerald-100 text-emerald-800">Hari Ini</Badge>
+              <Badge className="bg-emerald-100 text-emerald-800">
+                Hari Ini
+              </Badge>
             </div>
 
             {todayLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[1, 2, 3, 4].map(i => (
+                {[1, 2, 3, 4].map((i) => (
                   <Skeleton key={i} className="h-[200px]" />
                 ))}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {MEAL_TYPES.map(mealType => (
-                  <MealCard 
+                {MEAL_TYPES.map((mealType) => (
+                  <MealCard
                     key={mealType}
                     mealType={mealType}
-                    menu={todayMenus?.[mealType.toLowerCase() as keyof typeof todayMenus]}
+                    menu={
+                      todayMenus?.[
+                        mealType.toLowerCase() as keyof typeof todayMenus
+                      ]
+                    }
                   />
                 ))}
               </div>
@@ -325,36 +361,59 @@ export default function MealsPage() {
                   <div className="flex items-center gap-4 p-4 bg-amber-50 rounded-lg">
                     <Sun className="h-8 w-8 text-amber-600" />
                     <div>
-                      <p className="text-2xl font-bold">{stats.mealToday.breakfast.present}/{stats.totalStudents}</p>
+                      <p className="text-2xl font-bold">
+                        {stats.mealToday.breakfast.present}/
+                        {stats.totalStudents}
+                      </p>
                       <p className="text-sm text-muted-foreground">Sarapan</p>
                     </div>
                     <div className="ml-auto text-right">
-                      <p className="text-xs text-red-600">-{stats.mealToday.breakfast.absent}</p>
-                      <p className="text-xs text-muted-foreground">Tidak hadir</p>
+                      <p className="text-xs text-red-600">
+                        -{stats.mealToday.breakfast.absent}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Tidak hadir
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-4 p-4 bg-orange-50 rounded-lg">
                     <Sunset className="h-8 w-8 text-orange-600" />
                     <div>
-                      <p className="text-2xl font-bold">{stats.mealToday.lunch.present}/{stats.totalStudents}</p>
-                      <p className="text-sm text-muted-foreground">Makan Siang</p>
+                      <p className="text-2xl font-bold">
+                        {stats.mealToday.lunch.present}/{stats.totalStudents}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Makan Siang
+                      </p>
                     </div>
                     <div className="ml-auto text-right">
-                      <p className="text-xs text-red-600">-{stats.mealToday.lunch.absent}</p>
-                      <p className="text-xs text-muted-foreground">Tidak hadir</p>
+                      <p className="text-xs text-red-600">
+                        -{stats.mealToday.lunch.absent}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Tidak hadir
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-4 p-4 bg-indigo-50 rounded-lg">
                     <Moon className="h-8 w-8 text-indigo-600" />
                     <div>
-                      <p className="text-2xl font-bold">{stats.mealToday.dinner.present}/{stats.totalStudents}</p>
-                      <p className="text-sm text-muted-foreground">Makan Malam</p>
+                      <p className="text-2xl font-bold">
+                        {stats.mealToday.dinner.present}/{stats.totalStudents}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Makan Malam
+                      </p>
                     </div>
                     <div className="ml-auto text-right">
-                      <p className="text-xs text-red-600">-{stats.mealToday.dinner.absent}</p>
-                      <p className="text-xs text-muted-foreground">Tidak hadir</p>
+                      <p className="text-xs text-red-600">
+                        -{stats.mealToday.dinner.absent}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Tidak hadir
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -366,13 +425,26 @@ export default function MealsPage() {
           <TabsContent value="weekly" className="space-y-4">
             {/* Week Navigation */}
             <div className="flex items-center justify-between">
-              <Button variant="outline" size="icon" onClick={() => navigateWeek('prev')}>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigateWeek("prev")}
+              >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <h2 className="text-lg font-semibold">
-                {format(currentWeekStart, 'd MMM', { locale: id })} - {format(endOfWeek(currentWeekStart, { weekStartsOn: 1 }), 'd MMM yyyy', { locale: id })}
+                {format(currentWeekStart, "d MMM", { locale: id })} -{" "}
+                {format(
+                  endOfWeek(currentWeekStart, { weekStartsOn: 1 }),
+                  "d MMM yyyy",
+                  { locale: id },
+                )}
               </h2>
-              <Button variant="outline" size="icon" onClick={() => navigateWeek('next')}>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigateWeek("next")}
+              >
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -388,16 +460,16 @@ export default function MealsPage() {
                       <th className="border border-gray-300 bg-gray-50 p-3 text-left font-semibold w-[100px]">
                         Waktu
                       </th>
-                      {weekDays.map(day => (
-                        <th 
-                          key={day.toISOString()} 
+                      {weekDays.map((day) => (
+                        <th
+                          key={day.toISOString()}
                           className={`border border-gray-300 p-3 text-center font-semibold ${
-                            isToday(day) ? 'bg-emerald-100' : 'bg-gray-50'
+                            isToday(day) ? "bg-emerald-100" : "bg-gray-50"
                           }`}
                         >
-                          <div>{format(day, 'EEEE', { locale: id })}</div>
+                          <div>{format(day, "EEEE", { locale: id })}</div>
                           <div className="text-sm font-normal text-muted-foreground">
-                            {format(day, 'd MMM', { locale: id })}
+                            {format(day, "d MMM", { locale: id })}
                           </div>
                           {isToday(day) && (
                             <Badge className="bg-emerald-600 text-white text-[10px] mt-1">
@@ -409,45 +481,67 @@ export default function MealsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(['BREAKFAST', 'LUNCH', 'DINNER'] as MealType[]).map(mealType => (
-                      <tr key={mealType}>
-                        <td className={`border border-gray-300 p-3 ${MEAL_COLORS[mealType]}`}>
-                          <div className="flex items-center gap-2">
-                            {MEAL_ICONS[mealType]}
-                            <div>
-                              <div className="font-medium">{MEAL_TYPE_LABELS[mealType]}</div>
-                              <div className="text-xs opacity-75">{MEAL_TIMES[mealType]}</div>
+                    {(["BREAKFAST", "LUNCH", "DINNER"] as MealType[]).map(
+                      (mealType) => (
+                        <tr key={mealType}>
+                          <td
+                            className={`border border-gray-300 p-3 ${MEAL_COLORS[mealType]}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              {MEAL_ICONS[mealType]}
+                              <div>
+                                <div className="font-medium">
+                                  {MEAL_TYPE_LABELS[mealType]}
+                                </div>
+                                <div className="text-xs opacity-75">
+                                  {MEAL_TIMES[mealType]}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        {weekDays.map(day => {
-                          const dateKey = format(day, 'yyyy-MM-dd');
-                          const menu = menusByDayAndType[dateKey]?.[mealType];
-                          
-                          return (
-                            <td 
-                              key={`${dateKey}-${mealType}`}
-                              className={`border border-gray-300 p-2 align-top ${
-                                isToday(day) ? 'bg-emerald-50' : ''
-                              }`}
-                            >
-                              {menu ? (
-                                <div className="text-xs space-y-1">
-                                  <p className="font-semibold">{menu.mainDish}</p>
-                                  {menu.sideDish && <p className="text-muted-foreground">{menu.sideDish}</p>}
-                                  {menu.vegetable && <p className="text-muted-foreground">{menu.vegetable}</p>}
-                                  {menu.soup && <p className="text-muted-foreground">{menu.soup}</p>}
-                                </div>
-                              ) : (
-                                <div className="text-center text-muted-foreground py-2">
-                                  <span className="text-xs">-</span>
-                                </div>
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
+                          </td>
+                          {weekDays.map((day) => {
+                            const dateKey = format(day, "yyyy-MM-dd");
+                            const menu = menusByDayAndType[dateKey]?.[mealType];
+
+                            return (
+                              <td
+                                key={`${dateKey}-${mealType}`}
+                                className={`border border-gray-300 p-2 align-top ${
+                                  isToday(day) ? "bg-emerald-50" : ""
+                                }`}
+                              >
+                                {menu ? (
+                                  <div className="text-xs space-y-1">
+                                    <p className="font-semibold">
+                                      {menu.mainDish}
+                                    </p>
+                                    {menu.sideDish && (
+                                      <p className="text-muted-foreground">
+                                        {menu.sideDish}
+                                      </p>
+                                    )}
+                                    {menu.vegetable && (
+                                      <p className="text-muted-foreground">
+                                        {menu.vegetable}
+                                      </p>
+                                    )}
+                                    {menu.soup && (
+                                      <p className="text-muted-foreground">
+                                        {menu.soup}
+                                      </p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="text-center text-muted-foreground py-2">
+                                    <span className="text-xs">-</span>
+                                  </div>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ),
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -464,7 +558,9 @@ export default function MealsPage() {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-muted-foreground">Rata-rata Kalori/Hari</p>
+                    <p className="text-muted-foreground">
+                      Rata-rata Kalori/Hari
+                    </p>
                     <p className="text-xl font-bold">1,650 kkal</p>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg">

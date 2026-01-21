@@ -1,12 +1,12 @@
-import { z } from "zod";
-import { ViolationType } from "@prisma/client";
+import { z } from 'zod';
+import { ViolationType } from '@prisma/client';
 
 export const createViolationSchema = z.object({
-  studentId: z.string().uuid("Invalid student ID"),
+  studentId: z.string().uuid('Invalid student ID'),
   type: z.nativeEnum(ViolationType),
-  category: z.string().min(2, "Category is required"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  occurredAt: z.string().datetime("Invalid date"),
+  category: z.string().min(2, 'Category is required'),
+  description: z.string().min(10, 'Description must be at least 10 characters'),
+  occurredAt: z.string().datetime('Invalid date'),
   points: z.number().int().nonnegative().default(0),
   action: z.string().optional(),
 });

@@ -1,4 +1,38 @@
-import { PrismaClient, UserRole, UnitType, Gender, AttendanceStatus, TahfidzActivityType, PermitType, PermitStatus, ViolationType, PaymentStatus, PaymentMethod, AdmissionStatus, LeaveType, LeaveStatus, StaffAttendanceStatus, BookStatus, BorrowingStatus, MedicalRecordType, NotificationType, NotificationStatus, AssetStatus, AssetCondition, SubjectType, DayOfWeek, ExamType, ExamStatus, GradeType, AlumniStatus, DonationType, AlumniEventType, Prisma, Realm, RoleCode } from '@prisma/client';
+import {
+  PrismaClient,
+  UserRole,
+  UnitType,
+  Gender,
+  AttendanceStatus,
+  TahfidzActivityType,
+  PermitType,
+  PermitStatus,
+  ViolationType,
+  PaymentStatus,
+  PaymentMethod,
+  AdmissionStatus,
+  LeaveType,
+  LeaveStatus,
+  StaffAttendanceStatus,
+  BookStatus,
+  BorrowingStatus,
+  MedicalRecordType,
+  NotificationType,
+  NotificationStatus,
+  AssetStatus,
+  AssetCondition,
+  SubjectType,
+  DayOfWeek,
+  ExamType,
+  ExamStatus,
+  GradeType,
+  AlumniStatus,
+  DonationType,
+  AlumniEventType,
+  Prisma,
+  Realm,
+  RoleCode,
+} from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { seedWilayahIndonesia } from './seeds/wilayah-indonesia';
 import { seedKurikulumMerdeka, seedAccountCodes } from './seeds/kurikulum-merdeka';
@@ -91,8 +125,10 @@ async function main() {
       phone: '0266100001',
       email: 'yayasan@cipansor.id',
       website: 'https://cipansor.id',
-      vision: 'Menjadi lembaga pendidikan Islam terdepan yang menghasilkan generasi Qurani berakhlak mulia',
-      mission: 'Menyelenggarakan pendidikan Islam terpadu, membentuk karakter Islami, dan mengembangkan potensi santri secara optimal',
+      vision:
+        'Menjadi lembaga pendidikan Islam terdepan yang menghasilkan generasi Qurani berakhlak mulia',
+      mission:
+        'Menyelenggarakan pendidikan Islam terpadu, membentuk karakter Islami, dan mengembangkan potensi santri secara optimal',
     },
   });
 
@@ -100,11 +136,36 @@ async function main() {
 
   // Create Board Members
   const boardMembersData = [
-    { name: 'KH. Muhammad Yusuf', position: 'Ketua', phone: '081234567890', email: 'ketua@cipansor.id' },
-    { name: 'H. Ahmad Fauzi', position: 'Wakil Ketua', phone: '081234567891', email: 'wakil@cipansor.id' },
-    { name: 'Hj. Siti Fatimah', position: 'Sekretaris', phone: '081234567892', email: 'sekretaris@cipansor.id' },
-    { name: 'H. Abdullah Rahman', position: 'Bendahara', phone: '081234567893', email: 'bendahara@cipansor.id' },
-    { name: 'Ustadz Hasan Basri', position: 'Anggota', phone: '081234567894', email: 'anggota1@cipansor.id' },
+    {
+      name: 'KH. Muhammad Yusuf',
+      position: 'Ketua',
+      phone: '081234567890',
+      email: 'ketua@cipansor.id',
+    },
+    {
+      name: 'H. Ahmad Fauzi',
+      position: 'Wakil Ketua',
+      phone: '081234567891',
+      email: 'wakil@cipansor.id',
+    },
+    {
+      name: 'Hj. Siti Fatimah',
+      position: 'Sekretaris',
+      phone: '081234567892',
+      email: 'sekretaris@cipansor.id',
+    },
+    {
+      name: 'H. Abdullah Rahman',
+      position: 'Bendahara',
+      phone: '081234567893',
+      email: 'bendahara@cipansor.id',
+    },
+    {
+      name: 'Ustadz Hasan Basri',
+      position: 'Anggota',
+      phone: '081234567894',
+      email: 'anggota1@cipansor.id',
+    },
   ];
 
   for (const member of boardMembersData) {
@@ -149,9 +210,9 @@ async function main() {
   const tkQuran = await prisma.unit.create({
     data: {
       foundationId: foundation.id,
-      name: 'TK Qur\'an Cipansor',
+      name: "TK Qur'an Cipansor",
       type: UnitType.TK_QURAN,
-      address: 'Jl. TK Qur\'an No. 5, Kota Sukabumi',
+      address: "Jl. TK Qur'an No. 5, Kota Sukabumi",
       phone: '0266345678',
       email: 'info@tkquran.sch.id',
     },
@@ -160,9 +221,9 @@ async function main() {
   const smaQuran = await prisma.unit.create({
     data: {
       foundationId: foundation.id,
-      name: 'SMA Qur\'an Cipansor',
+      name: "SMA Qur'an Cipansor",
       type: UnitType.SMA_QURAN,
-      address: 'Jl. Al-Qur\'an No. 1, Kota Sukabumi',
+      address: "Jl. Al-Qur'an No. 1, Kota Sukabumi",
       phone: '0266456789',
       email: 'info@smaquran.sch.id',
     },
@@ -173,57 +234,232 @@ async function main() {
   // ============================================
   // SEED ROLES - All possible roles in the system
   // ============================================
-  
+
   const rolesData = [
     // Global
-    { code: RoleCode.SUPER_ADMIN, name: 'Super Admin', realm: Realm.GLOBAL, description: 'Full access to entire system' },
-    
+    {
+      code: RoleCode.SUPER_ADMIN,
+      name: 'Super Admin',
+      realm: Realm.GLOBAL,
+      description: 'Full access to entire system',
+    },
+
     // Yayasan roles
-    { code: RoleCode.YAYASAN_ADMIN, name: 'Admin Yayasan', realm: Realm.YAYASAN, description: 'Administrator yayasan' },
-    { code: RoleCode.YAYASAN_PEMBINA, name: 'Pembina', realm: Realm.YAYASAN, description: 'Pembina yayasan' },
-    { code: RoleCode.YAYASAN_KETUA, name: 'Ketua Pengurus', realm: Realm.YAYASAN, description: 'Ketua pengurus yayasan' },
-    { code: RoleCode.YAYASAN_SEKRETARIS, name: 'Sekretaris', realm: Realm.YAYASAN, description: 'Sekretaris pengurus yayasan' },
-    { code: RoleCode.YAYASAN_BENDAHARA, name: 'Bendahara', realm: Realm.YAYASAN, description: 'Bendahara pengurus yayasan' },
-    { code: RoleCode.YAYASAN_ANGGOTA, name: 'Anggota Pengurus', realm: Realm.YAYASAN, description: 'Anggota pengurus yayasan' },
-    { code: RoleCode.YAYASAN_PENGAWAS, name: 'Pengawas', realm: Realm.YAYASAN, description: 'Pengawas yayasan' },
-    
+    {
+      code: RoleCode.YAYASAN_ADMIN,
+      name: 'Admin Yayasan',
+      realm: Realm.YAYASAN,
+      description: 'Administrator yayasan',
+    },
+    {
+      code: RoleCode.YAYASAN_PEMBINA,
+      name: 'Pembina',
+      realm: Realm.YAYASAN,
+      description: 'Pembina yayasan',
+    },
+    {
+      code: RoleCode.YAYASAN_KETUA,
+      name: 'Ketua Pengurus',
+      realm: Realm.YAYASAN,
+      description: 'Ketua pengurus yayasan',
+    },
+    {
+      code: RoleCode.YAYASAN_SEKRETARIS,
+      name: 'Sekretaris',
+      realm: Realm.YAYASAN,
+      description: 'Sekretaris pengurus yayasan',
+    },
+    {
+      code: RoleCode.YAYASAN_BENDAHARA,
+      name: 'Bendahara',
+      realm: Realm.YAYASAN,
+      description: 'Bendahara pengurus yayasan',
+    },
+    {
+      code: RoleCode.YAYASAN_ANGGOTA,
+      name: 'Anggota Pengurus',
+      realm: Realm.YAYASAN,
+      description: 'Anggota pengurus yayasan',
+    },
+    {
+      code: RoleCode.YAYASAN_PENGAWAS,
+      name: 'Pengawas',
+      realm: Realm.YAYASAN,
+      description: 'Pengawas yayasan',
+    },
+
     // TK Qur'an roles
-    { code: RoleCode.TKQ_ADMIN, name: 'Admin TK Qur\'an', realm: Realm.TK_QURAN, description: 'Administrator TK Qur\'an' },
-    { code: RoleCode.TKQ_KEPALA_SEKOLAH, name: 'Kepala TK Qur\'an', realm: Realm.TK_QURAN, description: 'Kepala sekolah TK Qur\'an' },
-    { code: RoleCode.TKQ_GURU, name: 'Guru TK Qur\'an', realm: Realm.TK_QURAN, description: 'Guru TK Qur\'an' },
-    { code: RoleCode.TKQ_TATA_USAHA, name: 'Tata Usaha TK Qur\'an', realm: Realm.TK_QURAN, description: 'Tata usaha TK Qur\'an' },
-    { code: RoleCode.TKQ_ORANG_TUA, name: 'Orang Tua TK Qur\'an', realm: Realm.TK_QURAN, description: 'Orang tua siswa TK Qur\'an' },
-    { code: RoleCode.TKQ_SISWA, name: 'Siswa TK Qur\'an', realm: Realm.TK_QURAN, description: 'Siswa TK Qur\'an' },
-    
+    {
+      code: RoleCode.TKQ_ADMIN,
+      name: "Admin TK Qur'an",
+      realm: Realm.TK_QURAN,
+      description: "Administrator TK Qur'an",
+    },
+    {
+      code: RoleCode.TKQ_KEPALA_SEKOLAH,
+      name: "Kepala TK Qur'an",
+      realm: Realm.TK_QURAN,
+      description: "Kepala sekolah TK Qur'an",
+    },
+    {
+      code: RoleCode.TKQ_GURU,
+      name: "Guru TK Qur'an",
+      realm: Realm.TK_QURAN,
+      description: "Guru TK Qur'an",
+    },
+    {
+      code: RoleCode.TKQ_TATA_USAHA,
+      name: "Tata Usaha TK Qur'an",
+      realm: Realm.TK_QURAN,
+      description: "Tata usaha TK Qur'an",
+    },
+    {
+      code: RoleCode.TKQ_ORANG_TUA,
+      name: "Orang Tua TK Qur'an",
+      realm: Realm.TK_QURAN,
+      description: "Orang tua siswa TK Qur'an",
+    },
+    {
+      code: RoleCode.TKQ_SISWA,
+      name: "Siswa TK Qur'an",
+      realm: Realm.TK_QURAN,
+      description: "Siswa TK Qur'an",
+    },
+
     // SD IT (Islam Terpadu) roles
-    { code: RoleCode.SDIT_ADMIN, name: 'Admin SD IT', realm: Realm.SD_IT, description: 'Administrator SD IT' },
-    { code: RoleCode.SDIT_KEPALA_SEKOLAH, name: 'Kepala SD IT', realm: Realm.SD_IT, description: 'Kepala sekolah SD IT' },
+    {
+      code: RoleCode.SDIT_ADMIN,
+      name: 'Admin SD IT',
+      realm: Realm.SD_IT,
+      description: 'Administrator SD IT',
+    },
+    {
+      code: RoleCode.SDIT_KEPALA_SEKOLAH,
+      name: 'Kepala SD IT',
+      realm: Realm.SD_IT,
+      description: 'Kepala sekolah SD IT',
+    },
     { code: RoleCode.SDIT_GURU, name: 'Guru SD IT', realm: Realm.SD_IT, description: 'Guru SD IT' },
-    { code: RoleCode.SDIT_TATA_USAHA, name: 'Tata Usaha SD IT', realm: Realm.SD_IT, description: 'Tata usaha SD IT' },
-    { code: RoleCode.SDIT_ORANG_TUA, name: 'Orang Tua SD IT', realm: Realm.SD_IT, description: 'Orang tua siswa SD IT' },
-    { code: RoleCode.SDIT_SISWA, name: 'Siswa SD IT', realm: Realm.SD_IT, description: 'Siswa SD IT' },
-    
+    {
+      code: RoleCode.SDIT_TATA_USAHA,
+      name: 'Tata Usaha SD IT',
+      realm: Realm.SD_IT,
+      description: 'Tata usaha SD IT',
+    },
+    {
+      code: RoleCode.SDIT_ORANG_TUA,
+      name: 'Orang Tua SD IT',
+      realm: Realm.SD_IT,
+      description: 'Orang tua siswa SD IT',
+    },
+    {
+      code: RoleCode.SDIT_SISWA,
+      name: 'Siswa SD IT',
+      realm: Realm.SD_IT,
+      description: 'Siswa SD IT',
+    },
+
     // SMP IT (Islam Terpadu) roles
-    { code: RoleCode.SMPIT_ADMIN, name: 'Admin SMP IT', realm: Realm.SMP_IT, description: 'Administrator SMP IT' },
-    { code: RoleCode.SMPIT_KEPALA_SEKOLAH, name: 'Kepala SMP IT', realm: Realm.SMP_IT, description: 'Kepala sekolah SMP IT' },
-    { code: RoleCode.SMPIT_GURU, name: 'Guru SMP IT', realm: Realm.SMP_IT, description: 'Guru SMP IT' },
-    { code: RoleCode.SMPIT_TATA_USAHA, name: 'Tata Usaha SMP IT', realm: Realm.SMP_IT, description: 'Tata usaha SMP IT' },
-    { code: RoleCode.SMPIT_ORANG_TUA, name: 'Orang Tua SMP IT', realm: Realm.SMP_IT, description: 'Orang tua siswa SMP IT' },
-    { code: RoleCode.SMPIT_SISWA, name: 'Siswa SMP IT', realm: Realm.SMP_IT, description: 'Siswa SMP IT' },
-    
+    {
+      code: RoleCode.SMPIT_ADMIN,
+      name: 'Admin SMP IT',
+      realm: Realm.SMP_IT,
+      description: 'Administrator SMP IT',
+    },
+    {
+      code: RoleCode.SMPIT_KEPALA_SEKOLAH,
+      name: 'Kepala SMP IT',
+      realm: Realm.SMP_IT,
+      description: 'Kepala sekolah SMP IT',
+    },
+    {
+      code: RoleCode.SMPIT_GURU,
+      name: 'Guru SMP IT',
+      realm: Realm.SMP_IT,
+      description: 'Guru SMP IT',
+    },
+    {
+      code: RoleCode.SMPIT_TATA_USAHA,
+      name: 'Tata Usaha SMP IT',
+      realm: Realm.SMP_IT,
+      description: 'Tata usaha SMP IT',
+    },
+    {
+      code: RoleCode.SMPIT_ORANG_TUA,
+      name: 'Orang Tua SMP IT',
+      realm: Realm.SMP_IT,
+      description: 'Orang tua siswa SMP IT',
+    },
+    {
+      code: RoleCode.SMPIT_SISWA,
+      name: 'Siswa SMP IT',
+      realm: Realm.SMP_IT,
+      description: 'Siswa SMP IT',
+    },
+
     // SMA Qur'an roles
-    { code: RoleCode.SMAQ_ADMIN, name: 'Admin SMA Qur\'an', realm: Realm.SMA_QURAN, description: 'Administrator SMA Qur\'an' },
-    { code: RoleCode.SMAQ_KEPALA_SEKOLAH, name: 'Kepala SMA Qur\'an', realm: Realm.SMA_QURAN, description: 'Kepala sekolah SMA Qur\'an' },
-    { code: RoleCode.SMAQ_GURU, name: 'Guru SMA Qur\'an', realm: Realm.SMA_QURAN, description: 'Guru SMA Qur\'an' },
-    { code: RoleCode.SMAQ_TATA_USAHA, name: 'Tata Usaha SMA Qur\'an', realm: Realm.SMA_QURAN, description: 'Tata usaha SMA Qur\'an' },
-    { code: RoleCode.SMAQ_ORANG_TUA, name: 'Orang Tua SMA Qur\'an', realm: Realm.SMA_QURAN, description: 'Orang tua siswa SMA Qur\'an' },
-    { code: RoleCode.SMAQ_SISWA, name: 'Siswa SMA Qur\'an', realm: Realm.SMA_QURAN, description: 'Siswa SMA Qur\'an' },
-    
+    {
+      code: RoleCode.SMAQ_ADMIN,
+      name: "Admin SMA Qur'an",
+      realm: Realm.SMA_QURAN,
+      description: "Administrator SMA Qur'an",
+    },
+    {
+      code: RoleCode.SMAQ_KEPALA_SEKOLAH,
+      name: "Kepala SMA Qur'an",
+      realm: Realm.SMA_QURAN,
+      description: "Kepala sekolah SMA Qur'an",
+    },
+    {
+      code: RoleCode.SMAQ_GURU,
+      name: "Guru SMA Qur'an",
+      realm: Realm.SMA_QURAN,
+      description: "Guru SMA Qur'an",
+    },
+    {
+      code: RoleCode.SMAQ_TATA_USAHA,
+      name: "Tata Usaha SMA Qur'an",
+      realm: Realm.SMA_QURAN,
+      description: "Tata usaha SMA Qur'an",
+    },
+    {
+      code: RoleCode.SMAQ_ORANG_TUA,
+      name: "Orang Tua SMA Qur'an",
+      realm: Realm.SMA_QURAN,
+      description: "Orang tua siswa SMA Qur'an",
+    },
+    {
+      code: RoleCode.SMAQ_SISWA,
+      name: "Siswa SMA Qur'an",
+      realm: Realm.SMA_QURAN,
+      description: "Siswa SMA Qur'an",
+    },
+
     // Pesantren roles (cross-unit)
-    { code: RoleCode.MUSYRIF, name: 'Musyrif', realm: Realm.PESANTREN, description: 'Pembina asrama' },
-    { code: RoleCode.MUHAFIDZ, name: 'Muhafidz', realm: Realm.PESANTREN, description: 'Pengampu tahfidz' },
-    { code: RoleCode.MURABBI, name: 'Murabbi', realm: Realm.PESANTREN, description: 'Pembina akhlaq' },
-    { code: RoleCode.WALI_KAMAR, name: 'Wali Kamar', realm: Realm.PESANTREN, description: 'Penanggung jawab kamar' },
+    {
+      code: RoleCode.MUSYRIF,
+      name: 'Musyrif',
+      realm: Realm.PESANTREN,
+      description: 'Pembina asrama',
+    },
+    {
+      code: RoleCode.MUHAFIDZ,
+      name: 'Muhafidz',
+      realm: Realm.PESANTREN,
+      description: 'Pengampu tahfidz',
+    },
+    {
+      code: RoleCode.MURABBI,
+      name: 'Murabbi',
+      realm: Realm.PESANTREN,
+      description: 'Pembina akhlaq',
+    },
+    {
+      code: RoleCode.WALI_KAMAR,
+      name: 'Wali Kamar',
+      realm: Realm.PESANTREN,
+      description: 'Penanggung jawab kamar',
+    },
   ];
 
   const roles: Record<string, any> = {};
@@ -244,7 +480,7 @@ async function main() {
       isActive: true,
     },
   });
-  
+
   await prisma.userRoleAssignment.create({
     data: {
       userId: superAdminUser.id,
@@ -264,12 +500,22 @@ async function main() {
       isActive: true,
     },
   });
-  
+
   // Ketua Yayasan has multiple roles
   await prisma.userRoleAssignment.createMany({
     data: [
-      { userId: ketuaYayasanUser.id, roleId: roles[RoleCode.YAYASAN_KETUA].id, isPrimary: true, isActive: true },
-      { userId: ketuaYayasanUser.id, roleId: roles[RoleCode.YAYASAN_PEMBINA].id, isPrimary: false, isActive: true },
+      {
+        userId: ketuaYayasanUser.id,
+        roleId: roles[RoleCode.YAYASAN_KETUA].id,
+        isPrimary: true,
+        isActive: true,
+      },
+      {
+        userId: ketuaYayasanUser.id,
+        roleId: roles[RoleCode.YAYASAN_PEMBINA].id,
+        isPrimary: false,
+        isActive: true,
+      },
     ],
   });
 
@@ -282,7 +528,7 @@ async function main() {
       isActive: true,
     },
   });
-  
+
   await prisma.userRoleAssignment.create({
     data: {
       userId: sekretarisYayasanUser.id,
@@ -301,7 +547,7 @@ async function main() {
       isActive: true,
     },
   });
-  
+
   await prisma.userRoleAssignment.create({
     data: {
       userId: bendaharaYayasanUser.id,
@@ -321,7 +567,7 @@ async function main() {
       isActive: true,
     },
   });
-  
+
   await prisma.userRoleAssignment.create({
     data: {
       userId: adminYayasanUser.id,
@@ -342,7 +588,7 @@ async function main() {
       isActive: true,
     },
   });
-  
+
   await prisma.userRoleAssignment.create({
     data: {
       userId: adminPesantrenUser.id,
@@ -363,7 +609,7 @@ async function main() {
       isActive: true,
     },
   });
-  
+
   await prisma.userRoleAssignment.create({
     data: {
       userId: adminSdItUser.id,
@@ -385,11 +631,23 @@ async function main() {
       isActive: true,
     },
   });
-  
+
   await prisma.userRoleAssignment.createMany({
     data: [
-      { userId: kepalaSmpItUser.id, roleId: roles[RoleCode.SMPIT_KEPALA_SEKOLAH].id, unitId: pesantren.id, isPrimary: true, isActive: true },
-      { userId: kepalaSmpItUser.id, roleId: roles[RoleCode.SMPIT_GURU].id, unitId: pesantren.id, isPrimary: false, isActive: true },
+      {
+        userId: kepalaSmpItUser.id,
+        roleId: roles[RoleCode.SMPIT_KEPALA_SEKOLAH].id,
+        unitId: pesantren.id,
+        isPrimary: true,
+        isActive: true,
+      },
+      {
+        userId: kepalaSmpItUser.id,
+        roleId: roles[RoleCode.SMPIT_GURU].id,
+        unitId: pesantren.id,
+        isPrimary: false,
+        isActive: true,
+      },
     ],
   });
 
@@ -404,11 +662,23 @@ async function main() {
       isActive: true,
     },
   });
-  
+
   await prisma.userRoleAssignment.createMany({
     data: [
-      { userId: kepalaSdItUser.id, roleId: roles[RoleCode.SDIT_KEPALA_SEKOLAH].id, unitId: sdIt.id, isPrimary: true, isActive: true },
-      { userId: kepalaSdItUser.id, roleId: roles[RoleCode.SDIT_GURU].id, unitId: sdIt.id, isPrimary: false, isActive: true },
+      {
+        userId: kepalaSdItUser.id,
+        roleId: roles[RoleCode.SDIT_KEPALA_SEKOLAH].id,
+        unitId: sdIt.id,
+        isPrimary: true,
+        isActive: true,
+      },
+      {
+        userId: kepalaSdItUser.id,
+        roleId: roles[RoleCode.SDIT_GURU].id,
+        unitId: sdIt.id,
+        isPrimary: false,
+        isActive: true,
+      },
     ],
   });
 
@@ -423,7 +693,7 @@ async function main() {
       isActive: true,
     },
   });
-  
+
   await prisma.userRoleAssignment.create({
     data: {
       userId: teacherPesantrenUser.id,
@@ -452,7 +722,7 @@ async function main() {
       isActive: true,
     },
   });
-  
+
   await prisma.userRoleAssignment.create({
     data: {
       userId: teacherSdItUser.id,
@@ -482,7 +752,7 @@ async function main() {
       isActive: true,
     },
   });
-  
+
   await prisma.userRoleAssignment.create({
     data: {
       userId: tuSmpItUser.id,
@@ -504,7 +774,7 @@ async function main() {
       isActive: true,
     },
   });
-  
+
   await prisma.userRoleAssignment.create({
     data: {
       userId: tuSdItUser.id,
@@ -559,11 +829,41 @@ async function main() {
 
   // Assign students to different units/realms
   const studentConfigs = [
-    { name: 'Muhammad Rizky', gender: Gender.MALE, email: 'student1@smpit.sch.id', unitId: pesantren.id, roleCode: RoleCode.SMPIT_SISWA },
-    { name: 'Ahmad Fauzan', gender: Gender.MALE, email: 'student2@smpit.sch.id', unitId: pesantren.id, roleCode: RoleCode.SMPIT_SISWA },
-    { name: 'Siti Aisyah', gender: Gender.FEMALE, email: 'student3@sdit.sch.id', unitId: sdIt.id, roleCode: RoleCode.SDIT_SISWA },
-    { name: 'Fatimah Zahra', gender: Gender.FEMALE, email: 'student4@tkq.sch.id', unitId: tkQuran.id, roleCode: RoleCode.TKQ_SISWA },
-    { name: 'Abdullah Rahman', gender: Gender.MALE, email: 'student5@smaq.sch.id', unitId: smaQuran.id, roleCode: RoleCode.SMAQ_SISWA },
+    {
+      name: 'Muhammad Rizky',
+      gender: Gender.MALE,
+      email: 'student1@smpit.sch.id',
+      unitId: pesantren.id,
+      roleCode: RoleCode.SMPIT_SISWA,
+    },
+    {
+      name: 'Ahmad Fauzan',
+      gender: Gender.MALE,
+      email: 'student2@smpit.sch.id',
+      unitId: pesantren.id,
+      roleCode: RoleCode.SMPIT_SISWA,
+    },
+    {
+      name: 'Siti Aisyah',
+      gender: Gender.FEMALE,
+      email: 'student3@sdit.sch.id',
+      unitId: sdIt.id,
+      roleCode: RoleCode.SDIT_SISWA,
+    },
+    {
+      name: 'Fatimah Zahra',
+      gender: Gender.FEMALE,
+      email: 'student4@tkq.sch.id',
+      unitId: tkQuran.id,
+      roleCode: RoleCode.TKQ_SISWA,
+    },
+    {
+      name: 'Abdullah Rahman',
+      gender: Gender.MALE,
+      email: 'student5@smaq.sch.id',
+      unitId: smaQuran.id,
+      roleCode: RoleCode.SMAQ_SISWA,
+    },
   ];
 
   for (let i = 0; i < studentConfigs.length; i++) {
@@ -598,7 +898,9 @@ async function main() {
         nisn: `00${String(i + 1).padStart(8, '0')}`,
         gender: studentData.gender,
         birthPlace: 'Sukabumi',
-        birthDate: new Date(`2012-${String((i % 12) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`),
+        birthDate: new Date(
+          `2012-${String((i % 12) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`
+        ),
         address: `Jl. Santri No. ${i + 1}, Sukabumi`,
         parentName: `Bapak ${studentData.name.split(' ')[0]}`,
         parentPhone: `0812345678${String(i).padStart(2, '0')}`,
@@ -624,9 +926,27 @@ async function main() {
   // Create Parent users (wali santri) with role assignments
   const parentUsers = [];
   const parentNames = [
-    { name: 'Bapak Rizky (Wali)', email: 'parent1@smpit.sch.id', studentIdx: 0, unitId: pesantren.id, roleCode: RoleCode.SMPIT_ORANG_TUA },
-    { name: 'Ibu Fauzan (Wali)', email: 'parent2@smpit.sch.id', studentIdx: 1, unitId: pesantren.id, roleCode: RoleCode.SMPIT_ORANG_TUA },
-    { name: 'Bapak Aisyah (Wali)', email: 'parent3@sdit.sch.id', studentIdx: 2, unitId: sdIt.id, roleCode: RoleCode.SDIT_ORANG_TUA },
+    {
+      name: 'Bapak Rizky (Wali)',
+      email: 'parent1@smpit.sch.id',
+      studentIdx: 0,
+      unitId: pesantren.id,
+      roleCode: RoleCode.SMPIT_ORANG_TUA,
+    },
+    {
+      name: 'Ibu Fauzan (Wali)',
+      email: 'parent2@smpit.sch.id',
+      studentIdx: 1,
+      unitId: pesantren.id,
+      roleCode: RoleCode.SMPIT_ORANG_TUA,
+    },
+    {
+      name: 'Bapak Aisyah (Wali)',
+      email: 'parent3@sdit.sch.id',
+      studentIdx: 2,
+      unitId: sdIt.id,
+      roleCode: RoleCode.SDIT_ORANG_TUA,
+    },
   ];
 
   for (const parentData of parentNames) {
@@ -640,7 +960,7 @@ async function main() {
         isActive: true,
       },
     });
-    
+
     await prisma.userRoleAssignment.create({
       data: {
         userId: parentUser.id,
@@ -650,7 +970,7 @@ async function main() {
         isActive: true,
       },
     });
-    
+
     parentUsers.push({ user: parentUser, studentIdx: parentData.studentIdx });
   }
 
@@ -791,7 +1111,12 @@ async function main() {
   console.log('✅ Room assignments created');
 
   // Create Permits
-  const permitStatuses = [PermitStatus.PENDING, PermitStatus.APPROVED, PermitStatus.COMPLETED, PermitStatus.REJECTED];
+  const permitStatuses = [
+    PermitStatus.PENDING,
+    PermitStatus.APPROVED,
+    PermitStatus.COMPLETED,
+    PermitStatus.REJECTED,
+  ];
   const permitTypes = [PermitType.PULANG, PermitType.KELUAR, PermitType.SAKIT, PermitType.KELUARGA];
 
   for (let i = 0; i < 4; i++) {
@@ -809,7 +1134,8 @@ async function main() {
         reason: `Alasan izin ${permitTypes[i].toLowerCase()}: keperluan keluarga`,
         startDate,
         endDate,
-        approvedById: permitStatuses[i] !== PermitStatus.PENDING ? teacherPesantrenUser.id : undefined,
+        approvedById:
+          permitStatuses[i] !== PermitStatus.PENDING ? teacherPesantrenUser.id : undefined,
         approvedAt: permitStatuses[i] !== PermitStatus.PENDING ? new Date() : undefined,
         returnedAt: permitStatuses[i] === PermitStatus.COMPLETED ? new Date() : undefined,
       },
@@ -820,10 +1146,30 @@ async function main() {
 
   // Create Violations
   const violationDescriptions = [
-    { type: ViolationType.MINOR, category: 'ibadah', desc: 'Terlambat sholat berjamaah', points: 5 },
-    { type: ViolationType.MINOR, category: 'kebersihan', desc: 'Tidak merapikan tempat tidur', points: 3 },
-    { type: ViolationType.MODERATE, category: 'ketertiban', desc: 'Tidak mengikuti kegiatan wajib', points: 10 },
-    { type: ViolationType.MAJOR, category: 'ketertiban', desc: 'Keluar asrama tanpa izin', points: 25 },
+    {
+      type: ViolationType.MINOR,
+      category: 'ibadah',
+      desc: 'Terlambat sholat berjamaah',
+      points: 5,
+    },
+    {
+      type: ViolationType.MINOR,
+      category: 'kebersihan',
+      desc: 'Tidak merapikan tempat tidur',
+      points: 3,
+    },
+    {
+      type: ViolationType.MODERATE,
+      category: 'ketertiban',
+      desc: 'Tidak mengikuti kegiatan wajib',
+      points: 10,
+    },
+    {
+      type: ViolationType.MAJOR,
+      category: 'ketertiban',
+      desc: 'Keluar asrama tanpa izin',
+      points: 25,
+    },
   ];
 
   for (let i = 0; i < violationDescriptions.length; i++) {
@@ -878,11 +1224,37 @@ async function main() {
 
   // Create Payment Types
   const paymentTypesData = [
-    { name: 'SPP Bulanan', code: 'SPP', amount: new Prisma.Decimal(500000), description: 'Biaya pendidikan bulanan' },
-    { name: 'Biaya Makan', code: 'MAKAN', amount: new Prisma.Decimal(750000), description: 'Biaya makan 3x sehari' },
-    { name: 'Biaya Asrama', code: 'ASRAMA', amount: new Prisma.Decimal(300000), description: 'Biaya penginapan asrama' },
-    { name: 'Seragam', code: 'SRGM', amount: new Prisma.Decimal(1500000), description: 'Biaya seragam lengkap', isRecurring: false },
-    { name: 'Kegiatan Ekstrakurikuler', code: 'EKSKUL', amount: new Prisma.Decimal(100000), description: 'Biaya kegiatan tambahan' },
+    {
+      name: 'SPP Bulanan',
+      code: 'SPP',
+      amount: new Prisma.Decimal(500000),
+      description: 'Biaya pendidikan bulanan',
+    },
+    {
+      name: 'Biaya Makan',
+      code: 'MAKAN',
+      amount: new Prisma.Decimal(750000),
+      description: 'Biaya makan 3x sehari',
+    },
+    {
+      name: 'Biaya Asrama',
+      code: 'ASRAMA',
+      amount: new Prisma.Decimal(300000),
+      description: 'Biaya penginapan asrama',
+    },
+    {
+      name: 'Seragam',
+      code: 'SRGM',
+      amount: new Prisma.Decimal(1500000),
+      description: 'Biaya seragam lengkap',
+      isRecurring: false,
+    },
+    {
+      name: 'Kegiatan Ekstrakurikuler',
+      code: 'EKSKUL',
+      amount: new Prisma.Decimal(100000),
+      description: 'Biaya kegiatan tambahan',
+    },
   ];
 
   const createdPaymentTypes = [];
@@ -905,12 +1277,17 @@ async function main() {
   // Create Invoices and Payments
   const months = ['Juli', 'Agustus', 'September'];
   let invoiceCounter = 1;
-  const sppPaymentType = createdPaymentTypes.find(pt => pt.code === 'SPP')!;
+  const sppPaymentType = createdPaymentTypes.find((pt) => pt.code === 'SPP')!;
 
   for (const student of students.slice(0, 3)) {
     for (let monthIdx = 0; monthIdx < months.length; monthIdx++) {
       const dueDate = new Date(2024, 6 + monthIdx, 10); // 10th of each month
-      const status = monthIdx === 0 ? PaymentStatus.PAID : monthIdx === 1 ? PaymentStatus.PARTIAL : PaymentStatus.PENDING;
+      const status =
+        monthIdx === 0
+          ? PaymentStatus.PAID
+          : monthIdx === 1
+            ? PaymentStatus.PARTIAL
+            : PaymentStatus.PENDING;
 
       const totalAmount = Number(sppPaymentType.amount);
 
@@ -921,11 +1298,12 @@ async function main() {
           invoiceNumber: `INV-2024${String(invoiceCounter++).padStart(5, '0')}`,
           dueDate,
           amount: new Prisma.Decimal(totalAmount),
-          paidAmount: status === PaymentStatus.PAID 
-            ? new Prisma.Decimal(totalAmount) 
-            : status === PaymentStatus.PARTIAL 
-              ? new Prisma.Decimal(totalAmount / 2) 
-              : new Prisma.Decimal(0),
+          paidAmount:
+            status === PaymentStatus.PAID
+              ? new Prisma.Decimal(totalAmount)
+              : status === PaymentStatus.PARTIAL
+                ? new Prisma.Decimal(totalAmount / 2)
+                : new Prisma.Decimal(0),
           status,
           period: `${months[monthIdx]} 2024`,
           notes: `Tagihan SPP untuk bulan ${months[monthIdx]}`,
@@ -960,10 +1338,30 @@ async function main() {
 
   // Create Staff users and profiles
   const staffData = [
-    { name: 'Pak Bambang Sutejo', email: 'bambang@cipansor.id', position: 'Kepala TU', department: 'Administrasi' },
-    { name: 'Ibu Dewi Kartika', email: 'dewi@cipansor.id', position: 'Staff Keuangan', department: 'Keuangan' },
-    { name: 'Pak Rudi Hartono', email: 'rudi@cipansor.id', position: 'Security', department: 'Keamanan' },
-    { name: 'Ibu Sri Wahyuni', email: 'sri@cipansor.id', position: 'Petugas Kesehatan', department: 'Kesehatan' },
+    {
+      name: 'Pak Bambang Sutejo',
+      email: 'bambang@cipansor.id',
+      position: 'Kepala TU',
+      department: 'Administrasi',
+    },
+    {
+      name: 'Ibu Dewi Kartika',
+      email: 'dewi@cipansor.id',
+      position: 'Staff Keuangan',
+      department: 'Keuangan',
+    },
+    {
+      name: 'Pak Rudi Hartono',
+      email: 'rudi@cipansor.id',
+      position: 'Security',
+      department: 'Keamanan',
+    },
+    {
+      name: 'Ibu Sri Wahyuni',
+      email: 'sri@cipansor.id',
+      position: 'Petugas Kesehatan',
+      department: 'Kesehatan',
+    },
   ];
 
   const staffRecords = [];
@@ -1012,11 +1410,18 @@ async function main() {
       date.setDate(date.getDate() - dayOffset);
       date.setHours(0, 0, 0, 0);
 
-      const status = staffAttendanceStatuses[(staff.id.charCodeAt(0) + dayOffset) % staffAttendanceStatuses.length];
-      
+      const status =
+        staffAttendanceStatuses[
+          (staff.id.charCodeAt(0) + dayOffset) % staffAttendanceStatuses.length
+        ];
+
       const checkIn = new Date(date);
-      checkIn.setHours(7 + (status === StaffAttendanceStatus.LATE ? 1 : 0), 30 + Math.floor(Math.random() * 30), 0);
-      
+      checkIn.setHours(
+        7 + (status === StaffAttendanceStatus.LATE ? 1 : 0),
+        30 + Math.floor(Math.random() * 30),
+        0
+      );
+
       const checkOut = new Date(date);
       checkOut.setHours(16, Math.floor(Math.random() * 60), 0);
 
@@ -1025,11 +1430,22 @@ async function main() {
           staffId: staff.id,
           date,
           status,
-          checkIn: status === StaffAttendanceStatus.PRESENT || status === StaffAttendanceStatus.LATE ? checkIn : undefined,
-          checkOut: status === StaffAttendanceStatus.PRESENT || status === StaffAttendanceStatus.LATE ? checkOut : undefined,
-          notes: status === StaffAttendanceStatus.SICK ? 'Izin sakit dengan surat dokter' :
-                 status === StaffAttendanceStatus.LEAVE ? 'Cuti tahunan' :
-                 status === StaffAttendanceStatus.LATE ? 'Terlambat karena macet' : undefined,
+          checkIn:
+            status === StaffAttendanceStatus.PRESENT || status === StaffAttendanceStatus.LATE
+              ? checkIn
+              : undefined,
+          checkOut:
+            status === StaffAttendanceStatus.PRESENT || status === StaffAttendanceStatus.LATE
+              ? checkOut
+              : undefined,
+          notes:
+            status === StaffAttendanceStatus.SICK
+              ? 'Izin sakit dengan surat dokter'
+              : status === StaffAttendanceStatus.LEAVE
+                ? 'Cuti tahunan'
+                : status === StaffAttendanceStatus.LATE
+                  ? 'Terlambat karena macet'
+                  : undefined,
         },
       });
     }
@@ -1039,10 +1455,34 @@ async function main() {
 
   // Create Leave requests
   const leaveData = [
-    { staffIdx: 0, type: LeaveType.ANNUAL, days: 3, status: LeaveStatus.APPROVED, reason: 'Liburan keluarga' },
-    { staffIdx: 1, type: LeaveType.SICK, days: 2, status: LeaveStatus.APPROVED, reason: 'Sakit demam' },
-    { staffIdx: 2, type: LeaveType.MARRIAGE, days: 5, status: LeaveStatus.PENDING, reason: 'Menghadiri pernikahan anak' },
-    { staffIdx: 3, type: LeaveType.OTHER, days: 1, status: LeaveStatus.REJECTED, reason: 'Urusan pribadi' },
+    {
+      staffIdx: 0,
+      type: LeaveType.ANNUAL,
+      days: 3,
+      status: LeaveStatus.APPROVED,
+      reason: 'Liburan keluarga',
+    },
+    {
+      staffIdx: 1,
+      type: LeaveType.SICK,
+      days: 2,
+      status: LeaveStatus.APPROVED,
+      reason: 'Sakit demam',
+    },
+    {
+      staffIdx: 2,
+      type: LeaveType.MARRIAGE,
+      days: 5,
+      status: LeaveStatus.PENDING,
+      reason: 'Menghadiri pernikahan anak',
+    },
+    {
+      staffIdx: 3,
+      type: LeaveType.OTHER,
+      days: 1,
+      status: LeaveStatus.REJECTED,
+      reason: 'Urusan pribadi',
+    },
   ];
 
   for (const leave of leaveData) {
@@ -1063,7 +1503,8 @@ async function main() {
         status: leave.status,
         approvedById: leave.status !== LeaveStatus.PENDING ? teacherPesantrenUser.id : undefined,
         approvedAt: leave.status !== LeaveStatus.PENDING ? new Date() : undefined,
-        rejectedNote: leave.status === LeaveStatus.REJECTED ? 'Tidak memenuhi syarat cuti' : undefined,
+        rejectedNote:
+          leave.status === LeaveStatus.REJECTED ? 'Tidak memenuhi syarat cuti' : undefined,
       },
     });
   }
@@ -1119,12 +1560,42 @@ async function main() {
 
   // Create Registrants with various statuses
   const registrantData = [
-    { name: 'Farid Hidayat', gender: Gender.MALE, status: AdmissionStatus.ENROLLED, parentName: 'Bapak Hidayat' },
-    { name: 'Nurul Aini', gender: Gender.FEMALE, status: AdmissionStatus.ACCEPTED, parentName: 'Bapak Ahmad' },
-    { name: 'Rizki Ramadhan', gender: Gender.MALE, status: AdmissionStatus.TEST_COMPLETED, parentName: 'Bapak Ramadhan' },
-    { name: 'Salsabila Putri', gender: Gender.FEMALE, status: AdmissionStatus.DOCUMENT_CHECK, parentName: 'Bapak Putra' },
-    { name: 'Akbar Maulana', gender: Gender.MALE, status: AdmissionStatus.REGISTERED, parentName: 'Bapak Maulana' },
-    { name: 'Azzahra Aulia', gender: Gender.FEMALE, status: AdmissionStatus.REJECTED, parentName: 'Bapak Aulia' },
+    {
+      name: 'Farid Hidayat',
+      gender: Gender.MALE,
+      status: AdmissionStatus.ENROLLED,
+      parentName: 'Bapak Hidayat',
+    },
+    {
+      name: 'Nurul Aini',
+      gender: Gender.FEMALE,
+      status: AdmissionStatus.ACCEPTED,
+      parentName: 'Bapak Ahmad',
+    },
+    {
+      name: 'Rizki Ramadhan',
+      gender: Gender.MALE,
+      status: AdmissionStatus.TEST_COMPLETED,
+      parentName: 'Bapak Ramadhan',
+    },
+    {
+      name: 'Salsabila Putri',
+      gender: Gender.FEMALE,
+      status: AdmissionStatus.DOCUMENT_CHECK,
+      parentName: 'Bapak Putra',
+    },
+    {
+      name: 'Akbar Maulana',
+      gender: Gender.MALE,
+      status: AdmissionStatus.REGISTERED,
+      parentName: 'Bapak Maulana',
+    },
+    {
+      name: 'Azzahra Aulia',
+      gender: Gender.FEMALE,
+      status: AdmissionStatus.REJECTED,
+      parentName: 'Bapak Aulia',
+    },
   ];
 
   let regCounter = 1;
@@ -1146,24 +1617,53 @@ async function main() {
         parentEmail: `parent${regCounter}@gmail.com`,
         parentOccupation: 'Wiraswasta',
         status: reg.status,
-        testScore: (reg.status === AdmissionStatus.TEST_COMPLETED || reg.status === AdmissionStatus.ACCEPTED || reg.status === AdmissionStatus.ENROLLED)
-          ? new Prisma.Decimal(75 + Math.random() * 20) : undefined,
-        interviewScore: (reg.status === AdmissionStatus.ACCEPTED || reg.status === AdmissionStatus.ENROLLED)
-          ? new Prisma.Decimal(70 + Math.random() * 25) : undefined,
-        tahfidzScore: (reg.status === AdmissionStatus.ACCEPTED || reg.status === AdmissionStatus.ENROLLED)
-          ? new Prisma.Decimal(80 + Math.random() * 15) : undefined,
-        acceptedAt: (reg.status === AdmissionStatus.ACCEPTED || reg.status === AdmissionStatus.ENROLLED) ? new Date() : undefined,
+        testScore:
+          reg.status === AdmissionStatus.TEST_COMPLETED ||
+          reg.status === AdmissionStatus.ACCEPTED ||
+          reg.status === AdmissionStatus.ENROLLED
+            ? new Prisma.Decimal(75 + Math.random() * 20)
+            : undefined,
+        interviewScore:
+          reg.status === AdmissionStatus.ACCEPTED || reg.status === AdmissionStatus.ENROLLED
+            ? new Prisma.Decimal(70 + Math.random() * 25)
+            : undefined,
+        tahfidzScore:
+          reg.status === AdmissionStatus.ACCEPTED || reg.status === AdmissionStatus.ENROLLED
+            ? new Prisma.Decimal(80 + Math.random() * 15)
+            : undefined,
+        acceptedAt:
+          reg.status === AdmissionStatus.ACCEPTED || reg.status === AdmissionStatus.ENROLLED
+            ? new Date()
+            : undefined,
         enrolledAt: reg.status === AdmissionStatus.ENROLLED ? new Date() : undefined,
-        notes: reg.status === AdmissionStatus.REJECTED ? 'Tidak memenuhi persyaratan usia minimum' : undefined,
+        notes:
+          reg.status === AdmissionStatus.REJECTED
+            ? 'Tidak memenuhi persyaratan usia minimum'
+            : undefined,
       },
     });
 
     // Create registrant documents
     await prisma.registrantDocument.createMany({
       data: [
-        { registrantId: registrant.id, name: 'Akta Kelahiran', type: 'akta', isVerified: reg.status !== AdmissionStatus.REGISTERED },
-        { registrantId: registrant.id, name: 'Kartu Keluarga', type: 'kk', isVerified: reg.status !== AdmissionStatus.REGISTERED },
-        { registrantId: registrant.id, name: 'Pas Foto', type: 'foto', isVerified: reg.status !== AdmissionStatus.REGISTERED },
+        {
+          registrantId: registrant.id,
+          name: 'Akta Kelahiran',
+          type: 'akta',
+          isVerified: reg.status !== AdmissionStatus.REGISTERED,
+        },
+        {
+          registrantId: registrant.id,
+          name: 'Kartu Keluarga',
+          type: 'kk',
+          isVerified: reg.status !== AdmissionStatus.REGISTERED,
+        },
+        {
+          registrantId: registrant.id,
+          name: 'Pas Foto',
+          type: 'foto',
+          isVerified: reg.status !== AdmissionStatus.REGISTERED,
+        },
       ],
     });
   }
@@ -1200,14 +1700,62 @@ async function main() {
 
   // Create Books
   const booksData = [
-    { title: 'Fiqih Sunnah', author: 'Sayyid Sabiq', categoryIdx: 0, isbn: '978-979-1234-01-1', quantity: 5 },
-    { title: 'Riyadhus Shalihin', author: 'Imam An-Nawawi', categoryIdx: 1, isbn: '978-979-1234-02-2', quantity: 3 },
-    { title: 'Tafsir Ibnu Katsir', author: 'Ibnu Katsir', categoryIdx: 2, isbn: '978-979-1234-03-3', quantity: 2 },
-    { title: 'Ihya Ulumuddin', author: 'Imam Al-Ghazali', categoryIdx: 3, isbn: '978-979-1234-04-4', quantity: 4 },
-    { title: 'Ensiklopedia Islam', author: 'Tim Penulis', categoryIdx: 4, isbn: '978-979-1234-05-5', quantity: 6 },
-    { title: 'Bulughul Maram', author: 'Ibnu Hajar Al-Asqalani', categoryIdx: 1, isbn: '978-979-1234-06-6', quantity: 4 },
-    { title: 'Fathul Bari', author: 'Ibnu Hajar Al-Asqalani', categoryIdx: 1, isbn: '978-979-1234-07-7', quantity: 2 },
-    { title: 'Tafsir Al-Misbah', author: 'M. Quraish Shihab', categoryIdx: 2, isbn: '978-979-1234-08-8', quantity: 3 },
+    {
+      title: 'Fiqih Sunnah',
+      author: 'Sayyid Sabiq',
+      categoryIdx: 0,
+      isbn: '978-979-1234-01-1',
+      quantity: 5,
+    },
+    {
+      title: 'Riyadhus Shalihin',
+      author: 'Imam An-Nawawi',
+      categoryIdx: 1,
+      isbn: '978-979-1234-02-2',
+      quantity: 3,
+    },
+    {
+      title: 'Tafsir Ibnu Katsir',
+      author: 'Ibnu Katsir',
+      categoryIdx: 2,
+      isbn: '978-979-1234-03-3',
+      quantity: 2,
+    },
+    {
+      title: 'Ihya Ulumuddin',
+      author: 'Imam Al-Ghazali',
+      categoryIdx: 3,
+      isbn: '978-979-1234-04-4',
+      quantity: 4,
+    },
+    {
+      title: 'Ensiklopedia Islam',
+      author: 'Tim Penulis',
+      categoryIdx: 4,
+      isbn: '978-979-1234-05-5',
+      quantity: 6,
+    },
+    {
+      title: 'Bulughul Maram',
+      author: 'Ibnu Hajar Al-Asqalani',
+      categoryIdx: 1,
+      isbn: '978-979-1234-06-6',
+      quantity: 4,
+    },
+    {
+      title: 'Fathul Bari',
+      author: 'Ibnu Hajar Al-Asqalani',
+      categoryIdx: 1,
+      isbn: '978-979-1234-07-7',
+      quantity: 2,
+    },
+    {
+      title: 'Tafsir Al-Misbah',
+      author: 'M. Quraish Shihab',
+      categoryIdx: 2,
+      isbn: '978-979-1234-08-8',
+      quantity: 3,
+    },
   ];
 
   const books = [];
@@ -1273,12 +1821,48 @@ async function main() {
 
   // Create Medications
   const medicationsData = [
-    { name: 'Paracetamol', genericName: 'Acetaminophen', type: 'tablet', dosageForm: '500mg', quantity: 100 },
-    { name: 'Amoxicillin', genericName: 'Amoxicillin Trihydrate', type: 'kapsul', dosageForm: '500mg', quantity: 50 },
-    { name: 'OBH Combi', genericName: 'Obat Batuk Hitam', type: 'sirup', dosageForm: '60ml', quantity: 20 },
-    { name: 'Minyak Kayu Putih', genericName: 'Cajuput Oil', type: 'minyak', dosageForm: '30ml', quantity: 15 },
-    { name: 'Betadine', genericName: 'Povidone-Iodine', type: 'cairan', dosageForm: '60ml', quantity: 10 },
-    { name: 'Antangin JRG', genericName: 'Herbal', type: 'tablet', dosageForm: '1 strip', quantity: 30 },
+    {
+      name: 'Paracetamol',
+      genericName: 'Acetaminophen',
+      type: 'tablet',
+      dosageForm: '500mg',
+      quantity: 100,
+    },
+    {
+      name: 'Amoxicillin',
+      genericName: 'Amoxicillin Trihydrate',
+      type: 'kapsul',
+      dosageForm: '500mg',
+      quantity: 50,
+    },
+    {
+      name: 'OBH Combi',
+      genericName: 'Obat Batuk Hitam',
+      type: 'sirup',
+      dosageForm: '60ml',
+      quantity: 20,
+    },
+    {
+      name: 'Minyak Kayu Putih',
+      genericName: 'Cajuput Oil',
+      type: 'minyak',
+      dosageForm: '30ml',
+      quantity: 15,
+    },
+    {
+      name: 'Betadine',
+      genericName: 'Povidone-Iodine',
+      type: 'cairan',
+      dosageForm: '60ml',
+      quantity: 10,
+    },
+    {
+      name: 'Antangin JRG',
+      genericName: 'Herbal',
+      type: 'tablet',
+      dosageForm: '1 strip',
+      quantity: 30,
+    },
   ];
 
   const medications = [];
@@ -1306,17 +1890,47 @@ async function main() {
 
   // Create Medical Records
   const medicalRecordsData = [
-    { studentIdx: 0, type: MedicalRecordType.ILLNESS, complaint: 'Demam dan batuk', diagnosis: 'Flu', treatment: 'Istirahat dan minum obat' },
-    { studentIdx: 1, type: MedicalRecordType.INJURY, complaint: 'Luka gores di lutut', diagnosis: 'Luka ringan', treatment: 'Dibersihkan dan dibalut' },
-    { studentIdx: 2, type: MedicalRecordType.CHECKUP, complaint: 'Pemeriksaan rutin', diagnosis: 'Sehat', treatment: 'Tidak ada' },
-    { studentIdx: 3, type: MedicalRecordType.FIRST_AID, complaint: 'Pusing dan lemas', diagnosis: 'Kelelahan', treatment: 'Istirahat dan minum air' },
-    { studentIdx: 0, type: MedicalRecordType.REFERRAL, complaint: 'Sakit perut berkepanjangan', diagnosis: 'Perlu pemeriksaan lanjut', treatment: 'Dirujuk ke RS' },
+    {
+      studentIdx: 0,
+      type: MedicalRecordType.ILLNESS,
+      complaint: 'Demam dan batuk',
+      diagnosis: 'Flu',
+      treatment: 'Istirahat dan minum obat',
+    },
+    {
+      studentIdx: 1,
+      type: MedicalRecordType.INJURY,
+      complaint: 'Luka gores di lutut',
+      diagnosis: 'Luka ringan',
+      treatment: 'Dibersihkan dan dibalut',
+    },
+    {
+      studentIdx: 2,
+      type: MedicalRecordType.CHECKUP,
+      complaint: 'Pemeriksaan rutin',
+      diagnosis: 'Sehat',
+      treatment: 'Tidak ada',
+    },
+    {
+      studentIdx: 3,
+      type: MedicalRecordType.FIRST_AID,
+      complaint: 'Pusing dan lemas',
+      diagnosis: 'Kelelahan',
+      treatment: 'Istirahat dan minum air',
+    },
+    {
+      studentIdx: 0,
+      type: MedicalRecordType.REFERRAL,
+      complaint: 'Sakit perut berkepanjangan',
+      diagnosis: 'Perlu pemeriksaan lanjut',
+      treatment: 'Dirujuk ke RS',
+    },
   ];
 
   for (let i = 0; i < medicalRecordsData.length; i++) {
     const record = medicalRecordsData[i];
     const visitDate = new Date();
-    visitDate.setDate(visitDate.getDate() - (i * 3));
+    visitDate.setDate(visitDate.getDate() - i * 3);
 
     await prisma.medicalRecord.create({
       data: {
@@ -1383,14 +1997,70 @@ async function main() {
 
   // Create Assets
   const assetsData = [
-    { name: 'Meja Guru', categoryIdx: 0, brand: 'Informa', price: 1500000, location: 'Ruang Guru', condition: AssetCondition.GOOD },
-    { name: 'Kursi Plastik', categoryIdx: 0, brand: 'Napoly', price: 150000, location: 'Ruang Kelas', condition: AssetCondition.FAIR },
-    { name: 'Proyektor Epson', categoryIdx: 1, brand: 'Epson', price: 8500000, location: 'Aula', condition: AssetCondition.EXCELLENT },
-    { name: 'AC Split 1 PK', categoryIdx: 1, brand: 'Daikin', price: 5000000, location: 'Ruang Kepala', condition: AssetCondition.GOOD },
-    { name: 'Komputer Desktop', categoryIdx: 1, brand: 'HP', price: 12000000, location: 'Lab Komputer', condition: AssetCondition.GOOD },
-    { name: 'Mobil Operasional', categoryIdx: 2, brand: 'Toyota Avanza', price: 200000000, location: 'Garasi', condition: AssetCondition.GOOD },
-    { name: 'Kulkas 2 Pintu', categoryIdx: 3, brand: 'Samsung', price: 7500000, location: 'Dapur', condition: AssetCondition.GOOD },
-    { name: 'Bola Sepak', categoryIdx: 4, brand: 'Mikasa', price: 350000, location: 'Gudang Olahraga', condition: AssetCondition.FAIR },
+    {
+      name: 'Meja Guru',
+      categoryIdx: 0,
+      brand: 'Informa',
+      price: 1500000,
+      location: 'Ruang Guru',
+      condition: AssetCondition.GOOD,
+    },
+    {
+      name: 'Kursi Plastik',
+      categoryIdx: 0,
+      brand: 'Napoly',
+      price: 150000,
+      location: 'Ruang Kelas',
+      condition: AssetCondition.FAIR,
+    },
+    {
+      name: 'Proyektor Epson',
+      categoryIdx: 1,
+      brand: 'Epson',
+      price: 8500000,
+      location: 'Aula',
+      condition: AssetCondition.EXCELLENT,
+    },
+    {
+      name: 'AC Split 1 PK',
+      categoryIdx: 1,
+      brand: 'Daikin',
+      price: 5000000,
+      location: 'Ruang Kepala',
+      condition: AssetCondition.GOOD,
+    },
+    {
+      name: 'Komputer Desktop',
+      categoryIdx: 1,
+      brand: 'HP',
+      price: 12000000,
+      location: 'Lab Komputer',
+      condition: AssetCondition.GOOD,
+    },
+    {
+      name: 'Mobil Operasional',
+      categoryIdx: 2,
+      brand: 'Toyota Avanza',
+      price: 200000000,
+      location: 'Garasi',
+      condition: AssetCondition.GOOD,
+    },
+    {
+      name: 'Kulkas 2 Pintu',
+      categoryIdx: 3,
+      brand: 'Samsung',
+      price: 7500000,
+      location: 'Dapur',
+      condition: AssetCondition.GOOD,
+    },
+    {
+      name: 'Bola Sepak',
+      categoryIdx: 4,
+      brand: 'Mikasa',
+      price: 350000,
+      location: 'Gudang Olahraga',
+      condition: AssetCondition.FAIR,
+    },
   ];
 
   const assets = [];
@@ -1425,7 +2095,12 @@ async function main() {
 
   // Create Asset Maintenance Logs
   const maintenanceData = [
-    { assetIdx: 2, type: 'servis', description: 'Pembersihan filter dan penggantian lampu', cost: 500000 },
+    {
+      assetIdx: 2,
+      type: 'servis',
+      description: 'Pembersihan filter dan penggantian lampu',
+      cost: 500000,
+    },
     { assetIdx: 3, type: 'perbaikan', description: 'Pengisian freon AC', cost: 350000 },
     { assetIdx: 5, type: 'servis', description: 'Servis berkala 20.000 km', cost: 1500000 },
     { assetIdx: 4, type: 'penggantian', description: 'Upgrade RAM 8GB ke 16GB', cost: 800000 },
@@ -1434,7 +2109,7 @@ async function main() {
   for (let i = 0; i < maintenanceData.length; i++) {
     const maint = maintenanceData[i];
     const maintenanceDate = new Date();
-    maintenanceDate.setDate(maintenanceDate.getDate() - (i * 30));
+    maintenanceDate.setDate(maintenanceDate.getDate() - i * 30);
 
     const nextSchedule = new Date(maintenanceDate);
     nextSchedule.setMonth(nextSchedule.getMonth() + 6);
@@ -1461,10 +2136,33 @@ async function main() {
 
   // Create Announcements
   const announcementsData = [
-    { title: 'Libur Semester Ganjil', content: 'Libur semester ganjil akan dilaksanakan pada tanggal 20 Desember 2024 s/d 5 Januari 2025.', priority: 2, targetRoles: ['STUDENT', 'PARENT', 'TEACHER'] },
-    { title: 'Jadwal Ujian Akhir Semester', content: 'Ujian Akhir Semester akan dilaksanakan pada tanggal 10-18 Desember 2024. Mohon persiapkan diri dengan baik.', priority: 1, targetRoles: ['STUDENT', 'PARENT'] },
-    { title: 'Pembayaran SPP Bulan Desember', content: 'Batas akhir pembayaran SPP bulan Desember adalah tanggal 10 Desember 2024.', priority: 1, targetRoles: ['PARENT'] },
-    { title: 'Kegiatan Maulid Nabi', content: 'Peringatan Maulid Nabi Muhammad SAW akan diadakan pada tanggal 12 Rabiul Awal. Seluruh santri wajib hadir.', priority: 0, targetRoles: ['STUDENT', 'TEACHER', 'STAFF'] },
+    {
+      title: 'Libur Semester Ganjil',
+      content:
+        'Libur semester ganjil akan dilaksanakan pada tanggal 20 Desember 2024 s/d 5 Januari 2025.',
+      priority: 2,
+      targetRoles: ['STUDENT', 'PARENT', 'TEACHER'],
+    },
+    {
+      title: 'Jadwal Ujian Akhir Semester',
+      content:
+        'Ujian Akhir Semester akan dilaksanakan pada tanggal 10-18 Desember 2024. Mohon persiapkan diri dengan baik.',
+      priority: 1,
+      targetRoles: ['STUDENT', 'PARENT'],
+    },
+    {
+      title: 'Pembayaran SPP Bulan Desember',
+      content: 'Batas akhir pembayaran SPP bulan Desember adalah tanggal 10 Desember 2024.',
+      priority: 1,
+      targetRoles: ['PARENT'],
+    },
+    {
+      title: 'Kegiatan Maulid Nabi',
+      content:
+        'Peringatan Maulid Nabi Muhammad SAW akan diadakan pada tanggal 12 Rabiul Awal. Seluruh santri wajib hadir.',
+      priority: 0,
+      targetRoles: ['STUDENT', 'TEACHER', 'STAFF'],
+    },
   ];
 
   for (let i = 0; i < announcementsData.length; i++) {
@@ -1494,10 +2192,26 @@ async function main() {
 
   // Create Personal Notifications for students
   const notificationsData = [
-    { title: 'Tagihan SPP', message: 'Tagihan SPP bulan Desember telah tersedia. Silakan lakukan pembayaran.', type: NotificationType.PAYMENT },
-    { title: 'Jadwal Tasmi', message: 'Jadwal tasmi Anda adalah hari Senin pukul 08:00.', type: NotificationType.REMINDER },
-    { title: 'Hasil Ujian', message: 'Hasil ujian Fiqih telah tersedia. Silakan cek di halaman akademik.', type: NotificationType.ACADEMIC },
-    { title: 'Peringatan Kehadiran', message: 'Kehadiran Anda di bawah 80%. Mohon tingkatkan kehadiran.', type: NotificationType.ALERT },
+    {
+      title: 'Tagihan SPP',
+      message: 'Tagihan SPP bulan Desember telah tersedia. Silakan lakukan pembayaran.',
+      type: NotificationType.PAYMENT,
+    },
+    {
+      title: 'Jadwal Tasmi',
+      message: 'Jadwal tasmi Anda adalah hari Senin pukul 08:00.',
+      type: NotificationType.REMINDER,
+    },
+    {
+      title: 'Hasil Ujian',
+      message: 'Hasil ujian Fiqih telah tersedia. Silakan cek di halaman akademik.',
+      type: NotificationType.ACADEMIC,
+    },
+    {
+      title: 'Peringatan Kehadiran',
+      message: 'Kehadiran Anda di bawah 80%. Mohon tingkatkan kehadiran.',
+      type: NotificationType.ALERT,
+    },
   ];
 
   for (let i = 0; i < students.length; i++) {
@@ -1619,9 +2333,24 @@ async function main() {
 
   // Create Lesson Plans
   const lessonPlansData = [
-    { subjectIdx: 0, title: 'Bilangan Bulat', topic: 'Operasi Bilangan Bulat', objectives: 'Siswa dapat melakukan operasi penjumlahan dan pengurangan bilangan bulat' },
-    { subjectIdx: 5, title: 'Thaharah', topic: 'Wudhu dan Tayamum', objectives: 'Siswa dapat memahami tata cara wudhu dan tayamum yang benar' },
-    { subjectIdx: 9, title: 'Surah Al-Baqarah', topic: 'Hafalan Ayat 1-5', objectives: 'Siswa dapat menghafal Surah Al-Baqarah ayat 1-5 dengan tartil' },
+    {
+      subjectIdx: 0,
+      title: 'Bilangan Bulat',
+      topic: 'Operasi Bilangan Bulat',
+      objectives: 'Siswa dapat melakukan operasi penjumlahan dan pengurangan bilangan bulat',
+    },
+    {
+      subjectIdx: 5,
+      title: 'Thaharah',
+      topic: 'Wudhu dan Tayamum',
+      objectives: 'Siswa dapat memahami tata cara wudhu dan tayamum yang benar',
+    },
+    {
+      subjectIdx: 9,
+      title: 'Surah Al-Baqarah',
+      topic: 'Hafalan Ayat 1-5',
+      objectives: 'Siswa dapat menghafal Surah Al-Baqarah ayat 1-5 dengan tartil',
+    },
   ];
 
   for (const lp of lessonPlansData) {
@@ -1653,10 +2382,34 @@ async function main() {
 
   // Create Exams
   const examsData = [
-    { subjectIdx: 0, type: ExamType.DAILY_TEST, title: 'Ulangan Harian 1 - Bilangan Bulat', maxScore: 100, passingScore: 70 },
-    { subjectIdx: 0, type: ExamType.MIDTERM, title: 'UTS Matematika', maxScore: 100, passingScore: 70 },
-    { subjectIdx: 5, type: ExamType.DAILY_TEST, title: 'Ulangan Harian Fiqih - Thaharah', maxScore: 100, passingScore: 75 },
-    { subjectIdx: 9, type: ExamType.TAHFIDZ_TEST, title: 'Ujian Tahfidz - Juz 30', maxScore: 100, passingScore: 80 },
+    {
+      subjectIdx: 0,
+      type: ExamType.DAILY_TEST,
+      title: 'Ulangan Harian 1 - Bilangan Bulat',
+      maxScore: 100,
+      passingScore: 70,
+    },
+    {
+      subjectIdx: 0,
+      type: ExamType.MIDTERM,
+      title: 'UTS Matematika',
+      maxScore: 100,
+      passingScore: 70,
+    },
+    {
+      subjectIdx: 5,
+      type: ExamType.DAILY_TEST,
+      title: 'Ulangan Harian Fiqih - Thaharah',
+      maxScore: 100,
+      passingScore: 75,
+    },
+    {
+      subjectIdx: 9,
+      type: ExamType.TAHFIDZ_TEST,
+      title: 'Ujian Tahfidz - Juz 30',
+      maxScore: 100,
+      passingScore: 80,
+    },
   ];
 
   const exams = [];
@@ -1695,9 +2448,19 @@ async function main() {
     const exam = exams[examIdx];
     for (let studentIdx = 0; studentIdx < students.length; studentIdx++) {
       const student = students[studentIdx];
-      const score = gradeScores[(studentIdx + examIdx) % gradeScores.length] + (Math.random() * 10 - 5);
+      const score =
+        gradeScores[(studentIdx + examIdx) % gradeScores.length] + (Math.random() * 10 - 5);
       const percentage = score;
-      const letterGrade = percentage >= 90 ? 'A' : percentage >= 80 ? 'B' : percentage >= 70 ? 'C' : percentage >= 60 ? 'D' : 'E';
+      const letterGrade =
+        percentage >= 90
+          ? 'A'
+          : percentage >= 80
+            ? 'B'
+            : percentage >= 70
+              ? 'C'
+              : percentage >= 60
+                ? 'D'
+                : 'E';
 
       await prisma.grade.create({
         data: {
@@ -1761,14 +2524,102 @@ async function main() {
 
   // Create Alumni (graduates from past years)
   const alumniData = [
-    { name: 'Ahmad Zaki Rahman', gender: Gender.MALE, graduationYear: 2020, email: 'ahmad.zaki@gmail.com', phone: '081200000001', notes: 'Alumni angkatan 2020 yang sukses di bidang IT', lastClass: 'XII IPA 1', tahfidzLevel: '30 Juz', city: 'Jakarta', province: 'DKI Jakarta' },
-    { name: 'Siti Maryam Azzahra', gender: Gender.FEMALE, graduationYear: 2020, email: 'maryam.azzahra@gmail.com', phone: '081200000002', notes: 'Pengajar tahfidz di pesantren', lastClass: 'XII IPA 1', tahfidzLevel: '30 Juz', city: 'Bogor', province: 'Jawa Barat' },
-    { name: 'Muhammad Firdaus', gender: Gender.MALE, graduationYear: 2021, email: 'firdaus.dokter@gmail.com', phone: '081200000003', notes: 'Dokter umum dan alumni berprestasi', lastClass: 'XII IPA 1', tahfidzLevel: '20 Juz', city: 'Jakarta', province: 'DKI Jakarta' },
-    { name: 'Fatimah Nur Rahma', gender: Gender.FEMALE, graduationYear: 2021, email: 'fatimah.rahma@gmail.com', phone: '081200000004', notes: 'Pengusaha muda di bidang fashion muslim', lastClass: 'XII IPA 1', tahfidzLevel: '15 Juz', city: 'Bandung', province: 'Jawa Barat' },
-    { name: 'Abdullah Hasan', gender: Gender.MALE, graduationYear: 2022, email: 'abdullah.hasan@gmail.com', phone: '081200000005', notes: 'Imam dan guru tahfidz', lastClass: 'XII IPA 1', tahfidzLevel: '30 Juz', city: 'Sukabumi', province: 'Jawa Barat' },
-    { name: 'Aisyah Putri Dewi', gender: Gender.FEMALE, graduationYear: 2022, email: 'aisyah.dewi@gmail.com', phone: '081200000006', notes: 'Guru Bahasa Indonesia', lastClass: 'XII IPS 1', tahfidzLevel: '10 Juz', city: 'Sukabumi', province: 'Jawa Barat' },
-    { name: 'Umar Faruk', gender: Gender.MALE, graduationYear: 2023, email: 'umar.faruk@gmail.com', phone: '081200000007', notes: 'Fresh graduate, sedang mencari pekerjaan', lastClass: 'XII IPA 1', tahfidzLevel: '25 Juz', city: 'Sukabumi', province: 'Jawa Barat' },
-    { name: 'Khadijah Salsabila', gender: Gender.FEMALE, graduationYear: 2023, email: 'khadijah.sabil@gmail.com', phone: '081200000008', notes: 'Mahasiswa Fakultas Ekonomi UI', lastClass: 'XII IPS 1', tahfidzLevel: '15 Juz', city: 'Depok', province: 'Jawa Barat' },
+    {
+      name: 'Ahmad Zaki Rahman',
+      gender: Gender.MALE,
+      graduationYear: 2020,
+      email: 'ahmad.zaki@gmail.com',
+      phone: '081200000001',
+      notes: 'Alumni angkatan 2020 yang sukses di bidang IT',
+      lastClass: 'XII IPA 1',
+      tahfidzLevel: '30 Juz',
+      city: 'Jakarta',
+      province: 'DKI Jakarta',
+    },
+    {
+      name: 'Siti Maryam Azzahra',
+      gender: Gender.FEMALE,
+      graduationYear: 2020,
+      email: 'maryam.azzahra@gmail.com',
+      phone: '081200000002',
+      notes: 'Pengajar tahfidz di pesantren',
+      lastClass: 'XII IPA 1',
+      tahfidzLevel: '30 Juz',
+      city: 'Bogor',
+      province: 'Jawa Barat',
+    },
+    {
+      name: 'Muhammad Firdaus',
+      gender: Gender.MALE,
+      graduationYear: 2021,
+      email: 'firdaus.dokter@gmail.com',
+      phone: '081200000003',
+      notes: 'Dokter umum dan alumni berprestasi',
+      lastClass: 'XII IPA 1',
+      tahfidzLevel: '20 Juz',
+      city: 'Jakarta',
+      province: 'DKI Jakarta',
+    },
+    {
+      name: 'Fatimah Nur Rahma',
+      gender: Gender.FEMALE,
+      graduationYear: 2021,
+      email: 'fatimah.rahma@gmail.com',
+      phone: '081200000004',
+      notes: 'Pengusaha muda di bidang fashion muslim',
+      lastClass: 'XII IPA 1',
+      tahfidzLevel: '15 Juz',
+      city: 'Bandung',
+      province: 'Jawa Barat',
+    },
+    {
+      name: 'Abdullah Hasan',
+      gender: Gender.MALE,
+      graduationYear: 2022,
+      email: 'abdullah.hasan@gmail.com',
+      phone: '081200000005',
+      notes: 'Imam dan guru tahfidz',
+      lastClass: 'XII IPA 1',
+      tahfidzLevel: '30 Juz',
+      city: 'Sukabumi',
+      province: 'Jawa Barat',
+    },
+    {
+      name: 'Aisyah Putri Dewi',
+      gender: Gender.FEMALE,
+      graduationYear: 2022,
+      email: 'aisyah.dewi@gmail.com',
+      phone: '081200000006',
+      notes: 'Guru Bahasa Indonesia',
+      lastClass: 'XII IPS 1',
+      tahfidzLevel: '10 Juz',
+      city: 'Sukabumi',
+      province: 'Jawa Barat',
+    },
+    {
+      name: 'Umar Faruk',
+      gender: Gender.MALE,
+      graduationYear: 2023,
+      email: 'umar.faruk@gmail.com',
+      phone: '081200000007',
+      notes: 'Fresh graduate, sedang mencari pekerjaan',
+      lastClass: 'XII IPA 1',
+      tahfidzLevel: '25 Juz',
+      city: 'Sukabumi',
+      province: 'Jawa Barat',
+    },
+    {
+      name: 'Khadijah Salsabila',
+      gender: Gender.FEMALE,
+      graduationYear: 2023,
+      email: 'khadijah.sabil@gmail.com',
+      phone: '081200000008',
+      notes: 'Mahasiswa Fakultas Ekonomi UI',
+      lastClass: 'XII IPS 1',
+      tahfidzLevel: '15 Juz',
+      city: 'Depok',
+      province: 'Jawa Barat',
+    },
   ];
 
   const alumni = [];
@@ -1799,17 +2650,56 @@ async function main() {
 
   // Create Alumni Careers
   const careerHistory = [
-    { alumniIdx: 0, careers: [
-      { company: 'PT Startup Indonesia', position: 'Junior Developer', startDate: new Date('2020-07-01'), endDate: new Date('2022-06-30'), isCurrent: false },
-      { company: 'PT Telkom Indonesia', position: 'Software Engineer', startDate: new Date('2022-07-01'), endDate: null, isCurrent: true },
-    ]},
-    { alumniIdx: 2, careers: [
-      { company: 'RSUD Sukabumi', position: 'Dokter Muda', startDate: new Date('2021-06-01'), endDate: new Date('2023-05-31'), isCurrent: false },
-      { company: 'RS Islam Jakarta', position: 'Dokter', startDate: new Date('2023-06-01'), endDate: null, isCurrent: true },
-    ]},
-    { alumniIdx: 3, careers: [
-      { company: 'CV Berkah Jaya', position: 'Founder', startDate: new Date('2022-01-01'), endDate: null, isCurrent: true },
-    ]},
+    {
+      alumniIdx: 0,
+      careers: [
+        {
+          company: 'PT Startup Indonesia',
+          position: 'Junior Developer',
+          startDate: new Date('2020-07-01'),
+          endDate: new Date('2022-06-30'),
+          isCurrent: false,
+        },
+        {
+          company: 'PT Telkom Indonesia',
+          position: 'Software Engineer',
+          startDate: new Date('2022-07-01'),
+          endDate: null,
+          isCurrent: true,
+        },
+      ],
+    },
+    {
+      alumniIdx: 2,
+      careers: [
+        {
+          company: 'RSUD Sukabumi',
+          position: 'Dokter Muda',
+          startDate: new Date('2021-06-01'),
+          endDate: new Date('2023-05-31'),
+          isCurrent: false,
+        },
+        {
+          company: 'RS Islam Jakarta',
+          position: 'Dokter',
+          startDate: new Date('2023-06-01'),
+          endDate: null,
+          isCurrent: true,
+        },
+      ],
+    },
+    {
+      alumniIdx: 3,
+      careers: [
+        {
+          company: 'CV Berkah Jaya',
+          position: 'Founder',
+          startDate: new Date('2022-01-01'),
+          endDate: null,
+          isCurrent: true,
+        },
+      ],
+    },
   ];
 
   let totalCareers = 0;
@@ -1834,15 +2724,42 @@ async function main() {
 
   // Create Alumni Education
   const educationHistory = [
-    { alumniIdx: 0, education: [
-      { institution: 'Universitas Indonesia', degree: 'S1', field: 'Teknik Informatika', startYear: 2020, endYear: 2024 },
-    ]},
-    { alumniIdx: 2, education: [
-      { institution: 'Universitas Airlangga', degree: 'S1', field: 'Kedokteran Umum', startYear: 2021, endYear: 2027 },
-    ]},
-    { alumniIdx: 7, education: [
-      { institution: 'Universitas Indonesia', degree: 'S1', field: 'Ekonomi', startYear: 2023, endYear: null },
-    ]},
+    {
+      alumniIdx: 0,
+      education: [
+        {
+          institution: 'Universitas Indonesia',
+          degree: 'S1',
+          field: 'Teknik Informatika',
+          startYear: 2020,
+          endYear: 2024,
+        },
+      ],
+    },
+    {
+      alumniIdx: 2,
+      education: [
+        {
+          institution: 'Universitas Airlangga',
+          degree: 'S1',
+          field: 'Kedokteran Umum',
+          startYear: 2021,
+          endYear: 2027,
+        },
+      ],
+    },
+    {
+      alumniIdx: 7,
+      education: [
+        {
+          institution: 'Universitas Indonesia',
+          degree: 'S1',
+          field: 'Ekonomi',
+          startYear: 2023,
+          endYear: null,
+        },
+      ],
+    },
   ];
 
   let totalEducation = 0;
@@ -1867,12 +2784,38 @@ async function main() {
 
   // Create Alumni Donations
   const donationsData = [
-    { alumniIdx: 0, type: DonationType.MONETARY, amount: 5000000, description: 'Donasi pembangunan musholla' },
-    { alumniIdx: 2, type: DonationType.MONETARY, amount: 10000000, description: 'Donasi beasiswa santri kurang mampu' },
-    { alumniIdx: 3, type: DonationType.GOODS, amount: 2000000, description: 'Sumbangan buku pelajaran' },
-    { alumniIdx: 4, type: DonationType.SERVICE, amount: 0, description: 'Mengajar tahfidz selama 1 bulan' },
+    {
+      alumniIdx: 0,
+      type: DonationType.MONETARY,
+      amount: 5000000,
+      description: 'Donasi pembangunan musholla',
+    },
+    {
+      alumniIdx: 2,
+      type: DonationType.MONETARY,
+      amount: 10000000,
+      description: 'Donasi beasiswa santri kurang mampu',
+    },
+    {
+      alumniIdx: 3,
+      type: DonationType.GOODS,
+      amount: 2000000,
+      description: 'Sumbangan buku pelajaran',
+    },
+    {
+      alumniIdx: 4,
+      type: DonationType.SERVICE,
+      amount: 0,
+      description: 'Mengajar tahfidz selama 1 bulan',
+    },
     { alumniIdx: 0, type: DonationType.MONETARY, amount: 3000000, description: 'Donasi Ramadhan' },
-    { alumniIdx: 2, type: DonationType.MONETARY, amount: 5000000, description: 'Donasi kurban', isAnonymous: true },
+    {
+      alumniIdx: 2,
+      type: DonationType.MONETARY,
+      amount: 5000000,
+      description: 'Donasi kurban',
+      isAnonymous: true,
+    },
   ];
 
   for (let idx = 0; idx < donationsData.length; idx++) {
@@ -1895,10 +2838,42 @@ async function main() {
 
   // Create Alumni Events
   const eventsData = [
-    { type: AlumniEventType.REUNION, name: 'Reuni Akbar Alumni 2024', description: 'Reuni tahunan seluruh alumni Pondok Pesantren Al-Hikmah', eventDate: new Date('2024-08-17'), location: 'Aula Utama PP Al-Hikmah', capacity: 500, status: 'completed' },
-    { type: AlumniEventType.CHARITY, name: 'Bakti Sosial Alumni', description: 'Kegiatan bakti sosial alumni untuk masyarakat sekitar', eventDate: new Date('2024-12-15'), location: 'Desa Cipansor', capacity: 100, status: 'upcoming' },
-    { type: AlumniEventType.SEMINAR, name: 'Seminar Karir untuk Santri', description: 'Sharing session dari alumni sukses untuk santri', eventDate: new Date('2025-01-20'), location: 'Gedung Serba Guna', capacity: 200, status: 'upcoming' },
-    { type: AlumniEventType.GATHERING, name: 'Halal Bihalal Alumni 1445 H', description: 'Silaturahmi pasca lebaran', eventDate: new Date('2024-04-28'), location: 'Masjid PP Al-Hikmah', capacity: 300, status: 'completed' },
+    {
+      type: AlumniEventType.REUNION,
+      name: 'Reuni Akbar Alumni 2024',
+      description: 'Reuni tahunan seluruh alumni Pondok Pesantren Al-Hikmah',
+      eventDate: new Date('2024-08-17'),
+      location: 'Aula Utama PP Al-Hikmah',
+      capacity: 500,
+      status: 'completed',
+    },
+    {
+      type: AlumniEventType.CHARITY,
+      name: 'Bakti Sosial Alumni',
+      description: 'Kegiatan bakti sosial alumni untuk masyarakat sekitar',
+      eventDate: new Date('2024-12-15'),
+      location: 'Desa Cipansor',
+      capacity: 100,
+      status: 'upcoming',
+    },
+    {
+      type: AlumniEventType.SEMINAR,
+      name: 'Seminar Karir untuk Santri',
+      description: 'Sharing session dari alumni sukses untuk santri',
+      eventDate: new Date('2025-01-20'),
+      location: 'Gedung Serba Guna',
+      capacity: 200,
+      status: 'upcoming',
+    },
+    {
+      type: AlumniEventType.GATHERING,
+      name: 'Halal Bihalal Alumni 1445 H',
+      description: 'Silaturahmi pasca lebaran',
+      eventDate: new Date('2024-04-28'),
+      location: 'Masjid PP Al-Hikmah',
+      capacity: 300,
+      status: 'completed',
+    },
   ];
 
   const events = [];
@@ -2004,33 +2979,33 @@ async function main() {
   console.log('\n🔑 Login Credentials:');
   console.log('\n   === SUPER ADMIN (GLOBAL) ===');
   console.log('   Super Admin: superadmin@cipansor.id / SuperAdmin123!');
-  
+
   console.log('\n   === YAYASAN ===');
   console.log('   Ketua Yayasan: ketua@cipansor.id / Ketua123!');
   console.log('   Pembina Yayasan: pembina@cipansor.id / Pembina123!');
   console.log('   Pengawas Yayasan: pengawas@cipansor.id / Pengawas123!');
-  
+
   console.log('\n   === PAUD ===');
   console.log('   Admin PAUD: admin@paud.sch.id / Admin123!');
   console.log('   Siswa PAUD: student4@paud.sch.id / Student123!');
-  
+
   console.log('\n   === SD IT ===');
   console.log('   Admin SD IT: admin@sdit.sch.id / Admin123!');
   console.log('   Kepala Sekolah SD IT: kepala@sdit.sch.id / Kepala123!');
   console.log('   Guru SD IT: fatimah@sdit.sch.id / Teacher123!');
   console.log('   Orang Tua SD IT: parent3@sdit.sch.id / Parent123!');
   console.log('   Siswa SD IT: student3@sdit.sch.id / Student123!');
-  
+
   console.log('\n   === SMP IT ===');
   console.log('   Admin SMP IT: admin@smpit.sch.id / Admin123!');
   console.log('   Kepala Sekolah SMP IT: kepala@smpit.sch.id / Kepala123!');
   console.log('   Guru SMP IT: ahmad@smpit.sch.id / Teacher123!');
   console.log('   Orang Tua SMP IT: parent1@smpit.sch.id / Parent123!');
   console.log('   Siswa SMP IT: student1@smpit.sch.id / Student123!');
-  
-  console.log('\n   === SMA AL-QUR\'AN ===');
-  console.log('   Admin SMA Al-Qur\'an: admin@smaq.sch.id / Admin123!');
-  console.log('   Siswa SMA Al-Qur\'an: student5@smaq.sch.id / Student123!');
+
+  console.log("\n   === SMA AL-QUR'AN ===");
+  console.log("   Admin SMA Al-Qur'an: admin@smaq.sch.id / Admin123!");
+  console.log("   Siswa SMA Al-Qur'an: student5@smaq.sch.id / Student123!");
 
   // ============================================
   // PHASE 9: PAUD Enhancement Seeds

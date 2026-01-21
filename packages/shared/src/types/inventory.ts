@@ -1,34 +1,34 @@
 export enum AssetStatus {
-  ACTIVE = 'ACTIVE',
-  MAINTENANCE = 'MAINTENANCE',
-  DAMAGED = 'DAMAGED',
-  DISPOSED = 'DISPOSED',
+  ACTIVE = "ACTIVE",
+  MAINTENANCE = "MAINTENANCE",
+  DAMAGED = "DAMAGED",
+  DISPOSED = "DISPOSED",
 }
 
 export enum AssetMaintenanceStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED',
-  REJECTED = 'REJECTED',
-  CANCELLED = 'CANCELLED',
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  IN_PROGRESS = "IN_PROGRESS",
+  COMPLETED = "COMPLETED",
+  REJECTED = "REJECTED",
+  CANCELLED = "CANCELLED",
 }
 
 export enum AssetDisposalReason {
-  SOLD = 'SOLD',
-  LOST = 'LOST',
-  DAMAGED = 'DAMAGED',
-  DONATED = 'DONATED',
-  OBSOLETE = 'OBSOLETE',
-  OTHER = 'OTHER',
+  SOLD = "SOLD",
+  LOST = "LOST",
+  DAMAGED = "DAMAGED",
+  DONATED = "DONATED",
+  OBSOLETE = "OBSOLETE",
+  OTHER = "OTHER",
 }
 
 export enum AssetCondition {
-  EXCELLENT = 'EXCELLENT',
-  GOOD = 'GOOD',
-  FAIR = 'FAIR',
-  POOR = 'POOR',
-  BROKEN = 'BROKEN',
+  EXCELLENT = "EXCELLENT",
+  GOOD = "GOOD",
+  FAIR = "FAIR",
+  POOR = "POOR",
+  BROKEN = "BROKEN",
 }
 
 export interface AssetCategory {

@@ -1,13 +1,26 @@
-'use client';
+"use client";
 
-import { use } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, GraduationCap, Trash2, Edit, BookOpen, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { use } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  GraduationCap,
+  Trash2,
+  Edit,
+  BookOpen,
+  Plus,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -15,27 +28,31 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { toast } from 'sonner';
+} from "@/components/ui/table";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { toast } from "sonner";
 import {
   useCurriculum,
   useDeleteCurriculum,
   useRemoveSubjectFromCurriculum,
   SUBJECT_TYPE_LABELS,
   SubjectType,
-} from '@/hooks/use-curriculum';
+} from "@/hooks/use-curriculum";
 
 function getTypeBadgeColor(type: SubjectType) {
   const colors: Record<SubjectType, string> = {
-    REQUIRED: 'bg-blue-100 text-blue-800',
-    ELECTIVE: 'bg-green-100 text-green-800',
-    EXTRACURRICULAR: 'bg-purple-100 text-purple-800',
+    REQUIRED: "bg-blue-100 text-blue-800",
+    ELECTIVE: "bg-green-100 text-green-800",
+    EXTRACURRICULAR: "bg-purple-100 text-purple-800",
   };
   return colors[type];
 }
 
-export default function CurriculumDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function CurriculumDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const router = useRouter();
 
@@ -46,10 +63,10 @@ export default function CurriculumDetailPage({ params }: { params: Promise<{ id:
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(id);
-      toast.success('Kurikulum berhasil dihapus');
-      router.push('/curriculum');
+      toast.success("Kurikulum berhasil dihapus");
+      router.push("/curriculum");
     } catch {
-      toast.error('Gagal menghapus kurikulum');
+      toast.error("Gagal menghapus kurikulum");
     }
   };
 
@@ -59,9 +76,9 @@ export default function CurriculumDetailPage({ params }: { params: Promise<{ id:
         curriculumId: id,
         curriculumSubjectId,
       });
-      toast.success('Mata pelajaran berhasil dihapus dari kurikulum');
+      toast.success("Mata pelajaran berhasil dihapus dari kurikulum");
     } catch {
-      toast.error('Gagal menghapus mata pelajaran');
+      toast.error("Gagal menghapus mata pelajaran");
     }
   };
 
@@ -86,13 +103,17 @@ export default function CurriculumDetailPage({ params }: { params: Promise<{ id:
   }
 
   // Group subjects by semester
-  const subjectsBySemester = curriculum.subjects?.reduce((acc, cs) => {
-    if (!acc[cs.semester]) {
-      acc[cs.semester] = [];
-    }
-    acc[cs.semester].push(cs);
-    return acc;
-  }, {} as Record<number, typeof curriculum.subjects>) || {};
+  const subjectsBySemester =
+    curriculum.subjects?.reduce(
+      (acc, cs) => {
+        if (!acc[cs.semester]) {
+          acc[cs.semester] = [];
+        }
+        acc[cs.semester].push(cs);
+        return acc;
+      },
+      {} as Record<number, typeof curriculum.subjects>,
+    ) || {};
 
   const semesters = Object.keys(subjectsBySemester).map(Number).sort();
 
@@ -107,9 +128,11 @@ export default function CurriculumDetailPage({ params }: { params: Promise<{ id:
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight">{curriculum.name}</h1>
-            <Badge variant={curriculum.isActive ? 'default' : 'secondary'}>
-              {curriculum.isActive ? 'Aktif' : 'Nonaktif'}
+            <h1 className="text-3xl font-bold tracking-tight">
+              {curriculum.name}
+            </h1>
+            <Badge variant={curriculum.isActive ? "default" : "secondary"}>
+              {curriculum.isActive ? "Aktif" : "Nonaktif"}
             </Badge>
           </div>
           <p className="text-muted-foreground">Kode: {curriculum.code}</p>
@@ -157,24 +180,32 @@ export default function CurriculumDetailPage({ params }: { params: Promise<{ id:
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Unit</span>
-                <span className="font-medium">{curriculum.unit?.name || '-'}</span>
+                <span className="font-medium">
+                  {curriculum.unit?.name || "-"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Tahun Ajaran</span>
-                <span className="font-medium">{curriculum.academicYear?.name || '-'}</span>
+                <span className="font-medium">
+                  {curriculum.academicYear?.name || "-"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Tingkat Kelas</span>
-                <span className="font-medium">Kelas {curriculum.gradeLevel}</span>
+                <span className="font-medium">
+                  Kelas {curriculum.gradeLevel}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total Mapel</span>
-                <span className="font-medium">{curriculum.subjects?.length || 0}</span>
+                <span className="font-medium">
+                  {curriculum.subjects?.length || 0}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Status</span>
-                <Badge variant={curriculum.isActive ? 'default' : 'secondary'}>
-                  {curriculum.isActive ? 'Aktif' : 'Nonaktif'}
+                <Badge variant={curriculum.isActive ? "default" : "secondary"}>
+                  {curriculum.isActive ? "Aktif" : "Nonaktif"}
                 </Badge>
               </div>
             </div>
@@ -183,7 +214,9 @@ export default function CurriculumDetailPage({ params }: { params: Promise<{ id:
               <>
                 <Separator />
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Deskripsi</p>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Deskripsi
+                  </p>
                   <p className="text-sm">{curriculum.description}</p>
                 </div>
               </>
@@ -200,7 +233,9 @@ export default function CurriculumDetailPage({ params }: { params: Promise<{ id:
                   <BookOpen className="h-5 w-5" />
                   Mata Pelajaran
                 </CardTitle>
-                <CardDescription>Daftar mata pelajaran dalam kurikulum ini</CardDescription>
+                <CardDescription>
+                  Daftar mata pelajaran dalam kurikulum ini
+                </CardDescription>
               </div>
               <Button asChild>
                 <Link href={`/curriculum/curriculums/${id}/add-subject`}>
@@ -238,22 +273,32 @@ export default function CurriculumDetailPage({ params }: { params: Promise<{ id:
                                   {idx + 1}
                                 </TableCell>
                                 <TableCell className="font-medium">
-                                  {cs.subject?.name || '-'}
+                                  {cs.subject?.name || "-"}
                                 </TableCell>
                                 <TableCell className="font-mono text-sm">
-                                  {cs.subject?.code || '-'}
+                                  {cs.subject?.code || "-"}
                                 </TableCell>
                                 <TableCell>
                                   {cs.subject?.type && (
-                                    <Badge className={getTypeBadgeColor(cs.subject.type)}>
+                                    <Badge
+                                      className={getTypeBadgeColor(
+                                        cs.subject.type,
+                                      )}
+                                    >
                                       {SUBJECT_TYPE_LABELS[cs.subject.type]}
                                     </Badge>
                                   )}
                                 </TableCell>
-                                <TableCell>{cs.subject?.credits || 0}</TableCell>
                                 <TableCell>
-                                  <Badge variant={cs.isRequired ? 'default' : 'outline'}>
-                                    {cs.isRequired ? 'Wajib' : 'Pilihan'}
+                                  {cs.subject?.credits || 0}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant={
+                                      cs.isRequired ? "default" : "outline"
+                                    }
+                                  >
+                                    {cs.isRequired ? "Wajib" : "Pilihan"}
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
@@ -278,7 +323,9 @@ export default function CurriculumDetailPage({ params }: { params: Promise<{ id:
               ) : (
                 <div className="flex flex-col items-center justify-center py-8">
                   <BookOpen className="h-12 w-12 text-muted-foreground" />
-                  <p className="mt-4 text-muted-foreground">Belum ada mata pelajaran</p>
+                  <p className="mt-4 text-muted-foreground">
+                    Belum ada mata pelajaran
+                  </p>
                   <Button asChild className="mt-4" variant="outline">
                     <Link href={`/curriculum/curriculums/${id}/add-subject`}>
                       Tambah Mata Pelajaran

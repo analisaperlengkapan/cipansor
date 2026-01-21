@@ -37,7 +37,11 @@ const MIN_ASSESSMENTS_PER_ASPECT = 3;
 
 type ReportAccessContext = { role: UserRole; unitId: string | null; userId: string };
 
-async function assertCanAccessStudent(studentId: string, unitId: string, context: ReportAccessContext) {
+async function assertCanAccessStudent(
+  studentId: string,
+  unitId: string,
+  context: ReportAccessContext
+) {
   if (context.role === UserRole.SUPER_ADMIN) return;
 
   if (context.role === UserRole.PARENT) {
@@ -67,7 +71,8 @@ export async function findAllReports(
   query: ListReportsQuery,
   context: { role: string; unitId?: string | null; userId: string }
 ) {
-  const { page, limit, studentId, academicYearId, unitId, semester, classId, status, search } = query;
+  const { page, limit, studentId, academicYearId, unitId, semester, classId, status, search } =
+    query;
   const skip = (page - 1) * limit;
 
   const where: Prisma.PAUDNarrativeReportWhereInput = {
@@ -183,10 +188,7 @@ export async function findReportById(id: string, context: ReportAccessContext) {
 // CREATE REPORT
 // ============================================
 
-export async function createReport(
-  input: CreateReportInput,
-  context: ReportAccessContext
-) {
+export async function createReport(input: CreateReportInput, context: ReportAccessContext) {
   // Validate student exists
   const student = await prisma.student.findUnique({
     where: { id: input.studentId },
@@ -214,7 +216,9 @@ export async function createReport(
   });
 
   if (existing) {
-    throw Errors.conflict('Report already exists for this student in this semester. Use update instead.');
+    throw Errors.conflict(
+      'Report already exists for this student in this semester. Use update instead.'
+    );
   }
 
   // Validate academic year
@@ -344,7 +348,9 @@ export async function generateReportFromAssessments(
   });
 
   if (existing && !regenerate) {
-    throw Errors.conflict('Report already exists. Set regenerate=true to overwrite draft, or update existing report.');
+    throw Errors.conflict(
+      'Report already exists. Set regenerate=true to overwrite draft, or update existing report.'
+    );
   }
 
   if (existing && existing.status !== 'DRAFT') {
@@ -685,7 +691,11 @@ export async function addPhoto(
   });
 }
 
-export async function updatePhoto(photoId: string, input: UpdatePhotoInput, context: ReportAccessContext) {
+export async function updatePhoto(
+  photoId: string,
+  input: UpdatePhotoInput,
+  context: ReportAccessContext
+) {
   const photo = await prisma.pAUDReportPhoto.findUnique({
     where: { id: photoId },
     include: {
@@ -810,7 +820,8 @@ function generateNarratives(
 
   for (const { aspect, assessments } of aspectAssessments) {
     if (assessments.length < MIN_ASSESSMENTS_PER_ASPECT) {
-      narratives[aspect] = `Data penilaian untuk aspek ${ASPECT_NAMES[aspect]} belum cukup untuk membuat narasi. Minimal ${MIN_ASSESSMENTS_PER_ASPECT} penilaian diperlukan.`;
+      narratives[aspect] =
+        `Data penilaian untuk aspek ${ASPECT_NAMES[aspect]} belum cukup untuk membuat narasi. Minimal ${MIN_ASSESSMENTS_PER_ASPECT} penilaian diperlukan.`;
       continue;
     }
 
@@ -889,11 +900,9 @@ function calculateTrend(
   const secondHalf = assessments.slice(Math.ceil(assessments.length / 2));
 
   const firstAvg =
-    firstHalf.reduce((sum, a) => sum + levelValues[a.achievementLevel], 0) /
-    firstHalf.length;
+    firstHalf.reduce((sum, a) => sum + levelValues[a.achievementLevel], 0) / firstHalf.length;
   const secondAvg =
-    secondHalf.reduce((sum, a) => sum + levelValues[a.achievementLevel], 0) /
-    secondHalf.length;
+    secondHalf.reduce((sum, a) => sum + levelValues[a.achievementLevel], 0) / secondHalf.length;
 
   if (secondAvg > firstAvg + 0.3) return 'improving';
   if (secondAvg < firstAvg - 0.3) return 'declining';
@@ -996,8 +1005,7 @@ async function getAttendanceSummary(
   for (const record of attendanceRecords) {
     if (record.status === 'PRESENT') summary.presentDays++;
     else if (record.status === 'SICK') summary.sickDays++;
-    else if (record.status === 'EXCUSED')
-      summary.excusedDays++;
+    else if (record.status === 'EXCUSED') summary.excusedDays++;
   }
 
   return summary;

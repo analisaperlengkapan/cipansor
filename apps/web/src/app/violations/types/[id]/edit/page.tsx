@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -17,30 +23,30 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 import {
   useViolationType,
   useUpdateViolationType,
   VIOLATION_CATEGORIES,
   ViolationCategory,
-} from '@/hooks/use-violations';
+} from "@/hooks/use-violations";
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Nama wajib diisi'),
+  name: z.string().min(1, "Nama wajib diisi"),
   description: z.string().optional(),
-  category: z.string().min(1, 'Kategori wajib dipilih'),
-  points: z.coerce.number().min(1, 'Poin minimal 1'),
+  category: z.string().min(1, "Kategori wajib dipilih"),
+  points: z.coerce.number().min(1, "Poin minimal 1"),
   isActive: z.boolean(),
 });
 
@@ -57,9 +63,9 @@ export default function EditViolationTypePage() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      description: '',
-      category: '',
+      name: "",
+      description: "",
+      category: "",
       points: 1,
       isActive: true,
     },
@@ -69,7 +75,7 @@ export default function EditViolationTypePage() {
     if (violationType) {
       form.reset({
         name: violationType.name,
-        description: violationType.description || '',
+        description: violationType.description || "",
         category: violationType.category,
         points: violationType.points,
         isActive: violationType.isActive,
@@ -87,10 +93,10 @@ export default function EditViolationTypePage() {
           description: data.description || undefined,
         },
       });
-      toast.success('Jenis pelanggaran berhasil diperbarui');
-      router.push('/violations');
+      toast.success("Jenis pelanggaran berhasil diperbarui");
+      router.push("/violations");
     } catch {
-      toast.error('Gagal memperbarui jenis pelanggaran');
+      toast.error("Gagal memperbarui jenis pelanggaran");
     }
   };
 
@@ -105,7 +111,9 @@ export default function EditViolationTypePage() {
   if (!violationType) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">Jenis pelanggaran tidak ditemukan</p>
+        <p className="text-muted-foreground">
+          Jenis pelanggaran tidak ditemukan
+        </p>
         <Button variant="link" asChild>
           <Link href="/violations">Kembali ke daftar</Link>
         </Button>
@@ -123,7 +131,9 @@ export default function EditViolationTypePage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Edit Jenis Pelanggaran</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Edit Jenis Pelanggaran
+          </h1>
           <p className="text-muted-foreground">Perbarui jenis pelanggaran</p>
         </div>
       </div>
@@ -143,7 +153,10 @@ export default function EditViolationTypePage() {
                   <FormItem>
                     <FormLabel>Nama</FormLabel>
                     <FormControl>
-                      <Input placeholder="Contoh: Tidak sholat berjamaah" {...field} />
+                      <Input
+                        placeholder="Contoh: Tidak sholat berjamaah"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -175,7 +188,10 @@ export default function EditViolationTypePage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Kategori</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih kategori" />
@@ -189,7 +205,9 @@ export default function EditViolationTypePage() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormDescription>Tingkat keparahan pelanggaran</FormDescription>
+                      <FormDescription>
+                        Tingkat keparahan pelanggaran
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -219,11 +237,15 @@ export default function EditViolationTypePage() {
                     <div className="space-y-0.5">
                       <FormLabel className="text-base">Status Aktif</FormLabel>
                       <FormDescription>
-                        Jenis pelanggaran yang aktif dapat digunakan untuk pencatatan
+                        Jenis pelanggaran yang aktif dapat digunakan untuk
+                        pencatatan
                       </FormDescription>
                     </div>
                     <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
                     </FormControl>
                   </FormItem>
                 )}
@@ -234,7 +256,9 @@ export default function EditViolationTypePage() {
                   <Link href="/violations">Batal</Link>
                 </Button>
                 <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
+                  {updateMutation.isPending
+                    ? "Menyimpan..."
+                    : "Simpan Perubahan"}
                 </Button>
               </div>
             </form>

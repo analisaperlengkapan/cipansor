@@ -112,15 +112,17 @@ export const murojaahService = {
         recordedById,
         enrollmentId,
         halaqohId,
-        mistakes: mistakes ? {
-          create: mistakes.map(m => ({
-            mistakeType: m.mistakeType as TahfidzMistakeType,
-            juz: m.juz,
-            surahNumber: m.surahNumber,
-            ayahNumber: m.ayahNumber,
-            description: m.description,
-          })),
-        } : undefined,
+        mistakes: mistakes
+          ? {
+              create: mistakes.map((m) => ({
+                mistakeType: m.mistakeType as TahfidzMistakeType,
+                juz: m.juz,
+                surahNumber: m.surahNumber,
+                ayahNumber: m.ayahNumber,
+                description: m.description,
+              })),
+            }
+          : undefined,
       },
       include: {
         mistakes: true,
@@ -152,7 +154,7 @@ export const murojaahService = {
 
       // Then create new ones
       data.mistakes = {
-        create: mistakes.map(m => ({
+        create: mistakes.map((m) => ({
           mistakeType: m.mistakeType as TahfidzMistakeType,
           juz: m.juz,
           surahNumber: m.surahNumber,
@@ -203,5 +205,5 @@ export const murojaahService = {
     return prisma.murojaahMistake.delete({
       where: { id: mistakeId },
     });
-  }
+  },
 };

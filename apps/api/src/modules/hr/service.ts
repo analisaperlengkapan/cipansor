@@ -1,5 +1,12 @@
-import { prisma } from "../../lib/prisma";
-import { Prisma, LeaveStatus, StaffAttendanceStatus, LeaveType, UserRole, User } from "@prisma/client";
+import { prisma } from '../../lib/prisma';
+import {
+  Prisma,
+  LeaveStatus,
+  StaffAttendanceStatus,
+  LeaveType,
+  UserRole,
+  User,
+} from '@prisma/client';
 import {
   CreateStaffAttendanceInput,
   UpdateStaffAttendanceInput,
@@ -9,9 +16,9 @@ import {
   ApproveLeaveInput,
   CreateEmployeeInput,
   UpdateEmployeeInput,
-} from "./schema";
-import bcrypt from "bcryptjs";
-import { Errors } from "../../middleware/error";
+} from './schema';
+import bcrypt from 'bcryptjs';
+import { Errors } from '../../middleware/error';
 
 // =====================================
 // EMPLOYEE SERVICE (UNIFIED TEACHER & STAFF)
@@ -21,7 +28,7 @@ export async function getEmployees(params: {
   page: number;
   limit: number;
   unitId?: string;
-  role?: "TEACHER" | "STAFF";
+  role?: 'TEACHER' | 'STAFF';
   search?: string;
 }) {
   const { page, limit, unitId, role, search } = params;
@@ -36,10 +43,10 @@ export async function getEmployees(params: {
 
   if (search) {
     where.OR = [
-      { name: { contains: search, mode: "insensitive" } },
-      { email: { contains: search, mode: "insensitive" } },
-      { teacher: { nip: { contains: search, mode: "insensitive" } } },
-      { staff: { nip: { contains: search, mode: "insensitive" } } },
+      { name: { contains: search, mode: 'insensitive' } },
+      { email: { contains: search, mode: 'insensitive' } },
+      { teacher: { nip: { contains: search, mode: 'insensitive' } } },
+      { staff: { nip: { contains: search, mode: 'insensitive' } } },
     ];
   }
 
@@ -48,7 +55,7 @@ export async function getEmployees(params: {
       where,
       skip,
       take: limit,
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       include: {
         unit: { select: { id: true, name: true } },
         teacher: true,
@@ -79,11 +86,11 @@ export async function createEmployee(data: CreateEmployeeInput) {
   // Validate unique email
   const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
   if (existingUser) {
-    throw Errors.badRequest("Email already exists");
+    throw Errors.badRequest('Email already exists');
   }
 
   // Hash password (default to 'password123' if not provided)
-  const password = data.password || "password123";
+  const password = data.password || 'password123';
   const passwordHash = await bcrypt.hash(password, 10);
 
   return prisma.$transaction(async (tx) => {
@@ -100,7 +107,7 @@ export async function createEmployee(data: CreateEmployeeInput) {
     });
 
     // 2. Create Profile based on Role
-    if (data.role === "TEACHER") {
+    if (data.role === 'TEACHER') {
       await tx.teacher.create({
         data: {
           userId: user.id,
@@ -113,7 +120,7 @@ export async function createEmployee(data: CreateEmployeeInput) {
           address: data.address,
           nik: data.nik,
           noKK: data.noKK,
-          religion: data.religion || "ISLAM",
+          religion: data.religion || 'ISLAM',
           joinDate: data.joinDate ? new Date(data.joinDate) : undefined,
           employmentStatus: data.employmentStatus,
           specialization: data.specialization,
@@ -122,7 +129,7 @@ export async function createEmployee(data: CreateEmployeeInput) {
       });
     } else {
       // STAFF
-      if (!data.position) throw Errors.badRequest("Position is required for Staff");
+      if (!data.position) throw Errors.badRequest('Position is required for Staff');
 
       await tx.staff.create({
         data: {
@@ -146,7 +153,7 @@ export async function updateEmployee(id: string, data: UpdateEmployeeInput) {
     include: { teacher: true, staff: true },
   });
 
-  if (!user) throw Errors.notFound("Employee not found");
+  if (!user) throw Errors.notFound('Employee not found');
 
   return prisma.$transaction(async (tx) => {
     // 1. Update User
@@ -162,7 +169,7 @@ export async function updateEmployee(id: string, data: UpdateEmployeeInput) {
     });
 
     // 2. Update Profile
-    if (user.role === "TEACHER" && user.teacher) {
+    if (user.role === 'TEACHER' && user.teacher) {
       await tx.teacher.update({
         where: { id: user.teacher.id },
         data: {
@@ -182,7 +189,7 @@ export async function updateEmployee(id: string, data: UpdateEmployeeInput) {
           unitId: data.unitId, // Update unit if user moved
         },
       });
-    } else if (user.role === "STAFF" && user.staff) {
+    } else if (user.role === 'STAFF' && user.staff) {
       await tx.staff.update({
         where: { id: user.staff.id },
         data: {
@@ -263,7 +270,7 @@ export async function getStaffAttendance(params: {
       where,
       skip,
       take: limit,
-      orderBy: { date: "desc" },
+      orderBy: { date: 'desc' },
       include: {
         staff: {
           include: {
@@ -422,10 +429,7 @@ export async function getLeaves(params: {
   if (staffId) where.staffId = staffId;
   if (teacherId) where.teacherId = teacherId;
   if (unitId) {
-    where.OR = [
-      { staff: { unitId } },
-      { teacher: { unitId } },
-    ];
+    where.OR = [{ staff: { unitId } }, { teacher: { unitId } }];
   }
   if (type) where.type = type;
   if (status) where.status = status;
@@ -452,7 +456,7 @@ export async function getLeaves(params: {
       where,
       skip,
       take: limit,
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       include: {
         staff: {
           include: {
@@ -505,7 +509,7 @@ export async function createLeave(data: CreateLeaveInput) {
   const totalDays = calculateTotalDays(startDate, endDate);
 
   if (!data.staffId && !data.teacherId) {
-    throw Errors.badRequest("Either staffId or teacherId must be provided");
+    throw Errors.badRequest('Either staffId or teacherId must be provided');
   }
 
   return prisma.leave.create({
@@ -569,7 +573,7 @@ export async function approveLeave(id: string, approverId: string, data: Approve
           startDate: { lte: leave.startDate },
           endDate: { gte: leave.startDate },
           isActive: true, // Prefer active, but date match is key
-        }
+        },
       });
 
       if (academicYear) {
@@ -580,8 +584,8 @@ export async function approveLeave(id: string, approverId: string, data: Approve
               userId,
               academicYearId: academicYear.id,
               leaveType: leave.type,
-            }
-          }
+            },
+          },
         });
 
         if (balance) {
@@ -590,7 +594,7 @@ export async function approveLeave(id: string, approverId: string, data: Approve
             data: {
               usedDays: { increment: leave.totalDays },
               remainingDays: { decrement: leave.totalDays },
-            }
+            },
           });
         }
       }
@@ -598,7 +602,7 @@ export async function approveLeave(id: string, approverId: string, data: Approve
 
     const startDate = new Date(leave.startDate);
     const endDate = new Date(leave.endDate);
-    
+
     const dates: Date[] = [];
     const currentDate = new Date(startDate);
     while (currentDate <= endDate) {
@@ -610,42 +614,44 @@ export async function approveLeave(id: string, approverId: string, data: Approve
     const staffId = leave.staffId;
     const teacherId = leave.teacherId;
 
-    const transactionOperations = dates.map((date) => {
-      // Construct upsert args carefully
-      // Note: For upsert to work with @@unique([staffId, teacherId, date]),
-      // we must explicitly set the other ID to null in the where clause
-      // AND ensure the type safety for Prisma client
+    const transactionOperations = dates
+      .map((date) => {
+        // Construct upsert args carefully
+        // Note: For upsert to work with @@unique([staffId, teacherId, date]),
+        // we must explicitly set the other ID to null in the where clause
+        // AND ensure the type safety for Prisma client
 
-      if (staffId) {
-        return prisma.staffAttendance.upsert({
-          where: {
-            staffId_teacherId_date: { staffId: staffId, teacherId: null, date } as any,
-          },
-          update: { status: StaffAttendanceStatus.LEAVE, notes: `Cuti: ${leave.type}` },
-          create: {
-            staffId: staffId,
-            date,
-            status: StaffAttendanceStatus.LEAVE,
-            notes: `Cuti: ${leave.type}`,
-          },
-        });
-      } else if (teacherId) {
-        return prisma.staffAttendance.upsert({
-          where: {
-            staffId_teacherId_date: { staffId: null, teacherId: teacherId, date } as any,
-          },
-          update: { status: StaffAttendanceStatus.LEAVE, notes: `Cuti: ${leave.type}` },
-          create: {
-            teacherId: teacherId,
-            date,
-            status: StaffAttendanceStatus.LEAVE,
-            notes: `Cuti: ${leave.type}`,
-          },
-        });
-      }
+        if (staffId) {
+          return prisma.staffAttendance.upsert({
+            where: {
+              staffId_teacherId_date: { staffId: staffId, teacherId: null, date } as any,
+            },
+            update: { status: StaffAttendanceStatus.LEAVE, notes: `Cuti: ${leave.type}` },
+            create: {
+              staffId: staffId,
+              date,
+              status: StaffAttendanceStatus.LEAVE,
+              notes: `Cuti: ${leave.type}`,
+            },
+          });
+        } else if (teacherId) {
+          return prisma.staffAttendance.upsert({
+            where: {
+              staffId_teacherId_date: { staffId: null, teacherId: teacherId, date } as any,
+            },
+            update: { status: StaffAttendanceStatus.LEAVE, notes: `Cuti: ${leave.type}` },
+            create: {
+              teacherId: teacherId,
+              date,
+              status: StaffAttendanceStatus.LEAVE,
+              notes: `Cuti: ${leave.type}`,
+            },
+          });
+        }
 
-      return null;
-    }).filter((op): op is Prisma.Prisma__StaffAttendanceClient<any, never> => op !== null);
+        return null;
+      })
+      .filter((op): op is Prisma.Prisma__StaffAttendanceClient<any, never> => op !== null);
 
     await prisma.$transaction(transactionOperations);
   }
@@ -663,7 +669,7 @@ export async function cancelLeave(id: string) {
 export async function deleteLeave(id: string) {
   const leave = await prisma.leave.findUnique({ where: { id } });
   if (leave?.status === LeaveStatus.APPROVED) {
-    throw new Error("Cannot delete approved leave");
+    throw new Error('Cannot delete approved leave');
   }
   return prisma.leave.delete({ where: { id } });
 }
@@ -672,10 +678,7 @@ export async function getLeaveBalance(employeeId: string, year: number) {
   // Check both staff and teacher
   const leaves = await prisma.leave.findMany({
     where: {
-      OR: [
-        { staffId: employeeId },
-        { teacherId: employeeId }
-      ],
+      OR: [{ staffId: employeeId }, { teacherId: employeeId }],
       status: LeaveStatus.APPROVED,
       startDate: {
         gte: new Date(year, 0, 1),
@@ -729,9 +732,9 @@ export async function getStaffList(params: {
 
   if (search) {
     where.OR = [
-      { user: { name: { contains: search, mode: "insensitive" } } },
-      { nip: { contains: search, mode: "insensitive" } },
-      { position: { contains: search, mode: "insensitive" } },
+      { user: { name: { contains: search, mode: 'insensitive' } } },
+      { nip: { contains: search, mode: 'insensitive' } },
+      { position: { contains: search, mode: 'insensitive' } },
     ];
   }
 
@@ -740,7 +743,7 @@ export async function getStaffList(params: {
       where,
       skip,
       take: limit,
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       include: {
         user: { select: { id: true, name: true, email: true, phone: true, isActive: true } },
         unit: { select: { id: true, name: true } },

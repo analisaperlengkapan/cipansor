@@ -76,7 +76,7 @@ export const CorrespondenceService = {
       // Typically only generated when status is READY or SIGNED, but we'll allow draft numbering if needed
       // Or just leave it empty for DRAFT
       if (data.status !== 'DRAFT') {
-         letterNumber = await this.generateNumber(data.unitId, 'OUTGOING', academicYearId);
+        letterNumber = await this.generateNumber(data.unitId, 'OUTGOING', academicYearId);
       }
     }
 
@@ -305,7 +305,7 @@ export const CorrespondenceService = {
 
     // Update letter status if it was just received
     if (letter.status === 'SENT' || letter.status === 'ARCHIVED') {
-        // logic to mark letter as 'DISPOSED' or 'IN_PROGRESS' if needed
+      // logic to mark letter as 'DISPOSED' or 'IN_PROGRESS' if needed
     }
 
     // Notify Recipient
@@ -318,19 +318,14 @@ export const CorrespondenceService = {
         entityId: disposition.id,
         entityType: 'DISPOSITION',
         letterId: letter.id,
-        link: `/e-office/letter/${letter.id}`
-      }
+        link: `/e-office/letter/${letter.id}`,
+      },
     });
 
     return disposition;
   },
 
-  async updateDispositionStatus(
-    id: string,
-    status: string,
-    notes?: string,
-    userId?: string
-  ) {
+  async updateDispositionStatus(id: string, status: string, notes?: string, userId?: string) {
     const disposition = await prisma.disposition.findUnique({ where: { id } });
     if (!disposition) throw new Error('Disposition not found');
 
@@ -362,8 +357,8 @@ export const CorrespondenceService = {
           entityId: disposition.id,
           entityType: 'DISPOSITION',
           letterId: disposition.letterId,
-          link: `/e-office/letter/${disposition.letterId}`
-        }
+          link: `/e-office/letter/${disposition.letterId}`,
+        },
       });
     }
 

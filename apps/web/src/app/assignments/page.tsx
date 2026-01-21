@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { useAssignments } from '@/hooks/use-assignments';
-import { useAuthStore } from '@/stores/auth';
-import { AssignmentList } from '@/components/assignments/assignment-list';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import { useAssignments } from "@/hooks/use-assignments";
+import { useAuthStore } from "@/stores/auth";
+import { AssignmentList } from "@/components/assignments/assignment-list";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AssignmentsPage() {
   const router = useRouter();
@@ -16,8 +16,8 @@ export default function AssignmentsPage() {
   const [pageSize, setPageSize] = useState(10);
 
   // Filter based on role
-  const isTeacher = user?.role === 'TEACHER';
-  const isStudent = user?.role === 'STUDENT';
+  const isTeacher = user?.role === "TEACHER";
+  const isStudent = user?.role === "STUDENT";
 
   // For teacher: show assignments they created
   // For student: show assignments for their class (filtered by backend usually, or we pass studentId)
@@ -31,14 +31,16 @@ export default function AssignmentsPage() {
   const { data, isLoading } = useAssignments(queryParams);
 
   return (
-    <MainLayout allowedRoles={['TEACHER', 'STUDENT', 'SUPER_ADMIN', 'UNIT_ADMIN']}>
+    <MainLayout
+      allowedRoles={["TEACHER", "STUDENT", "SUPER_ADMIN", "UNIT_ADMIN"]}
+    >
       <div className="space-y-6">
         <PageHeader
           title="Assignments"
           description="Manage tasks and homework"
           action={
-            isTeacher || user?.role === 'SUPER_ADMIN'
-              ? { label: 'Create Assignment', href: '/assignments/create' }
+            isTeacher || user?.role === "SUPER_ADMIN"
+              ? { label: "Create Assignment", href: "/assignments/create" }
               : undefined
           }
         />

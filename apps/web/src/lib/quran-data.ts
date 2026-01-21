@@ -6,13 +6,13 @@
 export const QURAN_SURAH_JUZ_MAPPING: Record<number, number[]> = {
   // Surahs spanning multiple Juz
   2: [1, 2, 3], // Al-Baqarah
-  3: [3, 4],    // Ali 'Imran
+  3: [3, 4], // Ali 'Imran
   4: [4, 5, 6], // An-Nisa'
-  5: [6, 7],    // Al-Ma'idah
-  6: [7, 8],    // Al-An'am
-  7: [8, 9],    // Al-A'raf
-  8: [9, 10],   // Al-Anfal
-  9: [10, 11],  // At-Taubah
+  5: [6, 7], // Al-Ma'idah
+  6: [7, 8], // Al-An'am
+  7: [8, 9], // Al-A'raf
+  8: [9, 10], // Al-Anfal
+  9: [10, 11], // At-Taubah
   11: [11, 12], // Hud
   12: [12, 13], // Yusuf
   18: [15, 16], // Al-Kahf
@@ -67,11 +67,32 @@ export const QURAN_SURAH_JUZ_MAPPING: Record<number, number[]> = {
 
   // Grouped mappings for remaining
   // Juz 28
-  58: [28], 59: [28], 60: [28], 61: [28], 62: [28], 63: [28], 64: [28], 65: [28], 66: [28],
+  58: [28],
+  59: [28],
+  60: [28],
+  61: [28],
+  62: [28],
+  63: [28],
+  64: [28],
+  65: [28],
+  66: [28],
   // Juz 29
-  67: [29], 68: [29], 69: [29], 70: [29], 71: [29], 72: [29], 73: [29], 74: [29], 75: [29], 76: [29], 77: [29],
+  67: [29],
+  68: [29],
+  69: [29],
+  70: [29],
+  71: [29],
+  72: [29],
+  73: [29],
+  74: [29],
+  75: [29],
+  76: [29],
+  77: [29],
   // Juz 30 (Surah 78 to 114)
-  ...Array.from({ length: 114 - 78 + 1 }, (_, i) => i + 78).reduce((acc, curr) => ({ ...acc, [curr]: [30] }), {}),
+  ...Array.from({ length: 114 - 78 + 1 }, (_, i) => i + 78).reduce(
+    (acc, curr) => ({ ...acc, [curr]: [30] }),
+    {},
+  ),
 };
 
 export function getJuzForSurah(surahNumber: number): number[] {

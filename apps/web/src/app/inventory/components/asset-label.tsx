@@ -30,7 +30,9 @@ export function AssetLabel({ asset }: AssetLabelProps) {
               <QRCodeSVG value={asset.code} size={80} />
             </div>
             <div className="flex-1 overflow-hidden">
-              <h3 className="font-bold text-sm uppercase truncate">{asset.unit?.name || "Cipansor"}</h3>
+              <h3 className="font-bold text-sm uppercase truncate">
+                {asset.unit?.name || "Cipansor"}
+              </h3>
               <p className="text-xs text-gray-600 truncate">{asset.name}</p>
               <p className="font-mono text-lg font-bold mt-1">{asset.code}</p>
             </div>

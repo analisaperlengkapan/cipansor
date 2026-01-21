@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse, PaginatedResponse, User } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { ApiResponse, PaginatedResponse, User } from "@/lib/api";
 
 // ==================== TYPES ====================
 
@@ -20,7 +20,7 @@ export interface Teacher {
     id: string;
     name: string;
   };
-  status: 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE';
+  status: "ACTIVE" | "INACTIVE" | "ON_LEAVE";
   specialization?: string;
   bio?: string;
   createdAt: string;
@@ -31,7 +31,7 @@ export interface Teacher {
 
 interface UseTeachersParams {
   unitId?: string;
-  status?: 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE';
+  status?: "ACTIVE" | "INACTIVE" | "ON_LEAVE";
   isActive?: boolean;
   search?: string;
   page?: number;
@@ -45,9 +45,12 @@ interface UseTeachersParams {
  */
 export function useTeachers(params?: UseTeachersParams) {
   return useQuery({
-    queryKey: ['teachers', params],
+    queryKey: ["teachers", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Teacher>>('/hr/teachers', { params });
+      const response = await api.get<PaginatedResponse<Teacher>>(
+        "/hr/teachers",
+        { params },
+      );
       return response.data;
     },
   });
@@ -58,9 +61,11 @@ export function useTeachers(params?: UseTeachersParams) {
  */
 export function useTeacher(teacherId: string) {
   return useQuery({
-    queryKey: ['teachers', teacherId],
+    queryKey: ["teachers", teacherId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Teacher>>(`/hr/teachers/${teacherId}`);
+      const response = await api.get<ApiResponse<Teacher>>(
+        `/hr/teachers/${teacherId}`,
+      );
       return response.data.data;
     },
     enabled: !!teacherId,

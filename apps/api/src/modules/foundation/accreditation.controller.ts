@@ -39,7 +39,7 @@ export async function submitAssessment(req: Request, res: Response, next: NextFu
   try {
     const { unitId, academicYearId, assessments, assessmentDate } = req.body;
     const assessorId = req.user!.sub;
-    
+
     const result = await accreditationService.createAccreditationAssessment({
       unitId,
       academicYearId,
@@ -47,10 +47,8 @@ export async function submitAssessment(req: Request, res: Response, next: NextFu
       assessmentDate: new Date(assessmentDate ?? Date.now()),
       assessments,
     });
-    
-    return res.status(201).json(
-      ApiResponse.success(result, 'Assessment submitted successfully')
-    );
+
+    return res.status(201).json(ApiResponse.success(result, 'Assessment submitted successfully'));
   } catch (error) {
     next(error);
   }
@@ -61,12 +59,9 @@ export async function simulateScore(req: Request, res: Response, next: NextFunct
   try {
     const { unitId } = req.params;
     const { scores } = req.body;
-    
-    const simulation = await accreditationService.simulateAccreditationScore(
-      unitId,
-      scores ?? {}
-    );
-    
+
+    const simulation = await accreditationService.simulateAccreditationScore(unitId, scores ?? {});
+
     return res.json(ApiResponse.success(simulation, 'Simulation completed'));
   } catch (error) {
     next(error);

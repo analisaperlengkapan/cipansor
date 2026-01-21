@@ -10,7 +10,7 @@ import { LoginInput, RegisterInput, RefreshTokenInput, ChangePasswordInput } fro
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const input: LoginInput = req.body;
   const result = await authService.login(input);
-  
+
   res.json({
     success: true,
     data: result,
@@ -24,9 +24,9 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 export const register = asyncHandler(async (req: Request, res: Response) => {
   const input: RegisterInput = req.body;
   const creatorRole = req.user!.role;
-  
+
   const user = await authService.register(input, creatorRole);
-  
+
   res.status(201).json({
     success: true,
     data: user,
@@ -40,7 +40,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 export const refreshToken = asyncHandler(async (req: Request, res: Response) => {
   const { refreshToken }: RefreshTokenInput = req.body;
   const tokens = await authService.refreshToken(refreshToken);
-  
+
   res.json({
     success: true,
     data: tokens,
@@ -54,9 +54,9 @@ export const refreshToken = asyncHandler(async (req: Request, res: Response) => 
 export const logout = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.sub;
   const { refreshToken } = req.body;
-  
+
   await authService.logout(userId, refreshToken);
-  
+
   res.json({
     success: true,
     data: { message: 'Logged out successfully' },
@@ -70,7 +70,7 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
 export const getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.sub;
   const user = await authService.getCurrentUser(userId);
-  
+
   res.json({
     success: true,
     data: user,
@@ -84,9 +84,9 @@ export const getCurrentUser = asyncHandler(async (req: Request, res: Response) =
 export const changePassword = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.sub;
   const input: ChangePasswordInput = req.body;
-  
+
   const result = await authService.changePassword(userId, input);
-  
+
   res.json({
     success: true,
     data: result,

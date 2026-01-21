@@ -21,7 +21,9 @@ export const campaignController = {
         unitId: unitId as string,
       });
 
-      res.json(ApiResponse.success(result.data, 'Campaigns retrieved successfully', result.pagination));
+      res.json(
+        ApiResponse.success(result.data, 'Campaigns retrieved successfully', result.pagination)
+      );
     } catch (error) {
       next(error);
     }
@@ -121,7 +123,17 @@ export const donationController = {
    */
   async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page = 1, limit = 10, campaignId, unitId, status, type, startDate, endDate, isAnonymous } = req.query;
+      const {
+        page = 1,
+        limit = 10,
+        campaignId,
+        unitId,
+        status,
+        type,
+        startDate,
+        endDate,
+        isAnonymous,
+      } = req.query;
 
       const result = await donationService.findAll({
         page: Number(page),
@@ -135,7 +147,9 @@ export const donationController = {
         isAnonymous: isAnonymous !== undefined ? isAnonymous === 'true' : undefined,
       });
 
-      res.json(ApiResponse.success(result.data, 'Donations retrieved successfully', result.pagination));
+      res.json(
+        ApiResponse.success(result.data, 'Donations retrieved successfully', result.pagination)
+      );
     } catch (error) {
       next(error);
     }
@@ -224,13 +238,18 @@ export const donationController = {
   async createPublic(req: Request, res: Response, next: NextFunction) {
     try {
       const donation = await donationService.createPublic(req.body);
-      res.status(201).json(ApiResponse.success({
-        id: donation.id,
-        amount: donation.amount,
-        type: donation.type,
-        status: donation.status,
-        message: 'Terima kasih atas donasi Anda. Donasi akan diverifikasi oleh admin.',
-      }, 'Donation submitted successfully'));
+      res.status(201).json(
+        ApiResponse.success(
+          {
+            id: donation.id,
+            amount: donation.amount,
+            type: donation.type,
+            status: donation.status,
+            message: 'Terima kasih atas donasi Anda. Donasi akan diverifikasi oleh admin.',
+          },
+          'Donation submitted successfully'
+        )
+      );
     } catch (error) {
       next(error);
     }

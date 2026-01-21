@@ -1,23 +1,29 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { 
-  Trophy, 
+} from "@/components/ui/select";
+import {
+  Trophy,
   Target,
   BookOpen,
   Award,
@@ -29,24 +35,54 @@ import {
   TrendingUp,
   Calendar,
   Loader2,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useMyProgress } from '@/hooks/use-takhosus';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useMyProgress } from "@/hooks/use-takhosus";
 
 // Takhosus program milestones/levels
 const TAKHOSUS_LEVELS = [
-  { level: 1, name: 'Mubtadi (Pemula)', juzTarget: 5, durationMonths: 6, color: 'bg-slate-500' },
-  { level: 2, name: 'Mutawassith (Menengah)', juzTarget: 15, durationMonths: 12, color: 'bg-blue-500' },
-  { level: 3, name: 'Mutaqaddim (Lanjutan)', juzTarget: 25, durationMonths: 18, color: 'bg-purple-500' },
-  { level: 4, name: 'Hafizh (30 Juz)', juzTarget: 30, durationMonths: 24, color: 'bg-amber-500' },
-  { level: 5, name: 'Mutqin (Penguat)', juzTarget: 30, durationMonths: 36, color: 'bg-green-500' },
+  {
+    level: 1,
+    name: "Mubtadi (Pemula)",
+    juzTarget: 5,
+    durationMonths: 6,
+    color: "bg-slate-500",
+  },
+  {
+    level: 2,
+    name: "Mutawassith (Menengah)",
+    juzTarget: 15,
+    durationMonths: 12,
+    color: "bg-blue-500",
+  },
+  {
+    level: 3,
+    name: "Mutaqaddim (Lanjutan)",
+    juzTarget: 25,
+    durationMonths: 18,
+    color: "bg-purple-500",
+  },
+  {
+    level: 4,
+    name: "Hafizh (30 Juz)",
+    juzTarget: 30,
+    durationMonths: 24,
+    color: "bg-amber-500",
+  },
+  {
+    level: 5,
+    name: "Mutqin (Penguat)",
+    juzTarget: 30,
+    durationMonths: 36,
+    color: "bg-green-500",
+  },
 ];
 
 // Fallback data for when API returns empty
 const fallbackProgress = {
-  studentId: '',
-  studentName: 'Memuat...',
-  class: '-',
+  studentId: "",
+  studentName: "Memuat...",
+  class: "-",
   currentLevel: 1,
   currentJuz: 0,
   totalAyahMemorized: 0,
@@ -72,20 +108,28 @@ const getMilestoneIcon = (completed: boolean, inProgress: boolean) => {
 };
 
 export default function TakhosusMilestonePage() {
-  const [selectedStudent, setSelectedStudent] = useState<string>('');
-  
+  const [selectedStudent, setSelectedStudent] = useState<string>("");
+
   // Fetch progress from API
   const { data: apiProgress, isLoading } = useMyProgress();
-  
+
   // Use API data or fallback
   const progress = apiProgress || fallbackProgress;
-  
+
   const totalProgress = (progress.currentJuz / 30) * 100;
 
   // Loading state
   if (isLoading) {
     return (
-      <MainLayout allowedRoles={['STUDENT', 'TEACHER', 'SUPER_ADMIN', 'UNIT_ADMIN', 'PARENT']}>
+      <MainLayout
+        allowedRoles={[
+          "STUDENT",
+          "TEACHER",
+          "SUPER_ADMIN",
+          "UNIT_ADMIN",
+          "PARENT",
+        ]}
+      >
         <div className="space-y-6">
           <PageHeader
             title="Milestone Takhosus"
@@ -103,7 +147,7 @@ export default function TakhosusMilestonePage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-6 text-center">
-                  {[1, 2, 3].map(i => (
+                  {[1, 2, 3].map((i) => (
                     <div key={i}>
                       <Skeleton className="h-10 w-16 mx-auto" />
                       <Skeleton className="h-4 w-20 mt-1 mx-auto" />
@@ -121,7 +165,7 @@ export default function TakhosusMilestonePage() {
               <Skeleton className="h-6 w-48" />
             </CardHeader>
             <CardContent className="space-y-4">
-              {[1, 2, 3, 4, 5].map(i => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="flex gap-4">
                   <Skeleton className="w-12 h-12 rounded-full" />
                   <Skeleton className="flex-1 h-24 rounded-xl" />
@@ -135,7 +179,15 @@ export default function TakhosusMilestonePage() {
   }
 
   return (
-    <MainLayout allowedRoles={['STUDENT', 'TEACHER', 'SUPER_ADMIN', 'UNIT_ADMIN', 'PARENT']}>
+    <MainLayout
+      allowedRoles={[
+        "STUDENT",
+        "TEACHER",
+        "SUPER_ADMIN",
+        "UNIT_ADMIN",
+        "PARENT",
+      ]}
+    >
       <div className="space-y-6">
         <PageHeader
           title="Milestone Takhosus"
@@ -153,23 +205,34 @@ export default function TakhosusMilestonePage() {
                 <div>
                   <h2 className="text-2xl font-bold">{progress.studentName}</h2>
                   <p className="text-muted-foreground">{progress.class}</p>
-                  <Badge className={TAKHOSUS_LEVELS[progress.currentLevel - 1]?.color || 'bg-slate-500'}>
+                  <Badge
+                    className={
+                      TAKHOSUS_LEVELS[progress.currentLevel - 1]?.color ||
+                      "bg-slate-500"
+                    }
+                  >
                     {TAKHOSUS_LEVELS[progress.currentLevel - 1]?.name}
                   </Badge>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-3 gap-6 text-center">
                 <div>
-                  <p className="text-3xl font-bold text-primary">{progress.currentJuz}</p>
+                  <p className="text-3xl font-bold text-primary">
+                    {progress.currentJuz}
+                  </p>
                   <p className="text-sm text-muted-foreground">Juz Hafal</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-bold">{progress.totalAyahMemorized.toLocaleString()}</p>
+                  <p className="text-3xl font-bold">
+                    {progress.totalAyahMemorized.toLocaleString()}
+                  </p>
                   <p className="text-sm text-muted-foreground">Total Ayat</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-amber-600">{progress.streakDays}</p>
+                  <p className="text-3xl font-bold text-amber-600">
+                    {progress.streakDays}
+                  </p>
                   <p className="text-sm text-muted-foreground">Hari Streak</p>
                 </div>
               </div>
@@ -178,7 +241,9 @@ export default function TakhosusMilestonePage() {
             <div className="mt-6 space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Progress Keseluruhan</span>
-                <span className="font-medium">{progress.currentJuz}/30 Juz ({Math.round(totalProgress)}%)</span>
+                <span className="font-medium">
+                  {progress.currentJuz}/30 Juz ({Math.round(totalProgress)}%)
+                </span>
               </div>
               <Progress value={totalProgress} className="h-4" />
             </div>
@@ -192,66 +257,99 @@ export default function TakhosusMilestonePage() {
               <Target className="h-5 w-5" />
               Milestone Journey
             </CardTitle>
-            <CardDescription>Tahapan perjalanan menuju hafizh 30 juz</CardDescription>
+            <CardDescription>
+              Tahapan perjalanan menuju hafizh 30 juz
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="relative">
               {/* Vertical line */}
               <div className="absolute left-[23px] top-0 bottom-0 w-0.5 bg-muted" />
-              
+
               <div className="space-y-6">
                 {TAKHOSUS_LEVELS.map((level, index) => {
                   const milestone = progress.milestones[index];
                   const isCompleted = milestone?.completed;
                   const isInProgress = !isCompleted && milestone?.progress > 0;
-                  
+
                   return (
-                    <div key={level.level} className="relative flex gap-4 items-start">
+                    <div
+                      key={level.level}
+                      className="relative flex gap-4 items-start"
+                    >
                       {/* Icon */}
-                      <div className={cn(
-                        'relative z-10 w-12 h-12 rounded-full border-4 flex items-center justify-center bg-background',
-                        isCompleted ? 'border-green-500' : isInProgress ? 'border-blue-500' : 'border-muted'
-                      )}>
+                      <div
+                        className={cn(
+                          "relative z-10 w-12 h-12 rounded-full border-4 flex items-center justify-center bg-background",
+                          isCompleted
+                            ? "border-green-500"
+                            : isInProgress
+                              ? "border-blue-500"
+                              : "border-muted",
+                        )}
+                      >
                         {getMilestoneIcon(isCompleted, isInProgress)}
                       </div>
-                      
+
                       {/* Content */}
-                      <div className={cn(
-                        'flex-1 p-4 rounded-xl border',
-                        isCompleted ? 'bg-green-50 border-green-200' : isInProgress ? 'bg-blue-50 border-blue-200' : 'bg-muted/30'
-                      )}>
+                      <div
+                        className={cn(
+                          "flex-1 p-4 rounded-xl border",
+                          isCompleted
+                            ? "bg-green-50 border-green-200"
+                            : isInProgress
+                              ? "bg-blue-50 border-blue-200"
+                              : "bg-muted/30",
+                        )}
+                      >
                         <div className="flex items-center justify-between mb-2">
                           <div>
                             <h4 className="font-semibold flex items-center gap-2">
                               Level {level.level}: {level.name}
                               {isCompleted && (
-                                <Badge variant="outline" className="bg-green-100 text-green-700">
+                                <Badge
+                                  variant="outline"
+                                  className="bg-green-100 text-green-700"
+                                >
                                   <CheckCircle2 className="h-3 w-3 mr-1" />
                                   Selesai
                                 </Badge>
                               )}
                             </h4>
                             <p className="text-sm text-muted-foreground">
-                              Target: {level.juzTarget} Juz • {level.durationMonths} bulan
+                              Target: {level.juzTarget} Juz •{" "}
+                              {level.durationMonths} bulan
                             </p>
                           </div>
-                          <div className={cn('w-3 h-3 rounded-full', level.color)} />
+                          <div
+                            className={cn("w-3 h-3 rounded-full", level.color)}
+                          />
                         </div>
-                        
+
                         {isInProgress && milestone && (
                           <div className="mt-3 space-y-2">
                             <div className="flex justify-between text-sm">
                               <span>Progress Level</span>
-                              <span>{milestone.currentJuz}/{milestone.targetJuz} Juz</span>
+                              <span>
+                                {milestone.currentJuz}/{milestone.targetJuz} Juz
+                              </span>
                             </div>
-                            <Progress value={milestone.progress} className="h-2" />
+                            <Progress
+                              value={milestone.progress}
+                              className="h-2"
+                            />
                           </div>
                         )}
-                        
+
                         {isCompleted && milestone?.completedDate && (
                           <div className="mt-2 flex items-center gap-2 text-sm text-green-700">
                             <Calendar className="h-4 w-4" />
-                            <span>Selesai: {new Date(milestone.completedDate).toLocaleDateString('id-ID')}</span>
+                            <span>
+                              Selesai:{" "}
+                              {new Date(
+                                milestone.completedDate,
+                              ).toLocaleDateString("id-ID")}
+                            </span>
                             {milestone.sanadId && (
                               <>
                                 <Award className="h-4 w-4 ml-2" />
@@ -278,7 +376,9 @@ export default function TakhosusMilestonePage() {
                   <TrendingUp className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Progress Minggu Ini</p>
+                  <p className="text-sm text-muted-foreground">
+                    Progress Minggu Ini
+                  </p>
                   <p className="text-2xl font-bold">
                     {progress.lastWeekProgress}/{progress.weeklyTarget} halaman
                   </p>
@@ -294,8 +394,12 @@ export default function TakhosusMilestonePage() {
                   <Award className="h-6 w-6 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Sanad Diterima</p>
-                  <p className="text-2xl font-bold">{progress.sanadCount} Sanad</p>
+                  <p className="text-sm text-muted-foreground">
+                    Sanad Diterima
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {progress.sanadCount} Sanad
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -308,9 +412,14 @@ export default function TakhosusMilestonePage() {
                   <Calendar className="h-6 w-6 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Target Selesai</p>
+                  <p className="text-sm text-muted-foreground">
+                    Target Selesai
+                  </p>
                   <p className="text-2xl font-bold">
-                    {new Date(progress.expectedCompletion).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}
+                    {new Date(progress.expectedCompletion).toLocaleDateString(
+                      "id-ID",
+                      { month: "short", year: "numeric" },
+                    )}
                   </p>
                 </div>
               </div>

@@ -1,11 +1,11 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
-import { PaginatedResponse } from '@/types/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { PaginatedResponse } from "@/types/api";
 import {
   MurojaahRecord,
   SimaanExam,
-  TakhosusDashboardStats
-} from '@cipansor/shared';
+  TakhosusDashboardStats,
+} from "@cipansor/shared";
 
 // Define input types locally if not available in @cipansor/shared,
 // or import from a shared location if you move schemas to shared package.
@@ -13,7 +13,7 @@ import {
 
 export interface CreateMurojaahInput {
   studentId: string;
-  murojaahType: 'YAUMIYAH' | 'USBUIYAH' | 'SYAHRIYAH' | 'TASMI';
+  murojaahType: "YAUMIYAH" | "USBUIYAH" | "SYAHRIYAH" | "TASMI";
   murojaahDate: string;
   juzStart: number;
   juzEnd: number;
@@ -25,7 +25,7 @@ export interface CreateMurojaahInput {
   tajwidScore?: number;
   notes?: string;
   mistakes?: {
-    mistakeType: 'LAHIN_JALI' | 'LAHIN_KHAFI' | 'TAJWID' | 'LUPA' | 'URUTAN';
+    mistakeType: "LAHIN_JALI" | "LAHIN_KHAFI" | "TAJWID" | "LUPA" | "URUTAN";
     juz: number;
     surahNumber: number;
     ayahNumber?: number;
@@ -35,7 +35,7 @@ export interface CreateMurojaahInput {
 
 export interface CreateSimaanInput {
   studentId: string;
-  simaanType: 'BIN_NAZHR' | 'BIL_GHAIB' | 'TAHDIR' | 'TASMI' | 'KHATAM';
+  simaanType: "BIN_NAZHR" | "BIL_GHAIB" | "TAHDIR" | "TASMI" | "KHATAM";
   examDate: string;
   juzStart: number;
   juzEnd: number;
@@ -51,11 +51,14 @@ export type { MurojaahRecord, SimaanExam, TakhosusDashboardStats };
 
 export function useTakhosusDashboard(unitId?: string) {
   return useQuery({
-    queryKey: ['takhosus', 'dashboard', unitId],
+    queryKey: ["takhosus", "dashboard", unitId],
     queryFn: async () => {
-      const { data } = await api.get<TakhosusDashboardStats>('/takhosus/dashboard-stats', {
-        params: { unitId },
-      });
+      const { data } = await api.get<TakhosusDashboardStats>(
+        "/takhosus/dashboard-stats",
+        {
+          params: { unitId },
+        },
+      );
       return data.data;
     },
   });
@@ -68,56 +71,62 @@ export function useMurojaahRecords(params: {
   halaqohId?: string;
 }) {
   return useQuery({
-    queryKey: ['takhosus', 'murojaah', params],
+    queryKey: ["takhosus", "murojaah", params],
     queryFn: async () => {
-      const { data } = await api.get<PaginatedResponse<MurojaahRecord>>('/takhosus/murojaah', {
-        params,
-      });
+      const { data } = await api.get<PaginatedResponse<MurojaahRecord>>(
+        "/takhosus/murojaah",
+        {
+          params,
+        },
+      );
       return data;
     },
   });
 }
 
 export function useSimaanExams(params: {
-    page?: number;
-    limit?: number;
-    studentId?: string;
-    halaqohId?: string;
+  page?: number;
+  limit?: number;
+  studentId?: string;
+  halaqohId?: string;
 }) {
-    return useQuery({
-        queryKey: ['takhosus', 'simaan', params],
-        queryFn: async () => {
-            const { data } = await api.get<PaginatedResponse<SimaanExam>>('/takhosus/simaan', {
-                params
-            });
-            return data;
-        }
-    });
+  return useQuery({
+    queryKey: ["takhosus", "simaan", params],
+    queryFn: async () => {
+      const { data } = await api.get<PaginatedResponse<SimaanExam>>(
+        "/takhosus/simaan",
+        {
+          params,
+        },
+      );
+      return data;
+    },
+  });
 }
 
 export function useCreateMurojaah() {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: async (data: CreateMurojaahInput) => {
-            const { data: response } = await api.post('/takhosus/murojaah', data);
-            return response.data;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['takhosus', 'murojaah'] });
-            queryClient.invalidateQueries({ queryKey: ['takhosus', 'dashboard'] });
-        }
-    });
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: CreateMurojaahInput) => {
+      const { data: response } = await api.post("/takhosus/murojaah", data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "murojaah"] });
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "dashboard"] });
+    },
+  });
 }
 
 export function useCreateSimaan() {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: async (data: CreateSimaanInput) => {
-            const { data: response } = await api.post('/takhosus/simaan', data);
-            return response.data;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['takhosus', 'simaan'] });
-        }
-    });
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: CreateSimaanInput) => {
+      const { data: response } = await api.post("/takhosus/simaan", data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "simaan"] });
+    },
+  });
 }

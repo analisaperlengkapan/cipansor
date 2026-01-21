@@ -1,9 +1,5 @@
 import { z } from 'zod';
-import {
-  PAUDAspect,
-  PAUDAchievementLevel,
-  PAUDReportPeriod,
-} from '@cipansor/shared';
+import { PAUDAspect, PAUDAchievementLevel, PAUDReportPeriod } from '@cipansor/shared';
 
 // PAUD Aspect enum
 export const PAUDAspectEnum = z.nativeEnum({
@@ -23,7 +19,7 @@ export const PAUDAchievementLevelEnum = z.nativeEnum({
   BSB: 'BSB',
 } as const);
 
-// Report Period enum  
+// Report Period enum
 export const PAUDReportPeriodEnum = z.nativeEnum({
   HARIAN: 'HARIAN',
   MINGGUAN: 'MINGGUAN',
@@ -45,20 +41,22 @@ export const listIndicatorsQuerySchema = z.object({
   search: z.string().optional(),
 });
 
-export const createIndicatorSchema = z.object({
-  unitId: z.string().uuid().optional().nullable(), // null = global indicator
-  aspect: PAUDAspectEnum,
-  code: z.string().min(1).max(20),
-  name: z.string().min(1).max(255),
-  description: z.string().optional().nullable(),
-  ageGroupMin: z.number().int().min(0).max(84), // Age in months
-  ageGroupMax: z.number().int().min(0).max(84),
-  orderNumber: z.number().int().min(1),
-  isActive: z.boolean().default(true),
-}).refine((data) => data.ageGroupMax >= data.ageGroupMin, {
-  message: 'ageGroupMax must be greater than or equal to ageGroupMin',
-  path: ['ageGroupMax'],
-});
+export const createIndicatorSchema = z
+  .object({
+    unitId: z.string().uuid().optional().nullable(), // null = global indicator
+    aspect: PAUDAspectEnum,
+    code: z.string().min(1).max(20),
+    name: z.string().min(1).max(255),
+    description: z.string().optional().nullable(),
+    ageGroupMin: z.number().int().min(0).max(84), // Age in months
+    ageGroupMax: z.number().int().min(0).max(84),
+    orderNumber: z.number().int().min(1),
+    isActive: z.boolean().default(true),
+  })
+  .refine((data) => data.ageGroupMax >= data.ageGroupMin, {
+    message: 'ageGroupMax must be greater than or equal to ageGroupMin',
+    path: ['ageGroupMax'],
+  });
 
 export const updateIndicatorSchema = z.object({
   aspect: PAUDAspectEnum.optional(),
@@ -121,14 +119,18 @@ export const bulkCreateAssessmentSchema = z.object({
   semester: z.enum(['GANJIL', 'GENAP']),
   periodType: PAUDReportPeriodEnum,
   periodDate: z.coerce.date(),
-  assessments: z.array(z.object({
-    aspect: PAUDAspectEnum,
-    indicatorId: z.string().uuid().optional().nullable(),
-    achievementLevel: PAUDAchievementLevelEnum,
-    narrativeText: z.string().max(5000).optional().nullable(),
-    teacherNotes: z.string().max(2000).optional().nullable(),
-    recommendations: z.string().max(2000).optional().nullable(),
-  })).min(1, 'At least one assessment is required'),
+  assessments: z
+    .array(
+      z.object({
+        aspect: PAUDAspectEnum,
+        indicatorId: z.string().uuid().optional().nullable(),
+        achievementLevel: PAUDAchievementLevelEnum,
+        narrativeText: z.string().max(5000).optional().nullable(),
+        teacherNotes: z.string().max(2000).optional().nullable(),
+        recommendations: z.string().max(2000).optional().nullable(),
+      })
+    )
+    .min(1, 'At least one assessment is required'),
 });
 
 // NEW: Class Bulk Assessment Schema
@@ -141,13 +143,17 @@ export const bulkCreateClassAssessmentSchema = z.object({
   periodDate: z.coerce.date(),
   aspect: PAUDAspectEnum,
   indicatorId: z.string().uuid().optional().nullable(),
-  assessments: z.array(z.object({
-    studentId: z.string().uuid('Invalid student ID'),
-    achievementLevel: PAUDAchievementLevelEnum,
-    narrativeText: z.string().max(5000).optional().nullable(),
-    teacherNotes: z.string().max(2000).optional().nullable(),
-    recommendations: z.string().max(2000).optional().nullable(),
-  })).min(1, 'At least one student assessment is required'),
+  assessments: z
+    .array(
+      z.object({
+        studentId: z.string().uuid('Invalid student ID'),
+        achievementLevel: PAUDAchievementLevelEnum,
+        narrativeText: z.string().max(5000).optional().nullable(),
+        teacherNotes: z.string().max(2000).optional().nullable(),
+        recommendations: z.string().max(2000).optional().nullable(),
+      })
+    )
+    .min(1, 'At least one student assessment is required'),
 });
 
 // ============================================

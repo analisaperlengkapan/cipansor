@@ -10,21 +10,21 @@ vi.mock('../../../../../src/lib/prisma', () => ({
       findMany: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
-      count: vi.fn()
+      count: vi.fn(),
     },
     studentVisit: {
       findMany: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
-      count: vi.fn()
+      count: vi.fn(),
     },
     studentPackage: {
       findMany: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
-      count: vi.fn()
-    }
-  }
+      count: vi.fn(),
+    },
+  },
 }));
 
 describe('ReceptionService', () => {
@@ -42,10 +42,12 @@ describe('ReceptionService', () => {
 
       const result = await ReceptionService.getGuestBooks(unitId, {});
 
-      expect(prisma.guestBook.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: { unitId },
-        orderBy: { checkIn: 'desc' }
-      }));
+      expect(prisma.guestBook.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { unitId },
+          orderBy: { checkIn: 'desc' },
+        })
+      );
       expect(result).toEqual(mockData);
     });
   });
@@ -59,7 +61,7 @@ describe('ReceptionService', () => {
       const result = await ReceptionService.createGuestBook(unitId, userId, input);
 
       expect(prisma.guestBook.create).toHaveBeenCalledWith({
-        data: { ...input, unitId, receivedById: userId }
+        data: { ...input, unitId, receivedById: userId },
       });
       expect(result).toEqual(mockCreated);
     });
@@ -72,9 +74,11 @@ describe('ReceptionService', () => {
 
       const result = await ReceptionService.getStudentVisits(unitId, {});
 
-      expect(prisma.studentVisit.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: { unitId }
-      }));
+      expect(prisma.studentVisit.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { unitId },
+        })
+      );
       expect(result).toEqual(mockData);
     });
   });
@@ -90,15 +94,15 @@ describe('ReceptionService', () => {
       expect(result).toEqual({
         guestsToday: 5,
         activeVisits: 3,
-        pendingPackages: 2
+        pendingPackages: 2,
       });
 
       // Verify filters
       expect(prisma.studentVisit.count).toHaveBeenCalledWith({
-        where: { unitId, status: VisitStatus.CHECKED_IN }
+        where: { unitId, status: VisitStatus.CHECKED_IN },
       });
       expect(prisma.studentPackage.count).toHaveBeenCalledWith({
-        where: { unitId, status: PackageStatus.RECEIVED }
+        where: { unitId, status: PackageStatus.RECEIVED },
       });
     });
   });

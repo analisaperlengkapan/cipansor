@@ -1,13 +1,26 @@
-'use client';
+"use client";
 
-import { use } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, BookOpen, Trash2, Edit, Calendar, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { use } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  BookOpen,
+  Trash2,
+  Edit,
+  Calendar,
+  Users,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -15,9 +28,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { toast } from 'sonner';
+} from "@/components/ui/table";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { toast } from "sonner";
 import {
   useSubject,
   useDeleteSubject,
@@ -26,18 +39,22 @@ import {
   SUBJECT_TYPE_LABELS,
   SCHEDULE_DAY_LABELS,
   SubjectType,
-} from '@/hooks/use-curriculum';
+} from "@/hooks/use-curriculum";
 
 function getTypeBadgeColor(type: SubjectType) {
   const colors: Record<SubjectType, string> = {
-    REQUIRED: 'bg-blue-100 text-blue-800',
-    ELECTIVE: 'bg-green-100 text-green-800',
-    EXTRACURRICULAR: 'bg-purple-100 text-purple-800',
+    REQUIRED: "bg-blue-100 text-blue-800",
+    ELECTIVE: "bg-green-100 text-green-800",
+    EXTRACURRICULAR: "bg-purple-100 text-purple-800",
   };
   return colors[type];
 }
 
-export default function SubjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function SubjectDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const router = useRouter();
 
@@ -49,10 +66,10 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(id);
-      toast.success('Mata pelajaran berhasil dihapus');
-      router.push('/curriculum');
+      toast.success("Mata pelajaran berhasil dihapus");
+      router.push("/curriculum");
     } catch {
-      toast.error('Gagal menghapus mata pelajaran');
+      toast.error("Gagal menghapus mata pelajaran");
     }
   };
 
@@ -68,7 +85,9 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <BookOpen className="h-12 w-12 text-muted-foreground" />
-        <p className="mt-4 text-muted-foreground">Mata pelajaran tidak ditemukan</p>
+        <p className="mt-4 text-muted-foreground">
+          Mata pelajaran tidak ditemukan
+        </p>
         <Button asChild className="mt-4">
           <Link href="/curriculum">Kembali ke Kurikulum</Link>
         </Button>
@@ -87,12 +106,14 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight">{subject.name}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {subject.name}
+            </h1>
             <Badge className={getTypeBadgeColor(subject.type)}>
               {SUBJECT_TYPE_LABELS[subject.type]}
             </Badge>
-            <Badge variant={subject.isActive ? 'default' : 'secondary'}>
-              {subject.isActive ? 'Aktif' : 'Nonaktif'}
+            <Badge variant={subject.isActive ? "default" : "secondary"}>
+              {subject.isActive ? "Aktif" : "Nonaktif"}
             </Badge>
           </div>
           <p className="text-muted-foreground">Kode: {subject.code}</p>
@@ -140,7 +161,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Unit</span>
-                <span className="font-medium">{subject.unit?.name || '-'}</span>
+                <span className="font-medium">{subject.unit?.name || "-"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Tipe</span>
@@ -158,8 +179,8 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Status</span>
-                <Badge variant={subject.isActive ? 'default' : 'secondary'}>
-                  {subject.isActive ? 'Aktif' : 'Nonaktif'}
+                <Badge variant={subject.isActive ? "default" : "secondary"}>
+                  {subject.isActive ? "Aktif" : "Nonaktif"}
                 </Badge>
               </div>
             </div>
@@ -168,7 +189,9 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
               <>
                 <Separator />
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Deskripsi</p>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Deskripsi
+                  </p>
                   <p className="text-sm">{subject.description}</p>
                 </div>
               </>
@@ -185,7 +208,9 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                 <Users className="h-5 w-5" />
                 Guru Pengajar
               </CardTitle>
-              <CardDescription>Daftar guru yang mengajar mata pelajaran ini</CardDescription>
+              <CardDescription>
+                Daftar guru yang mengajar mata pelajaran ini
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {assignments && assignments.length > 0 ? (
@@ -202,13 +227,19 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                     {assignments.map((assignment) => (
                       <TableRow key={assignment.id}>
                         <TableCell className="font-medium">
-                          {assignment.teacher?.name || '-'}
+                          {assignment.teacher?.name || "-"}
                         </TableCell>
-                        <TableCell>{assignment.class?.name || '-'}</TableCell>
-                        <TableCell>{assignment.academicYear?.name || '-'}</TableCell>
+                        <TableCell>{assignment.class?.name || "-"}</TableCell>
                         <TableCell>
-                          <Badge variant={assignment.isActive ? 'default' : 'secondary'}>
-                            {assignment.isActive ? 'Aktif' : 'Nonaktif'}
+                          {assignment.academicYear?.name || "-"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              assignment.isActive ? "default" : "secondary"
+                            }
+                          >
+                            {assignment.isActive ? "Aktif" : "Nonaktif"}
                           </Badge>
                         </TableCell>
                       </TableRow>
@@ -218,7 +249,9 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
               ) : (
                 <div className="flex flex-col items-center justify-center py-8">
                   <Users className="h-12 w-12 text-muted-foreground" />
-                  <p className="mt-4 text-muted-foreground">Belum ada guru yang ditugaskan</p>
+                  <p className="mt-4 text-muted-foreground">
+                    Belum ada guru yang ditugaskan
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -231,7 +264,9 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                 <Calendar className="h-5 w-5" />
                 Jadwal Pelajaran
               </CardTitle>
-              <CardDescription>Jadwal mata pelajaran ini dalam seminggu</CardDescription>
+              <CardDescription>
+                Jadwal mata pelajaran ini dalam seminggu
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {schedules && schedules.length > 0 ? (
@@ -254,9 +289,9 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                         <TableCell>
                           {schedule.startTime} - {schedule.endTime}
                         </TableCell>
-                        <TableCell>{schedule.class?.name || '-'}</TableCell>
-                        <TableCell>{schedule.teacher?.name || '-'}</TableCell>
-                        <TableCell>{schedule.room || '-'}</TableCell>
+                        <TableCell>{schedule.class?.name || "-"}</TableCell>
+                        <TableCell>{schedule.teacher?.name || "-"}</TableCell>
+                        <TableCell>{schedule.room || "-"}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

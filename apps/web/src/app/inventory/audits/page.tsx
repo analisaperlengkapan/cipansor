@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -12,12 +12,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Pagination } from '@/components/shared/pagination';
-import { useAssetAudits, useCreateAudit } from '@/hooks/use-inventory';
-import { useUnits } from '@/hooks/use-units';
-import { toast } from 'sonner';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Pagination } from "@/components/shared/pagination";
+import { useAssetAudits, useCreateAudit } from "@/hooks/use-inventory";
+import { useUnits } from "@/hooks/use-units";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -26,12 +26,18 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function InventoryAuditsPage() {
   const [page, setPage] = useState(1);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [selectedUnitId, setSelectedUnitId] = useState<string>('');
+  const [selectedUnitId, setSelectedUnitId] = useState<string>("");
 
   const { data: audits, isLoading } = useAssetAudits({
     page,
@@ -47,19 +53,19 @@ export default function InventoryAuditsPage() {
         unitId: selectedUnitId,
         date: new Date(),
       });
-      toast.success('Audit berhasil dibuat');
+      toast.success("Audit berhasil dibuat");
       setIsCreateOpen(false);
     } catch {
-      toast.error('Gagal membuat audit');
+      toast.error("Gagal membuat audit");
     }
   };
 
   const formatDate = (dateString?: string | Date | null) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
     });
   };
 
@@ -73,8 +79,12 @@ export default function InventoryAuditsPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Stock Opname (Audit)</h1>
-            <p className="text-muted-foreground">Riwayat dan pelaksanaan audit aset</p>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Stock Opname (Audit)
+            </h1>
+            <p className="text-muted-foreground">
+              Riwayat dan pelaksanaan audit aset
+            </p>
           </div>
         </div>
 
@@ -92,7 +102,10 @@ export default function InventoryAuditsPage() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Pilih Unit</Label>
-                <Select value={selectedUnitId} onValueChange={setSelectedUnitId}>
+                <Select
+                  value={selectedUnitId}
+                  onValueChange={setSelectedUnitId}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih unit..." />
                   </SelectTrigger>
@@ -108,8 +121,12 @@ export default function InventoryAuditsPage() {
                   Audit akan mencakup seluruh aset yang terdaftar pada unit ini.
                 </p>
               </div>
-              <Button onClick={handleCreate} disabled={!selectedUnitId || createMutation.isPending} className="w-full">
-                {createMutation.isPending ? 'Memproses...' : 'Buat Audit'}
+              <Button
+                onClick={handleCreate}
+                disabled={!selectedUnitId || createMutation.isPending}
+                className="w-full"
+              >
+                {createMutation.isPending ? "Memproses..." : "Buat Audit"}
               </Button>
             </div>
           </DialogContent>
@@ -144,15 +161,21 @@ export default function InventoryAuditsPage() {
                     <TableCell>{formatDate(item.date)}</TableCell>
                     <TableCell>{item.unit?.name}</TableCell>
                     <TableCell>
-                      <Badge variant={item.status === 'COMPLETED' ? 'default' : 'outline'}>
+                      <Badge
+                        variant={
+                          item.status === "COMPLETED" ? "default" : "outline"
+                        }
+                      >
                         {item.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>{item.createdBy?.name || '-'}</TableCell>
+                    <TableCell>{item.createdBy?.name || "-"}</TableCell>
                     <TableCell>{item._count?.items || 0}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="outline" size="sm" asChild>
-                        <Link href={`/inventory/audits/${item.id}`}>Detail</Link>
+                        <Link href={`/inventory/audits/${item.id}`}>
+                          Detail
+                        </Link>
                       </Button>
                     </TableCell>
                   </TableRow>

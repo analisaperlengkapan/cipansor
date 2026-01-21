@@ -1,6 +1,6 @@
 /**
  * Student ID Card Service
- * 
+ *
  * Generate Kartu Pelajar/Santri dengan:
  * - QR Code untuk verifikasi
  * - Data identitas siswa
@@ -94,13 +94,13 @@ export class StudentIdCardService {
       }
 
       const [payloadPart, hash] = qrData.replace('cipansor://', '').split('#');
-      
+
       if (!payloadPart || !hash) {
         return { valid: false, message: 'Data QR Code tidak lengkap' };
       }
 
       const payload = JSON.parse(Buffer.from(payloadPart, 'base64url').toString('utf8'));
-      
+
       // Verify hash
       const expectedHash = crypto
         .createHash('sha256')
@@ -138,10 +138,7 @@ export class StudentIdCardService {
   /**
    * Generate single student ID card data
    */
-  static async generateIdCard(
-    studentId: string,
-    config: Partial<IdCardConfig> = {}
-  ) {
+  static async generateIdCard(studentId: string, config: Partial<IdCardConfig> = {}) {
     const mergedConfig = { ...DEFAULT_CONFIG, ...config };
 
     // Get student data with relations
@@ -198,7 +195,7 @@ export class StudentIdCardService {
           totalAyah: true,
         },
       });
-      
+
       if (tahfidzRecord) {
         tahfidzProgress = {
           juz: tahfidzRecord.juz,
@@ -261,18 +258,19 @@ export class StudentIdCardService {
             }
           : null,
         // Parent info (from StudentParent relation)
-        parent: mergedConfig.showParentName && primaryParent
-          ? {
-              name: primaryParent.parent.name,
-              phone: primaryParent.parent.phone,
-            }
-          : // Fallback to parentName field
-            mergedConfig.showParentName && student.parentName
+        parent:
+          mergedConfig.showParentName && primaryParent
             ? {
-                name: student.parentName,
-                phone: student.parentPhone,
+                name: primaryParent.parent.name,
+                phone: primaryParent.parent.phone,
               }
-            : null,
+            : // Fallback to parentName field
+              mergedConfig.showParentName && student.parentName
+              ? {
+                  name: student.parentName,
+                  phone: student.parentPhone,
+                }
+              : null,
         // Tahfidz progress
         tahfidz: tahfidzProgress
           ? {

@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import { useState, useRef, useCallback } from 'react';
-import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useState, useRef, useCallback } from "react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { 
-  Camera, 
-  Upload, 
-  X, 
+} from "@/components/ui/dialog";
+import {
+  Camera,
+  Upload,
+  X,
   ZoomIn,
   ChevronLeft,
   ChevronRight,
@@ -22,9 +22,9 @@ import {
   Share2,
   Trash2,
   ImageIcon,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export interface PhotoGalleryItem {
   id: string;
@@ -52,85 +52,100 @@ export function PhotoGallery({
   onDelete,
   onShare,
   maxPhotos = 10,
-  categories = ['Kegiatan', 'Hasil Karya', 'Makan', 'Tidur', 'Bermain'],
+  categories = ["Kegiatan", "Hasil Karya", "Makan", "Tidur", "Bermain"],
   editable = true,
   className,
 }: PhotoGalleryProps) {
-  const [selectedPhoto, setSelectedPhoto] = useState<PhotoGalleryItem | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<PhotoGalleryItem | null>(
+    null,
+  );
   const [isUploading, setIsUploading] = useState(false);
-  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterCategory, setFilterCategory] = useState<string>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const filteredPhotos = filterCategory === 'all' 
-    ? photos 
-    : photos.filter((p) => p.category === filterCategory);
+  const filteredPhotos =
+    filterCategory === "all"
+      ? photos
+      : photos.filter((p) => p.category === filterCategory);
 
-  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const handleFileSelect = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
 
-    if (photos.length + files.length > maxPhotos) {
-      toast.error(`Maksimal ${maxPhotos} foto`);
-      return;
-    }
-
-    const validFiles = Array.from(files).filter((file) => {
-      if (!file.type.startsWith('image/')) {
-        toast.error(`${file.name} bukan file gambar`);
-        return false;
+      if (photos.length + files.length > maxPhotos) {
+        toast.error(`Maksimal ${maxPhotos} foto`);
+        return;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error(`${file.name} terlalu besar (max 5MB)`);
-        return false;
+
+      const validFiles = Array.from(files).filter((file) => {
+        if (!file.type.startsWith("image/")) {
+          toast.error(`${file.name} bukan file gambar`);
+          return false;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`${file.name} terlalu besar (max 5MB)`);
+          return false;
+        }
+        return true;
+      });
+
+      if (validFiles.length === 0) return;
+
+      setIsUploading(true);
+      try {
+        await onUpload?.(validFiles);
+        toast.success(`${validFiles.length} foto berhasil diupload`);
+      } catch {
+        toast.error("Gagal mengupload foto");
+      } finally {
+        setIsUploading(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
       }
-      return true;
-    });
+    },
+    [photos.length, maxPhotos, onUpload],
+  );
 
-    if (validFiles.length === 0) return;
-
-    setIsUploading(true);
-    try {
-      await onUpload?.(validFiles);
-      toast.success(`${validFiles.length} foto berhasil diupload`);
-    } catch {
-      toast.error('Gagal mengupload foto');
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+  const handleDelete = useCallback(
+    async (photoId: string) => {
+      try {
+        await onDelete?.(photoId);
+        toast.success("Foto berhasil dihapus");
+        setSelectedPhoto(null);
+      } catch {
+        toast.error("Gagal menghapus foto");
       }
-    }
-  }, [photos.length, maxPhotos, onUpload]);
+    },
+    [onDelete],
+  );
 
-  const handleDelete = useCallback(async (photoId: string) => {
-    try {
-      await onDelete?.(photoId);
-      toast.success('Foto berhasil dihapus');
-      setSelectedPhoto(null);
-    } catch {
-      toast.error('Gagal menghapus foto');
-    }
-  }, [onDelete]);
+  const navigatePhoto = useCallback(
+    (direction: "prev" | "next") => {
+      if (!selectedPhoto) return;
 
-  const navigatePhoto = useCallback((direction: 'prev' | 'next') => {
-    if (!selectedPhoto) return;
-    
-    const currentIndex = filteredPhotos.findIndex((p) => p.id === selectedPhoto.id);
-    const newIndex = direction === 'prev' 
-      ? (currentIndex - 1 + filteredPhotos.length) % filteredPhotos.length
-      : (currentIndex + 1) % filteredPhotos.length;
-    
-    setSelectedPhoto(filteredPhotos[newIndex]);
-  }, [selectedPhoto, filteredPhotos]);
+      const currentIndex = filteredPhotos.findIndex(
+        (p) => p.id === selectedPhoto.id,
+      );
+      const newIndex =
+        direction === "prev"
+          ? (currentIndex - 1 + filteredPhotos.length) % filteredPhotos.length
+          : (currentIndex + 1) % filteredPhotos.length;
+
+      setSelectedPhoto(filteredPhotos[newIndex]);
+    },
+    [selectedPhoto, filteredPhotos],
+  );
 
   return (
     <div className={className}>
       {/* Category Filter */}
       <div className="flex flex-wrap gap-2 mb-4">
         <Badge
-          variant={filterCategory === 'all' ? 'default' : 'outline'}
+          variant={filterCategory === "all" ? "default" : "outline"}
           className="cursor-pointer"
-          onClick={() => setFilterCategory('all')}
+          onClick={() => setFilterCategory("all")}
         >
           Semua ({photos.length})
         </Badge>
@@ -139,7 +154,7 @@ export function PhotoGallery({
           return (
             <Badge
               key={cat}
-              variant={filterCategory === cat ? 'default' : 'outline'}
+              variant={filterCategory === cat ? "default" : "outline"}
               className="cursor-pointer"
               onClick={() => setFilterCategory(cat)}
             >
@@ -183,7 +198,7 @@ export function PhotoGallery({
           >
             <Image
               src={photo.thumbnail || photo.url}
-              alt={photo.caption || 'Photo'}
+              alt={photo.caption || "Photo"}
               fill
               className="object-cover group-hover:scale-105 transition-transform"
             />
@@ -222,11 +237,14 @@ export function PhotoGallery({
       />
 
       {/* Lightbox Dialog */}
-      <Dialog open={!!selectedPhoto} onOpenChange={() => setSelectedPhoto(null)}>
+      <Dialog
+        open={!!selectedPhoto}
+        onOpenChange={() => setSelectedPhoto(null)}
+      >
         <DialogContent className="max-w-4xl p-0 overflow-hidden">
           <DialogHeader className="p-4 absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/60 to-transparent">
             <DialogTitle className="text-white">
-              {selectedPhoto?.caption || 'Foto'}
+              {selectedPhoto?.caption || "Foto"}
             </DialogTitle>
           </DialogHeader>
 
@@ -234,7 +252,7 @@ export function PhotoGallery({
             <div className="relative aspect-video bg-black">
               <Image
                 src={selectedPhoto.url}
-                alt={selectedPhoto.caption || 'Photo'}
+                alt={selectedPhoto.caption || "Photo"}
                 fill
                 className="object-contain"
               />
@@ -246,7 +264,10 @@ export function PhotoGallery({
                     variant="ghost"
                     size="icon"
                     className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white hover:bg-black/70"
-                    onClick={(e) => { e.stopPropagation(); navigatePhoto('prev'); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigatePhoto("prev");
+                    }}
                   >
                     <ChevronLeft className="h-6 w-6" />
                   </Button>
@@ -254,7 +275,10 @@ export function PhotoGallery({
                     variant="ghost"
                     size="icon"
                     className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white hover:bg-black/70"
-                    onClick={(e) => { e.stopPropagation(); navigatePhoto('next'); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigatePhoto("next");
+                    }}
                   >
                     <ChevronRight className="h-6 w-6" />
                   </Button>
@@ -319,10 +343,12 @@ export function DailyReportPhotoPreview({
         <div
           key={photo.id}
           className={cn(
-            'relative w-16 h-16 rounded-lg overflow-hidden',
-            index === maxPreview - 1 && remaining > 0 && 'cursor-pointer'
+            "relative w-16 h-16 rounded-lg overflow-hidden",
+            index === maxPreview - 1 && remaining > 0 && "cursor-pointer",
           )}
-          onClick={index === maxPreview - 1 && remaining > 0 ? onViewAll : undefined}
+          onClick={
+            index === maxPreview - 1 && remaining > 0 ? onViewAll : undefined
+          }
         >
           <Image
             src={photo.thumbnail || photo.url}

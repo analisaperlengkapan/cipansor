@@ -1,23 +1,36 @@
-'use client';
+"use client";
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { useSupplierMutation } from '@/hooks/use-suppliers';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import Link from 'next/link';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useSupplierMutation } from "@/hooks/use-suppliers";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import Link from "next/link";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().min(1, "Name is required"),
   address: z.string().optional(),
   phone: z.string().optional(),
-  email: z.string().email().optional().or(z.literal('')),
+  email: z.string().email().optional().or(z.literal("")),
   contactPerson: z.string().optional(),
   category: z.string().optional(),
   rating: z.coerce.number().min(0).max(5).optional(),
@@ -31,15 +44,15 @@ export default function CreateSupplierPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      address: '',
-      phone: '',
-      email: '',
-      contactPerson: '',
-      category: 'GENERAL',
+      name: "",
+      address: "",
+      phone: "",
+      email: "",
+      contactPerson: "",
+      category: "GENERAL",
       rating: 0,
-      bankName: '',
-      bankAccount: '',
+      bankName: "",
+      bankAccount: "",
     },
   });
 
@@ -57,7 +70,9 @@ export default function CreateSupplierPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Tambah Supplier</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Tambah Supplier
+            </h1>
             <p className="text-muted-foreground">Input data supplier baru.</p>
           </div>
         </div>
@@ -68,7 +83,10 @@ export default function CreateSupplierPage() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
                 <FormField
                   control={form.control}
                   name="name"
@@ -90,7 +108,10 @@ export default function CreateSupplierPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Kategori</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih Kategori" />
@@ -98,10 +119,16 @@ export default function CreateSupplierPage() {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="GENERAL">Umum</SelectItem>
-                            <SelectItem value="STATIONERY">ATK (Alat Tulis Kantor)</SelectItem>
+                            <SelectItem value="STATIONERY">
+                              ATK (Alat Tulis Kantor)
+                            </SelectItem>
                             <SelectItem value="IT">Elektronik & IT</SelectItem>
-                            <SelectItem value="CATERING">Katering / Makanan</SelectItem>
-                            <SelectItem value="CONSTRUCTION">Konstruksi / Bangunan</SelectItem>
+                            <SelectItem value="CATERING">
+                              Katering / Makanan
+                            </SelectItem>
+                            <SelectItem value="CONSTRUCTION">
+                              Konstruksi / Bangunan
+                            </SelectItem>
                             <SelectItem value="SERVICES">Jasa</SelectItem>
                           </SelectContent>
                         </Select>
@@ -196,8 +223,14 @@ export default function CreateSupplierPage() {
                   />
                 </div>
 
-                <Button type="submit" disabled={create.isPending} className="w-full">
-                  {create.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button
+                  type="submit"
+                  disabled={create.isPending}
+                  className="w-full"
+                >
+                  {create.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Simpan Supplier
                 </Button>
               </form>

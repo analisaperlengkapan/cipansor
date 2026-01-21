@@ -1,8 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { PaginatedResponse } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { PaginatedResponse } from "@/lib/api";
 
 // Types
-export type ViolationCategory = 'LIGHT' | 'MEDIUM' | 'HEAVY';
+export type ViolationCategory = "LIGHT" | "MEDIUM" | "HEAVY";
 
 export interface ViolationType {
   id: string;
@@ -38,18 +38,27 @@ export interface Violation {
 }
 
 // Constants
-export const VIOLATION_CATEGORIES: { value: ViolationCategory; label: string; color: string }[] = [
-  { value: 'LIGHT', label: 'Ringan', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'MEDIUM', label: 'Sedang', color: 'bg-orange-100 text-orange-800' },
-  { value: 'HEAVY', label: 'Berat', color: 'bg-red-100 text-red-800' },
+export const VIOLATION_CATEGORIES: {
+  value: ViolationCategory;
+  label: string;
+  color: string;
+}[] = [
+  { value: "LIGHT", label: "Ringan", color: "bg-yellow-100 text-yellow-800" },
+  { value: "MEDIUM", label: "Sedang", color: "bg-orange-100 text-orange-800" },
+  { value: "HEAVY", label: "Berat", color: "bg-red-100 text-red-800" },
 ];
 
 // Violation Types Hooks
-export function useViolationTypes(params?: { category?: ViolationCategory; isActive?: boolean }) {
+export function useViolationTypes(params?: {
+  category?: ViolationCategory;
+  isActive?: boolean;
+}) {
   return useQuery({
-    queryKey: ['violation-types', params],
+    queryKey: ["violation-types", params],
     queryFn: async () => {
-      const response = await api.get<ViolationType[]>('/violation-types', { params });
+      const response = await api.get<ViolationType[]>("/violation-types", {
+        params,
+      });
       return response.data;
     },
   });
@@ -57,7 +66,7 @@ export function useViolationTypes(params?: { category?: ViolationCategory; isAct
 
 export function useViolationType(id: string) {
   return useQuery({
-    queryKey: ['violation-types', id],
+    queryKey: ["violation-types", id],
     queryFn: async () => {
       const response = await api.get<ViolationType>(`/violation-types/${id}`);
       return response.data;
@@ -77,11 +86,11 @@ export function useCreateViolationType() {
       points: number;
       isActive?: boolean;
     }) => {
-      const response = await api.post<ViolationType>('/violation-types', data);
+      const response = await api.post<ViolationType>("/violation-types", data);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['violation-types'] });
+      queryClient.invalidateQueries({ queryKey: ["violation-types"] });
     },
   });
 }
@@ -103,11 +112,14 @@ export function useUpdateViolationType() {
         isActive?: boolean;
       };
     }) => {
-      const response = await api.put<ViolationType>(`/violation-types/${id}`, data);
+      const response = await api.put<ViolationType>(
+        `/violation-types/${id}`,
+        data,
+      );
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['violation-types'] });
+      queryClient.invalidateQueries({ queryKey: ["violation-types"] });
     },
   });
 }
@@ -120,7 +132,7 @@ export function useDeleteViolationType() {
       await api.delete(`/violation-types/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['violation-types'] });
+      queryClient.invalidateQueries({ queryKey: ["violation-types"] });
     },
   });
 }
@@ -136,9 +148,12 @@ export function useViolations(params?: {
   endDate?: string;
 }) {
   return useQuery({
-    queryKey: ['violations', params],
+    queryKey: ["violations", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Violation>>('/violations', { params });
+      const response = await api.get<PaginatedResponse<Violation>>(
+        "/violations",
+        { params },
+      );
       return response.data;
     },
   });
@@ -146,7 +161,7 @@ export function useViolations(params?: {
 
 export function useViolation(id: string) {
   return useQuery({
-    queryKey: ['violations', id],
+    queryKey: ["violations", id],
     queryFn: async () => {
       const response = await api.get<Violation>(`/violations/${id}`);
       return response.data;
@@ -157,9 +172,11 @@ export function useViolation(id: string) {
 
 export function useStudentViolations(studentId: string) {
   return useQuery({
-    queryKey: ['violations', 'student', studentId],
+    queryKey: ["violations", "student", studentId],
     queryFn: async () => {
-      const response = await api.get<Violation[]>(`/violations/student/${studentId}`);
+      const response = await api.get<Violation[]>(
+        `/violations/student/${studentId}`,
+      );
       return response.data;
     },
     enabled: !!studentId,
@@ -178,11 +195,11 @@ export function useCreateViolation() {
       witness?: string;
       actionTaken?: string;
     }) => {
-      const response = await api.post<Violation>('/violations', data);
+      const response = await api.post<Violation>("/violations", data);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['violations'] });
+      queryClient.invalidateQueries({ queryKey: ["violations"] });
     },
   });
 }
@@ -208,7 +225,7 @@ export function useUpdateViolation() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['violations'] });
+      queryClient.invalidateQueries({ queryKey: ["violations"] });
     },
   });
 }
@@ -221,22 +238,34 @@ export function useDeleteViolation() {
       await api.delete(`/violations/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['violations'] });
+      queryClient.invalidateQueries({ queryKey: ["violations"] });
     },
   });
 }
 
 // Violation Summary Hooks
-export function useViolationSummary(params?: { startDate?: string; endDate?: string }) {
+export function useViolationSummary(params?: {
+  startDate?: string;
+  endDate?: string;
+}) {
   return useQuery({
-    queryKey: ['violations', 'summary', params],
+    queryKey: ["violations", "summary", params],
     queryFn: async () => {
       const response = await api.get<{
         totalViolations: number;
         byCategory: { category: ViolationCategory; count: number }[];
-        topViolationTypes: { violationTypeId: string; name: string; count: number }[];
-        topStudents: { studentId: string; name: string; count: number; points: number }[];
-      }>('/violations/summary', { params });
+        topViolationTypes: {
+          violationTypeId: string;
+          name: string;
+          count: number;
+        }[];
+        topStudents: {
+          studentId: string;
+          name: string;
+          count: number;
+          points: number;
+        }[];
+      }>("/violations/summary", { params });
       return response.data;
     },
   });
@@ -244,11 +273,12 @@ export function useViolationSummary(params?: { startDate?: string; endDate?: str
 
 export function useStudentViolationPoints(studentId: string) {
   return useQuery({
-    queryKey: ['violations', 'points', studentId],
+    queryKey: ["violations", "points", studentId],
     queryFn: async () => {
-      const response = await api.get<{ totalPoints: number; violations: Violation[] }>(
-        `/violations/student/${studentId}/points`
-      );
+      const response = await api.get<{
+        totalPoints: number;
+        violations: Violation[];
+      }>(`/violations/student/${studentId}/points`);
       return response.data;
     },
     enabled: !!studentId,

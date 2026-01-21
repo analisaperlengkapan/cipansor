@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Define mocks
 const db = vi.hoisted(() => {
@@ -30,8 +30,8 @@ const db = vi.hoisted(() => {
 });
 
 // Mock @prisma/client to return our hoisted mock when instantiated
-vi.mock("@prisma/client", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@prisma/client")>();
+vi.mock('@prisma/client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@prisma/client')>();
   return {
     ...actual,
     // Return a class implementation
@@ -44,42 +44,42 @@ vi.mock("@prisma/client", async (importOriginal) => {
 });
 
 // Import service after mocks
-import { createEmployee } from "../../../../src/modules/hr/service";
+import { createEmployee } from '../../../../src/modules/hr/service';
 
-vi.mock("bcryptjs", () => ({
+vi.mock('bcryptjs', () => ({
   default: {
-    hash: vi.fn().mockResolvedValue("hashedPassword"),
+    hash: vi.fn().mockResolvedValue('hashedPassword'),
   },
 }));
 
-describe("HR Employee Service", () => {
+describe('HR Employee Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset transaction implementation
     db.$transaction.mockImplementation((callback: any) => callback(db));
   });
 
-  it("should create a Teacher employee successfully", async () => {
+  it('should create a Teacher employee successfully', async () => {
     // Arrange
     const input = {
-      name: "John Doe",
-      email: "john@example.com",
-      unitId: "unit-1",
-      role: "TEACHER" as const,
-      gender: "MALE" as const,
-      nip: "12345",
-      nuptk: "98765",
-      religion: "ISLAM",
+      name: 'John Doe',
+      email: 'john@example.com',
+      unitId: 'unit-1',
+      role: 'TEACHER' as const,
+      gender: 'MALE' as const,
+      nip: '12345',
+      nuptk: '98765',
+      religion: 'ISLAM',
     };
 
     const mockUser = {
-      id: "user-1",
+      id: 'user-1',
       ...input,
     };
 
     db.user.findUnique.mockResolvedValue(null);
     db.user.create.mockResolvedValue(mockUser);
-    db.teacher.create.mockResolvedValue({ id: "teacher-1", userId: "user-1" });
+    db.teacher.create.mockResolvedValue({ id: 'teacher-1', userId: 'user-1' });
 
     // Act
     const result = await createEmployee(input);
@@ -91,42 +91,42 @@ describe("HR Employee Service", () => {
     expect(db.user.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         name: input.name,
-        role: "TEACHER",
-      })
+        role: 'TEACHER',
+      }),
     });
 
     expect(db.teacher.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
-        userId: "user-1",
+        userId: 'user-1',
         nuptk: input.nuptk,
-      })
+      }),
     });
 
     expect(db.staff.create).not.toHaveBeenCalled();
     expect(result).toEqual(mockUser);
   });
 
-  it("should create a Staff employee successfully", async () => {
+  it('should create a Staff employee successfully', async () => {
     // Arrange
     const input = {
-      name: "Jane Smith",
-      email: "jane@example.com",
-      unitId: "unit-1",
-      role: "STAFF" as const,
-      gender: "FEMALE" as const,
-      nip: "54321",
-      position: "Admin",
-      department: "HR",
+      name: 'Jane Smith',
+      email: 'jane@example.com',
+      unitId: 'unit-1',
+      role: 'STAFF' as const,
+      gender: 'FEMALE' as const,
+      nip: '54321',
+      position: 'Admin',
+      department: 'HR',
     };
 
     const mockUser = {
-      id: "user-2",
+      id: 'user-2',
       ...input,
     };
 
     db.user.findUnique.mockResolvedValue(null);
     db.user.create.mockResolvedValue(mockUser);
-    db.staff.create.mockResolvedValue({ id: "staff-1", userId: "user-2" });
+    db.staff.create.mockResolvedValue({ id: 'staff-1', userId: 'user-2' });
 
     // Act
     const result = await createEmployee(input);
@@ -135,35 +135,35 @@ describe("HR Employee Service", () => {
     expect(db.user.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         name: input.name,
-        role: "STAFF",
-      })
+        role: 'STAFF',
+      }),
     });
 
     expect(db.staff.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
-        userId: "user-2",
+        userId: 'user-2',
         position: input.position,
-      })
+      }),
     });
 
     expect(db.teacher.create).not.toHaveBeenCalled();
     expect(result).toEqual(mockUser);
   });
 
-  it("should throw error if email exists", async () => {
+  it('should throw error if email exists', async () => {
     // Arrange
     const input = {
-      name: "Duplicate User",
-      email: "duplicate@example.com",
-      unitId: "unit-1",
-      role: "STAFF" as const,
-      gender: "MALE" as const,
-      position: "Staff",
+      name: 'Duplicate User',
+      email: 'duplicate@example.com',
+      unitId: 'unit-1',
+      role: 'STAFF' as const,
+      gender: 'MALE' as const,
+      position: 'Staff',
     };
 
-    db.user.findUnique.mockResolvedValue({ id: "existing" });
+    db.user.findUnique.mockResolvedValue({ id: 'existing' });
 
     // Act & Assert
-    await expect(createEmployee(input)).rejects.toThrow("Email already exists");
+    await expect(createEmployee(input)).rejects.toThrow('Email already exists');
   });
 });

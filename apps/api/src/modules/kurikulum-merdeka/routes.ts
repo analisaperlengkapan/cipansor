@@ -56,42 +56,130 @@ router.post('/phases', authorize(UserRole.SUPER_ADMIN), kurikulumMerdekaControll
 router.put('/phases/:id', authorize(UserRole.SUPER_ADMIN), kurikulumMerdekaController.putPhase);
 
 // Learning Outcomes (Admin only)
-router.post('/learning-outcomes', authorize(UserRole.SUPER_ADMIN), kurikulumMerdekaController.postLearningOutcome);
-router.put('/learning-outcomes/:id', authorize(UserRole.SUPER_ADMIN), kurikulumMerdekaController.putLearningOutcome);
-router.delete('/learning-outcomes/:id', authorize(UserRole.SUPER_ADMIN), kurikulumMerdekaController.removeLearningOutcome);
+router.post(
+  '/learning-outcomes',
+  authorize(UserRole.SUPER_ADMIN),
+  kurikulumMerdekaController.postLearningOutcome
+);
+router.put(
+  '/learning-outcomes/:id',
+  authorize(UserRole.SUPER_ADMIN),
+  kurikulumMerdekaController.putLearningOutcome
+);
+router.delete(
+  '/learning-outcomes/:id',
+  authorize(UserRole.SUPER_ADMIN),
+  kurikulumMerdekaController.removeLearningOutcome
+);
 
 // Learning Objectives (Admin only)
-router.post('/learning-objectives', authorize(UserRole.SUPER_ADMIN), kurikulumMerdekaController.postLearningObjective);
-router.put('/learning-objectives/:id', authorize(UserRole.SUPER_ADMIN), kurikulumMerdekaController.putLearningObjective);
-router.delete('/learning-objectives/:id', authorize(UserRole.SUPER_ADMIN), kurikulumMerdekaController.removeLearningObjective);
+router.post(
+  '/learning-objectives',
+  authorize(UserRole.SUPER_ADMIN),
+  kurikulumMerdekaController.postLearningObjective
+);
+router.put(
+  '/learning-objectives/:id',
+  authorize(UserRole.SUPER_ADMIN),
+  kurikulumMerdekaController.putLearningObjective
+);
+router.delete(
+  '/learning-objectives/:id',
+  authorize(UserRole.SUPER_ADMIN),
+  kurikulumMerdekaController.removeLearningObjective
+);
 
 // Teaching Modules (Admin/Teacher)
-router.post('/teaching-modules', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), kurikulumMerdekaController.postTeachingModule);
-router.put('/teaching-modules/:id', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), kurikulumMerdekaController.putTeachingModule);
-router.delete('/teaching-modules/:id', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), kurikulumMerdekaController.removeTeachingModule);
+router.post(
+  '/teaching-modules',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  kurikulumMerdekaController.postTeachingModule
+);
+router.put(
+  '/teaching-modules/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  kurikulumMerdekaController.putTeachingModule
+);
+router.delete(
+  '/teaching-modules/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  kurikulumMerdekaController.removeTeachingModule
+);
 
 // P5 Themes (Admin only)
 router.post('/p5-themes', authorize(UserRole.SUPER_ADMIN), kurikulumMerdekaController.postP5Theme);
-router.put('/p5-themes/:id', authorize(UserRole.SUPER_ADMIN), kurikulumMerdekaController.putP5Theme);
+router.put(
+  '/p5-themes/:id',
+  authorize(UserRole.SUPER_ADMIN),
+  kurikulumMerdekaController.putP5Theme
+);
 
 // P5 Projects (Admin/Teacher)
-router.post('/p5-projects', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), kurikulumMerdekaController.postP5Project);
-router.put('/p5-projects/:id', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), kurikulumMerdekaController.putP5Project);
-router.delete('/p5-projects/:id', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), kurikulumMerdekaController.removeP5Project);
+router.post(
+  '/p5-projects',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  kurikulumMerdekaController.postP5Project
+);
+router.put(
+  '/p5-projects/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  kurikulumMerdekaController.putP5Project
+);
+router.delete(
+  '/p5-projects/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  kurikulumMerdekaController.removeP5Project
+);
 
 // P5 Assessments (Admin/Teacher)
-router.post('/p5-assessments', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), kurikulumMerdekaController.postP5Assessment);
-router.put('/p5-assessments/:id', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), kurikulumMerdekaController.putP5Assessment);
-router.delete('/p5-assessments/:id', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), kurikulumMerdekaController.removeP5Assessment);
+router.post(
+  '/p5-assessments',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  kurikulumMerdekaController.postP5Assessment
+);
+router.put(
+  '/p5-assessments/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  kurikulumMerdekaController.putP5Assessment
+);
+router.delete(
+  '/p5-assessments/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  kurikulumMerdekaController.removeP5Assessment
+);
 
 // Merdeka Assessments (Admin/Teacher)
-router.post('/assessments', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), kurikulumMerdekaController.postMerdekaAssessment);
-router.put('/assessments/:id', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), kurikulumMerdekaController.putMerdekaAssessment);
-router.delete('/assessments/:id', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), kurikulumMerdekaController.removeMerdekaAssessment);
+router.post(
+  '/assessments',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  kurikulumMerdekaController.postMerdekaAssessment
+);
+router.put(
+  '/assessments/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  kurikulumMerdekaController.putMerdekaAssessment
+);
+router.delete(
+  '/assessments/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  kurikulumMerdekaController.removeMerdekaAssessment
+);
 
 // Merdeka Assessment Results (Admin/Teacher)
-router.post('/assessment-results', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), kurikulumMerdekaController.postMerdekaResult);
-router.put('/assessment-results/:id', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), kurikulumMerdekaController.putMerdekaResult);
-router.delete('/assessment-results/:id', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), kurikulumMerdekaController.removeMerdekaResult);
+router.post(
+  '/assessment-results',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  kurikulumMerdekaController.postMerdekaResult
+);
+router.put(
+  '/assessment-results/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  kurikulumMerdekaController.putMerdekaResult
+);
+router.delete(
+  '/assessment-results/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  kurikulumMerdekaController.removeMerdekaResult
+);
 
 export default router;

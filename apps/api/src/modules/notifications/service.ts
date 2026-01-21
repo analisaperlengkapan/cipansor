@@ -1,6 +1,6 @@
-import { Prisma, NotificationStatus } from "@prisma/client";
-import { prisma } from "../../lib/prisma";
-import crypto from "node:crypto";
+import { Prisma, NotificationStatus } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
+import crypto from 'node:crypto';
 import type {
   CreateNotificationInput,
   CreateBulkNotificationInput,
@@ -11,8 +11,8 @@ import type {
   CreateTemplateInput,
   UpdateTemplateInput,
   QueryTemplateInput,
-} from "./schema";
-import type { NotificationTemplate } from "@cipansor/shared";
+} from './schema';
+import type { NotificationTemplate } from '@cipansor/shared';
 
 // Helper to map shared types to Prisma Enum
 export const mapTypeToPrisma = (type: string): { dbType: string; originalType: string | null } => {
@@ -23,13 +23,13 @@ export const mapTypeToPrisma = (type: string): { dbType: string; originalType: s
   }
 
   const mapping: Record<string, string> = {
-    'ATTENDANCE': 'ACADEMIC',
-    'FINANCE': 'PAYMENT',
-    'PERMIT': 'ACADEMIC',
-    'HEALTH': 'INFO',
-    'VIOLATION': 'ALERT',
-    'REWARD': 'INFO',
-    'SYSTEM': 'INFO'
+    ATTENDANCE: 'ACADEMIC',
+    FINANCE: 'PAYMENT',
+    PERMIT: 'ACADEMIC',
+    HEALTH: 'INFO',
+    VIOLATION: 'ALERT',
+    REWARD: 'INFO',
+    SYSTEM: 'INFO',
   };
 
   return { dbType: mapping[type] || 'INFO', originalType: type };
@@ -43,11 +43,10 @@ export async function getUserNotifications(userId: string, query: QueryNotificat
 
   const where: Prisma.NotificationWhereInput = {
     userId,
-    ...(isRead !== undefined && { status: isRead ? NotificationStatus.READ : NotificationStatus.UNREAD }),
-    OR: [
-      { scheduledAt: null },
-      { scheduledAt: { lte: new Date() } }
-    ]
+    ...(isRead !== undefined && {
+      status: isRead ? NotificationStatus.READ : NotificationStatus.UNREAD,
+    }),
+    OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
   };
 
   if (type) {
@@ -69,13 +68,13 @@ export async function getUserNotifications(userId: string, query: QueryNotificat
       where,
       skip,
       take: limit,
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     }),
     prisma.notification.count({ where }),
     prisma.notification.count({ where: { userId, status: NotificationStatus.UNREAD } }),
   ]);
 
-  const transformedData = data.map(n => {
+  const transformedData = data.map((n) => {
     const originalType = (n.data as any)?.originalType;
     if (originalType) {
       return { ...n, type: originalType };
@@ -100,12 +99,13 @@ export async function getAllNotifications(query: QueryNotificationInput) {
   const skip = (page - 1) * limit;
 
   const where: Prisma.NotificationWhereInput = {
-    ...(startDate && endDate && {
-      createdAt: {
-        gte: startDate,
-        lte: endDate,
-      },
-    }),
+    ...(startDate &&
+      endDate && {
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+      }),
   };
 
   if (type) {
@@ -125,7 +125,7 @@ export async function getAllNotifications(query: QueryNotificationInput) {
       where,
       skip,
       take: limit,
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       include: {
         user: { select: { id: true, name: true, email: true } },
       },
@@ -133,7 +133,7 @@ export async function getAllNotifications(query: QueryNotificationInput) {
     prisma.notification.count({ where }),
   ]);
 
-  const transformedData = data.map(n => {
+  const transformedData = data.map((n) => {
     const originalType = (n.data as any)?.originalType;
     if (originalType) {
       return { ...n, type: originalType };
@@ -156,8 +156,8 @@ export async function getNotificationById(id: string) {
   const notification = await prisma.notification.findUnique({
     where: { id },
     include: {
-      user: { select: { id: true, name: true } }
-    }
+      user: { select: { id: true, name: true } },
+    },
   });
 
   if (notification) {
@@ -215,7 +215,7 @@ export async function createBulkNotifications(data: CreateBulkNotificationInput)
       ...(originalType ? { originalType } : {}),
       priority,
       channels,
-    }
+    },
   }));
 
   return prisma.notification.createMany({
@@ -301,12 +301,13 @@ export async function scheduleNotification(id: string, scheduledAt: Date) {
 
 export async function getNotificationStats(startDate?: Date, endDate?: Date) {
   const where: Prisma.NotificationWhereInput = {
-    ...(startDate && endDate && {
-      createdAt: {
-        gte: startDate,
-        lte: endDate,
-      },
-    }),
+    ...(startDate &&
+      endDate && {
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+      }),
   };
 
   const [total, unread, rawNotifications] = await Promise.all([
@@ -320,7 +321,7 @@ export async function getNotificationStats(startDate?: Date, endDate?: Date) {
 
   const byTypeMap: Record<string, number> = {};
 
-  rawNotifications.forEach(n => {
+  rawNotifications.forEach((n) => {
     const originalType = (n.data as any)?.originalType || n.type;
     byTypeMap[originalType] = (byTypeMap[originalType] || 0) + 1;
   });
@@ -338,7 +339,7 @@ export async function getNotificationStats(startDate?: Date, endDate?: Date) {
 // ==================== TEMPLATES ====================
 
 export async function getTemplates(query: QueryTemplateInput, unitId?: string) {
-  const where: Prisma.SettingWhereInput = { key: "NOTIFICATION_TEMPLATES" };
+  const where: Prisma.SettingWhereInput = { key: 'NOTIFICATION_TEMPLATES' };
   if (unitId) {
     where.unitId = unitId;
   }
@@ -350,17 +351,17 @@ export async function getTemplates(query: QueryTemplateInput, unitId?: string) {
   let templates = (setting?.value as any[]) || [];
 
   if (query.type) {
-    templates = templates.filter(t => t.type === query.type);
+    templates = templates.filter((t) => t.type === query.type);
   }
   if (query.isActive !== undefined) {
-    templates = templates.filter(t => t.isActive === query.isActive);
+    templates = templates.filter((t) => t.isActive === query.isActive);
   }
 
   return templates;
 }
 
 export async function getTemplateById(id: string, unitId?: string) {
-  const where: Prisma.SettingWhereInput = { key: "NOTIFICATION_TEMPLATES" };
+  const where: Prisma.SettingWhereInput = { key: 'NOTIFICATION_TEMPLATES' };
   if (unitId) {
     where.unitId = unitId;
   }
@@ -369,8 +370,10 @@ export async function getTemplateById(id: string, unitId?: string) {
     where,
   });
 
-  const templates = (Array.isArray(setting?.value) ? setting.value : []) as unknown as NotificationTemplate[];
-  return templates.find(t => t.id === id) || null;
+  const templates = (Array.isArray(setting?.value)
+    ? setting.value
+    : []) as unknown as NotificationTemplate[];
+  return templates.find((t) => t.id === id) || null;
 }
 
 export async function createTemplate(data: CreateTemplateInput, unitId?: string) {
@@ -381,14 +384,14 @@ export async function createTemplate(data: CreateTemplateInput, unitId?: string)
   if (!targetUnitId) {
     // Fallback logic kept for compatibility but should be avoided
     const unit = await prisma.unit.findFirst();
-    if (!unit) throw new Error("No unit found to store settings");
+    if (!unit) throw new Error('No unit found to store settings');
     targetUnitId = unit.id;
   }
 
   // Use transaction to minimize race condition window, though simplistic
   return prisma.$transaction(async (tx) => {
     const setting = await tx.setting.findUnique({
-      where: { unitId_key: { unitId: targetUnitId!, key: "NOTIFICATION_TEMPLATES" } },
+      where: { unitId_key: { unitId: targetUnitId!, key: 'NOTIFICATION_TEMPLATES' } },
     });
 
     const templates = (setting?.value as any[]) || [];
@@ -403,9 +406,9 @@ export async function createTemplate(data: CreateTemplateInput, unitId?: string)
     templates.push(newTemplate);
 
     await tx.setting.upsert({
-      where: { unitId_key: { unitId: targetUnitId!, key: "NOTIFICATION_TEMPLATES" } },
+      where: { unitId_key: { unitId: targetUnitId!, key: 'NOTIFICATION_TEMPLATES' } },
       update: { value: templates },
-      create: { unitId: targetUnitId!, key: "NOTIFICATION_TEMPLATES", value: templates },
+      create: { unitId: targetUnitId!, key: 'NOTIFICATION_TEMPLATES', value: templates },
     });
 
     return newTemplate;
@@ -416,24 +419,24 @@ export async function updateTemplate(id: string, data: UpdateTemplateInput, unit
   let targetUnitId = unitId;
   if (!targetUnitId) {
     const unit = await prisma.unit.findFirst();
-    if (!unit) throw new Error("No unit found");
+    if (!unit) throw new Error('No unit found');
     targetUnitId = unit.id;
   }
 
   return prisma.$transaction(async (tx) => {
     const setting = await tx.setting.findUnique({
-      where: { unitId_key: { unitId: targetUnitId!, key: "NOTIFICATION_TEMPLATES" } },
+      where: { unitId_key: { unitId: targetUnitId!, key: 'NOTIFICATION_TEMPLATES' } },
     });
 
     let templates = (setting?.value as any[]) || [];
-    const index = templates.findIndex(t => t.id === id);
+    const index = templates.findIndex((t) => t.id === id);
 
-    if (index === -1) throw new Error("Template not found");
+    if (index === -1) throw new Error('Template not found');
 
     templates[index] = { ...templates[index], ...data, updatedAt: new Date() };
 
     await tx.setting.update({
-      where: { unitId_key: { unitId: targetUnitId!, key: "NOTIFICATION_TEMPLATES" } },
+      where: { unitId_key: { unitId: targetUnitId!, key: 'NOTIFICATION_TEMPLATES' } },
       data: { value: templates },
     });
 
@@ -445,20 +448,20 @@ export async function deleteTemplate(id: string, unitId?: string) {
   let targetUnitId = unitId;
   if (!targetUnitId) {
     const unit = await prisma.unit.findFirst();
-    if (!unit) throw new Error("No unit found");
+    if (!unit) throw new Error('No unit found');
     targetUnitId = unit.id;
   }
 
   return prisma.$transaction(async (tx) => {
     const setting = await tx.setting.findUnique({
-      where: { unitId_key: { unitId: targetUnitId!, key: "NOTIFICATION_TEMPLATES" } },
+      where: { unitId_key: { unitId: targetUnitId!, key: 'NOTIFICATION_TEMPLATES' } },
     });
 
     let templates = (setting?.value as any[]) || [];
-    templates = templates.filter(t => t.id !== id);
+    templates = templates.filter((t) => t.id !== id);
 
     await tx.setting.update({
-      where: { unitId_key: { unitId: targetUnitId!, key: "NOTIFICATION_TEMPLATES" } },
+      where: { unitId_key: { unitId: targetUnitId!, key: 'NOTIFICATION_TEMPLATES' } },
       data: { value: templates },
     });
 
@@ -491,7 +494,7 @@ export async function getAnnouncements(query: QueryAnnouncementInput) {
         unit: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true } },
       },
-      orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
+      orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
     }),
     prisma.announcement.count({ where }),
   ]);

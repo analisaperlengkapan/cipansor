@@ -1,22 +1,34 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { MainLayout } from "@/components/layout/main-layout";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
   useCreateNotification,
   useSendNotification,
   useNotificationTemplates,
@@ -32,11 +44,11 @@ import {
   NotificationPriority,
   NotificationChannel,
   RecipientType,
-} from '@/hooks/use-notifications';
-import { useClasses } from '@/hooks/use-classes';
-import { useUnits } from '@/hooks/use-units';
-import { 
-  Send, 
+} from "@/hooks/use-notifications";
+import { useClasses } from "@/hooks/use-classes";
+import { useUnits } from "@/hooks/use-units";
+import {
+  Send,
   MessageSquare,
   Mail,
   Phone,
@@ -52,17 +64,27 @@ import {
   CheckCircle2,
   Loader2,
   History,
-  FileCode
-} from 'lucide-react';
-import { toast } from 'sonner';
-import Link from 'next/link';
+  FileCode,
+} from "lucide-react";
+import { toast } from "sonner";
+import Link from "next/link";
 
 const quickSendSchema = z.object({
-  title: z.string().min(5, 'Judul minimal 5 karakter'),
-  message: z.string().min(10, 'Pesan minimal 10 karakter'),
-  type: z.enum(['ANNOUNCEMENT', 'ATTENDANCE', 'FINANCE', 'ACADEMIC', 'PERMIT', 'HEALTH', 'VIOLATION', 'REWARD', 'SYSTEM']),
-  priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']),
-  recipientType: z.enum(['ALL', 'UNIT', 'CLASS', 'ROLE', 'INDIVIDUAL']),
+  title: z.string().min(5, "Judul minimal 5 karakter"),
+  message: z.string().min(10, "Pesan minimal 10 karakter"),
+  type: z.enum([
+    "ANNOUNCEMENT",
+    "ATTENDANCE",
+    "FINANCE",
+    "ACADEMIC",
+    "PERMIT",
+    "HEALTH",
+    "VIOLATION",
+    "REWARD",
+    "SYSTEM",
+  ]),
+  priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT"]),
+  recipientType: z.enum(["ALL", "UNIT", "CLASS", "ROLE", "INDIVIDUAL"]),
   unitId: z.string().optional(),
   classId: z.string().optional(),
   role: z.string().optional(),
@@ -73,40 +95,46 @@ type QuickSendForm = z.infer<typeof quickSendSchema>;
 // Message templates for quick selection
 const MESSAGE_TEMPLATES = [
   {
-    id: 'payment-reminder',
-    title: 'Pengingat Pembayaran SPP',
-    message: 'Yth. Orang Tua/Wali,\n\nMohon untuk segera melakukan pembayaran SPP bulan ini sebelum tanggal jatuh tempo. Terima kasih.',
-    type: 'FINANCE' as NotificationType,
+    id: "payment-reminder",
+    title: "Pengingat Pembayaran SPP",
+    message:
+      "Yth. Orang Tua/Wali,\n\nMohon untuk segera melakukan pembayaran SPP bulan ini sebelum tanggal jatuh tempo. Terima kasih.",
+    type: "FINANCE" as NotificationType,
   },
   {
-    id: 'schedule-change',
-    title: 'Perubahan Jadwal Pembelajaran',
-    message: 'Diberitahukan bahwa terdapat perubahan jadwal pembelajaran. Silakan cek jadwal terbaru di aplikasi.',
-    type: 'ACADEMIC' as NotificationType,
+    id: "schedule-change",
+    title: "Perubahan Jadwal Pembelajaran",
+    message:
+      "Diberitahukan bahwa terdapat perubahan jadwal pembelajaran. Silakan cek jadwal terbaru di aplikasi.",
+    type: "ACADEMIC" as NotificationType,
   },
   {
-    id: 'holiday-notice',
-    title: 'Pemberitahuan Libur',
-    message: 'Diberitahukan kepada seluruh siswa dan orang tua bahwa sekolah akan libur pada [tanggal]. Kegiatan belajar mengajar akan kembali normal pada [tanggal].',
-    type: 'ANNOUNCEMENT' as NotificationType,
+    id: "holiday-notice",
+    title: "Pemberitahuan Libur",
+    message:
+      "Diberitahukan kepada seluruh siswa dan orang tua bahwa sekolah akan libur pada [tanggal]. Kegiatan belajar mengajar akan kembali normal pada [tanggal].",
+    type: "ANNOUNCEMENT" as NotificationType,
   },
   {
-    id: 'exam-schedule',
-    title: 'Jadwal Ujian',
-    message: 'Ujian akan dilaksanakan mulai tanggal [tanggal]. Mohon persiapkan diri dengan baik.',
-    type: 'ACADEMIC' as NotificationType,
+    id: "exam-schedule",
+    title: "Jadwal Ujian",
+    message:
+      "Ujian akan dilaksanakan mulai tanggal [tanggal]. Mohon persiapkan diri dengan baik.",
+    type: "ACADEMIC" as NotificationType,
   },
   {
-    id: 'meeting-invitation',
-    title: 'Undangan Pertemuan Wali Murid',
-    message: 'Mengundang Bapak/Ibu Wali Murid untuk hadir dalam pertemuan yang akan dilaksanakan pada [tanggal] pukul [waktu] di [tempat].',
-    type: 'ANNOUNCEMENT' as NotificationType,
+    id: "meeting-invitation",
+    title: "Undangan Pertemuan Wali Murid",
+    message:
+      "Mengundang Bapak/Ibu Wali Murid untuk hadir dalam pertemuan yang akan dilaksanakan pada [tanggal] pukul [waktu] di [tempat].",
+    type: "ANNOUNCEMENT" as NotificationType,
   },
   {
-    id: 'health-notice',
-    title: 'Pemberitahuan Kesehatan',
-    message: 'Diberitahukan kepada seluruh wali murid untuk memperhatikan kondisi kesehatan anak. Mohon tidak mengirim anak jika sedang sakit.',
-    type: 'HEALTH' as NotificationType,
+    id: "health-notice",
+    title: "Pemberitahuan Kesehatan",
+    message:
+      "Diberitahukan kepada seluruh wali murid untuk memperhatikan kondisi kesehatan anak. Mohon tidak mengirim anak jika sedang sakit.",
+    type: "HEALTH" as NotificationType,
   },
 ];
 
@@ -127,9 +155,14 @@ const RECIPIENT_ICONS: Record<RecipientType, React.ReactNode> = {
 };
 
 export default function QuickSendPage() {
-  const [selectedChannels, setSelectedChannels] = useState<NotificationChannel[]>(['IN_APP']);
+  const [selectedChannels, setSelectedChannels] = useState<
+    NotificationChannel[]
+  >(["IN_APP"]);
   const [isLoading, setIsLoading] = useState(false);
-  const [sendResult, setSendResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [sendResult, setSendResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
 
   const { data: units = [] } = useUnits();
   const { data: classesData } = useClasses({});
@@ -148,37 +181,37 @@ export default function QuickSendPage() {
   } = useForm<QuickSendForm>({
     resolver: zodResolver(quickSendSchema),
     defaultValues: {
-      type: 'ANNOUNCEMENT',
-      priority: 'NORMAL',
-      recipientType: 'ALL',
+      type: "ANNOUNCEMENT",
+      priority: "NORMAL",
+      recipientType: "ALL",
     },
   });
 
-  const recipientType = watch('recipientType');
-  const selectedUnitId = watch('unitId');
+  const recipientType = watch("recipientType");
+  const selectedUnitId = watch("unitId");
 
-  const filteredClasses = selectedUnitId 
+  const filteredClasses = selectedUnitId
     ? classes.filter((c: { unitId: string }) => c.unitId === selectedUnitId)
     : classes;
 
   const handleChannelToggle = (channel: NotificationChannel) => {
-    setSelectedChannels(prev => 
+    setSelectedChannels((prev) =>
       prev.includes(channel)
-        ? prev.filter(c => c !== channel)
-        : [...prev, channel]
+        ? prev.filter((c) => c !== channel)
+        : [...prev, channel],
     );
   };
 
-  const handleTemplateSelect = (template: typeof MESSAGE_TEMPLATES[0]) => {
-    setValue('title', template.title);
-    setValue('message', template.message);
-    setValue('type', template.type);
-    toast.success('Template diterapkan');
+  const handleTemplateSelect = (template: (typeof MESSAGE_TEMPLATES)[0]) => {
+    setValue("title", template.title);
+    setValue("message", template.message);
+    setValue("type", template.type);
+    toast.success("Template diterapkan");
   };
 
   const onSubmit = async (data: QuickSendForm) => {
     if (selectedChannels.length === 0) {
-      toast.error('Pilih minimal satu channel pengiriman');
+      toast.error("Pilih minimal satu channel pengiriman");
       return;
     }
 
@@ -200,14 +233,15 @@ export default function QuickSendPage() {
         success: true,
         message: `Pesan berhasil dikirim ke ${RECIPIENT_TYPE_LABELS[data.recipientType]}`,
       });
-      
-      toast.success('Pesan berhasil dikirim!');
-      
+
+      toast.success("Pesan berhasil dikirim!");
+
       // Reset form
       reset();
-      setSelectedChannels(['IN_APP']);
+      setSelectedChannels(["IN_APP"]);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Gagal mengirim pesan';
+      const message =
+        error instanceof Error ? error.message : "Gagal mengirim pesan";
       setSendResult({
         success: false,
         message,
@@ -266,10 +300,12 @@ export default function QuickSendPage() {
                     <Input
                       id="title"
                       placeholder="Masukkan judul pesan..."
-                      {...register('title')}
+                      {...register("title")}
                     />
                     {errors.title && (
-                      <p className="text-sm text-red-500">{errors.title.message}</p>
+                      <p className="text-sm text-red-500">
+                        {errors.title.message}
+                      </p>
                     )}
                   </div>
 
@@ -280,10 +316,12 @@ export default function QuickSendPage() {
                       id="message"
                       placeholder="Tulis pesan Anda di sini..."
                       rows={6}
-                      {...register('message')}
+                      {...register("message")}
                     />
                     {errors.message && (
-                      <p className="text-sm text-red-500">{errors.message.message}</p>
+                      <p className="text-sm text-red-500">
+                        {errors.message.message}
+                      </p>
                     )}
                   </div>
 
@@ -291,15 +329,17 @@ export default function QuickSendPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Tipe Notifikasi</Label>
-                      <Select 
-                        value={watch('type')} 
-                        onValueChange={(value) => setValue('type', value as NotificationType)}
+                      <Select
+                        value={watch("type")}
+                        onValueChange={(value) =>
+                          setValue("type", value as NotificationType)
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {NOTIFICATION_TYPES.map(type => (
+                          {NOTIFICATION_TYPES.map((type) => (
                             <SelectItem key={type} value={type}>
                               {NOTIFICATION_TYPE_LABELS[type]}
                             </SelectItem>
@@ -310,15 +350,17 @@ export default function QuickSendPage() {
 
                     <div className="space-y-2">
                       <Label>Prioritas</Label>
-                      <Select 
-                        value={watch('priority')} 
-                        onValueChange={(value) => setValue('priority', value as NotificationPriority)}
+                      <Select
+                        value={watch("priority")}
+                        onValueChange={(value) =>
+                          setValue("priority", value as NotificationPriority)
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {NOTIFICATION_PRIORITIES.map(priority => (
+                          {NOTIFICATION_PRIORITIES.map((priority) => (
                             <SelectItem key={priority} value={priority}>
                               {NOTIFICATION_PRIORITY_LABELS[priority]}
                             </SelectItem>
@@ -333,39 +375,48 @@ export default function QuickSendPage() {
                     <Label>Penerima</Label>
                     <RadioGroup
                       value={recipientType}
-                      onValueChange={(value) => setValue('recipientType', value as RecipientType)}
+                      onValueChange={(value) =>
+                        setValue("recipientType", value as RecipientType)
+                      }
                       className="grid grid-cols-2 md:grid-cols-5 gap-2"
                     >
-                      {(['ALL', 'UNIT', 'CLASS'] as RecipientType[]).map(type => (
-                        <Label
-                          key={type}
-                          htmlFor={`recipient-${type}`}
-                          className={`
+                      {(["ALL", "UNIT", "CLASS"] as RecipientType[]).map(
+                        (type) => (
+                          <Label
+                            key={type}
+                            htmlFor={`recipient-${type}`}
+                            className={`
                             flex items-center gap-2 p-3 border rounded-lg cursor-pointer
-                            ${recipientType === type ? 'border-primary bg-primary/5' : 'hover:bg-muted'}
+                            ${recipientType === type ? "border-primary bg-primary/5" : "hover:bg-muted"}
                           `}
-                        >
-                          <RadioGroupItem value={type} id={`recipient-${type}`} />
-                          {RECIPIENT_ICONS[type]}
-                          <span className="text-sm">{RECIPIENT_TYPE_LABELS[type]}</span>
-                        </Label>
-                      ))}
+                          >
+                            <RadioGroupItem
+                              value={type}
+                              id={`recipient-${type}`}
+                            />
+                            {RECIPIENT_ICONS[type]}
+                            <span className="text-sm">
+                              {RECIPIENT_TYPE_LABELS[type]}
+                            </span>
+                          </Label>
+                        ),
+                      )}
                     </RadioGroup>
                   </div>
 
                   {/* Conditional: Unit Selection */}
-                  {(recipientType === 'UNIT' || recipientType === 'CLASS') && (
+                  {(recipientType === "UNIT" || recipientType === "CLASS") && (
                     <div className="space-y-2">
                       <Label>Pilih Unit</Label>
-                      <Select 
-                        value={selectedUnitId} 
-                        onValueChange={(value) => setValue('unitId', value)}
+                      <Select
+                        value={selectedUnitId}
+                        onValueChange={(value) => setValue("unitId", value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Pilih unit..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {units.map(unit => (
+                          {units.map((unit) => (
                             <SelectItem key={unit.id} value={unit.id}>
                               {unit.name}
                             </SelectItem>
@@ -376,19 +427,19 @@ export default function QuickSendPage() {
                   )}
 
                   {/* Conditional: Class Selection */}
-                  {recipientType === 'CLASS' && (
+                  {recipientType === "CLASS" && (
                     <div className="space-y-2">
                       <Label>Pilih Kelas</Label>
-                      <Select 
-                        value={watch('classId')} 
-                        onValueChange={(value) => setValue('classId', value)}
+                      <Select
+                        value={watch("classId")}
+                        onValueChange={(value) => setValue("classId", value)}
                         disabled={!selectedUnitId}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Pilih kelas..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {filteredClasses.map(cls => (
+                          {filteredClasses.map((cls) => (
                             <SelectItem key={cls.id} value={cls.id}>
                               {cls.name}
                             </SelectItem>
@@ -402,11 +453,15 @@ export default function QuickSendPage() {
                   <div className="space-y-2">
                     <Label>Channel Pengiriman</Label>
                     <div className="flex flex-wrap gap-2">
-                      {NOTIFICATION_CHANNELS.map(channel => (
+                      {NOTIFICATION_CHANNELS.map((channel) => (
                         <Button
                           key={channel}
                           type="button"
-                          variant={selectedChannels.includes(channel) ? 'default' : 'outline'}
+                          variant={
+                            selectedChannels.includes(channel)
+                              ? "default"
+                              : "outline"
+                          }
                           size="sm"
                           onClick={() => handleChannelToggle(channel)}
                           className="gap-2"
@@ -417,17 +472,21 @@ export default function QuickSendPage() {
                       ))}
                     </div>
                     {selectedChannels.length === 0 && (
-                      <p className="text-sm text-red-500">Pilih minimal satu channel</p>
+                      <p className="text-sm text-red-500">
+                        Pilih minimal satu channel
+                      </p>
                     )}
                   </div>
 
                   {/* Result Message */}
                   {sendResult && (
-                    <div className={`p-4 rounded-lg flex items-center gap-3 ${
-                      sendResult.success 
-                        ? 'bg-green-50 text-green-800 border border-green-200'
-                        : 'bg-red-50 text-red-800 border border-red-200'
-                    }`}>
+                    <div
+                      className={`p-4 rounded-lg flex items-center gap-3 ${
+                        sendResult.success
+                          ? "bg-green-50 text-green-800 border border-green-200"
+                          : "bg-red-50 text-red-800 border border-red-200"
+                      }`}
+                    >
                       {sendResult.success ? (
                         <CheckCircle2 className="h-5 w-5" />
                       ) : (
@@ -439,12 +498,12 @@ export default function QuickSendPage() {
 
                   {/* Submit */}
                   <div className="flex justify-end gap-2 pt-4 border-t">
-                    <Button 
-                      type="button" 
+                    <Button
+                      type="button"
                       variant="outline"
                       onClick={() => {
                         reset();
-                        setSelectedChannels(['IN_APP']);
+                        setSelectedChannels(["IN_APP"]);
                         setSendResult(null);
                       }}
                     >
@@ -483,7 +542,7 @@ export default function QuickSendPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {MESSAGE_TEMPLATES.map(template => (
+                  {MESSAGE_TEMPLATES.map((template) => (
                     <Button
                       key={template.id}
                       variant="outline"

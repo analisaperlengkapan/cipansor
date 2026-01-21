@@ -12,7 +12,8 @@ export class KitabProgressController {
         category: req.query.category as any,
         level: req.query.level as any,
         search: req.query.search as string | undefined,
-        isActive: req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined,
+        isActive:
+          req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined,
         page: parseInt(req.query.page as string) || 1,
         limit: parseInt(req.query.limit as string) || 20,
       };
@@ -131,7 +132,9 @@ export class KitabProgressController {
           results.success++;
         } catch (error) {
           results.failed++;
-          results.errors.push(`${record.studentId}: ${error instanceof Error ? error.message : 'Failed'}`);
+          results.errors.push(
+            `${record.studentId}: ${error instanceof Error ? error.message : 'Failed'}`
+          );
         }
       }
 

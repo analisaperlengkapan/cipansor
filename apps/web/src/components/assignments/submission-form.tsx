@@ -1,10 +1,17 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Textarea } from '@/components/ui/textarea';
-import { AssignmentSubmission } from '@cipansor/shared';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { AssignmentSubmission } from "@cipansor/shared";
 
 const submissionSchema = z.object({
   content: z.string().optional(),
@@ -16,11 +23,15 @@ interface SubmissionFormProps {
   isLoading?: boolean;
 }
 
-export function SubmissionForm({ initialData, onSubmit, isLoading }: SubmissionFormProps) {
+export function SubmissionForm({
+  initialData,
+  onSubmit,
+  isLoading,
+}: SubmissionFormProps) {
   const form = useForm<z.infer<typeof submissionSchema>>({
     resolver: zodResolver(submissionSchema),
     defaultValues: {
-      content: initialData?.content || '',
+      content: initialData?.content || "",
     },
   });
 
@@ -34,7 +45,11 @@ export function SubmissionForm({ initialData, onSubmit, isLoading }: SubmissionF
             <FormItem>
               <FormLabel>Your Answer</FormLabel>
               <FormControl>
-                <Textarea placeholder="Type your answer here..." {...field} className="min-h-[150px]" />
+                <Textarea
+                  placeholder="Type your answer here..."
+                  {...field}
+                  className="min-h-[150px]"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -42,7 +57,11 @@ export function SubmissionForm({ initialData, onSubmit, isLoading }: SubmissionF
         />
 
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Submitting...' : (initialData ? 'Update Submission' : 'Submit Assignment')}
+          {isLoading
+            ? "Submitting..."
+            : initialData
+              ? "Update Submission"
+              : "Submit Assignment"}
         </Button>
       </form>
     </Form>

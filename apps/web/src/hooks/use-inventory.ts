@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { PaginatedResponse } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { PaginatedResponse } from "@/lib/api";
 import {
   Asset,
   AssetCategory,
@@ -24,10 +24,15 @@ import {
   CreateAssetDisposalInput,
   AssetMaintenanceStatus,
   AssetDisposalReason,
-} from '@cipansor/shared';
+} from "@cipansor/shared";
 
 // Re-export shared types/enums for convenience
-export { AssetStatus, AssetCondition, AssetMaintenanceStatus, AssetDisposalReason };
+export {
+  AssetStatus,
+  AssetCondition,
+  AssetMaintenanceStatus,
+  AssetDisposalReason,
+};
 export type {
   Asset,
   AssetCategory,
@@ -35,16 +40,18 @@ export type {
   AssetAssignment,
   AssetAudit,
   AssetDepreciation,
-  AssetMaintenance
+  AssetMaintenance,
 };
 
 // Hooks
 
 export function useInventoryCategories() {
   return useQuery({
-    queryKey: ['inventory-categories'],
+    queryKey: ["inventory-categories"],
     queryFn: async () => {
-      const response = await api.get<{ data: AssetCategory[] }>('/inventory/categories');
+      const response = await api.get<{ data: AssetCategory[] }>(
+        "/inventory/categories",
+      );
       return response.data.data;
     },
   });
@@ -60,9 +67,11 @@ export function useInventoryItems(params?: {
   unitId?: string;
 }) {
   return useQuery({
-    queryKey: ['inventory', params],
+    queryKey: ["inventory", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Asset>>('/inventory', { params });
+      const response = await api.get<PaginatedResponse<Asset>>("/inventory", {
+        params,
+      });
       return response.data;
     },
   });
@@ -70,7 +79,7 @@ export function useInventoryItems(params?: {
 
 export function useInventoryItem(id: string) {
   return useQuery({
-    queryKey: ['inventory', id],
+    queryKey: ["inventory", id],
     queryFn: async () => {
       const response = await api.get<{ data: Asset }>(`/inventory/${id}`);
       return response.data.data;
@@ -84,12 +93,12 @@ export function useCreateInventoryItem() {
 
   return useMutation({
     mutationFn: async (data: CreateAssetInput) => {
-      const response = await api.post<{ data: Asset }>('/inventory', data);
+      const response = await api.post<{ data: Asset }>("/inventory", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory', 'summary'] });
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory", "summary"] });
     },
   });
 }
@@ -109,9 +118,9 @@ export function useUpdateInventoryItem() {
       return response.data.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory', data.id] });
-      queryClient.invalidateQueries({ queryKey: ['inventory', 'summary'] });
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory", data.id] });
+      queryClient.invalidateQueries({ queryKey: ["inventory", "summary"] });
     },
   });
 }
@@ -124,17 +133,19 @@ export function useDeleteInventoryItem() {
       await api.delete(`/inventory/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory', 'summary'] });
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory", "summary"] });
     },
   });
 }
 
 export function useInventorySummary(unitId?: string) {
   return useQuery({
-    queryKey: ['inventory', 'summary', unitId],
+    queryKey: ["inventory", "summary", unitId],
     queryFn: async () => {
-      const response = await api.get<{ data: InventoryStats }>(unitId ? `/inventory/stats/${unitId}` : '/inventory/stats');
+      const response = await api.get<{ data: InventoryStats }>(
+        unitId ? `/inventory/stats/${unitId}` : "/inventory/stats",
+      );
       return response.data.data;
     },
   });
@@ -152,9 +163,12 @@ export function useMaintenances(params?: {
   endDate?: string;
 }) {
   return useQuery({
-    queryKey: ['inventory-maintenances', params],
+    queryKey: ["inventory-maintenances", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<AssetMaintenance>>('/inventory/maintenance', { params });
+      const response = await api.get<PaginatedResponse<AssetMaintenance>>(
+        "/inventory/maintenance",
+        { params },
+      );
       return response.data;
     },
   });
@@ -165,13 +179,13 @@ export function useCreateMaintenance() {
 
   return useMutation({
     mutationFn: async (data: CreateAssetMaintenanceInput) => {
-      const response = await api.post('/inventory/maintenance', data);
+      const response = await api.post("/inventory/maintenance", data);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory-maintenances'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-maintenances"] });
+    },
   });
 }
 
@@ -180,12 +194,12 @@ export function useCreateMaintenanceRequest() {
 
   return useMutation({
     mutationFn: async (data: CreateMaintenanceRequestInput) => {
-      const response = await api.post('/inventory/maintenance/request', data);
+      const response = await api.post("/inventory/maintenance/request", data);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory-maintenances'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["inventory-maintenances"] });
+    },
   });
 }
 
@@ -193,13 +207,19 @@ export function useUpdateMaintenance() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateAssetMaintenanceInput }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdateAssetMaintenanceInput;
+    }) => {
       const response = await api.put(`/inventory/maintenance/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory-maintenances'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["inventory-maintenances"] });
+    },
   });
 }
 
@@ -207,14 +227,23 @@ export function useUpdateMaintenanceStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateMaintenanceStatusInput }) => {
-      const response = await api.patch(`/inventory/maintenance/${id}/status`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdateMaintenanceStatusInput;
+    }) => {
+      const response = await api.patch(
+        `/inventory/maintenance/${id}/status`,
+        data,
+      );
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory-maintenances'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory'] }); // Might affect asset status
-    }
+      queryClient.invalidateQueries({ queryKey: ["inventory-maintenances"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory"] }); // Might affect asset status
+    },
   });
 }
 
@@ -224,14 +253,20 @@ export function useDisposeAsset() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: CreateAssetDisposalInput }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: CreateAssetDisposalInput;
+    }) => {
       const response = await api.post(`/inventory/${id}/dispose`, data);
       return response.data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory', variables.id] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory", variables.id] });
+    },
   });
 }
 
@@ -245,9 +280,12 @@ export function useAssetAssignments(params?: {
   status?: string;
 }) {
   return useQuery({
-    queryKey: ['inventory-assignments', params],
+    queryKey: ["inventory-assignments", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<AssetAssignment>>('/inventory/assignments', { params });
+      const response = await api.get<PaginatedResponse<AssetAssignment>>(
+        "/inventory/assignments",
+        { params },
+      );
       return response.data;
     },
   });
@@ -257,13 +295,18 @@ export function useCreateAssignment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: CreateAssetAssignmentInput) => {
-      const response = await api.post<{ data: AssetAssignment }>('/inventory/assignments', data);
+      const response = await api.post<{ data: AssetAssignment }>(
+        "/inventory/assignments",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['inventory-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-assignments"] });
       if (data.assetId) {
-        queryClient.invalidateQueries({ queryKey: ['inventory', data.assetId] });
+        queryClient.invalidateQueries({
+          queryKey: ["inventory", data.assetId],
+        });
       }
     },
   });
@@ -272,14 +315,25 @@ export function useCreateAssignment() {
 export function useReturnAssignment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: ReturnAssetAssignmentInput }) => {
-      const response = await api.post<{ data: AssetAssignment }>(`/inventory/assignments/${id}/return`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: ReturnAssetAssignmentInput;
+    }) => {
+      const response = await api.post<{ data: AssetAssignment }>(
+        `/inventory/assignments/${id}/return`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['inventory-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-assignments"] });
       if (data.assetId) {
-        queryClient.invalidateQueries({ queryKey: ['inventory', data.assetId] });
+        queryClient.invalidateQueries({
+          queryKey: ["inventory", data.assetId],
+        });
       }
     },
   });
@@ -293,9 +347,12 @@ export function useAssetAudits(params?: {
   unitId?: string;
 }) {
   return useQuery({
-    queryKey: ['inventory-audits', params],
+    queryKey: ["inventory-audits", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<AssetAudit>>('/inventory/audits', { params });
+      const response = await api.get<PaginatedResponse<AssetAudit>>(
+        "/inventory/audits",
+        { params },
+      );
       return response.data;
     },
   });
@@ -305,20 +362,25 @@ export function useCreateAudit() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: CreateAssetAuditInput) => {
-      const response = await api.post<{ data: AssetAudit }>('/inventory/audits', data);
+      const response = await api.post<{ data: AssetAudit }>(
+        "/inventory/audits",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory-audits'] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-audits"] });
     },
   });
 }
 
 export function useAssetAudit(id: string) {
   return useQuery({
-    queryKey: ['inventory-audits', id],
+    queryKey: ["inventory-audits", id],
     queryFn: async () => {
-      const response = await api.get<{ data: AssetAudit }>(`/inventory/audits/${id}`);
+      const response = await api.get<{ data: AssetAudit }>(
+        `/inventory/audits/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -328,12 +390,21 @@ export function useAssetAudit(id: string) {
 export function useUpdateAuditItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ itemId, data }: { itemId: string; data: UpdateAssetAuditItemInput }) => {
-      const response = await api.put<{ data: AssetAuditItem }>(`/inventory/audits/items/${itemId}`, data);
+    mutationFn: async ({
+      itemId,
+      data,
+    }: {
+      itemId: string;
+      data: UpdateAssetAuditItemInput;
+    }) => {
+      const response = await api.put<{ data: AssetAuditItem }>(
+        `/inventory/audits/items/${itemId}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory-audits'] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-audits"] });
     },
   });
 }
@@ -342,12 +413,16 @@ export function useCompleteAudit() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.patch<{ data: AssetAudit }>(`/inventory/audits/${id}/complete`);
+      const response = await api.patch<{ data: AssetAudit }>(
+        `/inventory/audits/${id}/complete`,
+      );
       return response.data.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['inventory-audits'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory-audits', data.id] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-audits"] });
+      queryClient.invalidateQueries({
+        queryKey: ["inventory-audits", data.id],
+      });
     },
   });
 }
@@ -356,9 +431,11 @@ export function useCompleteAudit() {
 
 export function useAssetDepreciation(id: string) {
   return useQuery({
-    queryKey: ['inventory-depreciation', id],
+    queryKey: ["inventory-depreciation", id],
     queryFn: async () => {
-      const response = await api.get<{ data: AssetDepreciation }>(`/inventory/${id}/depreciation`);
+      const response = await api.get<{ data: AssetDepreciation }>(
+        `/inventory/${id}/depreciation`,
+      );
       return response.data.data;
     },
     enabled: !!id,

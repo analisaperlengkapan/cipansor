@@ -66,11 +66,7 @@ router.get(
  *       200:
  *         description: Quick stats data
  */
-router.get(
-  '/quick-stats',
-  authenticate,
-  controller.getQuickStats
-);
+router.get('/quick-stats', authenticate, controller.getQuickStats);
 
 /**
  * @openapi
@@ -110,12 +106,7 @@ router.get(
  *       200:
  *         description: List of metric snapshots
  */
-router.get(
-  '/metrics',
-  authenticate,
-  validateQuery(metricsQuerySchema),
-  controller.getMetrics
-);
+router.get('/metrics', authenticate, validateQuery(metricsQuerySchema), controller.getMetrics);
 
 /**
  * @openapi
@@ -213,12 +204,7 @@ router.post(
  *       200:
  *         description: Trend data with summary
  */
-router.get(
-  '/trends',
-  authenticate,
-  validateQuery(trendQuerySchema),
-  controller.getTrend
-);
+router.get('/trends', authenticate, validateQuery(trendQuerySchema), controller.getTrend);
 
 /**
  * @openapi

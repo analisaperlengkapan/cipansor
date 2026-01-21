@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useCorrespondence } from '@/hooks/use-correspondence';
-import { useAuth } from '@/hooks/use-auth';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useCorrespondence } from "@/hooks/use-correspondence";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -20,7 +20,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Mail,
   Send,
@@ -37,23 +37,27 @@ import {
   Users,
   Calendar,
   RefreshCw,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
-import { LetterDirection, LetterStatus, type LetterDetail } from '@cipansor/shared';
-import Link from 'next/link';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
+import {
+  LetterDirection,
+  LetterStatus,
+  type LetterDetail,
+} from "@cipansor/shared";
+import Link from "next/link";
 
 export default function EOfficeMainPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { useLetters } = useCorrespondence(user?.unitId);
-  
+
   // Fetch inbox and outbox
   const { data: inboxData, isLoading: loadingInbox } = useLetters({
     direction: LetterDirection.INCOMING,
     limit: 5,
   });
-  
+
   const { data: outboxData, isLoading: loadingOutbox } = useLetters({
     direction: LetterDirection.OUTGOING,
     limit: 5,
@@ -66,37 +70,77 @@ export default function EOfficeMainPage() {
   const stats = {
     totalIncoming: inboxData?.meta?.total || 0,
     totalOutgoing: outboxData?.meta?.total || 0,
-    pendingReview: inbox.filter((l: LetterDetail) => l.status === LetterStatus.PENDING_REVIEW).length,
-    needsAction: inbox.filter((l: LetterDetail) => 
-      l.status === LetterStatus.DRAFT || l.status === LetterStatus.PENDING_REVIEW
+    pendingReview: inbox.filter(
+      (l: LetterDetail) => l.status === LetterStatus.PENDING_REVIEW,
+    ).length,
+    needsAction: inbox.filter(
+      (l: LetterDetail) =>
+        l.status === LetterStatus.DRAFT ||
+        l.status === LetterStatus.PENDING_REVIEW,
     ).length,
   };
 
   const getStatusBadge = (status: LetterStatus) => {
     const config: Record<LetterStatus, { label: string; className: string }> = {
-      [LetterStatus.DRAFT]: { label: 'Draft', className: 'bg-gray-100 text-gray-800' },
-      [LetterStatus.PENDING_REVIEW]: { label: 'Menunggu Review', className: 'bg-yellow-100 text-yellow-800' },
-      [LetterStatus.APPROVED]: { label: 'Disetujui', className: 'bg-green-100 text-green-800' },
-      [LetterStatus.REJECTED]: { label: 'Ditolak', className: 'bg-red-100 text-red-800' },
-      [LetterStatus.SENT]: { label: 'Terkirim', className: 'bg-blue-100 text-blue-800' },
-      [LetterStatus.RECEIVED]: { label: 'Diterima', className: 'bg-purple-100 text-purple-800' },
-      [LetterStatus.DISPOSED]: { label: 'Didisposisi', className: 'bg-indigo-100 text-indigo-800' },
-      [LetterStatus.COMPLETED]: { label: 'Selesai', className: 'bg-emerald-100 text-emerald-800' },
-      [LetterStatus.ARCHIVED]: { label: 'Diarsip', className: 'bg-slate-100 text-slate-800' },
+      [LetterStatus.DRAFT]: {
+        label: "Draft",
+        className: "bg-gray-100 text-gray-800",
+      },
+      [LetterStatus.PENDING_REVIEW]: {
+        label: "Menunggu Review",
+        className: "bg-yellow-100 text-yellow-800",
+      },
+      [LetterStatus.APPROVED]: {
+        label: "Disetujui",
+        className: "bg-green-100 text-green-800",
+      },
+      [LetterStatus.REJECTED]: {
+        label: "Ditolak",
+        className: "bg-red-100 text-red-800",
+      },
+      [LetterStatus.SENT]: {
+        label: "Terkirim",
+        className: "bg-blue-100 text-blue-800",
+      },
+      [LetterStatus.RECEIVED]: {
+        label: "Diterima",
+        className: "bg-purple-100 text-purple-800",
+      },
+      [LetterStatus.DISPOSED]: {
+        label: "Didisposisi",
+        className: "bg-indigo-100 text-indigo-800",
+      },
+      [LetterStatus.COMPLETED]: {
+        label: "Selesai",
+        className: "bg-emerald-100 text-emerald-800",
+      },
+      [LetterStatus.ARCHIVED]: {
+        label: "Diarsip",
+        className: "bg-slate-100 text-slate-800",
+      },
     };
-    const c = config[status] || { label: status, className: 'bg-gray-100 text-gray-800' };
+    const c = config[status] || {
+      label: status,
+      className: "bg-gray-100 text-gray-800",
+    };
     return <Badge className={c.className}>{c.label}</Badge>;
   };
 
   const getUrgencyBadge = (urgency: string) => {
     const config: Record<string, string> = {
-      URGENT: 'bg-red-100 text-red-800 border-red-200',
-      IMMEDIATE: 'bg-orange-100 text-orange-800 border-orange-200',
-      NORMAL: 'bg-gray-100 text-gray-800 border-gray-200',
+      URGENT: "bg-red-100 text-red-800 border-red-200",
+      IMMEDIATE: "bg-orange-100 text-orange-800 border-orange-200",
+      NORMAL: "bg-gray-100 text-gray-800 border-gray-200",
     };
     return (
-      <span className={`text-xs px-2 py-0.5 rounded border ${config[urgency] || config.NORMAL}`}>
-        {urgency === 'URGENT' ? 'Segera' : urgency === 'IMMEDIATE' ? 'Penting' : 'Biasa'}
+      <span
+        className={`text-xs px-2 py-0.5 rounded border ${config[urgency] || config.NORMAL}`}
+      >
+        {urgency === "URGENT"
+          ? "Segera"
+          : urgency === "IMMEDIATE"
+            ? "Penting"
+            : "Biasa"}
       </span>
     );
   };
@@ -111,7 +155,7 @@ export default function EOfficeMainPage() {
             Sistem Manajemen Surat & Disposisi Digital
           </p>
         </div>
-        <Button onClick={() => router.push('/e-office/create')}>
+        <Button onClick={() => router.push("/e-office/create")}>
           <Plus className="mr-2 h-4 w-4" />
           Buat Surat Baru
         </Button>
@@ -119,7 +163,10 @@ export default function EOfficeMainPage() {
 
       {/* Quick Stats */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => router.push('/e-office/inbox')}>
+        <Card
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => router.push("/e-office/inbox")}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Surat Masuk</CardTitle>
             <Inbox className="h-4 w-4 text-blue-600" />
@@ -132,7 +179,10 @@ export default function EOfficeMainPage() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => router.push('/e-office/outbox')}>
+        <Card
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => router.push("/e-office/outbox")}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Surat Keluar</CardTitle>
             <SendHorizontal className="h-4 w-4 text-green-600" />
@@ -147,36 +197,40 @@ export default function EOfficeMainPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Menunggu Review</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Menunggu Review
+            </CardTitle>
             <Clock className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.pendingReview}</div>
-            <p className="text-xs text-muted-foreground">
-              Perlu persetujuan
-            </p>
+            <div className="text-2xl font-bold text-yellow-600">
+              {stats.pendingReview}
+            </div>
+            <p className="text-xs text-muted-foreground">Perlu persetujuan</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Perlu Tindakan</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Perlu Tindakan
+            </CardTitle>
             <AlertCircle className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats.needsAction}</div>
-            <p className="text-xs text-muted-foreground">
-              Memerlukan aksi
-            </p>
+            <div className="text-2xl font-bold text-orange-600">
+              {stats.needsAction}
+            </div>
+            <p className="text-xs text-muted-foreground">Memerlukan aksi</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card 
+        <Card
           className="cursor-pointer hover:bg-primary/5 transition-colors border-2 border-dashed"
-          onClick={() => router.push('/e-office/create?direction=incoming')}
+          onClick={() => router.push("/e-office/create?direction=incoming")}
         >
           <CardContent className="flex flex-col items-center justify-center p-6 gap-2">
             <div className="p-3 bg-blue-100 rounded-full">
@@ -189,9 +243,9 @@ export default function EOfficeMainPage() {
           </CardContent>
         </Card>
 
-        <Card 
+        <Card
           className="cursor-pointer hover:bg-primary/5 transition-colors border-2 border-dashed"
-          onClick={() => router.push('/e-office/create?direction=outgoing')}
+          onClick={() => router.push("/e-office/create?direction=outgoing")}
         >
           <CardContent className="flex flex-col items-center justify-center p-6 gap-2">
             <div className="p-3 bg-green-100 rounded-full">
@@ -204,9 +258,9 @@ export default function EOfficeMainPage() {
           </CardContent>
         </Card>
 
-        <Card 
+        <Card
           className="cursor-pointer hover:bg-primary/5 transition-colors border-2 border-dashed"
-          onClick={() => router.push('/e-office/inbox?status=pending')}
+          onClick={() => router.push("/e-office/inbox?status=pending")}
         >
           <CardContent className="flex flex-col items-center justify-center p-6 gap-2">
             <div className="p-3 bg-yellow-100 rounded-full">
@@ -219,9 +273,9 @@ export default function EOfficeMainPage() {
           </CardContent>
         </Card>
 
-        <Card 
+        <Card
           className="cursor-pointer hover:bg-primary/5 transition-colors border-2 border-dashed"
-          onClick={() => router.push('/e-office/archive')}
+          onClick={() => router.push("/e-office/archive")}
         >
           <CardContent className="flex flex-col items-center justify-center p-6 gap-2">
             <div className="p-3 bg-purple-100 rounded-full">
@@ -246,9 +300,7 @@ export default function EOfficeMainPage() {
                   <Inbox className="h-5 w-5 text-blue-600" />
                   Surat Masuk Terbaru
                 </CardTitle>
-                <CardDescription>
-                  5 surat masuk terbaru
-                </CardDescription>
+                <CardDescription>5 surat masuk terbaru</CardDescription>
               </div>
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/e-office/inbox">
@@ -270,7 +322,7 @@ export default function EOfficeMainPage() {
             ) : (
               <div className="space-y-3">
                 {inbox.map((letter: LetterDetail) => (
-                  <div 
+                  <div
                     key={letter.id}
                     className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
                     onClick={() => router.push(`/e-office/letter/${letter.id}`)}
@@ -280,7 +332,9 @@ export default function EOfficeMainPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium truncate">{letter.subject}</span>
+                        <span className="font-medium truncate">
+                          {letter.subject}
+                        </span>
                         {getUrgencyBadge(letter.urgency)}
                       </div>
                       <div className="text-sm text-muted-foreground truncate">
@@ -288,7 +342,9 @@ export default function EOfficeMainPage() {
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-muted-foreground">
-                          {format(new Date(letter.date), 'dd MMM yyyy', { locale: localeId })}
+                          {format(new Date(letter.date), "dd MMM yyyy", {
+                            locale: localeId,
+                          })}
                         </span>
                         {getStatusBadge(letter.status)}
                       </div>
@@ -309,9 +365,7 @@ export default function EOfficeMainPage() {
                   <Send className="h-5 w-5 text-green-600" />
                   Surat Keluar Terbaru
                 </CardTitle>
-                <CardDescription>
-                  5 surat keluar terbaru
-                </CardDescription>
+                <CardDescription>5 surat keluar terbaru</CardDescription>
               </div>
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/e-office/outbox">
@@ -333,7 +387,7 @@ export default function EOfficeMainPage() {
             ) : (
               <div className="space-y-3">
                 {outbox.map((letter: LetterDetail) => (
-                  <div 
+                  <div
                     key={letter.id}
                     className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
                     onClick={() => router.push(`/e-office/letter/${letter.id}`)}
@@ -343,15 +397,20 @@ export default function EOfficeMainPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium truncate">{letter.subject}</span>
+                        <span className="font-medium truncate">
+                          {letter.subject}
+                        </span>
                         {getUrgencyBadge(letter.urgency)}
                       </div>
                       <div className="text-sm text-muted-foreground truncate">
-                        Kepada: {letter.recipientName || letter.recipientInstance}
+                        Kepada:{" "}
+                        {letter.recipientName || letter.recipientInstance}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-muted-foreground">
-                          {format(new Date(letter.date), 'dd MMM yyyy', { locale: localeId })}
+                          {format(new Date(letter.date), "dd MMM yyyy", {
+                            locale: localeId,
+                          })}
                         </span>
                         {getStatusBadge(letter.status)}
                       </div>
@@ -372,12 +431,22 @@ export default function EOfficeMainPage() {
               <FileText className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-blue-900">Tips Penggunaan E-Office</h3>
+              <h3 className="font-semibold text-blue-900">
+                Tips Penggunaan E-Office
+              </h3>
               <ul className="mt-2 space-y-1 text-sm text-blue-800">
                 <li>• Gunakan nomor agenda untuk melacak surat masuk</li>
-                <li>• Disposisikan surat ke pegawai yang berwenang untuk tindak lanjut</li>
-                <li>• Arsipkan surat yang sudah selesai diproses untuk dokumentasi</li>
-                <li>• Gunakan filter sifat surat (Segera/Penting/Biasa) untuk prioritas</li>
+                <li>
+                  • Disposisikan surat ke pegawai yang berwenang untuk tindak
+                  lanjut
+                </li>
+                <li>
+                  • Arsipkan surat yang sudah selesai diproses untuk dokumentasi
+                </li>
+                <li>
+                  • Gunakan filter sifat surat (Segera/Penting/Biasa) untuk
+                  prioritas
+                </li>
               </ul>
             </div>
           </div>

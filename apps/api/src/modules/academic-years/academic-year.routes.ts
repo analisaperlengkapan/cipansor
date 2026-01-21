@@ -170,7 +170,13 @@ router.post('/', isSuperAdmin, validate(createAcademicYearSchema), controller.cr
  *       404:
  *         description: Academic year not found
  */
-router.put('/:id', isSuperAdmin, validateParams(academicYearIdParamSchema), validate(updateAcademicYearSchema), controller.update);
+router.put(
+  '/:id',
+  isSuperAdmin,
+  validateParams(academicYearIdParamSchema),
+  validate(updateAcademicYearSchema),
+  controller.update
+);
 
 /**
  * @swagger

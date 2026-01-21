@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -16,34 +22,34 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { toast } from "sonner";
 import {
   useCreateInventoryItem,
   useInventoryCategories,
   AssetCondition,
   AssetStatus,
-} from '@/hooks/use-inventory';
-import { useUnits } from '@/hooks/use-units';
+} from "@/hooks/use-inventory";
+import { useUnits } from "@/hooks/use-units";
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Nama wajib diisi'),
-  code: z.string().min(1, 'Kode wajib diisi'),
-  categoryId: z.string().uuid('Kategori wajib dipilih'),
+  name: z.string().min(1, "Nama wajib diisi"),
+  code: z.string().min(1, "Kode wajib diisi"),
+  categoryId: z.string().uuid("Kategori wajib dipilih"),
   description: z.string().optional(),
   condition: z.nativeEnum(AssetCondition),
   status: z.nativeEnum(AssetStatus),
   location: z.string().optional(),
-  unitId: z.string().uuid('Unit wajib dipilih'),
+  unitId: z.string().uuid("Unit wajib dipilih"),
   purchaseDate: z.string().optional(),
   purchasePrice: z.coerce.number().optional(),
   warrantyExpiry: z.string().optional(),
@@ -64,21 +70,21 @@ export default function NewInventoryPage() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      code: '',
-      categoryId: '',
-      description: '',
+      name: "",
+      code: "",
+      categoryId: "",
+      description: "",
       condition: AssetCondition.GOOD,
       status: AssetStatus.ACTIVE,
-      location: '',
-      unitId: '',
-      purchaseDate: '',
+      location: "",
+      unitId: "",
+      purchaseDate: "",
       purchasePrice: undefined,
-      warrantyExpiry: '',
-      notes: '',
-      brand: '',
-      model: '',
-      serialNumber: '',
+      warrantyExpiry: "",
+      notes: "",
+      brand: "",
+      model: "",
+      serialNumber: "",
     },
   });
 
@@ -87,18 +93,22 @@ export default function NewInventoryPage() {
       await createMutation.mutateAsync({
         ...data,
         location: data.location || undefined,
-        purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : undefined,
+        purchaseDate: data.purchaseDate
+          ? new Date(data.purchaseDate)
+          : undefined,
         purchasePrice: data.purchasePrice || undefined,
-        warrantyExpiry: data.warrantyExpiry ? new Date(data.warrantyExpiry) : undefined,
+        warrantyExpiry: data.warrantyExpiry
+          ? new Date(data.warrantyExpiry)
+          : undefined,
         notes: data.notes || data.description || undefined,
         brand: data.brand || undefined,
         model: data.model || undefined,
         serialNumber: data.serialNumber || undefined,
       });
-      toast.success('Inventaris berhasil ditambahkan');
-      router.push('/inventory');
+      toast.success("Inventaris berhasil ditambahkan");
+      router.push("/inventory");
     } catch {
-      toast.error('Gagal menambahkan inventaris');
+      toast.error("Gagal menambahkan inventaris");
     }
   };
 
@@ -113,7 +123,9 @@ export default function NewInventoryPage() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Tambah Aset</h1>
-          <p className="text-muted-foreground">Tambahkan aset baru ke inventaris</p>
+          <p className="text-muted-foreground">
+            Tambahkan aset baru ke inventaris
+          </p>
         </div>
       </div>
 
@@ -206,7 +218,10 @@ export default function NewInventoryPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Kategori</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih kategori" />
@@ -250,7 +265,10 @@ export default function NewInventoryPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Kondisi</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih kondisi" />
@@ -275,7 +293,10 @@ export default function NewInventoryPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Status</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih status" />
@@ -301,7 +322,9 @@ export default function NewInventoryPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Lokasi & Pembelian</CardTitle>
-                <CardDescription>Informasi lokasi dan pembelian</CardDescription>
+                <CardDescription>
+                  Informasi lokasi dan pembelian
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -324,7 +347,10 @@ export default function NewInventoryPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Unit</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih unit" />
@@ -338,7 +364,9 @@ export default function NewInventoryPage() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormDescription>Unit yang memiliki aset ini</FormDescription>
+                      <FormDescription>
+                        Unit yang memiliki aset ini
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -370,7 +398,7 @@ export default function NewInventoryPage() {
                             type="number"
                             placeholder="0"
                             {...field}
-                            value={field.value || ''}
+                            value={field.value || ""}
                           />
                         </FormControl>
                         <FormMessage />
@@ -420,7 +448,7 @@ export default function NewInventoryPage() {
               <Link href="/inventory">Batal</Link>
             </Button>
             <Button type="submit" disabled={createMutation.isPending}>
-              {createMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+              {createMutation.isPending ? "Menyimpan..." : "Simpan"}
             </Button>
           </div>
         </form>

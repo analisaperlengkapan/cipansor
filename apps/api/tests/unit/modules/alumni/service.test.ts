@@ -68,27 +68,33 @@ describe('Alumni Service - batchGraduateStudents', () => {
     await batchGraduateStudents(input);
 
     // Should create alumni record
-    expect(prisma.alumni.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({
-        studentId: 'student-1',
-        registrationNo: 'ALM-2024-0001',
-        graduationYear: 2024,
+    expect(prisma.alumni.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          studentId: 'student-1',
+          registrationNo: 'ALM-2024-0001',
+          graduationYear: 2024,
+        }),
       })
-    }));
+    );
 
     // Should update student status
-    expect(prisma.student.update).toHaveBeenCalledWith(expect.objectContaining({
-      where: { id: 'student-1' },
-      data: expect.objectContaining({
-        status: 'alumni',
-        graduateYear: 2024,
-      }),
-    }));
+    expect(prisma.student.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'student-1' },
+        data: expect.objectContaining({
+          status: 'alumni',
+          graduateYear: 2024,
+        }),
+      })
+    );
 
     // Should close enrollments
-    expect(prisma.classEnrollment.updateMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { studentId: 'student-1', status: 'active' },
-      data: { status: 'completed' },
-    }));
+    expect(prisma.classEnrollment.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { studentId: 'student-1', status: 'active' },
+        data: { status: 'completed' },
+      })
+    );
   });
 });

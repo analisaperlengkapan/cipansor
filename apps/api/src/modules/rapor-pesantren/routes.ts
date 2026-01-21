@@ -76,19 +76,14 @@ router.put(
  *     security:
  *       - bearerAuth: []
  */
-router.post(
-  '/generate',
-  authenticate,
-  validate(getRaporQuerySchema),
-  async (req, res, next) => {
-    try {
-      const result = await service.generateRaporPesantren(req.body);
-      res.status(201).json(ApiResponse.success(result, 'Rapor generated successfully'));
-    } catch (error) {
-      next(error);
-    }
+router.post('/generate', authenticate, validate(getRaporQuerySchema), async (req, res, next) => {
+  try {
+    const result = await service.generateRaporPesantren(req.body);
+    res.status(201).json(ApiResponse.success(result, 'Rapor generated successfully'));
+  } catch (error) {
+    next(error);
   }
-);
+});
 
 /**
  * @swagger
@@ -151,7 +146,9 @@ router.get('/', authenticate, async (req, res, next) => {
   try {
     const query = listRaporQuerySchema.parse(req.query);
     const result = await service.listRaporPesantren(query);
-    res.json(ApiResponse.paginated(result.data, result.meta.page, result.meta.limit, result.meta.total));
+    res.json(
+      ApiResponse.paginated(result.data, result.meta.page, result.meta.limit, result.meta.total)
+    );
   } catch (error) {
     next(error);
   }
@@ -191,19 +188,14 @@ router.get('/:id', authenticate, async (req, res, next) => {
  *     security:
  *       - bearerAuth: []
  */
-router.put(
-  '/:id',
-  authenticate,
-  validate(updateRaporSchema),
-  async (req, res, next) => {
-    try {
-      const result = await service.updateRaporPesantren(req.params.id, req.body);
-      res.json(ApiResponse.success(result, 'Rapor updated successfully'));
-    } catch (error) {
-      next(error);
-    }
+router.put('/:id', authenticate, validate(updateRaporSchema), async (req, res, next) => {
+  try {
+    const result = await service.updateRaporPesantren(req.params.id, req.body);
+    res.json(ApiResponse.success(result, 'Rapor updated successfully'));
+  } catch (error) {
+    next(error);
   }
-);
+});
 
 /**
  * @swagger

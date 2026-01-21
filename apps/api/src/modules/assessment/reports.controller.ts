@@ -11,9 +11,9 @@ export async function getSkhun(req: Request, res: Response, next: NextFunction) 
     const { studentId, academicYearId, examPeriod } = req.query;
 
     if (!studentId || !academicYearId) {
-      return res.status(400).json(
-        ApiResponse.error('Student ID and Academic Year ID are required')
-      );
+      return res
+        .status(400)
+        .json(ApiResponse.error('Student ID and Academic Year ID are required'));
     }
 
     const skhun = await reportsService.generateSkhun(
@@ -53,9 +53,7 @@ export async function getBulkSkhun(req: Request, res: Response, next: NextFuncti
     const { classId, academicYearId, examPeriod } = req.query;
 
     if (!classId || !academicYearId) {
-      return res.status(400).json(
-        ApiResponse.error('Class ID and Academic Year ID are required')
-      );
+      return res.status(400).json(ApiResponse.error('Class ID and Academic Year ID are required'));
     }
 
     const skhunList = await reportsService.generateBulkSkhun(
@@ -141,9 +139,9 @@ export async function exportSkhunExcel(req: Request, res: Response, next: NextFu
     const { studentId, academicYearId } = req.query;
 
     if (!studentId || !academicYearId) {
-      return res.status(400).json(
-        ApiResponse.error('Student ID and Academic Year ID are required')
-      );
+      return res
+        .status(400)
+        .json(ApiResponse.error('Student ID and Academic Year ID are required'));
     }
 
     const exportData = await reportsService.exportSkhunToExcel(

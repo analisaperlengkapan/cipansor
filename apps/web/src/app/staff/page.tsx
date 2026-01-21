@@ -1,15 +1,21 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
-import { useAuthStore } from '@/stores/auth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
+import { useAuthStore } from "@/stores/auth";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -17,9 +23,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Users,
   HeartPulse,
@@ -38,9 +44,9 @@ import {
   TrendingUp,
   AlertTriangle,
   ChevronRight,
-} from 'lucide-react';
-import Link from 'next/link';
-import { toast } from 'sonner';
+} from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
 import {
   useStaffDashboard,
   useApprovePermit,
@@ -51,17 +57,20 @@ import {
   formatRelativeTime,
   getActivityIcon,
   type PendingTask,
-} from '@/hooks/use-staff-dashboard';
+} from "@/hooks/use-staff-dashboard";
 
 export default function StaffDashboard() {
   const { user } = useAuthStore();
-  const { stats, pendingTasks, recentActivity, isLoading, refetch } = useStaffDashboard();
-  
+  const { stats, pendingTasks, recentActivity, isLoading, refetch } =
+    useStaffDashboard();
+
   // Dialog states
-  const [selectedPermit, setSelectedPermit] = useState<PendingTask | null>(null);
+  const [selectedPermit, setSelectedPermit] = useState<PendingTask | null>(
+    null,
+  );
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
-  
+  const [rejectReason, setRejectReason] = useState("");
+
   // Mutations
   const approvePermit = useApprovePermit();
   const rejectPermit = useRejectPermit();
@@ -69,88 +78,107 @@ export default function StaffDashboard() {
   const handleApprovePermit = async (permitId: string) => {
     try {
       await approvePermit.mutateAsync(permitId);
-      toast.success('Izin berhasil disetujui');
+      toast.success("Izin berhasil disetujui");
       setSelectedPermit(null);
     } catch {
-      toast.error('Gagal menyetujui izin');
+      toast.error("Gagal menyetujui izin");
     }
   };
 
   const handleRejectPermit = async () => {
     if (!selectedPermit || !rejectReason.trim()) {
-      toast.error('Masukkan alasan penolakan');
+      toast.error("Masukkan alasan penolakan");
       return;
     }
     try {
-      await rejectPermit.mutateAsync({ permitId: selectedPermit.id, reason: rejectReason });
-      toast.success('Izin berhasil ditolak');
+      await rejectPermit.mutateAsync({
+        permitId: selectedPermit.id,
+        reason: rejectReason,
+      });
+      toast.success("Izin berhasil ditolak");
       setSelectedPermit(null);
       setRejectDialogOpen(false);
-      setRejectReason('');
+      setRejectReason("");
     } catch {
-      toast.error('Gagal menolak izin');
+      toast.error("Gagal menolak izin");
     }
   };
 
   const quickActions = [
     {
-      title: 'Data Siswa',
-      description: 'Kelola data siswa',
+      title: "Data Siswa",
+      description: "Kelola data siswa",
       icon: Users,
-      href: '/students',
-      color: 'bg-blue-500',
+      href: "/students",
+      color: "bg-blue-500",
     },
     {
-      title: 'Kesehatan',
-      description: 'Rekam kesehatan siswa',
+      title: "Kesehatan",
+      description: "Rekam kesehatan siswa",
       icon: HeartPulse,
-      href: '/health',
-      color: 'bg-red-500',
+      href: "/health",
+      color: "bg-red-500",
     },
     {
-      title: 'Perizinan',
-      description: 'Kelola perizinan',
+      title: "Perizinan",
+      description: "Kelola perizinan",
       icon: ClipboardList,
-      href: '/permits',
-      color: 'bg-purple-500',
+      href: "/permits",
+      color: "bg-purple-500",
     },
     {
-      title: 'Keuangan',
-      description: 'Pembayaran siswa',
+      title: "Keuangan",
+      description: "Pembayaran siswa",
       icon: DollarSign,
-      href: '/finance',
-      color: 'bg-green-500',
+      href: "/finance",
+      color: "bg-green-500",
     },
   ];
 
   const getTaskIcon = (type: string) => {
     switch (type) {
-      case 'permit': return <ClipboardList className="h-4 w-4 text-purple-600" />;
-      case 'health': return <HeartPulse className="h-4 w-4 text-red-600" />;
-      case 'violation': return <FileWarning className="h-4 w-4 text-orange-600" />;
-      case 'reward': return <Award className="h-4 w-4 text-green-600" />;
-      default: return <Clock className="h-4 w-4 text-gray-600" />;
+      case "permit":
+        return <ClipboardList className="h-4 w-4 text-purple-600" />;
+      case "health":
+        return <HeartPulse className="h-4 w-4 text-red-600" />;
+      case "violation":
+        return <FileWarning className="h-4 w-4 text-orange-600" />;
+      case "reward":
+        return <Award className="h-4 w-4 text-green-600" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-600" />;
     }
   };
 
   const getTaskBgColor = (type: string) => {
     switch (type) {
-      case 'permit': return 'bg-purple-100';
-      case 'health': return 'bg-red-100';
-      case 'violation': return 'bg-orange-100';
-      case 'reward': return 'bg-green-100';
-      default: return 'bg-gray-100';
+      case "permit":
+        return "bg-purple-100";
+      case "health":
+        return "bg-red-100";
+      case "violation":
+        return "bg-orange-100";
+      case "reward":
+        return "bg-green-100";
+      default:
+        return "bg-gray-100";
     }
   };
 
   const getActivityColor = (type: string) => {
     switch (type) {
-      case 'permit': return 'bg-purple-500';
-      case 'health': return 'bg-red-500';
-      case 'violation': return 'bg-orange-500';
-      case 'reward': return 'bg-yellow-500';
-      case 'attendance': return 'bg-green-500';
-      default: return 'bg-blue-500';
+      case "permit":
+        return "bg-purple-500";
+      case "health":
+        return "bg-red-500";
+      case "violation":
+        return "bg-orange-500";
+      case "reward":
+        return "bg-yellow-500";
+      case "attendance":
+        return "bg-green-500";
+      default:
+        return "bg-blue-500";
     }
   };
 
@@ -160,7 +188,7 @@ export default function StaffDashboard() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Selamat Datang, {user?.name?.split(' ')[0] || 'Staff'}! 👋
+            Selamat Datang, {user?.name?.split(" ")[0] || "Staff"}! 👋
           </h1>
           <p className="text-muted-foreground">
             Dashboard Staff - Kelola administrasi dan layanan siswa
@@ -168,10 +196,17 @@ export default function StaffDashboard() {
         </div>
         <div className="flex items-center gap-2">
           <p className="text-sm text-muted-foreground">
-            {format(new Date(), 'EEEE, d MMMM yyyy', { locale: localeId })}
+            {format(new Date(), "EEEE, d MMMM yyyy", { locale: localeId })}
           </p>
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isLoading}
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+            />
           </Button>
         </div>
       </div>
@@ -190,8 +225,12 @@ export default function StaffDashboard() {
               <Skeleton className="h-8 w-16" />
             ) : (
               <>
-                <div className="text-2xl font-bold">{stats?.pendingPermits ?? 0}</div>
-                <p className="text-xs text-muted-foreground">menunggu persetujuan</p>
+                <div className="text-2xl font-bold">
+                  {stats?.pendingPermits ?? 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  menunggu persetujuan
+                </p>
               </>
             )}
           </CardContent>
@@ -208,15 +247,21 @@ export default function StaffDashboard() {
               <Skeleton className="h-8 w-16" />
             ) : (
               <>
-                <div className="text-2xl font-bold text-red-600">{stats?.sickStudents ?? 0}</div>
-                <p className="text-xs text-muted-foreground">sedang dalam perawatan</p>
+                <div className="text-2xl font-bold text-red-600">
+                  {stats?.sickStudents ?? 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  sedang dalam perawatan
+                </p>
               </>
             )}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pelanggaran Hari Ini</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Pelanggaran Hari Ini
+            </CardTitle>
             <div className="p-2 rounded-lg bg-orange-100">
               <FileWarning className="h-4 w-4 text-orange-600" />
             </div>
@@ -226,15 +271,21 @@ export default function StaffDashboard() {
               <Skeleton className="h-8 w-16" />
             ) : (
               <>
-                <div className="text-2xl font-bold">{stats?.todayViolations ?? 0}</div>
-                <p className="text-xs text-muted-foreground">tercatat hari ini</p>
+                <div className="text-2xl font-bold">
+                  {stats?.todayViolations ?? 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  tercatat hari ini
+                </p>
               </>
             )}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Penghargaan Hari Ini</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Penghargaan Hari Ini
+            </CardTitle>
             <div className="p-2 rounded-lg bg-green-100">
               <Award className="h-4 w-4 text-green-600" />
             </div>
@@ -244,8 +295,12 @@ export default function StaffDashboard() {
               <Skeleton className="h-8 w-16" />
             ) : (
               <>
-                <div className="text-2xl font-bold text-green-600">{stats?.todayRewards ?? 0}</div>
-                <p className="text-xs text-muted-foreground">diberikan hari ini</p>
+                <div className="text-2xl font-bold text-green-600">
+                  {stats?.todayRewards ?? 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  diberikan hari ini
+                </p>
               </>
             )}
           </CardContent>
@@ -264,23 +319,33 @@ export default function StaffDashboard() {
           <CardContent>
             <div className="grid grid-cols-5 gap-4">
               <div className="text-center p-3 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{stats.attendanceToday.present}</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {stats.attendanceToday.present}
+                </div>
                 <div className="text-xs text-muted-foreground">Hadir</div>
               </div>
               <div className="text-center p-3 bg-red-50 rounded-lg">
-                <div className="text-2xl font-bold text-red-600">{stats.attendanceToday.absent}</div>
+                <div className="text-2xl font-bold text-red-600">
+                  {stats.attendanceToday.absent}
+                </div>
                 <div className="text-xs text-muted-foreground">Alpha</div>
               </div>
               <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-600">{stats.attendanceToday.sick}</div>
+                <div className="text-2xl font-bold text-yellow-600">
+                  {stats.attendanceToday.sick}
+                </div>
                 <div className="text-xs text-muted-foreground">Sakit</div>
               </div>
               <div className="text-center p-3 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{stats.attendanceToday.excused}</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {stats.attendanceToday.excused}
+                </div>
                 <div className="text-xs text-muted-foreground">Izin</div>
               </div>
               <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold">{stats.attendanceToday.total}</div>
+                <div className="text-2xl font-bold">
+                  {stats.attendanceToday.total}
+                </div>
                 <div className="text-xs text-muted-foreground">Total</div>
               </div>
             </div>
@@ -318,7 +383,9 @@ export default function StaffDashboard() {
               <ClipboardList className="h-5 w-5" />
               Tugas Pending
             </CardTitle>
-            <CardDescription>Tugas yang memerlukan tindakan Anda</CardDescription>
+            <CardDescription>
+              Tugas yang memerlukan tindakan Anda
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[320px]">
@@ -335,23 +402,31 @@ export default function StaffDashboard() {
                   ))
                 ) : pendingTasks && pendingTasks.length > 0 ? (
                   pendingTasks.map((task) => (
-                    <div 
-                      key={task.id} 
+                    <div
+                      key={task.id}
                       className={`flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer ${getPriorityColor(task.priority)}`}
-                      onClick={() => task.type === 'permit' && setSelectedPermit(task)}
+                      onClick={() =>
+                        task.type === "permit" && setSelectedPermit(task)
+                      }
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${getTaskBgColor(task.type)}`}>
+                        <div
+                          className={`p-2 rounded-lg ${getTaskBgColor(task.type)}`}
+                        >
                           {getTaskIcon(task.type)}
                         </div>
                         <div>
                           <p className="text-sm font-medium">{task.title}</p>
-                          <p className="text-xs text-muted-foreground">{task.studentName}</p>
-                          <p className="text-xs text-muted-foreground">{formatRelativeTime(task.date)}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {task.studentName}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatRelativeTime(task.date)}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {task.priority === 'high' && (
+                        {task.priority === "high" && (
                           <AlertTriangle className="h-4 w-4 text-red-500" />
                         )}
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -399,18 +474,32 @@ export default function StaffDashboard() {
                   ))
                 ) : recentActivity && recentActivity.length > 0 ? (
                   recentActivity.map((activity) => (
-                    <div key={activity.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className={`w-2 h-2 rounded-full mt-2 ${getActivityColor(activity.type)}`} />
+                    <div
+                      key={activity.id}
+                      className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div
+                        className={`w-2 h-2 rounded-full mt-2 ${getActivityColor(activity.type)}`}
+                      />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm">
-                          <span className="mr-1">{getActivityIcon(activity.type)}</span>
+                          <span className="mr-1">
+                            {getActivityIcon(activity.type)}
+                          </span>
                           <span className="font-medium">{activity.action}</span>
-                          <span className="text-muted-foreground"> - {activity.subject}</span>
+                          <span className="text-muted-foreground">
+                            {" "}
+                            - {activity.subject}
+                          </span>
                         </p>
                         {activity.actor && (
-                          <p className="text-xs text-muted-foreground">oleh {activity.actor}</p>
+                          <p className="text-xs text-muted-foreground">
+                            oleh {activity.actor}
+                          </p>
                         )}
-                        <p className="text-xs text-muted-foreground">{formatRelativeTime(activity.time)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatRelativeTime(activity.time)}
+                        </p>
                       </div>
                     </div>
                   ))
@@ -436,25 +525,37 @@ export default function StaffDashboard() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-4">
             <Link href="/violations">
-              <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2">
+              <Button
+                variant="outline"
+                className="w-full h-auto py-4 flex flex-col gap-2"
+              >
                 <FileWarning className="h-6 w-6" />
                 <span>Pelanggaran</span>
               </Button>
             </Link>
             <Link href="/rewards">
-              <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2">
+              <Button
+                variant="outline"
+                className="w-full h-auto py-4 flex flex-col gap-2"
+              >
                 <Award className="h-6 w-6" />
                 <span>Penghargaan</span>
               </Button>
             </Link>
             <Link href="/announcements">
-              <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2">
+              <Button
+                variant="outline"
+                className="w-full h-auto py-4 flex flex-col gap-2"
+              >
                 <Bell className="h-6 w-6" />
                 <span>Pengumuman</span>
               </Button>
             </Link>
             <Link href="/attendance">
-              <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2">
+              <Button
+                variant="outline"
+                className="w-full h-auto py-4 flex flex-col gap-2"
+              >
                 <Calendar className="h-6 w-6" />
                 <span>Kehadiran</span>
               </Button>
@@ -464,7 +565,10 @@ export default function StaffDashboard() {
       </Card>
 
       {/* Permit Action Dialog */}
-      <Dialog open={!!selectedPermit} onOpenChange={(open) => !open && setSelectedPermit(null)}>
+      <Dialog
+        open={!!selectedPermit}
+        onOpenChange={(open) => !open && setSelectedPermit(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Detail Perizinan</DialogTitle>
@@ -490,22 +594,27 @@ export default function StaffDashboard() {
                 <div>
                   <Label className="text-muted-foreground">Tanggal</Label>
                   <p className="font-medium">
-                    {format(new Date(selectedPermit.date), 'd MMMM yyyy', { locale: localeId })}
+                    {format(new Date(selectedPermit.date), "d MMMM yyyy", {
+                      locale: localeId,
+                    })}
                   </p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Prioritas</Label>
                   <Badge className={getPriorityColor(selectedPermit.priority)}>
-                    {selectedPermit.priority === 'high' ? 'Tinggi' : 
-                     selectedPermit.priority === 'medium' ? 'Sedang' : 'Rendah'}
+                    {selectedPermit.priority === "high"
+                      ? "Tinggi"
+                      : selectedPermit.priority === "medium"
+                        ? "Sedang"
+                        : "Rendah"}
                   </Badge>
                 </div>
               </div>
             </div>
           )}
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setRejectDialogOpen(true);
               }}
@@ -514,8 +623,10 @@ export default function StaffDashboard() {
               <XCircle className="h-4 w-4 mr-2" />
               Tolak
             </Button>
-            <Button 
-              onClick={() => selectedPermit && handleApprovePermit(selectedPermit.id)}
+            <Button
+              onClick={() =>
+                selectedPermit && handleApprovePermit(selectedPermit.id)
+              }
               disabled={approvePermit.isPending || rejectPermit.isPending}
             >
               {approvePermit.isPending ? (
@@ -551,11 +662,14 @@ export default function StaffDashboard() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setRejectDialogOpen(false)}
+            >
               Batal
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={handleRejectPermit}
               disabled={rejectPermit.isPending || !rejectReason.trim()}
             >

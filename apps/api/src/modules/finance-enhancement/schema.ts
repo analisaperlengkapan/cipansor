@@ -4,7 +4,7 @@ import {
   JournalReferenceType,
   ScholarshipType,
   ScholarshipSource,
-  PaymentCategory
+  PaymentCategory,
 } from '@cipansor/shared';
 
 // ==================== ACCOUNT CODES ====================
@@ -14,25 +14,30 @@ export const createAccountCodeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   type: z.nativeEnum(AccountType),
   parentId: z.string().optional(),
-  isActive: z.boolean().optional()
+  isActive: z.boolean().optional(),
 });
 
 export const updateAccountCodeSchema = createAccountCodeSchema.partial();
 
 // ==================== JOURNAL ENTRIES ====================
 
-export const createJournalEntrySchema = z.object({
-  unitId: z.string().uuid(),
-  accountId: z.string().uuid(),
-  date: z.string().datetime().or(z.date().transform(d => d.toISOString())),
-  description: z.string().optional(),
-  debit: z.number().min(0).optional(),
-  credit: z.number().min(0).optional(),
-  reference: z.string().optional(),
-  referenceType: z.nativeEnum(JournalReferenceType).optional()
-}).refine(data => (data.debit || 0) > 0 || (data.credit || 0) > 0, {
-  message: "Either debit or credit must be greater than 0"
-});
+export const createJournalEntrySchema = z
+  .object({
+    unitId: z.string().uuid(),
+    accountId: z.string().uuid(),
+    date: z
+      .string()
+      .datetime()
+      .or(z.date().transform((d) => d.toISOString())),
+    description: z.string().optional(),
+    debit: z.number().min(0).optional(),
+    credit: z.number().min(0).optional(),
+    reference: z.string().optional(),
+    referenceType: z.nativeEnum(JournalReferenceType).optional(),
+  })
+  .refine((data) => (data.debit || 0) > 0 || (data.credit || 0) > 0, {
+    message: 'Either debit or credit must be greater than 0',
+  });
 
 // ==================== SCHOLARSHIPS ====================
 
@@ -46,7 +51,7 @@ export const createScholarshipSchema = z.object({
   startDate: z.string().datetime(),
   endDate: z.string().datetime().optional(),
   unitId: z.string().uuid(),
-  isActive: z.boolean().optional()
+  isActive: z.boolean().optional(),
 });
 
 export const assignScholarshipSchema = z.object({
@@ -55,7 +60,7 @@ export const assignScholarshipSchema = z.object({
   academicYearId: z.string().uuid(),
   startDate: z.string().datetime(),
   endDate: z.string().datetime().optional(),
-  notes: z.string().optional()
+  notes: z.string().optional(),
 });
 
 // ==================== PAYMENT COMPONENTS ====================
@@ -67,5 +72,5 @@ export const createPaymentComponentSchema = z.object({
   category: z.nativeEnum(PaymentCategory),
   amount: z.number().min(0),
   unitId: z.string().uuid(),
-  isActive: z.boolean().optional()
+  isActive: z.boolean().optional(),
 });

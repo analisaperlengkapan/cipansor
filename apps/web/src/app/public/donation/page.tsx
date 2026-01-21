@@ -1,19 +1,38 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { 
-  usePublicCampaigns, 
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  usePublicCampaigns,
   useCampaign,
   useCreateDonation,
   DONATION_TYPES,
@@ -22,10 +41,10 @@ import {
   PaymentMethod,
   DonationCampaign,
   formatCurrency,
-  calculateProgress
-} from '@/hooks/use-donation';
-import { 
-  Heart, 
+  calculateProgress,
+} from "@/hooks/use-donation";
+import {
+  Heart,
   HandHeart,
   Target,
   Users,
@@ -42,14 +61,17 @@ import {
   Mail,
   MapPin,
   ChevronRight,
-  ExternalLink
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import Link from 'next/link';
+  ExternalLink,
+} from "lucide-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import Link from "next/link";
 
-const paymentIcons: Record<PaymentMethod, React.ComponentType<{ className?: string }>> = {
+const paymentIcons: Record<
+  PaymentMethod,
+  React.ComponentType<{ className?: string }>
+> = {
   CASH: Banknote,
   BANK_TRANSFER: Building2,
   QRIS: QrCode,
@@ -58,39 +80,44 @@ const paymentIcons: Record<PaymentMethod, React.ComponentType<{ className?: stri
 };
 
 export default function PublicDonationPage() {
-  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(
+    null,
+  );
   const [showForm, setShowForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successData, setSuccessData] = useState<{ donorName: string; amount: number } | null>(null);
+  const [successData, setSuccessData] = useState<{
+    donorName: string;
+    amount: number;
+  } | null>(null);
 
   const [formData, setFormData] = useState({
-    donorName: '',
-    donorPhone: '',
-    donorEmail: '',
-    donorAddress: '',
+    donorName: "",
+    donorPhone: "",
+    donorEmail: "",
+    donorAddress: "",
     isAnonymous: false,
-    type: 'INFAK' as DonationType,
-    amount: '',
-    paymentMethod: 'BANK_TRANSFER' as PaymentMethod,
-    notes: '',
+    type: "INFAK" as DonationType,
+    amount: "",
+    paymentMethod: "BANK_TRANSFER" as PaymentMethod,
+    notes: "",
   });
 
   const { data: campaignsData, isLoading } = usePublicCampaigns();
   const campaigns = campaignsData?.data || [];
-  const activeCampaigns = campaigns.filter(c => c.status === 'ACTIVE');
+  const activeCampaigns = campaigns.filter((c) => c.status === "ACTIVE");
 
   const createDonation = useCreateDonation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.donorName.trim() && !formData.isAnonymous) {
-      toast.error('Nama donatur harus diisi atau pilih donasi anonim');
+      toast.error("Nama donatur harus diisi atau pilih donasi anonim");
       return;
     }
 
     if (!formData.amount || parseInt(formData.amount) < 10000) {
-      toast.error('Minimal donasi Rp 10.000');
+      toast.error("Minimal donasi Rp 10.000");
       return;
     }
 
@@ -98,7 +125,7 @@ export default function PublicDonationPage() {
     try {
       await createDonation.mutateAsync({
         campaignId: selectedCampaignId || undefined,
-        donorName: formData.isAnonymous ? 'Hamba Allah' : formData.donorName,
+        donorName: formData.isAnonymous ? "Hamba Allah" : formData.donorName,
         donorPhone: formData.donorPhone || undefined,
         donorEmail: formData.donorEmail || undefined,
         donorAddress: formData.donorAddress || undefined,
@@ -108,27 +135,27 @@ export default function PublicDonationPage() {
         paymentMethod: formData.paymentMethod,
         notes: formData.notes || undefined,
       });
-      
+
       setSuccessData({
-        donorName: formData.isAnonymous ? 'Hamba Allah' : formData.donorName,
+        donorName: formData.isAnonymous ? "Hamba Allah" : formData.donorName,
         amount: parseInt(formData.amount),
       });
-      
+
       // Reset form
       setFormData({
-        donorName: '',
-        donorPhone: '',
-        donorEmail: '',
-        donorAddress: '',
+        donorName: "",
+        donorPhone: "",
+        donorEmail: "",
+        donorAddress: "",
         isAnonymous: false,
-        type: 'INFAK',
-        amount: '',
-        paymentMethod: 'BANK_TRANSFER',
-        notes: '',
+        type: "INFAK",
+        amount: "",
+        paymentMethod: "BANK_TRANSFER",
+        notes: "",
       });
       setShowForm(false);
     } catch {
-      toast.error('Gagal mengirim donasi. Silakan coba lagi.');
+      toast.error("Gagal mengirim donasi. Silakan coba lagi.");
     } finally {
       setIsSubmitting(false);
     }
@@ -168,11 +195,11 @@ export default function PublicDonationPage() {
             Mari Berbagi Kebaikan
           </h2>
           <p className="text-lg text-emerald-100 max-w-2xl mx-auto mb-8">
-            Setiap donasi Anda akan membantu pengembangan pendidikan Islam dan 
+            Setiap donasi Anda akan membantu pengembangan pendidikan Islam dan
             memberikan manfaat bagi ribuan santri di Yayasan CIPANSOR
           </p>
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
             className="bg-white text-emerald-600 hover:bg-emerald-50"
             onClick={() => setShowForm(true)}
           >
@@ -192,7 +219,9 @@ export default function PublicDonationPage() {
                   <Target className="h-6 w-6 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Kampanye Aktif</p>
+                  <p className="text-sm text-muted-foreground">
+                    Kampanye Aktif
+                  </p>
                   <p className="text-2xl font-bold">{activeCampaigns.length}</p>
                 </div>
               </div>
@@ -220,9 +249,16 @@ export default function PublicDonationPage() {
                   <Banknote className="h-6 w-6 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Terkumpul</p>
+                  <p className="text-sm text-muted-foreground">
+                    Total Terkumpul
+                  </p>
                   <p className="text-2xl font-bold">
-                    {formatCurrency(activeCampaigns.reduce((sum, c) => sum + c.collectedAmount, 0))}
+                    {formatCurrency(
+                      activeCampaigns.reduce(
+                        (sum, c) => sum + c.collectedAmount,
+                        0,
+                      ),
+                    )}
                   </p>
                 </div>
               </div>
@@ -238,7 +274,7 @@ export default function PublicDonationPage() {
 
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map(i => (
+              {[1, 2, 3].map((i) => (
                 <Skeleton key={i} className="h-80" />
               ))}
             </div>
@@ -246,9 +282,11 @@ export default function PublicDonationPage() {
             <Card className="text-center py-12">
               <CardContent>
                 <Heart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Belum ada kampanye aktif saat ini</p>
-                <Button 
-                  variant="outline" 
+                <p className="text-muted-foreground">
+                  Belum ada kampanye aktif saat ini
+                </p>
+                <Button
+                  variant="outline"
                   className="mt-4"
                   onClick={() => setShowForm(true)}
                 >
@@ -259,8 +297,8 @@ export default function PublicDonationPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {activeCampaigns.map((campaign) => (
-                <CampaignCard 
-                  key={campaign.id} 
+                <CampaignCard
+                  key={campaign.id}
                   campaign={campaign}
                   onDonate={() => {
                     setSelectedCampaignId(campaign.id);
@@ -277,8 +315,8 @@ export default function PublicDonationPage() {
           <h3 className="text-2xl font-bold mb-6 text-center">Jenis Donasi</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {DONATION_TYPES.slice(0, 8).map((type) => (
-              <Card 
-                key={type.value} 
+              <Card
+                key={type.value}
                 className="hover:shadow-lg transition-shadow cursor-pointer"
                 onClick={() => {
                   setFormData({ ...formData, type: type.value });
@@ -304,19 +342,31 @@ export default function PublicDonationPage() {
                 <Building2 className="h-5 w-5" />
                 Informasi Rekening
               </CardTitle>
-              <CardDescription>Transfer donasi ke rekening berikut</CardDescription>
+              <CardDescription>
+                Transfer donasi ke rekening berikut
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="p-4 bg-white rounded-lg border">
-                  <p className="font-semibold text-lg mb-2">Bank Syariah Indonesia (BSI)</p>
-                  <p className="text-2xl font-mono font-bold text-emerald-600 mb-1">7788990011</p>
-                  <p className="text-sm text-muted-foreground">a.n. Yayasan CIPANSOR</p>
+                  <p className="font-semibold text-lg mb-2">
+                    Bank Syariah Indonesia (BSI)
+                  </p>
+                  <p className="text-2xl font-mono font-bold text-emerald-600 mb-1">
+                    7788990011
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    a.n. Yayasan CIPANSOR
+                  </p>
                 </div>
                 <div className="p-4 bg-white rounded-lg border">
                   <p className="font-semibold text-lg mb-2">Bank Muamalat</p>
-                  <p className="text-2xl font-mono font-bold text-emerald-600 mb-1">1234567890</p>
-                  <p className="text-sm text-muted-foreground">a.n. Yayasan CIPANSOR</p>
+                  <p className="text-2xl font-mono font-bold text-emerald-600 mb-1">
+                    1234567890
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    a.n. Yayasan CIPANSOR
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -330,14 +380,22 @@ export default function PublicDonationPage() {
               <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                 <div>
                   <h4 className="font-semibold text-lg mb-2">Butuh Bantuan?</h4>
-                  <p className="text-muted-foreground">Hubungi kami untuk informasi lebih lanjut tentang donasi</p>
+                  <p className="text-muted-foreground">
+                    Hubungi kami untuk informasi lebih lanjut tentang donasi
+                  </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <a href="tel:+6281234567890" className="flex items-center gap-2 text-emerald-600 hover:underline">
+                  <a
+                    href="tel:+6281234567890"
+                    className="flex items-center gap-2 text-emerald-600 hover:underline"
+                  >
                     <Phone className="h-4 w-4" />
                     0812-3456-7890
                   </a>
-                  <a href="mailto:donasi@cipansor.id" className="flex items-center gap-2 text-emerald-600 hover:underline">
+                  <a
+                    href="mailto:donasi@cipansor.id"
+                    className="flex items-center gap-2 text-emerald-600 hover:underline"
+                  >
                     <Mail className="h-4 w-4" />
                     donasi@cipansor.id
                   </a>
@@ -351,10 +409,13 @@ export default function PublicDonationPage() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gray-400">© 2024 Yayasan Pendidikan Islam CIPANSOR. Semua hak dilindungi.</p>
+          <p className="text-gray-400">
+            © 2024 Yayasan Pendidikan Islam CIPANSOR. Semua hak dilindungi.
+          </p>
           <p className="text-sm text-gray-500 mt-2">
-            "Perumpamaan orang yang menginfakkan hartanya di jalan Allah seperti sebutir biji yang menumbuhkan tujuh tangkai, 
-            pada setiap tangkai ada seratus biji." (QS. Al-Baqarah: 261)
+            "Perumpamaan orang yang menginfakkan hartanya di jalan Allah seperti
+            sebutir biji yang menumbuhkan tujuh tangkai, pada setiap tangkai ada
+            seratus biji." (QS. Al-Baqarah: 261)
           </p>
         </div>
       </footer>
@@ -368,10 +429,11 @@ export default function PublicDonationPage() {
               Form Donasi
             </DialogTitle>
             <DialogDescription>
-              Isi data donasi Anda. Donasi akan diverifikasi setelah pembayaran dikonfirmasi.
+              Isi data donasi Anda. Donasi akan diverifikasi setelah pembayaran
+              dikonfirmasi.
             </DialogDescription>
           </DialogHeader>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4 pt-4">
             {/* Quick Amount */}
             <div className="space-y-2">
@@ -381,9 +443,13 @@ export default function PublicDonationPage() {
                   <Button
                     key={amount}
                     type="button"
-                    variant={formData.amount === String(amount) ? 'default' : 'outline'}
+                    variant={
+                      formData.amount === String(amount) ? "default" : "outline"
+                    }
                     size="sm"
-                    onClick={() => setFormData({ ...formData, amount: String(amount) })}
+                    onClick={() =>
+                      setFormData({ ...formData, amount: String(amount) })
+                    }
                   >
                     {formatCurrency(amount)}
                   </Button>
@@ -393,7 +459,9 @@ export default function PublicDonationPage() {
                 type="number"
                 placeholder="Atau masukkan nominal lain"
                 value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, amount: e.target.value })
+                }
                 min={10000}
               />
             </div>
@@ -401,9 +469,11 @@ export default function PublicDonationPage() {
             {/* Donation Type */}
             <div className="space-y-2">
               <Label>Jenis Donasi</Label>
-              <Select 
-                value={formData.type} 
-                onValueChange={(v) => setFormData({ ...formData, type: v as DonationType })}
+              <Select
+                value={formData.type}
+                onValueChange={(v) =>
+                  setFormData({ ...formData, type: v as DonationType })
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -423,7 +493,9 @@ export default function PublicDonationPage() {
               <Checkbox
                 id="isAnonymous"
                 checked={formData.isAnonymous}
-                onCheckedChange={(checked) => setFormData({ ...formData, isAnonymous: checked as boolean })}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, isAnonymous: checked as boolean })
+                }
               />
               <Label htmlFor="isAnonymous" className="cursor-pointer">
                 Donasi sebagai Hamba Allah (Anonim)
@@ -438,7 +510,9 @@ export default function PublicDonationPage() {
                   <Input
                     id="donorName"
                     value={formData.donorName}
-                    onChange={(e) => setFormData({ ...formData, donorName: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, donorName: e.target.value })
+                    }
                     placeholder="Masukkan nama lengkap"
                   />
                 </div>
@@ -449,7 +523,9 @@ export default function PublicDonationPage() {
                     <Input
                       id="donorPhone"
                       value={formData.donorPhone}
-                      onChange={(e) => setFormData({ ...formData, donorPhone: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, donorPhone: e.target.value })
+                      }
                       placeholder="08xx"
                     />
                   </div>
@@ -459,7 +535,9 @@ export default function PublicDonationPage() {
                       id="donorEmail"
                       type="email"
                       value={formData.donorEmail}
-                      onChange={(e) => setFormData({ ...formData, donorEmail: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, donorEmail: e.target.value })
+                      }
                       placeholder="email@example.com"
                     />
                   </div>
@@ -477,9 +555,18 @@ export default function PublicDonationPage() {
                     <Button
                       key={method.value}
                       type="button"
-                      variant={formData.paymentMethod === method.value ? 'default' : 'outline'}
+                      variant={
+                        formData.paymentMethod === method.value
+                          ? "default"
+                          : "outline"
+                      }
                       className="justify-start"
-                      onClick={() => setFormData({ ...formData, paymentMethod: method.value })}
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          paymentMethod: method.value,
+                        })
+                      }
                     >
                       <Icon className="h-4 w-4 mr-2" />
                       {method.label}
@@ -495,14 +582,16 @@ export default function PublicDonationPage() {
               <Textarea
                 id="notes"
                 value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
                 placeholder="Tulis pesan atau doa..."
                 rows={2}
               />
             </div>
 
             <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? 'Memproses...' : 'Kirim Donasi'}
+              {isSubmitting ? "Memproses..." : "Kirim Donasi"}
             </Button>
           </form>
         </DialogContent>
@@ -523,7 +612,8 @@ export default function PublicDonationPage() {
               {successData && formatCurrency(successData.amount)}
             </p>
             <p className="text-sm text-muted-foreground mb-6">
-              Donasi Anda sedang menunggu verifikasi. Kami akan menghubungi Anda setelah pembayaran dikonfirmasi.
+              Donasi Anda sedang menunggu verifikasi. Kami akan menghubungi Anda
+              setelah pembayaran dikonfirmasi.
             </p>
             <Button onClick={() => setSuccessData(null)} className="w-full">
               Tutup
@@ -535,14 +625,17 @@ export default function PublicDonationPage() {
   );
 }
 
-function CampaignCard({ 
-  campaign, 
-  onDonate 
-}: { 
+function CampaignCard({
+  campaign,
+  onDonate,
+}: {
   campaign: DonationCampaign;
   onDonate: () => void;
 }) {
-  const progress = calculateProgress(campaign.collectedAmount, campaign.targetAmount);
+  const progress = calculateProgress(
+    campaign.collectedAmount,
+    campaign.targetAmount,
+  );
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -551,8 +644,12 @@ function CampaignCard({
       </div>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-lg line-clamp-2">{campaign.title}</CardTitle>
-          <Badge className="bg-emerald-100 text-emerald-800 shrink-0">Aktif</Badge>
+          <CardTitle className="text-lg line-clamp-2">
+            {campaign.title}
+          </CardTitle>
+          <Badge className="bg-emerald-100 text-emerald-800 shrink-0">
+            Aktif
+          </Badge>
         </div>
         {campaign.description && (
           <CardDescription className="line-clamp-2">
@@ -566,9 +663,7 @@ function CampaignCard({
             <span className="font-medium text-emerald-600">
               {formatCurrency(campaign.collectedAmount)}
             </span>
-            <span className="text-muted-foreground">
-              {progress}%
-            </span>
+            <span className="text-muted-foreground">{progress}%</span>
           </div>
           <Progress value={progress} className="h-2" />
           <p className="text-xs text-muted-foreground mt-1">
@@ -584,7 +679,10 @@ function CampaignCard({
           {campaign.endDate && (
             <span className="flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5" />
-              s/d {format(new Date(campaign.endDate), 'd MMM', { locale: idLocale })}
+              s/d{" "}
+              {format(new Date(campaign.endDate), "d MMM", {
+                locale: idLocale,
+              })}
             </span>
           )}
         </div>

@@ -3,7 +3,15 @@ import { prisma } from '@/lib/prisma';
 import { SharedPaginatedResponse } from '@cipansor/shared';
 
 export const contractService = {
-  async create(data: { userId: string; contractNumber: string; type: string; startDate: Date; endDate?: Date; documentUrl?: string; notes?: string }) {
+  async create(data: {
+    userId: string;
+    contractNumber: string;
+    type: string;
+    startDate: Date;
+    endDate?: Date;
+    documentUrl?: string;
+    notes?: string;
+  }) {
     return prisma.employmentContract.create({
       data: {
         user: { connect: { id: data.userId } },
@@ -17,7 +25,17 @@ export const contractService = {
     });
   },
 
-  async update(id: string, data: { type?: string; startDate?: Date; endDate?: Date; status?: any; documentUrl?: string; notes?: string }) {
+  async update(
+    id: string,
+    data: {
+      type?: string;
+      startDate?: Date;
+      endDate?: Date;
+      status?: any;
+      documentUrl?: string;
+      notes?: string;
+    }
+  ) {
     return prisma.employmentContract.update({
       where: { id },
       data,
@@ -88,5 +106,5 @@ export const contractService = {
       },
       orderBy: { endDate: 'asc' },
     });
-  }
+  },
 };

@@ -316,10 +316,14 @@ export async function createSchedule(data: CreateScheduleInput) {
 
   if (conflict) {
     const conflictType =
-      conflict.teacherId === data.teacherId ? 'Teacher' :
-      conflict.classId === data.classId ? 'Class' :
-      'Room';
-    throw new Error(`Schedule conflict: ${conflictType} is already booked at this time (${data.startTime} - ${data.endTime})`);
+      conflict.teacherId === data.teacherId
+        ? 'Teacher'
+        : conflict.classId === data.classId
+          ? 'Class'
+          : 'Room';
+    throw new Error(
+      `Schedule conflict: ${conflictType} is already booked at this time (${data.startTime} - ${data.endTime})`
+    );
   }
 
   return prisma.schedule.create({

@@ -1,29 +1,43 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { useBulkCreateDailyReports, DailyMood, BulkCreateDailyReportsInput } from '@/hooks/use-daily-report';
-import { useClasses } from '@/hooks/use-classes';
-import { useStudents } from '@/hooks/use-students';
-import { useAcademicYears } from '@/hooks/use-academic-years';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import {
+  useBulkCreateDailyReports,
+  DailyMood,
+  BulkCreateDailyReportsInput,
+} from "@/hooks/use-daily-report";
+import { useClasses } from "@/hooks/use-classes";
+import { useStudents } from "@/hooks/use-students";
+import { useAcademicYears } from "@/hooks/use-academic-years";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+} from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   ArrowLeft,
   CalendarIcon,
@@ -31,13 +45,13 @@ import {
   Loader2,
   Users,
   Info,
-} from 'lucide-react';
-import { format, set, parse } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { useAuthStore } from '@/stores/auth';
-import { cn } from '@/lib/utils';
-import { MOOD_OPTIONS, HEALTH_OPTIONS, ATTENDANCE_OPTIONS } from '../constants';
+} from "lucide-react";
+import { format, set, parse } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { toast } from "sonner";
+import { useAuthStore } from "@/stores/auth";
+import { cn } from "@/lib/utils";
+import { MOOD_OPTIONS, HEALTH_OPTIONS, ATTENDANCE_OPTIONS } from "../constants";
 
 interface StudentCheckIn {
   studentId: string;
@@ -52,9 +66,9 @@ interface StudentCheckIn {
 export default function BulkCheckInPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [classId, setClassId] = useState<string>('');
+  const [classId, setClassId] = useState<string>("");
   const [date, setDate] = useState<Date>(new Date());
-  const [defaultCheckInTime, setDefaultCheckInTime] = useState('07:30');
+  const [defaultCheckInTime, setDefaultCheckInTime] = useState("07:30");
   const [students, setStudents] = useState<StudentCheckIn[]>([]);
   const [selectAll, setSelectAll] = useState(false);
 
@@ -84,13 +98,13 @@ export default function BulkCheckInPage() {
       setStudents(
         studentData.data.map((student) => ({
           studentId: student.id,
-          studentName: student.name || '',
+          studentName: student.name || "",
           photoUrl: student.photoUrl,
           selected: true,
           checkInTime: defaultCheckInTime,
-          moodStatus: 'HAPPY',
-          healthStatus: 'Sehat',
-        }))
+          moodStatus: "HAPPY",
+          healthStatus: "Sehat",
+        })),
       );
       setSelectAll(true);
     }
@@ -102,14 +116,14 @@ export default function BulkCheckInPage() {
       prev.map((s) => ({
         ...s,
         selected: checked,
-      }))
+      })),
     );
   };
 
   const handleStudentChange = (
     studentId: string,
     field: keyof StudentCheckIn,
-    value: string | boolean
+    value: string | boolean,
   ) => {
     setStudents((prev) =>
       prev.map((s) => {
@@ -117,7 +131,7 @@ export default function BulkCheckInPage() {
           return { ...s, [field]: value } as StudentCheckIn;
         }
         return s;
-      })
+      }),
     );
   };
 
@@ -126,20 +140,20 @@ export default function BulkCheckInPage() {
       prev.map((s) => ({
         ...s,
         checkInTime: s.selected ? defaultCheckInTime : s.checkInTime,
-      }))
+      })),
     );
   };
 
   const handleSubmit = async () => {
     if (!user?.unitId || !activeAcademicYear?.id) {
-      toast.error('Data unit atau tahun ajaran tidak ditemukan');
+      toast.error("Data unit atau tahun ajaran tidak ditemukan");
       return;
     }
 
     const selectedStudents = students.filter((s) => s.selected);
 
     if (selectedStudents.length === 0) {
-      toast.error('Pilih minimal 1 siswa untuk check-in');
+      toast.error("Pilih minimal 1 siswa untuk check-in");
       return;
     }
 
@@ -152,7 +166,7 @@ export default function BulkCheckInPage() {
           // Construct full ISO datetime for arrivalTime
           let arrivalTime: string | undefined = undefined;
           if (s.checkInTime) {
-            const timeParts = s.checkInTime.split(':');
+            const timeParts = s.checkInTime.split(":");
             if (timeParts.length === 2) {
               const checkInDate = set(date, {
                 hours: parseInt(timeParts[0], 10),
@@ -177,9 +191,9 @@ export default function BulkCheckInPage() {
       await bulkCreateMutation.mutateAsync(payload);
 
       toast.success(`${selectedStudents.length} siswa berhasil check-in`);
-      router.push('/paud/daily-reports');
+      router.push("/paud/daily-reports");
     } catch (error) {
-      toast.error('Gagal melakukan bulk check-in');
+      toast.error("Gagal melakukan bulk check-in");
       console.error(error);
     }
   };
@@ -204,7 +218,9 @@ export default function BulkCheckInPage() {
         <Card>
           <CardHeader>
             <CardTitle>Konfigurasi Check-in</CardTitle>
-            <CardDescription>Pilih kelas dan tanggal untuk check-in</CardDescription>
+            <CardDescription>
+              Pilih kelas dan tanggal untuk check-in
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-6 md:grid-cols-3">
@@ -230,10 +246,12 @@ export default function BulkCheckInPage() {
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className={cn('w-full justify-start text-left font-normal')}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                      )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {format(date, 'EEEE, dd MMMM yyyy', { locale: idLocale })}
+                      {format(date, "EEEE, dd MMMM yyyy", { locale: idLocale })}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -256,7 +274,11 @@ export default function BulkCheckInPage() {
                     onChange={(e) => setDefaultCheckInTime(e.target.value)}
                     className="flex-1"
                   />
-                  <Button variant="outline" onClick={handleApplyDefaultTime} disabled={!students.length}>
+                  <Button
+                    variant="outline"
+                    onClick={handleApplyDefaultTime}
+                    disabled={!students.length}
+                  >
                     Apply
                   </Button>
                 </div>
@@ -265,7 +287,10 @@ export default function BulkCheckInPage() {
 
             {classId && (
               <div className="mt-4">
-                <Button onClick={initializeStudents} disabled={studentsLoading || !studentData?.data?.length}>
+                <Button
+                  onClick={initializeStudents}
+                  disabled={studentsLoading || !studentData?.data?.length}
+                >
                   {studentsLoading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
@@ -285,7 +310,9 @@ export default function BulkCheckInPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Daftar Siswa</CardTitle>
-                  <CardDescription>{selectedCount} dari {students.length} siswa dipilih</CardDescription>
+                  <CardDescription>
+                    {selectedCount} dari {students.length} siswa dipilih
+                  </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
                   <Checkbox
@@ -304,8 +331,10 @@ export default function BulkCheckInPage() {
                     <div key={student.studentId}>
                       <div
                         className={cn(
-                          'p-4 rounded-lg border transition-colors',
-                          student.selected ? 'bg-primary/5 border-primary' : 'bg-muted/30'
+                          "p-4 rounded-lg border transition-colors",
+                          student.selected
+                            ? "bg-primary/5 border-primary"
+                            : "bg-muted/30",
                         )}
                       >
                         <div className="flex items-start gap-4">
@@ -314,7 +343,11 @@ export default function BulkCheckInPage() {
                             <Checkbox
                               checked={student.selected}
                               onCheckedChange={(checked) =>
-                                handleStudentChange(student.studentId, 'selected', !!checked)
+                                handleStudentChange(
+                                  student.studentId,
+                                  "selected",
+                                  !!checked,
+                                )
                               }
                             />
                             {student.photoUrl ? (
@@ -326,19 +359,22 @@ export default function BulkCheckInPage() {
                             ) : (
                               <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
                                 <span className="text-lg font-medium">
-                                  {student.studentName[0] || '?'}
+                                  {student.studentName[0] || "?"}
                                 </span>
                               </div>
                             )}
                             <div>
-                              <p className="font-medium">{student.studentName}</p>
-                              <p className="text-sm text-muted-foreground">No. {index + 1}</p>
+                              <p className="font-medium">
+                                {student.studentName}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                No. {index + 1}
+                              </p>
                             </div>
                           </div>
 
                           {/* Status Inputs */}
                           <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4 ml-4">
-
                             {student.selected && (
                               <>
                                 <div className="space-y-2">
@@ -349,8 +385,8 @@ export default function BulkCheckInPage() {
                                     onChange={(e) =>
                                       handleStudentChange(
                                         student.studentId,
-                                        'checkInTime',
-                                        e.target.value
+                                        "checkInTime",
+                                        e.target.value,
                                       )
                                     }
                                     className="h-9"
@@ -363,7 +399,11 @@ export default function BulkCheckInPage() {
                                   <Select
                                     value={student.moodStatus}
                                     onValueChange={(v) =>
-                                      handleStudentChange(student.studentId, 'moodStatus', v as DailyMood)
+                                      handleStudentChange(
+                                        student.studentId,
+                                        "moodStatus",
+                                        v as DailyMood,
+                                      )
                                     }
                                   >
                                     <SelectTrigger className="h-9">
@@ -371,7 +411,10 @@ export default function BulkCheckInPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                       {MOOD_OPTIONS.map((opt) => (
-                                        <SelectItem key={opt.value} value={opt.value}>
+                                        <SelectItem
+                                          key={opt.value}
+                                          value={opt.value}
+                                        >
                                           {opt.label}
                                         </SelectItem>
                                       ))}
@@ -385,7 +428,11 @@ export default function BulkCheckInPage() {
                                   <Select
                                     value={student.healthStatus}
                                     onValueChange={(v) =>
-                                      handleStudentChange(student.studentId, 'healthStatus', v)
+                                      handleStudentChange(
+                                        student.studentId,
+                                        "healthStatus",
+                                        v,
+                                      )
                                     }
                                   >
                                     <SelectTrigger className="h-9">
@@ -393,7 +440,10 @@ export default function BulkCheckInPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                       {HEALTH_OPTIONS.map((opt) => (
-                                        <SelectItem key={opt.value} value={opt.value}>
+                                        <SelectItem
+                                          key={opt.value}
+                                          value={opt.value}
+                                        >
                                           {opt.label}
                                         </SelectItem>
                                       ))}
@@ -405,7 +455,9 @@ export default function BulkCheckInPage() {
                           </div>
                         </div>
                       </div>
-                      {index < students.length - 1 && <Separator className="my-2" />}
+                      {index < students.length - 1 && (
+                        <Separator className="my-2" />
+                      )}
                     </div>
                   ))}
                 </div>

@@ -1,23 +1,28 @@
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
-import { TahfidzRecord, QuranProgressMap, QuranSurahProgress, QuranSurahStatus } from '@cipansor/shared';
+import {
+  TahfidzRecord,
+  QuranProgressMap,
+  QuranSurahProgress,
+  QuranSurahStatus,
+} from '@cipansor/shared';
 import { Prisma } from '@prisma/client';
 
 // Quran Data Helper
 const QURAN_SURAHS = [
   { number: 1, name: 'Al-Fatihah', verses: 7, juz: 1 },
   { number: 2, name: 'Al-Baqarah', verses: 286, juz: 1 },
-  { number: 3, name: 'Ali \'Imran', verses: 200, juz: 3 },
+  { number: 3, name: "Ali 'Imran", verses: 200, juz: 3 },
   { number: 4, name: 'An-Nisa', verses: 176, juz: 4 },
-  { number: 5, name: 'Al-Ma\'idah', verses: 120, juz: 6 },
-  { number: 6, name: 'Al-An\'am', verses: 165, juz: 7 },
-  { number: 7, name: 'Al-A\'raf', verses: 206, juz: 8 },
+  { number: 5, name: "Al-Ma'idah", verses: 120, juz: 6 },
+  { number: 6, name: "Al-An'am", verses: 165, juz: 7 },
+  { number: 7, name: "Al-A'raf", verses: 206, juz: 8 },
   { number: 8, name: 'Al-Anfal', verses: 75, juz: 9 },
   { number: 9, name: 'At-Taubah', verses: 129, juz: 10 },
   { number: 10, name: 'Yunus', verses: 109, juz: 11 },
   { number: 11, name: 'Hud', verses: 123, juz: 11 },
   { number: 12, name: 'Yusuf', verses: 111, juz: 12 },
-  { number: 13, name: 'Ar-Ra\'d', verses: 43, juz: 13 },
+  { number: 13, name: "Ar-Ra'd", verses: 43, juz: 13 },
   { number: 14, name: 'Ibrahim', verses: 52, juz: 13 },
   { number: 15, name: 'Al-Hijr', verses: 99, juz: 14 },
   { number: 16, name: 'An-Nahl', verses: 128, juz: 14 },
@@ -27,13 +32,13 @@ const QURAN_SURAHS = [
   { number: 20, name: 'Ta-Ha', verses: 135, juz: 16 },
   { number: 21, name: 'Al-Anbiya', verses: 112, juz: 17 },
   { number: 22, name: 'Al-Hajj', verses: 78, juz: 17 },
-  { number: 23, name: 'Al-Mu\'minun', verses: 118, juz: 18 },
+  { number: 23, name: "Al-Mu'minun", verses: 118, juz: 18 },
   { number: 24, name: 'An-Nur', verses: 64, juz: 18 },
   { number: 25, name: 'Al-Furqan', verses: 77, juz: 18 },
-  { number: 26, name: 'Ash-Shu\'ara', verses: 227, juz: 19 },
+  { number: 26, name: "Ash-Shu'ara", verses: 227, juz: 19 },
   { number: 27, name: 'An-Naml', verses: 93, juz: 19 },
   { number: 28, name: 'Al-Qasas', verses: 88, juz: 20 },
-  { number: 29, name: 'Al-\'Ankabut', verses: 69, juz: 20 },
+  { number: 29, name: "Al-'Ankabut", verses: 69, juz: 20 },
   { number: 30, name: 'Ar-Rum', verses: 60, juz: 21 },
   { number: 31, name: 'Luqman', verses: 34, juz: 21 },
   { number: 32, name: 'As-Sajdah', verses: 30, juz: 21 },
@@ -60,13 +65,13 @@ const QURAN_SURAHS = [
   { number: 53, name: 'An-Najm', verses: 62, juz: 27 },
   { number: 54, name: 'Al-Qamar', verses: 55, juz: 27 },
   { number: 55, name: 'Ar-Rahman', verses: 78, juz: 27 },
-  { number: 56, name: 'Al-Waqi\'ah', verses: 96, juz: 27 },
+  { number: 56, name: "Al-Waqi'ah", verses: 96, juz: 27 },
   { number: 57, name: 'Al-Hadid', verses: 29, juz: 27 },
   { number: 58, name: 'Al-Mujadilah', verses: 22, juz: 28 },
   { number: 59, name: 'Al-Hashr', verses: 24, juz: 28 },
   { number: 60, name: 'Al-Mumtahanah', verses: 13, juz: 28 },
   { number: 61, name: 'As-Saff', verses: 14, juz: 28 },
-  { number: 62, name: 'Al-Jumu\'ah', verses: 11, juz: 28 },
+  { number: 62, name: "Al-Jumu'ah", verses: 11, juz: 28 },
   { number: 63, name: 'Al-Munafiqun', verses: 11, juz: 28 },
   { number: 64, name: 'At-Taghabun', verses: 18, juz: 28 },
   { number: 65, name: 'At-Talaq', verses: 12, juz: 28 },
@@ -74,7 +79,7 @@ const QURAN_SURAHS = [
   { number: 67, name: 'Al-Mulk', verses: 30, juz: 29 },
   { number: 68, name: 'Al-Qalam', verses: 52, juz: 29 },
   { number: 69, name: 'Al-Haqqah', verses: 52, juz: 29 },
-  { number: 70, name: 'Al-Ma\'arij', verses: 44, juz: 29 },
+  { number: 70, name: "Al-Ma'arij", verses: 44, juz: 29 },
   { number: 71, name: 'Nuh', verses: 28, juz: 29 },
   { number: 72, name: 'Al-Jinn', verses: 28, juz: 29 },
   { number: 73, name: 'Al-Muzzammil', verses: 20, juz: 29 },
@@ -83,15 +88,15 @@ const QURAN_SURAHS = [
   { number: 76, name: 'Al-Insan', verses: 31, juz: 29 },
   { number: 77, name: 'Al-Mursalat', verses: 50, juz: 29 },
   { number: 78, name: 'An-Naba', verses: 40, juz: 30 },
-  { number: 79, name: 'An-Nazi\'at', verses: 46, juz: 30 },
-  { number: 80, name: '\'Abasa', verses: 42, juz: 30 },
+  { number: 79, name: "An-Nazi'at", verses: 46, juz: 30 },
+  { number: 80, name: "'Abasa", verses: 42, juz: 30 },
   { number: 81, name: 'At-Takwir', verses: 29, juz: 30 },
   { number: 82, name: 'Al-Infitar', verses: 19, juz: 30 },
   { number: 83, name: 'Al-Mutaffifin', verses: 36, juz: 30 },
   { number: 84, name: 'Al-Inshiqaq', verses: 25, juz: 30 },
   { number: 85, name: 'Al-Buruj', verses: 22, juz: 30 },
   { number: 86, name: 'At-Tariq', verses: 17, juz: 30 },
-  { number: 87, name: 'Al-A\'la', verses: 19, juz: 30 },
+  { number: 87, name: "Al-A'la", verses: 19, juz: 30 },
   { number: 88, name: 'Al-Ghashiyah', verses: 26, juz: 30 },
   { number: 89, name: 'Al-Fajr', verses: 30, juz: 30 },
   { number: 90, name: 'Al-Balad', verses: 20, juz: 30 },
@@ -100,18 +105,18 @@ const QURAN_SURAHS = [
   { number: 93, name: 'Ad-Duha', verses: 11, juz: 30 },
   { number: 94, name: 'Ash-Sharh', verses: 8, juz: 30 },
   { number: 95, name: 'At-Tin', verses: 8, juz: 30 },
-  { number: 96, name: 'Al-\'Alaq', verses: 19, juz: 30 },
+  { number: 96, name: "Al-'Alaq", verses: 19, juz: 30 },
   { number: 97, name: 'Al-Qadr', verses: 5, juz: 30 },
   { number: 98, name: 'Al-Bayyinah', verses: 8, juz: 30 },
   { number: 99, name: 'Az-Zalzalah', verses: 8, juz: 30 },
-  { number: 100, name: 'Al-\'Adiyat', verses: 11, juz: 30 },
-  { number: 101, name: 'Al-Qari\'ah', verses: 11, juz: 30 },
+  { number: 100, name: "Al-'Adiyat", verses: 11, juz: 30 },
+  { number: 101, name: "Al-Qari'ah", verses: 11, juz: 30 },
   { number: 102, name: 'At-Takathur', verses: 8, juz: 30 },
-  { number: 103, name: 'Al-\'Asr', verses: 3, juz: 30 },
+  { number: 103, name: "Al-'Asr", verses: 3, juz: 30 },
   { number: 104, name: 'Al-Humazah', verses: 9, juz: 30 },
   { number: 105, name: 'Al-Fil', verses: 5, juz: 30 },
   { number: 106, name: 'Quraysh', verses: 4, juz: 30 },
-  { number: 107, name: 'Al-Ma\'un', verses: 7, juz: 30 },
+  { number: 107, name: "Al-Ma'un", verses: 7, juz: 30 },
   { number: 108, name: 'Al-Kawthar', verses: 3, juz: 30 },
   { number: 109, name: 'Al-Kafirun', verses: 6, juz: 30 },
   { number: 110, name: 'An-Nasr', verses: 3, juz: 30 },
@@ -169,7 +174,7 @@ export const getQuranProgressMap = async (studentId: string): Promise<QuranProgr
       orderBy: {
         recordedAt: 'desc',
       },
-    })
+    }),
   ]);
 
   // Process data per Surah
@@ -179,7 +184,7 @@ export const getQuranProgressMap = async (studentId: string): Promise<QuranProgr
     let lastReview: Date | undefined = undefined;
 
     // Check if fully memorized via Assessment
-    const assessment = assessmentRecords.find(r => r.surahNumber === surah.number);
+    const assessment = assessmentRecords.find((r) => r.surahNumber === surah.number);
     if (assessment) {
       status = 'MEMORIZED';
       strength = assessment.score || 100;
@@ -188,12 +193,12 @@ export const getQuranProgressMap = async (studentId: string): Promise<QuranProgr
 
     // Check Ziyadah coverage if not passed assessment
     if (status !== 'MEMORIZED') {
-      const surahZiyadah = ziyadahRecords.filter(r => r.surahNumber === surah.number);
+      const surahZiyadah = ziyadahRecords.filter((r) => r.surahNumber === surah.number);
       if (surahZiyadah.length > 0) {
         // Calculate coverage
         // Simple logic: if max ayahEnd >= surah.verses, consider memorized (or check continuous ranges)
         // For simplicity: Max ayahEnd
-        const maxAyah = Math.max(...surahZiyadah.map(r => r.ayahEnd));
+        const maxAyah = Math.max(...surahZiyadah.map((r) => r.ayahEnd));
         if (maxAyah >= surah.verses) {
           status = 'MEMORIZED';
         } else {
@@ -202,15 +207,18 @@ export const getQuranProgressMap = async (studentId: string): Promise<QuranProgr
 
         const latestZiyadah = surahZiyadah[0].recordedAt; // already sorted desc
         if (!lastReview || latestZiyadah > lastReview) {
-            lastReview = latestZiyadah;
+          lastReview = latestZiyadah;
         }
       }
     }
 
     // Calculate strength from Murojaah
-    const recentMurojaah = murojaahRecords.filter(r => r.surahNumber === surah.number).slice(0, 3);
+    const recentMurojaah = murojaahRecords
+      .filter((r) => r.surahNumber === surah.number)
+      .slice(0, 3);
     if (recentMurojaah.length > 0) {
-      const avgScore = recentMurojaah.reduce((acc, curr) => acc + (curr.score || 0), 0) / recentMurojaah.length;
+      const avgScore =
+        recentMurojaah.reduce((acc, curr) => acc + (curr.score || 0), 0) / recentMurojaah.length;
       strength = avgScore;
       if (recentMurojaah[0].recordedAt > (lastReview || new Date(0))) {
         lastReview = recentMurojaah[0].recordedAt;
@@ -227,9 +235,9 @@ export const getQuranProgressMap = async (studentId: string): Promise<QuranProgr
   });
 
   // Calculate stats
-  const totalMemorized = surahs.filter(s => s.status === 'MEMORIZED').length;
-  const totalInProgress = surahs.filter(s => s.status === 'IN_PROGRESS').length;
-  const totalNotStarted = surahs.filter(s => s.status === 'NOT_STARTED').length;
+  const totalMemorized = surahs.filter((s) => s.status === 'MEMORIZED').length;
+  const totalInProgress = surahs.filter((s) => s.status === 'IN_PROGRESS').length;
+  const totalNotStarted = surahs.filter((s) => s.status === 'NOT_STARTED').length;
   const percentage = Math.round((totalMemorized / 114) * 100);
 
   return {

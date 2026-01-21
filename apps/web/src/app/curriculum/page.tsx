@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -14,14 +20,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   useSubjects,
   useCurriculums,
@@ -33,8 +39,8 @@ import {
   SCHEDULE_DAY_LABELS,
   type SubjectType,
   type ScheduleDay,
-} from '@/hooks';
-import { useUnits, useAcademicYears, useClasses } from '@/hooks';
+} from "@/hooks";
+import { useUnits, useAcademicYears, useClasses } from "@/hooks";
 import {
   BookOpen,
   Search,
@@ -46,26 +52,26 @@ import {
   Users,
   GraduationCap,
   Loader2,
-} from 'lucide-react';
-import Link from 'next/link';
+} from "lucide-react";
+import Link from "next/link";
 
 export default function CurriculumPage() {
-  const [activeTab, setActiveTab] = useState('subjects');
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<SubjectType | 'ALL'>('ALL');
-  const [unitFilter, setUnitFilter] = useState<string>('ALL');
-  const [classFilter, setClassFilter] = useState<string>('ALL');
+  const [activeTab, setActiveTab] = useState("subjects");
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<SubjectType | "ALL">("ALL");
+  const [unitFilter, setUnitFilter] = useState<string>("ALL");
+  const [classFilter, setClassFilter] = useState<string>("ALL");
 
   const { data: subjects, isLoading: loadingSubjects } = useSubjects({
     search: search || undefined,
-    type: typeFilter !== 'ALL' ? typeFilter : undefined,
-    unitId: unitFilter !== 'ALL' ? unitFilter : undefined,
+    type: typeFilter !== "ALL" ? typeFilter : undefined,
+    unitId: unitFilter !== "ALL" ? unitFilter : undefined,
   });
   const { data: curriculums, isLoading: loadingCurriculums } = useCurriculums({
-    unitId: unitFilter !== 'ALL' ? unitFilter : undefined,
+    unitId: unitFilter !== "ALL" ? unitFilter : undefined,
   });
   const { data: schedules, isLoading: loadingSchedules } = useSchedules({
-    classId: classFilter !== 'ALL' ? classFilter : undefined,
+    classId: classFilter !== "ALL" ? classFilter : undefined,
   });
   const { data: assignments } = useTeacherAssignments();
   const { data: units } = useUnits();
@@ -76,18 +82,21 @@ export default function CurriculumPage() {
 
   const getSubjectTypeBadge = (type: SubjectType) => {
     const colors: Record<SubjectType, string> = {
-      REQUIRED: 'bg-blue-100 text-blue-800',
-      ELECTIVE: 'bg-green-100 text-green-800',
-      EXTRACURRICULAR: 'bg-purple-100 text-purple-800',
+      REQUIRED: "bg-blue-100 text-blue-800",
+      ELECTIVE: "bg-green-100 text-green-800",
+      EXTRACURRICULAR: "bg-purple-100 text-purple-800",
     };
     return <Badge className={colors[type]}>{SUBJECT_TYPE_LABELS[type]}</Badge>;
   };
 
   // Group schedules by day
-  const schedulesByDay = SCHEDULE_DAYS.reduce((acc, day) => {
-    acc[day] = schedules?.filter((s) => s.day === day) || [];
-    return acc;
-  }, {} as Record<ScheduleDay, typeof schedules>);
+  const schedulesByDay = SCHEDULE_DAYS.reduce(
+    (acc, day) => {
+      acc[day] = schedules?.filter((s) => s.day === day) || [];
+      return acc;
+    },
+    {} as Record<ScheduleDay, typeof schedules>,
+  );
 
   return (
     <MainLayout>
@@ -106,14 +115,18 @@ export default function CurriculumPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Mata Pelajaran</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Mata Pelajaran
+              </CardTitle>
               <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{subjects?.length ?? 0}</div>
               <p className="text-xs text-muted-foreground">
-                {subjects?.filter(s => s.type === 'REQUIRED').length ?? 0} wajib,{' '}
-                {subjects?.filter(s => s.type === 'ELECTIVE').length ?? 0} pilihan
+                {subjects?.filter((s) => s.type === "REQUIRED").length ?? 0}{" "}
+                wajib,{" "}
+                {subjects?.filter((s) => s.type === "ELECTIVE").length ?? 0}{" "}
+                pilihan
               </p>
             </CardContent>
           </Card>
@@ -123,29 +136,39 @@ export default function CurriculumPage() {
               <GraduationCap className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{curriculums?.length ?? 0}</div>
+              <div className="text-2xl font-bold">
+                {curriculums?.length ?? 0}
+              </div>
               <p className="text-xs text-muted-foreground">
-                {curriculums?.filter(c => c.isActive).length ?? 0} aktif
+                {curriculums?.filter((c) => c.isActive).length ?? 0} aktif
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Jadwal Pelajaran</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Jadwal Pelajaran
+              </CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{schedules?.length ?? 0}</div>
-              <p className="text-xs text-muted-foreground">Total sesi per minggu</p>
+              <p className="text-xs text-muted-foreground">
+                Total sesi per minggu
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Penugasan Guru</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Penugasan Guru
+              </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{assignments?.length ?? 0}</div>
+              <div className="text-2xl font-bold">
+                {assignments?.length ?? 0}
+              </div>
               <p className="text-xs text-muted-foreground">Guru mengajar</p>
             </CardContent>
           </Card>
@@ -196,7 +219,9 @@ export default function CurriculumPage() {
                   </Select>
                   <Select
                     value={typeFilter}
-                    onValueChange={(v) => setTypeFilter(v as SubjectType | 'ALL')}
+                    onValueChange={(v) =>
+                      setTypeFilter(v as SubjectType | "ALL")
+                    }
                   >
                     <SelectTrigger className="w-full md:w-[150px]">
                       <SelectValue placeholder="Semua Tipe" />
@@ -244,7 +269,9 @@ export default function CurriculumPage() {
                   ) : subjects?.length ? (
                     subjects.map((subject) => (
                       <TableRow key={subject.id}>
-                        <TableCell className="font-mono text-sm">{subject.code}</TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {subject.code}
+                        </TableCell>
                         <TableCell>
                           <div>
                             <p className="font-medium">{subject.name}</p>
@@ -255,13 +282,17 @@ export default function CurriculumPage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>{subject.unit?.name ?? '-'}</TableCell>
-                        <TableCell>{getSubjectTypeBadge(subject.type)}</TableCell>
+                        <TableCell>{subject.unit?.name ?? "-"}</TableCell>
+                        <TableCell>
+                          {getSubjectTypeBadge(subject.type)}
+                        </TableCell>
                         <TableCell>{subject.credits}</TableCell>
                         <TableCell>{subject.hoursPerWeek} jam</TableCell>
                         <TableCell>
-                          <Badge variant={subject.isActive ? 'default' : 'secondary'}>
-                            {subject.isActive ? 'Aktif' : 'Nonaktif'}
+                          <Badge
+                            variant={subject.isActive ? "default" : "secondary"}
+                          >
+                            {subject.isActive ? "Aktif" : "Nonaktif"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -272,7 +303,9 @@ export default function CurriculumPage() {
                               </Link>
                             </Button>
                             <Button variant="ghost" size="icon" asChild>
-                              <Link href={`/curriculum/subjects/${subject.id}/edit`}>
+                              <Link
+                                href={`/curriculum/subjects/${subject.id}/edit`}
+                              >
                                 <Edit className="h-4 w-4" />
                               </Link>
                             </Button>
@@ -282,7 +315,10 @@ export default function CurriculumPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={8}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         Belum ada mata pelajaran
                       </TableCell>
                     </TableRow>
@@ -327,11 +363,17 @@ export default function CurriculumPage() {
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div>
-                          <CardTitle className="text-lg">{curriculum.name}</CardTitle>
+                          <CardTitle className="text-lg">
+                            {curriculum.name}
+                          </CardTitle>
                           <CardDescription>{curriculum.code}</CardDescription>
                         </div>
-                        <Badge variant={curriculum.isActive ? 'default' : 'secondary'}>
-                          {curriculum.isActive ? 'Aktif' : 'Nonaktif'}
+                        <Badge
+                          variant={
+                            curriculum.isActive ? "default" : "secondary"
+                          }
+                        >
+                          {curriculum.isActive ? "Aktif" : "Nonaktif"}
                         </Badge>
                       </div>
                     </CardHeader>
@@ -342,7 +384,9 @@ export default function CurriculumPage() {
                           <span>{curriculum.unit?.name}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Tahun Ajaran</span>
+                          <span className="text-muted-foreground">
+                            Tahun Ajaran
+                          </span>
                           <span>{curriculum.academicYear?.name}</span>
                         </div>
                         <div className="flex justify-between">
@@ -350,19 +394,25 @@ export default function CurriculumPage() {
                           <span>Kelas {curriculum.gradeLevel}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Mata Pelajaran</span>
+                          <span className="text-muted-foreground">
+                            Mata Pelajaran
+                          </span>
                           <span>{curriculum.subjects?.length ?? 0}</span>
                         </div>
                       </div>
                       <div className="mt-4 flex justify-end gap-2">
                         <Button variant="outline" size="sm" asChild>
-                          <Link href={`/curriculum/curriculums/${curriculum.id}`}>
+                          <Link
+                            href={`/curriculum/curriculums/${curriculum.id}`}
+                          >
                             <Eye className="mr-2 h-4 w-4" />
                             Detail
                           </Link>
                         </Button>
                         <Button variant="outline" size="sm" asChild>
-                          <Link href={`/curriculum/curriculums/${curriculum.id}/edit`}>
+                          <Link
+                            href={`/curriculum/curriculums/${curriculum.id}/edit`}
+                          >
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </Link>
@@ -417,13 +467,17 @@ export default function CurriculumPage() {
                 SCHEDULE_DAYS.slice(0, 6).map((day) => (
                   <Card key={day}>
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">{SCHEDULE_DAY_LABELS[day]}</CardTitle>
+                      <CardTitle className="text-lg">
+                        {SCHEDULE_DAY_LABELS[day]}
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
                       {schedulesByDay[day]?.length ? (
                         <div className="space-y-2">
                           {schedulesByDay[day]
-                            ?.sort((a, b) => a.startTime.localeCompare(b.startTime))
+                            ?.sort((a, b) =>
+                              a.startTime.localeCompare(b.startTime),
+                            )
                             .map((schedule) => (
                               <div
                                 key={schedule.id}
@@ -435,15 +489,20 @@ export default function CurriculumPage() {
                                     {schedule.startTime} - {schedule.endTime}
                                   </div>
                                   <div>
-                                    <p className="font-medium">{schedule.subject?.name}</p>
+                                    <p className="font-medium">
+                                      {schedule.subject?.name}
+                                    </p>
                                     <p className="text-sm text-muted-foreground">
-                                      {schedule.teacher?.name} • {schedule.class?.name}
+                                      {schedule.teacher?.name} •{" "}
+                                      {schedule.class?.name}
                                       {schedule.room && ` • ${schedule.room}`}
                                     </p>
                                   </div>
                                 </div>
                                 <Button variant="ghost" size="icon" asChild>
-                                  <Link href={`/curriculum/schedules/${schedule.id}/edit`}>
+                                  <Link
+                                    href={`/curriculum/schedules/${schedule.id}/edit`}
+                                  >
                                     <Edit className="h-4 w-4" />
                                   </Link>
                                 </Button>

@@ -1,6 +1,6 @@
-export type PAUDAspect = 'NAM' | 'FM' | 'KOG' | 'BHS' | 'SE' | 'SNI';
-export type PAUDAchievementLevel = 'BB' | 'MB' | 'BSH' | 'BSB';
-export type PAUDReportPeriod = 'HARIAN' | 'MINGGUAN' | 'BULANAN' | 'SEMESTER';
+export type PAUDAspect = "NAM" | "FM" | "KOG" | "BHS" | "SE" | "SNI";
+export type PAUDAchievementLevel = "BB" | "MB" | "BSH" | "BSB";
+export type PAUDReportPeriod = "HARIAN" | "MINGGUAN" | "BULANAN" | "SEMESTER";
 
 // Basic Types
 export interface PAUDIndicator {
@@ -98,7 +98,7 @@ export interface PAUDNarrativeReport {
   presentDays: number;
   sickDays: number;
   excusedDays: number;
-  status: 'DRAFT' | 'FINALIZED';
+  status: "DRAFT" | "FINALIZED";
   createdById: string;
   finalizedAt?: Date | string | null;
   createdAt: Date | string;
@@ -232,7 +232,8 @@ export interface BulkCreateClassPAUDAssessmentInput {
 }
 
 // Renamed Alias for Frontend Consistency
-export type BulkCreateClassTKAssessmentInput = BulkCreateClassPAUDAssessmentInput;
+export type BulkCreateClassTKAssessmentInput =
+  BulkCreateClassPAUDAssessmentInput;
 
 export interface CreatePAUDEvidenceInput {
   assessmentId: string;

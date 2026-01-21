@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { Input } from '@/components/ui/input';
-import { Search, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { cn } from '@/lib/utils';
+import { Input } from "@/components/ui/input";
+import { Search, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { cn } from "@/lib/utils";
 
 interface SearchInputProps {
   placeholder?: string;
@@ -15,20 +15,23 @@ interface SearchInputProps {
 }
 
 export function SearchInput({
-  placeholder = 'Search...',
+  placeholder = "Search...",
   value: externalValue,
   onChange,
   debounceMs = 300,
   className,
 }: SearchInputProps) {
-  const [internalValue, setInternalValue] = useState(externalValue || '');
+  const [internalValue, setInternalValue] = useState(externalValue || "");
   const isFirstRender = useRef(true);
   // Store previous external value to check for changes
   const prevExternalValueRef = useRef(externalValue);
 
   // Update internal value when external value changes, but only if different
   // We use a ref to track if this specific instance of the value has been processed
-  if (externalValue !== undefined && externalValue !== prevExternalValueRef.current) {
+  if (
+    externalValue !== undefined &&
+    externalValue !== prevExternalValueRef.current
+  ) {
     prevExternalValueRef.current = externalValue;
     // We can update state during render if it's based on props change (derived state pattern)
     // However, since we also allow user input to change it, it's safer to just set it here if we accept
@@ -43,11 +46,11 @@ export function SearchInput({
   }
 
   useEffect(() => {
-      if (externalValue !== undefined && externalValue !== internalValue) {
-          setInternalValue(externalValue);
-      }
-      // We only want to run this when externalValue changes, not internalValue
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (externalValue !== undefined && externalValue !== internalValue) {
+      setInternalValue(externalValue);
+    }
+    // We only want to run this when externalValue changes, not internalValue
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [externalValue]);
 
   // Stable onChange callback - wrapped in useRef to avoid re-creation
@@ -67,15 +70,15 @@ export function SearchInput({
     // or always if we are treating this as internal state driver
 
     const timer = setTimeout(() => {
-        onChangeRef.current(internalValue);
+      onChangeRef.current(internalValue);
     }, debounceMs);
 
     return () => clearTimeout(timer);
   }, [internalValue, debounceMs]);
 
   const handleClear = useCallback(() => {
-    setInternalValue('');
-    onChangeRef.current('');
+    setInternalValue("");
+    onChangeRef.current("");
   }, []);
 
   return (

@@ -1,26 +1,32 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState, useRef, useEffect } from "react";
+import { MainLayout } from "@/components/layout/main-layout";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useStudents, Student } from '@/hooks/use-students';
-import { useUnits } from '@/hooks/use-units';
-import { useClasses } from '@/hooks/use-classes';
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useStudents, Student } from "@/hooks/use-students";
+import { useUnits } from "@/hooks/use-units";
+import { useClasses } from "@/hooks/use-classes";
 import {
   Award,
   Printer,
@@ -30,102 +36,102 @@ import {
   CheckCircle2,
   BookOpen,
   Star,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import { api } from '@/lib/api';
+} from "lucide-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { api } from "@/lib/api";
 
 // ========================================
 // JUZ DATA & SANAD TYPES
 // ========================================
 
 const JUZ_NAMES = [
-  { number: 1, name: 'Juz 1 (Al-Fatihah - Al-Baqarah 141)' },
-  { number: 2, name: 'Juz 2 (Al-Baqarah 142-252)' },
-  { number: 3, name: 'Juz 3 (Al-Baqarah 253 - Ali Imran 92)' },
-  { number: 4, name: 'Juz 4 (Ali Imran 93 - An-Nisa 23)' },
-  { number: 5, name: 'Juz 5 (An-Nisa 24-147)' },
-  { number: 6, name: 'Juz 6 (An-Nisa 148 - Al-Maidah 81)' },
-  { number: 7, name: 'Juz 7 (Al-Maidah 82 - Al-An\'am 110)' },
-  { number: 8, name: 'Juz 8 (Al-An\'am 111 - Al-A\'raf 87)' },
-  { number: 9, name: 'Juz 9 (Al-A\'raf 88 - Al-Anfal 40)' },
-  { number: 10, name: 'Juz 10 (Al-Anfal 41 - At-Taubah 92)' },
-  { number: 11, name: 'Juz 11 (At-Taubah 93 - Hud 5)' },
-  { number: 12, name: 'Juz 12 (Hud 6 - Yusuf 52)' },
-  { number: 13, name: 'Juz 13 (Yusuf 53 - Ibrahim 52)' },
-  { number: 14, name: 'Juz 14 (Al-Hijr 1 - An-Nahl 128)' },
-  { number: 15, name: 'Juz 15 (Al-Isra 1 - Al-Kahf 74)' },
-  { number: 16, name: 'Juz 16 (Al-Kahf 75 - Taha 135)' },
-  { number: 17, name: 'Juz 17 (Al-Anbiya 1 - Al-Hajj 78)' },
-  { number: 18, name: 'Juz 18 (Al-Mu\'minun 1 - Al-Furqan 20)' },
-  { number: 19, name: 'Juz 19 (Al-Furqan 21 - An-Naml 55)' },
-  { number: 20, name: 'Juz 20 (An-Naml 56 - Al-Ankabut 45)' },
-  { number: 21, name: 'Juz 21 (Al-Ankabut 46 - Al-Ahzab 30)' },
-  { number: 22, name: 'Juz 22 (Al-Ahzab 31 - Ya Sin 27)' },
-  { number: 23, name: 'Juz 23 (Ya Sin 28 - Az-Zumar 31)' },
-  { number: 24, name: 'Juz 24 (Az-Zumar 32 - Fussilat 46)' },
-  { number: 25, name: 'Juz 25 (Fussilat 47 - Al-Jathiyah 37)' },
-  { number: 26, name: 'Juz 26 (Al-Ahqaf 1 - Az-Zariyat 30)' },
-  { number: 27, name: 'Juz 27 (Az-Zariyat 31 - Al-Hadid 29)' },
-  { number: 28, name: 'Juz 28 (Al-Mujadilah 1 - At-Tahrim 12)' },
-  { number: 29, name: 'Juz 29 (Al-Mulk 1 - Al-Mursalat 50)' },
-  { number: 30, name: 'Juz 30 / Juz Amma (An-Naba - An-Nas)' },
+  { number: 1, name: "Juz 1 (Al-Fatihah - Al-Baqarah 141)" },
+  { number: 2, name: "Juz 2 (Al-Baqarah 142-252)" },
+  { number: 3, name: "Juz 3 (Al-Baqarah 253 - Ali Imran 92)" },
+  { number: 4, name: "Juz 4 (Ali Imran 93 - An-Nisa 23)" },
+  { number: 5, name: "Juz 5 (An-Nisa 24-147)" },
+  { number: 6, name: "Juz 6 (An-Nisa 148 - Al-Maidah 81)" },
+  { number: 7, name: "Juz 7 (Al-Maidah 82 - Al-An'am 110)" },
+  { number: 8, name: "Juz 8 (Al-An'am 111 - Al-A'raf 87)" },
+  { number: 9, name: "Juz 9 (Al-A'raf 88 - Al-Anfal 40)" },
+  { number: 10, name: "Juz 10 (Al-Anfal 41 - At-Taubah 92)" },
+  { number: 11, name: "Juz 11 (At-Taubah 93 - Hud 5)" },
+  { number: 12, name: "Juz 12 (Hud 6 - Yusuf 52)" },
+  { number: 13, name: "Juz 13 (Yusuf 53 - Ibrahim 52)" },
+  { number: 14, name: "Juz 14 (Al-Hijr 1 - An-Nahl 128)" },
+  { number: 15, name: "Juz 15 (Al-Isra 1 - Al-Kahf 74)" },
+  { number: 16, name: "Juz 16 (Al-Kahf 75 - Taha 135)" },
+  { number: 17, name: "Juz 17 (Al-Anbiya 1 - Al-Hajj 78)" },
+  { number: 18, name: "Juz 18 (Al-Mu'minun 1 - Al-Furqan 20)" },
+  { number: 19, name: "Juz 19 (Al-Furqan 21 - An-Naml 55)" },
+  { number: 20, name: "Juz 20 (An-Naml 56 - Al-Ankabut 45)" },
+  { number: 21, name: "Juz 21 (Al-Ankabut 46 - Al-Ahzab 30)" },
+  { number: 22, name: "Juz 22 (Al-Ahzab 31 - Ya Sin 27)" },
+  { number: 23, name: "Juz 23 (Ya Sin 28 - Az-Zumar 31)" },
+  { number: 24, name: "Juz 24 (Az-Zumar 32 - Fussilat 46)" },
+  { number: 25, name: "Juz 25 (Fussilat 47 - Al-Jathiyah 37)" },
+  { number: 26, name: "Juz 26 (Al-Ahqaf 1 - Az-Zariyat 30)" },
+  { number: 27, name: "Juz 27 (Az-Zariyat 31 - Al-Hadid 29)" },
+  { number: 28, name: "Juz 28 (Al-Mujadilah 1 - At-Tahrim 12)" },
+  { number: 29, name: "Juz 29 (Al-Mulk 1 - Al-Mursalat 50)" },
+  { number: 30, name: "Juz 30 / Juz Amma (An-Naba - An-Nas)" },
 ];
 
 const CERTIFICATE_TYPES = [
   {
-    id: 'TAHFIDZ_JUZ_AMMA',
-    label: 'Sertifikat Hafalan Juz 30 (Juz Amma)',
-    description: 'Untuk santri yang telah menyelesaikan hafalan Juz Amma',
-    icon: '📖',
-    color: 'bg-green-100 text-green-700',
+    id: "TAHFIDZ_JUZ_AMMA",
+    label: "Sertifikat Hafalan Juz 30 (Juz Amma)",
+    description: "Untuk santri yang telah menyelesaikan hafalan Juz Amma",
+    icon: "📖",
+    color: "bg-green-100 text-green-700",
   },
   {
-    id: 'TAHFIDZ_5_JUZ',
-    label: 'Sertifikat Hafalan 5 Juz',
-    description: 'Untuk santri yang telah menyelesaikan hafalan 5 Juz',
-    icon: '📗',
-    color: 'bg-blue-100 text-blue-700',
+    id: "TAHFIDZ_5_JUZ",
+    label: "Sertifikat Hafalan 5 Juz",
+    description: "Untuk santri yang telah menyelesaikan hafalan 5 Juz",
+    icon: "📗",
+    color: "bg-blue-100 text-blue-700",
   },
   {
-    id: 'TAHFIDZ_10_JUZ',
-    label: 'Sertifikat Hafalan 10 Juz',
-    description: 'Untuk santri yang telah menyelesaikan hafalan 10 Juz',
-    icon: '📘',
-    color: 'bg-purple-100 text-purple-700',
+    id: "TAHFIDZ_10_JUZ",
+    label: "Sertifikat Hafalan 10 Juz",
+    description: "Untuk santri yang telah menyelesaikan hafalan 10 Juz",
+    icon: "📘",
+    color: "bg-purple-100 text-purple-700",
   },
   {
-    id: 'TAHFIDZ_30_JUZ',
-    label: 'Sanad Hafalan 30 Juz (Khatam)',
-    description: 'Sanad resmi untuk Hafidz/Hafidzah 30 Juz Al-Quran',
-    icon: '🏆',
-    color: 'bg-yellow-100 text-yellow-700',
+    id: "TAHFIDZ_30_JUZ",
+    label: "Sanad Hafalan 30 Juz (Khatam)",
+    description: "Sanad resmi untuk Hafidz/Hafidzah 30 Juz Al-Quran",
+    icon: "🏆",
+    color: "bg-yellow-100 text-yellow-700",
   },
   {
-    id: 'SANAD_QIRAAH',
-    label: 'Sanad Qira\'ah',
-    description: 'Sanad untuk bacaan Al-Quran dengan riwayat tertentu',
-    icon: '📜',
-    color: 'bg-amber-100 text-amber-700',
+    id: "SANAD_QIRAAH",
+    label: "Sanad Qira'ah",
+    description: "Sanad untuk bacaan Al-Quran dengan riwayat tertentu",
+    icon: "📜",
+    color: "bg-amber-100 text-amber-700",
   },
 ];
 
 const QIRAAH_TYPES = [
-  'Riwayat Hafs dari Ashim',
-  'Riwayat Warsy dari Nafi',
-  'Riwayat Qalun dari Nafi',
-  'Riwayat Ad-Duri dari Abu Amr',
-  'Riwayat As-Susi dari Abu Amr',
-  'Riwayat Syu\'bah dari Ashim',
-  'Qiraah Sab\'ah (7 Qiraah)',
+  "Riwayat Hafs dari Ashim",
+  "Riwayat Warsy dari Nafi",
+  "Riwayat Qalun dari Nafi",
+  "Riwayat Ad-Duri dari Abu Amr",
+  "Riwayat As-Susi dari Abu Amr",
+  "Riwayat Syu'bah dari Ashim",
+  "Qiraah Sab'ah (7 Qiraah)",
 ];
 
 const GRADE_OPTIONS = [
-  'Mumtaz (Istimewa)',
-  'Jayyid Jiddan (Sangat Baik)',
-  'Jayyid (Baik)',
-  'Maqbul (Cukup)',
+  "Mumtaz (Istimewa)",
+  "Jayyid Jiddan (Sangat Baik)",
+  "Jayyid (Baik)",
+  "Maqbul (Cukup)",
 ];
 
 interface FormData {
@@ -141,23 +147,25 @@ interface FormData {
 }
 
 export default function TahfidzCertificatePage() {
-  const [selectedUnitId, setSelectedUnitId] = useState<string>('');
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUnitId, setSelectedUnitId] = useState<string>("");
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [activeTab, setActiveTab] = useState('select-student');
+  const [activeTab, setActiveTab] = useState("select-student");
   const [formData, setFormData] = useState<FormData>({
-    certificateType: 'TAHFIDZ_JUZ_AMMA',
-    tanggalSertifikat: format(new Date(), 'yyyy-MM-dd'),
-    musyrifName: '',
-    musyrifTitle: 'Musyrif Tahfidz',
+    certificateType: "TAHFIDZ_JUZ_AMMA",
+    tanggalSertifikat: format(new Date(), "yyyy-MM-dd"),
+    musyrifName: "",
+    musyrifTitle: "Musyrif Tahfidz",
     completedJuz: [30],
-    grade: 'Jayyid Jiddan (Sangat Baik)',
-    qiraahType: 'Riwayat Hafs dari Ashim',
-    sanadChain: '',
-    notes: '',
+    grade: "Jayyid Jiddan (Sangat Baik)",
+    qiraahType: "Riwayat Hafs dari Ashim",
+    sanadChain: "",
+    notes: "",
   });
-  const [generatedCertNumber, setGeneratedCertNumber] = useState<string | null>(null);
+  const [generatedCertNumber, setGeneratedCertNumber] = useState<string | null>(
+    null,
+  );
   const [isGenerating, setIsGenerating] = useState(false);
   const [shouldPrint, setShouldPrint] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
@@ -171,28 +179,28 @@ export default function TahfidzCertificatePage() {
     unitId: selectedUnitId || undefined,
     classId: selectedClassId || undefined,
     search: searchQuery || undefined,
-    status: 'ACTIVE',
+    status: "ACTIVE",
     limit: 50,
   });
 
   const students = studentsData?.data || [];
   const selectedCertType = CERTIFICATE_TYPES.find(
-    (c) => c.id === formData.certificateType
+    (c) => c.id === formData.certificateType,
   );
 
   const handleSelectStudent = (student: Student) => {
     setSelectedStudent(student);
     setGeneratedCertNumber(null);
-    setActiveTab('select-type');
+    setActiveTab("select-type");
   };
 
   const handleSelectType = (typeId: string) => {
     let defaultJuz: number[] = [];
-    if (typeId === 'TAHFIDZ_JUZ_AMMA') defaultJuz = [30];
-    else if (typeId === 'TAHFIDZ_5_JUZ') defaultJuz = [26, 27, 28, 29, 30];
-    else if (typeId === 'TAHFIDZ_10_JUZ')
+    if (typeId === "TAHFIDZ_JUZ_AMMA") defaultJuz = [30];
+    else if (typeId === "TAHFIDZ_5_JUZ") defaultJuz = [26, 27, 28, 29, 30];
+    else if (typeId === "TAHFIDZ_10_JUZ")
       defaultJuz = [21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
-    else if (typeId === 'TAHFIDZ_30_JUZ')
+    else if (typeId === "TAHFIDZ_30_JUZ")
       defaultJuz = Array.from({ length: 30 }, (_, i) => i + 1);
 
     setFormData({
@@ -201,7 +209,7 @@ export default function TahfidzCertificatePage() {
       completedJuz: defaultJuz,
     });
     setGeneratedCertNumber(null);
-    setActiveTab('fill-details');
+    setActiveTab("fill-details");
   };
 
   const handleJuzToggle = (juzNumber: number) => {
@@ -216,24 +224,24 @@ export default function TahfidzCertificatePage() {
   // Trigger print logic when shouldPrint becomes true AND we have a generatedCertNumber
   useEffect(() => {
     if (shouldPrint && generatedCertNumber) {
-        // Double check printRef content is ready
-        // Small timeout to ensure state update propagated to DOM
-        const timer = setTimeout(() => {
-           performPrint();
-           setShouldPrint(false); // Reset trigger
-        }, 100);
-        return () => clearTimeout(timer);
+      // Double check printRef content is ready
+      // Small timeout to ensure state update propagated to DOM
+      const timer = setTimeout(() => {
+        performPrint();
+        setShouldPrint(false); // Reset trigger
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [shouldPrint, generatedCertNumber]);
 
   const performPrint = () => {
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (!printWindow) {
-      toast.error('Popup diblokir. Izinkan popup untuk mencetak.');
+      toast.error("Popup diblokir. Izinkan popup untuk mencetak.");
       return;
     }
 
-    const printContent = printRef.current?.innerHTML || '';
+    const printContent = printRef.current?.innerHTML || "";
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -270,12 +278,12 @@ export default function TahfidzCertificatePage() {
       printWindow.print();
       printWindow.close();
     }, 500);
-    toast.success('Sertifikat siap dicetak');
+    toast.success("Sertifikat siap dicetak");
   };
 
   const handlePrint = async () => {
     if (!selectedStudent) {
-      toast.error('Pilih santri terlebih dahulu');
+      toast.error("Pilih santri terlebih dahulu");
       return;
     }
 
@@ -283,41 +291,41 @@ export default function TahfidzCertificatePage() {
     let currentCertNumber = generatedCertNumber;
 
     if (!currentCertNumber) {
-        setIsGenerating(true);
-        try {
-            const res = await api.post('/tahfidz/certificates', {
-                studentId: selectedStudent.id,
-                certificateType: formData.certificateType,
-                issueDate: formData.tanggalSertifikat,
-                grade: formData.grade,
-                completedJuz: formData.completedJuz,
-                qiraahType: formData.qiraahType,
-                musyrifName: formData.musyrifName,
-                sanadChain: formData.sanadChain,
-                notes: formData.notes
-            });
+      setIsGenerating(true);
+      try {
+        const res = await api.post("/tahfidz/certificates", {
+          studentId: selectedStudent.id,
+          certificateType: formData.certificateType,
+          issueDate: formData.tanggalSertifikat,
+          grade: formData.grade,
+          completedJuz: formData.completedJuz,
+          qiraahType: formData.qiraahType,
+          musyrifName: formData.musyrifName,
+          sanadChain: formData.sanadChain,
+          notes: formData.notes,
+        });
 
-            if (res.data && res.data.success) {
-                currentCertNumber = res.data.data.certificateNumber;
-                setGeneratedCertNumber(currentCertNumber);
-                toast.success('Nomor sertifikat berhasil digenerate');
-                // Trigger print effect
-                setShouldPrint(true);
-            } else {
-                 toast.error('Gagal generate nomor sertifikat');
-                 setIsGenerating(false);
-                 return;
-            }
-        } catch (err) {
-            console.error(err);
-            toast.error('Gagal generate nomor sertifikat');
-            setIsGenerating(false);
-            return;
+        if (res.data && res.data.success) {
+          currentCertNumber = res.data.data.certificateNumber;
+          setGeneratedCertNumber(currentCertNumber);
+          toast.success("Nomor sertifikat berhasil digenerate");
+          // Trigger print effect
+          setShouldPrint(true);
+        } else {
+          toast.error("Gagal generate nomor sertifikat");
+          setIsGenerating(false);
+          return;
         }
+      } catch (err) {
+        console.error(err);
+        toast.error("Gagal generate nomor sertifikat");
         setIsGenerating(false);
+        return;
+      }
+      setIsGenerating(false);
     } else {
-        // If already generated, just print
-        setShouldPrint(true);
+      // If already generated, just print
+      setShouldPrint(true);
     }
   };
 
@@ -328,19 +336,19 @@ export default function TahfidzCertificatePage() {
     if (!selectedStudent || !selectedCertType) return null;
 
     const isSanad =
-      formData.certificateType === 'TAHFIDZ_30_JUZ' ||
-      formData.certificateType === 'SANAD_QIRAAH';
+      formData.certificateType === "TAHFIDZ_30_JUZ" ||
+      formData.certificateType === "SANAD_QIRAAH";
 
     const bgColor = isSanad
-      ? 'linear-gradient(135deg, #0c4a6e 0%, #082f49 100%)'
-      : 'linear-gradient(135deg, #065f46 0%, #022c22 100%)';
+      ? "linear-gradient(135deg, #0c4a6e 0%, #082f49 100%)"
+      : "linear-gradient(135deg, #065f46 0%, #022c22 100%)";
 
-    const accentColor = isSanad ? '#fbbf24' : '#10b981';
+    const accentColor = isSanad ? "#fbbf24" : "#10b981";
 
     // Use generated number or fallback to placeholder
     const certNumberDisplay = generatedCertNumber
-        ? `No: ${generatedCertNumber}`
-        : `No: [DRAFT]/${formData.certificateType.split('_').pop()}/CPN/${format(new Date(), 'MM/yyyy')}`;
+      ? `No: ${generatedCertNumber}`
+      : `No: [DRAFT]/${formData.certificateType.split("_").pop()}/CPN/${format(new Date(), "MM/yyyy")}`;
 
     return (
       <div
@@ -362,13 +370,19 @@ export default function TahfidzCertificatePage() {
         {/* Corner Arabic Calligraphy Decorations */}
         <div
           className="absolute top-6 left-6 text-4xl opacity-30"
-          style={{ color: accentColor, fontFamily: "'Noto Naskh Arabic', serif" }}
+          style={{
+            color: accentColor,
+            fontFamily: "'Noto Naskh Arabic', serif",
+          }}
         >
           ﷽
         </div>
         <div
           className="absolute top-6 right-6 text-4xl opacity-30"
-          style={{ color: accentColor, fontFamily: "'Noto Naskh Arabic', serif" }}
+          style={{
+            color: accentColor,
+            fontFamily: "'Noto Naskh Arabic', serif",
+          }}
         >
           ﷽
         </div>
@@ -394,7 +408,9 @@ export default function TahfidzCertificatePage() {
             >
               PONDOK PESANTREN CIPANSOR
             </h1>
-            <p className="text-xs opacity-70 mt-1">Tahfidz Al-Qur&apos;an Program</p>
+            <p className="text-xs opacity-70 mt-1">
+              Tahfidz Al-Qur&apos;an Program
+            </p>
           </div>
 
           {/* Certificate Type Title */}
@@ -403,7 +419,7 @@ export default function TahfidzCertificatePage() {
               className="text-2xl font-bold tracking-widest uppercase"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
-              {isSanad ? 'SANAD' : 'SERTIFIKAT'}
+              {isSanad ? "SANAD" : "SERTIFIKAT"}
             </p>
             <p
               className="text-lg opacity-90 mt-1"
@@ -425,27 +441,28 @@ export default function TahfidzCertificatePage() {
           </div>
 
           {/* Certificate Number */}
-          <p className="text-xs opacity-60 mb-3">
-            {certNumberDisplay}
-          </p>
+          <p className="text-xs opacity-60 mb-3">{certNumberDisplay}</p>
 
           {/* Main Text */}
           <div className="text-center mb-4">
             <p className="text-base mb-2">Diberikan kepada:</p>
             <p
               className="text-3xl mb-2"
-              style={{ fontFamily: "'Great Vibes', cursive", color: accentColor }}
+              style={{
+                fontFamily: "'Great Vibes', cursive",
+                color: accentColor,
+              }}
             >
               {selectedStudent.name}
             </p>
             <p className="text-sm opacity-80">NIS: {selectedStudent.nis}</p>
             <p className="text-xs opacity-70">
-              Tempat/Tanggal Lahir: {selectedStudent.birthPlace || '-'},{' '}
+              Tempat/Tanggal Lahir: {selectedStudent.birthPlace || "-"},{" "}
               {selectedStudent.birthDate
-                ? format(new Date(selectedStudent.birthDate), 'd MMMM yyyy', {
-                  locale: idLocale,
-                })
-                : '-'}
+                ? format(new Date(selectedStudent.birthDate), "d MMMM yyyy", {
+                    locale: idLocale,
+                  })
+                : "-"}
             </p>
           </div>
 
@@ -455,15 +472,15 @@ export default function TahfidzCertificatePage() {
               className="text-sm leading-relaxed"
               style={{ fontFamily: "'Amiri', serif" }}
             >
-              {formData.certificateType === 'TAHFIDZ_JUZ_AMMA' &&
-                'Telah menyelesaikan hafalan Juz 30 (Juz Amma) Al-Quran Al-Karim dengan bacaan yang baik dan benar.'}
-              {formData.certificateType === 'TAHFIDZ_5_JUZ' &&
+              {formData.certificateType === "TAHFIDZ_JUZ_AMMA" &&
+                "Telah menyelesaikan hafalan Juz 30 (Juz Amma) Al-Quran Al-Karim dengan bacaan yang baik dan benar."}
+              {formData.certificateType === "TAHFIDZ_5_JUZ" &&
                 `Telah menyelesaikan hafalan ${formData.completedJuz.length} Juz Al-Quran Al-Karim dengan bacaan yang baik dan benar.`}
-              {formData.certificateType === 'TAHFIDZ_10_JUZ' &&
+              {formData.certificateType === "TAHFIDZ_10_JUZ" &&
                 `Telah menyelesaikan hafalan ${formData.completedJuz.length} Juz Al-Quran Al-Karim dengan bacaan yang baik dan benar.`}
-              {formData.certificateType === 'TAHFIDZ_30_JUZ' &&
-                'Telah menyelesaikan hafalan 30 Juz Al-Quran Al-Karim (Khatam) dan berhak menyandang gelar HAFIDZ/HAFIDZAH.'}
-              {formData.certificateType === 'SANAD_QIRAAH' &&
+              {formData.certificateType === "TAHFIDZ_30_JUZ" &&
+                "Telah menyelesaikan hafalan 30 Juz Al-Quran Al-Karim (Khatam) dan berhak menyandang gelar HAFIDZ/HAFIDZAH."}
+              {formData.certificateType === "SANAD_QIRAAH" &&
                 `Telah menyelesaikan bacaan Al-Quran dengan ${formData.qiraahType} dan berhak menerima sanad.`}
             </p>
           </div>
@@ -514,8 +531,8 @@ export default function TahfidzCertificatePage() {
 
           {/* Date */}
           <p className="text-sm mb-6">
-            Ditetapkan di Bandung,{' '}
-            {format(new Date(formData.tanggalSertifikat), 'd MMMM yyyy', {
+            Ditetapkan di Bandung,{" "}
+            {format(new Date(formData.tanggalSertifikat), "d MMMM yyyy", {
               locale: idLocale,
             })}
           </p>
@@ -529,7 +546,7 @@ export default function TahfidzCertificatePage() {
                 style={{ borderColor: accentColor }}
               />
               <p className="text-sm font-semibold">
-                {formData.musyrifName || '(.................................)'}
+                {formData.musyrifName || "(.................................)"}
               </p>
             </div>
             <div className="text-center">
@@ -593,7 +610,7 @@ export default function TahfidzCertificatePage() {
               className="transition-all hover:shadow-md hover:-translate-y-0.5"
             >
               <Printer className="h-4 w-4 mr-2" />
-              {isGenerating ? 'Generating...' : 'Cetak Sertifikat'}
+              {isGenerating ? "Generating..." : "Cetak Sertifikat"}
             </Button>
           </div>
         </div>
@@ -601,12 +618,13 @@ export default function TahfidzCertificatePage() {
         {/* Progress Steps */}
         <div className="flex items-center justify-center gap-2 flex-wrap">
           <div
-            className={`flex items-center gap-2 px-4 py-2 rounded-full ${activeTab === 'select-student'
-                ? 'bg-primary text-primary-foreground'
+            className={`flex items-center gap-2 px-4 py-2 rounded-full ${
+              activeTab === "select-student"
+                ? "bg-primary text-primary-foreground"
                 : selectedStudent
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-muted'
-              }`}
+                  ? "bg-green-100 text-green-800"
+                  : "bg-muted"
+            }`}
           >
             {selectedStudent ? (
               <CheckCircle2 className="h-4 w-4" />
@@ -619,12 +637,13 @@ export default function TahfidzCertificatePage() {
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
           <div
-            className={`flex items-center gap-2 px-4 py-2 rounded-full ${activeTab === 'select-type'
-                ? 'bg-primary text-primary-foreground'
+            className={`flex items-center gap-2 px-4 py-2 rounded-full ${
+              activeTab === "select-type"
+                ? "bg-primary text-primary-foreground"
                 : formData.certificateType && selectedStudent
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-muted'
-              }`}
+                  ? "bg-green-100 text-green-800"
+                  : "bg-muted"
+            }`}
           >
             <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-xs">
               2
@@ -633,10 +652,11 @@ export default function TahfidzCertificatePage() {
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
           <div
-            className={`flex items-center gap-2 px-4 py-2 rounded-full ${activeTab === 'fill-details'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted'
-              }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full ${
+              activeTab === "fill-details"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted"
+            }`}
           >
             <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-xs">
               3
@@ -670,7 +690,7 @@ export default function TahfidzCertificatePage() {
                     value={selectedUnitId}
                     onValueChange={(value) => {
                       setSelectedUnitId(value);
-                      setSelectedClassId('');
+                      setSelectedClassId("");
                     }}
                   >
                     <SelectTrigger className="w-full md:w-48 bg-background/50 backdrop-blur-sm border-muted-foreground/20">
@@ -725,15 +745,17 @@ export default function TahfidzCertificatePage() {
                   <div className="text-center py-12 text-muted-foreground">
                     <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>Tidak ada santri ditemukan</p>
-                    <p className="text-sm">Gunakan filter untuk mencari santri</p>
+                    <p className="text-sm">
+                      Gunakan filter untuk mencari santri
+                    </p>
                   </div>
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {students.map((student) => {
                       const initials = student.name
-                        .split(' ')
+                        .split(" ")
                         .map((n) => n[0])
-                        .join('')
+                        .join("")
                         .substring(0, 2)
                         .toUpperCase();
                       const isSelected = selectedStudent?.id === student.id;
@@ -743,9 +765,10 @@ export default function TahfidzCertificatePage() {
                           key={student.id}
                           className={`
                             flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all
-                            ${isSelected
-                              ? 'bg-primary/10 border-primary ring-2 ring-primary'
-                              : 'hover:bg-muted hover:border-muted-foreground/50'
+                            ${
+                              isSelected
+                                ? "bg-primary/10 border-primary ring-2 ring-primary"
+                                : "hover:bg-muted hover:border-muted-foreground/50"
                             }
                           `}
                           onClick={() => handleSelectStudent(student)}
@@ -756,12 +779,14 @@ export default function TahfidzCertificatePage() {
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{student.name}</p>
+                            <p className="font-medium truncate">
+                              {student.name}
+                            </p>
                             <p className="text-sm text-muted-foreground">
                               NIS: {student.nis}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {student.currentClass?.name || '-'} •{' '}
+                              {student.currentClass?.name || "-"} •{" "}
                               {student.unit?.name}
                             </p>
                           </div>
@@ -801,9 +826,10 @@ export default function TahfidzCertificatePage() {
                         key={type.id}
                         className={`
                           p-6 rounded-xl border-2 cursor-pointer transition-all
-                          ${isSelected
-                            ? 'border-primary bg-primary/5 shadow-lg'
-                            : 'border-muted hover:border-muted-foreground/50 hover:bg-muted/50'
+                          ${
+                            isSelected
+                              ? "border-primary bg-primary/5 shadow-lg"
+                              : "border-muted hover:border-muted-foreground/50 hover:bg-muted/50"
                           }
                         `}
                         onClick={() => handleSelectType(type.id)}
@@ -846,9 +872,9 @@ export default function TahfidzCertificatePage() {
                       <Avatar className="h-12 w-12">
                         <AvatarFallback className="bg-emerald-100 text-emerald-700">
                           {selectedStudent.name
-                            .split(' ')
+                            .split(" ")
                             .map((n) => n[0])
-                            .join('')
+                            .join("")
                             .substring(0, 2)
                             .toUpperCase()}
                         </AvatarFallback>
@@ -856,7 +882,8 @@ export default function TahfidzCertificatePage() {
                       <div>
                         <p className="font-medium">{selectedStudent.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          NIS: {selectedStudent.nis} • {selectedStudent.unit?.name}
+                          NIS: {selectedStudent.nis} •{" "}
+                          {selectedStudent.unit?.name}
                         </p>
                       </div>
                     </div>
@@ -890,7 +917,10 @@ export default function TahfidzCertificatePage() {
                     <Input
                       value={formData.musyrifName}
                       onChange={(e) =>
-                        setFormData({ ...formData, musyrifName: e.target.value })
+                        setFormData({
+                          ...formData,
+                          musyrifName: e.target.value,
+                        })
                       }
                       placeholder="Nama musyrif yang membimbing"
                     />
@@ -942,7 +972,9 @@ export default function TahfidzCertificatePage() {
 
                   {/* Juz Selection */}
                   <div className="space-y-2">
-                    <Label>Juz yang Dihafalkan ({formData.completedJuz.length} Juz)</Label>
+                    <Label>
+                      Juz yang Dihafalkan ({formData.completedJuz.length} Juz)
+                    </Label>
                     <div className="grid grid-cols-6 gap-2 max-h-40 overflow-y-auto p-2 border rounded-md">
                       {JUZ_NAMES.map((juz) => (
                         <button
@@ -951,9 +983,10 @@ export default function TahfidzCertificatePage() {
                           onClick={() => handleJuzToggle(juz.number)}
                           className={`
                             w-full aspect-square rounded-md text-sm font-medium transition-all
-                            ${formData.completedJuz.includes(juz.number)
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted hover:bg-muted/80'
+                            ${
+                              formData.completedJuz.includes(juz.number)
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted hover:bg-muted/80"
                             }
                           `}
                           title={juz.name}
@@ -965,20 +998,23 @@ export default function TahfidzCertificatePage() {
                   </div>
 
                   {/* Sanad Chain (for full Sanad) */}
-                  {(formData.certificateType === 'TAHFIDZ_30_JUZ' ||
-                    formData.certificateType === 'SANAD_QIRAAH') && (
-                      <div className="space-y-2">
-                        <Label>Silsilah Sanad (Opsional)</Label>
-                        <Textarea
-                          value={formData.sanadChain}
-                          onChange={(e) =>
-                            setFormData({ ...formData, sanadChain: e.target.value })
-                          }
-                          placeholder="Ust. Muhammad Ridwan → Syeikh Abdullah → ..."
-                          rows={3}
-                        />
-                      </div>
-                    )}
+                  {(formData.certificateType === "TAHFIDZ_30_JUZ" ||
+                    formData.certificateType === "SANAD_QIRAAH") && (
+                    <div className="space-y-2">
+                      <Label>Silsilah Sanad (Opsional)</Label>
+                      <Textarea
+                        value={formData.sanadChain}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            sanadChain: e.target.value,
+                          })
+                        }
+                        placeholder="Ust. Muhammad Ridwan → Syeikh Abdullah → ..."
+                        rows={3}
+                      />
+                    </div>
+                  )}
 
                   {/* Notes */}
                   <div className="space-y-2">
@@ -996,13 +1032,17 @@ export default function TahfidzCertificatePage() {
                   <div className="flex gap-2 pt-4">
                     <Button
                       variant="outline"
-                      onClick={() => setActiveTab('select-type')}
+                      onClick={() => setActiveTab("select-type")}
                     >
                       Kembali
                     </Button>
-                    <Button onClick={handlePrint} className="flex-1" disabled={isGenerating}>
+                    <Button
+                      onClick={handlePrint}
+                      className="flex-1"
+                      disabled={isGenerating}
+                    >
                       <Printer className="h-4 w-4 mr-2" />
-                      {isGenerating ? 'Generating...' : 'Cetak Sertifikat'}
+                      {isGenerating ? "Generating..." : "Cetak Sertifikat"}
                     </Button>
                   </div>
                 </CardContent>

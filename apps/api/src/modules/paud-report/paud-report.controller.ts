@@ -241,7 +241,9 @@ export const getReportPdf = asyncHandler(async (req: Request, res: Response) => 
 // PDF HTML TEMPLATE
 // ============================================
 
-function generateReportHtml(report: Awaited<ReturnType<typeof PAUDReportService.findReportById>>): string {
+function generateReportHtml(
+  report: Awaited<ReturnType<typeof PAUDReportService.findReportById>>
+): string {
   const student = report.student;
   const academicYear = report.academicYear;
   const semester = report.semester;
@@ -397,7 +399,7 @@ function generateReportHtml(report: Awaited<ReturnType<typeof PAUDReportService.
 </head>
 <body>
   <div class="header">
-    <h1>${report.unit?.name || 'TK Qur\'an'}</h1>
+    <h1>${report.unit?.name || "TK Qur'an"}</h1>
     <h2>LAPORAN PERKEMBANGAN ANAK</h2>
     <p>Tahun Pelajaran ${academicYear.name} - Semester ${semester === 'GANJIL' ? 'Ganjil' : 'Genap'}</p>
   </div>

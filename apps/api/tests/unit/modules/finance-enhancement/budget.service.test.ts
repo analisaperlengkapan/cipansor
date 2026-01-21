@@ -1,15 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createBudget, updateBudget, getBudgets } from '../../../../src/modules/finance-enhancement/budget.service';
+import {
+  createBudget,
+  updateBudget,
+  getBudgets,
+} from '../../../../src/modules/finance-enhancement/budget.service';
 import { prisma } from '../../../../src/lib/prisma';
 import { Prisma } from '@prisma/client';
 
 // Mock Prisma Decimal
 const Decimal = class {
   constructor(public val: number | string) {}
-  toNumber() { return Number(this.val); }
-  toString() { return String(this.val); }
-  plus(v: any) { return new Decimal(Number(this.val) + Number(v)); }
-  minus(v: any) { return new Decimal(Number(this.val) - Number(v)); }
+  toNumber() {
+    return Number(this.val);
+  }
+  toString() {
+    return String(this.val);
+  }
+  plus(v: any) {
+    return new Decimal(Number(this.val) + Number(v));
+  }
+  minus(v: any) {
+    return new Decimal(Number(this.val) - Number(v));
+  }
 };
 
 // @ts-ignore
@@ -65,16 +77,18 @@ describe('Budget Service', () => {
         unitId_academicYearId_accountId: {
           unitId: input.unitId,
           academicYearId: input.academicYearId,
-          accountId: input.accountId
-        }
-      }
+          accountId: input.accountId,
+        },
+      },
     });
 
-    expect(prisma.budget.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({
-        amount: new Prisma.Decimal(input.amount)
+    expect(prisma.budget.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          amount: new Prisma.Decimal(input.amount),
+        }),
       })
-    }));
+    );
 
     expect(result).toEqual(mockCreatedBudget);
   });
@@ -82,13 +96,15 @@ describe('Budget Service', () => {
   it('should throw error if budget already exists', async () => {
     (prisma.budget.findUnique as any).mockResolvedValue({ id: 'existing' });
 
-    await expect(createBudget({
-      unitId: 'unit-1',
-      academicYearId: 'year-1',
-      accountId: 'acc-1',
-      amount: 1000000,
-      createdById: 'user-1',
-    })).rejects.toThrow('Budget for this account and academic year already exists');
+    await expect(
+      createBudget({
+        unitId: 'unit-1',
+        academicYearId: 'year-1',
+        accountId: 'acc-1',
+        amount: 1000000,
+        createdById: 'user-1',
+      })
+    ).rejects.toThrow('Budget for this account and academic year already exists');
   });
 
   it('should get budgets with correct transformation', async () => {
@@ -98,8 +114,8 @@ describe('Budget Service', () => {
         unitId: 'unit-1',
         accountId: 'acc-1',
         amount: new Prisma.Decimal(1000),
-        academicYear: { startDate: new Date(), endDate: new Date() }
-      }
+        academicYear: { startDate: new Date(), endDate: new Date() },
+      },
     ];
 
     (prisma.budget.findMany as any).mockResolvedValue(mockBudgets);
@@ -107,7 +123,7 @@ describe('Budget Service', () => {
 
     // Mock aggregate for usage calculation
     (prisma.journalEntry.aggregate as any).mockResolvedValue({
-      _sum: { debit: new Prisma.Decimal(200), credit: new Prisma.Decimal(0) }
+      _sum: { debit: new Prisma.Decimal(200), credit: new Prisma.Decimal(0) },
     });
 
     const result = await getBudgets({});

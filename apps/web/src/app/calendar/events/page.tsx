@@ -1,13 +1,25 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useState } from "react";
+import { MainLayout } from "@/components/layout/main-layout";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -15,13 +27,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,16 +43,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { 
-  useCalendarEvents, 
+} from "@/components/ui/alert-dialog";
+import {
+  useCalendarEvents,
   useDeleteCalendarEvent,
-  EVENT_CATEGORIES, 
+  EVENT_CATEGORIES,
   getEventCategoryConfig,
-  EventCategory
-} from '@/hooks/use-calendar';
-import { 
-  Calendar as CalendarIcon, 
+  EventCategory,
+} from "@/hooks/use-calendar";
+import {
+  Calendar as CalendarIcon,
   Plus,
   Search,
   MoreHorizontal,
@@ -49,16 +61,16 @@ import {
   Eye,
   MapPin,
   Clock,
-  Filter
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import Link from 'next/link';
-import { toast } from 'sonner';
+  Filter,
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import Link from "next/link";
+import { toast } from "sonner";
 
 export default function EventsListPage() {
-  const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<EventCategory | ''>('');
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<EventCategory | "">("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: eventsData, isLoading } = useCalendarEvents({
@@ -70,20 +82,21 @@ export default function EventsListPage() {
   const deleteEvent = useDeleteCalendarEvent();
 
   // Filter events by search
-  const filteredEvents = events.filter(event => 
-    event.title.toLowerCase().includes(search.toLowerCase()) ||
-    event.description?.toLowerCase().includes(search.toLowerCase()) ||
-    event.location?.toLowerCase().includes(search.toLowerCase())
+  const filteredEvents = events.filter(
+    (event) =>
+      event.title.toLowerCase().includes(search.toLowerCase()) ||
+      event.description?.toLowerCase().includes(search.toLowerCase()) ||
+      event.location?.toLowerCase().includes(search.toLowerCase()),
   );
 
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
       await deleteEvent.mutateAsync(deleteId);
-      toast.success('Event berhasil dihapus');
+      toast.success("Event berhasil dihapus");
       setDeleteId(null);
     } catch {
-      toast.error('Gagal menghapus event');
+      toast.error("Gagal menghapus event");
     }
   };
 
@@ -130,7 +143,12 @@ export default function EventsListPage() {
                   className="pl-9"
                 />
               </div>
-              <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as EventCategory | '')}>
+              <Select
+                value={categoryFilter}
+                onValueChange={(v) =>
+                  setCategoryFilter(v as EventCategory | "")
+                }
+              >
                 <SelectTrigger className="w-48">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Semua Kategori" />
@@ -140,7 +158,10 @@ export default function EventsListPage() {
                   {EVENT_CATEGORIES.map((cat) => (
                     <SelectItem key={cat.value} value={cat.value}>
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: cat.color }}
+                        />
                         {cat.label}
                       </div>
                     </SelectItem>
@@ -162,7 +183,7 @@ export default function EventsListPage() {
           <CardContent>
             {isLoading ? (
               <div className="space-y-3">
-                {[1, 2, 3, 4, 5].map(i => (
+                {[1, 2, 3, 4, 5].map((i) => (
                   <Skeleton key={i} className="h-16" />
                 ))}
               </div>
@@ -196,7 +217,7 @@ export default function EventsListPage() {
                       <TableRow key={event.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div 
+                            <div
                               className="w-3 h-10 rounded-full shrink-0"
                               style={{ backgroundColor: catConfig?.color }}
                             />
@@ -218,9 +239,17 @@ export default function EventsListPage() {
                         <TableCell>
                           <div className="flex items-center gap-1 text-sm">
                             <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                            {format(new Date(event.startDate), 'd MMM', { locale: idLocale })}
+                            {format(new Date(event.startDate), "d MMM", {
+                              locale: idLocale,
+                            })}
                             {event.startDate !== event.endDate && (
-                              <> - {format(new Date(event.endDate), 'd MMM', { locale: idLocale })}</>
+                              <>
+                                {" "}
+                                -{" "}
+                                {format(new Date(event.endDate), "d MMM", {
+                                  locale: idLocale,
+                                })}
+                              </>
                             )}
                           </div>
                         </TableCell>
@@ -267,7 +296,7 @@ export default function EventsListPage() {
                                   Edit
                                 </DropdownMenuItem>
                               </Link>
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 className="text-red-600"
                                 onClick={() => setDeleteId(event.id)}
                               >
@@ -292,12 +321,16 @@ export default function EventsListPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Hapus Event?</AlertDialogTitle>
               <AlertDialogDescription>
-                Event yang dihapus tidak dapat dikembalikan. Apakah Anda yakin ingin melanjutkan?
+                Event yang dihapus tidak dapat dikembalikan. Apakah Anda yakin
+                ingin melanjutkan?
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Batal</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-red-600 hover:bg-red-700"
+              >
                 Hapus
               </AlertDialogAction>
             </AlertDialogFooter>

@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
 /**
  * Portfolio Page - Digital Student Portfolio
- * 
+ *
  * Halaman manajemen portofolio digital siswa
  * Kategori: Akademik, P5, Ekstrakurikuler, Prestasi, Seni, Tahfidz
  */
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   usePortfolios,
   usePortfolioTypes,
@@ -16,22 +16,22 @@ import {
   useCreatePortfolio,
   useDeletePortfolio,
   type Portfolio,
-} from '@/hooks/use-portfolio';
-import { useStudents } from '@/hooks/use-students';
-import { useUnits } from '@/hooks/use-units';
-import { useAcademicYears } from '@/hooks/use-academic-years';
-import { useAuthStore } from '@/stores/auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/hooks/use-portfolio";
+import { useStudents } from "@/hooks/use-students";
+import { useUnits } from "@/hooks/use-units";
+import { useAcademicYears } from "@/hooks/use-academic-years";
+import { useAuthStore } from "@/stores/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -39,7 +39,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -47,10 +47,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import {
   FolderOpen,
   Plus,
@@ -69,10 +69,10 @@ import {
   BookMarked,
   Folder,
   TrendingUp,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
+import { toast } from "sonner";
 
 const typeIcons: Record<string, React.ReactNode> = {
   ACADEMIC: <BookOpen className="h-4 w-4" />,
@@ -85,31 +85,34 @@ const typeIcons: Record<string, React.ReactNode> = {
 };
 
 const typeColors: Record<string, string> = {
-  ACADEMIC: 'bg-blue-100 text-blue-700',
-  P5_PROJECT: 'bg-green-100 text-green-700',
-  EXTRACURRICULAR: 'bg-purple-100 text-purple-700',
-  ACHIEVEMENT: 'bg-amber-100 text-amber-700',
-  ARTWORK: 'bg-pink-100 text-pink-700',
-  TAHFIDZ: 'bg-emerald-100 text-emerald-700',
-  OTHER: 'bg-gray-100 text-gray-700',
+  ACADEMIC: "bg-blue-100 text-blue-700",
+  P5_PROJECT: "bg-green-100 text-green-700",
+  EXTRACURRICULAR: "bg-purple-100 text-purple-700",
+  ACHIEVEMENT: "bg-amber-100 text-amber-700",
+  ARTWORK: "bg-pink-100 text-pink-700",
+  TAHFIDZ: "bg-emerald-100 text-emerald-700",
+  OTHER: "bg-gray-100 text-gray-700",
 };
 
 export default function PortfolioPage() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUnit, setSelectedUnit] = useState<string>(user?.unitId || '');
-  const [selectedType, setSelectedType] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedUnit, setSelectedUnit] = useState<string>(user?.unitId || "");
+  const [selectedType, setSelectedType] = useState<string>("");
 
   // Queries
   const { data: typesData } = usePortfolioTypes();
   const { data: unitsData } = useUnits();
   const { data: yearsData } = useAcademicYears();
-  const { data: studentsData } = useStudents({ unitId: selectedUnit || undefined, limit: 100 });
+  const { data: studentsData } = useStudents({
+    unitId: selectedUnit || undefined,
+    limit: 100,
+  });
   const { data: portfoliosData, isLoading } = usePortfolios({
-    unitId: (selectedUnit && selectedUnit !== 'ALL') ? selectedUnit : undefined,
-    type: (selectedType && selectedType !== 'ALL') ? selectedType : undefined,
+    unitId: selectedUnit && selectedUnit !== "ALL" ? selectedUnit : undefined,
+    type: selectedType && selectedType !== "ALL" ? selectedType : undefined,
     search: searchQuery || undefined,
   });
   const { data: stats } = usePortfolioStatistics({
@@ -122,26 +125,26 @@ export default function PortfolioPage() {
 
   // Form state
   const [formData, setFormData] = useState({
-    studentId: '',
-    title: '',
-    type: 'ACADEMIC' as string,
-    category: '',
-    description: '',
-    reflection: '',
-    academicYearId: '',
+    studentId: "",
+    title: "",
+    type: "ACADEMIC" as string,
+    category: "",
+    description: "",
+    reflection: "",
+    academicYearId: "",
     isPublic: false,
     isShowcase: false,
   });
 
   const handleOpenDialog = () => {
     setFormData({
-      studentId: '',
-      title: '',
-      type: 'ACADEMIC',
-      category: '',
-      description: '',
-      reflection: '',
-      academicYearId: yearsData?.data?.find((y: any) => y.isActive)?.id || '',
+      studentId: "",
+      title: "",
+      type: "ACADEMIC",
+      category: "",
+      description: "",
+      reflection: "",
+      academicYearId: yearsData?.data?.find((y: any) => y.isActive)?.id || "",
       isPublic: false,
       isShowcase: false,
     });
@@ -152,25 +155,28 @@ export default function PortfolioPage() {
     e.preventDefault();
     try {
       const result = await createPortfolio.mutateAsync(formData);
-      toast.success('Portfolio berhasil dibuat');
+      toast.success("Portfolio berhasil dibuat");
       setIsDialogOpen(false);
       router.push(`/portfolio/${result.id}`);
     } catch (error) {
-      toast.error('Gagal membuat portfolio');
+      toast.error("Gagal membuat portfolio");
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus portfolio ini?')) return;
+    if (!confirm("Apakah Anda yakin ingin menghapus portfolio ini?")) return;
     try {
       await deletePortfolio.mutateAsync(id);
-      toast.success('Portfolio berhasil dihapus');
+      toast.success("Portfolio berhasil dihapus");
     } catch (error) {
-      toast.error('Gagal menghapus portfolio');
+      toast.error("Gagal menghapus portfolio");
     }
   };
 
-  const selectedCategories = typesData?.categories?.[formData.type as keyof typeof typesData.categories] || [];
+  const selectedCategories =
+    typesData?.categories?.[
+      formData.type as keyof typeof typesData.categories
+    ] || [];
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -208,7 +214,9 @@ export default function PortfolioPage() {
             <Star className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{stats?.showcaseCount || 0}</div>
+            <div className="text-2xl font-bold text-amber-600">
+              {stats?.showcaseCount || 0}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -217,17 +225,21 @@ export default function PortfolioPage() {
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats?.reviewedCount || 0}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {stats?.reviewedCount || 0}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rata-rata Nilai</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Rata-rata Nilai
+            </CardTitle>
             <Trophy className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {stats?.averageScore?.toFixed(1) || '-'}
+              {stats?.averageScore?.toFixed(1) || "-"}
             </div>
           </CardContent>
         </Card>
@@ -238,11 +250,13 @@ export default function PortfolioPage() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-1">
-              {Object.entries(stats?.byType || {}).slice(0, 3).map(([type, count]) => (
-                <Badge key={type} variant="outline" className="text-xs">
-                  {type}: {count as number}
-                </Badge>
-              ))}
+              {Object.entries(stats?.byType || {})
+                .slice(0, 3)
+                .map(([type, count]) => (
+                  <Badge key={type} variant="outline" className="text-xs">
+                    {type}: {count as number}
+                  </Badge>
+                ))}
             </div>
           </CardContent>
         </Card>
@@ -349,18 +363,23 @@ export default function PortfolioPage() {
                   <Badge className={typeColors[portfolio.type]}>
                     {typeIcons[portfolio.type]}
                     <span className="ml-1">
-                      {typesData?.types?.find((t) => t.value === portfolio.type)?.label || portfolio.type}
+                      {typesData?.types?.find((t) => t.value === portfolio.type)
+                        ?.label || portfolio.type}
                     </span>
                   </Badge>
                 </div>
-                <CardTitle className="text-lg line-clamp-1">{portfolio.title}</CardTitle>
+                <CardTitle className="text-lg line-clamp-1">
+                  {portfolio.title}
+                </CardTitle>
                 <CardDescription className="line-clamp-2">
-                  {portfolio.description || 'Tidak ada deskripsi'}
+                  {portfolio.description || "Tidak ada deskripsi"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0 pb-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span className="font-medium">{portfolio.student?.user?.name}</span>
+                  <span className="font-medium">
+                    {portfolio.student?.user?.name}
+                  </span>
                   <span>•</span>
                   <span>{portfolio.student?.unit?.name}</span>
                 </div>
@@ -377,7 +396,11 @@ export default function PortfolioPage() {
                       {portfolio._count?.comments || 0}
                     </span>
                   </div>
-                  <span>{format(new Date(portfolio.createdAt), 'd MMM yyyy', { locale: localeId })}</span>
+                  <span>
+                    {format(new Date(portfolio.createdAt), "d MMM yyyy", {
+                      locale: localeId,
+                    })}
+                  </span>
                 </div>
               </CardFooter>
             </Card>
@@ -400,7 +423,9 @@ export default function PortfolioPage() {
                 <Label>Siswa</Label>
                 <Select
                   value={formData.studentId}
-                  onValueChange={(v) => setFormData({ ...formData, studentId: v })}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, studentId: v })
+                  }
                   required
                 >
                   <SelectTrigger>
@@ -419,7 +444,9 @@ export default function PortfolioPage() {
                 <Label>Judul</Label>
                 <Input
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
                   placeholder="Judul portfolio..."
                   required
                 />
@@ -429,7 +456,9 @@ export default function PortfolioPage() {
                   <Label>Tipe</Label>
                   <Select
                     value={formData.type}
-                    onValueChange={(v) => setFormData({ ...formData, type: v, category: '' })}
+                    onValueChange={(v) =>
+                      setFormData({ ...formData, type: v, category: "" })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -447,7 +476,9 @@ export default function PortfolioPage() {
                   <Label>Kategori</Label>
                   <Select
                     value={formData.category}
-                    onValueChange={(v) => setFormData({ ...formData, category: v })}
+                    onValueChange={(v) =>
+                      setFormData({ ...formData, category: v })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih Kategori" />
@@ -466,7 +497,9 @@ export default function PortfolioPage() {
                 <Label>Deskripsi</Label>
                 <Textarea
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   placeholder="Deskripsi karya..."
                 />
               </div>
@@ -474,7 +507,9 @@ export default function PortfolioPage() {
                 <Label>Refleksi Siswa</Label>
                 <Textarea
                   value={formData.reflection}
-                  onChange={(e) => setFormData({ ...formData, reflection: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, reflection: e.target.value })
+                  }
                   placeholder="Apa yang dipelajari dari karya ini..."
                 />
               </div>
@@ -482,14 +517,18 @@ export default function PortfolioPage() {
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={formData.isPublic}
-                    onCheckedChange={(v) => setFormData({ ...formData, isPublic: v })}
+                    onCheckedChange={(v) =>
+                      setFormData({ ...formData, isPublic: v })
+                    }
                   />
                   <Label className="text-sm">Publik</Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={formData.isShowcase}
-                    onCheckedChange={(v) => setFormData({ ...formData, isShowcase: v })}
+                    onCheckedChange={(v) =>
+                      setFormData({ ...formData, isShowcase: v })
+                    }
                   />
                   <Label className="text-sm">Showcase</Label>
                 </div>

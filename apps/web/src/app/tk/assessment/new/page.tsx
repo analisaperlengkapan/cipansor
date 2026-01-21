@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
 import {
   useCreateTKAssessment,
   useTKIndicators,
@@ -13,11 +13,11 @@ import {
   TKAchievementLevel,
   ASPECT_LABELS,
   ACHIEVEMENT_LABELS,
-} from '@/hooks/use-tk-assessment';
-import { useStudents } from '@/hooks/use-students';
-import { useAcademicYears } from '@/hooks/use-academic-years';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+} from "@/hooks/use-tk-assessment";
+import { useStudents } from "@/hooks/use-students";
+import { useAcademicYears } from "@/hooks/use-academic-years";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -26,43 +26,58 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Textarea } from '@/components/ui/textarea';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Save, ArrowLeft, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { useAuthStore } from '@/stores/auth';
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
-import { Progress } from '@/components/ui/progress';
-import { useAddEvidence } from '@/hooks/use-tk-assessment';
-import { ImagePlus, X, CheckCircle2, Star, Activity, Lightbulb, MessageCircle, HeartHandshake, Palette, FileText } from 'lucide-react';
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { CalendarIcon, Save, ArrowLeft, Loader2 } from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { toast } from "sonner";
+import { useAuthStore } from "@/stores/auth";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
+import { useAddEvidence } from "@/hooks/use-tk-assessment";
+import {
+  ImagePlus,
+  X,
+  CheckCircle2,
+  Star,
+  Activity,
+  Lightbulb,
+  MessageCircle,
+  HeartHandshake,
+  Palette,
+  FileText,
+} from "lucide-react";
 
 const formSchema = z.object({
-  studentId: z.string().min(1, 'Pilih siswa'),
-  academicYearId: z.string().min(1, 'Pilih tahun ajaran'),
-  semester: z.enum(['GANJIL', 'GENAP']),
-  aspect: z.enum(['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI'], {
-    required_error: 'Pilih aspek perkembangan',
+  studentId: z.string().min(1, "Pilih siswa"),
+  academicYearId: z.string().min(1, "Pilih tahun ajaran"),
+  semester: z.enum(["GANJIL", "GENAP"]),
+  aspect: z.enum(["NAM", "FM", "KOG", "BHS", "SE", "SNI"], {
+    required_error: "Pilih aspek perkembangan",
   }),
   indicatorId: z.string().optional(),
-  periodType: z.enum(['HARIAN', 'MINGGUAN', 'BULANAN', 'SEMESTER'], {
-    required_error: 'Pilih tipe periode',
+  periodType: z.enum(["HARIAN", "MINGGUAN", "BULANAN", "SEMESTER"], {
+    required_error: "Pilih tipe periode",
   }),
-  periodDate: z.date({ required_error: 'Pilih tanggal penilaian' }),
-  achievementLevel: z.enum(['BB', 'MB', 'BSH', 'BSB'], {
-    required_error: 'Pilih tingkat capaian',
+  periodDate: z.date({ required_error: "Pilih tanggal penilaian" }),
+  achievementLevel: z.enum(["BB", "MB", "BSH", "BSB"], {
+    required_error: "Pilih tingkat capaian",
   }),
   narrativeText: z.string().max(2000).optional(),
   teacherNotes: z.string().max(1000).optional(),
@@ -72,17 +87,37 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const PERIOD_TYPES = [
-  { value: 'HARIAN', label: 'Harian', description: 'Penilaian harian' },
-  { value: 'MINGGUAN', label: 'Mingguan', description: 'Penilaian mingguan' },
-  { value: 'BULANAN', label: 'Bulanan', description: 'Penilaian bulanan' },
-  { value: 'SEMESTER', label: 'Semester', description: 'Penilaian semester' },
+  { value: "HARIAN", label: "Harian", description: "Penilaian harian" },
+  { value: "MINGGUAN", label: "Mingguan", description: "Penilaian mingguan" },
+  { value: "BULANAN", label: "Bulanan", description: "Penilaian bulanan" },
+  { value: "SEMESTER", label: "Semester", description: "Penilaian semester" },
 ];
 
 const ACHIEVEMENT_OPTIONS = [
-  { value: 'BB', label: 'BB', description: 'Belum Berkembang', color: 'border-red-500' },
-  { value: 'MB', label: 'MB', description: 'Mulai Berkembang', color: 'border-yellow-500' },
-  { value: 'BSH', label: 'BSH', description: 'Berkembang Sesuai Harapan', color: 'border-blue-500' },
-  { value: 'BSB', label: 'BSB', description: 'Berkembang Sangat Baik', color: 'border-green-500' },
+  {
+    value: "BB",
+    label: "BB",
+    description: "Belum Berkembang",
+    color: "border-red-500",
+  },
+  {
+    value: "MB",
+    label: "MB",
+    description: "Mulai Berkembang",
+    color: "border-yellow-500",
+  },
+  {
+    value: "BSH",
+    label: "BSH",
+    description: "Berkembang Sesuai Harapan",
+    color: "border-blue-500",
+  },
+  {
+    value: "BSB",
+    label: "BSB",
+    description: "Berkembang Sangat Baik",
+    color: "border-green-500",
+  },
 ];
 
 export default function CreateTKAssessmentPage() {
@@ -91,7 +126,7 @@ export default function CreateTKAssessmentPage() {
 
   const { data: students, isLoading: loadingStudents } = useStudents({
     unitId: user?.unitId,
-    status: 'ACTIVE',
+    status: "ACTIVE",
     limit: 100,
   });
 
@@ -100,13 +135,13 @@ export default function CreateTKAssessmentPage() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      periodType: 'HARIAN',
+      periodType: "HARIAN",
       periodDate: new Date(),
-      semester: 'GANJIL',
+      semester: "GANJIL",
     },
   });
 
-  const selectedAspect = form.watch('aspect') as TKAspect | undefined;
+  const selectedAspect = form.watch("aspect") as TKAspect | undefined;
   const { data: indicators } = useTKIndicators({
     aspect: selectedAspect,
     isActive: true,
@@ -138,16 +173,19 @@ export default function CreateTKAssessmentPage() {
     try {
       const result = await createMutation.mutateAsync({
         ...values,
-        periodDate: format(values.periodDate, 'yyyy-MM-dd'),
+        periodDate: format(values.periodDate, "yyyy-MM-dd"),
       });
 
       // Upload evidences if any
       if (files.length > 0) {
         for (const file of files) {
           const formData = new FormData();
-          formData.append('file', file);
+          formData.append("file", file);
           // Use uppercase for fileType to match potential DB constraints/Enums
-          formData.append('fileType', file.type.startsWith('image') ? 'IMAGE' : 'VIDEO');
+          formData.append(
+            "fileType",
+            file.type.startsWith("image") ? "IMAGE" : "VIDEO",
+          );
           await addEvidenceMutation.mutateAsync({
             assessmentId: result.id,
             data: formData,
@@ -155,18 +193,18 @@ export default function CreateTKAssessmentPage() {
         }
       }
 
-      toast.success('Penilaian berhasil disimpan');
-      router.push('/paud/assessment');
+      toast.success("Penilaian berhasil disimpan");
+      router.push("/paud/assessment");
     } catch (error) {
-      toast.error('Gagal menyimpan penilaian');
+      toast.error("Gagal menyimpan penilaian");
     }
   };
 
   const nextStep = async () => {
     const fields = [
-      ['studentId', 'academicYearId', 'periodType', 'periodDate', 'semester'],
-      ['aspect', 'achievementLevel'],
-      ['narrativeText', 'teacherNotes', 'recommendations'],
+      ["studentId", "academicYearId", "periodType", "periodDate", "semester"],
+      ["aspect", "achievementLevel"],
+      ["narrativeText", "teacherNotes", "recommendations"],
       [],
     ][step - 1];
 
@@ -189,10 +227,18 @@ export default function CreateTKAssessmentPage() {
         <div className="space-y-2">
           <Progress value={(step / 4) * 100} className="h-2" />
           <div className="flex justify-between text-xs text-muted-foreground px-1">
-            <span className={step >= 1 ? 'text-primary font-medium' : ''}>1. Data Dasar</span>
-            <span className={step >= 2 ? 'text-primary font-medium' : ''}>2. Capaian</span>
-            <span className={step >= 3 ? 'text-primary font-medium' : ''}>3. Narasi</span>
-            <span className={step >= 4 ? 'text-primary font-medium' : ''}>4. Bukti</span>
+            <span className={step >= 1 ? "text-primary font-medium" : ""}>
+              1. Data Dasar
+            </span>
+            <span className={step >= 2 ? "text-primary font-medium" : ""}>
+              2. Capaian
+            </span>
+            <span className={step >= 3 ? "text-primary font-medium" : ""}>
+              3. Narasi
+            </span>
+            <span className={step >= 4 ? "text-primary font-medium" : ""}>
+              4. Bukti
+            </span>
           </div>
         </div>
 
@@ -211,7 +257,10 @@ export default function CreateTKAssessmentPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Pilih Siswa</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Pilih siswa" />
@@ -236,7 +285,10 @@ export default function CreateTKAssessmentPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Tahun Ajaran</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Pilih tahun ajaran" />
@@ -263,7 +315,10 @@ export default function CreateTKAssessmentPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Jenis Periode</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Pilih periode" />
@@ -292,14 +347,16 @@ export default function CreateTKAssessmentPage() {
                             <PopoverTrigger asChild>
                               <FormControl>
                                 <Button
-                                  variant={'outline'}
+                                  variant={"outline"}
                                   className={cn(
-                                    'pl-3 text-left font-normal',
-                                    !field.value && 'text-muted-foreground'
+                                    "pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground",
                                   )}
                                 >
                                   {field.value ? (
-                                    format(field.value, 'PPP', { locale: idLocale })
+                                    format(field.value, "PPP", {
+                                      locale: idLocale,
+                                    })
                                   ) : (
                                     <span>Pilih tanggal</span>
                                   )}
@@ -307,13 +364,17 @@ export default function CreateTKAssessmentPage() {
                                 </Button>
                               </FormControl>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
+                            <PopoverContent
+                              className="w-auto p-0"
+                              align="start"
+                            >
                               <Calendar
                                 mode="single"
                                 selected={field.value}
                                 onSelect={field.onChange}
                                 disabled={(date) =>
-                                  date > new Date() || date < new Date('1900-01-01')
+                                  date > new Date() ||
+                                  date < new Date("1900-01-01")
                                 }
                                 initialFocus
                               />
@@ -330,15 +391,22 @@ export default function CreateTKAssessmentPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Semester *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Pilih semester" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="GANJIL">Semester 1 (Ganjil)</SelectItem>
-                              <SelectItem value="GENAP">Semester 2 (Genap)</SelectItem>
+                              <SelectItem value="GANJIL">
+                                Semester 1 (Ganjil)
+                              </SelectItem>
+                              <SelectItem value="GENAP">
+                                Semester 2 (Genap)
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -368,15 +436,16 @@ export default function CreateTKAssessmentPage() {
                             defaultValue={field.value}
                             className="grid grid-cols-2 md:grid-cols-3 gap-4"
                           >
-                            {Object.entries(ASPECT_LABELS).map(([value, label]) => {
+                            {Object.entries(ASPECT_LABELS).map(
+                              ([value, label]) => {
                                 // Dynamic icon selection based on aspect
                                 let Icon = FileText; // Default
-                                if (value === 'NAM') Icon = Star;
-                                if (value === 'FM') Icon = Activity; // or PersonStanding if available
-                                if (value === 'KOG') Icon = Lightbulb;
-                                if (value === 'BHS') Icon = MessageCircle;
-                                if (value === 'SE') Icon = HeartHandshake;
-                                if (value === 'SNI') Icon = Palette;
+                                if (value === "NAM") Icon = Star;
+                                if (value === "FM") Icon = Activity; // or PersonStanding if available
+                                if (value === "KOG") Icon = Lightbulb;
+                                if (value === "BHS") Icon = MessageCircle;
+                                if (value === "SE") Icon = HeartHandshake;
+                                if (value === "SNI") Icon = Palette;
 
                                 return (
                                   <div key={value}>
@@ -388,18 +457,28 @@ export default function CreateTKAssessmentPage() {
                                     <label
                                       htmlFor={`aspect-${value}`}
                                       className={cn(
-                                        'flex flex-col items-center justify-center rounded-xl border-2 border-muted bg-card p-4 hover:bg-accent/50 hover:border-primary/50 transition-all cursor-pointer h-full gap-3 text-center peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 peer-data-[state=checked]:text-primary shadow-sm hover:shadow-md',
-                                        field.value === value && 'ring-2 ring-primary ring-offset-2'
+                                        "flex flex-col items-center justify-center rounded-xl border-2 border-muted bg-card p-4 hover:bg-accent/50 hover:border-primary/50 transition-all cursor-pointer h-full gap-3 text-center peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 peer-data-[state=checked]:text-primary shadow-sm hover:shadow-md",
+                                        field.value === value &&
+                                          "ring-2 ring-primary ring-offset-2",
                                       )}
                                     >
-                                      <div className={cn("p-2 rounded-full bg-muted peer-data-[state=checked]:bg-primary/20", field.value === value && "bg-primary/20")}>
-                                          <Icon className="h-6 w-6" />
+                                      <div
+                                        className={cn(
+                                          "p-2 rounded-full bg-muted peer-data-[state=checked]:bg-primary/20",
+                                          field.value === value &&
+                                            "bg-primary/20",
+                                        )}
+                                      >
+                                        <Icon className="h-6 w-6" />
                                       </div>
-                                      <span className="text-sm font-semibold">{label}</span>
+                                      <span className="text-sm font-semibold">
+                                        {label}
+                                      </span>
                                     </label>
                                   </div>
-                                )
-                            })}
+                                );
+                              },
+                            )}
                           </RadioGroup>
                         </FormControl>
                         <FormMessage />
@@ -429,27 +508,38 @@ export default function CreateTKAssessmentPage() {
                                 <label
                                   htmlFor={option.value}
                                   className={cn(
-                                    'flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-card p-4 hover:scale-[1.02] transition-all cursor-pointer h-full relative overflow-hidden group shadow-sm hover:shadow-md',
-                                    'peer-data-[state=checked]:border-primary peer-data-[state=checked]:shadow-lg',
-                                    field.value === option.value && option.color.replace('border-', 'border-') + ' bg-accent/20'
+                                    "flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-card p-4 hover:scale-[1.02] transition-all cursor-pointer h-full relative overflow-hidden group shadow-sm hover:shadow-md",
+                                    "peer-data-[state=checked]:border-primary peer-data-[state=checked]:shadow-lg",
+                                    field.value === option.value &&
+                                      option.color.replace(
+                                        "border-",
+                                        "border-",
+                                      ) + " bg-accent/20",
                                   )}
                                 >
                                   {/* Color Indicator Strip */}
-                                  <div className={cn("absolute top-0 left-0 w-full h-1.5", option.color.replace('border-', 'bg-'))} />
-                                  
-                                  <div className="mt-2 text-3xl font-bold tracking-tight">{option.value}</div>
+                                  <div
+                                    className={cn(
+                                      "absolute top-0 left-0 w-full h-1.5",
+                                      option.color.replace("border-", "bg-"),
+                                    )}
+                                  />
+
+                                  <div className="mt-2 text-3xl font-bold tracking-tight">
+                                    {option.value}
+                                  </div>
                                   <div className="text-xs font-semibold uppercase text-muted-foreground mt-1 text-center">
                                     {option.label}
                                   </div>
                                   <p className="text-[10px] text-center text-muted-foreground leading-tight mt-3 px-2">
                                     {option.description}
                                   </p>
-                                  
+
                                   {/* Checkmark for active state */}
                                   {field.value === option.value && (
-                                     <div className="absolute top-2 right-2 text-primary animate-in zoom-in duration-300">
-                                        <CheckCircle2 className="w-4 h-4" />
-                                     </div>
+                                    <div className="absolute top-2 right-2 text-primary animate-in zoom-in duration-300">
+                                      <CheckCircle2 className="w-4 h-4" />
+                                    </div>
                                   )}
                                 </label>
                               </div>
@@ -477,7 +567,10 @@ export default function CreateTKAssessmentPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Indikator (Opsional)</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Pilih indikator" />
@@ -485,7 +578,10 @@ export default function CreateTKAssessmentPage() {
                             </FormControl>
                             <SelectContent>
                               {indicators.map((indicator) => (
-                                <SelectItem key={indicator.id} value={indicator.id}>
+                                <SelectItem
+                                  key={indicator.id}
+                                  value={indicator.id}
+                                >
                                   {indicator.name}
                                 </SelectItem>
                               ))}
@@ -511,7 +607,9 @@ export default function CreateTKAssessmentPage() {
                           />
                         </FormControl>
                         <FormDescription className="flex justify-between">
-                          <span>Focus on specific evidence or behavior observed.</span>
+                          <span>
+                            Focus on specific evidence or behavior observed.
+                          </span>
                           <span>{field.value?.length || 0} / 2000</span>
                         </FormDescription>
                         <FormMessage />
@@ -571,8 +669,15 @@ export default function CreateTKAssessmentPage() {
                       <FormLabel>Unggah Foto/Video Bukti</FormLabel>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {previews.map((preview, index) => (
-                          <div key={index} className="relative aspect-square rounded-md overflow-hidden border">
-                            <img src={preview} alt={`Evidence ${index}`} className="object-cover w-full h-full" />
+                          <div
+                            key={index}
+                            className="relative aspect-square rounded-md overflow-hidden border"
+                          >
+                            <img
+                              src={preview}
+                              alt={`Evidence ${index}`}
+                              className="object-cover w-full h-full"
+                            />
                             <button
                               type="button"
                               onClick={() => removeFile(index)}
@@ -584,7 +689,9 @@ export default function CreateTKAssessmentPage() {
                         ))}
                         <label className="flex flex-col items-center justify-center aspect-square rounded-md border-2 border-dashed border-muted-foreground/25 hover:border-primary hover:bg-accent/50 cursor-pointer transition-all">
                           <ImagePlus className="h-8 w-8 text-muted-foreground" />
-                          <span className="text-[10px] mt-2 font-medium">Tambah Bukti</span>
+                          <span className="text-[10px] mt-2 font-medium">
+                            Tambah Bukti
+                          </span>
                           <input
                             type="file"
                             multiple
@@ -595,7 +702,8 @@ export default function CreateTKAssessmentPage() {
                         </label>
                       </div>
                       <p className="text-[11px] text-muted-foreground italic">
-                        * Unggah foto atau video yang menunjukkan aktivitas terkait capaian ini.
+                        * Unggah foto atau video yang menunjukkan aktivitas
+                        terkait capaian ini.
                       </p>
                     </div>
 
@@ -606,13 +714,33 @@ export default function CreateTKAssessmentPage() {
                       </h4>
                       <div className="grid grid-cols-2 gap-y-2 text-sm">
                         <span className="text-muted-foreground">Siswa:</span>
-                        <span className="font-medium">{students?.data?.find(s => s.id === form.getValues('studentId'))?.name}</span>
+                        <span className="font-medium">
+                          {
+                            students?.data?.find(
+                              (s) => s.id === form.getValues("studentId"),
+                            )?.name
+                          }
+                        </span>
                         <span className="text-muted-foreground">Aspek:</span>
-                        <span className="font-medium">{ASPECT_LABELS[form.getValues('aspect')]}</span>
+                        <span className="font-medium">
+                          {ASPECT_LABELS[form.getValues("aspect")]}
+                        </span>
                         <span className="text-muted-foreground">Capaian:</span>
-                        <span className="font-medium">{ACHIEVEMENT_LABELS[form.getValues('achievementLevel')]}</span>
-                        <span className="text-muted-foreground">Indikator:</span>
-                        <span className="font-medium">{indicators?.find(i => i.id === form.getValues('indicatorId'))?.name || '-'}</span>
+                        <span className="font-medium">
+                          {
+                            ACHIEVEMENT_LABELS[
+                              form.getValues("achievementLevel")
+                            ]
+                          }
+                        </span>
+                        <span className="text-muted-foreground">
+                          Indikator:
+                        </span>
+                        <span className="font-medium">
+                          {indicators?.find(
+                            (i) => i.id === form.getValues("indicatorId"),
+                          )?.name || "-"}
+                        </span>
                       </div>
                     </div>
                   </CardContent>
@@ -627,7 +755,7 @@ export default function CreateTKAssessmentPage() {
                 variant="ghost"
                 onClick={step === 1 ? () => router.back() : prevStep}
               >
-                {step === 1 ? 'Batal' : 'Kembali'}
+                {step === 1 ? "Batal" : "Kembali"}
               </Button>
 
               <div className="flex gap-3">
@@ -636,8 +764,14 @@ export default function CreateTKAssessmentPage() {
                     Lanjut
                   </Button>
                 ) : (
-                  <Button type="submit" disabled={createMutation.isPending || addEvidenceMutation.isPending}>
-                    {createMutation.isPending || addEvidenceMutation.isPending ? (
+                  <Button
+                    type="submit"
+                    disabled={
+                      createMutation.isPending || addEvidenceMutation.isPending
+                    }
+                  >
+                    {createMutation.isPending ||
+                    addEvidenceMutation.isPending ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Menyimpan...

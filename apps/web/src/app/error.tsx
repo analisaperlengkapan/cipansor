@@ -1,15 +1,21 @@
-'use client';
+"use client";
 
 /**
  * Global Error Boundary
  * Catches unhandled errors and displays a user-friendly error page
  */
 
-import { useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
-import Link from 'next/link';
+import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import Link from "next/link";
 
 export default function Error({
   error,
@@ -20,7 +26,7 @@ export default function Error({
 }) {
   useEffect(() => {
     // Log the error to an error reporting service
-    console.error('Application Error:', error);
+    console.error("Application Error:", error);
   }, [error]);
 
   return (
@@ -32,14 +38,17 @@ export default function Error({
           </div>
           <CardTitle className="text-xl">Terjadi Kesalahan</CardTitle>
           <CardDescription>
-            Maaf, terjadi kesalahan yang tidak terduga. Tim kami telah diberitahu.
+            Maaf, terjadi kesalahan yang tidak terduga. Tim kami telah
+            diberitahu.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {process.env.NODE_ENV === 'development' && (
+          {process.env.NODE_ENV === "development" && (
             <div className="rounded-md bg-muted p-4 text-sm">
               <p className="font-medium text-destructive">{error.name}</p>
-              <p className="mt-1 text-muted-foreground wrap-break-word">{error.message}</p>
+              <p className="mt-1 text-muted-foreground wrap-break-word">
+                {error.message}
+              </p>
               {error.digest && (
                 <p className="mt-2 text-xs text-muted-foreground">
                   Error ID: {error.digest}

@@ -14,12 +14,7 @@ import {
   CreateStockMovementSchema,
   ListStockMovementsQuerySchema,
 } from './canteen.schema';
-import {
-  categoryService,
-  itemService,
-  transactionService,
-  stockMovementService,
-} from './service';
+import { categoryService, itemService, transactionService, stockMovementService } from './service';
 import { ApiResponse } from '../../utils/response';
 
 const router = Router();
@@ -29,23 +24,19 @@ const router = Router();
 // =============================================================================
 
 // GET /api/canteen/categories - Get all categories
-router.get(
-  '/categories',
-  authenticate,
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const unitId = req.user?.unitId;
-      if (!unitId) {
-        return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
-      }
-
-      const categories = await categoryService.getAll(unitId);
-      return res.json(ApiResponse.success(categories, 'Berhasil mengambil data kategori'));
-    } catch (err) {
-      next(err);
+router.get('/categories', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const unitId = req.user?.unitId;
+    if (!unitId) {
+      return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
     }
+
+    const categories = await categoryService.getAll(unitId);
+    return res.json(ApiResponse.success(categories, 'Berhasil mengambil data kategori'));
+  } catch (err) {
+    next(err);
   }
-);
+});
 
 // GET /api/canteen/categories/:id - Get category by ID
 router.get(
@@ -137,24 +128,22 @@ router.delete(
 // =============================================================================
 
 // GET /api/canteen/items - Get all items
-router.get(
-  '/items',
-  authenticate,
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const unitId = req.user?.unitId;
-      if (!unitId) {
-        return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
-      }
-
-      const parsedQuery = ListItemsQuerySchema.parse(req.query);
-      const result = await itemService.getAll(unitId, parsedQuery);
-      return res.json(ApiResponse.success(result.data, 'Berhasil mengambil data item', result.pagination));
-    } catch (err) {
-      next(err);
+router.get('/items', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const unitId = req.user?.unitId;
+    if (!unitId) {
+      return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
     }
+
+    const parsedQuery = ListItemsQuerySchema.parse(req.query);
+    const result = await itemService.getAll(unitId, parsedQuery);
+    return res.json(
+      ApiResponse.success(result.data, 'Berhasil mengambil data item', result.pagination)
+    );
+  } catch (err) {
+    next(err);
   }
-);
+});
 
 // GET /api/canteen/items/low-stock - Get low stock items
 router.get(
@@ -177,27 +166,23 @@ router.get(
 );
 
 // GET /api/canteen/items/:id - Get item by ID
-router.get(
-  '/items/:id',
-  authenticate,
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const unitId = req.user?.unitId;
-      if (!unitId) {
-        return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
-      }
-
-      const item = await itemService.getById(req.params.id, unitId);
-      if (!item) {
-        return res.status(404).json(ApiResponse.error('Item tidak ditemukan', 'NOT_FOUND'));
-      }
-
-      return res.json(ApiResponse.success(item, 'Berhasil mengambil data item'));
-    } catch (err) {
-      next(err);
+router.get('/items/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const unitId = req.user?.unitId;
+    if (!unitId) {
+      return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
     }
+
+    const item = await itemService.getById(req.params.id, unitId);
+    if (!item) {
+      return res.status(404).json(ApiResponse.error('Item tidak ditemukan', 'NOT_FOUND'));
+    }
+
+    return res.json(ApiResponse.success(item, 'Berhasil mengambil data item'));
+  } catch (err) {
+    next(err);
   }
-);
+});
 
 // POST /api/canteen/items - Create item
 router.post(
@@ -278,7 +263,9 @@ router.get(
 
       const parsedQuery = ListTransactionsQuerySchema.parse(req.query);
       const result = await transactionService.getAll(unitId, parsedQuery);
-      return res.json(ApiResponse.success(result.data, 'Berhasil mengambil data transaksi', result.pagination));
+      return res.json(
+        ApiResponse.success(result.data, 'Berhasil mengambil data transaksi', result.pagination)
+      );
     } catch (err) {
       next(err);
     }
@@ -344,7 +331,9 @@ router.post(
       const unitId = req.user?.unitId;
       const userId = req.user?.sub;
       if (!unitId || !userId) {
-        return res.status(400).json(ApiResponse.error('Unit ID atau User ID tidak ditemukan', 'REQUIRED'));
+        return res
+          .status(400)
+          .json(ApiResponse.error('Unit ID atau User ID tidak ditemukan', 'REQUIRED'));
       }
 
       const transaction = await transactionService.create(unitId, userId, req.body);
@@ -366,7 +355,9 @@ router.patch(
       const unitId = req.user?.unitId;
       const userId = req.user?.sub;
       if (!unitId || !userId) {
-        return res.status(400).json(ApiResponse.error('Unit ID atau User ID tidak ditemukan', 'REQUIRED'));
+        return res
+          .status(400)
+          .json(ApiResponse.error('Unit ID atau User ID tidak ditemukan', 'REQUIRED'));
       }
 
       const transaction = await transactionService.updateStatus(
@@ -400,7 +391,13 @@ router.get(
 
       const parsedQuery = ListStockMovementsQuerySchema.parse(req.query);
       const result = await stockMovementService.getAll(unitId, parsedQuery);
-      return res.json(ApiResponse.success(result.data, 'Berhasil mengambil data pergerakan stok', result.pagination));
+      return res.json(
+        ApiResponse.success(
+          result.data,
+          'Berhasil mengambil data pergerakan stok',
+          result.pagination
+        )
+      );
     } catch (err) {
       next(err);
     }
@@ -418,11 +415,15 @@ router.post(
       const unitId = req.user?.unitId;
       const userId = req.user?.sub;
       if (!unitId || !userId) {
-        return res.status(400).json(ApiResponse.error('Unit ID atau User ID tidak ditemukan', 'REQUIRED'));
+        return res
+          .status(400)
+          .json(ApiResponse.error('Unit ID atau User ID tidak ditemukan', 'REQUIRED'));
       }
 
       const movement = await stockMovementService.create(unitId, userId, req.body);
-      return res.status(201).json(ApiResponse.success(movement, 'Pergerakan stok berhasil dicatat'));
+      return res
+        .status(201)
+        .json(ApiResponse.success(movement, 'Pergerakan stok berhasil dicatat'));
     } catch (err) {
       next(err);
     }

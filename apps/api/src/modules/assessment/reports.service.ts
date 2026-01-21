@@ -237,7 +237,8 @@ export async function generateSkhun(
         id: e.student.id,
         average:
           e.student.grades.length > 0
-            ? e.student.grades.reduce((sum: number, g: any) => sum + Number(g.score), 0) / e.student.grades.length
+            ? e.student.grades.reduce((sum: number, g: any) => sum + Number(g.score), 0) /
+              e.student.grades.length
             : 0,
       }))
       .sort((a, b) => b.average - a.average);
@@ -427,7 +428,8 @@ export async function generateTranscript(
 
   // Calculate overall average and GPA
   const allScores = finalGrades.map((g) => g.averageScore);
-  const overallAverage = allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0;
+  const overallAverage =
+    allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0;
   const gpa = calculateGPA(overallAverage);
 
   // Determine graduation status

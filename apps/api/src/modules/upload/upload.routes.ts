@@ -8,10 +8,6 @@ const router = Router();
 // Protect all upload routes
 router.use(authenticate);
 
-router.post(
-  '/',
-  handleSingleUpload('file'),
-  uploadController.uploadFile
-);
+router.post('/', handleSingleUpload('file'), uploadController.uploadFile);
 
 export const uploadRoutes = router;

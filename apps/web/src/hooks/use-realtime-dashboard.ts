@@ -1,15 +1,15 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { io, Socket } from 'socket.io-client';
-import { toast } from 'sonner';
-import { DashboardMetrics } from '@cipansor/shared';
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { io, Socket } from "socket.io-client";
+import { toast } from "sonner";
+import { DashboardMetrics } from "@cipansor/shared";
 
 interface DashboardAlert {
   id: string;
   unitId?: string;
   metricType: string;
   message: string;
-  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  severity: "INFO" | "WARNING" | "CRITICAL";
   timestamp: string;
 }
 
@@ -21,11 +21,13 @@ interface UseRealtimeDashboardOptions {
   onAlert?: (alert: DashboardAlert) => void;
 }
 
-export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) {
+export function useRealtimeDashboard(
+  options: UseRealtimeDashboardOptions = {},
+) {
   const {
     enabled = true,
     unitIds = [],
-    metrics = ['students', 'attendance', 'tahfidz'],
+    metrics = ["students", "attendance", "tahfidz"],
     onMetricsUpdate,
     onAlert,
   } = options;
@@ -39,8 +41,8 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
 
   // Get access token from storage
   const getAccessToken = useCallback(() => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('accessToken');
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("accessToken");
   }, []);
 
   // Calculate exponential backoff delay
@@ -69,17 +71,17 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
 
     const token = getAccessToken();
     if (!token) {
-      console.warn('No access token found, skipping WebSocket connection');
+      console.warn("No access token found, skipping WebSocket connection");
       return;
     }
 
     // Connect to WebSocket server
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3001';
-    
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "http://localhost:3001";
+
     // Create socket instance
     const newSocket = io(wsUrl, {
       auth: { token },
-      transports: ['websocket', 'polling'],
+      transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 30000,
@@ -90,58 +92,65 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
     setSocket(newSocket);
 
     // Connection handlers
-    newSocket.on('connect', () => {
-      console.log('✅ WebSocket connected');
+    newSocket.on("connect", () => {
+      console.log("✅ WebSocket connected");
       setIsConnected(true);
       setReconnectAttempts(0);
       setConnectionError(null);
-      
-      toast.success('Dashboard terhubung', { duration: 2000 });
-      
+
+      toast.success("Dashboard terhubung", { duration: 2000 });
+
       // Subscribe to dashboard updates
-      newSocket.emit('dashboard:subscribe', {
-        unitIds: memoizedUnitIds && memoizedUnitIds.length > 0 ? memoizedUnitIds : ['all'],
+      newSocket.emit("dashboard:subscribe", {
+        unitIds:
+          memoizedUnitIds && memoizedUnitIds.length > 0
+            ? memoizedUnitIds
+            : ["all"],
         metrics: memoizedMetrics,
       });
     });
 
-    newSocket.on('disconnect', (reason: string) => {
-      console.log('❌ WebSocket disconnected:', reason);
+    newSocket.on("disconnect", (reason: string) => {
+      console.log("❌ WebSocket disconnected:", reason);
       setIsConnected(false);
-      
-      if (reason === 'io server disconnect') {
+
+      if (reason === "io server disconnect") {
         // Server forcefully disconnected - probably auth issue
-        setConnectionError('Authentication failed. Please login again.');
-        toast.error('Sesi berakhir. Silakan login kembali.');
-      } else if (reason === 'transport close' || reason === 'ping timeout') {
+        setConnectionError("Authentication failed. Please login again.");
+        toast.error("Sesi berakhir. Silakan login kembali.");
+      } else if (reason === "transport close" || reason === "ping timeout") {
         // Network issue - will auto-reconnect
-        toast.warning('Koneksi terputus. Mencoba menghubungkan kembali...', { duration: 3000 });
+        toast.warning("Koneksi terputus. Mencoba menghubungkan kembali...", {
+          duration: 3000,
+        });
       }
     });
 
-    newSocket.on('connect_error', (error: Error) => {
-      console.error('❌ WebSocket connection error:', error.message);
+    newSocket.on("connect_error", (error: Error) => {
+      console.error("❌ WebSocket connection error:", error.message);
       setIsConnected(false);
       setConnectionError(error.message);
-      
-      setReconnectAttempts(prev => {
+
+      setReconnectAttempts((prev) => {
         const attempts = prev + 1;
         if (attempts === 1) {
-          toast.error('Gagal terhubung ke server');
+          toast.error("Gagal terhubung ke server");
         } else if (attempts === 5) {
-          toast.error('Masih mencoba terhubung... Periksa koneksi internet Anda.');
+          toast.error(
+            "Masih mencoba terhubung... Periksa koneksi internet Anda.",
+          );
         }
         return attempts;
       });
     });
 
     // Metrics update handler
-    newSocket.on('metrics:update', (data: DashboardMetrics) => {
-      console.log('📊 Metrics update received:', data);
+    newSocket.on("metrics:update", (data: DashboardMetrics) => {
+      console.log("📊 Metrics update received:", data);
       setLastUpdate(new Date());
-      
+
       // Update React Query cache
-      queryClient.setQueryData(['dashboard-metrics'], (old: any) => ({
+      queryClient.setQueryData(["dashboard-metrics"], (old: any) => ({
         ...old,
         ...data,
       }));
@@ -151,27 +160,28 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
     });
 
     // Alert handler
-    newSocket.on('alert:new', (alert: DashboardAlert) => {
-      console.log('🚨 Alert received:', alert);
-      
+    newSocket.on("alert:new", (alert: DashboardAlert) => {
+      console.log("🚨 Alert received:", alert);
+
       // Add new alert to cache
-      queryClient.setQueryData(['dashboard-alerts'], (old: DashboardAlert[] = []) => 
-        [alert, ...old]
+      queryClient.setQueryData(
+        ["dashboard-alerts"],
+        (old: DashboardAlert[] = []) => [alert, ...old],
       );
 
       // Show toast notification based on severity
       const toastOptions = {
-        duration: alert.severity === 'CRITICAL' ? 10000 : 5000,
+        duration: alert.severity === "CRITICAL" ? 10000 : 5000,
       };
 
       switch (alert.severity) {
-        case 'CRITICAL':
+        case "CRITICAL":
           toast.error(alert.message, toastOptions);
           break;
-        case 'WARNING':
+        case "WARNING":
           toast.warning(alert.message, toastOptions);
           break;
-        case 'INFO':
+        case "INFO":
           toast.info(alert.message, toastOptions);
           break;
       }
@@ -181,31 +191,33 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
     });
 
     // Reconnection handlers
-    newSocket.on('reconnect', (attemptNumber: number) => {
-      console.log('🔄 Reconnected after', attemptNumber, 'attempts');
+    newSocket.on("reconnect", (attemptNumber: number) => {
+      console.log("🔄 Reconnected after", attemptNumber, "attempts");
       setReconnectAttempts(0);
       setConnectionError(null);
-      toast.success('Dashboard terhubung kembali');
+      toast.success("Dashboard terhubung kembali");
     });
 
-    newSocket.on('reconnect_attempt', (attemptNumber: number) => {
-      console.log('🔄 Reconnection attempt', attemptNumber);
+    newSocket.on("reconnect_attempt", (attemptNumber: number) => {
+      console.log("🔄 Reconnection attempt", attemptNumber);
       setReconnectAttempts(attemptNumber);
     });
 
-    newSocket.on('reconnect_error', (error: Error) => {
-      console.error('❌ Reconnection error:', error.message);
+    newSocket.on("reconnect_error", (error: Error) => {
+      console.error("❌ Reconnection error:", error.message);
     });
 
-    newSocket.on('reconnect_failed', () => {
-      console.error('❌ Failed to reconnect after maximum attempts');
-      setConnectionError('Unable to connect to server');
-      toast.error('Gagal terhubung ke dashboard real-time. Silakan refresh halaman.');
+    newSocket.on("reconnect_failed", () => {
+      console.error("❌ Failed to reconnect after maximum attempts");
+      setConnectionError("Unable to connect to server");
+      toast.error(
+        "Gagal terhubung ke dashboard real-time. Silakan refresh halaman.",
+      );
     });
 
     // Cleanup on unmount
     return () => {
-      console.log('🔌 Closing WebSocket connection');
+      console.log("🔌 Closing WebSocket connection");
       newSocket.close();
       setSocket(null);
     };
@@ -213,14 +225,17 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
   }, [enabled, getAccessToken, queryClient, memoizedUnitIds, memoizedMetrics]);
 
   // Manual subscription update
-  const updateSubscription = useCallback((newUnitIds: string[], newMetrics: string[]) => {
-    if (socket && isConnected) {
-      socket.emit('dashboard:subscribe', {
-        unitIds: newUnitIds,
-        metrics: newMetrics,
-      });
-    }
-  }, [socket, isConnected]);
+  const updateSubscription = useCallback(
+    (newUnitIds: string[], newMetrics: string[]) => {
+      if (socket && isConnected) {
+        socket.emit("dashboard:subscribe", {
+          unitIds: newUnitIds,
+          metrics: newMetrics,
+        });
+      }
+    },
+    [socket, isConnected],
+  );
 
   // Manual disconnect
   const disconnect = useCallback(() => {
@@ -234,18 +249,21 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
   // Manual reconnect
   const reconnect = useCallback(() => {
     if (socket && !isConnected) {
-      console.log('🔄 Manual reconnect triggered');
+      console.log("🔄 Manual reconnect triggered");
       setReconnectAttempts(0);
       socket.connect();
     }
   }, [socket, isConnected]);
 
   // Subscribe to specific unit
-  const subscribeToUnit = useCallback((unitId: string) => {
-    if (socket && isConnected) {
-      socket.emit('subscribe:unit-dashboard', { unitId });
-    }
-  }, [socket, isConnected]);
+  const subscribeToUnit = useCallback(
+    (unitId: string) => {
+      if (socket && isConnected) {
+        socket.emit("subscribe:unit-dashboard", { unitId });
+      }
+    },
+    [socket, isConnected],
+  );
 
   return {
     socket,
@@ -261,11 +279,15 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
 }
 
 // Hook for dashboard alerts with pagination
-export function useDashboardAlerts(params: { page?: number; limit?: number } = {}) {
+export function useDashboardAlerts(
+  params: { page?: number; limit?: number } = {},
+) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { page = 1, limit = 20 } = params;
-  
-  return useQueryClient().getQueryData<DashboardAlert[]>(['dashboard-alerts']) || [];
+
+  return (
+    useQueryClient().getQueryData<DashboardAlert[]>(["dashboard-alerts"]) || []
+  );
 }
 
 // Helper for deep comparison of string arrays

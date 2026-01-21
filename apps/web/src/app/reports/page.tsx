@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * Reports Page
@@ -6,35 +6,41 @@
  * Generate and export various reports
  */
 
-import { useState, useMemo } from 'react';
-import { 
-  FileText, 
-  Download, 
-  Filter, 
-  Calendar, 
-  Users, 
-  BookOpen, 
-  Wallet, 
-  AlertTriangle, 
-  Award, 
+import { useState, useMemo } from "react";
+import {
+  FileText,
+  Download,
+  Filter,
+  Calendar,
+  Users,
+  BookOpen,
+  Wallet,
+  AlertTriangle,
+  Award,
   Briefcase,
   CalendarCheck,
   Loader2,
   RefreshCw,
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -42,7 +48,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   useStudentReport,
   useAttendanceReport,
@@ -54,68 +60,90 @@ import {
   REPORT_CATEGORY_LABELS,
   type ExportReportType,
   type QuickReportParams,
-} from '@/hooks/use-reports';
-import { useUnits, type Unit } from '@/hooks/use-units';
-import { useClasses } from '@/hooks/use-classes';
+} from "@/hooks/use-reports";
+import { useUnits, type Unit } from "@/hooks/use-units";
+import { useClasses } from "@/hooks/use-classes";
 
 // Icon mapping
-const REPORT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  'users': Users,
-  'calendar-check': CalendarCheck,
-  'book-open': BookOpen,
-  'wallet': Wallet,
-  'file-text': FileText,
-  'alert-triangle': AlertTriangle,
-  'award': Award,
-  'briefcase': Briefcase,
+const REPORT_ICONS: Record<
+  string,
+  React.ComponentType<{ className?: string }>
+> = {
+  users: Users,
+  "calendar-check": CalendarCheck,
+  "book-open": BookOpen,
+  wallet: Wallet,
+  "file-text": FileText,
+  "alert-triangle": AlertTriangle,
+  award: Award,
+  briefcase: Briefcase,
 };
 
 // Report category colors
 const CATEGORY_COLORS: Record<string, string> = {
-  STUDENT: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  ACADEMIC: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  FINANCE: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  HR: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  DISCIPLINE: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  STUDENT: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  ACADEMIC:
+    "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  FINANCE:
+    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+  HR: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+  DISCIPLINE: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
 };
 
 export default function ReportsPage() {
   // State
-  const [activeTab, setActiveTab] = useState<string>('overview');
-  const [selectedReport, setSelectedReport] = useState<ExportReportType | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("overview");
+  const [selectedReport, setSelectedReport] = useState<ExportReportType | null>(
+    null,
+  );
   const [filters, setFilters] = useState<QuickReportParams>({});
   const [shouldFetch, setShouldFetch] = useState(false);
 
   // Queries
   const { data: units } = useUnits();
-  const { data: classes } = useClasses(filters.unitId ? { unitId: filters.unitId } : undefined);
+  const { data: classes } = useClasses(
+    filters.unitId ? { unitId: filters.unitId } : undefined,
+  );
 
   // Report queries (enabled based on selection and shouldFetch)
-  const { 
-    data: studentReport, 
-    isLoading: studentLoading, 
-    refetch: refetchStudents 
-  } = useStudentReport(filters, shouldFetch && selectedReport === 'STUDENT_LIST');
-  
-  const { 
-    data: attendanceReport, 
-    isLoading: attendanceLoading, 
-    refetch: refetchAttendance 
-  } = useAttendanceReport(filters, shouldFetch && selectedReport === 'ATTENDANCE_SUMMARY');
-  
-  const { 
-    data: tahfidzReport, 
-    isLoading: tahfidzLoading, 
-    refetch: refetchTahfidz 
-  } = useTahfidzReport(filters, shouldFetch && selectedReport === 'TAHFIDZ_PROGRESS');
-  
-  const { 
-    data: financeReport, 
-    isLoading: financeLoading, 
-    refetch: refetchFinance 
+  const {
+    data: studentReport,
+    isLoading: studentLoading,
+    refetch: refetchStudents,
+  } = useStudentReport(
+    filters,
+    shouldFetch && selectedReport === "STUDENT_LIST",
+  );
+
+  const {
+    data: attendanceReport,
+    isLoading: attendanceLoading,
+    refetch: refetchAttendance,
+  } = useAttendanceReport(
+    filters,
+    shouldFetch && selectedReport === "ATTENDANCE_SUMMARY",
+  );
+
+  const {
+    data: tahfidzReport,
+    isLoading: tahfidzLoading,
+    refetch: refetchTahfidz,
+  } = useTahfidzReport(
+    filters,
+    shouldFetch && selectedReport === "TAHFIDZ_PROGRESS",
+  );
+
+  const {
+    data: financeReport,
+    isLoading: financeLoading,
+    refetch: refetchFinance,
   } = useQuickFinanceReport(
-    { unitId: filters.unitId, startDate: filters.startDate, endDate: filters.endDate }, 
-    shouldFetch && selectedReport === 'FINANCIAL_SUMMARY'
+    {
+      unitId: filters.unitId,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+    },
+    shouldFetch && selectedReport === "FINANCIAL_SUMMARY",
   );
 
   // Group reports by category
@@ -134,7 +162,7 @@ export default function ReportsPage() {
   const handleSelectReport = (reportType: ExportReportType) => {
     setSelectedReport(reportType);
     setShouldFetch(false);
-    setActiveTab('generate');
+    setActiveTab("generate");
   };
 
   // Handle generate report
@@ -142,37 +170,37 @@ export default function ReportsPage() {
     setShouldFetch(true);
     // Refetch based on selected report
     switch (selectedReport) {
-      case 'STUDENT_LIST':
+      case "STUDENT_LIST":
         refetchStudents();
         break;
-      case 'ATTENDANCE_SUMMARY':
+      case "ATTENDANCE_SUMMARY":
         refetchAttendance();
         break;
-      case 'TAHFIDZ_PROGRESS':
+      case "TAHFIDZ_PROGRESS":
         refetchTahfidz();
         break;
-      case 'FINANCIAL_SUMMARY':
+      case "FINANCIAL_SUMMARY":
         refetchFinance();
         break;
     }
   };
 
   // Handle download
-  const handleDownload = (format: 'JSON' | 'CSV') => {
+  const handleDownload = (format: "JSON" | "CSV") => {
     if (!selectedReport) return;
 
     let data;
     switch (selectedReport) {
-      case 'STUDENT_LIST':
+      case "STUDENT_LIST":
         data = studentReport;
         break;
-      case 'ATTENDANCE_SUMMARY':
+      case "ATTENDANCE_SUMMARY":
         data = attendanceReport;
         break;
-      case 'TAHFIDZ_PROGRESS':
+      case "TAHFIDZ_PROGRESS":
         data = tahfidzReport;
         break;
-      case 'FINANCIAL_SUMMARY':
+      case "FINANCIAL_SUMMARY":
         data = financeReport;
         break;
     }
@@ -184,23 +212,30 @@ export default function ReportsPage() {
   };
 
   // Check if any report is loading
-  const isLoading = studentLoading || attendanceLoading || tahfidzLoading || financeLoading;
+  const isLoading =
+    studentLoading || attendanceLoading || tahfidzLoading || financeLoading;
 
   // Get current report data
   const currentReportData = useMemo(() => {
     switch (selectedReport) {
-      case 'STUDENT_LIST':
+      case "STUDENT_LIST":
         return studentReport;
-      case 'ATTENDANCE_SUMMARY':
+      case "ATTENDANCE_SUMMARY":
         return attendanceReport;
-      case 'TAHFIDZ_PROGRESS':
+      case "TAHFIDZ_PROGRESS":
         return tahfidzReport;
-      case 'FINANCIAL_SUMMARY':
+      case "FINANCIAL_SUMMARY":
         return financeReport;
       default:
         return null;
     }
-  }, [selectedReport, studentReport, attendanceReport, tahfidzReport, financeReport]);
+  }, [
+    selectedReport,
+    studentReport,
+    attendanceReport,
+    tahfidzReport,
+    financeReport,
+  ]);
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -236,20 +271,26 @@ export default function ReportsPage() {
                 {reports.map((report) => {
                   const IconComponent = REPORT_ICONS[report.icon] || FileText;
                   return (
-                    <Card 
-                      key={report.type} 
+                    <Card
+                      key={report.type}
                       className={`cursor-pointer transition-all hover:shadow-md hover:border-primary ${
-                        selectedReport === report.type ? 'border-primary ring-2 ring-primary/20' : ''
+                        selectedReport === report.type
+                          ? "border-primary ring-2 ring-primary/20"
+                          : ""
                       }`}
                       onClick={() => handleSelectReport(report.type)}
                     >
                       <CardHeader className="pb-2">
                         <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${CATEGORY_COLORS[report.category]}`}>
+                          <div
+                            className={`p-2 rounded-lg ${CATEGORY_COLORS[report.category]}`}
+                          >
                             <IconComponent className="h-5 w-5" />
                           </div>
                           <div>
-                            <CardTitle className="text-base">{report.label}</CardTitle>
+                            <CardTitle className="text-base">
+                              {report.label}
+                            </CardTitle>
                             <CardDescription className="text-sm">
                               {report.description}
                             </CardDescription>
@@ -274,27 +315,35 @@ export default function ReportsPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {(() => {
-                        const report = EXPORT_REPORT_TYPES.find(r => r.type === selectedReport);
-                        const IconComponent = report ? REPORT_ICONS[report.icon] || FileText : FileText;
+                        const report = EXPORT_REPORT_TYPES.find(
+                          (r) => r.type === selectedReport,
+                        );
+                        const IconComponent = report
+                          ? REPORT_ICONS[report.icon] || FileText
+                          : FileText;
                         return (
                           <>
-                            <div className={`p-2 rounded-lg ${report ? CATEGORY_COLORS[report.category] : ''}`}>
+                            <div
+                              className={`p-2 rounded-lg ${report ? CATEGORY_COLORS[report.category] : ""}`}
+                            >
                               <IconComponent className="h-6 w-6" />
                             </div>
                             <div>
                               <CardTitle>{report?.label}</CardTitle>
-                              <CardDescription>{report?.description}</CardDescription>
+                              <CardDescription>
+                                {report?.description}
+                              </CardDescription>
                             </div>
                           </>
                         );
                       })()}
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => {
                         setSelectedReport(null);
                         setShouldFetch(false);
-                        setActiveTab('overview');
+                        setActiveTab("overview");
                       }}
                     >
                       Pilih Laporan Lain
@@ -317,8 +366,14 @@ export default function ReportsPage() {
                     <div className="space-y-2">
                       <Label>Unit</Label>
                       <Select
-                        value={filters.unitId || ''}
-                        onValueChange={(value) => setFilters({ ...filters, unitId: value || undefined, classId: undefined })}
+                        value={filters.unitId || ""}
+                        onValueChange={(value) =>
+                          setFilters({
+                            ...filters,
+                            unitId: value || undefined,
+                            classId: undefined,
+                          })
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Semua Unit" />
@@ -335,12 +390,21 @@ export default function ReportsPage() {
                     </div>
 
                     {/* Class Filter (for student/attendance/tahfidz reports) */}
-                    {['STUDENT_LIST', 'ATTENDANCE_SUMMARY', 'TAHFIDZ_PROGRESS'].includes(selectedReport) && (
+                    {[
+                      "STUDENT_LIST",
+                      "ATTENDANCE_SUMMARY",
+                      "TAHFIDZ_PROGRESS",
+                    ].includes(selectedReport) && (
                       <div className="space-y-2">
                         <Label>Kelas</Label>
                         <Select
-                          value={filters.classId || ''}
-                          onValueChange={(value) => setFilters({ ...filters, classId: value || undefined })}
+                          value={filters.classId || ""}
+                          onValueChange={(value) =>
+                            setFilters({
+                              ...filters,
+                              classId: value || undefined,
+                            })
+                          }
                           disabled={!filters.unitId}
                         >
                           <SelectTrigger>
@@ -359,7 +423,11 @@ export default function ReportsPage() {
                     )}
 
                     {/* Date Range (for time-based reports) */}
-                    {['ATTENDANCE_SUMMARY', 'TAHFIDZ_PROGRESS', 'FINANCIAL_SUMMARY'].includes(selectedReport) && (
+                    {[
+                      "ATTENDANCE_SUMMARY",
+                      "TAHFIDZ_PROGRESS",
+                      "FINANCIAL_SUMMARY",
+                    ].includes(selectedReport) && (
                       <>
                         <div className="space-y-2">
                           <Label className="flex items-center gap-1">
@@ -368,8 +436,13 @@ export default function ReportsPage() {
                           </Label>
                           <Input
                             type="date"
-                            value={filters.startDate || ''}
-                            onChange={(e) => setFilters({ ...filters, startDate: e.target.value || undefined })}
+                            value={filters.startDate || ""}
+                            onChange={(e) =>
+                              setFilters({
+                                ...filters,
+                                startDate: e.target.value || undefined,
+                              })
+                            }
                           />
                         </div>
                         <div className="space-y-2">
@@ -379,20 +452,30 @@ export default function ReportsPage() {
                           </Label>
                           <Input
                             type="date"
-                            value={filters.endDate || ''}
-                            onChange={(e) => setFilters({ ...filters, endDate: e.target.value || undefined })}
+                            value={filters.endDate || ""}
+                            onChange={(e) =>
+                              setFilters({
+                                ...filters,
+                                endDate: e.target.value || undefined,
+                              })
+                            }
                           />
                         </div>
                       </>
                     )}
 
                     {/* Status Filter (for student report) */}
-                    {selectedReport === 'STUDENT_LIST' && (
+                    {selectedReport === "STUDENT_LIST" && (
                       <div className="space-y-2">
                         <Label>Status</Label>
                         <Select
-                          value={filters.status || ''}
-                          onValueChange={(value) => setFilters({ ...filters, status: value || undefined })}
+                          value={filters.status || ""}
+                          onValueChange={(value) =>
+                            setFilters({
+                              ...filters,
+                              status: value || undefined,
+                            })
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Semua Status" />
@@ -400,7 +483,9 @@ export default function ReportsPage() {
                           <SelectContent>
                             <SelectItem value="">Semua Status</SelectItem>
                             <SelectItem value="ACTIVE">Aktif</SelectItem>
-                            <SelectItem value="INACTIVE">Tidak Aktif</SelectItem>
+                            <SelectItem value="INACTIVE">
+                              Tidak Aktif
+                            </SelectItem>
                             <SelectItem value="GRADUATED">Lulus</SelectItem>
                             <SelectItem value="TRANSFERRED">Pindah</SelectItem>
                             <SelectItem value="DROPPED">Keluar</SelectItem>
@@ -427,11 +512,17 @@ export default function ReportsPage() {
                     </Button>
                     {currentReportData && (
                       <>
-                        <Button variant="outline" onClick={() => handleDownload('JSON')}>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleDownload("JSON")}
+                        >
                           <Download className="mr-2 h-4 w-4" />
                           Download JSON
                         </Button>
-                        <Button variant="outline" onClick={() => handleDownload('CSV')}>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleDownload("CSV")}
+                        >
                           <Download className="mr-2 h-4 w-4" />
                           Download CSV
                         </Button>
@@ -449,36 +540,42 @@ export default function ReportsPage() {
                       <div>
                         <CardTitle>Hasil Laporan</CardTitle>
                         <CardDescription>
-                          Generated at: {new Date(currentReportData.generatedAt).toLocaleString('id-ID')}
+                          Generated at:{" "}
+                          {new Date(
+                            currentReportData.generatedAt,
+                          ).toLocaleString("id-ID")}
                         </CardDescription>
                       </div>
-                      {'totalRecords' in currentReportData && currentReportData.totalRecords !== undefined && (
-                        <Badge variant="secondary">
-                          {currentReportData.totalRecords} records
-                        </Badge>
-                      )}
+                      {"totalRecords" in currentReportData &&
+                        currentReportData.totalRecords !== undefined && (
+                          <Badge variant="secondary">
+                            {currentReportData.totalRecords} records
+                          </Badge>
+                        )}
                     </div>
                   </CardHeader>
                   <CardContent>
                     {/* Student Report Table */}
-                    {selectedReport === 'STUDENT_LIST' && studentReport && (
+                    {selectedReport === "STUDENT_LIST" && studentReport && (
                       <StudentReportTable data={studentReport.data} />
                     )}
 
                     {/* Attendance Report */}
-                    {selectedReport === 'ATTENDANCE_SUMMARY' && attendanceReport && (
-                      <AttendanceReportView data={attendanceReport} />
-                    )}
+                    {selectedReport === "ATTENDANCE_SUMMARY" &&
+                      attendanceReport && (
+                        <AttendanceReportView data={attendanceReport} />
+                      )}
 
                     {/* Tahfidz Report */}
-                    {selectedReport === 'TAHFIDZ_PROGRESS' && tahfidzReport && (
+                    {selectedReport === "TAHFIDZ_PROGRESS" && tahfidzReport && (
                       <TahfidzReportView data={tahfidzReport} />
                     )}
 
                     {/* Finance Report */}
-                    {selectedReport === 'FINANCIAL_SUMMARY' && financeReport && (
-                      <FinanceReportView data={financeReport} />
-                    )}
+                    {selectedReport === "FINANCIAL_SUMMARY" &&
+                      financeReport && (
+                        <FinanceReportView data={financeReport} />
+                      )}
                   </CardContent>
                 </Card>
               )}
@@ -491,15 +588,19 @@ export default function ReportsPage() {
 }
 
 // Student Report Table Component
-function StudentReportTable({ data }: { data: Array<{
-  id: string;
-  nis: string;
-  name: string;
-  gender: string;
-  status: string;
-  className: string;
-  unitName: string;
-}> }) {
+function StudentReportTable({
+  data,
+}: {
+  data: Array<{
+    id: string;
+    nis: string;
+    name: string;
+    gender: string;
+    status: string;
+    className: string;
+    unitName: string;
+  }>;
+}) {
   return (
     <div className="rounded-md border overflow-auto">
       <Table>
@@ -516,7 +617,10 @@ function StudentReportTable({ data }: { data: Array<{
         <TableBody>
           {data.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+              <TableCell
+                colSpan={6}
+                className="text-center text-muted-foreground py-8"
+              >
                 Tidak ada data
               </TableCell>
             </TableRow>
@@ -526,12 +630,20 @@ function StudentReportTable({ data }: { data: Array<{
                 <TableCell className="font-mono">{student.nis}</TableCell>
                 <TableCell className="font-medium">{student.name}</TableCell>
                 <TableCell>
-                  <Badge variant={student.gender === 'MALE' ? 'default' : 'secondary'}>
-                    {student.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}
+                  <Badge
+                    variant={
+                      student.gender === "MALE" ? "default" : "secondary"
+                    }
+                  >
+                    {student.gender === "MALE" ? "Laki-laki" : "Perempuan"}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={student.status === 'ACTIVE' ? 'default' : 'outline'}>
+                  <Badge
+                    variant={
+                      student.status === "ACTIVE" ? "default" : "outline"
+                    }
+                  >
                     {student.status}
                   </Badge>
                 </TableCell>
@@ -547,37 +659,43 @@ function StudentReportTable({ data }: { data: Array<{
 }
 
 // Attendance Report View Component
-function AttendanceReportView({ data }: { data: {
-  summary: {
-    totalStudents: number;
-    averageAttendanceRate: number;
-    totalPresent: number;
-    totalAbsent: number;
-    totalSick: number;
-    totalPermitted: number;
-    totalLate: number;
+function AttendanceReportView({
+  data,
+}: {
+  data: {
+    summary: {
+      totalStudents: number;
+      averageAttendanceRate: number;
+      totalPresent: number;
+      totalAbsent: number;
+      totalSick: number;
+      totalPermitted: number;
+      totalLate: number;
+    };
+    data: Array<{
+      studentId: string;
+      studentName: string;
+      nis: string;
+      className: string;
+      totalDays: number;
+      present: number;
+      absent: number;
+      sick: number;
+      permitted: number;
+      late: number;
+      attendanceRate: number;
+    }>;
   };
-  data: Array<{
-    studentId: string;
-    studentName: string;
-    nis: string;
-    className: string;
-    totalDays: number;
-    present: number;
-    absent: number;
-    sick: number;
-    permitted: number;
-    late: number;
-    attendanceRate: number;
-  }>;
-} }) {
+}) {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-5">
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold">{data.summary.totalStudents}</div>
+            <div className="text-2xl font-bold">
+              {data.summary.totalStudents}
+            </div>
             <p className="text-xs text-muted-foreground">Total Santri</p>
           </CardContent>
         </Card>
@@ -591,19 +709,25 @@ function AttendanceReportView({ data }: { data: {
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold">{data.summary.totalPresent}</div>
+            <div className="text-2xl font-bold">
+              {data.summary.totalPresent}
+            </div>
             <p className="text-xs text-muted-foreground">Hadir</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-red-600">{data.summary.totalAbsent}</div>
+            <div className="text-2xl font-bold text-red-600">
+              {data.summary.totalAbsent}
+            </div>
             <p className="text-xs text-muted-foreground">Absen</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-yellow-600">{data.summary.totalLate}</div>
+            <div className="text-2xl font-bold text-yellow-600">
+              {data.summary.totalLate}
+            </div>
             <p className="text-xs text-muted-foreground">Terlambat</p>
           </CardContent>
         </Card>
@@ -628,7 +752,10 @@ function AttendanceReportView({ data }: { data: {
           <TableBody>
             {data.data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                <TableCell
+                  colSpan={9}
+                  className="text-center text-muted-foreground py-8"
+                >
                   Tidak ada data
                 </TableCell>
               </TableRow>
@@ -636,15 +763,29 @@ function AttendanceReportView({ data }: { data: {
               data.data.map((item) => (
                 <TableRow key={item.studentId}>
                   <TableCell className="font-mono">{item.nis}</TableCell>
-                  <TableCell className="font-medium">{item.studentName}</TableCell>
+                  <TableCell className="font-medium">
+                    {item.studentName}
+                  </TableCell>
                   <TableCell>{item.className}</TableCell>
                   <TableCell className="text-right">{item.present}</TableCell>
-                  <TableCell className="text-right text-red-600">{item.absent}</TableCell>
+                  <TableCell className="text-right text-red-600">
+                    {item.absent}
+                  </TableCell>
                   <TableCell className="text-right">{item.sick}</TableCell>
                   <TableCell className="text-right">{item.permitted}</TableCell>
-                  <TableCell className="text-right text-yellow-600">{item.late}</TableCell>
+                  <TableCell className="text-right text-yellow-600">
+                    {item.late}
+                  </TableCell>
                   <TableCell className="text-right font-medium">
-                    <Badge variant={item.attendanceRate >= 90 ? 'default' : item.attendanceRate >= 75 ? 'secondary' : 'destructive'}>
+                    <Badge
+                      variant={
+                        item.attendanceRate >= 90
+                          ? "default"
+                          : item.attendanceRate >= 75
+                            ? "secondary"
+                            : "destructive"
+                      }
+                    >
                       {item.attendanceRate.toFixed(1)}%
                     </Badge>
                   </TableCell>
@@ -659,32 +800,38 @@ function AttendanceReportView({ data }: { data: {
 }
 
 // Tahfidz Report View Component
-function TahfidzReportView({ data }: { data: {
-  summary: {
-    totalStudents: number;
-    averageJuz: number;
-    completedHafidz: number;
-    totalMemorization: number;
-    totalMurajaah: number;
+function TahfidzReportView({
+  data,
+}: {
+  data: {
+    summary: {
+      totalStudents: number;
+      averageJuz: number;
+      completedHafidz: number;
+      totalMemorization: number;
+      totalMurajaah: number;
+    };
+    data: Array<{
+      studentId: string;
+      studentName: string;
+      nis: string;
+      className: string;
+      totalJuz: number;
+      totalSurah: number;
+      totalAyat: number;
+      progressPercentage: number;
+    }>;
   };
-  data: Array<{
-    studentId: string;
-    studentName: string;
-    nis: string;
-    className: string;
-    totalJuz: number;
-    totalSurah: number;
-    totalAyat: number;
-    progressPercentage: number;
-  }>;
-} }) {
+}) {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-5">
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold">{data.summary.totalStudents}</div>
+            <div className="text-2xl font-bold">
+              {data.summary.totalStudents}
+            </div>
             <p className="text-xs text-muted-foreground">Total Santri</p>
           </CardContent>
         </Card>
@@ -698,19 +845,25 @@ function TahfidzReportView({ data }: { data: {
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-primary">{data.summary.completedHafidz}</div>
+            <div className="text-2xl font-bold text-primary">
+              {data.summary.completedHafidz}
+            </div>
             <p className="text-xs text-muted-foreground">Hafidz (30 Juz)</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold">{data.summary.totalMemorization}</div>
+            <div className="text-2xl font-bold">
+              {data.summary.totalMemorization}
+            </div>
             <p className="text-xs text-muted-foreground">Total Setoran</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold">{data.summary.totalMurajaah}</div>
+            <div className="text-2xl font-bold">
+              {data.summary.totalMurajaah}
+            </div>
             <p className="text-xs text-muted-foreground">Total Murajaah</p>
           </CardContent>
         </Card>
@@ -733,7 +886,10 @@ function TahfidzReportView({ data }: { data: {
           <TableBody>
             {data.data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell
+                  colSpan={7}
+                  className="text-center text-muted-foreground py-8"
+                >
                   Tidak ada data
                 </TableCell>
               </TableRow>
@@ -741,13 +897,23 @@ function TahfidzReportView({ data }: { data: {
               data.data.map((item) => (
                 <TableRow key={item.studentId}>
                   <TableCell className="font-mono">{item.nis}</TableCell>
-                  <TableCell className="font-medium">{item.studentName}</TableCell>
+                  <TableCell className="font-medium">
+                    {item.studentName}
+                  </TableCell>
                   <TableCell>{item.className}</TableCell>
-                  <TableCell className="text-right font-medium">{item.totalJuz}</TableCell>
-                  <TableCell className="text-right">{item.totalSurah}</TableCell>
+                  <TableCell className="text-right font-medium">
+                    {item.totalJuz}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {item.totalSurah}
+                  </TableCell>
                   <TableCell className="text-right">{item.totalAyat}</TableCell>
                   <TableCell className="text-right">
-                    <Badge variant={item.progressPercentage >= 100 ? 'default' : 'secondary'}>
+                    <Badge
+                      variant={
+                        item.progressPercentage >= 100 ? "default" : "secondary"
+                      }
+                    >
                       {item.progressPercentage.toFixed(1)}%
                     </Badge>
                   </TableCell>
@@ -762,21 +928,33 @@ function TahfidzReportView({ data }: { data: {
 }
 
 // Finance Report View Component
-function FinanceReportView({ data }: { data: {
-  summary: {
-    totalIncome: number;
-    totalExpense: number;
-    netIncome: number;
-    pendingPayments: number;
-    collectionRate: number;
+function FinanceReportView({
+  data,
+}: {
+  data: {
+    summary: {
+      totalIncome: number;
+      totalExpense: number;
+      netIncome: number;
+      pendingPayments: number;
+      collectionRate: number;
+    };
+    incomeByCategory: Array<{
+      category: string;
+      amount: number;
+      percentage: number;
+    }>;
+    expenseByCategory: Array<{
+      category: string;
+      amount: number;
+      percentage: number;
+    }>;
   };
-  incomeByCategory: Array<{ category: string; amount: number; percentage: number }>;
-  expenseByCategory: Array<{ category: string; amount: number; percentage: number }>;
-} }) {
+}) {
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
       minimumFractionDigits: 0,
     }).format(amount);
   };
@@ -803,7 +981,9 @@ function FinanceReportView({ data }: { data: {
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className={`text-2xl font-bold ${data.summary.netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <div
+              className={`text-2xl font-bold ${data.summary.netIncome >= 0 ? "text-green-600" : "text-red-600"}`}
+            >
               {formatCurrency(data.summary.netIncome)}
             </div>
             <p className="text-xs text-muted-foreground">Pendapatan Bersih</p>
@@ -839,11 +1019,18 @@ function FinanceReportView({ data }: { data: {
                 <p className="text-sm text-muted-foreground">Tidak ada data</p>
               ) : (
                 data.incomeByCategory.map((item) => (
-                  <div key={item.category} className="flex justify-between items-center">
+                  <div
+                    key={item.category}
+                    className="flex justify-between items-center"
+                  >
                     <span className="text-sm">{item.category}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{formatCurrency(item.amount)}</span>
-                      <Badge variant="secondary">{item.percentage.toFixed(1)}%</Badge>
+                      <span className="text-sm font-medium">
+                        {formatCurrency(item.amount)}
+                      </span>
+                      <Badge variant="secondary">
+                        {item.percentage.toFixed(1)}%
+                      </Badge>
                     </div>
                   </div>
                 ))
@@ -862,11 +1049,18 @@ function FinanceReportView({ data }: { data: {
                 <p className="text-sm text-muted-foreground">Tidak ada data</p>
               ) : (
                 data.expenseByCategory.map((item) => (
-                  <div key={item.category} className="flex justify-between items-center">
+                  <div
+                    key={item.category}
+                    className="flex justify-between items-center"
+                  >
                     <span className="text-sm">{item.category}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{formatCurrency(item.amount)}</span>
-                      <Badge variant="secondary">{item.percentage.toFixed(1)}%</Badge>
+                      <span className="text-sm font-medium">
+                        {formatCurrency(item.amount)}
+                      </span>
+                      <Badge variant="secondary">
+                        {item.percentage.toFixed(1)}%
+                      </Badge>
                     </div>
                   </div>
                 ))

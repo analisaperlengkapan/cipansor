@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SchedulerService, notificationScheduler } from '../../src/modules/notifications/scheduler.service';
+import {
+  SchedulerService,
+  notificationScheduler,
+} from '../../src/modules/notifications/scheduler.service';
 import { prisma } from '../../src/lib/prisma';
 import * as notificationService from '../../src/modules/notifications/service';
 import { NotificationType, AttendanceStatus } from '@prisma/client';
@@ -31,7 +34,7 @@ vi.mock('../../src/lib/prisma', () => ({
     },
     student: {
       findMany: vi.fn(),
-    }
+    },
   },
 }));
 
@@ -45,13 +48,13 @@ vi.mock('../../src/lib/logger', () => ({
 
 // Mock createNotification to simulate DB latency
 vi.spyOn(notificationService, 'createNotification').mockImplementation(async () => {
-  await new Promise(resolve => setTimeout(resolve, 1)); // 1ms delay
+  await new Promise((resolve) => setTimeout(resolve, 1)); // 1ms delay
   return {} as any;
 });
 
 // Mock createManyNotifications
 vi.spyOn(notificationService, 'createManyNotifications').mockImplementation(async () => {
-  await new Promise(resolve => setTimeout(resolve, 5)); // 5ms delay for bulk
+  await new Promise((resolve) => setTimeout(resolve, 5)); // 5ms delay for bulk
   return {} as any;
 });
 
@@ -136,17 +139,19 @@ describe('SchedulerService Performance', () => {
     expect(createManyCalls).toBe(1);
 
     // If we were using createMany, we'd verify the payload size
-    expect(vi.mocked(prisma.notification.createMany)).toHaveBeenCalledWith(expect.objectContaining({
+    expect(vi.mocked(prisma.notification.createMany)).toHaveBeenCalledWith(
+      expect.objectContaining({
         data: expect.arrayContaining([
-            expect.objectContaining({
-                userId: 'user-0',
-                type: 'ALERT',
-                data: expect.objectContaining({
-                    priority: 'HIGH',
-                    channels: ['IN_APP']
-                })
-            })
-        ])
-    }));
+          expect.objectContaining({
+            userId: 'user-0',
+            type: 'ALERT',
+            data: expect.objectContaining({
+              priority: 'HIGH',
+              channels: ['IN_APP'],
+            }),
+          }),
+        ]),
+      })
+    );
   });
 });

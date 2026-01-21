@@ -1,30 +1,40 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { useCreateSimaan } from '@/hooks/use-simaan';
-import { useClasses } from '@/hooks/use-classes';
-import { useStudents } from '@/hooks/use-students';
-import { useTeachers } from '@/hooks/use-teachers';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import { useCreateSimaan } from "@/hooks/use-simaan";
+import { useClasses } from "@/hooks/use-classes";
+import { useStudents } from "@/hooks/use-students";
+import { useTeachers } from "@/hooks/use-teachers";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Form,
   FormControl,
@@ -33,49 +43,61 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, CalendarIcon, Save, Loader2, BookOpen, Users } from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { useAuthStore } from '@/stores/auth';
-import { cn } from '@/lib/utils';
-import { useState } from 'react';
+} from "@/components/ui/form";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  ArrowLeft,
+  CalendarIcon,
+  Save,
+  Loader2,
+  BookOpen,
+  Users,
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { toast } from "sonner";
+import { useAuthStore } from "@/stores/auth";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 const EXAM_TYPES = [
-  { value: 'JUZ_30', label: 'Juz 30', description: 'Juz Amma (Juz 30)' },
-  { value: 'JUZ_1_15', label: 'Juz 1-15', description: '15 Juz Pertama' },
-  { value: 'JUZ_16_30', label: 'Juz 16-30', description: '15 Juz Terakhir' },
-  { value: 'FULL_30_JUZ', label: '30 Juz', description: 'Al-Quran 30 Juz' },
-  { value: 'CUSTOM', label: 'Custom', description: 'Pilih rentang sendiri' },
+  { value: "JUZ_30", label: "Juz 30", description: "Juz Amma (Juz 30)" },
+  { value: "JUZ_1_15", label: "Juz 1-15", description: "15 Juz Pertama" },
+  { value: "JUZ_16_30", label: "Juz 16-30", description: "15 Juz Terakhir" },
+  { value: "FULL_30_JUZ", label: "30 Juz", description: "Al-Quran 30 Juz" },
+  { value: "CUSTOM", label: "Custom", description: "Pilih rentang sendiri" },
 ];
 
-const simaanSchema = z.object({
-  studentId: z.string().min(1, 'Santri wajib dipilih'),
-  examDate: z.date({ required_error: 'Tanggal wajib diisi' }),
-  examType: z.string().min(1, 'Jenis ujian wajib dipilih'),
-  startJuz: z.number().min(1).max(30).optional(),
-  endJuz: z.number().min(1).max(30).optional(),
-  duration: z.number().min(15, 'Minimal 15 menit'),
-  notes: z.string().optional(),
-  examinerIds: z.array(z.string()).min(1, 'Minimal 1 penguji'),
-}).refine((data) => {
-  if (data.examType === 'CUSTOM') {
-    return data.startJuz && data.endJuz && data.endJuz >= data.startJuz;
-  }
-  return true;
-}, {
-  message: 'Juz akhir harus lebih besar atau sama dengan juz awal',
-  path: ['endJuz'],
-});
+const simaanSchema = z
+  .object({
+    studentId: z.string().min(1, "Santri wajib dipilih"),
+    examDate: z.date({ required_error: "Tanggal wajib diisi" }),
+    examType: z.string().min(1, "Jenis ujian wajib dipilih"),
+    startJuz: z.number().min(1).max(30).optional(),
+    endJuz: z.number().min(1).max(30).optional(),
+    duration: z.number().min(15, "Minimal 15 menit"),
+    notes: z.string().optional(),
+    examinerIds: z.array(z.string()).min(1, "Minimal 1 penguji"),
+  })
+  .refine(
+    (data) => {
+      if (data.examType === "CUSTOM") {
+        return data.startJuz && data.endJuz && data.endJuz >= data.startJuz;
+      }
+      return true;
+    },
+    {
+      message: "Juz akhir harus lebih besar atau sama dengan juz awal",
+      path: ["endJuz"],
+    },
+  );
 
 type SimaanFormData = z.infer<typeof simaanSchema>;
 
 export default function CreateSimaanPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
 
   const { data: classes } = useClasses({ unitId: user?.unitId });
   const { data: students } = useStudents({
@@ -90,41 +112,44 @@ export default function CreateSimaanPage() {
   const form = useForm<SimaanFormData>({
     resolver: zodResolver(simaanSchema),
     defaultValues: {
-      studentId: '',
+      studentId: "",
       examDate: new Date(),
-      examType: 'JUZ_30',
+      examType: "JUZ_30",
       startJuz: undefined,
       endJuz: undefined,
       duration: 60,
-      notes: '',
+      notes: "",
       examinerIds: [],
     },
   });
 
-  const watchExamType = form.watch('examType');
-  const watchExaminerIds = form.watch('examinerIds');
+  const watchExamType = form.watch("examType");
+  const watchExaminerIds = form.watch("examinerIds");
 
   const onSubmit = async (data: SimaanFormData) => {
     try {
       await createMutation.mutateAsync({
         ...data,
-        examDate: format(data.examDate, 'yyyy-MM-dd'),
-        startJuz: data.examType === 'CUSTOM' ? data.startJuz : undefined,
-        endJuz: data.examType === 'CUSTOM' ? data.endJuz : undefined,
+        examDate: format(data.examDate, "yyyy-MM-dd"),
+        startJuz: data.examType === "CUSTOM" ? data.startJuz : undefined,
+        endJuz: data.examType === "CUSTOM" ? data.endJuz : undefined,
       });
-      toast.success('Ujian simaan berhasil dijadwalkan');
-      router.push('/tahfidz/simaan');
+      toast.success("Ujian simaan berhasil dijadwalkan");
+      router.push("/tahfidz/simaan");
     } catch {
-      toast.error('Gagal menjadwalkan ujian simaan');
+      toast.error("Gagal menjadwalkan ujian simaan");
     }
   };
 
   const toggleExaminer = (examinerId: string) => {
-    const current = form.getValues('examinerIds');
+    const current = form.getValues("examinerIds");
     if (current.includes(examinerId)) {
-      form.setValue('examinerIds', current.filter((id) => id !== examinerId));
+      form.setValue(
+        "examinerIds",
+        current.filter((id) => id !== examinerId),
+      );
     } else {
-      form.setValue('examinerIds', [...current, examinerId]);
+      form.setValue("examinerIds", [...current, examinerId]);
     }
   };
 
@@ -154,7 +179,10 @@ export default function CreateSimaanPage() {
                 {/* Class filter */}
                 <div className="space-y-2">
                   <Label>Filter Kelas/Halaqah</Label>
-                  <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                  <Select
+                    value={selectedClassId}
+                    onValueChange={setSelectedClassId}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Semua kelas" />
                     </SelectTrigger>
@@ -175,7 +203,10 @@ export default function CreateSimaanPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Santri *</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih santri" />
@@ -206,14 +237,16 @@ export default function CreateSimaanPage() {
                             <Button
                               variant="outline"
                               className={cn(
-                                'w-full justify-start text-left font-normal',
-                                !field.value && 'text-muted-foreground'
+                                "w-full justify-start text-left font-normal",
+                                !field.value && "text-muted-foreground",
                               )}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
                               {field.value
-                                ? format(field.value, 'EEEE, dd MMMM yyyy', { locale: idLocale })
-                                : 'Pilih tanggal'}
+                                ? format(field.value, "EEEE, dd MMMM yyyy", {
+                                    locale: idLocale,
+                                  })
+                                : "Pilih tanggal"}
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
@@ -243,7 +276,9 @@ export default function CreateSimaanPage() {
                           type="number"
                           min={15}
                           {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 60)}
+                          onChange={(e) =>
+                            field.onChange(parseInt(e.target.value) || 60)
+                          }
                         />
                       </FormControl>
                       <FormDescription>Estimasi waktu ujian</FormDescription>
@@ -261,7 +296,9 @@ export default function CreateSimaanPage() {
                   <BookOpen className="h-5 w-5" />
                   Jenis Ujian
                 </CardTitle>
-                <CardDescription>Pilih materi yang akan diujikan</CardDescription>
+                <CardDescription>
+                  Pilih materi yang akan diujikan
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <FormField
@@ -275,15 +312,17 @@ export default function CreateSimaanPage() {
                             <div
                               key={type.value}
                               className={cn(
-                                'border rounded-lg p-4 cursor-pointer transition-colors',
+                                "border rounded-lg p-4 cursor-pointer transition-colors",
                                 field.value === type.value
-                                  ? 'border-primary bg-primary/5'
-                                  : 'hover:bg-muted/50'
+                                  ? "border-primary bg-primary/5"
+                                  : "hover:bg-muted/50",
                               )}
                               onClick={() => field.onChange(type.value)}
                             >
                               <p className="font-medium">{type.label}</p>
-                              <p className="text-sm text-muted-foreground">{type.description}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {type.description}
+                              </p>
                             </div>
                           ))}
                         </div>
@@ -293,7 +332,7 @@ export default function CreateSimaanPage() {
                   )}
                 />
 
-                {watchExamType === 'CUSTOM' && (
+                {watchExamType === "CUSTOM" && (
                   <div className="grid gap-4 md:grid-cols-2">
                     <FormField
                       control={form.control}
@@ -307,7 +346,11 @@ export default function CreateSimaanPage() {
                               min={1}
                               max={30}
                               {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                              onChange={(e) =>
+                                field.onChange(
+                                  parseInt(e.target.value) || undefined,
+                                )
+                              }
                             />
                           </FormControl>
                           <FormMessage />
@@ -326,7 +369,11 @@ export default function CreateSimaanPage() {
                               min={1}
                               max={30}
                               {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                              onChange={(e) =>
+                                field.onChange(
+                                  parseInt(e.target.value) || undefined,
+                                )
+                              }
                             />
                           </FormControl>
                           <FormMessage />
@@ -354,7 +401,9 @@ export default function CreateSimaanPage() {
                   render={() => (
                     <FormItem>
                       <div className="mb-4">
-                        <FormLabel>Penguji * ({watchExaminerIds.length} dipilih)</FormLabel>
+                        <FormLabel>
+                          Penguji * ({watchExaminerIds.length} dipilih)
+                        </FormLabel>
                       </div>
                       <ScrollArea className="h-[200px] border rounded-lg p-4">
                         <div className="space-y-3">
@@ -362,20 +411,22 @@ export default function CreateSimaanPage() {
                             <div
                               key={teacher.id}
                               className={cn(
-                                'flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors',
+                                "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors",
                                 watchExaminerIds.includes(teacher.id)
-                                  ? 'bg-primary/10'
-                                  : 'hover:bg-muted/50'
+                                  ? "bg-primary/10"
+                                  : "hover:bg-muted/50",
                               )}
                               onClick={() => toggleExaminer(teacher.id)}
                             >
                               <Checkbox
                                 checked={watchExaminerIds.includes(teacher.id)}
-                                onCheckedChange={() => toggleExaminer(teacher.id)}
+                                onCheckedChange={() =>
+                                  toggleExaminer(teacher.id)
+                                }
                               />
                               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                                 <span className="text-xs font-medium">
-                                  {teacher.name?.[0] || '?'}
+                                  {teacher.name?.[0] || "?"}
                                 </span>
                               </div>
                               <div>
@@ -422,7 +473,11 @@ export default function CreateSimaanPage() {
 
             {/* Submit */}
             <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => router.back()}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+              >
                 Batal
               </Button>
               <Button type="submit" disabled={createMutation.isPending}>

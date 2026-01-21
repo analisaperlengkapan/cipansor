@@ -228,7 +228,16 @@ export class KitabProgressService {
         take: limit,
         orderBy: { updatedAt: 'desc' },
         include: {
-          kitab: { select: { id: true, title: true, author: true, category: true, level: true, totalPages: true } },
+          kitab: {
+            select: {
+              id: true,
+              title: true,
+              author: true,
+              category: true,
+              level: true,
+              totalPages: true,
+            },
+          },
           student: { include: { user: { select: { name: true } } } },
           teacher: { include: { user: { select: { name: true } } } },
           academicYear: { select: { id: true, name: true } },
@@ -247,7 +256,8 @@ export class KitabProgressService {
    * Update or create progress
    */
   async updateProgress(input: UpdateProgressInput, currentUser: AuthenticatedUser) {
-    const { kitabId, studentId, teacherId, academicYearId, currentPage, currentBab, grade, notes } = input;
+    const { kitabId, studentId, teacherId, academicYearId, currentPage, currentBab, grade, notes } =
+      input;
 
     // Verify kitab exists
     await this.getKitabById(kitabId);
@@ -315,7 +325,10 @@ export class KitabProgressService {
       throw Errors.notFound('Progress record not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && progress.student.unitId !== currentUser.unitId) {
+    if (
+      currentUser.role !== UserRole.SUPER_ADMIN &&
+      progress.student.unitId !== currentUser.unitId
+    ) {
       throw Errors.forbidden('Access denied');
     }
 

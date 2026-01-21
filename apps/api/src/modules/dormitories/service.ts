@@ -1,5 +1,5 @@
-import { prisma } from "../../lib/prisma";
-import { Prisma, Room } from "@prisma/client";
+import { prisma } from '../../lib/prisma';
+import { Prisma, Room } from '@prisma/client';
 import {
   CreateDormitoryDto,
   UpdateDormitoryDto,
@@ -10,7 +10,7 @@ import {
   CreateRoomAssignmentDto,
   UpdateRoomAssignmentDto,
   QueryRoomAssignmentDto,
-} from "./schema";
+} from './schema';
 
 // =====================================
 // DORMITORY SERVICE
@@ -34,8 +34,8 @@ export async function getDormitories(query: QueryDormitoryDto) {
     ...(gender && { gender }),
     ...(search && {
       OR: [
-        { name: { contains: search, mode: "insensitive" as const } },
-        { code: { contains: search, mode: "insensitive" as const } },
+        { name: { contains: search, mode: 'insensitive' as const } },
+        { code: { contains: search, mode: 'insensitive' as const } },
       ],
     }),
   };
@@ -47,7 +47,7 @@ export async function getDormitories(query: QueryDormitoryDto) {
         unit: { select: { id: true, name: true } },
         _count: { select: { rooms: true } },
       },
-      orderBy: { name: "asc" },
+      orderBy: { name: 'asc' },
       skip,
       take: limit,
     }),
@@ -75,7 +75,7 @@ export async function getDormitoryById(id: string) {
         include: {
           _count: { select: { assignments: { where: { isActive: true } } } },
         },
-        orderBy: [{ floor: "asc" }, { name: "asc" }],
+        orderBy: [{ floor: 'asc' }, { name: 'asc' }],
       },
     },
   });
@@ -125,7 +125,7 @@ export async function getRooms(query: QueryRoomDto) {
         dormitory: { select: { id: true, name: true, code: true, gender: true } },
         _count: { select: { assignments: { where: { isActive: true } } } },
       },
-      orderBy: [{ floor: "asc" }, { name: "asc" }],
+      orderBy: [{ floor: 'asc' }, { name: 'asc' }],
       skip,
       take: limit,
     }),
@@ -157,7 +157,7 @@ export async function getRoomById(id: string) {
             },
           },
         },
-        orderBy: { assignedAt: "desc" },
+        orderBy: { assignedAt: 'desc' },
       },
     },
   });
@@ -233,7 +233,7 @@ export async function getRoomAssignments(query: QueryRoomAssignmentDto) {
           },
         },
       },
-      orderBy: { assignedAt: "desc" },
+      orderBy: { assignedAt: 'desc' },
       skip,
       take: limit,
     }),
@@ -311,23 +311,16 @@ export async function getStudentsByMusyrif(userId: string) {
   }
 
   // 2. Collect scope
-  const dormitoryIds = musyrif.assignments
-    .filter((a) => !a.roomId)
-    .map((a) => a.dormitoryId);
+  const dormitoryIds = musyrif.assignments.filter((a) => !a.roomId).map((a) => a.dormitoryId);
 
-  const roomIds = musyrif.assignments
-    .filter((a) => a.roomId)
-    .map((a) => a.roomId as string);
+  const roomIds = musyrif.assignments.filter((a) => a.roomId).map((a) => a.roomId as string);
 
   // 3. Find students
   const roomAssignments = await prisma.roomAssignment.findMany({
     where: {
       isActive: true,
       room: {
-        OR: [
-          { id: { in: roomIds } },
-          { dormitoryId: { in: dormitoryIds } },
-        ],
+        OR: [{ id: { in: roomIds } }, { dormitoryId: { in: dormitoryIds } }],
       },
     },
     include: {
@@ -345,17 +338,17 @@ export async function getStudentsByMusyrif(userId: string) {
     },
     orderBy: {
       student: { user: { name: 'asc' } },
-    }
+    },
   });
 
-  return roomAssignments.map(ra => ({
+  return roomAssignments.map((ra) => ({
     id: ra.student.id,
     name: ra.student.user.name,
     nis: ra.student.nis,
     photo: ra.student.photoUrl,
     class: ra.student.enrollments[0]?.class.name || '-',
     room: ra.room.name,
-    gender: ra.student.gender
+    gender: ra.student.gender,
   }));
 }
 

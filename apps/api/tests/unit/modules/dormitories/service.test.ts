@@ -72,10 +72,7 @@ describe('DormitoryService', () => {
         where: {
           isActive: true,
           room: {
-            OR: [
-              { id: { in: ['room-2'] } },
-              { dormitoryId: { in: ['dorm-1'] } },
-            ],
+            OR: [{ id: { in: ['room-2'] } }, { dormitoryId: { in: ['dorm-1'] } }],
           },
         },
         include: expect.any(Object),

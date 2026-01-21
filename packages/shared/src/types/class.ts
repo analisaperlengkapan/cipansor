@@ -1,4 +1,4 @@
-import { Gender, EnrollmentStatus } from './enums';
+import { Gender, EnrollmentStatus } from "./enums";
 
 export interface Class {
   id: string;

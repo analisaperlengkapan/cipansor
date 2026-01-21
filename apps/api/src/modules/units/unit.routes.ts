@@ -2,7 +2,12 @@ import { Router } from 'express';
 import { authenticate, isSuperAdmin, isAdmin } from '@/middleware/auth';
 import { validate, validateQuery, validateParams } from '@/middleware/error';
 import * as controller from './unit.controller';
-import { createUnitSchema, updateUnitSchema, listUnitsQuerySchema, unitIdParamSchema } from './unit.schema';
+import {
+  createUnitSchema,
+  updateUnitSchema,
+  listUnitsQuerySchema,
+  unitIdParamSchema,
+} from './unit.schema';
 
 const router = Router();
 
@@ -159,7 +164,13 @@ router.post('/', isSuperAdmin, validate(createUnitSchema), controller.create);
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.put('/:id', isAdmin, validateParams(unitIdParamSchema), validate(updateUnitSchema), controller.update);
+router.put(
+  '/:id',
+  isAdmin,
+  validateParams(unitIdParamSchema),
+  validate(updateUnitSchema),
+  controller.update
+);
 
 /**
  * @swagger

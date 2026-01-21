@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { format } from 'date-fns';
-import { CalendarIcon, Plus, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { format } from "date-fns";
+import { CalendarIcon, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -25,30 +25,30 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import {
   useCreateMurojaah,
   useUpdateMurojaah,
   MUROJAAH_TYPES,
   MISTAKE_TYPES,
   MurojaahRecord,
-} from '@/hooks/use-murojaah';
+} from "@/hooks/use-murojaah";
 
 const mistakeSchema = z.object({
   mistakeType: z.string(),
@@ -58,23 +58,25 @@ const mistakeSchema = z.object({
   description: z.string().optional(),
 });
 
-const formSchema = z.object({
-  murojaahType: z.string(),
-  murojaahDate: z.date(),
-  juzStart: z.coerce.number().min(1).max(30),
-  juzEnd: z.coerce.number().min(1).max(30),
-  pagesReviewed: z.coerce.number().min(1).max(620),
-  durationMinutes: z.coerce.number().min(1),
-  qualityScore: z.coerce.number().min(0).max(100),
-  fluencyLevel: z.coerce.number().min(1).max(5),
-  tajwidScore: z.coerce.number().min(0).max(100).optional(),
-  notes: z.string().optional(),
-  improvementAreas: z.string().optional(),
-  mistakes: z.array(mistakeSchema).optional(),
-}).refine((data) => data.juzEnd >= data.juzStart, {
-  message: 'Juz Akhir harus lebih besar atau sama dengan Juz Awal',
-  path: ['juzEnd'],
-});
+const formSchema = z
+  .object({
+    murojaahType: z.string(),
+    murojaahDate: z.date(),
+    juzStart: z.coerce.number().min(1).max(30),
+    juzEnd: z.coerce.number().min(1).max(30),
+    pagesReviewed: z.coerce.number().min(1).max(620),
+    durationMinutes: z.coerce.number().min(1),
+    qualityScore: z.coerce.number().min(0).max(100),
+    fluencyLevel: z.coerce.number().min(1).max(5),
+    tajwidScore: z.coerce.number().min(0).max(100).optional(),
+    notes: z.string().optional(),
+    improvementAreas: z.string().optional(),
+    mistakes: z.array(mistakeSchema).optional(),
+  })
+  .refine((data) => data.juzEnd >= data.juzStart, {
+    message: "Juz Akhir harus lebih besar atau sama dengan Juz Awal",
+    path: ["juzEnd"],
+  });
 
 interface MurojaahFormDialogProps {
   open?: boolean;
@@ -103,10 +105,10 @@ export function MurojaahFormDialog({
       surahNumber: m.surahNumber,
       ayahNumber: m.ayahNumber,
       description: m.description,
-    })) || []
+    })) || [],
   );
 
-  const isControlled = typeof open !== 'undefined';
+  const isControlled = typeof open !== "undefined";
   const isOpen = isControlled ? open : internalOpen;
   const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
 
@@ -116,7 +118,7 @@ export function MurojaahFormDialog({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      murojaahType: initialData?.murojaahType || 'DAILY',
+      murojaahType: initialData?.murojaahType || "DAILY",
       murojaahDate: initialData?.murojaahDate
         ? new Date(initialData.murojaahDate)
         : new Date(),
@@ -127,8 +129,8 @@ export function MurojaahFormDialog({
       qualityScore: initialData?.qualityScore || 80,
       fluencyLevel: initialData?.fluencyLevel || 3,
       tajwidScore: initialData?.tajwidScore,
-      notes: initialData?.notes || '',
-      improvementAreas: initialData?.improvementAreas || '',
+      notes: initialData?.notes || "",
+      improvementAreas: initialData?.improvementAreas || "",
       mistakes: [],
     },
   });
@@ -143,7 +145,7 @@ export function MurojaahFormDialog({
             murojaahDate: values.murojaahDate.toISOString(),
           },
         });
-        toast.success('Data murojaah berhasil diperbarui');
+        toast.success("Data murojaah berhasil diperbarui");
       } else {
         await createMurojaah.mutateAsync({
           studentId,
@@ -153,14 +155,14 @@ export function MurojaahFormDialog({
           murojaahDate: values.murojaahDate.toISOString(),
           mistakes,
         });
-        toast.success('Data murojaah berhasil ditambahkan');
+        toast.success("Data murojaah berhasil ditambahkan");
       }
       setIsOpen?.(false);
       form.reset();
       setMistakes([]);
     } catch (error: unknown) {
       const err = error as Error;
-      toast.error(err.message || 'Terjadi kesalahan');
+      toast.error(err.message || "Terjadi kesalahan");
     }
   };
 
@@ -168,8 +170,8 @@ export function MurojaahFormDialog({
     setMistakes([
       ...mistakes,
       {
-        mistakeType: 'LAHN_JALI',
-        juz: form.getValues('juzStart'),
+        mistakeType: "LAHN_JALI",
+        juz: form.getValues("juzStart"),
         surahNumber: 1,
         ayahNumber: 1,
       },
@@ -192,7 +194,7 @@ export function MurojaahFormDialog({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {initialData ? 'Edit Murojaah' : 'Tambah Catatan Murojaah'}
+            {initialData ? "Edit Murojaah" : "Tambah Catatan Murojaah"}
           </DialogTitle>
           <DialogDescription>
             Catat hasil setoran atau murojaah harian santri.
@@ -208,7 +210,10 @@ export function MurojaahFormDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Jenis Murojaah</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Pilih jenis" />
@@ -237,14 +242,14 @@ export function MurojaahFormDialog({
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
-                            variant={'outline'}
+                            variant={"outline"}
                             className={cn(
-                              'w-full pl-3 text-left font-normal',
-                              !field.value && 'text-muted-foreground'
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground",
                             )}
                           >
                             {field.value ? (
-                              format(field.value, 'PPP')
+                              format(field.value, "PPP")
                             ) : (
                               <span>Pilih tanggal</span>
                             )}
@@ -258,7 +263,7 @@ export function MurojaahFormDialog({
                           selected={field.value}
                           onSelect={field.onChange}
                           disabled={(date) =>
-                            date > new Date() || date < new Date('1900-01-01')
+                            date > new Date() || date < new Date("1900-01-01")
                           }
                           initialFocus
                         />
@@ -345,7 +350,10 @@ export function MurojaahFormDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Level (1-5)</FormLabel>
-                    <Select onValueChange={(v) => field.onChange(parseInt(v))} value={field.value?.toString()}>
+                    <Select
+                      onValueChange={(v) => field.onChange(parseInt(v))}
+                      value={field.value?.toString()}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Pilih level" />
@@ -370,7 +378,20 @@ export function MurojaahFormDialog({
                   <FormItem>
                     <FormLabel>Nilai Tajwid (Opsional)</FormLabel>
                     <FormControl>
-                      <Input type="number" min={0} max={100} {...field} value={field.value || ''} onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)} />
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value
+                              ? parseInt(e.target.value)
+                              : undefined,
+                          )
+                        }
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -399,7 +420,10 @@ export function MurojaahFormDialog({
                   <FormItem>
                     <FormLabel>Area Perbaikan</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Hal yang perlu diperbaiki..." {...field} />
+                      <Textarea
+                        placeholder="Hal yang perlu diperbaiki..."
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -411,8 +435,15 @@ export function MurojaahFormDialog({
             {!initialData && (
               <div className="space-y-4 border rounded-md p-4 bg-muted/20">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-sm">Daftar Kesalahan ({mistakes.length})</h4>
-                  <Button type="button" variant="outline" size="sm" onClick={addMistake}>
+                  <h4 className="font-medium text-sm">
+                    Daftar Kesalahan ({mistakes.length})
+                  </h4>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addMistake}
+                  >
                     <Plus className="h-3 w-3 mr-1" />
                     Tambah Kesalahan
                   </Button>
@@ -425,19 +456,26 @@ export function MurojaahFormDialog({
                 )}
 
                 {mistakes.map((mistake, index) => (
-                  <div key={index} className="grid grid-cols-12 gap-2 items-end border-b pb-4 last:border-0 last:pb-0">
+                  <div
+                    key={index}
+                    className="grid grid-cols-12 gap-2 items-end border-b pb-4 last:border-0 last:pb-0"
+                  >
                     <div className="col-span-12 md:col-span-3">
                       <FormLabel className="text-xs">Jenis</FormLabel>
                       <Select
                         value={mistake.mistakeType}
-                        onValueChange={(v) => updateMistake(index, 'mistakeType', v)}
+                        onValueChange={(v) =>
+                          updateMistake(index, "mistakeType", v)
+                        }
                       >
                         <SelectTrigger className="h-8 text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {MISTAKE_TYPES.map(t => (
-                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                          {MISTAKE_TYPES.map((t) => (
+                            <SelectItem key={t.value} value={t.value}>
+                              {t.label}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -448,7 +486,9 @@ export function MurojaahFormDialog({
                         type="number"
                         className="h-8 text-xs"
                         value={mistake.juz}
-                        onChange={(e) => updateMistake(index, 'juz', parseInt(e.target.value))}
+                        onChange={(e) =>
+                          updateMistake(index, "juz", parseInt(e.target.value))
+                        }
                       />
                     </div>
                     <div className="col-span-3 md:col-span-2">
@@ -457,7 +497,13 @@ export function MurojaahFormDialog({
                         type="number"
                         className="h-8 text-xs"
                         value={mistake.surahNumber}
-                        onChange={(e) => updateMistake(index, 'surahNumber', parseInt(e.target.value))}
+                        onChange={(e) =>
+                          updateMistake(
+                            index,
+                            "surahNumber",
+                            parseInt(e.target.value),
+                          )
+                        }
                       />
                     </div>
                     <div className="col-span-3 md:col-span-2">
@@ -466,15 +512,23 @@ export function MurojaahFormDialog({
                         type="number"
                         className="h-8 text-xs"
                         value={mistake.ayahNumber}
-                        onChange={(e) => updateMistake(index, 'ayahNumber', parseInt(e.target.value))}
+                        onChange={(e) =>
+                          updateMistake(
+                            index,
+                            "ayahNumber",
+                            parseInt(e.target.value),
+                          )
+                        }
                       />
                     </div>
                     <div className="col-span-11 md:col-span-2">
                       <FormLabel className="text-xs">Ket</FormLabel>
                       <Input
                         className="h-8 text-xs"
-                        value={mistake.description || ''}
-                        onChange={(e) => updateMistake(index, 'description', e.target.value)}
+                        value={mistake.description || ""}
+                        onChange={(e) =>
+                          updateMistake(index, "description", e.target.value)
+                        }
                         placeholder="Ket..."
                       />
                     </div>
@@ -495,11 +549,20 @@ export function MurojaahFormDialog({
             )}
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsOpen?.(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsOpen?.(false)}
+              >
                 Batal
               </Button>
-              <Button type="submit" disabled={createMurojaah.isPending || updateMurojaah.isPending}>
-                {createMurojaah.isPending || updateMurojaah.isPending ? 'Menyimpan...' : 'Simpan'}
+              <Button
+                type="submit"
+                disabled={createMurojaah.isPending || updateMurojaah.isPending}
+              >
+                {createMurojaah.isPending || updateMurojaah.isPending
+                  ? "Menyimpan..."
+                  : "Simpan"}
               </Button>
             </DialogFooter>
           </form>

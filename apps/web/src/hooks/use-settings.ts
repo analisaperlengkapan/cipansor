@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import api, { ApiResponse } from '@/lib/api';
+import { useQuery } from "@tanstack/react-query";
+import api, { ApiResponse } from "@/lib/api";
 
 export interface Settings {
   institutionName: string;
@@ -14,22 +14,22 @@ export interface Settings {
 
 // Default settings
 const defaultSettings: Settings = {
-  institutionName: 'Yayasan Pendidikan Islam Al-Hidayah',
-  institutionAddress: 'Jl. Pendidikan No. 123, Kota',
-  institutionPhone: '(021) 1234567',
-  institutionEmail: 'info@yayasan.sch.id',
+  institutionName: "Yayasan Pendidikan Islam Al-Hidayah",
+  institutionAddress: "Jl. Pendidikan No. 123, Kota",
+  institutionPhone: "(021) 1234567",
+  institutionEmail: "info@yayasan.sch.id",
   institutionLogo: undefined,
-  currency: 'IDR',
-  timezone: 'Asia/Jakarta',
-  dateFormat: 'dd/MM/yyyy',
+  currency: "IDR",
+  timezone: "Asia/Jakarta",
+  dateFormat: "dd/MM/yyyy",
 };
 
 export function useSettings() {
   return useQuery({
-    queryKey: ['settings'],
+    queryKey: ["settings"],
     queryFn: async () => {
       try {
-        const response = await api.get<ApiResponse<Settings>>('/settings');
+        const response = await api.get<ApiResponse<Settings>>("/settings");
         return response.data.data;
       } catch {
         // Return default settings if API is not available

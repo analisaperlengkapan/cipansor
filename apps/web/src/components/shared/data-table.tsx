@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   ColumnDef,
@@ -7,7 +7,7 @@ import {
   useReactTable,
   SortingState,
   getSortedRowModel,
-} from '@tanstack/react-table';
+} from "@tanstack/react-table";
 import {
   Table,
   TableBody,
@@ -15,13 +15,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Pagination } from './pagination';
-import { useState } from 'react';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/table";
+import { Pagination } from "./pagination";
+import { useState } from "react";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -68,33 +68,31 @@ export function DataTable<TData, TValue>({
                 {headerGroup.headers.map((header) => {
                   const canSort = header.column.getCanSort();
                   const sorted = header.column.getIsSorted();
-                  
+
                   return (
                     <TableHead key={header.id}>
-                      {header.isPlaceholder ? null : (
-                        canSort ? (
-                          <Button
-                            variant="ghost"
-                            className="-ml-4 h-8 hover:bg-transparent"
-                            onClick={() => header.column.toggleSorting()}
-                          >
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                            {sorted === 'asc' ? (
-                              <ArrowUp className="ml-2 h-4 w-4" />
-                            ) : sorted === 'desc' ? (
-                              <ArrowDown className="ml-2 h-4 w-4" />
-                            ) : (
-                              <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
-                            )}
-                          </Button>
-                        ) : (
-                          flexRender(
+                      {header.isPlaceholder ? null : canSort ? (
+                        <Button
+                          variant="ghost"
+                          className="-ml-4 h-8 hover:bg-transparent"
+                          onClick={() => header.column.toggleSorting()}
+                        >
+                          {flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
-                          )
+                            header.getContext(),
+                          )}
+                          {sorted === "asc" ? (
+                            <ArrowUp className="ml-2 h-4 w-4" />
+                          ) : sorted === "desc" ? (
+                            <ArrowDown className="ml-2 h-4 w-4" />
+                          ) : (
+                            <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+                          )}
+                        </Button>
+                      ) : (
+                        flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
                         )
                       )}
                     </TableHead>
@@ -103,7 +101,6 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
-
 
           <TableBody>
             {isLoading ? (
@@ -120,20 +117,26 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                  className={cn(onRowClick && 'cursor-pointer')}
+                  data-state={row.getIsSelected() && "selected"}
+                  className={cn(onRowClick && "cursor-pointer")}
                   onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results found.
                 </TableCell>
               </TableRow>
@@ -141,7 +144,7 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      
+
       {pagination && (
         <Pagination
           page={pagination.page}

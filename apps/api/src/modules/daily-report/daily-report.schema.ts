@@ -34,7 +34,7 @@ export const createDailyReportSchema = z.object({
   unitId: z.string().uuid(),
   academicYearId: z.string().uuid(),
   reportDate: z.string().datetime(),
-  
+
   // Mood & Physical
   morningMood: DailyMoodEnum.optional().nullable(),
   afternoonMood: DailyMoodEnum.optional().nullable(),
@@ -46,45 +46,49 @@ export const createDailyReportSchema = z.object({
   sholatDzuhur: z.boolean().optional(),
   sholatAshar: z.boolean().optional(),
   sholatJamaah: z.boolean().optional(),
-  
+
   // Meals
   breakfastConsumption: MealConsumptionEnum.optional().nullable(),
   lunchConsumption: MealConsumptionEnum.optional().nullable(),
   snackConsumption: MealConsumptionEnum.optional().nullable(),
-  
+
   // Sleep (for full-day/boarding PAUD)
   napDurationMinutes: z.number().int().min(0).max(240).optional().nullable(),
   napQuality: z.string().max(100).optional().nullable(),
-  
+
   // Toileting (for potty training age)
   bathroomCount: z.number().int().min(0).max(20).optional().nullable(),
   toiletingNotes: z.string().max(200).optional().nullable(),
-  
+
   // Activities & Learning
   activitiesSummary: z.string().max(1000).optional().nullable(),
   learningAchievements: z.string().max(500).optional().nullable(),
   specialMoments: z.string().max(500).optional().nullable(),
-  
+
   // Ibadah (Islamic activities)
   ibadahNotes: z.string().max(500).optional().nullable(),
   doaPractice: z.string().max(200).optional().nullable(),
   surahPractice: z.string().max(200).optional().nullable(),
-  
+
   // Social & Behavior
   socialInteraction: z.string().max(500).optional().nullable(),
   behaviorNotes: z.string().max(500).optional().nullable(),
-  
+
   // Recommendations for parents
   parentNotes: z.string().max(500).optional().nullable(),
   homeworkSuggestion: z.string().max(500).optional().nullable(),
 
   // Structured Homework (SD IT Specific)
-  homework: z.array(z.object({
-    subjectName: z.string().min(1),
-    description: z.string().min(1),
-    dueDate: z.string().datetime().optional().nullable(),
-  })).optional(),
-  
+  homework: z
+    .array(
+      z.object({
+        subjectName: z.string().min(1),
+        description: z.string().min(1),
+        dueDate: z.string().datetime().optional().nullable(),
+      })
+    )
+    .optional(),
+
   // Photos of activities (URLs)
   photoUrls: z.array(z.string().url()).max(10).optional().default([]),
 });
@@ -120,11 +124,15 @@ export const updateDailyReportSchema = z.object({
   homeworkSuggestion: z.string().max(500).optional().nullable(),
 
   // Structured Homework
-  homework: z.array(z.object({
-    subjectName: z.string().min(1),
-    description: z.string().min(1),
-    dueDate: z.string().datetime().optional().nullable(),
-  })).optional(),
+  homework: z
+    .array(
+      z.object({
+        subjectName: z.string().min(1),
+        description: z.string().min(1),
+        dueDate: z.string().datetime().optional().nullable(),
+      })
+    )
+    .optional(),
 
   photoUrls: z.array(z.string().url()).max(10).optional(),
 });
@@ -145,18 +153,23 @@ export const bulkCreateDailyReportsSchema = z.object({
   unitId: z.string().uuid(),
   academicYearId: z.string().uuid(),
   reportDate: z.string().datetime(),
-  reports: z.array(z.object({
-    studentId: z.string().uuid(),
-    arrivalTime: z.string().optional().nullable(),
-    morningMood: DailyMoodEnum.optional().nullable(),
-    afternoonMood: DailyMoodEnum.optional().nullable(),
-    healthNotes: z.string().max(500).optional().nullable(),
-    breakfastConsumption: MealConsumptionEnum.optional().nullable(),
-    lunchConsumption: MealConsumptionEnum.optional().nullable(),
-    activitiesSummary: z.string().max(1000).optional().nullable(),
-    ibadahNotes: z.string().max(500).optional().nullable(),
-    parentNotes: z.string().max(500).optional().nullable(),
-  })).min(1).max(50),
+  reports: z
+    .array(
+      z.object({
+        studentId: z.string().uuid(),
+        arrivalTime: z.string().optional().nullable(),
+        morningMood: DailyMoodEnum.optional().nullable(),
+        afternoonMood: DailyMoodEnum.optional().nullable(),
+        healthNotes: z.string().max(500).optional().nullable(),
+        breakfastConsumption: MealConsumptionEnum.optional().nullable(),
+        lunchConsumption: MealConsumptionEnum.optional().nullable(),
+        activitiesSummary: z.string().max(1000).optional().nullable(),
+        ibadahNotes: z.string().max(500).optional().nullable(),
+        parentNotes: z.string().max(500).optional().nullable(),
+      })
+    )
+    .min(1)
+    .max(50),
 });
 
 // ============================================

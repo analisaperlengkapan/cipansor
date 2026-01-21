@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { use } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { format, formatDistanceToNow } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { use } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { format, formatDistanceToNow } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
   Mic2,
@@ -22,22 +22,22 @@ import {
   BarChart3,
   MessageSquare,
   FileText,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,8 +48,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+} from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import {
   useMuhadhorohDetail,
@@ -60,7 +60,7 @@ import {
   getGradeColor,
   getLanguageLabel,
   formatDuration,
-} from '@/hooks/use-muhadhoroh';
+} from "@/hooks/use-muhadhoroh";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -77,19 +77,19 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(id);
-      toast.success('Muhadhoroh berhasil dihapus');
-      router.push('/muhadhoroh');
+      toast.success("Muhadhoroh berhasil dihapus");
+      router.push("/muhadhoroh");
     } catch {
-      toast.error('Gagal menghapus muhadhoroh');
+      toast.error("Gagal menghapus muhadhoroh");
     }
   };
 
   const handleCancel = async () => {
     try {
       await cancelMutation.mutateAsync(id);
-      toast.success('Muhadhoroh berhasil dibatalkan');
+      toast.success("Muhadhoroh berhasil dibatalkan");
     } catch {
-      toast.error('Gagal membatalkan muhadhoroh');
+      toast.error("Gagal membatalkan muhadhoroh");
     }
   };
 
@@ -155,9 +155,9 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
     );
   }
 
-  const isCompleted = muhadhoroh.status === 'COMPLETED';
-  const isScheduled = muhadhoroh.status === 'SCHEDULED';
-  const isCancelled = muhadhoroh.status === 'CANCELLED';
+  const isCompleted = muhadhoroh.status === "COMPLETED";
+  const isScheduled = muhadhoroh.status === "SCHEDULED";
+  const isCancelled = muhadhoroh.status === "CANCELLED";
 
   return (
     <MainLayout>
@@ -173,14 +173,14 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <Mic2 className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold tracking-tight">Detail Muhadhoroh</h1>
+              <h1 className="text-2xl font-bold tracking-tight">
+                Detail Muhadhoroh
+              </h1>
               <Badge className={getStatusColor(muhadhoroh.status)}>
                 {getStatusLabel(muhadhoroh.status)}
               </Badge>
             </div>
-            <p className="text-muted-foreground">
-              {muhadhoroh.topic}
-            </p>
+            <p className="text-muted-foreground">{muhadhoroh.topic}</p>
           </div>
           <div className="flex gap-2">
             {isScheduled && (
@@ -226,15 +226,22 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
                   <AvatarFallback className="text-lg">
-                    {muhadhoroh.student?.name?.split(' ').map(n => n[0]).join('') || '?'}
+                    {muhadhoroh.student?.name
+                      ?.split(" ")
+                      .map((n) => n[0])
+                      .join("") || "?"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <h3 className="text-xl font-semibold">{muhadhoroh.student?.name}</h3>
+                  <h3 className="text-xl font-semibold">
+                    {muhadhoroh.student?.name}
+                  </h3>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                     <span>NIS: {muhadhoroh.student?.nis}</span>
                     {muhadhoroh.student?.class && (
-                      <Badge variant="outline">{muhadhoroh.student.class.name}</Badge>
+                      <Badge variant="outline">
+                        {muhadhoroh.student.class.name}
+                      </Badge>
                     )}
                   </div>
                   {muhadhoroh.unit && (
@@ -260,13 +267,20 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
                 <div>
                   <p className="text-sm text-muted-foreground">Tanggal</p>
                   <p className="font-medium">
-                    {format(new Date(muhadhoroh.scheduledAt), 'EEEE, dd MMMM yyyy', { locale: localeId })}
+                    {format(
+                      new Date(muhadhoroh.scheduledAt),
+                      "EEEE, dd MMMM yyyy",
+                      { locale: localeId },
+                    )}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Waktu</p>
                   <p className="font-medium">
-                    {format(new Date(muhadhoroh.scheduledAt), 'HH:mm', { locale: localeId })} WIB
+                    {format(new Date(muhadhoroh.scheduledAt), "HH:mm", {
+                      locale: localeId,
+                    })}{" "}
+                    WIB
                   </p>
                 </div>
                 <div>
@@ -274,8 +288,7 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
                   <p className="font-medium">
                     {new Date(muhadhoroh.scheduledAt) > new Date()
                       ? `${formatDistanceToNow(new Date(muhadhoroh.scheduledAt), { locale: localeId, addSuffix: true })}`
-                      : `${formatDistanceToNow(new Date(muhadhoroh.scheduledAt), { locale: localeId, addSuffix: true })}`
-                    }
+                      : `${formatDistanceToNow(new Date(muhadhoroh.scheduledAt), { locale: localeId, addSuffix: true })}`}
                   </p>
                 </div>
               </div>
@@ -293,10 +306,10 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
                 <Badge variant="outline" className="text-base py-1 px-3">
-                  {muhadhoroh.language === 'Indonesian' && '🇮🇩'}
-                  {muhadhoroh.language === 'Arabic' && '🕌'}
-                  {muhadhoroh.language === 'English' && '🇬🇧'}
-                  {' '}{getLanguageLabel(muhadhoroh.language)}
+                  {muhadhoroh.language === "Indonesian" && "🇮🇩"}
+                  {muhadhoroh.language === "Arabic" && "🕌"}
+                  {muhadhoroh.language === "English" && "🇬🇧"}{" "}
+                  {getLanguageLabel(muhadhoroh.language)}
                 </Badge>
                 {muhadhoroh.duration && (
                   <div className="flex items-center gap-1 text-muted-foreground">
@@ -307,7 +320,9 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
               </div>
               <Separator />
               <div>
-                <p className="text-sm text-muted-foreground mb-2">Topik / Judul</p>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Topik / Judul
+                </p>
                 <p className="text-lg font-medium">{muhadhoroh.topic}</p>
               </div>
             </CardContent>
@@ -325,7 +340,15 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
                   <CardDescription>
                     Dinilai oleh: {muhadhoroh.evaluator.name}
                     {muhadhoroh.evaluatedAt && (
-                      <> pada {format(new Date(muhadhoroh.evaluatedAt), 'dd MMMM yyyy, HH:mm', { locale: localeId })}</>
+                      <>
+                        {" "}
+                        pada{" "}
+                        {format(
+                          new Date(muhadhoroh.evaluatedAt),
+                          "dd MMMM yyyy, HH:mm",
+                          { locale: localeId },
+                        )}
+                      </>
                     )}
                   </CardDescription>
                 )}
@@ -333,11 +356,17 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
               <CardContent className="space-y-6">
                 {/* Total Score */}
                 <div className="text-center p-6 bg-muted/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-2">Nilai Total</p>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Nilai Total
+                  </p>
                   <div className="flex items-center justify-center gap-4">
-                    <span className="text-5xl font-bold">{muhadhoroh.totalScore}</span>
+                    <span className="text-5xl font-bold">
+                      {muhadhoroh.totalScore}
+                    </span>
                     {muhadhoroh.grade && (
-                      <Badge className={`${getGradeColor(muhadhoroh.grade)} text-xl px-4 py-2`}>
+                      <Badge
+                        className={`${getGradeColor(muhadhoroh.grade)} text-xl px-4 py-2`}
+                      >
                         {muhadhoroh.grade}
                       </Badge>
                     )}
@@ -350,32 +379,47 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
                     <BarChart3 className="h-4 w-4" />
                     Rincian Nilai
                   </h4>
-                  
+
                   {/* Content Score */}
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Konten / Isi Materi</span>
-                      <span className="font-medium">{muhadhoroh.contentScore || 0}/100</span>
+                      <span className="font-medium">
+                        {muhadhoroh.contentScore || 0}/100
+                      </span>
                     </div>
-                    <Progress value={muhadhoroh.contentScore || 0} className="h-2" />
+                    <Progress
+                      value={muhadhoroh.contentScore || 0}
+                      className="h-2"
+                    />
                   </div>
 
                   {/* Delivery Score */}
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Penyampaian / Delivery</span>
-                      <span className="font-medium">{muhadhoroh.deliveryScore || 0}/100</span>
+                      <span className="font-medium">
+                        {muhadhoroh.deliveryScore || 0}/100
+                      </span>
                     </div>
-                    <Progress value={muhadhoroh.deliveryScore || 0} className="h-2" />
+                    <Progress
+                      value={muhadhoroh.deliveryScore || 0}
+                      className="h-2"
+                    />
                   </div>
 
                   {/* Language Score */}
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Penggunaan Bahasa</span>
-                      <span className="font-medium">{muhadhoroh.languageScore || 0}/100</span>
+                      <span className="font-medium">
+                        {muhadhoroh.languageScore || 0}/100
+                      </span>
                     </div>
-                    <Progress value={muhadhoroh.languageScore || 0} className="h-2" />
+                    <Progress
+                      value={muhadhoroh.languageScore || 0}
+                      className="h-2"
+                    />
                   </div>
                 </div>
 
@@ -400,7 +444,11 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
                       Rekaman Video
                     </h4>
                     <Button variant="outline" asChild>
-                      <a href={muhadhoroh.videoUrl} target="_blank" rel="noopener noreferrer">
+                      <a
+                        href={muhadhoroh.videoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         <Play className="h-4 w-4 mr-2" />
                         Tonton Video
                       </a>
@@ -436,16 +484,22 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="outline" className="w-full text-orange-600 hover:text-orange-700">
+                      <Button
+                        variant="outline"
+                        className="w-full text-orange-600 hover:text-orange-700"
+                      >
                         <XCircle className="h-4 w-4 mr-2" />
                         Batalkan
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Batalkan Muhadhoroh?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          Batalkan Muhadhoroh?
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          Jadwal muhadhoroh ini akan dibatalkan. Santri dapat dijadwalkan ulang di lain waktu.
+                          Jadwal muhadhoroh ini akan dibatalkan. Santri dapat
+                          dijadwalkan ulang di lain waktu.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -490,12 +544,16 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Hapus Muhadhoroh?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Tindakan ini tidak dapat dibatalkan. Data muhadhoroh termasuk penilaian akan dihapus permanen.
+                      Tindakan ini tidak dapat dibatalkan. Data muhadhoroh
+                      termasuk penilaian akan dihapus permanen.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Batal</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      className="bg-destructive text-destructive-foreground"
+                    >
                       Hapus
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -512,16 +570,26 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
             <CardContent className="space-y-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">ID</span>
-                <span className="font-mono text-xs">{muhadhoroh.id.slice(0, 8)}...</span>
+                <span className="font-mono text-xs">
+                  {muhadhoroh.id.slice(0, 8)}...
+                </span>
               </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Dibuat</span>
-                <span>{format(new Date(muhadhoroh.createdAt), 'dd MMM yyyy', { locale: localeId })}</span>
+                <span>
+                  {format(new Date(muhadhoroh.createdAt), "dd MMM yyyy", {
+                    locale: localeId,
+                  })}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Diperbarui</span>
-                <span>{format(new Date(muhadhoroh.updatedAt), 'dd MMM yyyy', { locale: localeId })}</span>
+                <span>
+                  {format(new Date(muhadhoroh.updatedAt), "dd MMM yyyy", {
+                    locale: localeId,
+                  })}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -535,23 +603,31 @@ export default function MuhadhorohDetailPage({ params }: PageProps) {
               <CardContent>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
-                    <Badge className={getGradeColor('A')}>A</Badge>
-                    <span className="text-muted-foreground">86-100 (Mumtaz)</span>
+                    <Badge className={getGradeColor("A")}>A</Badge>
+                    <span className="text-muted-foreground">
+                      86-100 (Mumtaz)
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge className={getGradeColor('B')}>B</Badge>
-                    <span className="text-muted-foreground">71-85 (Jayyid Jiddan)</span>
+                    <Badge className={getGradeColor("B")}>B</Badge>
+                    <span className="text-muted-foreground">
+                      71-85 (Jayyid Jiddan)
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge className={getGradeColor('C')}>C</Badge>
-                    <span className="text-muted-foreground">56-70 (Jayyid)</span>
+                    <Badge className={getGradeColor("C")}>C</Badge>
+                    <span className="text-muted-foreground">
+                      56-70 (Jayyid)
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge className={getGradeColor('D')}>D</Badge>
-                    <span className="text-muted-foreground">41-55 (Maqbul)</span>
+                    <Badge className={getGradeColor("D")}>D</Badge>
+                    <span className="text-muted-foreground">
+                      41-55 (Maqbul)
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge className={getGradeColor('E')}>E</Badge>
+                    <Badge className={getGradeColor("E")}>E</Badge>
                     <span className="text-muted-foreground">0-40 (Rasib)</span>
                   </div>
                 </div>

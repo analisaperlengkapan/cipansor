@@ -3,13 +3,19 @@
  * Specialized error UI for dashboard components
  */
 
-'use client';
+"use client";
 
-import React from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import Link from 'next/link';
+import React from "react";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import Link from "next/link";
 
 interface DashboardErrorFallbackProps {
   error?: Error;
@@ -21,8 +27,8 @@ interface DashboardErrorFallbackProps {
 export function DashboardErrorFallback({
   error,
   resetError,
-  title = 'Gagal Memuat Dashboard',
-  message = 'Terjadi kesalahan saat memuat data dashboard. Silakan coba lagi.',
+  title = "Gagal Memuat Dashboard",
+  message = "Terjadi kesalahan saat memuat data dashboard. Silakan coba lagi.",
 }: DashboardErrorFallbackProps) {
   return (
     <div className="flex items-center justify-center min-h-[400px] p-4">
@@ -35,14 +41,14 @@ export function DashboardErrorFallback({
           <CardDescription className="mt-2">{message}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {process.env.NODE_ENV === 'development' && error && (
+          {process.env.NODE_ENV === "development" && error && (
             <details className="rounded-md bg-gray-100 p-3 text-sm">
               <summary className="cursor-pointer font-medium text-gray-700 mb-2">
                 Error Details
               </summary>
               <pre className="text-xs text-gray-600 overflow-auto">
                 {error.message}
-                {'\n\n'}
+                {"\n\n"}
                 {error.stack}
               </pre>
             </details>
@@ -65,8 +71,11 @@ export function DashboardErrorFallback({
 
           <div className="text-center text-xs text-gray-500">
             <p>
-              Jika masalah berlanjut, hubungi{' '}
-              <a href="mailto:support@cipansor.id" className="text-blue-600 hover:underline">
+              Jika masalah berlanjut, hubungi{" "}
+              <a
+                href="mailto:support@cipansor.id"
+                className="text-blue-600 hover:underline"
+              >
                 dukungan teknis
               </a>
             </p>
@@ -94,7 +103,8 @@ export function DashboardLoadingError({
             Gagal Memuat Data
           </h3>
           <p className="text-sm text-red-700 mt-1">
-            {error?.message || 'Terjadi kesalahan saat mengambil data. Silakan coba lagi.'}
+            {error?.message ||
+              "Terjadi kesalahan saat mengambil data. Silakan coba lagi."}
           </p>
           {refetch && (
             <Button
@@ -128,7 +138,7 @@ export function ConnectionError({
         <span className="text-sm text-amber-800">
           {attemptNumber > 0
             ? `Mencoba menghubungkan kembali... (Percobaan ${attemptNumber})`
-            : 'Koneksi terputus'}
+            : "Koneksi terputus"}
         </span>
         {reconnect && (
           <Button

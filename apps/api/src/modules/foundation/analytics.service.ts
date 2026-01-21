@@ -1,9 +1,9 @@
-import { prisma } from "../../lib/prisma";
+import { prisma } from '../../lib/prisma';
 import {
   FoundationExecutiveSummary,
   FoundationFinancialOverview,
   FoundationUnitComparison,
-} from "@cipansor/shared";
+} from '@cipansor/shared';
 
 /**
  * Get executive summary statistics for the foundation
@@ -11,15 +11,15 @@ import {
  */
 export async function getExecutiveSummary(): Promise<FoundationExecutiveSummary> {
   // Count active students
-  const totalStudents = await prisma.student.count({ 
-    where: { status: "ACTIVE" } 
+  const totalStudents = await prisma.student.count({
+    where: { status: 'ACTIVE' },
   });
 
   // Count teachers via role assignments (roles containing GURU)
   const totalTeachers = await prisma.userRoleAssignment.count({
     where: {
-      role: { 
-        code: { in: ["TKQ_GURU", "SDIT_GURU", "SMPIT_GURU", "SMAQ_GURU", "MUSYRIF"] }
+      role: {
+        code: { in: ['TKQ_GURU', 'SDIT_GURU', 'SMPIT_GURU', 'SMAQ_GURU', 'MUSYRIF'] },
       },
       isActive: true,
     },
@@ -28,8 +28,8 @@ export async function getExecutiveSummary(): Promise<FoundationExecutiveSummary>
   // Count staff via role assignments (admin/tata usaha roles)
   const totalStaff = await prisma.userRoleAssignment.count({
     where: {
-      role: { 
-        code: { in: ["TKQ_TATA_USAHA", "SDIT_TATA_USAHA", "SMPIT_TATA_USAHA", "SMAQ_TATA_USAHA"] }
+      role: {
+        code: { in: ['TKQ_TATA_USAHA', 'SDIT_TATA_USAHA', 'SMPIT_TATA_USAHA', 'SMAQ_TATA_USAHA'] },
       },
       isActive: true,
     },
@@ -44,14 +44,13 @@ export async function getExecutiveSummary(): Promise<FoundationExecutiveSummary>
 
   const studentsLastMonth = await prisma.student.count({
     where: {
-      status: "ACTIVE",
+      status: 'ACTIVE',
       createdAt: { lt: oneMonthAgo },
     },
   });
 
-  const growth = studentsLastMonth > 0
-    ? ((totalStudents - studentsLastMonth) / studentsLastMonth) * 100
-    : 0;
+  const growth =
+    studentsLastMonth > 0 ? ((totalStudents - studentsLastMonth) / studentsLastMonth) * 100 : 0;
 
   return {
     totalStudents,
@@ -83,7 +82,7 @@ export async function getFinancialOverview(): Promise<FoundationFinancialOvervie
       _sum: { credit: true },
       where: {
         date: { gte: start, lte: end },
-        account: { code: { startsWith: "4" } },
+        account: { code: { startsWith: '4' } },
       },
     });
 
@@ -92,7 +91,7 @@ export async function getFinancialOverview(): Promise<FoundationFinancialOvervie
       _sum: { debit: true },
       where: {
         date: { gte: start, lte: end },
-        account: { code: { startsWith: "5" } },
+        account: { code: { startsWith: '5' } },
       },
     });
 
@@ -109,8 +108,8 @@ export async function getFinancialOverview(): Promise<FoundationFinancialOvervie
   ]);
 
   // Get all units for breakdown
-  const units = await prisma.unit.findMany({ 
-    select: { id: true, name: true } 
+  const units = await prisma.unit.findMany({
+    select: { id: true, name: true },
   });
 
   // Build by-unit breakdown with placeholder data
@@ -129,13 +128,13 @@ export async function getFinancialOverview(): Promise<FoundationFinancialOvervie
 
   // Get expense composition by account for pie chart
   const expensesByAccount = await prisma.journalEntry.groupBy({
-    by: ["accountId"],
+    by: ['accountId'],
     _sum: { debit: true },
     where: {
       date: { gte: startOfMonth, lte: endOfMonth },
-      account: { code: { startsWith: "5" } },
+      account: { code: { startsWith: '5' } },
     },
-    orderBy: { _sum: { debit: "desc" } },
+    orderBy: { _sum: { debit: 'desc' } },
     take: 6,
   });
 
@@ -148,7 +147,7 @@ export async function getFinancialOverview(): Promise<FoundationFinancialOvervie
   const expenseComposition = expensesByAccount.map((e) => {
     const account = accounts.find((a) => a.id === e.accountId);
     return {
-      name: account?.name || "Lainnya",
+      name: account?.name || 'Lainnya',
       value: Number(e._sum.debit || 0),
     };
   });
@@ -172,7 +171,7 @@ export async function getUnitComparison(): Promise<FoundationUnitComparison[]> {
     include: {
       _count: {
         select: {
-          students: { where: { status: "ACTIVE" } },
+          students: { where: { status: 'ACTIVE' } },
         },
       },
     },
@@ -180,11 +179,11 @@ export async function getUnitComparison(): Promise<FoundationUnitComparison[]> {
 
   // Get teacher counts by unit via role assignments
   const teachersByUnit = await prisma.userRoleAssignment.groupBy({
-    by: ["unitId"],
+    by: ['unitId'],
     _count: { _all: true },
     where: {
-      role: { 
-        code: { in: ["TKQ_GURU", "SDIT_GURU", "SMPIT_GURU", "SMAQ_GURU", "MUSYRIF"] }
+      role: {
+        code: { in: ['TKQ_GURU', 'SDIT_GURU', 'SMPIT_GURU', 'SMAQ_GURU', 'MUSYRIF'] },
       },
       isActive: true,
       unitId: { not: null },

@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -20,7 +20,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -29,28 +29,23 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+} from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Plus,
   Search,
@@ -71,10 +66,10 @@ import {
   TrendingUp,
   AlertCircle,
   Calendar,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+} from "lucide-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 
 // Types
 interface LaundryPricing {
@@ -99,12 +94,12 @@ interface LaundryTransaction {
   transactionNumber: string;
   unitId: string;
   studentId: string;
-  status: 'PENDING' | 'PROCESSING' | 'READY' | 'DELIVERED' | 'CANCELLED';
+  status: "PENDING" | "PROCESSING" | "READY" | "DELIVERED" | "CANCELLED";
   totalWeight?: number;
   totalItems: number;
   totalAmount: number;
-  paymentMethod: 'CASH' | 'WALLET' | 'TRANSFER';
-  paymentStatus: 'PENDING' | 'PAID' | 'REFUNDED';
+  paymentMethod: "CASH" | "WALLET" | "TRANSFER";
+  paymentStatus: "PENDING" | "PAID" | "REFUNDED";
   receivedAt: string;
   estimatedReady?: string;
   readyAt?: string;
@@ -142,54 +137,54 @@ interface Student {
 }
 
 // API functions
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
 async function fetchPricing(params?: Record<string, string>) {
   const query = new URLSearchParams(params).toString();
   const res = await fetch(`${API_BASE}/laundry/pricing?${query}`, {
-    credentials: 'include',
+    credentials: "include",
   });
-  if (!res.ok) throw new Error('Failed to fetch pricing');
+  if (!res.ok) throw new Error("Failed to fetch pricing");
   return res.json();
 }
 
 async function createPricing(data: Partial<LaundryPricing>) {
   const res = await fetch(`${API_BASE}/laundry/pricing`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Failed to create pricing');
+  if (!res.ok) throw new Error("Failed to create pricing");
   return res.json();
 }
 
 async function updatePricing(id: string, data: Partial<LaundryPricing>) {
   const res = await fetch(`${API_BASE}/laundry/pricing/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Failed to update pricing');
+  if (!res.ok) throw new Error("Failed to update pricing");
   return res.json();
 }
 
 async function deletePricing(id: string) {
   const res = await fetch(`${API_BASE}/laundry/pricing/${id}`, {
-    method: 'DELETE',
-    credentials: 'include',
+    method: "DELETE",
+    credentials: "include",
   });
-  if (!res.ok) throw new Error('Failed to delete pricing');
+  if (!res.ok) throw new Error("Failed to delete pricing");
   return res.json();
 }
 
 async function fetchTransactions(params?: Record<string, string>) {
   const query = new URLSearchParams(params).toString();
   const res = await fetch(`${API_BASE}/laundry/transactions?${query}`, {
-    credentials: 'include',
+    credentials: "include",
   });
-  if (!res.ok) throw new Error('Failed to fetch transactions');
+  if (!res.ok) throw new Error("Failed to fetch transactions");
   return res.json();
 }
 
@@ -201,48 +196,52 @@ async function createTransaction(data: {
   notes?: string;
 }) {
   const res = await fetch(`${API_BASE}/laundry/transactions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Failed to create transaction');
+  if (!res.ok) throw new Error("Failed to create transaction");
   return res.json();
 }
 
-async function updateTransactionStatus(id: string, status: string, notes?: string) {
+async function updateTransactionStatus(
+  id: string,
+  status: string,
+  notes?: string,
+) {
   const res = await fetch(`${API_BASE}/laundry/transactions/${id}/status`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ status, notes }),
   });
-  if (!res.ok) throw new Error('Failed to update status');
+  if (!res.ok) throw new Error("Failed to update status");
   return res.json();
 }
 
 async function fetchStudents(search?: string) {
-  const params = search ? `?search=${encodeURIComponent(search)}` : '';
+  const params = search ? `?search=${encodeURIComponent(search)}` : "";
   const res = await fetch(`${API_BASE}/students${params}`, {
-    credentials: 'include',
+    credentials: "include",
   });
-  if (!res.ok) throw new Error('Failed to fetch students');
+  if (!res.ok) throw new Error("Failed to fetch students");
   return res.json();
 }
 
 async function fetchUnits() {
   const res = await fetch(`${API_BASE}/units`, {
-    credentials: 'include',
+    credentials: "include",
   });
-  if (!res.ok) throw new Error('Failed to fetch units');
+  if (!res.ok) throw new Error("Failed to fetch units");
   return res.json();
 }
 
 // Format currency
 function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
     minimumFractionDigits: 0,
   }).format(amount);
 }
@@ -250,101 +249,101 @@ function formatCurrency(amount: number) {
 // Status badge colors
 function getStatusColor(status: string) {
   switch (status) {
-    case 'PENDING':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'PROCESSING':
-      return 'bg-blue-100 text-blue-800';
-    case 'READY':
-      return 'bg-green-100 text-green-800';
-    case 'DELIVERED':
-      return 'bg-gray-100 text-gray-800';
-    case 'CANCELLED':
-      return 'bg-red-100 text-red-800';
+    case "PENDING":
+      return "bg-yellow-100 text-yellow-800";
+    case "PROCESSING":
+      return "bg-blue-100 text-blue-800";
+    case "READY":
+      return "bg-green-100 text-green-800";
+    case "DELIVERED":
+      return "bg-gray-100 text-gray-800";
+    case "CANCELLED":
+      return "bg-red-100 text-red-800";
     default:
-      return 'bg-gray-100 text-gray-800';
+      return "bg-gray-100 text-gray-800";
   }
 }
 
 function getPaymentStatusColor(status: string) {
   switch (status) {
-    case 'PAID':
-      return 'bg-green-100 text-green-800';
-    case 'PENDING':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'REFUNDED':
-      return 'bg-red-100 text-red-800';
+    case "PAID":
+      return "bg-green-100 text-green-800";
+    case "PENDING":
+      return "bg-yellow-100 text-yellow-800";
+    case "REFUNDED":
+      return "bg-red-100 text-red-800";
     default:
-      return 'bg-gray-100 text-gray-800';
+      return "bg-gray-100 text-gray-800";
   }
 }
 
 // Pricing Management Tab
 function PricingTab() {
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<LaundryPricing | null>(null);
   const [formData, setFormData] = useState({
-    itemType: '',
-    description: '',
+    itemType: "",
+    description: "",
     pricePerItem: 0,
     pricePerKg: 0,
     estimatedDays: 2,
     isActive: true,
-    unitId: '',
+    unitId: "",
   });
 
   const { data: pricingData, isLoading } = useQuery({
-    queryKey: ['laundry-pricing', search],
+    queryKey: ["laundry-pricing", search],
     queryFn: () => fetchPricing(search ? { search } : undefined),
   });
 
   const { data: unitsData } = useQuery({
-    queryKey: ['units'],
+    queryKey: ["units"],
     queryFn: fetchUnits,
   });
 
   const createMutation = useMutation({
     mutationFn: createPricing,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['laundry-pricing'] });
-      toast.success('Harga laundry berhasil ditambahkan');
+      queryClient.invalidateQueries({ queryKey: ["laundry-pricing"] });
+      toast.success("Harga laundry berhasil ditambahkan");
       setShowDialog(false);
       resetForm();
     },
-    onError: () => toast.error('Gagal menambahkan harga laundry'),
+    onError: () => toast.error("Gagal menambahkan harga laundry"),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<LaundryPricing> }) =>
       updatePricing(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['laundry-pricing'] });
-      toast.success('Harga laundry berhasil diperbarui');
+      queryClient.invalidateQueries({ queryKey: ["laundry-pricing"] });
+      toast.success("Harga laundry berhasil diperbarui");
       setShowDialog(false);
       resetForm();
     },
-    onError: () => toast.error('Gagal memperbarui harga laundry'),
+    onError: () => toast.error("Gagal memperbarui harga laundry"),
   });
 
   const deleteMutation = useMutation({
     mutationFn: deletePricing,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['laundry-pricing'] });
-      toast.success('Harga laundry berhasil dihapus');
+      queryClient.invalidateQueries({ queryKey: ["laundry-pricing"] });
+      toast.success("Harga laundry berhasil dihapus");
     },
-    onError: () => toast.error('Gagal menghapus harga laundry'),
+    onError: () => toast.error("Gagal menghapus harga laundry"),
   });
 
   const resetForm = () => {
     setFormData({
-      itemType: '',
-      description: '',
+      itemType: "",
+      description: "",
       pricePerItem: 0,
       pricePerKg: 0,
       estimatedDays: 2,
       isActive: true,
-      unitId: '',
+      unitId: "",
     });
     setEditingItem(null);
   };
@@ -353,7 +352,7 @@ function PricingTab() {
     setEditingItem(item);
     setFormData({
       itemType: item.itemType,
-      description: item.description || '',
+      description: item.description || "",
       pricePerItem: item.pricePerItem,
       pricePerKg: item.pricePerKg || 0,
       estimatedDays: item.estimatedDays,
@@ -387,10 +386,13 @@ function PricingTab() {
             className="w-64"
           />
         </div>
-        <Dialog open={showDialog} onOpenChange={(open) => {
-          setShowDialog(open);
-          if (!open) resetForm();
-        }}>
+        <Dialog
+          open={showDialog}
+          onOpenChange={(open) => {
+            setShowDialog(open);
+            if (!open) resetForm();
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -400,7 +402,7 @@ function PricingTab() {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
-                {editingItem ? 'Edit Harga Laundry' : 'Tambah Harga Laundry'}
+                {editingItem ? "Edit Harga Laundry" : "Tambah Harga Laundry"}
               </DialogTitle>
               <DialogDescription>
                 Atur harga laundry per item atau per kilogram
@@ -411,7 +413,9 @@ function PricingTab() {
                 <Label>Unit</Label>
                 <Select
                   value={formData.unitId}
-                  onValueChange={(value) => setFormData({ ...formData, unitId: value })}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, unitId: value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih unit" />
@@ -429,7 +433,9 @@ function PricingTab() {
                 <Label>Jenis Pakaian</Label>
                 <Input
                   value={formData.itemType}
-                  onChange={(e) => setFormData({ ...formData, itemType: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, itemType: e.target.value })
+                  }
                   placeholder="Contoh: Kemeja, Celana, Seragam"
                   required
                 />
@@ -438,7 +444,9 @@ function PricingTab() {
                 <Label>Deskripsi (opsional)</Label>
                 <Textarea
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   placeholder="Keterangan tambahan..."
                 />
               </div>
@@ -448,7 +456,12 @@ function PricingTab() {
                   <Input
                     type="number"
                     value={formData.pricePerItem}
-                    onChange={(e) => setFormData({ ...formData, pricePerItem: parseInt(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        pricePerItem: parseInt(e.target.value) || 0,
+                      })
+                    }
                     min={0}
                   />
                 </div>
@@ -457,7 +470,12 @@ function PricingTab() {
                   <Input
                     type="number"
                     value={formData.pricePerKg}
-                    onChange={(e) => setFormData({ ...formData, pricePerKg: parseInt(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        pricePerKg: parseInt(e.target.value) || 0,
+                      })
+                    }
                     min={0}
                   />
                 </div>
@@ -467,7 +485,12 @@ function PricingTab() {
                 <Input
                   type="number"
                   value={formData.estimatedDays}
-                  onChange={(e) => setFormData({ ...formData, estimatedDays: parseInt(e.target.value) || 1 })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      estimatedDays: parseInt(e.target.value) || 1,
+                    })
+                  }
                   min={1}
                 />
               </div>
@@ -475,7 +498,9 @@ function PricingTab() {
                 <Label>Status Aktif</Label>
                 <Switch
                   checked={formData.isActive}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, isActive: checked })
+                  }
                 />
               </div>
               <DialogFooter>
@@ -491,12 +516,14 @@ function PricingTab() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={createMutation.isPending || updateMutation.isPending}
+                  disabled={
+                    createMutation.isPending || updateMutation.isPending
+                  }
                 >
                   {(createMutation.isPending || updateMutation.isPending) && (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   )}
-                  {editingItem ? 'Simpan' : 'Tambah'}
+                  {editingItem ? "Simpan" : "Tambah"}
                 </Button>
               </DialogFooter>
             </form>
@@ -526,7 +553,10 @@ function PricingTab() {
               </TableRow>
             ) : pricing.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell
+                  colSpan={7}
+                  className="text-center py-8 text-muted-foreground"
+                >
                   Belum ada data harga laundry
                 </TableCell>
               </TableRow>
@@ -537,17 +567,21 @@ function PricingTab() {
                     <div>
                       <div className="font-medium">{item.itemType}</div>
                       {item.description && (
-                        <div className="text-sm text-muted-foreground">{item.description}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {item.description}
+                        </div>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>{item.unit?.name || '-'}</TableCell>
+                  <TableCell>{item.unit?.name || "-"}</TableCell>
                   <TableCell>{formatCurrency(item.pricePerItem)}</TableCell>
-                  <TableCell>{item.pricePerKg ? formatCurrency(item.pricePerKg) : '-'}</TableCell>
+                  <TableCell>
+                    {item.pricePerKg ? formatCurrency(item.pricePerKg) : "-"}
+                  </TableCell>
                   <TableCell>{item.estimatedDays} hari</TableCell>
                   <TableCell>
-                    <Badge variant={item.isActive ? 'default' : 'secondary'}>
-                      {item.isActive ? 'Aktif' : 'Nonaktif'}
+                    <Badge variant={item.isActive ? "default" : "secondary"}>
+                      {item.isActive ? "Aktif" : "Nonaktif"}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -564,7 +598,7 @@ function PricingTab() {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => {
-                            if (confirm('Hapus harga ini?')) {
+                            if (confirm("Hapus harga ini?")) {
                               deleteMutation.mutate(item.id);
                             }
                           }}
@@ -589,80 +623,93 @@ function PricingTab() {
 // Transactions Tab
 function TransactionsTab() {
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [showDialog, setShowDialog] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<LaundryTransaction | null>(null);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<LaundryTransaction | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
-  
+
   // Form state for new transaction
-  const [studentSearch, setStudentSearch] = useState('');
+  const [studentSearch, setStudentSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [selectedUnit, setSelectedUnit] = useState('');
-  const [selectedItems, setSelectedItems] = useState<{
-    pricingId: string;
-    quantity: number;
-    weight?: number;
-    price: number;
-    itemType: string;
-  }[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState('CASH');
-  const [notes, setNotes] = useState('');
+  const [selectedUnit, setSelectedUnit] = useState("");
+  const [selectedItems, setSelectedItems] = useState<
+    {
+      pricingId: string;
+      quantity: number;
+      weight?: number;
+      price: number;
+      itemType: string;
+    }[]
+  >([]);
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
+  const [notes, setNotes] = useState("");
 
   const { data: transactionsData, isLoading } = useQuery({
-    queryKey: ['laundry-transactions', search, statusFilter],
+    queryKey: ["laundry-transactions", search, statusFilter],
     queryFn: () =>
       fetchTransactions({
         ...(search && { search }),
-        ...(statusFilter !== 'ALL' && { status: statusFilter }),
+        ...(statusFilter !== "ALL" && { status: statusFilter }),
       }),
   });
 
   const { data: studentsData } = useQuery({
-    queryKey: ['students', studentSearch],
+    queryKey: ["students", studentSearch],
     queryFn: () => fetchStudents(studentSearch),
     enabled: studentSearch.length > 2,
   });
 
   const { data: unitsData } = useQuery({
-    queryKey: ['units'],
+    queryKey: ["units"],
     queryFn: fetchUnits,
   });
 
   const { data: pricingData } = useQuery({
-    queryKey: ['laundry-pricing', selectedUnit],
-    queryFn: () => fetchPricing(selectedUnit ? { unitId: selectedUnit, isActive: 'true' } : undefined),
+    queryKey: ["laundry-pricing", selectedUnit],
+    queryFn: () =>
+      fetchPricing(
+        selectedUnit ? { unitId: selectedUnit, isActive: "true" } : undefined,
+      ),
     enabled: !!selectedUnit,
   });
 
   const createMutation = useMutation({
     mutationFn: createTransaction,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['laundry-transactions'] });
-      toast.success('Transaksi laundry berhasil dibuat');
+      queryClient.invalidateQueries({ queryKey: ["laundry-transactions"] });
+      toast.success("Transaksi laundry berhasil dibuat");
       setShowDialog(false);
       resetForm();
     },
-    onError: () => toast.error('Gagal membuat transaksi'),
+    onError: () => toast.error("Gagal membuat transaksi"),
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status, notes }: { id: string; status: string; notes?: string }) =>
-      updateTransactionStatus(id, status, notes),
+    mutationFn: ({
+      id,
+      status,
+      notes,
+    }: {
+      id: string;
+      status: string;
+      notes?: string;
+    }) => updateTransactionStatus(id, status, notes),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['laundry-transactions'] });
-      toast.success('Status transaksi diperbarui');
+      queryClient.invalidateQueries({ queryKey: ["laundry-transactions"] });
+      toast.success("Status transaksi diperbarui");
     },
-    onError: () => toast.error('Gagal memperbarui status'),
+    onError: () => toast.error("Gagal memperbarui status"),
   });
 
   const resetForm = () => {
-    setStudentSearch('');
+    setStudentSearch("");
     setSelectedStudent(null);
-    setSelectedUnit('');
+    setSelectedUnit("");
     setSelectedItems([]);
-    setPaymentMethod('CASH');
-    setNotes('');
+    setPaymentMethod("CASH");
+    setNotes("");
   };
 
   const addItem = (pricing: LaundryPricing) => {
@@ -670,8 +717,8 @@ function TransactionsTab() {
     if (existing) {
       setSelectedItems(
         selectedItems.map((i) =>
-          i.pricingId === pricing.id ? { ...i, quantity: i.quantity + 1 } : i
-        )
+          i.pricingId === pricing.id ? { ...i, quantity: i.quantity + 1 } : i,
+        ),
       );
     } else {
       setSelectedItems([
@@ -691,17 +738,22 @@ function TransactionsTab() {
       setSelectedItems(selectedItems.filter((i) => i.pricingId !== pricingId));
     } else {
       setSelectedItems(
-        selectedItems.map((i) => (i.pricingId === pricingId ? { ...i, quantity } : i))
+        selectedItems.map((i) =>
+          i.pricingId === pricingId ? { ...i, quantity } : i,
+        ),
       );
     }
   };
 
-  const totalAmount = selectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const totalAmount = selectedItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStudent || !selectedUnit || selectedItems.length === 0) {
-      toast.error('Lengkapi data transaksi');
+      toast.error("Lengkapi data transaksi");
       return;
     }
 
@@ -748,10 +800,13 @@ function TransactionsTab() {
             </SelectContent>
           </Select>
         </div>
-        <Dialog open={showDialog} onOpenChange={(open) => {
-          setShowDialog(open);
-          if (!open) resetForm();
-        }}>
+        <Dialog
+          open={showDialog}
+          onOpenChange={(open) => {
+            setShowDialog(open);
+            if (!open) resetForm();
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -784,7 +839,10 @@ function TransactionsTab() {
                 </div>
                 <div className="space-y-2">
                   <Label>Metode Pembayaran</Label>
-                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <Select
+                    value={paymentMethod}
+                    onValueChange={setPaymentMethod}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -816,7 +874,9 @@ function TransactionsTab() {
                         }}
                       >
                         <div className="font-medium">{student.fullName}</div>
-                        <div className="text-sm text-muted-foreground">{student.nis}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {student.nis}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -824,8 +884,12 @@ function TransactionsTab() {
                 {selectedStudent && (
                   <div className="flex items-center justify-between p-2 bg-muted rounded-md">
                     <div>
-                      <div className="font-medium">{selectedStudent.fullName}</div>
-                      <div className="text-sm text-muted-foreground">{selectedStudent.nis}</div>
+                      <div className="font-medium">
+                        {selectedStudent.fullName}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {selectedStudent.nis}
+                      </div>
                     </div>
                     <Button
                       type="button"
@@ -833,7 +897,7 @@ function TransactionsTab() {
                       size="sm"
                       onClick={() => {
                         setSelectedStudent(null);
-                        setStudentSearch('');
+                        setStudentSearch("");
                       }}
                     >
                       <XCircle className="h-4 w-4" />
@@ -872,11 +936,15 @@ function TransactionsTab() {
                   <Label>Item Dipilih</Label>
                   <div className="border rounded-md divide-y">
                     {selectedItems.map((item) => (
-                      <div key={item.pricingId} className="flex items-center justify-between p-2">
+                      <div
+                        key={item.pricingId}
+                        className="flex items-center justify-between p-2"
+                      >
                         <div>
                           <div className="font-medium">{item.itemType}</div>
                           <div className="text-sm text-muted-foreground">
-                            {formatCurrency(item.price)} × {item.quantity} = {formatCurrency(item.price * item.quantity)}
+                            {formatCurrency(item.price)} × {item.quantity} ={" "}
+                            {formatCurrency(item.price * item.quantity)}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -884,16 +952,28 @@ function TransactionsTab() {
                             type="button"
                             variant="outline"
                             size="icon"
-                            onClick={() => updateItemQuantity(item.pricingId, item.quantity - 1)}
+                            onClick={() =>
+                              updateItemQuantity(
+                                item.pricingId,
+                                item.quantity - 1,
+                              )
+                            }
                           >
                             -
                           </Button>
-                          <span className="w-8 text-center">{item.quantity}</span>
+                          <span className="w-8 text-center">
+                            {item.quantity}
+                          </span>
                           <Button
                             type="button"
                             variant="outline"
                             size="icon"
-                            onClick={() => updateItemQuantity(item.pricingId, item.quantity + 1)}
+                            onClick={() =>
+                              updateItemQuantity(
+                                item.pricingId,
+                                item.quantity + 1,
+                              )
+                            }
                           >
                             +
                           </Button>
@@ -903,7 +983,9 @@ function TransactionsTab() {
                   </div>
                   <div className="flex justify-between items-center p-2 bg-muted rounded-md">
                     <span className="font-medium">Total</span>
-                    <span className="font-bold text-lg">{formatCurrency(totalAmount)}</span>
+                    <span className="font-bold text-lg">
+                      {formatCurrency(totalAmount)}
+                    </span>
                   </div>
                 </div>
               )}
@@ -954,26 +1036,45 @@ function TransactionsTab() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Santri</Label>
-                  <div className="font-medium">{selectedTransaction.student?.fullName}</div>
-                  <div className="text-sm text-muted-foreground">{selectedTransaction.student?.nis}</div>
+                  <div className="font-medium">
+                    {selectedTransaction.student?.fullName}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {selectedTransaction.student?.nis}
+                  </div>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Status</Label>
                   <div>
-                    <Badge className={getStatusColor(selectedTransaction.status)}>
+                    <Badge
+                      className={getStatusColor(selectedTransaction.status)}
+                    >
                       {selectedTransaction.status}
                     </Badge>
                   </div>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Tanggal Masuk</Label>
-                  <div>{format(new Date(selectedTransaction.receivedAt), 'dd MMM yyyy HH:mm', { locale: localeId })}</div>
+                  <div>
+                    {format(
+                      new Date(selectedTransaction.receivedAt),
+                      "dd MMM yyyy HH:mm",
+                      { locale: localeId },
+                    )}
+                  </div>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Estimasi Selesai</Label>
-                  <div>{selectedTransaction.estimatedReady 
-                    ? format(new Date(selectedTransaction.estimatedReady), 'dd MMM yyyy', { locale: localeId })
-                    : '-'}
+                  <Label className="text-muted-foreground">
+                    Estimasi Selesai
+                  </Label>
+                  <div>
+                    {selectedTransaction.estimatedReady
+                      ? format(
+                          new Date(selectedTransaction.estimatedReady),
+                          "dd MMM yyyy",
+                          { locale: localeId },
+                        )
+                      : "-"}
                   </div>
                 </div>
                 <div>
@@ -982,28 +1083,33 @@ function TransactionsTab() {
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Total</Label>
-                  <div className="font-bold">{formatCurrency(selectedTransaction.totalAmount)}</div>
+                  <div className="font-bold">
+                    {formatCurrency(selectedTransaction.totalAmount)}
+                  </div>
                 </div>
               </div>
 
-              {selectedTransaction.items && selectedTransaction.items.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Item Laundry</Label>
-                  <div className="border rounded-md divide-y">
-                    {selectedTransaction.items.map((item) => (
-                      <div key={item.id} className="flex justify-between p-2">
-                        <div>
-                          <div>{item.pricing?.itemType || '-'}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {item.quantity} × {formatCurrency(item.price)}
+              {selectedTransaction.items &&
+                selectedTransaction.items.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Item Laundry</Label>
+                    <div className="border rounded-md divide-y">
+                      {selectedTransaction.items.map((item) => (
+                        <div key={item.id} className="flex justify-between p-2">
+                          <div>
+                            <div>{item.pricing?.itemType || "-"}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {item.quantity} × {formatCurrency(item.price)}
+                            </div>
+                          </div>
+                          <div className="font-medium">
+                            {formatCurrency(item.subtotal)}
                           </div>
                         </div>
-                        <div className="font-medium">{formatCurrency(item.subtotal)}</div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {selectedTransaction.notes && (
                 <div>
@@ -1013,12 +1119,12 @@ function TransactionsTab() {
               )}
 
               <div className="flex gap-2">
-                {selectedTransaction.status === 'PENDING' && (
+                {selectedTransaction.status === "PENDING" && (
                   <Button
                     onClick={() => {
                       updateStatusMutation.mutate({
                         id: selectedTransaction.id,
-                        status: 'PROCESSING',
+                        status: "PROCESSING",
                       });
                       setShowDetailDialog(false);
                     }}
@@ -1028,12 +1134,12 @@ function TransactionsTab() {
                     Mulai Proses
                   </Button>
                 )}
-                {selectedTransaction.status === 'PROCESSING' && (
+                {selectedTransaction.status === "PROCESSING" && (
                   <Button
                     onClick={() => {
                       updateStatusMutation.mutate({
                         id: selectedTransaction.id,
-                        status: 'READY',
+                        status: "READY",
                       });
                       setShowDetailDialog(false);
                     }}
@@ -1043,12 +1149,12 @@ function TransactionsTab() {
                     Siap Ambil
                   </Button>
                 )}
-                {selectedTransaction.status === 'READY' && (
+                {selectedTransaction.status === "READY" && (
                   <Button
                     onClick={() => {
                       updateStatusMutation.mutate({
                         id: selectedTransaction.id,
-                        status: 'DELIVERED',
+                        status: "DELIVERED",
                       });
                       setShowDetailDialog(false);
                     }}
@@ -1058,14 +1164,16 @@ function TransactionsTab() {
                     Sudah Diambil
                   </Button>
                 )}
-                {['PENDING', 'PROCESSING'].includes(selectedTransaction.status) && (
+                {["PENDING", "PROCESSING"].includes(
+                  selectedTransaction.status,
+                ) && (
                   <Button
                     variant="destructive"
                     onClick={() => {
-                      if (confirm('Batalkan transaksi ini?')) {
+                      if (confirm("Batalkan transaksi ini?")) {
                         updateStatusMutation.mutate({
                           id: selectedTransaction.id,
-                          status: 'CANCELLED',
+                          status: "CANCELLED",
                         });
                         setShowDetailDialog(false);
                       }
@@ -1104,32 +1212,39 @@ function TransactionsTab() {
               </TableRow>
             ) : transactions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell
+                  colSpan={8}
+                  className="text-center py-8 text-muted-foreground"
+                >
                   Belum ada transaksi laundry
                 </TableCell>
               </TableRow>
             ) : (
               transactions.map((tx: LaundryTransaction) => (
                 <TableRow key={tx.id}>
-                  <TableCell className="font-mono">{tx.transactionNumber}</TableCell>
+                  <TableCell className="font-mono">
+                    {tx.transactionNumber}
+                  </TableCell>
                   <TableCell>
                     <div>
                       <div className="font-medium">{tx.student?.fullName}</div>
-                      <div className="text-sm text-muted-foreground">{tx.student?.nis}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {tx.student?.nis}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    {format(new Date(tx.receivedAt), 'dd/MM/yy HH:mm')}
+                    {format(new Date(tx.receivedAt), "dd/MM/yy HH:mm")}
                   </TableCell>
                   <TableCell>{tx.totalItems} item</TableCell>
                   <TableCell>{formatCurrency(tx.totalAmount)}</TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(tx.status)}>
-                      {tx.status === 'PENDING' && 'Pending'}
-                      {tx.status === 'PROCESSING' && 'Proses'}
-                      {tx.status === 'READY' && 'Siap Ambil'}
-                      {tx.status === 'DELIVERED' && 'Diambil'}
-                      {tx.status === 'CANCELLED' && 'Batal'}
+                      {tx.status === "PENDING" && "Pending"}
+                      {tx.status === "PROCESSING" && "Proses"}
+                      {tx.status === "READY" && "Siap Ambil"}
+                      {tx.status === "DELIVERED" && "Diambil"}
+                      {tx.status === "CANCELLED" && "Batal"}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -1162,7 +1277,7 @@ function TransactionsTab() {
 // Main Page Component
 export default function LaundryPage() {
   const { data: transactionsData } = useQuery({
-    queryKey: ['laundry-transactions'],
+    queryKey: ["laundry-transactions"],
     queryFn: () => fetchTransactions(),
   });
 
@@ -1170,11 +1285,16 @@ export default function LaundryPage() {
 
   // Calculate stats
   const stats = {
-    pending: transactions.filter((t: LaundryTransaction) => t.status === 'PENDING').length,
-    processing: transactions.filter((t: LaundryTransaction) => t.status === 'PROCESSING').length,
-    ready: transactions.filter((t: LaundryTransaction) => t.status === 'READY').length,
+    pending: transactions.filter(
+      (t: LaundryTransaction) => t.status === "PENDING",
+    ).length,
+    processing: transactions.filter(
+      (t: LaundryTransaction) => t.status === "PROCESSING",
+    ).length,
+    ready: transactions.filter((t: LaundryTransaction) => t.status === "READY")
+      .length,
     totalRevenue: transactions
-      .filter((t: LaundryTransaction) => t.paymentStatus === 'PAID')
+      .filter((t: LaundryTransaction) => t.paymentStatus === "PAID")
       .reduce((sum: number, t: LaundryTransaction) => sum + t.totalAmount, 0),
   };
 
@@ -1227,7 +1347,9 @@ export default function LaundryPage() {
             <DollarSign className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
+            <div className="text-2xl font-bold">
+              {formatCurrency(stats.totalRevenue)}
+            </div>
             <p className="text-xs text-muted-foreground">total terbayar</p>
           </CardContent>
         </Card>

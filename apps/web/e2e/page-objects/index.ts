@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Page } from "@playwright/test";
 
 /**
  * Dashboard Page Object Model
@@ -9,7 +9,7 @@ export class DashboardPage {
 
   // Locators
   get heading() {
-    return this.page.getByRole('heading', { name: /dashboard/i });
+    return this.page.getByRole("heading", { name: /dashboard/i });
   }
 
   get quickStatsCards() {
@@ -34,24 +34,29 @@ export class DashboardPage {
 
   // Actions
   async goto() {
-    await this.page.goto('/dashboard');
-    await this.page.waitForLoadState('networkidle');
+    await this.page.goto("/dashboard");
+    await this.page.waitForLoadState("networkidle");
   }
 
   async waitForDataLoad() {
-    await this.page.waitForSelector('.animate-spin', { state: 'hidden', timeout: 15000 });
+    await this.page.waitForSelector(".animate-spin", {
+      state: "hidden",
+      timeout: 15000,
+    });
   }
 
   async verifyQuickStats() {
-    await this.totalStudentsCard.waitFor({ state: 'visible' });
-    await this.totalTeachersCard.waitFor({ state: 'visible' });
-    await this.todayAttendanceCard.waitFor({ state: 'visible' });
+    await this.totalStudentsCard.waitFor({ state: "visible" });
+    await this.totalTeachersCard.waitFor({ state: "visible" });
+    await this.todayAttendanceCard.waitFor({ state: "visible" });
   }
 
   async getStatValue(statName: string): Promise<string> {
-    const card = this.page.getByText(new RegExp(statName, 'i')).locator('..');
-    const value = await card.locator('[data-testid="stat-value"]').textContent();
-    return value || '0';
+    const card = this.page.getByText(new RegExp(statName, "i")).locator("..");
+    const value = await card
+      .locator('[data-testid="stat-value"]')
+      .textContent();
+    return value || "0";
   }
 }
 
@@ -63,7 +68,7 @@ export class TahfidzDashboardPage {
 
   // Locators
   get heading() {
-    return this.page.getByRole('heading', { name: /dashboard tahfidz/i });
+    return this.page.getByRole("heading", { name: /dashboard tahfidz/i });
   }
 
   get totalRecordsCard() {
@@ -91,38 +96,42 @@ export class TahfidzDashboardPage {
   }
 
   get recentRecordsTable() {
-    return this.page.locator('table').filter({ hasText: /catatan terbaru/i });
+    return this.page.locator("table").filter({ hasText: /catatan terbaru/i });
   }
 
   // Actions
   async goto() {
-    await this.page.goto('/tahfidz/dashboard');
-    await this.page.waitForLoadState('networkidle');
+    await this.page.goto("/tahfidz/dashboard");
+    await this.page.waitForLoadState("networkidle");
   }
 
   async waitForDataLoad() {
-    await this.page.waitForSelector('.animate-spin', { state: 'hidden', timeout: 15000 });
+    await this.page.waitForSelector(".animate-spin", {
+      state: "hidden",
+      timeout: 15000,
+    });
   }
 
   async selectUnit(unitName: string | RegExp) {
-    const unitSelect = this.page.locator('button[role="combobox"]')
+    const unitSelect = this.page
+      .locator('button[role="combobox"]')
       .filter({ hasText: /semua unit|unit/i })
       .first();
-    
+
     await unitSelect.click();
-    await this.page.getByRole('option', { name: unitName }).click();
+    await this.page.getByRole("option", { name: unitName }).click();
     await this.waitForDataLoad();
   }
 
   async verifyAllSections() {
-    await this.totalRecordsCard.waitFor({ state: 'visible' });
-    await this.activeSantriCard.waitFor({ state: 'visible' });
-    await this.recordTypeChart.waitFor({ state: 'visible' });
-    await this.topSantriSection.waitFor({ state: 'visible' });
+    await this.totalRecordsCard.waitFor({ state: "visible" });
+    await this.activeSantriCard.waitFor({ state: "visible" });
+    await this.recordTypeChart.waitFor({ state: "visible" });
+    await this.topSantriSection.waitFor({ state: "visible" });
   }
 
   async clickRecentRecord(index = 0) {
-    const row = this.recentRecordsTable.locator('tbody tr').nth(index);
+    const row = this.recentRecordsTable.locator("tbody tr").nth(index);
     await row.click();
   }
 }
@@ -135,11 +144,12 @@ export class TKAssessmentPage {
 
   // Locators
   get heading() {
-    return this.page.getByRole('heading', { name: /penilaian tk/i });
+    return this.page.getByRole("heading", { name: /penilaian tk/i });
   }
 
   get studentSelect() {
-    return this.page.locator('button[role="combobox"]')
+    return this.page
+      .locator('button[role="combobox"]')
       .filter({ hasText: /pilih santri|select student/i });
   }
 
@@ -156,32 +166,35 @@ export class TKAssessmentPage {
   }
 
   get saveButton() {
-    return this.page.getByRole('button', { name: /simpan|save/i });
+    return this.page.getByRole("button", { name: /simpan|save/i });
   }
 
   // Actions
   async goto() {
-    await this.page.goto('/tk/assessment');
-    await this.page.waitForLoadState('networkidle');
+    await this.page.goto("/tk/assessment");
+    await this.page.waitForLoadState("networkidle");
   }
 
   async selectStudent(studentName: string) {
     await this.studentSelect.click();
-    await this.page.getByRole('option', { name: studentName }).click();
+    await this.page.getByRole("option", { name: studentName }).click();
   }
 
   async selectAspect(aspectName: string) {
-    await this.page.getByRole('tab', { name: new RegExp(aspectName, 'i') }).click();
+    await this.page
+      .getByRole("tab", { name: new RegExp(aspectName, "i") })
+      .click();
   }
 
   async selectIndicator(indicatorText: string | RegExp) {
-    const checkbox = this.page.locator('label')
+    const checkbox = this.page
+      .locator("label")
       .filter({ hasText: indicatorText })
       .locator('input[type="checkbox"]');
     await checkbox.check();
   }
 
-  async setAchievementLevel(level: 'BB' | 'MB' | 'BSH' | 'BSB') {
+  async setAchievementLevel(level: "BB" | "MB" | "BSH" | "BSB") {
     const radio = this.page.locator(`input[value="${level}"]`).first();
     await radio.check();
   }
@@ -189,8 +202,10 @@ export class TKAssessmentPage {
   async saveAssessment() {
     await this.saveButton.click();
     // Wait for success toast
-    await this.page.getByRole('status').filter({ hasText: /berhasil|success/i })
-      .waitFor({ state: 'visible', timeout: 5000 });
+    await this.page
+      .getByRole("status")
+      .filter({ hasText: /berhasil|success/i })
+      .waitFor({ state: "visible", timeout: 5000 });
   }
 }
 
@@ -210,7 +225,7 @@ export class LoginPage {
   }
 
   get loginButton() {
-    return this.page.getByRole('button', { name: /sign in|masuk|login/i });
+    return this.page.getByRole("button", { name: /sign in|masuk|login/i });
   }
 
   get errorMessage() {
@@ -219,7 +234,7 @@ export class LoginPage {
 
   // Actions
   async goto() {
-    await this.page.goto('/login');
+    await this.page.goto("/login");
   }
 
   async login(email: string, password: string) {
@@ -230,29 +245,36 @@ export class LoginPage {
 
   async loginAndWaitForDashboard(email: string, password: string) {
     await this.login(email, password);
-    
+
     // Wait a bit for navigation to start
     await this.page.waitForTimeout(1000);
-    
+
     // Wait for navigation with multiple fallbacks
     await Promise.race([
       this.page.waitForURL(/dashboard/, { timeout: 20000 }).catch(() => {}),
       this.page.waitForURL(/home/, { timeout: 20000 }).catch(() => {}),
-      this.page.waitForLoadState('domcontentloaded', { timeout: 20000 }).catch(() => {})
+      this.page
+        .waitForLoadState("domcontentloaded", { timeout: 20000 })
+        .catch(() => {}),
     ]);
-    
+
     // Verify we're not still on login page
     const currentURL = this.page.url();
-    if (currentURL.includes('/login')) {
+    if (currentURL.includes("/login")) {
       // Check if there's an error message
-      const errorVisible = await this.page.locator('[role="alert"], [class*="error"]')
-        .isVisible({ timeout: 2000 }).catch(() => false);
-      
+      const errorVisible = await this.page
+        .locator('[role="alert"], [class*="error"]')
+        .isVisible({ timeout: 2000 })
+        .catch(() => false);
+
       if (errorVisible) {
-        const errorText = await this.page.locator('[role="alert"], [class*="error"]').first().textContent();
+        const errorText = await this.page
+          .locator('[role="alert"], [class*="error"]')
+          .first()
+          .textContent();
         throw new Error(`Login failed with error: ${errorText}`);
       }
-      
+
       throw new Error(`Login failed - still on login page: ${currentURL}`);
     }
   }

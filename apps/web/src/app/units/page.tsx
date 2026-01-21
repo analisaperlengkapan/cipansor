@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Building2,
   Plus,
@@ -13,22 +13,22 @@ import {
   Phone,
   Mail,
   User,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { Button } from '@/components/ui/button';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useUnits, useDeleteUnit, UNIT_TYPES } from '@/hooks/use-units';
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useUnits, useDeleteUnit, UNIT_TYPES } from "@/hooks/use-units";
 
 const getUnitTypeLabel = (type: string) => {
   const unitType = UNIT_TYPES.find((t) => t.value === type);
@@ -37,18 +37,18 @@ const getUnitTypeLabel = (type: string) => {
 
 const getUnitTypeColor = (type: string) => {
   switch (type) {
-    case 'PESANTREN':
-      return 'bg-green-100 text-green-800';
-    case 'TK_QURAN':
-      return 'bg-pink-100 text-pink-800';
-    case 'SD_IT':
-      return 'bg-blue-100 text-blue-800';
-    case 'SMP_IT':
-      return 'bg-purple-100 text-purple-800';
-    case 'SMA_QURAN':
-      return 'bg-emerald-100 text-emerald-800';
+    case "PESANTREN":
+      return "bg-green-100 text-green-800";
+    case "TK_QURAN":
+      return "bg-pink-100 text-pink-800";
+    case "SD_IT":
+      return "bg-blue-100 text-blue-800";
+    case "SMP_IT":
+      return "bg-purple-100 text-purple-800";
+    case "SMA_QURAN":
+      return "bg-emerald-100 text-emerald-800";
     default:
-      return 'bg-gray-100 text-gray-800';
+      return "bg-gray-100 text-gray-800";
   }
 };
 
@@ -56,18 +56,19 @@ export default function UnitsPage() {
   const router = useRouter();
   const { data: units, isLoading } = useUnits();
   const deleteUnit = useDeleteUnit();
-  
+
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const handleDelete = async () => {
     if (!deleteId) return;
-    
+
     try {
       await deleteUnit.mutateAsync(deleteId);
-      toast.success('Unit berhasil dihapus');
+      toast.success("Unit berhasil dihapus");
       setDeleteId(null);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal menghapus unit';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal menghapus unit";
       toast.error(errorMessage);
     }
   };
@@ -78,9 +79,9 @@ export default function UnitsPage() {
         title="Unit Pendidikan"
         description="Kelola unit-unit pendidikan pesantren"
         action={{
-          label: 'Tambah Unit',
+          label: "Tambah Unit",
           icon: <Plus className="h-4 w-4" />,
-          href: '/units/new',
+          href: "/units/new",
         }}
       />
 
@@ -125,7 +126,10 @@ export default function UnitsPage() {
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <CardTitle className="text-lg">{unit.name}</CardTitle>
-                    <Badge className={getUnitTypeColor(unit.type)} variant="secondary">
+                    <Badge
+                      className={getUnitTypeColor(unit.type)}
+                      variant="secondary"
+                    >
                       {getUnitTypeLabel(unit.type)}
                     </Badge>
                   </div>
@@ -159,15 +163,25 @@ export default function UnitsPage() {
                     </div>
                   )}
                 </CardDescription>
-                
+
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" asChild className="flex-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                    className="flex-1"
+                  >
                     <Link href={`/units/${unit.id}`}>
                       <Eye className="h-4 w-4 mr-1" />
                       Lihat
                     </Link>
                   </Button>
-                  <Button variant="outline" size="sm" asChild className="flex-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                    className="flex-1"
+                  >
                     <Link href={`/units/${unit.id}/edit`}>
                       <Pencil className="h-4 w-4 mr-1" />
                       Edit

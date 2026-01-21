@@ -1,4 +1,3 @@
-
 import { vi, describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { notificationService } from '../../src/modules/notifications/email-sms.service';
 import { prisma } from '../../src/lib/prisma';

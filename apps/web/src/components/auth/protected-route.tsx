@@ -1,9 +1,16 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/auth';
-import { ADMIN_ROLES, TEACHER_ROLES, STAFF_ROLES, STUDENT_ROLES, PARENT_ROLES, YAYASAN_ROLES } from '@/config/navigation';
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/stores/auth";
+import {
+  ADMIN_ROLES,
+  TEACHER_ROLES,
+  STAFF_ROLES,
+  STUDENT_ROLES,
+  PARENT_ROLES,
+  YAYASAN_ROLES,
+} from "@/config/navigation";
 
 interface UserRole {
   id: string;
@@ -22,32 +29,37 @@ interface UserRole {
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: string[];      // Legacy role names (SUPER_ADMIN, UNIT_ADMIN, etc.)
-  allowedRoleCodes?: string[];  // New role codes (SMPIT_ADMIN, PAUD_GURU, etc.)
-  allowedRealms?: string[];     // Realms (GLOBAL, YAYASAN, PAUD, etc.)
+  allowedRoles?: string[]; // Legacy role names (SUPER_ADMIN, UNIT_ADMIN, etc.)
+  allowedRoleCodes?: string[]; // New role codes (SMPIT_ADMIN, PAUD_GURU, etc.)
+  allowedRealms?: string[]; // Realms (GLOBAL, YAYASAN, PAUD, etc.)
 }
 
 // Map legacy roles to RoleCode categories
 function mapLegacyRoleToRoleCodes(legacyRole: string): string[] {
   switch (legacyRole) {
-    case 'SUPER_ADMIN':
-      return ['SUPER_ADMIN'];
-    case 'UNIT_ADMIN':
-      return ADMIN_ROLES.filter(r => r !== 'SUPER_ADMIN');
-    case 'TEACHER':
+    case "SUPER_ADMIN":
+      return ["SUPER_ADMIN"];
+    case "UNIT_ADMIN":
+      return ADMIN_ROLES.filter((r) => r !== "SUPER_ADMIN");
+    case "TEACHER":
       return TEACHER_ROLES;
-    case 'STAFF':
+    case "STAFF":
       return STAFF_ROLES;
-    case 'STUDENT':
+    case "STUDENT":
       return STUDENT_ROLES;
-    case 'PARENT':
+    case "PARENT":
       return PARENT_ROLES;
     default:
       return [legacyRole];
   }
 }
 
-export function ProtectedRoute({ children, allowedRoles, allowedRoleCodes, allowedRealms }: ProtectedRouteProps) {
+export function ProtectedRoute({
+  children,
+  allowedRoles,
+  allowedRoleCodes,
+  allowedRealms,
+}: ProtectedRouteProps) {
   const router = useRouter();
   const { isAuthenticated, isLoading, user, fetchUser } = useAuthStore();
   const [hasInitialized, setHasInitialized] = useState(false);
@@ -59,14 +71,14 @@ export function ProtectedRoute({ children, allowedRoles, allowedRoleCodes, allow
   useEffect(() => {
     // Only redirect after initialization is complete and auth check fails
     if (hasInitialized && !isLoading && !isAuthenticated) {
-      router.push('/login');
+      router.push("/login");
     }
   }, [isAuthenticated, isLoading, router, hasInitialized]);
 
   // Get active role from userRoles
   const activeRole = useMemo(() => {
     const userRoles = user?.userRoles as UserRole[] | undefined;
-    return userRoles?.find(r => r.isPrimary) || userRoles?.[0];
+    return userRoles?.find((r) => r.isPrimary) || userRoles?.[0];
   }, [user?.userRoles]);
 
   // Check if user has access based on their active role
@@ -83,7 +95,7 @@ export function ProtectedRoute({ children, allowedRoles, allowedRoleCodes, allow
     const activeRealm = activeRole?.role.realm;
 
     // Super Admin always has access
-    if (activeRoleCode === 'SUPER_ADMIN') {
+    if (activeRoleCode === "SUPER_ADMIN") {
       return true;
     }
 
@@ -120,7 +132,7 @@ export function ProtectedRoute({ children, allowedRoles, allowedRoleCodes, allow
 
   useEffect(() => {
     if (user && !hasAccess) {
-      router.push('/unauthorized');
+      router.push("/unauthorized");
     }
   }, [user, hasAccess, router]);
 

@@ -1,42 +1,48 @@
-'use client';
+"use client";
 
 /**
  * Settings Page
  * Application settings - appearance, notifications, preferences
  */
 
-import { useState, useEffect } from 'react';
-import { 
-  Sun, 
-  Moon, 
-  Monitor, 
-  Bell, 
+import { useState, useEffect } from "react";
+import {
+  Sun,
+  Moon,
+  Monitor,
+  Bell,
   BellOff,
-  Globe, 
+  Globe,
   Palette,
   Volume2,
   Shield,
   Info,
   Check,
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { toast } from "sonner";
 
 // Types
-type Theme = 'light' | 'dark' | 'system';
-type Language = 'id' | 'en';
+type Theme = "light" | "dark" | "system";
+type Language = "id" | "en";
 
 interface NotificationSettings {
   email: boolean;
@@ -56,8 +62,8 @@ interface AppSettings {
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
-  theme: 'system',
-  language: 'id',
+  theme: "system",
+  language: "id",
   notifications: {
     email: true,
     push: true,
@@ -70,32 +76,32 @@ const DEFAULT_SETTINGS: AppSettings = {
   compactMode: false,
 };
 
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Lock } from 'lucide-react';
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { User, Lock } from "lucide-react";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  
+
   // Get active tab from URL or default to 'appearance'
   // Map 'users' to 'account' if needed, or just keep 'account'
-  const tabParam = searchParams.get('tab');
-  const activeTab = tabParam === 'users' ? 'account' : (tabParam || 'appearance');
+  const tabParam = searchParams.get("tab");
+  const activeTab = tabParam === "users" ? "account" : tabParam || "appearance";
 
   const onTabChange = (value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('tab', value);
-      router.push(`${pathname}?${params.toString()}`);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", value);
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   // Load settings from localStorage
   useEffect(() => {
-    const savedSettings = localStorage.getItem('app-settings');
+    const savedSettings = localStorage.getItem("app-settings");
     if (savedSettings) {
       try {
         setSettings(JSON.parse(savedSettings));
@@ -108,13 +114,16 @@ export default function SettingsPage() {
   // Apply theme
   useEffect(() => {
     const root = document.documentElement;
-    
-    if (settings.theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      root.classList.remove('light', 'dark');
+
+    if (settings.theme === "system") {
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
+        .matches
+        ? "dark"
+        : "light";
+      root.classList.remove("light", "dark");
       root.classList.add(systemTheme);
     } else {
-      root.classList.remove('light', 'dark');
+      root.classList.remove("light", "dark");
       root.classList.add(settings.theme);
     }
   }, [settings.theme]);
@@ -123,18 +132,21 @@ export default function SettingsPage() {
   const saveSettings = async () => {
     setIsSaving(true);
     try {
-      localStorage.setItem('app-settings', JSON.stringify(settings));
-      toast.success('Pengaturan berhasil disimpan');
+      localStorage.setItem("app-settings", JSON.stringify(settings));
+      toast.success("Pengaturan berhasil disimpan");
     } catch {
-      toast.error('Gagal menyimpan pengaturan');
+      toast.error("Gagal menyimpan pengaturan");
     } finally {
       setIsSaving(false);
     }
   };
 
   // Update nested settings
-  const updateNotificationSetting = (key: keyof NotificationSettings, value: boolean) => {
-    setSettings(prev => ({
+  const updateNotificationSetting = (
+    key: keyof NotificationSettings,
+    value: boolean,
+  ) => {
+    setSettings((prev) => ({
       ...prev,
       notifications: {
         ...prev.notifications,
@@ -158,7 +170,10 @@ export default function SettingsPage() {
           <TabsTrigger value="appearance" className="flex items-center gap-2">
             <Palette className="h-4 w-4" /> Tampilan
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
+          <TabsTrigger
+            value="notifications"
+            className="flex items-center gap-2"
+          >
             <Bell className="h-4 w-4" /> Notifikasi
           </TabsTrigger>
           <TabsTrigger value="profile" className="flex items-center gap-2">
@@ -168,7 +183,7 @@ export default function SettingsPage() {
             <Lock className="h-4 w-4" /> Akun
           </TabsTrigger>
           <TabsTrigger value="about" className="flex items-center gap-2">
-             <Info className="h-4 w-4" /> Tentang
+            <Info className="h-4 w-4" /> Tentang
           </TabsTrigger>
         </TabsList>
 
@@ -189,11 +204,17 @@ export default function SettingsPage() {
                 <Label>Tema</Label>
                 <RadioGroup
                   value={settings.theme}
-                  onValueChange={(value: Theme) => setSettings(prev => ({ ...prev, theme: value }))}
+                  onValueChange={(value: Theme) =>
+                    setSettings((prev) => ({ ...prev, theme: value }))
+                  }
                   className="grid grid-cols-3 gap-4"
                 >
                   <div>
-                    <RadioGroupItem value="light" id="light" className="peer sr-only" />
+                    <RadioGroupItem
+                      value="light"
+                      id="light"
+                      className="peer sr-only"
+                    />
                     <Label
                       htmlFor="light"
                       className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
@@ -203,7 +224,11 @@ export default function SettingsPage() {
                     </Label>
                   </div>
                   <div>
-                    <RadioGroupItem value="dark" id="dark" className="peer sr-only" />
+                    <RadioGroupItem
+                      value="dark"
+                      id="dark"
+                      className="peer sr-only"
+                    />
                     <Label
                       htmlFor="dark"
                       className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
@@ -213,7 +238,11 @@ export default function SettingsPage() {
                     </Label>
                   </div>
                   <div>
-                    <RadioGroupItem value="system" id="system" className="peer sr-only" />
+                    <RadioGroupItem
+                      value="system"
+                      id="system"
+                      className="peer sr-only"
+                    />
                     <Label
                       htmlFor="system"
                       className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
@@ -240,7 +269,9 @@ export default function SettingsPage() {
                 </div>
                 <Select
                   value={settings.language}
-                  onValueChange={(value: Language) => setSettings(prev => ({ ...prev, language: value }))}
+                  onValueChange={(value: Language) =>
+                    setSettings((prev) => ({ ...prev, language: value }))
+                  }
                 >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue />
@@ -264,7 +295,9 @@ export default function SettingsPage() {
                 </div>
                 <Switch
                   checked={settings.compactMode}
-                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, compactMode: checked }))}
+                  onCheckedChange={(checked) =>
+                    setSettings((prev) => ({ ...prev, compactMode: checked }))
+                  }
                 />
               </div>
             </CardContent>
@@ -293,7 +326,9 @@ export default function SettingsPage() {
                 </div>
                 <Switch
                   checked={settings.notifications.email}
-                  onCheckedChange={(checked) => updateNotificationSetting('email', checked)}
+                  onCheckedChange={(checked) =>
+                    updateNotificationSetting("email", checked)
+                  }
                 />
               </div>
 
@@ -309,7 +344,9 @@ export default function SettingsPage() {
                 </div>
                 <Switch
                   checked={settings.notifications.push}
-                  onCheckedChange={(checked) => updateNotificationSetting('push', checked)}
+                  onCheckedChange={(checked) =>
+                    updateNotificationSetting("push", checked)
+                  }
                 />
               </div>
 
@@ -318,7 +355,7 @@ export default function SettingsPage() {
               {/* Notification Categories */}
               <div className="space-y-4">
                 <Label className="text-base">Kategori Notifikasi</Label>
-                
+
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="font-normal">Kehadiran</Label>
@@ -328,7 +365,9 @@ export default function SettingsPage() {
                   </div>
                   <Switch
                     checked={settings.notifications.attendance}
-                    onCheckedChange={(checked) => updateNotificationSetting('attendance', checked)}
+                    onCheckedChange={(checked) =>
+                      updateNotificationSetting("attendance", checked)
+                    }
                   />
                 </div>
 
@@ -341,7 +380,9 @@ export default function SettingsPage() {
                   </div>
                   <Switch
                     checked={settings.notifications.finance}
-                    onCheckedChange={(checked) => updateNotificationSetting('finance', checked)}
+                    onCheckedChange={(checked) =>
+                      updateNotificationSetting("finance", checked)
+                    }
                   />
                 </div>
 
@@ -354,7 +395,9 @@ export default function SettingsPage() {
                   </div>
                   <Switch
                     checked={settings.notifications.announcements}
-                    onCheckedChange={(checked) => updateNotificationSetting('announcements', checked)}
+                    onCheckedChange={(checked) =>
+                      updateNotificationSetting("announcements", checked)
+                    }
                   />
                 </div>
 
@@ -367,7 +410,9 @@ export default function SettingsPage() {
                   </div>
                   <Switch
                     checked={settings.notifications.tahfidz}
-                    onCheckedChange={(checked) => updateNotificationSetting('tahfidz', checked)}
+                    onCheckedChange={(checked) =>
+                      updateNotificationSetting("tahfidz", checked)
+                    }
                   />
                 </div>
               </div>
@@ -387,13 +432,15 @@ export default function SettingsPage() {
                 </div>
                 <Switch
                   checked={settings.soundEnabled}
-                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, soundEnabled: checked }))}
+                  onCheckedChange={(checked) =>
+                    setSettings((prev) => ({ ...prev, soundEnabled: checked }))
+                  }
                 />
               </div>
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="profile" className="space-y-4">
           <Card>
             <CardHeader>
@@ -401,27 +448,33 @@ export default function SettingsPage() {
                 <User className="h-5 w-5" />
                 Profil Pengguna
               </CardTitle>
-              <CardDescription>
-                Kelola informasi profil Anda
-              </CardDescription>
+              <CardDescription>Kelola informasi profil Anda</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Nama Lengkap</Label>
-                  <div className="p-3 rounded-md bg-muted/50 border">Dr. Ahmad Fauzi, M.Pd.</div>
+                  <div className="p-3 rounded-md bg-muted/50 border">
+                    Dr. Ahmad Fauzi, M.Pd.
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Email</Label>
-                  <div className="p-3 rounded-md bg-muted/50 border">admin@cipansor.id</div>
+                  <div className="p-3 rounded-md bg-muted/50 border">
+                    admin@cipansor.id
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Peran</Label>
-                  <div className="p-3 rounded-md bg-muted/50 border">Super Admin</div>
+                  <div className="p-3 rounded-md bg-muted/50 border">
+                    Super Admin
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Unit</Label>
-                  <div className="p-3 rounded-md bg-muted/50 border">SMA Al-Qur'an Cipansor</div>
+                  <div className="p-3 rounded-md bg-muted/50 border">
+                    SMA Al-Qur'an Cipansor
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -430,7 +483,7 @@ export default function SettingsPage() {
 
         <TabsContent value="account" className="space-y-4">
           <Card>
-             <CardHeader>
+            <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Lock className="h-5 w-5" />
                 Keamanan Akun
@@ -440,9 +493,10 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-               <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800">
-                  Fitur keamanan akun dikelola oleh administrator pusat. Hubungi IT Support untuk reset password.
-               </div>
+              <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800">
+                Fitur keamanan akun dikelola oleh administrator pusat. Hubungi
+                IT Support untuk reset password.
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -471,14 +525,17 @@ export default function SettingsPage() {
                   <p className="font-medium">Yayasan Pesantren Cipansor</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Terakhir Update</Label>
-                  <p className="font-medium">{new Date().toLocaleDateString('id-ID')}</p>
+                  <Label className="text-muted-foreground">
+                    Terakhir Update
+                  </Label>
+                  <p className="font-medium">
+                    {new Date().toLocaleDateString("id-ID")}
+                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
-        
       </Tabs>
 
       {/* Save Button */}

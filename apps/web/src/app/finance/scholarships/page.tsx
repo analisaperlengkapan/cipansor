@@ -33,7 +33,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, RefreshCw, Filter, GraduationCap, Users, Eye } from "lucide-react";
+import {
+  Plus,
+  Search,
+  RefreshCw,
+  Filter,
+  GraduationCap,
+  Users,
+  Eye,
+} from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as localeID } from "date-fns/locale";
@@ -46,7 +54,7 @@ import {
   type Scholarship,
   type ScholarshipRecipient,
   ScholarshipSource,
-  ScholarshipType
+  ScholarshipType,
 } from "@/hooks/use-finance-enhancement";
 import { useUnits } from "@/hooks/use-units";
 import { useStudents } from "@/hooks/use-students";
@@ -68,8 +76,17 @@ const TYPE_LABELS: Record<ScholarshipType, string> = {
   [ScholarshipType.FIXED_AMOUNT]: "Bantuan Tetap (Fixed)",
 };
 
-function RecipientsDialog({ scholarship, onClose }: { scholarship: Scholarship | null, onClose: () => void }) {
-  const { data: recipients, isLoading } = useScholarshipRecipients(scholarship?.id || "", { limit: 50 });
+function RecipientsDialog({
+  scholarship,
+  onClose,
+}: {
+  scholarship: Scholarship | null;
+  onClose: () => void;
+}) {
+  const { data: recipients, isLoading } = useScholarshipRecipients(
+    scholarship?.id || "",
+    { limit: 50 },
+  );
 
   if (!scholarship) return null;
 
@@ -98,26 +115,43 @@ function RecipientsDialog({ scholarship, onClose }: { scholarship: Scholarship |
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">Memuat data...</TableCell>
+                  <TableCell colSpan={6} className="text-center py-4">
+                    Memuat data...
+                  </TableCell>
                 </TableRow>
               ) : recipients?.data?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">Belum ada penerima.</TableCell>
+                  <TableCell
+                    colSpan={6}
+                    className="text-center py-4 text-muted-foreground"
+                  >
+                    Belum ada penerima.
+                  </TableCell>
                 </TableRow>
               ) : (
                 recipients?.data?.map((recipient: any) => (
                   <TableRow key={recipient.id}>
-                    <TableCell className="font-medium">{recipient.student?.name || "Unknown"}</TableCell>
+                    <TableCell className="font-medium">
+                      {recipient.student?.name || "Unknown"}
+                    </TableCell>
                     <TableCell>{recipient.student?.nis || "-"}</TableCell>
                     <TableCell>{recipient.student?.class || "-"}</TableCell>
                     <TableCell>{recipient.academicYear?.name || "-"}</TableCell>
                     <TableCell>
-                      <Badge variant={recipient.status === "ACTIVE" ? "default" : "secondary"}>
+                      <Badge
+                        variant={
+                          recipient.status === "ACTIVE"
+                            ? "default"
+                            : "secondary"
+                        }
+                      >
                         {recipient.status}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {format(new Date(recipient.startDate), "dd MMM yyyy", { locale: localeID })}
+                      {format(new Date(recipient.startDate), "dd MMM yyyy", {
+                        locale: localeID,
+                      })}
                     </TableCell>
                   </TableRow>
                 ))
@@ -134,22 +168,29 @@ function RecipientsDialog({ scholarship, onClose }: { scholarship: Scholarship |
 }
 
 export default function ScholarshipsPage() {
-  const [activeView, setActiveView] = useState<"SCHOLARSHIPS" | "RECIPIENTS">("SCHOLARSHIPS");
+  const [activeView, setActiveView] = useState<"SCHOLARSHIPS" | "RECIPIENTS">(
+    "SCHOLARSHIPS",
+  );
   const [selectedUnitId, setSelectedUnitId] = useState<string | "ALL">("ALL");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [studentSearch, setStudentSearch] = useState("");
-  const [selectedScholarshipForView, setSelectedScholarshipForView] = useState<Scholarship | null>(null);
+  const [selectedScholarshipForView, setSelectedScholarshipForView] =
+    useState<Scholarship | null>(null);
 
   const { data: unitsData } = useUnits();
   const { data: academicYears } = useAcademicYears();
   const { data: studentsData } = useStudents({
     unitId: selectedUnitId === "ALL" ? undefined : selectedUnitId,
     search: studentSearch, // Added search
-    limit: 20 // Reduced limit, rely on search
+    limit: 20, // Reduced limit, rely on search
   });
 
-  const { data: scholarshipsData, isLoading: scholarshipsLoading, refetch: refetchScholarships } = useScholarships({
+  const {
+    data: scholarshipsData,
+    isLoading: scholarshipsLoading,
+    refetch: refetchScholarships,
+  } = useScholarships({
     unitId: selectedUnitId === "ALL" ? undefined : selectedUnitId,
     limit: 100,
   });
@@ -166,8 +207,8 @@ export default function ScholarshipsPage() {
         type: formData.get("type") as ScholarshipType,
         quota: parseInt(formData.get("quota") as string) || undefined,
         startDate: formData.get("startDate") as string,
-        endDate: formData.get("endDate") as string || undefined,
-        unitId: formData.get("unitId") as string || undefined,
+        endDate: (formData.get("endDate") as string) || undefined,
+        unitId: (formData.get("unitId") as string) || undefined,
         isActive: true,
       });
       toast.success("Program beasiswa berhasil dibuat");
@@ -214,7 +255,10 @@ export default function ScholarshipsPage() {
           </div>
 
           <div className="flex gap-2">
-             <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+            <Dialog
+              open={isAssignDialogOpen}
+              onOpenChange={setIsAssignDialogOpen}
+            >
               <DialogTrigger asChild>
                 <Button variant="secondary">
                   <Users className="h-4 w-4 mr-2" />
@@ -225,7 +269,9 @@ export default function ScholarshipsPage() {
                 <form action={handleAssign}>
                   <DialogHeader>
                     <DialogTitle>Berikan Beasiswa</DialogTitle>
-                    <DialogDescription>Pilih santri dan program beasiswa</DialogDescription>
+                    <DialogDescription>
+                      Pilih santri dan program beasiswa
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
@@ -292,12 +338,25 @@ export default function ScholarshipsPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="notes">Catatan</Label>
-                      <Textarea id="notes" name="notes" placeholder="Keterangan tambahan..." />
+                      <Textarea
+                        id="notes"
+                        name="notes"
+                        placeholder="Keterangan tambahan..."
+                      />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsAssignDialogOpen(false)}>Batal</Button>
-                    <Button type="submit" disabled={assignScholarship.isPending}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsAssignDialogOpen(false)}
+                    >
+                      Batal
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={assignScholarship.isPending}
+                    >
                       {assignScholarship.isPending ? "Menyimpan..." : "Simpan"}
                     </Button>
                   </DialogFooter>
@@ -316,12 +375,19 @@ export default function ScholarshipsPage() {
                 <form action={handleCreate}>
                   <DialogHeader>
                     <DialogTitle>Buat Program Beasiswa Baru</DialogTitle>
-                    <DialogDescription>Tambahkan skema bantuan pembiayaan baru</DialogDescription>
+                    <DialogDescription>
+                      Tambahkan skema bantuan pembiayaan baru
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Nama Program</Label>
-                      <Input id="name" name="name" placeholder="Beasiswa Prestasi Tahfidz" required />
+                      <Input
+                        id="name"
+                        name="name"
+                        placeholder="Beasiswa Prestasi Tahfidz"
+                        required
+                      />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -331,9 +397,13 @@ export default function ScholarshipsPage() {
                             <SelectValue placeholder="Pilih sumber" />
                           </SelectTrigger>
                           <SelectContent>
-                            {Object.entries(SOURCE_LABELS).map(([key, label]) => (
-                              <SelectItem key={key} value={key}>{label}</SelectItem>
-                            ))}
+                            {Object.entries(SOURCE_LABELS).map(
+                              ([key, label]) => (
+                                <SelectItem key={key} value={key}>
+                                  {label}
+                                </SelectItem>
+                              ),
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
@@ -345,7 +415,9 @@ export default function ScholarshipsPage() {
                           </SelectTrigger>
                           <SelectContent>
                             {Object.entries(TYPE_LABELS).map(([key, label]) => (
-                              <SelectItem key={key} value={key}>{label}</SelectItem>
+                              <SelectItem key={key} value={key}>
+                                {label}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -354,7 +426,13 @@ export default function ScholarshipsPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="quota">Kuota (Opsional)</Label>
-                        <Input id="quota" name="quota" type="number" min="0" placeholder="Tak terbatas" />
+                        <Input
+                          id="quota"
+                          name="quota"
+                          type="number"
+                          min="0"
+                          placeholder="Tak terbatas"
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="unitId">Unit (Opsional)</Label>
@@ -365,7 +443,9 @@ export default function ScholarshipsPage() {
                           <SelectContent>
                             <SelectItem value="">Semua Unit</SelectItem>
                             {unitsData?.map((unit: any) => (
-                              <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
+                              <SelectItem key={unit.id} value={unit.id}>
+                                {unit.name}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -374,7 +454,12 @@ export default function ScholarshipsPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="startDate">Berlaku Mulai</Label>
-                        <Input id="startDate" name="startDate" type="date" required />
+                        <Input
+                          id="startDate"
+                          name="startDate"
+                          type="date"
+                          required
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="endDate">Berlaku Sampai</Label>
@@ -383,12 +468,25 @@ export default function ScholarshipsPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="description">Deskripsi</Label>
-                      <Textarea id="description" name="description" placeholder="Syarat dan ketentuan..." />
+                      <Textarea
+                        id="description"
+                        name="description"
+                        placeholder="Syarat dan ketentuan..."
+                      />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>Batal</Button>
-                    <Button type="submit" disabled={createScholarship.isPending}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsAddDialogOpen(false)}
+                    >
+                      Batal
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={createScholarship.isPending}
+                    >
                       {createScholarship.isPending ? "Menyimpan..." : "Simpan"}
                     </Button>
                   </DialogFooter>
@@ -422,7 +520,10 @@ export default function ScholarshipsPage() {
                   </TableRow>
                 ) : scholarshipsData?.data.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={6}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       Belum ada program beasiswa
                     </TableCell>
                   </TableRow>
@@ -438,18 +539,25 @@ export default function ScholarshipsPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{SOURCE_LABELS[item.source as ScholarshipSource] || item.source}</Badge>
+                        <Badge variant="outline">
+                          {SOURCE_LABELS[item.source as ScholarshipSource] ||
+                            item.source}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
-                          {TYPE_LABELS[item.type as ScholarshipType] || item.type}
+                          {TYPE_LABELS[item.type as ScholarshipType] ||
+                            item.type}
                         </span>
                       </TableCell>
                       <TableCell>
-                        {item._count?.recipients || 0} / {item.quota ? item.quota : '∞'}
+                        {item._count?.recipients || 0} /{" "}
+                        {item.quota ? item.quota : "∞"}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={item.isActive ? "default" : "secondary"}>
+                        <Badge
+                          variant={item.isActive ? "default" : "secondary"}
+                        >
                           {item.isActive ? "Aktif" : "Nonaktif"}
                         </Badge>
                       </TableCell>

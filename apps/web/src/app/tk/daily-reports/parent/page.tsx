@@ -1,19 +1,29 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useDailyReports } from '@/hooks/use-daily-report';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { useDailyReports } from "@/hooks/use-daily-report";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import {
   Users,
   CalendarIcon,
@@ -28,7 +38,7 @@ import {
   Smile,
   Meh,
   Frown,
-} from 'lucide-react';
+} from "lucide-react";
 
 const moodIcons: Record<string, React.ReactNode> = {
   EXCELLENT: <Smile className="h-5 w-5 text-green-500" />,
@@ -39,18 +49,18 @@ const moodIcons: Record<string, React.ReactNode> = {
 };
 
 const moodLabels: Record<string, string> = {
-  EXCELLENT: 'Sangat Baik',
-  GOOD: 'Baik',
-  NEUTRAL: 'Biasa',
-  LOW: 'Kurang',
-  STRUGGLING: 'Sangat Kurang',
+  EXCELLENT: "Sangat Baik",
+  GOOD: "Baik",
+  NEUTRAL: "Biasa",
+  LOW: "Kurang",
+  STRUGGLING: "Sangat Kurang",
 };
 
 const mealLabels: Record<string, string> = {
-  FINISHED: 'Habis',
-  HALF: 'Setengah',
-  LITTLE: 'Sedikit',
-  NOT_EAT: 'Tidak Makan',
+  FINISHED: "Habis",
+  HALF: "Setengah",
+  LITTLE: "Sedikit",
+  NOT_EAT: "Tidak Makan",
 };
 
 // This page is intended for parents to view their children's daily reports
@@ -60,7 +70,7 @@ export default function ParentDailyReportsPage() {
 
   // In real implementation, this would filter by parent's children
   const { data, isLoading } = useDailyReports({
-    date: format(selectedDate, 'yyyy-MM-dd'),
+    date: format(selectedDate, "yyyy-MM-dd"),
   });
 
   const reports = data?.data || [];
@@ -81,9 +91,12 @@ export default function ParentDailyReportsPage() {
               <span className="text-muted-foreground">Tanggal:</span>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
+                  <Button
+                    variant="outline"
+                    className="w-[240px] justify-start text-left font-normal"
+                  >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {format(selectedDate, 'EEEE, dd MMMM yyyy', { locale: id })}
+                    {format(selectedDate, "EEEE, dd MMMM yyyy", { locale: id })}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -126,12 +139,15 @@ export default function ParentDailyReportsPage() {
                     <Avatar className="h-16 w-16 border-2 border-white shadow">
                       <AvatarImage src={report.student?.photoUrl} />
                       <AvatarFallback className="text-lg">
-                        {report.student?.name?.substring(0, 2).toUpperCase() || 'ST'}
+                        {report.student?.name?.substring(0, 2).toUpperCase() ||
+                          "ST"}
                       </AvatarFallback>
                     </Avatar>
                     <div>
                       <CardTitle>{report.student?.name}</CardTitle>
-                      <CardDescription>{report.student?.class?.name}</CardDescription>
+                      <CardDescription>
+                        {report.student?.class?.name}
+                      </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
@@ -140,7 +156,7 @@ export default function ParentDailyReportsPage() {
                   {/* Attendance */}
                   <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-2">
-                      {report.attendanceStatus === 'HADIR' ? (
+                      {report.attendanceStatus === "HADIR" ? (
                         <CheckCircle className="h-5 w-5 text-green-500" />
                       ) : (
                         <XCircle className="h-5 w-5 text-red-500" />
@@ -148,7 +164,11 @@ export default function ParentDailyReportsPage() {
                       <span className="font-medium">Kehadiran</span>
                     </div>
                     <Badge
-                      variant={report.attendanceStatus === 'HADIR' ? 'default' : 'secondary'}
+                      variant={
+                        report.attendanceStatus === "HADIR"
+                          ? "default"
+                          : "secondary"
+                      }
                     >
                       {report.attendanceStatus}
                     </Badge>
@@ -159,7 +179,9 @@ export default function ParentDailyReportsPage() {
                     <span className="text-muted-foreground">Kondisi/Mood</span>
                     <div className="flex items-center gap-2">
                       {moodIcons[report.mood]}
-                      <span className="font-medium">{moodLabels[report.mood]}</span>
+                      <span className="font-medium">
+                        {moodLabels[report.mood]}
+                      </span>
                     </div>
                   </div>
 
@@ -169,16 +191,16 @@ export default function ParentDailyReportsPage() {
                       <p className="text-sm text-muted-foreground">Check-in</p>
                       <p className="font-medium">
                         {report.checkInTime
-                          ? format(new Date(report.checkInTime), 'HH:mm')
-                          : '-'}
+                          ? format(new Date(report.checkInTime), "HH:mm")
+                          : "-"}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Check-out</p>
                       <p className="font-medium">
                         {report.checkOutTime
-                          ? format(new Date(report.checkOutTime), 'HH:mm')
-                          : '-'}
+                          ? format(new Date(report.checkOutTime), "HH:mm")
+                          : "-"}
                       </p>
                     </div>
                   </div>
@@ -192,15 +214,21 @@ export default function ParentDailyReportsPage() {
                     <div className="grid grid-cols-3 gap-2 text-sm">
                       <div className="p-2 bg-muted/50 rounded text-center">
                         <p className="text-muted-foreground">Pagi</p>
-                        <p className="font-medium">{mealLabels[report.breakfast] || '-'}</p>
+                        <p className="font-medium">
+                          {mealLabels[report.breakfast] || "-"}
+                        </p>
                       </div>
                       <div className="p-2 bg-muted/50 rounded text-center">
                         <p className="text-muted-foreground">Siang</p>
-                        <p className="font-medium">{mealLabels[report.lunch] || '-'}</p>
+                        <p className="font-medium">
+                          {mealLabels[report.lunch] || "-"}
+                        </p>
                       </div>
                       <div className="p-2 bg-muted/50 rounded text-center">
                         <p className="text-muted-foreground">Snack</p>
-                        <p className="font-medium">{mealLabels[report.snack] || '-'}</p>
+                        <p className="font-medium">
+                          {mealLabels[report.snack] || "-"}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -213,10 +241,10 @@ export default function ParentDailyReportsPage() {
                         Tidur Siang
                       </span>
                       <span className="font-medium">
-                        {format(new Date(report.napStartTime), 'HH:mm')} -
+                        {format(new Date(report.napStartTime), "HH:mm")} -
                         {report.napEndTime
-                          ? format(new Date(report.napEndTime), 'HH:mm')
-                          : '...'}
+                          ? format(new Date(report.napEndTime), "HH:mm")
+                          : "..."}
                       </span>
                     </div>
                   )}
@@ -228,7 +256,9 @@ export default function ParentDailyReportsPage() {
                         <BookOpen className="h-4 w-4" />
                         Aktivitas
                       </h4>
-                      <p className="text-sm text-muted-foreground">{report.activities}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {report.activities}
+                      </p>
                     </div>
                   )}
 
@@ -240,18 +270,20 @@ export default function ParentDailyReportsPage() {
                         Foto ({report.photos.length})
                       </h4>
                       <div className="flex gap-2 overflow-x-auto">
-                        {report.photos.slice(0, 4).map((photo: any, idx: number) => (
-                          <div
-                            key={photo.id || idx}
-                            className="w-20 h-20 rounded-lg bg-muted flex-shrink-0 overflow-hidden"
-                          >
-                            <img
-                              src={photo.photoUrl}
-                              alt={photo.caption || `Photo ${idx + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ))}
+                        {report.photos
+                          .slice(0, 4)
+                          .map((photo: any, idx: number) => (
+                            <div
+                              key={photo.id || idx}
+                              className="w-20 h-20 rounded-lg bg-muted flex-shrink-0 overflow-hidden"
+                            >
+                              <img
+                                src={photo.photoUrl}
+                                alt={photo.caption || `Photo ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ))}
                       </div>
                     </div>
                   )}

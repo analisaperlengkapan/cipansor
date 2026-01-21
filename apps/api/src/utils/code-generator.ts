@@ -35,13 +35,13 @@ export const generateBulkUniqueCodes = async (
     lastRecord = await tx.purchaseRequest.findFirst({
       where: { code: { startsWith: codePrefix } },
       orderBy: { code: 'desc' },
-      select: { code: true }
+      select: { code: true },
     });
   } else if (table === 'assets') {
     lastRecord = await tx.asset.findFirst({
       where: { code: { startsWith: codePrefix } },
       orderBy: { code: 'desc' },
-      select: { code: true }
+      select: { code: true },
     });
   }
 

@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
-import { api } from '@/lib/api';
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/lib/api";
 import {
   Users,
   GraduationCap,
@@ -20,7 +26,7 @@ import {
   FileText,
   Receipt,
   ChevronRight,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface Child {
   id: string;
@@ -110,13 +116,13 @@ interface GradeData {
 
 export default function ChildrenPage() {
   const searchParams = useSearchParams();
-  const selectedId = searchParams.get('id');
-  
+  const selectedId = searchParams.get("id");
+
   const [loading, setLoading] = useState(true);
   const [children, setChildren] = useState<Child[]>([]);
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
-  const [activeTab, setActiveTab] = useState('profile');
-  
+  const [activeTab, setActiveTab] = useState("profile");
+
   // Detail data
   const [attendance, setAttendance] = useState<AttendanceSummary | null>(null);
   const [tahfidz, setTahfidz] = useState<TahfidzProgress | null>(null);
@@ -127,13 +133,13 @@ export default function ChildrenPage() {
     const fetchChildren = async () => {
       try {
         setLoading(true);
-        const res = await api.get('/parent/children');
+        const res = await api.get("/parent/children");
         const childrenData = res.data.data || [];
         setChildren(childrenData);
-        
+
         // Auto-select child if ID is provided or select first child
         if (childrenData.length > 0) {
-          const childToSelect = selectedId 
+          const childToSelect = selectedId
             ? childrenData.find((c: Child) => c.student.id === selectedId)
             : childrenData[0];
           if (childToSelect) {
@@ -141,7 +147,7 @@ export default function ChildrenPage() {
           }
         }
       } catch (err) {
-        console.error('Failed to fetch children:', err);
+        console.error("Failed to fetch children:", err);
       } finally {
         setLoading(false);
       }
@@ -157,20 +163,20 @@ export default function ChildrenPage() {
       setDetailLoading(true);
       try {
         const studentId = selectedChild.student.id;
-        
+
         // Fetch based on active tab
-        if (activeTab === 'attendance') {
+        if (activeTab === "attendance") {
           const res = await api.get(`/parent/children/${studentId}/attendance`);
           setAttendance(res.data.data);
-        } else if (activeTab === 'tahfidz') {
+        } else if (activeTab === "tahfidz") {
           const res = await api.get(`/parent/children/${studentId}/tahfidz`);
           setTahfidz(res.data.data);
-        } else if (activeTab === 'grades') {
+        } else if (activeTab === "grades") {
           const res = await api.get(`/parent/children/${studentId}/grades`);
           setGrades(res.data.data);
         }
       } catch (err) {
-        console.error('Failed to fetch details:', err);
+        console.error("Failed to fetch details:", err);
       } finally {
         setDetailLoading(false);
       }
@@ -199,7 +205,8 @@ export default function ChildrenPage() {
           <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium">Belum ada data anak</h3>
           <p className="text-muted-foreground mt-2">
-            Silakan hubungi admin sekolah untuk menghubungkan akun Anda dengan data anak.
+            Silakan hubungi admin sekolah untuk menghubungkan akun Anda dengan
+            data anak.
           </p>
         </CardContent>
       </Card>
@@ -207,9 +214,9 @@ export default function ChildrenPage() {
   }
 
   const relationLabels: Record<string, string> = {
-    father: 'Ayah',
-    mother: 'Ibu',
-    guardian: 'Wali',
+    father: "Ayah",
+    mother: "Ibu",
+    guardian: "Wali",
   };
 
   return (
@@ -227,7 +234,9 @@ export default function ChildrenPage() {
           <Card
             key={child.id}
             className={`cursor-pointer transition-colors hover:border-primary ${
-              selectedChild?.id === child.id ? 'border-primary bg-primary/5' : ''
+              selectedChild?.id === child.id
+                ? "border-primary bg-primary/5"
+                : ""
             }`}
             onClick={() => setSelectedChild(child)}
           >
@@ -239,7 +248,8 @@ export default function ChildrenPage() {
                 <div className="flex-1">
                   <p className="font-medium">{child.student.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {child.student.nis} • {relationLabels[child.relation] || child.relation}
+                    {child.student.nis} •{" "}
+                    {relationLabels[child.relation] || child.relation}
                   </p>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -262,10 +272,14 @@ export default function ChildrenPage() {
                 <CardDescription className="flex items-center gap-2 mt-1">
                   <Badge variant="secondary">{selectedChild.student.nis}</Badge>
                   {selectedChild.student.class && (
-                    <Badge variant="outline">{selectedChild.student.class.name}</Badge>
+                    <Badge variant="outline">
+                      {selectedChild.student.class.name}
+                    </Badge>
                   )}
                   {selectedChild.student.unit && (
-                    <Badge variant="outline">{selectedChild.student.unit.name}</Badge>
+                    <Badge variant="outline">
+                      {selectedChild.student.unit.name}
+                    </Badge>
                   )}
                 </CardDescription>
               </div>
@@ -301,41 +315,52 @@ export default function ChildrenPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">NIS</label>
+                      <label className="text-sm font-medium text-muted-foreground">
+                        NIS
+                      </label>
                       <p className="mt-1">{selectedChild.student.nis}</p>
                     </div>
                     {selectedChild.student.nisn && (
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">NISN</label>
+                        <label className="text-sm font-medium text-muted-foreground">
+                          NISN
+                        </label>
                         <p className="mt-1">{selectedChild.student.nisn}</p>
                       </div>
                     )}
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">Nama Lengkap</label>
+                      <label className="text-sm font-medium text-muted-foreground">
+                        Nama Lengkap
+                      </label>
                       <p className="mt-1">{selectedChild.student.name}</p>
                     </div>
-                    {selectedChild.student.birthPlace && selectedChild.student.birthDate && (
-                      <div>
-                        <label className="text-sm font-medium text-muted-foreground">
-                          Tempat, Tanggal Lahir
-                        </label>
-                        <p className="mt-1">
-                          {selectedChild.student.birthPlace},{' '}
-                          {new Date(selectedChild.student.birthDate).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          })}
-                        </p>
-                      </div>
-                    )}
+                    {selectedChild.student.birthPlace &&
+                      selectedChild.student.birthDate && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">
+                            Tempat, Tanggal Lahir
+                          </label>
+                          <p className="mt-1">
+                            {selectedChild.student.birthPlace},{" "}
+                            {new Date(
+                              selectedChild.student.birthDate,
+                            ).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            })}
+                          </p>
+                        </div>
+                      )}
                     {selectedChild.student.gender && (
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">
                           Jenis Kelamin
                         </label>
                         <p className="mt-1">
-                          {selectedChild.student.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}
+                          {selectedChild.student.gender === "MALE"
+                            ? "Laki-laki"
+                            : "Perempuan"}
                         </p>
                       </div>
                     )}
@@ -343,19 +368,29 @@ export default function ChildrenPage() {
                   <div className="space-y-4">
                     {selectedChild.student.class && (
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">Kelas</label>
-                        <p className="mt-1">{selectedChild.student.class.name}</p>
+                        <label className="text-sm font-medium text-muted-foreground">
+                          Kelas
+                        </label>
+                        <p className="mt-1">
+                          {selectedChild.student.class.name}
+                        </p>
                       </div>
                     )}
                     {selectedChild.student.unit && (
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">Unit</label>
-                        <p className="mt-1">{selectedChild.student.unit.name}</p>
+                        <label className="text-sm font-medium text-muted-foreground">
+                          Unit
+                        </label>
+                        <p className="mt-1">
+                          {selectedChild.student.unit.name}
+                        </p>
                       </div>
                     )}
                     {selectedChild.student.address && (
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">Alamat</label>
+                        <label className="text-sm font-medium text-muted-foreground">
+                          Alamat
+                        </label>
                         <p className="mt-1">{selectedChild.student.address}</p>
                       </div>
                     )}
@@ -364,9 +399,12 @@ export default function ChildrenPage() {
                         Hubungan dengan Siswa
                       </label>
                       <p className="mt-1">
-                        {relationLabels[selectedChild.relation] || selectedChild.relation}
+                        {relationLabels[selectedChild.relation] ||
+                          selectedChild.relation}
                         {selectedChild.isPrimary && (
-                          <Badge variant="secondary" className="ml-2">Kontak Utama</Badge>
+                          <Badge variant="secondary" className="ml-2">
+                            Kontak Utama
+                          </Badge>
                         )}
                       </p>
                     </div>
@@ -398,7 +436,9 @@ export default function ChildrenPage() {
                           <div className="text-2xl font-bold text-yellow-600">
                             {attendance.summary.LATE}
                           </div>
-                          <p className="text-sm text-muted-foreground">Terlambat</p>
+                          <p className="text-sm text-muted-foreground">
+                            Terlambat
+                          </p>
                         </CardContent>
                       </Card>
                       <Card>
@@ -431,17 +471,25 @@ export default function ChildrenPage() {
                     <Card>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Persentase Kehadiran</span>
-                          <span className={`text-2xl font-bold ${
-                            attendance.percentage >= 80 ? 'text-green-600' : 'text-red-600'
-                          }`}>
+                          <span className="text-sm font-medium">
+                            Persentase Kehadiran
+                          </span>
+                          <span
+                            className={`text-2xl font-bold ${
+                              attendance.percentage >= 80
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
                             {attendance.percentage.toFixed(1)}%
                           </span>
                         </div>
                         <div className="mt-2 h-3 bg-muted rounded-full overflow-hidden">
-                          <div 
+                          <div
                             className={`h-full ${
-                              attendance.percentage >= 80 ? 'bg-green-600' : 'bg-red-600'
+                              attendance.percentage >= 80
+                                ? "bg-green-600"
+                                : "bg-red-600"
                             }`}
                             style={{ width: `${attendance.percentage}%` }}
                           />
@@ -475,7 +523,9 @@ export default function ChildrenPage() {
                           <div className="text-3xl font-bold text-primary">
                             {tahfidz.summary.totalJuz}
                           </div>
-                          <p className="text-sm text-muted-foreground">Total Juz</p>
+                          <p className="text-sm text-muted-foreground">
+                            Total Juz
+                          </p>
                         </CardContent>
                       </Card>
                       <Card>
@@ -483,7 +533,9 @@ export default function ChildrenPage() {
                           <div className="text-3xl font-bold text-primary">
                             {tahfidz.summary.totalSurah}
                           </div>
-                          <p className="text-sm text-muted-foreground">Total Surah</p>
+                          <p className="text-sm text-muted-foreground">
+                            Total Surah
+                          </p>
                         </CardContent>
                       </Card>
                       <Card>
@@ -491,7 +543,9 @@ export default function ChildrenPage() {
                           <div className="text-3xl font-bold text-primary">
                             {tahfidz.summary.totalAyah}
                           </div>
-                          <p className="text-sm text-muted-foreground">Total Ayat</p>
+                          <p className="text-sm text-muted-foreground">
+                            Total Ayat
+                          </p>
                         </CardContent>
                       </Card>
                     </div>
@@ -500,17 +554,22 @@ export default function ChildrenPage() {
                     {tahfidz.summary.lastMemoization && (
                       <Card>
                         <CardHeader>
-                          <CardTitle className="text-lg">Hafalan Terakhir</CardTitle>
+                          <CardTitle className="text-lg">
+                            Hafalan Terakhir
+                          </CardTitle>
                         </CardHeader>
                         <CardContent>
                           <p className="text-lg font-medium">
                             {tahfidz.summary.lastMemoization.surahName}
                           </p>
                           <p className="text-muted-foreground">
-                            Ayat {tahfidz.summary.lastMemoization.ayahStart} - {tahfidz.summary.lastMemoization.ayahEnd}
+                            Ayat {tahfidz.summary.lastMemoization.ayahStart} -{" "}
+                            {tahfidz.summary.lastMemoization.ayahEnd}
                           </p>
                           <p className="text-sm text-muted-foreground mt-2">
-                            {new Date(tahfidz.summary.lastMemoization.recordedAt).toLocaleDateString('id-ID')}
+                            {new Date(
+                              tahfidz.summary.lastMemoization.recordedAt,
+                            ).toLocaleDateString("id-ID")}
                           </p>
                         </CardContent>
                       </Card>
@@ -520,24 +579,39 @@ export default function ChildrenPage() {
                     {tahfidz.recentRecords.length > 0 && (
                       <Card>
                         <CardHeader>
-                          <CardTitle className="text-lg">Riwayat Hafalan</CardTitle>
+                          <CardTitle className="text-lg">
+                            Riwayat Hafalan
+                          </CardTitle>
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-3">
                             {tahfidz.recentRecords.map((record) => (
-                              <div key={record.id} className="flex items-center justify-between p-3 border rounded-lg">
+                              <div
+                                key={record.id}
+                                className="flex items-center justify-between p-3 border rounded-lg"
+                              >
                                 <div>
-                                  <p className="font-medium">{record.surahName}</p>
+                                  <p className="font-medium">
+                                    {record.surahName}
+                                  </p>
                                   <p className="text-sm text-muted-foreground">
                                     Ayat {record.ayahStart} - {record.ayahEnd}
                                   </p>
                                 </div>
                                 <div className="text-right">
-                                  <Badge variant={record.grade === 'A' ? 'default' : 'secondary'}>
+                                  <Badge
+                                    variant={
+                                      record.grade === "A"
+                                        ? "default"
+                                        : "secondary"
+                                    }
+                                  >
                                     {record.grade}
                                   </Badge>
                                   <p className="text-xs text-muted-foreground mt-1">
-                                    {new Date(record.recordedAt).toLocaleDateString('id-ID')}
+                                    {new Date(
+                                      record.recordedAt,
+                                    ).toLocaleDateString("id-ID")}
                                   </p>
                                 </div>
                               </div>
@@ -567,19 +641,28 @@ export default function ChildrenPage() {
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="font-medium">{subjectData.subject.name}</p>
+                              <p className="font-medium">
+                                {subjectData.subject.name}
+                              </p>
                               <p className="text-sm text-muted-foreground">
                                 {subjectData.grades.length} nilai tercatat
                               </p>
                             </div>
                             <div className="text-right">
-                              <div className={`text-2xl font-bold ${
-                                subjectData.averageScore >= 75 ? 'text-green-600' : 
-                                subjectData.averageScore >= 60 ? 'text-yellow-600' : 'text-red-600'
-                              }`}>
+                              <div
+                                className={`text-2xl font-bold ${
+                                  subjectData.averageScore >= 75
+                                    ? "text-green-600"
+                                    : subjectData.averageScore >= 60
+                                      ? "text-yellow-600"
+                                      : "text-red-600"
+                                }`}
+                              >
                                 {subjectData.averageScore.toFixed(1)}
                               </div>
-                              <p className="text-xs text-muted-foreground">Rata-rata</p>
+                              <p className="text-xs text-muted-foreground">
+                                Rata-rata
+                              </p>
                             </div>
                           </div>
                         </CardContent>
@@ -596,7 +679,9 @@ export default function ChildrenPage() {
               {/* More Tab */}
               <TabsContent value="more" className="mt-6">
                 <div className="grid gap-4 md:grid-cols-2">
-                  <a href={`/parent/violations?studentId=${selectedChild.student.id}`}>
+                  <a
+                    href={`/parent/violations?studentId=${selectedChild.student.id}`}
+                  >
                     <Card className="cursor-pointer hover:border-primary transition-colors">
                       <CardContent className="p-4 flex items-center gap-4">
                         <AlertTriangle className="h-8 w-8 text-red-500" />
@@ -609,7 +694,9 @@ export default function ChildrenPage() {
                       </CardContent>
                     </Card>
                   </a>
-                  <a href={`/parent/rewards?studentId=${selectedChild.student.id}`}>
+                  <a
+                    href={`/parent/rewards?studentId=${selectedChild.student.id}`}
+                  >
                     <Card className="cursor-pointer hover:border-primary transition-colors">
                       <CardContent className="p-4 flex items-center gap-4">
                         <Award className="h-8 w-8 text-yellow-500" />
@@ -622,7 +709,9 @@ export default function ChildrenPage() {
                       </CardContent>
                     </Card>
                   </a>
-                  <a href={`/parent/health?studentId=${selectedChild.student.id}`}>
+                  <a
+                    href={`/parent/health?studentId=${selectedChild.student.id}`}
+                  >
                     <Card className="cursor-pointer hover:border-primary transition-colors">
                       <CardContent className="p-4 flex items-center gap-4">
                         <Heart className="h-8 w-8 text-pink-500" />
@@ -635,7 +724,9 @@ export default function ChildrenPage() {
                       </CardContent>
                     </Card>
                   </a>
-                  <a href={`/parent/finance?studentId=${selectedChild.student.id}`}>
+                  <a
+                    href={`/parent/finance?studentId=${selectedChild.student.id}`}
+                  >
                     <Card className="cursor-pointer hover:border-primary transition-colors">
                       <CardContent className="p-4 flex items-center gap-4">
                         <Receipt className="h-8 w-8 text-green-500" />

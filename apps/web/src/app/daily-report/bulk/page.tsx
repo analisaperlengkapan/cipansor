@@ -9,13 +9,19 @@ import {
   Loader2,
   Save,
   Calendar as CalendarIcon,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -33,7 +39,11 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useClasses } from "@/hooks/use-classes";
@@ -55,99 +65,111 @@ interface StudentReportState {
 }
 
 // Memoized Row Component
-const StudentReportRow = memo(({
-  enrollment,
-  report,
-  onUpdate
-}: {
-  enrollment: any;
-  report: StudentReportState;
-  onUpdate: (studentId: string, field: keyof StudentReportState, value: any) => void;
-}) => {
-  const studentId = enrollment.student.id;
+const StudentReportRow = memo(
+  ({
+    enrollment,
+    report,
+    onUpdate,
+  }: {
+    enrollment: any;
+    report: StudentReportState;
+    onUpdate: (
+      studentId: string,
+      field: keyof StudentReportState,
+      value: any,
+    ) => void;
+  }) => {
+    const studentId = enrollment.student.id;
 
-  return (
-    <TableRow>
-      <TableCell className="font-medium">
-        {enrollment.student.user.name}
-      </TableCell>
-      <TableCell>
-        <Select
-          value={report.morningMood}
-          onValueChange={(val: any) => onUpdate(studentId, "morningMood", val)}
-        >
-          <SelectTrigger className="w-[100px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="HAPPY">😊</SelectItem>
-            <SelectItem value="NEUTRAL">😐</SelectItem>
-            <SelectItem value="SAD">😢</SelectItem>
-            <SelectItem value="TIRED">😴</SelectItem>
-            <SelectItem value="EXCITED">🤩</SelectItem>
-            <SelectItem value="SICK">🤒</SelectItem>
-          </SelectContent>
-        </Select>
-      </TableCell>
-      <TableCell>
-        <Select
-          value={report.lunchConsumption}
-          onValueChange={(val: any) => onUpdate(studentId, "lunchConsumption", val)}
-        >
-          <SelectTrigger className="w-[110px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="HABIS">Habis</SelectItem>
-            <SelectItem value="SETENGAH">1/2</SelectItem>
-            <SelectItem value="SEDIKIT">Sedikit</SelectItem>
-            <SelectItem value="TIDAK_MAU">Tdk Mau</SelectItem>
-          </SelectContent>
-        </Select>
-      </TableCell>
-      <TableCell className="text-center">
-        <Checkbox
-          checked={report.sholatDhuha}
-          onCheckedChange={(c) => onUpdate(studentId, "sholatDhuha", !!c)}
-        />
-      </TableCell>
-      <TableCell className="text-center">
-        <Checkbox
-          checked={report.sholatDzuhur}
-          onCheckedChange={(c) => onUpdate(studentId, "sholatDzuhur", !!c)}
-        />
-      </TableCell>
-      <TableCell className="text-center">
-        <Checkbox
-          checked={report.sholatAshar}
-          onCheckedChange={(c) => onUpdate(studentId, "sholatAshar", !!c)}
-        />
-      </TableCell>
-      <TableCell className="text-center">
-        <Checkbox
-          checked={report.sholatJamaah}
-          onCheckedChange={(c) => onUpdate(studentId, "sholatJamaah", !!c)}
-        />
-      </TableCell>
-      <TableCell>
-        <Input
-          placeholder="Juz/Surat..."
-          value={report.tahfidzActivity}
-          onChange={(e) => onUpdate(studentId, "tahfidzActivity", e.target.value)}
-          className="w-[120px]"
-        />
-      </TableCell>
-      <TableCell>
-        <Input
-          placeholder="Catatan..."
-          value={report.notes}
-          onChange={(e) => onUpdate(studentId, "notes", e.target.value)}
-          className="w-[150px]"
-        />
-      </TableCell>
-    </TableRow>
-  );
-});
+    return (
+      <TableRow>
+        <TableCell className="font-medium">
+          {enrollment.student.user.name}
+        </TableCell>
+        <TableCell>
+          <Select
+            value={report.morningMood}
+            onValueChange={(val: any) =>
+              onUpdate(studentId, "morningMood", val)
+            }
+          >
+            <SelectTrigger className="w-[100px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="HAPPY">😊</SelectItem>
+              <SelectItem value="NEUTRAL">😐</SelectItem>
+              <SelectItem value="SAD">😢</SelectItem>
+              <SelectItem value="TIRED">😴</SelectItem>
+              <SelectItem value="EXCITED">🤩</SelectItem>
+              <SelectItem value="SICK">🤒</SelectItem>
+            </SelectContent>
+          </Select>
+        </TableCell>
+        <TableCell>
+          <Select
+            value={report.lunchConsumption}
+            onValueChange={(val: any) =>
+              onUpdate(studentId, "lunchConsumption", val)
+            }
+          >
+            <SelectTrigger className="w-[110px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="HABIS">Habis</SelectItem>
+              <SelectItem value="SETENGAH">1/2</SelectItem>
+              <SelectItem value="SEDIKIT">Sedikit</SelectItem>
+              <SelectItem value="TIDAK_MAU">Tdk Mau</SelectItem>
+            </SelectContent>
+          </Select>
+        </TableCell>
+        <TableCell className="text-center">
+          <Checkbox
+            checked={report.sholatDhuha}
+            onCheckedChange={(c) => onUpdate(studentId, "sholatDhuha", !!c)}
+          />
+        </TableCell>
+        <TableCell className="text-center">
+          <Checkbox
+            checked={report.sholatDzuhur}
+            onCheckedChange={(c) => onUpdate(studentId, "sholatDzuhur", !!c)}
+          />
+        </TableCell>
+        <TableCell className="text-center">
+          <Checkbox
+            checked={report.sholatAshar}
+            onCheckedChange={(c) => onUpdate(studentId, "sholatAshar", !!c)}
+          />
+        </TableCell>
+        <TableCell className="text-center">
+          <Checkbox
+            checked={report.sholatJamaah}
+            onCheckedChange={(c) => onUpdate(studentId, "sholatJamaah", !!c)}
+          />
+        </TableCell>
+        <TableCell>
+          <Input
+            placeholder="Juz/Surat..."
+            value={report.tahfidzActivity}
+            onChange={(e) =>
+              onUpdate(studentId, "tahfidzActivity", e.target.value)
+            }
+            className="w-[120px]"
+          />
+        </TableCell>
+        <TableCell>
+          <Input
+            placeholder="Catatan..."
+            value={report.notes}
+            onChange={(e) => onUpdate(studentId, "notes", e.target.value)}
+            className="w-[150px]"
+          />
+        </TableCell>
+      </TableRow>
+    );
+  },
+);
 
 StudentReportRow.displayName = "StudentReportRow";
 
@@ -158,7 +180,9 @@ export default function BulkDailyReportPage() {
 
   const classId = searchParams.get("classId");
   const [date, setDate] = useState<Date>(new Date());
-  const [reports, setReports] = useState<Record<string, StudentReportState>>({});
+  const [reports, setReports] = useState<Record<string, StudentReportState>>(
+    {},
+  );
 
   // Fetch classes for selection
   const { data: classesData } = useClasses({
@@ -177,7 +201,11 @@ export default function BulkDailyReportPage() {
   });
 
   // Initialize form state when students are loaded
-  if (studentsData && Object.keys(reports).length === 0 && studentsData.length > 0) {
+  if (
+    studentsData &&
+    Object.keys(reports).length === 0 &&
+    studentsData.length > 0
+  ) {
     const initialReports: Record<string, StudentReportState> = {};
     studentsData.forEach((enrollment: any) => {
       initialReports[enrollment.student.id] = {
@@ -216,17 +244,23 @@ export default function BulkDailyReportPage() {
   });
 
   // Optimized update handler with useCallback
-  const handleUpdate = useCallback((studentId: string, field: keyof StudentReportState, value: any) => {
-    setReports((prev) => ({
-      ...prev,
-      [studentId]: {
-        ...prev[studentId],
-        [field]: value,
-      },
-    }));
-  }, []);
+  const handleUpdate = useCallback(
+    (studentId: string, field: keyof StudentReportState, value: any) => {
+      setReports((prev) => ({
+        ...prev,
+        [studentId]: {
+          ...prev[studentId],
+          [field]: value,
+        },
+      }));
+    },
+    [],
+  );
 
-  const handleCheckAll = (field: keyof StudentReportState, checked: boolean) => {
+  const handleCheckAll = (
+    field: keyof StudentReportState,
+    checked: boolean,
+  ) => {
     setReports((prev) => {
       const next = { ...prev };
       Object.keys(next).forEach((studentId) => {
@@ -254,7 +288,7 @@ export default function BulkDailyReportPage() {
         napDurationMinutes: r.napDurationMinutes,
         parentNotes: r.notes, // Mapping notes to teacher/parent notes field
         // Defaults for required fields not in bulk view
-        healthNotes: r.morningMood === 'SICK' ? 'Sakit' : 'Sehat',
+        healthNotes: r.morningMood === "SICK" ? "Sakit" : "Sehat",
         breakfastConsumption: "FULL",
         activitiesSummary: "Mengikuti kegiatan dengan baik",
         ibadahNotes: r.tahfidzActivity || "-",
@@ -277,23 +311,29 @@ export default function BulkDailyReportPage() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Input Laporan Harian Massal</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Input Laporan Harian Massal
+          </h1>
           <p className="text-muted-foreground">
             Isi laporan harian untuk satu kelas sekaligus.
           </p>
         </div>
         <div className="flex items-center gap-2">
-           <Popover>
+          <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant={"outline"}
                 className={cn(
                   "w-[240px] justify-start text-left font-normal",
-                  !date && "text-muted-foreground"
+                  !date && "text-muted-foreground",
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, "PPP", { locale: id }) : <span>Pilih tanggal</span>}
+                {date ? (
+                  format(date, "PPP", { locale: id })
+                ) : (
+                  <span>Pilih tanggal</span>
+                )}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">
@@ -325,7 +365,8 @@ export default function BulkDailyReportPage() {
         <CardHeader>
           <CardTitle>Daftar Siswa</CardTitle>
           <CardDescription>
-            Silakan lengkapi data mood, makan, sholat, dan tahfidz untuk setiap siswa.
+            Silakan lengkapi data mood, makan, sholat, dan tahfidz untuk setiap
+            siswa.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -353,25 +394,41 @@ export default function BulkDailyReportPage() {
                     <TableHead className="text-center">
                       <div className="flex flex-col items-center gap-1">
                         <span>Dhuha</span>
-                        <Checkbox onCheckedChange={(c) => handleCheckAll("sholatDhuha", !!c)} />
+                        <Checkbox
+                          onCheckedChange={(c) =>
+                            handleCheckAll("sholatDhuha", !!c)
+                          }
+                        />
                       </div>
                     </TableHead>
                     <TableHead className="text-center">
                       <div className="flex flex-col items-center gap-1">
                         <span>Dzuhur</span>
-                        <Checkbox onCheckedChange={(c) => handleCheckAll("sholatDzuhur", !!c)} />
+                        <Checkbox
+                          onCheckedChange={(c) =>
+                            handleCheckAll("sholatDzuhur", !!c)
+                          }
+                        />
                       </div>
                     </TableHead>
                     <TableHead className="text-center">
                       <div className="flex flex-col items-center gap-1">
                         <span>Ashar</span>
-                        <Checkbox onCheckedChange={(c) => handleCheckAll("sholatAshar", !!c)} />
+                        <Checkbox
+                          onCheckedChange={(c) =>
+                            handleCheckAll("sholatAshar", !!c)
+                          }
+                        />
                       </div>
                     </TableHead>
                     <TableHead className="text-center">
                       <div className="flex flex-col items-center gap-1">
                         <span>Jamaah</span>
-                        <Checkbox onCheckedChange={(c) => handleCheckAll("sholatJamaah", !!c)} />
+                        <Checkbox
+                          onCheckedChange={(c) =>
+                            handleCheckAll("sholatJamaah", !!c)
+                          }
+                        />
                       </div>
                     </TableHead>
                     <TableHead>Tahfidz/Ibadah</TableHead>

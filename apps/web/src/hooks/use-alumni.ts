@@ -1,38 +1,69 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 // Types
-export type AlumniStatus = 'REGISTERED' | 'VERIFIED' | 'ACTIVE' | 'INACTIVE';
-export type EducationLevel = 'SMP' | 'SMA' | 'D3' | 'S1' | 'S2' | 'S3' | 'OTHER';
-export type EmploymentStatus = 'EMPLOYED' | 'SELF_EMPLOYED' | 'STUDENT' | 'UNEMPLOYED' | 'OTHER';
+export type AlumniStatus = "REGISTERED" | "VERIFIED" | "ACTIVE" | "INACTIVE";
+export type EducationLevel =
+  | "SMP"
+  | "SMA"
+  | "D3"
+  | "S1"
+  | "S2"
+  | "S3"
+  | "OTHER";
+export type EmploymentStatus =
+  | "EMPLOYED"
+  | "SELF_EMPLOYED"
+  | "STUDENT"
+  | "UNEMPLOYED"
+  | "OTHER";
 
-export const ALUMNI_STATUSES: AlumniStatus[] = ['REGISTERED', 'VERIFIED', 'ACTIVE', 'INACTIVE'];
-export const EDUCATION_LEVELS: EducationLevel[] = ['SMP', 'SMA', 'D3', 'S1', 'S2', 'S3', 'OTHER'];
-export const EMPLOYMENT_STATUSES: EmploymentStatus[] = ['EMPLOYED', 'SELF_EMPLOYED', 'STUDENT', 'UNEMPLOYED', 'OTHER'];
+export const ALUMNI_STATUSES: AlumniStatus[] = [
+  "REGISTERED",
+  "VERIFIED",
+  "ACTIVE",
+  "INACTIVE",
+];
+export const EDUCATION_LEVELS: EducationLevel[] = [
+  "SMP",
+  "SMA",
+  "D3",
+  "S1",
+  "S2",
+  "S3",
+  "OTHER",
+];
+export const EMPLOYMENT_STATUSES: EmploymentStatus[] = [
+  "EMPLOYED",
+  "SELF_EMPLOYED",
+  "STUDENT",
+  "UNEMPLOYED",
+  "OTHER",
+];
 
 export const ALUMNI_STATUS_LABELS: Record<AlumniStatus, string> = {
-  REGISTERED: 'Terdaftar',
-  VERIFIED: 'Terverifikasi',
-  ACTIVE: 'Aktif',
-  INACTIVE: 'Tidak Aktif',
+  REGISTERED: "Terdaftar",
+  VERIFIED: "Terverifikasi",
+  ACTIVE: "Aktif",
+  INACTIVE: "Tidak Aktif",
 };
 
 export const EDUCATION_LEVEL_LABELS: Record<EducationLevel, string> = {
-  SMP: 'SMP',
-  SMA: 'SMA/SMK',
-  D3: 'D3',
-  S1: 'S1',
-  S2: 'S2',
-  S3: 'S3',
-  OTHER: 'Lainnya',
+  SMP: "SMP",
+  SMA: "SMA/SMK",
+  D3: "D3",
+  S1: "S1",
+  S2: "S2",
+  S3: "S3",
+  OTHER: "Lainnya",
 };
 
 export const EMPLOYMENT_STATUS_LABELS: Record<EmploymentStatus, string> = {
-  EMPLOYED: 'Bekerja',
-  SELF_EMPLOYED: 'Wirausaha',
-  STUDENT: 'Mahasiswa',
-  UNEMPLOYED: 'Belum Bekerja',
-  OTHER: 'Lainnya',
+  EMPLOYED: "Bekerja",
+  SELF_EMPLOYED: "Wirausaha",
+  STUDENT: "Mahasiswa",
+  UNEMPLOYED: "Belum Bekerja",
+  OTHER: "Lainnya",
 };
 
 export interface Alumni {
@@ -43,11 +74,11 @@ export interface Alumni {
     nis: string;
     name: string;
   };
-  
+
   // Personal info
   fullName: string;
   studentName?: string; // For backward compatibility
-  gender: 'MALE' | 'FEMALE';
+  gender: "MALE" | "FEMALE";
   birthPlace: string;
   birthDate: string;
   phone: string;
@@ -55,7 +86,7 @@ export interface Alumni {
   address?: string;
   city?: string;
   province?: string;
-  
+
   // Graduation info
   graduationYear: number;
   unitId: string;
@@ -68,7 +99,7 @@ export interface Alumni {
     id: string;
     name: string;
   };
-  
+
   // Current info
   currentEducation?: EducationLevel;
   educationInstitution?: string;
@@ -77,27 +108,27 @@ export interface Alumni {
   currentOccupation?: string;
   currentCompany?: string;
   currentCity?: string;
-  
+
   // Employment
   employmentStatus?: EmploymentStatus;
   companyName?: string;
   position?: string;
   industry?: string;
   workCity?: string;
-  
+
   // Social
   linkedinUrl?: string;
   instagramUrl?: string;
   facebookUrl?: string;
-  
+
   // Status
   status: AlumniStatus;
   photoUrl?: string;
   bio?: string;
-  
+
   // Achievements
   achievements?: AlumniAchievement[];
-  
+
   createdAt: string;
   updatedAt: string;
 }
@@ -127,7 +158,7 @@ export interface AlumniEvent {
   registeredCount: number;
   imageUrl?: string;
   isPublished: boolean;
-  status?: 'UPCOMING' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
+  status?: "UPCOMING" | "ONGOING" | "COMPLETED" | "CANCELLED";
   createdAt: string;
   updatedAt: string;
 }
@@ -139,7 +170,7 @@ export interface AlumniDonation {
   amount: number;
   purpose: string;
   message?: string;
-  status: 'PENDING' | 'CONFIRMED' | 'REJECTED';
+  status: "PENDING" | "CONFIRMED" | "REJECTED";
   paymentMethod?: string;
   paymentProofUrl?: string;
   confirmedAt?: string;
@@ -168,12 +199,17 @@ export function useAlumni(params?: {
   limit?: number;
 }) {
   return useQuery({
-    queryKey: ['alumni', params],
+    queryKey: ["alumni", params],
     queryFn: async () => {
-      const response = await api.get('/alumni', { params });
+      const response = await api.get("/alumni", { params });
       return response.data as {
         data: Alumni[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
+        meta: {
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        };
       };
     },
   });
@@ -181,7 +217,7 @@ export function useAlumni(params?: {
 
 export function useAlumniDetail(id: string) {
   return useQuery({
-    queryKey: ['alumni', id],
+    queryKey: ["alumni", id],
     queryFn: async () => {
       const response = await api.get(`/alumni/${id}`);
       return response.data.data as Alumni;
@@ -192,9 +228,9 @@ export function useAlumniDetail(id: string) {
 
 export function useAlumniStats() {
   return useQuery({
-    queryKey: ['alumni-stats'],
+    queryKey: ["alumni-stats"],
     queryFn: async () => {
-      const response = await api.get('/alumni/stats');
+      const response = await api.get("/alumni/stats");
       return response.data.data as AlumniStats;
     },
   });
@@ -216,14 +252,17 @@ export function useCreateAlumni() {
 
   return useMutation({
     mutationFn: async (data: CreateAlumniData | FormData) => {
-      const response = await api.post('/alumni', data, {
-        headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+      const response = await api.post("/alumni", data, {
+        headers:
+          data instanceof FormData
+            ? { "Content-Type": "multipart/form-data" }
+            : undefined,
       });
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alumni'] });
-      queryClient.invalidateQueries({ queryKey: ['alumni-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["alumni"] });
+      queryClient.invalidateQueries({ queryKey: ["alumni-stats"] });
     },
   });
 }
@@ -234,14 +273,14 @@ export function useUpdateAlumni() {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: FormData }) => {
       const response = await api.put(`/alumni/${id}`, data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { "Content-Type": "multipart/form-data" },
       });
       return response.data.data;
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['alumni'] });
-      queryClient.invalidateQueries({ queryKey: ['alumni', id] });
-      queryClient.invalidateQueries({ queryKey: ['alumni-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["alumni"] });
+      queryClient.invalidateQueries({ queryKey: ["alumni", id] });
+      queryClient.invalidateQueries({ queryKey: ["alumni-stats"] });
     },
   });
 }
@@ -255,8 +294,8 @@ export function useVerifyAlumni() {
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alumni'] });
-      queryClient.invalidateQueries({ queryKey: ['alumni-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["alumni"] });
+      queryClient.invalidateQueries({ queryKey: ["alumni-stats"] });
     },
   });
 }
@@ -269,8 +308,8 @@ export function useDeleteAlumni() {
       await api.delete(`/alumni/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alumni'] });
-      queryClient.invalidateQueries({ queryKey: ['alumni-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["alumni"] });
+      queryClient.invalidateQueries({ queryKey: ["alumni-stats"] });
     },
   });
 }
@@ -283,12 +322,17 @@ export function useAlumniEvents(params?: {
   limit?: number;
 }) {
   return useQuery({
-    queryKey: ['alumni-events', params],
+    queryKey: ["alumni-events", params],
     queryFn: async () => {
-      const response = await api.get('/alumni/events', { params });
+      const response = await api.get("/alumni/events", { params });
       return response.data as {
         data: AlumniEvent[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
+        meta: {
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        };
       };
     },
   });
@@ -296,7 +340,7 @@ export function useAlumniEvents(params?: {
 
 export function useAlumniEvent(id: string) {
   return useQuery({
-    queryKey: ['alumni-event', id],
+    queryKey: ["alumni-event", id],
     queryFn: async () => {
       const response = await api.get(`/alumni/events/${id}`);
       return response.data.data as AlumniEvent;
@@ -320,13 +364,16 @@ export function useCreateAlumniEvent() {
 
   return useMutation({
     mutationFn: async (data: CreateAlumniEventData | FormData) => {
-      const response = await api.post('/alumni/events', data, {
-        headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+      const response = await api.post("/alumni/events", data, {
+        headers:
+          data instanceof FormData
+            ? { "Content-Type": "multipart/form-data" }
+            : undefined,
       });
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alumni-events'] });
+      queryClient.invalidateQueries({ queryKey: ["alumni-events"] });
     },
   });
 }
@@ -337,12 +384,12 @@ export function useUpdateAlumniEvent() {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: FormData }) => {
       const response = await api.put(`/alumni/events/${id}`, data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { "Content-Type": "multipart/form-data" },
       });
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alumni-events'] });
+      queryClient.invalidateQueries({ queryKey: ["alumni-events"] });
     },
   });
 }
@@ -356,7 +403,7 @@ export function useRegisterForEvent() {
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alumni-events'] });
+      queryClient.invalidateQueries({ queryKey: ["alumni-events"] });
     },
   });
 }
@@ -369,7 +416,7 @@ export function useDeleteAlumniEvent() {
       await api.delete(`/alumni/events/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alumni-events'] });
+      queryClient.invalidateQueries({ queryKey: ["alumni-events"] });
     },
   });
 }
@@ -382,12 +429,17 @@ export function useAlumniDonations(params?: {
   limit?: number;
 }) {
   return useQuery({
-    queryKey: ['alumni-donations', params],
+    queryKey: ["alumni-donations", params],
     queryFn: async () => {
-      const response = await api.get('/alumni/donations', { params });
+      const response = await api.get("/alumni/donations", { params });
       return response.data as {
         data: AlumniDonation[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
+        meta: {
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        };
       };
     },
   });
@@ -398,13 +450,13 @@ export function useCreateAlumniDonation() {
 
   return useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await api.post('/alumni/donations', data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const response = await api.post("/alumni/donations", data, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alumni-donations'] });
+      queryClient.invalidateQueries({ queryKey: ["alumni-donations"] });
     },
   });
 }
@@ -418,7 +470,7 @@ export function useConfirmDonation() {
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alumni-donations'] });
+      queryClient.invalidateQueries({ queryKey: ["alumni-donations"] });
     },
   });
 }
@@ -428,14 +480,24 @@ export function useAddAlumniAchievement() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ alumniId, data }: { alumniId: string; data: FormData }) => {
-      const response = await api.post(`/alumni/${alumniId}/achievements`, data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+    mutationFn: async ({
+      alumniId,
+      data,
+    }: {
+      alumniId: string;
+      data: FormData;
+    }) => {
+      const response = await api.post(
+        `/alumni/${alumniId}/achievements`,
+        data,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
       return response.data.data;
     },
     onSuccess: (_, { alumniId }) => {
-      queryClient.invalidateQueries({ queryKey: ['alumni', alumniId] });
+      queryClient.invalidateQueries({ queryKey: ["alumni", alumniId] });
     },
   });
 }
@@ -444,11 +506,17 @@ export function useDeleteAlumniAchievement() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ alumniId, achievementId }: { alumniId: string; achievementId: string }) => {
+    mutationFn: async ({
+      alumniId,
+      achievementId,
+    }: {
+      alumniId: string;
+      achievementId: string;
+    }) => {
       await api.delete(`/alumni/${alumniId}/achievements/${achievementId}`);
     },
     onSuccess: (_, { alumniId }) => {
-      queryClient.invalidateQueries({ queryKey: ['alumni', alumniId] });
+      queryClient.invalidateQueries({ queryKey: ["alumni", alumniId] });
     },
   });
 }

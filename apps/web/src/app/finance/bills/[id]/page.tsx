@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { use, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, CreditCard, Trash2, Plus, Receipt } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { use, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, CreditCard, Trash2, Plus, Receipt } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -14,7 +20,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -22,19 +28,19 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { toast } from "sonner";
 import {
   useBill,
   useBillPayments,
@@ -45,12 +51,12 @@ import {
   BILL_STATUSES,
   PAYMENT_METHODS,
   PaymentMethod,
-} from '@/hooks/use-finance';
+} from "@/hooks/use-finance";
 
 function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
     minimumFractionDigits: 0,
   }).format(amount);
 }
@@ -69,9 +75,11 @@ export default function BillDetailPage({
 
   // Payment form state
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
-  const [paymentNotes, setPaymentNotes] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
+  const [paymentDate, setPaymentDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
+  const [paymentNotes, setPaymentNotes] = useState("");
 
   const { data: bill, isLoading } = useBill(id);
   const { data: payments } = useBillPayments(id);
@@ -84,12 +92,12 @@ export default function BillDetailPage({
 
   const handleCreatePayment = async () => {
     if (paymentAmount <= 0) {
-      toast.error('Jumlah pembayaran harus lebih dari 0');
+      toast.error("Jumlah pembayaran harus lebih dari 0");
       return;
     }
 
     if (paymentAmount > remainingAmount) {
-      toast.error('Jumlah pembayaran melebihi sisa tagihan');
+      toast.error("Jumlah pembayaran melebihi sisa tagihan");
       return;
     }
 
@@ -101,12 +109,12 @@ export default function BillDetailPage({
         paymentDate,
         notes: paymentNotes || undefined,
       });
-      toast.success('Pembayaran berhasil dicatat');
+      toast.success("Pembayaran berhasil dicatat");
       setShowPayment(false);
       setPaymentAmount(0);
-      setPaymentNotes('');
+      setPaymentNotes("");
     } catch {
-      toast.error('Gagal mencatat pembayaran');
+      toast.error("Gagal mencatat pembayaran");
     }
   };
 
@@ -114,20 +122,20 @@ export default function BillDetailPage({
     if (!deleteId) return;
     try {
       await deletePaymentMutation.mutateAsync(deleteId);
-      toast.success('Pembayaran berhasil dihapus');
+      toast.success("Pembayaran berhasil dihapus");
       setDeleteId(null);
     } catch {
-      toast.error('Gagal menghapus pembayaran');
+      toast.error("Gagal menghapus pembayaran");
     }
   };
 
   const handleDeleteBill = async () => {
     try {
       await deleteBillMutation.mutateAsync(id);
-      toast.success('Tagihan berhasil dihapus');
-      router.push('/finance');
+      toast.success("Tagihan berhasil dihapus");
+      router.push("/finance");
     } catch {
-      toast.error('Gagal menghapus tagihan');
+      toast.error("Gagal menghapus tagihan");
     }
   };
 
@@ -172,7 +180,9 @@ export default function BillDetailPage({
           </Button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold tracking-tight">Detail Tagihan</h1>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Detail Tagihan
+              </h1>
               {getStatusBadge(bill.status)}
             </div>
             <p className="text-muted-foreground font-mono">
@@ -180,7 +190,7 @@ export default function BillDetailPage({
             </p>
           </div>
         </div>
-        {bill.status !== 'PAID' && bill.status !== 'CANCELLED' && (
+        {bill.status !== "PAID" && bill.status !== "CANCELLED" && (
           <div className="flex gap-2">
             <Button
               variant="destructive"
@@ -226,7 +236,9 @@ export default function BillDetailPage({
                     <Label htmlFor="method">Metode Pembayaran</Label>
                     <Select
                       value={paymentMethod}
-                      onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
+                      onValueChange={(v) =>
+                        setPaymentMethod(v as PaymentMethod)
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -262,14 +274,19 @@ export default function BillDetailPage({
                   </div>
 
                   <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setShowPayment(false)}>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowPayment(false)}
+                    >
                       Batal
                     </Button>
                     <Button
                       onClick={handleCreatePayment}
                       disabled={createPaymentMutation.isPending}
                     >
-                      {createPaymentMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+                      {createPaymentMutation.isPending
+                        ? "Menyimpan..."
+                        : "Simpan"}
                     </Button>
                   </div>
                 </div>
@@ -296,23 +313,23 @@ export default function BillDetailPage({
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Tahun Ajaran</p>
-                <p className="font-medium">{bill.academicYear?.name || '-'}</p>
+                <p className="font-medium">{bill.academicYear?.name || "-"}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Jatuh Tempo</p>
                 <p className="font-medium">
-                  {new Date(bill.dueDate).toLocaleDateString('id-ID', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
+                  {new Date(bill.dueDate).toLocaleDateString("id-ID", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
                   })}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Dibuat</p>
                 <p className="font-medium">
-                  {new Date(bill.createdAt).toLocaleDateString('id-ID')}
+                  {new Date(bill.createdAt).toLocaleDateString("id-ID")}
                 </p>
               </div>
             </div>
@@ -341,7 +358,9 @@ export default function BillDetailPage({
               </div>
             </div>
             <Button variant="outline" size="sm" asChild>
-              <Link href={`/students/${bill.studentId}`}>Lihat Profil Santri</Link>
+              <Link href={`/students/${bill.studentId}`}>
+                Lihat Profil Santri
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -356,7 +375,9 @@ export default function BillDetailPage({
           <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-lg bg-muted p-4">
               <p className="text-sm text-muted-foreground">Total Tagihan</p>
-              <p className="text-2xl font-bold">{formatCurrency(bill.amount)}</p>
+              <p className="text-2xl font-bold">
+                {formatCurrency(bill.amount)}
+              </p>
             </div>
             <div className="rounded-lg bg-green-50 p-4">
               <p className="text-sm text-green-600">Terbayar</p>
@@ -400,17 +421,20 @@ export default function BillDetailPage({
                       {payment.receiptNumber}
                     </TableCell>
                     <TableCell>
-                      {new Date(payment.paymentDate).toLocaleDateString('id-ID')}
+                      {new Date(payment.paymentDate).toLocaleDateString(
+                        "id-ID",
+                      )}
                     </TableCell>
                     <TableCell>
-                      {PAYMENT_METHODS.find((m) => m.value === payment.paymentMethod)
-                        ?.label || payment.paymentMethod}
+                      {PAYMENT_METHODS.find(
+                        (m) => m.value === payment.paymentMethod,
+                      )?.label || payment.paymentMethod}
                     </TableCell>
                     <TableCell className="font-medium text-green-600">
                       {formatCurrency(payment.amount)}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {payment.notes || '-'}
+                      {payment.notes || "-"}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button

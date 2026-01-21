@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 // We define the enum manually to match @cipansor/shared and include Prisma's types for compatibility
 // Shared: ANNOUNCEMENT, ATTENDANCE, FINANCE, ACADEMIC, PERMIT, HEALTH, VIOLATION, REWARD, SYSTEM
@@ -16,7 +16,7 @@ export const NotificationTypeEnum = z.enum([
   'INFO',
   'REMINDER',
   'ALERT',
-  'PAYMENT'
+  'PAYMENT',
 ]);
 
 export const NotificationPriorityEnum = z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']);
@@ -46,15 +46,20 @@ export const createNotificationSchema = z.object({
   scheduledAt: z.coerce.date().optional(),
 });
 
-export const createBulkNotificationSchema = createNotificationSchema.extend({
-  userIds: z.array(z.string().uuid()).min(1),
-}).omit({ userId: true, recipientType: true, recipientIds: true });
+export const createBulkNotificationSchema = createNotificationSchema
+  .extend({
+    userIds: z.array(z.string().uuid()).min(1),
+  })
+  .omit({ userId: true, recipientType: true, recipientIds: true });
 
 export const queryNotificationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   type: NotificationTypeEnum.optional(),
-  isRead: z.enum(["true", "false"]).optional().transform((v) => v === "true" ? true : v === "false" ? false : undefined),
+  isRead: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => (v === 'true' ? true : v === 'false' ? false : undefined)),
   priority: NotificationPriorityEnum.optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
@@ -76,7 +81,10 @@ export const updateTemplateSchema = createTemplateSchema.partial();
 
 export const queryTemplateSchema = z.object({
   type: NotificationTypeEnum.optional(),
-  isActive: z.enum(["true", "false"]).optional().transform((v) => v === "true"),
+  isActive: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => v === 'true'),
 });
 
 // ==================== STATS ====================
@@ -107,9 +115,11 @@ export const queryAnnouncementSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   unitId: z.string().uuid().optional(),
   priority: z.coerce.number().int().min(0).max(2).optional(),
-  active: z.enum(["true", "false"]).optional().transform((v) => v === "true"),
+  active: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => v === 'true'),
 });
-
 
 export type CreateNotificationInput = z.infer<typeof createNotificationSchema>;
 export type CreateBulkNotificationInput = z.infer<typeof createBulkNotificationSchema>;

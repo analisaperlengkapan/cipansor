@@ -1,15 +1,15 @@
-import Link from 'next/link';
-import { Heart, TrendingUp, TrendingDown } from 'lucide-react';
-import { useStudentIbadahStats, getCategoryInfo } from '@/hooks/use-ibadah';
+import Link from "next/link";
+import { Heart, TrendingUp, TrendingDown } from "lucide-react";
+import { useStudentIbadahStats, getCategoryInfo } from "@/hooks/use-ibadah";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 
 interface StudentIbadahTabProps {
   studentId: string;
@@ -18,13 +18,21 @@ interface StudentIbadahTabProps {
 export function StudentIbadahTab({ studentId }: StudentIbadahTabProps) {
   // Calculating start/end of current month for display context
   const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+  const startOfMonth = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    1,
+  ).toISOString();
+  const endOfMonth = new Date(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    0,
+  ).toISOString();
 
   const { data: ibadahStats, isLoading } = useStudentIbadahStats({
     studentId: studentId,
     startDate: startOfMonth,
-    endDate: endOfMonth
+    endDate: endOfMonth,
   });
 
   return (
@@ -32,7 +40,9 @@ export function StudentIbadahTab({ studentId }: StudentIbadahTabProps) {
       <Card>
         <CardHeader>
           <CardTitle>Ibadah Summary</CardTitle>
-          <CardDescription>Daily worship monitoring for this month</CardDescription>
+          <CardDescription>
+            Daily worship monitoring for this month
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -43,9 +53,13 @@ export function StudentIbadahTab({ studentId }: StudentIbadahTabProps) {
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-4 bg-muted rounded-lg">
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Completion Rate</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                    Completion Rate
+                  </p>
                   <div className="flex items-center justify-center gap-2">
-                    <span className="text-2xl font-bold">{ibadahStats?.summary?.completionRate || 0}%</span>
+                    <span className="text-2xl font-bold">
+                      {ibadahStats?.summary?.completionRate || 0}%
+                    </span>
                     {Number(ibadahStats?.summary?.completionRate || 0) >= 80 ? (
                       <TrendingUp className="h-4 w-4 text-green-500" />
                     ) : (
@@ -54,9 +68,13 @@ export function StudentIbadahTab({ studentId }: StudentIbadahTabProps) {
                   </div>
                 </div>
                 <div className="text-center p-4 bg-muted rounded-lg">
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Current Streak</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                    Current Streak
+                  </p>
                   <div className="flex items-center justify-center gap-2">
-                    <span className="text-2xl font-bold">{ibadahStats?.summary?.currentStreak || 0}</span>
+                    <span className="text-2xl font-bold">
+                      {ibadahStats?.summary?.currentStreak || 0}
+                    </span>
                     <span className="text-sm text-muted-foreground">days</span>
                   </div>
                 </div>
@@ -73,14 +91,18 @@ export function StudentIbadahTab({ studentId }: StudentIbadahTabProps) {
                           <span>{catInfo?.icon}</span>
                           {catInfo?.label}
                         </span>
-                        <span className="text-muted-foreground">{cat.completionRate}%</span>
+                        <span className="text-muted-foreground">
+                          {cat.completionRate}%
+                        </span>
                       </div>
                       <Progress value={cat.completionRate} className="h-2" />
                     </div>
                   );
                 })}
                 {!ibadahStats?.byCategory?.length && (
-                  <p className="text-sm text-muted-foreground">No ibadah data recorded yet.</p>
+                  <p className="text-sm text-muted-foreground">
+                    No ibadah data recorded yet.
+                  </p>
                 )}
               </div>
             </div>

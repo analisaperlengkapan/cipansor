@@ -1,11 +1,17 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -13,25 +19,25 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useSubjects } from '@/hooks';
-import { useCreateQuestionBank } from '@/hooks/use-cbt';
-import { useAuthStore } from '@/stores/auth';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { useSubjects } from "@/hooks";
+import { useCreateQuestionBank } from "@/hooks/use-cbt";
+import { useAuthStore } from "@/stores/auth";
+import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
 
 const bankSchema = z.object({
-  title: z.string().min(1, 'Judul wajib diisi'),
+  title: z.string().min(1, "Judul wajib diisi"),
   description: z.string().optional(),
   subjectId: z.string().optional(),
 });
@@ -47,8 +53,8 @@ export default function NewQuestionBankPage() {
   const form = useForm<BankFormData>({
     resolver: zodResolver(bankSchema),
     defaultValues: {
-      title: '',
-      description: '',
+      title: "",
+      description: "",
       subjectId: undefined,
     },
   });
@@ -59,13 +65,13 @@ export default function NewQuestionBankPage() {
     try {
       await createBank.mutateAsync({
         ...data,
-        unitId: user.unitId || '',
+        unitId: user.unitId || "",
         teacherId: user.id,
       });
-      toast.success('Bank soal berhasil dibuat');
-      router.push('/cbt/banks');
+      toast.success("Bank soal berhasil dibuat");
+      router.push("/cbt/banks");
     } catch (error) {
-      toast.error('Gagal membuat bank soal');
+      toast.error("Gagal membuat bank soal");
     }
   };
 
@@ -77,7 +83,9 @@ export default function NewQuestionBankPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Buat Bank Soal Baru</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Buat Bank Soal Baru
+            </h1>
             <p className="text-muted-foreground">
               Buat kumpulan soal baru untuk digunakan dalam ujian
             </p>
@@ -91,7 +99,10 @@ export default function NewQuestionBankPage() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
                 <FormField
                   control={form.control}
                   name="title"
@@ -99,7 +110,10 @@ export default function NewQuestionBankPage() {
                     <FormItem>
                       <FormLabel>Judul Bank Soal</FormLabel>
                       <FormControl>
-                        <Input placeholder="Contoh: Bank Soal Matematika Kelas 7 - Bilangan Bulat" {...field} />
+                        <Input
+                          placeholder="Contoh: Bank Soal Matematika Kelas 7 - Bilangan Bulat"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -112,7 +126,10 @@ export default function NewQuestionBankPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Mata Pelajaran (Opsional)</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih mata pelajaran" />
@@ -150,7 +167,11 @@ export default function NewQuestionBankPage() {
                 />
 
                 <div className="flex justify-end gap-4">
-                  <Button type="button" variant="outline" onClick={() => router.back()}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.back()}
+                  >
                     Batal
                   </Button>
                   <Button type="submit" disabled={createBank.isPending}>

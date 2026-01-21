@@ -7,7 +7,7 @@ import {
   createStudentVisitSchema,
   updateStudentVisitSchema,
   createStudentPackageSchema,
-  updateStudentPackageSchema
+  updateStudentPackageSchema,
 } from './reception.schema';
 import * as ReceptionController from './reception.controller';
 
@@ -26,11 +26,19 @@ router.patch('/guests/:id', validate(updateGuestBookSchema), ReceptionController
 // Student Visits
 router.get('/visits', ReceptionController.getStudentVisits);
 router.post('/visits', validate(createStudentVisitSchema), ReceptionController.createStudentVisit);
-router.patch('/visits/:id', validate(updateStudentVisitSchema), ReceptionController.updateStudentVisit);
+router.patch(
+  '/visits/:id',
+  validate(updateStudentVisitSchema),
+  ReceptionController.updateStudentVisit
+);
 
 // Packages
 router.get('/packages', ReceptionController.getPackages);
 router.post('/packages', validate(createStudentPackageSchema), ReceptionController.createPackage);
-router.patch('/packages/:id', validate(updateStudentPackageSchema), ReceptionController.updatePackage);
+router.patch(
+  '/packages/:id',
+  validate(updateStudentPackageSchema),
+  ReceptionController.updatePackage
+);
 
 export default router;

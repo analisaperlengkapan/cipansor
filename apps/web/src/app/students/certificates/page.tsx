@@ -1,25 +1,37 @@
-'use client';
+"use client";
 
-import { useState, useRef } from 'react';
-import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useStudents, Student } from '@/hooks/use-students';
-import { useUnits } from '@/hooks/use-units';
-import { useClasses } from '@/hooks/use-classes';
+import { useState, useRef } from "react";
+import { MainLayout } from "@/components/layout/main-layout";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useStudents, Student } from "@/hooks/use-students";
+import { useUnits } from "@/hooks/use-units";
+import { useClasses } from "@/hooks/use-classes";
 import {
   CERTIFICATE_TEMPLATES,
   CertificateType,
-  generateCertificateNumber
-} from '@/hooks/use-certificate';
+  generateCertificateNumber,
+} from "@/hooks/use-certificate";
 import {
   Award,
   Printer,
@@ -34,11 +46,11 @@ import {
   ChevronRight,
   CheckCircle2,
   Calendar,
-  Building2
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+  Building2,
+} from "lucide-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   GraduationCap,
@@ -57,16 +69,16 @@ interface CertificateFormData {
 }
 
 export default function CertificateGeneratorPage() {
-  const [selectedUnitId, setSelectedUnitId] = useState<string>('');
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUnitId, setSelectedUnitId] = useState<string>("");
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [activeTab, setActiveTab] = useState('select-student');
+  const [activeTab, setActiveTab] = useState("select-student");
   const [formData, setFormData] = useState<CertificateFormData>({
-    type: 'GRADUATION',
-    title: '',
-    description: '',
-    issuedDate: format(new Date(), 'yyyy-MM-dd'),
+    type: "GRADUATION",
+    title: "",
+    description: "",
+    issuedDate: format(new Date(), "yyyy-MM-dd"),
     metadata: {},
   });
   const printRef = useRef<HTMLDivElement>(null);
@@ -80,28 +92,30 @@ export default function CertificateGeneratorPage() {
     unitId: selectedUnitId || undefined,
     classId: selectedClassId || undefined,
     search: searchQuery || undefined,
-    status: 'ACTIVE',
+    status: "ACTIVE",
     limit: 50,
   });
 
   const students = studentsData?.data || [];
-  const selectedTemplate = CERTIFICATE_TEMPLATES.find(t => t.type === formData.type);
-  const certificateNumber = generateCertificateNumber(formData.type, 'CPN');
+  const selectedTemplate = CERTIFICATE_TEMPLATES.find(
+    (t) => t.type === formData.type,
+  );
+  const certificateNumber = generateCertificateNumber(formData.type, "CPN");
 
   const handleSelectStudent = (student: Student) => {
     setSelectedStudent(student);
-    setActiveTab('select-type');
+    setActiveTab("select-type");
   };
 
   const handleSelectType = (type: CertificateType) => {
-    const template = CERTIFICATE_TEMPLATES.find(t => t.type === type);
+    const template = CERTIFICATE_TEMPLATES.find((t) => t.type === type);
     setFormData({
       ...formData,
       type,
-      title: template?.label || '',
+      title: template?.label || "",
       metadata: {},
     });
-    setActiveTab('fill-details');
+    setActiveTab("fill-details");
   };
 
   const handleMetadataChange = (key: string, value: string) => {
@@ -116,17 +130,17 @@ export default function CertificateGeneratorPage() {
 
   const handlePrint = () => {
     if (!selectedStudent) {
-      toast.error('Pilih siswa terlebih dahulu');
+      toast.error("Pilih siswa terlebih dahulu");
       return;
     }
 
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (!printWindow) {
-      toast.error('Popup diblokir. Izinkan popup untuk mencetak.');
+      toast.error("Popup diblokir. Izinkan popup untuk mencetak.");
       return;
     }
 
-    const printContent = printRef.current?.innerHTML || '';
+    const printContent = printRef.current?.innerHTML || "";
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -164,36 +178,36 @@ export default function CertificateGeneratorPage() {
       printWindow.close();
     }, 500);
 
-    toast.success('Sertifikat siap dicetak');
+    toast.success("Sertifikat siap dicetak");
   };
 
   const renderCertificatePreview = () => {
     if (!selectedStudent || !selectedTemplate) return null;
 
     const bgGradient: Record<string, string> = {
-      GRADUATION: 'linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%)',
-      TAHFIDZ: 'linear-gradient(135deg, #065f46 0%, #022c22 100%)',
-      ACHIEVEMENT: 'linear-gradient(135deg, #92400e 0%, #451a03 100%)',
-      COURSE_COMPLETION: 'linear-gradient(135deg, #5b21b6 0%, #2e1065 100%)',
-      APPRECIATION: 'linear-gradient(135deg, #be185d 0%, #500724 100%)',
-      IJAZAH: 'linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%)',
-      STTB: 'linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%)',
-      SANAD: 'linear-gradient(135deg, #065f46 0%, #022c22 100%)',
-      PARTICIPATION: 'linear-gradient(135deg, #5b21b6 0%, #2e1065 100%)',
-      OTHER: 'linear-gradient(135deg, #4b5563 0%, #1f2937 100%)',
+      GRADUATION: "linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%)",
+      TAHFIDZ: "linear-gradient(135deg, #065f46 0%, #022c22 100%)",
+      ACHIEVEMENT: "linear-gradient(135deg, #92400e 0%, #451a03 100%)",
+      COURSE_COMPLETION: "linear-gradient(135deg, #5b21b6 0%, #2e1065 100%)",
+      APPRECIATION: "linear-gradient(135deg, #be185d 0%, #500724 100%)",
+      IJAZAH: "linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%)",
+      STTB: "linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%)",
+      SANAD: "linear-gradient(135deg, #065f46 0%, #022c22 100%)",
+      PARTICIPATION: "linear-gradient(135deg, #5b21b6 0%, #2e1065 100%)",
+      OTHER: "linear-gradient(135deg, #4b5563 0%, #1f2937 100%)",
     };
 
     const accentColor: Record<string, string> = {
-      GRADUATION: '#c9a227',
-      TAHFIDZ: '#10b981',
-      ACHIEVEMENT: '#f59e0b',
-      COURSE_COMPLETION: '#8b5cf6',
-      APPRECIATION: '#ec4899',
-      IJAZAH: '#c9a227',
-      STTB: '#c9a227',
-      SANAD: '#10b981',
-      PARTICIPATION: '#8b5cf6',
-      OTHER: '#9ca3af',
+      GRADUATION: "#c9a227",
+      TAHFIDZ: "#10b981",
+      ACHIEVEMENT: "#f59e0b",
+      COURSE_COMPLETION: "#8b5cf6",
+      APPRECIATION: "#ec4899",
+      IJAZAH: "#c9a227",
+      STTB: "#c9a227",
+      SANAD: "#10b981",
+      PARTICIPATION: "#8b5cf6",
+      OTHER: "#9ca3af",
     };
 
     return (
@@ -245,14 +259,21 @@ export default function CertificateGeneratorPage() {
         <div className="absolute inset-0 flex flex-col items-center justify-center text-white px-16 py-12">
           {/* Header */}
           <div className="text-center mb-4">
-            <p className="text-sm tracking-[0.3em] uppercase opacity-80">Yayasan Pendidikan Islam</p>
+            <p className="text-sm tracking-[0.3em] uppercase opacity-80">
+              Yayasan Pendidikan Islam
+            </p>
             <h1
               className="text-3xl font-bold tracking-wide mt-1"
-              style={{ fontFamily: "'Cinzel', serif", color: accentColor[formData.type] }}
+              style={{
+                fontFamily: "'Cinzel', serif",
+                color: accentColor[formData.type],
+              }}
             >
               CIPANSOR
             </h1>
-            <p className="text-xs opacity-70 mt-1">{selectedStudent.unit?.name}</p>
+            <p className="text-xs opacity-70 mt-1">
+              {selectedStudent.unit?.name}
+            </p>
           </div>
 
           {/* Certificate Type */}
@@ -263,7 +284,9 @@ export default function CertificateGeneratorPage() {
             >
               {selectedTemplate.label.toUpperCase()}
             </p>
-            <p className="text-sm opacity-70 mt-1 italic">{selectedTemplate.labelEn}</p>
+            <p className="text-sm opacity-70 mt-1 italic">
+              {selectedTemplate.labelEn}
+            </p>
           </div>
 
           {/* Certificate Number */}
@@ -274,7 +297,10 @@ export default function CertificateGeneratorPage() {
             <p className="text-lg mb-3">Diberikan kepada:</p>
             <p
               className="text-4xl mb-2"
-              style={{ fontFamily: "'Great Vibes', cursive", color: accentColor[formData.type] }}
+              style={{
+                fontFamily: "'Great Vibes', cursive",
+                color: accentColor[formData.type],
+              }}
             >
               {selectedStudent.name}
             </p>
@@ -283,40 +309,61 @@ export default function CertificateGeneratorPage() {
 
           {/* Description */}
           <div className="text-center mb-6 max-w-2xl">
-            {formData.type === 'GRADUATION' && (
+            {formData.type === "GRADUATION" && (
               <p className="text-base leading-relaxed">
-                Telah menyelesaikan pendidikan di {selectedStudent.unit?.name || 'unit'} dengan
-                {formData.metadata.finalGrade && ` nilai ${formData.metadata.finalGrade}`}
-                {formData.metadata.rank && ` dan meraih peringkat ${formData.metadata.rank}`}
-                {formData.metadata.graduationYear && ` pada tahun ${formData.metadata.graduationYear}`}.
+                Telah menyelesaikan pendidikan di{" "}
+                {selectedStudent.unit?.name || "unit"} dengan
+                {formData.metadata.finalGrade &&
+                  ` nilai ${formData.metadata.finalGrade}`}
+                {formData.metadata.rank &&
+                  ` dan meraih peringkat ${formData.metadata.rank}`}
+                {formData.metadata.graduationYear &&
+                  ` pada tahun ${formData.metadata.graduationYear}`}
+                .
               </p>
             )}
-            {formData.type === 'TAHFIDZ' && (
+            {formData.type === "TAHFIDZ" && (
               <p className="text-base leading-relaxed">
-                Telah menyelesaikan hafalan Al-Quran sebanyak <strong>{formData.metadata.juzCount || '-'} Juz</strong>
-                {formData.metadata.completedJuz && ` (${formData.metadata.completedJuz})`}
-                {formData.metadata.grade && ` dengan predikat ${formData.metadata.grade}`}.
+                Telah menyelesaikan hafalan Al-Quran sebanyak{" "}
+                <strong>{formData.metadata.juzCount || "-"} Juz</strong>
+                {formData.metadata.completedJuz &&
+                  ` (${formData.metadata.completedJuz})`}
+                {formData.metadata.grade &&
+                  ` dengan predikat ${formData.metadata.grade}`}
+                .
               </p>
             )}
-            {formData.type === 'ACHIEVEMENT' && (
+            {formData.type === "ACHIEVEMENT" && (
               <p className="text-base leading-relaxed">
-                Atas prestasi {formData.metadata.achievementType && `dalam bidang ${formData.metadata.achievementType}`}: <strong>{formData.metadata.achievement || '-'}</strong>
-                {formData.metadata.level && ` tingkat ${formData.metadata.level}`}
-                {formData.metadata.rank && ` dengan raihan ${formData.metadata.rank}`}.
+                Atas prestasi{" "}
+                {formData.metadata.achievementType &&
+                  `dalam bidang ${formData.metadata.achievementType}`}
+                : <strong>{formData.metadata.achievement || "-"}</strong>
+                {formData.metadata.level &&
+                  ` tingkat ${formData.metadata.level}`}
+                {formData.metadata.rank &&
+                  ` dengan raihan ${formData.metadata.rank}`}
+                .
               </p>
             )}
-            {formData.type === 'COURSE_COMPLETION' && (
+            {formData.type === "COURSE_COMPLETION" && (
               <p className="text-base leading-relaxed">
-                Telah menyelesaikan <strong>{formData.metadata.courseName || '-'}</strong>
-                {formData.metadata.duration && ` selama ${formData.metadata.duration}`}
-                {formData.metadata.score && ` dengan nilai ${formData.metadata.score}`}.
+                Telah menyelesaikan{" "}
+                <strong>{formData.metadata.courseName || "-"}</strong>
+                {formData.metadata.duration &&
+                  ` selama ${formData.metadata.duration}`}
+                {formData.metadata.score &&
+                  ` dengan nilai ${formData.metadata.score}`}
+                .
               </p>
             )}
-            {formData.type === 'APPRECIATION' && (
+            {formData.type === "APPRECIATION" && (
               <p className="text-base leading-relaxed">
-                Atas <strong>{formData.metadata.reason || '-'}</strong>
-                {formData.metadata.event && ` dalam kegiatan ${formData.metadata.event}`}
-                {formData.metadata.role && ` sebagai ${formData.metadata.role}`}.
+                Atas <strong>{formData.metadata.reason || "-"}</strong>
+                {formData.metadata.event &&
+                  ` dalam kegiatan ${formData.metadata.event}`}
+                {formData.metadata.role && ` sebagai ${formData.metadata.role}`}
+                .
               </p>
             )}
             {formData.description && (
@@ -326,27 +373,43 @@ export default function CertificateGeneratorPage() {
 
           {/* Date */}
           <p className="text-sm mb-8">
-            Ditetapkan di ............., {format(new Date(formData.issuedDate), 'd MMMM yyyy', { locale: idLocale })}
+            Ditetapkan di .............,{" "}
+            {format(new Date(formData.issuedDate), "d MMMM yyyy", {
+              locale: idLocale,
+            })}
           </p>
 
           {/* Signatures */}
           <div className="flex justify-center gap-32 w-full">
             <div className="text-center">
-              <p className="text-sm mb-16">Kepala {selectedStudent.unit?.type === 'SD_IT' ? 'Sekolah' : selectedStudent.unit?.type === 'SMP_IT' || selectedStudent.unit?.type === 'SMA_IT' || selectedStudent.unit?.type === 'MA' ? 'Madrasah' : 'Lembaga'}</p>
+              <p className="text-sm mb-16">
+                Kepala{" "}
+                {selectedStudent.unit?.type === "SD_IT"
+                  ? "Sekolah"
+                  : selectedStudent.unit?.type === "SMP_IT" ||
+                      selectedStudent.unit?.type === "SMA_IT" ||
+                      selectedStudent.unit?.type === "MA"
+                    ? "Madrasah"
+                    : "Lembaga"}
+              </p>
               <div
                 className="w-48 border-b mb-2"
                 style={{ borderColor: accentColor[formData.type] }}
               />
-              <p className="text-sm font-semibold">(.................................)</p>
+              <p className="text-sm font-semibold">
+                (.................................)
+              </p>
             </div>
-            {formData.type === 'TAHFIDZ' && formData.metadata.teacherName && (
+            {formData.type === "TAHFIDZ" && formData.metadata.teacherName && (
               <div className="text-center">
                 <p className="text-sm mb-16">Musyrif/ah</p>
                 <div
                   className="w-48 border-b mb-2"
                   style={{ borderColor: accentColor[formData.type] }}
                 />
-                <p className="text-sm font-semibold">{formData.metadata.teacherName}</p>
+                <p className="text-sm font-semibold">
+                  {formData.metadata.teacherName}
+                </p>
               </div>
             )}
             <div className="text-center">
@@ -355,14 +418,19 @@ export default function CertificateGeneratorPage() {
                 className="w-48 border-b mb-2"
                 style={{ borderColor: accentColor[formData.type] }}
               />
-              <p className="text-sm font-semibold">(.................................)</p>
+              <p className="text-sm font-semibold">
+                (.................................)
+              </p>
             </div>
           </div>
         </div>
 
         {/* Watermark */}
         <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
-          <GraduationCap className="w-96 h-96" style={{ color: accentColor[formData.type] }} />
+          <GraduationCap
+            className="w-96 h-96"
+            style={{ color: accentColor[formData.type] }}
+          />
         </div>
       </div>
     );
@@ -397,18 +465,34 @@ export default function CertificateGeneratorPage() {
 
         {/* Progress Steps */}
         <div className="flex items-center justify-center gap-2">
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${activeTab === 'select-student' ? 'bg-primary text-primary-foreground' : selectedStudent ? 'bg-green-100 text-green-800' : 'bg-muted'}`}>
-            {selectedStudent ? <CheckCircle2 className="h-4 w-4" /> : <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-xs">1</span>}
+          <div
+            className={`flex items-center gap-2 px-4 py-2 rounded-full ${activeTab === "select-student" ? "bg-primary text-primary-foreground" : selectedStudent ? "bg-green-100 text-green-800" : "bg-muted"}`}
+          >
+            {selectedStudent ? (
+              <CheckCircle2 className="h-4 w-4" />
+            ) : (
+              <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-xs">
+                1
+              </span>
+            )}
             <span className="text-sm font-medium">Pilih Siswa</span>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${activeTab === 'select-type' ? 'bg-primary text-primary-foreground' : formData.type && selectedStudent ? 'bg-green-100 text-green-800' : 'bg-muted'}`}>
-            <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-xs">2</span>
+          <div
+            className={`flex items-center gap-2 px-4 py-2 rounded-full ${activeTab === "select-type" ? "bg-primary text-primary-foreground" : formData.type && selectedStudent ? "bg-green-100 text-green-800" : "bg-muted"}`}
+          >
+            <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-xs">
+              2
+            </span>
             <span className="text-sm font-medium">Pilih Jenis</span>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${activeTab === 'fill-details' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-            <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-xs">3</span>
+          <div
+            className={`flex items-center gap-2 px-4 py-2 rounded-full ${activeTab === "fill-details" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
+          >
+            <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-xs">
+              3
+            </span>
             <span className="text-sm font-medium">Isi Detail</span>
           </div>
         </div>
@@ -438,7 +522,7 @@ export default function CertificateGeneratorPage() {
                     value={selectedUnitId}
                     onValueChange={(value) => {
                       setSelectedUnitId(value);
-                      setSelectedClassId('');
+                      setSelectedClassId("");
                     }}
                   >
                     <SelectTrigger className="w-full md:w-48 bg-background/50 backdrop-blur-sm border-muted-foreground/20">
@@ -485,7 +569,7 @@ export default function CertificateGeneratorPage() {
 
                 {studentsLoading ? (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {[1, 2, 3, 4, 5, 6].map(i => (
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
                       <Skeleton key={i} className="h-24" />
                     ))}
                   </div>
@@ -493,12 +577,19 @@ export default function CertificateGeneratorPage() {
                   <div className="text-center py-12 text-muted-foreground">
                     <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>Tidak ada siswa ditemukan</p>
-                    <p className="text-sm">Gunakan filter untuk mencari siswa</p>
+                    <p className="text-sm">
+                      Gunakan filter untuk mencari siswa
+                    </p>
                   </div>
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {students.map(student => {
-                      const initials = student.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                    {students.map((student) => {
+                      const initials = student.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .substring(0, 2)
+                        .toUpperCase();
                       const isSelected = selectedStudent?.id === student.id;
 
                       return (
@@ -506,7 +597,7 @@ export default function CertificateGeneratorPage() {
                           key={student.id}
                           className={`
                             flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all
-                            ${isSelected ? 'bg-primary/10 border-primary ring-2 ring-primary' : 'hover:bg-muted hover:border-muted-foreground/50'}
+                            ${isSelected ? "bg-primary/10 border-primary ring-2 ring-primary" : "hover:bg-muted hover:border-muted-foreground/50"}
                           `}
                           onClick={() => handleSelectStudent(student)}
                         >
@@ -516,12 +607,15 @@ export default function CertificateGeneratorPage() {
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{student.name}</p>
+                            <p className="font-medium truncate">
+                              {student.name}
+                            </p>
                             <p className="text-sm text-muted-foreground">
                               NIS: {student.nis}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {student.currentClass?.name || '-'} • {student.unit?.name}
+                              {student.currentClass?.name || "-"} •{" "}
+                              {student.unit?.name}
                             </p>
                           </div>
                         </div>
@@ -543,7 +637,10 @@ export default function CertificateGeneratorPage() {
                 </CardTitle>
                 <CardDescription>
                   {selectedStudent && (
-                    <span>Untuk: <strong>{selectedStudent.name}</strong> ({selectedStudent.nis})</span>
+                    <span>
+                      Untuk: <strong>{selectedStudent.name}</strong> (
+                      {selectedStudent.nis})
+                    </span>
                   )}
                 </CardDescription>
               </CardHeader>
@@ -558,16 +655,22 @@ export default function CertificateGeneratorPage() {
                         key={template.type}
                         className={`
                           p-6 rounded-xl border-2 cursor-pointer transition-all
-                          ${isSelected ? 'border-primary bg-primary/5 shadow-lg' : 'border-muted hover:border-muted-foreground/50 hover:bg-muted/50'}
+                          ${isSelected ? "border-primary bg-primary/5 shadow-lg" : "border-muted hover:border-muted-foreground/50 hover:bg-muted/50"}
                         `}
                         onClick={() => handleSelectType(template.type)}
                       >
-                        <div className={`w-12 h-12 rounded-lg ${template.color} flex items-center justify-center mb-4`}>
+                        <div
+                          className={`w-12 h-12 rounded-lg ${template.color} flex items-center justify-center mb-4`}
+                        >
                           <Icon className="h-6 w-6" />
                         </div>
                         <h3 className="font-semibold mb-1">{template.label}</h3>
-                        <p className="text-sm text-muted-foreground mb-2">{template.labelEn}</p>
-                        <p className="text-xs text-muted-foreground">{template.description}</p>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {template.labelEn}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {template.description}
+                        </p>
                       </div>
                     );
                   })}
@@ -596,13 +699,19 @@ export default function CertificateGeneratorPage() {
                     <div className="p-4 bg-muted rounded-lg flex items-center gap-3">
                       <Avatar className="h-12 w-12">
                         <AvatarFallback className="bg-emerald-100 text-emerald-700">
-                          {selectedStudent.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                          {selectedStudent.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .substring(0, 2)
+                            .toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="font-medium">{selectedStudent.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          NIS: {selectedStudent.nis} • {selectedStudent.unit?.name}
+                          NIS: {selectedStudent.nis} •{" "}
+                          {selectedStudent.unit?.name}
                         </p>
                       </div>
                     </div>
@@ -623,7 +732,9 @@ export default function CertificateGeneratorPage() {
                     <Input
                       type="date"
                       value={formData.issuedDate}
-                      onChange={(e) => setFormData({ ...formData, issuedDate: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, issuedDate: e.target.value })
+                      }
                     />
                   </div>
 
@@ -632,15 +743,21 @@ export default function CertificateGeneratorPage() {
                     <div key={field.key} className="space-y-2">
                       <Label>
                         {field.label}
-                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                        {field.required && (
+                          <span className="text-red-500 ml-1">*</span>
+                        )}
                       </Label>
-                      {field.type === 'select' ? (
+                      {field.type === "select" ? (
                         <Select
-                          value={formData.metadata[field.key] || ''}
-                          onValueChange={(value) => handleMetadataChange(field.key, value)}
+                          value={formData.metadata[field.key] || ""}
+                          onValueChange={(value) =>
+                            handleMetadataChange(field.key, value)
+                          }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder={`Pilih ${field.label.toLowerCase()}`} />
+                            <SelectValue
+                              placeholder={`Pilih ${field.label.toLowerCase()}`}
+                            />
                           </SelectTrigger>
                           <SelectContent>
                             {field.options?.map((option) => (
@@ -653,8 +770,10 @@ export default function CertificateGeneratorPage() {
                       ) : (
                         <Input
                           type={field.type}
-                          value={formData.metadata[field.key] || ''}
-                          onChange={(e) => handleMetadataChange(field.key, e.target.value)}
+                          value={formData.metadata[field.key] || ""}
+                          onChange={(e) =>
+                            handleMetadataChange(field.key, e.target.value)
+                          }
                           placeholder={`Masukkan ${field.label.toLowerCase()}`}
                         />
                       )}
@@ -666,14 +785,22 @@ export default function CertificateGeneratorPage() {
                     <Label>Keterangan Tambahan (Opsional)</Label>
                     <Textarea
                       value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          description: e.target.value,
+                        })
+                      }
                       placeholder="Tambahkan keterangan jika diperlukan..."
                       rows={3}
                     />
                   </div>
 
                   <div className="flex gap-2 pt-4">
-                    <Button variant="outline" onClick={() => setActiveTab('select-type')}>
+                    <Button
+                      variant="outline"
+                      onClick={() => setActiveTab("select-type")}
+                    >
                       Kembali
                     </Button>
                     <Button onClick={handlePrint} className="flex-1">
@@ -705,9 +832,7 @@ export default function CertificateGeneratorPage() {
         </Tabs>
 
         {/* Hidden Print Area */}
-        <div className="hidden">
-          {renderCertificatePreview()}
-        </div>
+        <div className="hidden">{renderCertificatePreview()}</div>
       </div>
     </MainLayout>
   );

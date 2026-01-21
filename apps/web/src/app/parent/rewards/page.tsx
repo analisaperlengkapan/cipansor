@@ -1,19 +1,25 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { api } from '@/lib/api';
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
-  Award,
-  Trophy,
-  Star,
-  Calendar,
-  User,
-} from 'lucide-react';
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { api } from "@/lib/api";
+import { Award, Trophy, Star, Calendar, User } from "lucide-react";
 
 interface Child {
   id: string;
@@ -44,29 +50,31 @@ interface RewardSummary {
 
 export default function RewardsPage() {
   const searchParams = useSearchParams();
-  const selectedStudentId = searchParams.get('studentId');
+  const selectedStudentId = searchParams.get("studentId");
 
   const [loading, setLoading] = useState(true);
   const [children, setChildren] = useState<Child[]>([]);
-  const [selectedChild, setSelectedChild] = useState<string>('');
+  const [selectedChild, setSelectedChild] = useState<string>("");
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [summary, setSummary] = useState<RewardSummary | null>(null);
 
   useEffect(() => {
     const fetchChildren = async () => {
       try {
-        const res = await api.get('/parent/children');
+        const res = await api.get("/parent/children");
         const childrenData = res.data.data || [];
         setChildren(childrenData);
-        
+
         if (childrenData.length > 0) {
-          const defaultChild = selectedStudentId 
-            ? childrenData.find((c: Child) => c.student.id === selectedStudentId)?.student.id
+          const defaultChild = selectedStudentId
+            ? childrenData.find(
+                (c: Child) => c.student.id === selectedStudentId,
+              )?.student.id
             : childrenData[0].student.id;
           setSelectedChild(defaultChild || childrenData[0].student.id);
         }
       } catch (err) {
-        console.error('Failed to fetch children:', err);
+        console.error("Failed to fetch children:", err);
       }
     };
 
@@ -83,7 +91,7 @@ export default function RewardsPage() {
         setRewards(res.data.data.rewards || []);
         setSummary(res.data.data.summary || null);
       } catch (err) {
-        console.error('Failed to fetch rewards:', err);
+        console.error("Failed to fetch rewards:", err);
       } finally {
         setLoading(false);
       }
@@ -94,23 +102,23 @@ export default function RewardsPage() {
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      ACADEMIC: 'Akademik',
-      TAHFIDZ: 'Tahfidz',
-      BEHAVIOR: 'Perilaku',
-      COMPETITION: 'Kompetisi',
-      ATTENDANCE: 'Kehadiran',
-      OTHER: 'Lainnya',
+      ACADEMIC: "Akademik",
+      TAHFIDZ: "Tahfidz",
+      BEHAVIOR: "Perilaku",
+      COMPETITION: "Kompetisi",
+      ATTENDANCE: "Kehadiran",
+      OTHER: "Lainnya",
     };
     return labels[type] || type;
   };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'ACADEMIC':
+      case "ACADEMIC":
         return <Star className="h-5 w-5 text-blue-500" />;
-      case 'TAHFIDZ':
+      case "TAHFIDZ":
         return <Star className="h-5 w-5 text-green-500" />;
-      case 'COMPETITION':
+      case "COMPETITION":
         return <Trophy className="h-5 w-5 text-yellow-500" />;
       default:
         return <Award className="h-5 w-5 text-purple-500" />;
@@ -159,14 +167,20 @@ export default function RewardsPage() {
               <Card>
                 <CardContent className="p-4 text-center">
                   <Trophy className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-                  <div className="text-2xl font-bold">{summary.totalRewards}</div>
-                  <p className="text-sm text-muted-foreground">Total Penghargaan</p>
+                  <div className="text-2xl font-bold">
+                    {summary.totalRewards}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Total Penghargaan
+                  </p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
                   <Star className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-yellow-600">{summary.totalPoints}</div>
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {summary.totalPoints}
+                  </div>
                   <p className="text-sm text-muted-foreground">Total Poin</p>
                 </CardContent>
               </Card>
@@ -174,9 +188,13 @@ export default function RewardsPage() {
                 <CardContent className="p-4 text-center">
                   <Award className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
                   <div className="text-lg font-bold">
-                    {summary.totalPoints < 10 ? 'Pemula' : 
-                     summary.totalPoints < 50 ? 'Berkembang' : 
-                     summary.totalPoints < 100 ? 'Berprestasi' : 'Teladan'}
+                    {summary.totalPoints < 10
+                      ? "Pemula"
+                      : summary.totalPoints < 50
+                        ? "Berkembang"
+                        : summary.totalPoints < 100
+                          ? "Berprestasi"
+                          : "Teladan"}
                   </div>
                   <p className="text-sm text-muted-foreground">Predikat</p>
                 </CardContent>
@@ -207,7 +225,10 @@ export default function RewardsPage() {
               ) : (
                 <div className="space-y-4">
                   {rewards.map((reward) => (
-                    <Card key={reward.id} className="bg-linear-to-r from-yellow-50 to-orange-50 border-yellow-200">
+                    <Card
+                      key={reward.id}
+                      className="bg-linear-to-r from-yellow-50 to-orange-50 border-yellow-200"
+                    >
                       <CardContent className="p-4">
                         <div className="flex items-start gap-4">
                           <div className="p-2 rounded-full bg-yellow-100">
@@ -216,8 +237,12 @@ export default function RewardsPage() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <p className="font-medium">{reward.title}</p>
-                              <Badge variant="secondary">{getTypeLabel(reward.type)}</Badge>
-                              <Badge className="bg-yellow-500">{reward.points} Poin</Badge>
+                              <Badge variant="secondary">
+                                {getTypeLabel(reward.type)}
+                              </Badge>
+                              <Badge className="bg-yellow-500">
+                                {reward.points} Poin
+                              </Badge>
                             </div>
                             {reward.description && (
                               <p className="text-sm text-muted-foreground mt-1">
@@ -227,11 +252,14 @@ export default function RewardsPage() {
                             <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <Calendar className="h-4 w-4" />
-                                {new Date(reward.awardedAt).toLocaleDateString('id-ID', {
-                                  day: 'numeric',
-                                  month: 'short',
-                                  year: 'numeric',
-                                })}
+                                {new Date(reward.awardedAt).toLocaleDateString(
+                                  "id-ID",
+                                  {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  },
+                                )}
                               </div>
                               {reward.awardedBy && (
                                 <div className="flex items-center gap-1">

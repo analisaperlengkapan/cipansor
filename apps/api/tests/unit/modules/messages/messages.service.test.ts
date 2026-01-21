@@ -15,26 +15,26 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@prisma/client', () => {
   return {
     PrismaClient: class {
-        message = {
-            create: mocks.create,
-            findMany: mocks.findMany,
-            count: mocks.count,
-            findUnique: mocks.findUnique,
-            findFirst: mocks.findFirst,
-            update: mocks.update,
-        };
-        user = {
-            findUnique: mocks.userFindUnique,
-        };
-        $disconnect = vi.fn();
+      message = {
+        create: mocks.create,
+        findMany: mocks.findMany,
+        count: mocks.count,
+        findUnique: mocks.findUnique,
+        findFirst: mocks.findFirst,
+        update: mocks.update,
+      };
+      user = {
+        findUnique: mocks.userFindUnique,
+      };
+      $disconnect = vi.fn();
     },
     UserRole: {
-        SUPER_ADMIN: 'SUPER_ADMIN',
+      SUPER_ADMIN: 'SUPER_ADMIN',
     },
     Prisma: {
-        sql: vi.fn(),
-        empty: '',
-    }
+      sql: vi.fn(),
+      empty: '',
+    },
   };
 });
 
@@ -42,15 +42,15 @@ vi.mock('@prisma/client', () => {
 vi.mock('../../../../../src/lib/prisma', () => ({
   prisma: {
     message: {
-        create: mocks.create,
-        findMany: mocks.findMany,
-        count: mocks.count,
-        findUnique: mocks.findUnique,
-        findFirst: mocks.findFirst,
-        update: mocks.update,
+      create: mocks.create,
+      findMany: mocks.findMany,
+      count: mocks.count,
+      findUnique: mocks.findUnique,
+      findFirst: mocks.findFirst,
+      update: mocks.update,
     },
     user: {
-        findUnique: mocks.userFindUnique,
+      findUnique: mocks.userFindUnique,
     },
   },
 }));

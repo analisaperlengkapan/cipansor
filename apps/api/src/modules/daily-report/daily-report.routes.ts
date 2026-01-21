@@ -117,7 +117,11 @@ router.get('/', validateQuery(listDailyReportsQuerySchema), controller.listDaily
  *       200:
  *         description: Student monthly summary
  */
-router.get('/summary/student', validateQuery(studentDailySummarySchema), controller.getStudentMonthlySummary);
+router.get(
+  '/summary/student',
+  validateQuery(studentDailySummarySchema),
+  controller.getStudentMonthlySummary
+);
 
 /**
  * @swagger
@@ -151,7 +155,11 @@ router.get('/summary/student', validateQuery(studentDailySummarySchema), control
  *       200:
  *         description: Class daily summary
  */
-router.get('/summary/class', validateQuery(classDailySummarySchema), controller.getClassDailySummary);
+router.get(
+  '/summary/class',
+  validateQuery(classDailySummarySchema),
+  controller.getClassDailySummary
+);
 
 /**
  * @swagger

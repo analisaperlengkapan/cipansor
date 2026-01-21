@@ -47,7 +47,7 @@ const router = Router();
 router.get('/', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { unitId, type, priority, published, page, limit } = req.query;
-    
+
     const result = await announcementService.findAll({
       unitId: (unitId as string) || req.user?.unitId || undefined,
       type: type as NotificationType,

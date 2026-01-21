@@ -1,16 +1,22 @@
-'use client';
+"use client";
 
-import { use, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, BookOpen, Save } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { use, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, BookOpen, Save } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -19,34 +25,58 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
-import { useBook, useUpdateBook, BOOK_CATEGORIES, BookCategory } from '@/hooks/use-library';
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import {
+  useBook,
+  useUpdateBook,
+  BOOK_CATEGORIES,
+  BookCategory,
+} from "@/hooks/use-library";
 
 const bookSchema = z.object({
-  title: z.string().min(1, 'Judul buku wajib diisi'),
-  author: z.string().min(1, 'Nama penulis wajib diisi'),
+  title: z.string().min(1, "Judul buku wajib diisi"),
+  author: z.string().min(1, "Nama penulis wajib diisi"),
   isbn: z.string().optional(),
   publisher: z.string().optional(),
-  publishYear: z.coerce.number().min(1900).max(new Date().getFullYear()).optional().or(z.literal('')),
-  category: z.enum(['ISLAMIC', 'ACADEMIC', 'FICTION', 'NON_FICTION', 'REFERENCE', 'OTHER'] as const, {
-    required_error: 'Kategori wajib dipilih',
-  }),
+  publishYear: z.coerce
+    .number()
+    .min(1900)
+    .max(new Date().getFullYear())
+    .optional()
+    .or(z.literal("")),
+  category: z.enum(
+    [
+      "ISLAMIC",
+      "ACADEMIC",
+      "FICTION",
+      "NON_FICTION",
+      "REFERENCE",
+      "OTHER",
+    ] as const,
+    {
+      required_error: "Kategori wajib dipilih",
+    },
+  ),
   description: z.string().optional(),
-  quantity: z.coerce.number().min(1, 'Minimal 1 eksemplar'),
+  quantity: z.coerce.number().min(1, "Minimal 1 eksemplar"),
   location: z.string().optional(),
 });
 
 type BookFormData = z.infer<typeof bookSchema>;
 
-export default function EditBookPage({ params }: { params: Promise<{ id: string }> }) {
+export default function EditBookPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const router = useRouter();
   const { data: book, isLoading } = useBook(id);
@@ -55,15 +85,15 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
   const form = useForm<BookFormData>({
     resolver: zodResolver(bookSchema),
     defaultValues: {
-      title: '',
-      author: '',
-      isbn: '',
-      publisher: '',
-      publishYear: '',
+      title: "",
+      author: "",
+      isbn: "",
+      publisher: "",
+      publishYear: "",
       category: undefined,
-      description: '',
+      description: "",
       quantity: 1,
-      location: '',
+      location: "",
     },
   });
 
@@ -72,13 +102,13 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
       form.reset({
         title: book.title,
         author: book.author,
-        isbn: book.isbn || '',
-        publisher: book.publisher || '',
-        publishYear: book.publishYear || '',
+        isbn: book.isbn || "",
+        publisher: book.publisher || "",
+        publishYear: book.publishYear || "",
         category: book.category,
-        description: book.description || '',
+        description: book.description || "",
         quantity: book.quantity,
-        location: book.location || '',
+        location: book.location || "",
       });
     }
   }, [book, form]);
@@ -98,10 +128,10 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
       };
 
       await updateMutation.mutateAsync({ id, data: payload });
-      toast.success('Buku berhasil diperbarui');
+      toast.success("Buku berhasil diperbarui");
       router.push(`/library/books/${id}`);
     } catch {
-      toast.error('Gagal memperbarui buku');
+      toast.error("Gagal memperbarui buku");
     }
   };
 
@@ -263,7 +293,10 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Kategori *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih kategori" />
@@ -292,7 +325,8 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                           <Input type="number" min={1} {...field} />
                         </FormControl>
                         <FormDescription>
-                          Tersedia: {book.availableQuantity} dari {book.quantity}
+                          Tersedia: {book.availableQuantity} dari{" "}
+                          {book.quantity}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -308,7 +342,9 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                         <FormControl>
                           <Input placeholder="A1-01" {...field} />
                         </FormControl>
-                        <FormDescription>Lokasi penyimpanan buku</FormDescription>
+                        <FormDescription>
+                          Lokasi penyimpanan buku
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -337,14 +373,18 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                       </div>
                     )}
                     <p className="font-semibold">
-                      {form.watch('title') || 'Judul Buku'}
+                      {form.watch("title") || "Judul Buku"}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {form.watch('author') || 'Nama Penulis'}
+                      {form.watch("author") || "Nama Penulis"}
                     </p>
-                    {form.watch('category') && (
+                    {form.watch("category") && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        {BOOK_CATEGORIES.find((c) => c.value === form.watch('category'))?.label}
+                        {
+                          BOOK_CATEGORIES.find(
+                            (c) => c.value === form.watch("category"),
+                          )?.label
+                        }
                       </p>
                     )}
                   </div>

@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useParams, useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Printer, Loader2, Download, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { useParams, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  ArrowLeft,
+  Printer,
+  Loader2,
+  Download,
+  AlertCircle,
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
 interface TranscriptData {
   student: {
@@ -67,10 +73,16 @@ export default function TranscriptPrintPage() {
   const router = useRouter();
   const studentId = params.studentId as string;
 
-  const { data: transcript, isLoading, error } = useQuery<TranscriptData>({
-    queryKey: ['transcript', studentId],
+  const {
+    data: transcript,
+    isLoading,
+    error,
+  } = useQuery<TranscriptData>({
+    queryKey: ["transcript", studentId],
     queryFn: async () => {
-      const res = await api.get(`/assessment/reports/students/${studentId}/transcript`);
+      const res = await api.get(
+        `/assessment/reports/students/${studentId}/transcript`,
+      );
       return res.data.data;
     },
     enabled: !!studentId,
@@ -101,17 +113,17 @@ export default function TranscriptPrintPage() {
 
   const getGradeColor = (grade: string) => {
     switch (grade) {
-      case 'A':
-      case 'A+':
-        return 'text-green-600';
-      case 'B':
-        return 'text-blue-600';
-      case 'C':
-        return 'text-yellow-600';
-      case 'D':
-        return 'text-orange-600';
+      case "A":
+      case "A+":
+        return "text-green-600";
+      case "B":
+        return "text-blue-600";
+      case "C":
+        return "text-yellow-600";
+      case "D":
+        return "text-orange-600";
       default:
-        return 'text-red-600';
+        return "text-red-600";
     }
   };
 
@@ -125,7 +137,9 @@ export default function TranscriptPrintPage() {
             Kembali
           </Button>
           <div>
-            <p className="font-semibold">Transkrip - {transcript.student.name}</p>
+            <p className="font-semibold">
+              Transkrip - {transcript.student.name}
+            </p>
             <p className="text-sm text-muted-foreground">
               {transcript.transcriptNumber}
             </p>
@@ -177,9 +191,15 @@ export default function TranscriptPrintPage() {
                 <p className="text-xs font-medium text-gray-600 uppercase">
                   Kementerian Agama Republik Indonesia
                 </p>
-                <h1 className="text-base font-bold uppercase">{transcript.school.name}</h1>
-                <p className="text-xs text-gray-600">{transcript.school.address}</p>
-                <p className="text-xs text-gray-600">NPSN: {transcript.school.npsn ?? '-'}</p>
+                <h1 className="text-base font-bold uppercase">
+                  {transcript.school.name}
+                </h1>
+                <p className="text-xs text-gray-600">
+                  {transcript.school.address}
+                </p>
+                <p className="text-xs text-gray-600">
+                  NPSN: {transcript.school.npsn ?? "-"}
+                </p>
               </div>
               <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center text-2xl">
                 ☪️
@@ -195,21 +215,35 @@ export default function TranscriptPrintPage() {
 
           {/* Student Info */}
           <div className="mb-4 no-break">
-            <h3 className="font-bold text-xs bg-gray-200 p-1 mb-2">DATA PESERTA DIDIK</h3>
+            <h3 className="font-bold text-xs bg-gray-200 p-1 mb-2">
+              DATA PESERTA DIDIK
+            </h3>
             <div className="grid grid-cols-2 gap-x-8 text-xs">
               <div className="space-y-0.5">
                 <div className="flex">
                   <span className="w-28 text-gray-600">Nama Lengkap</span>
-                  <span className="font-semibold">: {transcript.student.name}</span>
+                  <span className="font-semibold">
+                    : {transcript.student.name}
+                  </span>
                 </div>
                 <div className="flex">
                   <span className="w-28 text-gray-600">NIS / NISN</span>
-                  <span>: {transcript.student.nis} / {transcript.student.nisn ?? '-'}</span>
+                  <span>
+                    : {transcript.student.nis} /{" "}
+                    {transcript.student.nisn ?? "-"}
+                  </span>
                 </div>
                 <div className="flex">
                   <span className="w-28 text-gray-600">TTL</span>
                   <span>
-                    : {transcript.student.birthPlace ?? '-'}, {transcript.student.birthDate ? format(new Date(transcript.student.birthDate), 'd MMM yyyy', { locale: idLocale }) : '-'}
+                    : {transcript.student.birthPlace ?? "-"},{" "}
+                    {transcript.student.birthDate
+                      ? format(
+                          new Date(transcript.student.birthDate),
+                          "d MMM yyyy",
+                          { locale: idLocale },
+                        )
+                      : "-"}
                   </span>
                 </div>
               </div>
@@ -224,7 +258,7 @@ export default function TranscriptPrintPage() {
                 </div>
                 <div className="flex">
                   <span className="w-28 text-gray-600">Nama Orang Tua</span>
-                  <span>: {transcript.student.parentName ?? '-'}</span>
+                  <span>: {transcript.student.parentName ?? "-"}</span>
                 </div>
               </div>
             </div>
@@ -238,35 +272,63 @@ export default function TranscriptPrintPage() {
             <table className="w-full border-collapse text-xs">
               <thead>
                 <tr className="bg-green-50">
-                  <th className="border border-gray-400 p-1 w-8 text-center">No</th>
-                  <th className="border border-gray-400 p-1 text-left">Mata Pelajaran</th>
-                  <th className="border border-gray-400 p-1 w-16 text-center">Nilai</th>
-                  <th className="border border-gray-400 p-1 w-14 text-center">Grade</th>
-                  <th className="border border-gray-400 p-1 w-16 text-center">Status</th>
+                  <th className="border border-gray-400 p-1 w-8 text-center">
+                    No
+                  </th>
+                  <th className="border border-gray-400 p-1 text-left">
+                    Mata Pelajaran
+                  </th>
+                  <th className="border border-gray-400 p-1 w-16 text-center">
+                    Nilai
+                  </th>
+                  <th className="border border-gray-400 p-1 w-14 text-center">
+                    Grade
+                  </th>
+                  <th className="border border-gray-400 p-1 w-16 text-center">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {transcript.finalGrades.map((grade, index) => (
                   <tr key={index}>
-                    <td className="border border-gray-400 p-1 text-center">{index + 1}</td>
-                    <td className="border border-gray-400 p-1">{grade.subjectName}</td>
+                    <td className="border border-gray-400 p-1 text-center">
+                      {index + 1}
+                    </td>
+                    <td className="border border-gray-400 p-1">
+                      {grade.subjectName}
+                    </td>
                     <td className="border border-gray-400 p-1 text-center font-semibold">
                       {grade.averageScore.toFixed(1)}
                     </td>
-                    <td className={`border border-gray-400 p-1 text-center font-bold ${getGradeColor(grade.letterGrade)}`}>
+                    <td
+                      className={`border border-gray-400 p-1 text-center font-bold ${getGradeColor(grade.letterGrade)}`}
+                    >
                       {grade.letterGrade}
                     </td>
-                    <td className={`border border-gray-400 p-1 text-center text-xs ${grade.isPassedKKM ? 'text-green-600' : 'text-red-600'}`}>
-                      {grade.isPassedKKM ? '✓ Lulus' : '✗ Tidak'}
+                    <td
+                      className={`border border-gray-400 p-1 text-center text-xs ${grade.isPassedKKM ? "text-green-600" : "text-red-600"}`}
+                    >
+                      {grade.isPassedKKM ? "✓ Lulus" : "✗ Tidak"}
                     </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr className="bg-green-100 font-bold">
-                  <td colSpan={2} className="border border-gray-400 p-1 text-right">Rata-rata</td>
-                  <td className="border border-gray-400 p-1 text-center">{transcript.overallAverage.toFixed(2)}</td>
-                  <td colSpan={2} className="border border-gray-400 p-1 text-center">
+                  <td
+                    colSpan={2}
+                    className="border border-gray-400 p-1 text-right"
+                  >
+                    Rata-rata
+                  </td>
+                  <td className="border border-gray-400 p-1 text-center">
+                    {transcript.overallAverage.toFixed(2)}
+                  </td>
+                  <td
+                    colSpan={2}
+                    className="border border-gray-400 p-1 text-center"
+                  >
                     IPK: {transcript.gpa.toFixed(2)}
                   </td>
                 </tr>
@@ -283,21 +345,28 @@ export default function TranscriptPrintPage() {
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div className="bg-green-50 p-2 rounded text-center">
                   <p className="text-xs text-gray-600">Total Juz</p>
-                  <p className="text-2xl font-bold text-green-700">{transcript.tahfidzSummary.totalJuz}</p>
+                  <p className="text-2xl font-bold text-green-700">
+                    {transcript.tahfidzSummary.totalJuz}
+                  </p>
                 </div>
                 <div className="bg-green-50 p-2 rounded text-center">
                   <p className="text-xs text-gray-600">Total Surah</p>
-                  <p className="text-2xl font-bold text-green-700">{transcript.tahfidzSummary.totalSurah}</p>
+                  <p className="text-2xl font-bold text-green-700">
+                    {transcript.tahfidzSummary.totalSurah}
+                  </p>
                 </div>
                 <div className="bg-green-50 p-2 rounded text-center">
                   <p className="text-xs text-gray-600">Grade Tahfidz</p>
-                  <p className={`text-2xl font-bold ${getGradeColor(transcript.tahfidzSummary.tahfidzGrade)}`}>
+                  <p
+                    className={`text-2xl font-bold ${getGradeColor(transcript.tahfidzSummary.tahfidzGrade)}`}
+                  >
                     {transcript.tahfidzSummary.tahfidzGrade}
                   </p>
                 </div>
               </div>
               <p className="text-xs text-gray-600 mt-1">
-                Hafalan terakhir: Juz {transcript.tahfidzSummary.lastJuz} - Surah {transcript.tahfidzSummary.lastSurah}
+                Hafalan terakhir: Juz {transcript.tahfidzSummary.lastJuz} -
+                Surah {transcript.tahfidzSummary.lastSurah}
               </p>
             </div>
           )}
@@ -311,24 +380,42 @@ export default function TranscriptPrintPage() {
               <div key={semIndex} className="mb-3 no-break">
                 <p className="text-xs font-semibold bg-gray-100 p-1">
                   Semester {sem.semester} - {sem.academicYear}
-                  {sem.rank && <span className="float-right">Peringkat: {sem.rank}</span>}
+                  {sem.rank && (
+                    <span className="float-right">Peringkat: {sem.rank}</span>
+                  )}
                 </p>
                 <table className="w-full border-collapse text-xs">
                   <thead>
                     <tr className="bg-gray-50">
-                      <th className="border border-gray-300 p-0.5 w-6 text-center">No</th>
-                      <th className="border border-gray-300 p-0.5 text-left">Mata Pelajaran</th>
-                      <th className="border border-gray-300 p-0.5 w-12 text-center">Nilai</th>
-                      <th className="border border-gray-300 p-0.5 w-10 text-center">Grade</th>
+                      <th className="border border-gray-300 p-0.5 w-6 text-center">
+                        No
+                      </th>
+                      <th className="border border-gray-300 p-0.5 text-left">
+                        Mata Pelajaran
+                      </th>
+                      <th className="border border-gray-300 p-0.5 w-12 text-center">
+                        Nilai
+                      </th>
+                      <th className="border border-gray-300 p-0.5 w-10 text-center">
+                        Grade
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {sem.subjects.map((subj, subjIndex) => (
                       <tr key={subjIndex}>
-                        <td className="border border-gray-300 p-0.5 text-center">{subjIndex + 1}</td>
-                        <td className="border border-gray-300 p-0.5">{subj.name}</td>
-                        <td className="border border-gray-300 p-0.5 text-center">{subj.score.toFixed(0)}</td>
-                        <td className={`border border-gray-300 p-0.5 text-center font-semibold ${getGradeColor(subj.grade)}`}>
+                        <td className="border border-gray-300 p-0.5 text-center">
+                          {subjIndex + 1}
+                        </td>
+                        <td className="border border-gray-300 p-0.5">
+                          {subj.name}
+                        </td>
+                        <td className="border border-gray-300 p-0.5 text-center">
+                          {subj.score.toFixed(0)}
+                        </td>
+                        <td
+                          className={`border border-gray-300 p-0.5 text-center font-semibold ${getGradeColor(subj.grade)}`}
+                        >
                           {subj.grade}
                         </td>
                       </tr>
@@ -336,10 +423,16 @@ export default function TranscriptPrintPage() {
                   </tbody>
                   <tfoot>
                     <tr className="bg-gray-50">
-                      <td colSpan={2} className="border border-gray-300 p-0.5 text-right font-semibold">
+                      <td
+                        colSpan={2}
+                        className="border border-gray-300 p-0.5 text-right font-semibold"
+                      >
                         Rata-rata Semester
                       </td>
-                      <td colSpan={2} className="border border-gray-300 p-0.5 text-center font-bold">
+                      <td
+                        colSpan={2}
+                        className="border border-gray-300 p-0.5 text-center font-bold"
+                      >
                         {sem.average.toFixed(2)}
                       </td>
                     </tr>
@@ -354,12 +447,17 @@ export default function TranscriptPrintPage() {
             <h3 className="font-bold text-xs bg-green-700 text-white p-1 mb-1">
               D. STATUS KELULUSAN
             </h3>
-            <div className={`p-3 rounded-lg text-center ${transcript.isGraduated ? 'bg-green-100 border-2 border-green-500' : 'bg-red-100 border-2 border-red-500'}`}>
-              <p className={`text-lg font-bold ${transcript.isGraduated ? 'text-green-700' : 'text-red-700'}`}>
+            <div
+              className={`p-3 rounded-lg text-center ${transcript.isGraduated ? "bg-green-100 border-2 border-green-500" : "bg-red-100 border-2 border-red-500"}`}
+            >
+              <p
+                className={`text-lg font-bold ${transcript.isGraduated ? "text-green-700" : "text-red-700"}`}
+              >
                 {transcript.graduationStatus.toUpperCase()}
               </p>
               <p className="text-xs text-gray-600 mt-1">
-                Indeks Prestasi Kumulatif (IPK): {transcript.gpa.toFixed(2)} / 4.00
+                Indeks Prestasi Kumulatif (IPK): {transcript.gpa.toFixed(2)} /
+                4.00
               </p>
             </div>
           </div>
@@ -388,21 +486,38 @@ export default function TranscriptPrintPage() {
               </p>
             </div>
             <div>
-              <p>Diterbitkan di: {transcript.school.address?.split(',')[0] ?? 'Bandung'}</p>
-              <p>Tanggal: {format(new Date(transcript.issuedDate), 'd MMMM yyyy', { locale: idLocale })}</p>
+              <p>
+                Diterbitkan di:{" "}
+                {transcript.school.address?.split(",")[0] ?? "Bandung"}
+              </p>
+              <p>
+                Tanggal:{" "}
+                {format(new Date(transcript.issuedDate), "d MMMM yyyy", {
+                  locale: idLocale,
+                })}
+              </p>
               <p className="font-semibold mt-1">Kepala Madrasah</p>
               <div className="h-12"></div>
               <p className="border-t border-black pt-1">
                 ________________________
               </p>
-              <p className="text-xs text-gray-600">NIP. ________________________</p>
+              <p className="text-xs text-gray-600">
+                NIP. ________________________
+              </p>
             </div>
           </div>
 
           {/* Footer */}
           <div className="text-center text-xs text-gray-500 mt-6 pt-3 border-t">
-            <p>Transkrip ini sah dan dapat digunakan untuk keperluan akademik</p>
-            <p>Dicetak: {format(new Date(), "EEEE, d MMMM yyyy 'pukul' HH:mm 'WIB'", { locale: idLocale })}</p>
+            <p>
+              Transkrip ini sah dan dapat digunakan untuk keperluan akademik
+            </p>
+            <p>
+              Dicetak:{" "}
+              {format(new Date(), "EEEE, d MMMM yyyy 'pukul' HH:mm 'WIB'", {
+                locale: idLocale,
+              })}
+            </p>
           </div>
         </div>
       </div>

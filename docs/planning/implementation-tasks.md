@@ -10,12 +10,14 @@
 ## Executive Summary
 
 ### Project Status
+
 - **Backend Completion:** 98% (62 modules implemented)
 - **Frontend Completion:** 70% (60+ pages, needs UI/UX enhancement)
 - **Database:** Complete (5,700+ lines Prisma schema)
 - **Focus:** Frontend implementation + Integration testing + Polish
 
 ### Total Effort Estimation
+
 - **PAUD Module:** 116 hours (14.5 days)
 - **Tahfidz Enhancement:** 112 hours (14 days)
 - **Multi-Unit Dashboard:** 88 hours (11 days)
@@ -24,6 +26,7 @@
 - **GRAND TOTAL:** 420 hours (~53 days or ~10.5 weeks)
 
 ### Sprint Planning (2-week sprints)
+
 - **Sprint 1-2:** PAUD Module (P1 - Critical)
 - **Sprint 3-4:** Tahfidz Enhancement (P2 - High)
 - **Sprint 5:** Multi-Unit Dashboard (P3 - Medium)
@@ -52,6 +55,7 @@
 **Estimated:** 8 hours
 
 #### Tasks:
+
 - [ ] 1.1.1 Create page layout with filters (student, aspect, period, date range)
   - File: `apps/web/src/app/(dashboard)/paud/assessment/page.tsx`
   - Components: SearchInput, DateRangePicker, Select (aspect/period)
@@ -84,6 +88,7 @@
 
 **Dependencies:** Backend API exists (✅ complete)  
 **Acceptance Criteria:**
+
 - Filters work correctly with API
 - Table displays paginated data
 - Actions trigger correct modals/routes
@@ -97,6 +102,7 @@
 **Estimated:** 12 hours
 
 #### Tasks:
+
 - [ ] 1.2.1 Create multi-step form layout
   - File: `apps/web/src/app/(dashboard)/paud/assessment/new/page.tsx`
   - Stepper component with 4 steps
@@ -146,6 +152,7 @@
 
 **Dependencies:** 1.1  
 **Acceptance Criteria:**
+
 - Form validates correctly at each step
 - File upload works with preview
 - Submit creates assessment successfully
@@ -160,6 +167,7 @@
 **Estimated:** 16 hours
 
 #### Tasks:
+
 - [ ] 1.3.1 Create dashboard layout with summary cards
   - Student info card (name, photo, class)
   - Overall progress card (avg score, trend)
@@ -205,6 +213,7 @@
 
 **Dependencies:** 1.1, 1.2  
 **Acceptance Criteria:**
+
 - Radar chart displays correctly with accurate data
 - Timeline is navigable and clickable
 - Filters update data correctly
@@ -218,6 +227,7 @@
 **Estimated:** 14 hours
 
 #### Tasks:
+
 - [ ] 1.4.1 Create class overview cards
   - Total students card
   - Avg progress card (across all aspects)
@@ -257,6 +267,7 @@
 
 **Dependencies:** 1.3  
 **Acceptance Criteria:**
+
 - Distribution chart accurately reflects class data
 - Student grid is sortable and filterable
 - Export generates correct CSV
@@ -270,6 +281,7 @@
 **Estimated:** 18 hours
 
 #### Tasks:
+
 - [ ] 1.5.1 Create report generation wizard (3 steps)
   - Step 1: Select students (multi-select)
   - Step 2: Select period & template
@@ -317,6 +329,7 @@
 
 **Dependencies:** 1.3, 1.4  
 **Acceptance Criteria:**
+
 - Can generate report for single or multiple students
 - PDF format matches school standards
 - Progress bar updates accurately
@@ -330,6 +343,7 @@
 **Estimated:** 10 hours
 
 #### Tasks:
+
 - [ ] 1.6.1 Create indicators list page
   - Group by aspect (NAM, FM, etc.)
   - Expandable accordion per aspect
@@ -357,6 +371,7 @@
 
 **Dependencies:** None (admin tool)  
 **Acceptance Criteria:**
+
 - Indicators are manageable per aspect
 - Bulk import works correctly
 - Order is persisted
@@ -370,6 +385,7 @@
 **Estimated:** 6 hours
 
 #### Tasks:
+
 - [ ] 1.7.1 Create settings page layout
   - Tab navigation: General, Templates, Notifications
   - **Time:** 1h
@@ -395,6 +411,7 @@
 
 **Dependencies:** None  
 **Acceptance Criteria:**
+
 - Settings are saved and applied system-wide
 - Template upload works
 
@@ -406,6 +423,7 @@
 **Estimated:** 12 hours
 
 #### Tasks:
+
 - [ ] 1.8.1 Audit all PAUD pages for mobile layout
   - Test on mobile viewport (375px, 768px)
   - Identify layout issues
@@ -440,6 +458,7 @@
 
 **Dependencies:** 1.1-1.7  
 **Acceptance Criteria:**
+
 - All pages usable on mobile (touch-friendly)
 - No horizontal scroll
 - Charts/graphs display correctly
@@ -452,6 +471,7 @@
 **Estimated:** 8 hours
 
 #### Tasks:
+
 - [ ] 1.9.1 Write E2E test: Create assessment flow
   - Playwright test from login → create → verify
   - **Time:** 2h
@@ -473,6 +493,7 @@
 
 **Dependencies:** 1.1-1.8  
 **Acceptance Criteria:**
+
 - All E2E tests pass
 - Coverage ≥ 70% for PAUD pages
 
@@ -484,6 +505,7 @@
 **Estimated:** 4 hours
 
 #### Tasks:
+
 - [ ] 1.10.1 Write user guide for teachers
   - How to create assessments
   - How to view student progress
@@ -500,6 +522,7 @@
 
 **Dependencies:** 1.9  
 **Acceptance Criteria:**
+
 - Docs are clear and complete
 - Published in accessible location (docs site or PDF)
 
@@ -518,6 +541,7 @@
 **Status:** ✅ Complete - Ready for E2E testing
 
 #### Tasks:
+
 - [x] 2.1.1 Create analytics dashboard layout
   - Summary cards: Total records, avg quality, consistency
   - **Time:** 2h ✅ (Session 1)
@@ -556,12 +580,14 @@
 
 **Dependencies:** Backend API exists ✅  
 **Acceptance Criteria:**
+
 - ✅ Charts display accurate data
 - ✅ Filters update charts correctly
 - ✅ Ranking updates in real-time
 - ⏳ E2E tests pending
 
 **Notes:**
+
 - Initial mock data implementation: Session 1 (12h)
 - Backend API implementation: Session 3 (2.5h)
 - JSX fixes & completion: Session 4 (0.5h)
@@ -576,6 +602,7 @@
 **Estimated:** 10 hours
 
 #### Tasks:
+
 - [ ] 2.2.1 Enhance form layout with better UX
   - Auto-fill student from halaqoh
   - Juz/Surah/Ayat picker with search
@@ -601,6 +628,7 @@
 
 **Dependencies:** 2.1  
 **Acceptance Criteria:**
+
 - Form is intuitive and fast to use
 - Quality score calculation is accurate
 - Voice note (if implemented) works
@@ -614,6 +642,7 @@
 **Estimated:** 24 hours
 
 #### Tasks:
+
 - [ ] 2.3.1 Create simaan exam list page
   - Table: Student, Type, Status, Date, Score
   - Filters: Type, status, date range
@@ -659,6 +688,7 @@
 
 **Dependencies:** 2.1, 2.2  
 **Acceptance Criteria:**
+
 - Exams can be scheduled with multiple examiners
 - Marathon exams support multi-session
 - Pass/fail is accurate
@@ -672,6 +702,7 @@
 **Estimated:** 8 hours
 
 #### Tasks:
+
 - [ ] 2.4.1 Create schedule calendar view
   - Month/week view
   - Show scheduled exams on calendar
@@ -692,6 +723,7 @@
 
 **Dependencies:** 2.3  
 **Acceptance Criteria:**
+
 - Calendar displays all exams correctly
 - Notifications are sent
 
@@ -704,6 +736,7 @@
 **Estimated:** 20 hours
 
 #### Tasks:
+
 - [ ] 2.5.1 Create sanad record management page
   - List all sanad records
   - CRUD for chain of transmission
@@ -738,6 +771,7 @@
 
 **Dependencies:** 2.3 (requires passed marathon exam)  
 **Acceptance Criteria:**
+
 - Certificate PDF is high-quality and printable
 - QR verification works
 - PDF is downloadable
@@ -751,6 +785,7 @@
 **Estimated:** 12 hours
 
 #### Tasks:
+
 - [ ] 2.6.1 Create comprehensive profile layout
   - Header: Photo, name, halaqoh, enrollment date
   - Tabs: Murojaah, Simaan, Certificates
@@ -783,6 +818,7 @@
 
 **Dependencies:** 2.1, 2.3, 2.5  
 **Acceptance Criteria:**
+
 - Profile shows complete tahfidz journey
 - Charts and stats are accurate
 
@@ -794,6 +830,7 @@
 **Estimated:** 10 hours
 
 #### Tasks:
+
 - [ ] 2.7.1 Audit all tahfidz pages for mobile
   - **Time:** 1.5h
 
@@ -814,6 +851,7 @@
 
 **Dependencies:** 2.1-2.6  
 **Acceptance Criteria:**
+
 - All pages usable on mobile
 
 ---
@@ -824,6 +862,7 @@
 **Estimated:** 8 hours
 
 #### Tasks:
+
 - [ ] 2.8.1 Write E2E test: Murojaah record flow
   - **Time:** 2h
 
@@ -841,6 +880,7 @@
 
 **Dependencies:** 2.1-2.7  
 **Acceptance Criteria:**
+
 - All E2E tests pass
 
 ---
@@ -851,6 +891,7 @@
 **Estimated:** 2 hours
 
 #### Tasks:
+
 - [ ] 2.9.1 Write muhafidz user guide
   - **Time:** 1h
 
@@ -862,6 +903,7 @@
 
 **Dependencies:** 2.8  
 **Acceptance Criteria:**
+
 - Docs published
 
 ---
@@ -877,6 +919,7 @@
 **Estimated:** 20 hours
 
 #### Tasks:
+
 - [ ] 3.1.1 Create dashboard layout with KPI cards
   - Total students (all units)
   - Total teachers
@@ -915,6 +958,7 @@
 
 **Dependencies:** Backend WebSocket implemented  
 **Acceptance Criteria:**
+
 - Dashboard updates in real-time (< 1 min latency)
 - KPIs are accurate
 - Charts display correctly
@@ -928,6 +972,7 @@
 **Estimated:** 16 hours
 
 #### Tasks:
+
 - [ ] 3.2.1 Create comparison table
   - Rows: Units (PAUD, TKQ, SDIT, SMPIT, SMAQ, Pesantren)
   - Columns: Students, Teachers, Attendance, Tahfidz, Finance
@@ -957,6 +1002,7 @@
 
 **Dependencies:** 3.1  
 **Acceptance Criteria:**
+
 - Comparison is clear and informative
 - Export works correctly
 
@@ -969,6 +1015,7 @@
 **Estimated:** 14 hours
 
 #### Tasks:
+
 - [ ] 3.3.1 Create metric selector
   - Dropdown: Select metric to display (attendance, academic, tahfidz)
   - **Time:** 1.5h
@@ -996,6 +1043,7 @@
 
 **Dependencies:** 3.2  
 **Acceptance Criteria:**
+
 - Heatmap is readable
 - Threshold alerts are visible
 
@@ -1008,6 +1056,7 @@
 **Estimated:** 12 hours
 
 #### Tasks:
+
 - [ ] 3.4.1 Create unit overview cards
   - Students (active, inactive), teachers, classes
   - **Time:** 2h
@@ -1035,6 +1084,7 @@
 
 **Dependencies:** 3.3  
 **Acceptance Criteria:**
+
 - Dashboard is comprehensive for unit admin
 - Data is specific to selected unit
 
@@ -1047,6 +1097,7 @@
 **Estimated:** 10 hours
 
 #### Tasks:
+
 - [ ] 3.5.1 Implement notification center component
   - Bell icon with badge (unread count)
   - Dropdown list of notifications
@@ -1075,6 +1126,7 @@
 
 **Dependencies:** 3.1  
 **Acceptance Criteria:**
+
 - Notifications appear in real-time
 - User can dismiss/mark as read
 
@@ -1086,6 +1138,7 @@
 **Estimated:** 8 hours
 
 #### Tasks:
+
 - [ ] 3.6.1 Audit all dashboard pages
   - **Time:** 1h
 
@@ -1103,6 +1156,7 @@
 
 **Dependencies:** 3.1-3.5  
 **Acceptance Criteria:**
+
 - All dashboards usable on mobile
 
 ---
@@ -1113,6 +1167,7 @@
 **Estimated:** 6 hours
 
 #### Tasks:
+
 - [ ] 3.7.1 Write E2E test: Executive dashboard view
   - **Time:** 1.5h
 
@@ -1127,6 +1182,7 @@
 
 **Dependencies:** 3.1-3.6  
 **Acceptance Criteria:**
+
 - E2E tests pass
 
 ---
@@ -1137,6 +1193,7 @@
 **Estimated:** 2 hours
 
 #### Tasks:
+
 - [ ] 3.8.1 Write admin guide for dashboards
   - **Time:** 1h
 
@@ -1145,6 +1202,7 @@
 
 **Dependencies:** 3.7  
 **Acceptance Criteria:**
+
 - Docs published
 
 ---
@@ -1159,6 +1217,7 @@
 **Estimated:** 16 hours
 
 #### Tasks:
+
 - [ ] 4.1.1 Test PAUD assessment → Daily report flow
   - Create assessment → verify daily report triggered
   - **Time:** 3h
@@ -1184,6 +1243,7 @@
 
 **Dependencies:** All modules complete  
 **Acceptance Criteria:**
+
 - All integration workflows pass
 - No data inconsistencies
 
@@ -1195,6 +1255,7 @@
 **Estimated:** 20 hours
 
 #### Tasks:
+
 - [x] 4.2.1 Implement Redis caching ✅ COMPLETE
   - [x] Cache dashboard metrics (TTL: 60s) - Read-through cache with invalidation
   - [x] Cache utility functions (warmDashboardCache, invalidateDashboardCache)
@@ -1232,6 +1293,7 @@
 
 **Dependencies:** 4.1  
 **Acceptance Criteria:**
+
 - Dashboard loads < 500ms (p95)
 - API response < 200ms (p95)
 - No API errors under load (< 1%)
@@ -1244,6 +1306,7 @@
 **Estimated:** 12 hours
 
 #### Tasks:
+
 - [ ] 4.3.1 Audit all API endpoints for authorization
   - Ensure RBAC checks in place
   - Test unauthorized access attempts
@@ -1269,6 +1332,7 @@
 
 **Dependencies:** All modules  
 **Acceptance Criteria:**
+
 - No unauthorized access possible
 - Rate limiting works
 - No XSS/CSRF vulnerabilities
@@ -1281,6 +1345,7 @@
 **Estimated:** 10 hours
 
 #### Tasks:
+
 - [ ] 4.4.1 Audit all pages for accessibility
   - Run axe or Lighthouse accessibility scan
   - **Time:** 2h
@@ -1304,6 +1369,7 @@
 
 **Dependencies:** All modules  
 **Acceptance Criteria:**
+
 - Lighthouse accessibility score ≥ 90
 - Keyboard navigation works everywhere
 
@@ -1315,6 +1381,7 @@
 **Estimated:** 8 hours
 
 #### Tasks:
+
 - [ ] 4.5.1 Implement Sentry error tracking
   - Configure Sentry for backend & frontend
   - **Time:** 2h
@@ -1337,6 +1404,7 @@
 
 **Dependencies:** None  
 **Acceptance Criteria:**
+
 - Errors are tracked in Sentry
 - Logs are structured and searchable
 
@@ -1348,6 +1416,7 @@
 **Estimated:** 8 hours
 
 #### Tasks:
+
 - [ ] 4.6.1 Setup k6 load testing
   - Install k6, create test scripts
   - **Time:** 1h
@@ -1370,6 +1439,7 @@
 
 **Dependencies:** 4.2  
 **Acceptance Criteria:**
+
 - System handles expected load without errors
 
 ---
@@ -1380,6 +1450,7 @@
 **Estimated:** 6 hours
 
 #### Tasks:
+
 - [ ] 4.7.1 Setup Prometheus metrics
   - Expose /metrics endpoint
   - **Time:** 2h
@@ -1395,6 +1466,7 @@
 
 **Dependencies:** 4.5  
 **Acceptance Criteria:**
+
 - Metrics are collected
 - Dashboards display correctly
 
@@ -1410,6 +1482,7 @@
 **Estimated:** 8 hours
 
 #### Tasks:
+
 - [ ] 5.1.1 Write complete user manual
   - Sections for each role (admin, teacher, parent)
   - **Time:** 4h
@@ -1428,6 +1501,7 @@
 
 **Dependencies:** All modules  
 **Acceptance Criteria:**
+
 - Docs are comprehensive and clear
 - Videos are helpful
 
@@ -1439,6 +1513,7 @@
 **Estimated:** 6 hours
 
 #### Tasks:
+
 - [ ] 5.2.1 Update API documentation (Swagger)
   - Ensure all endpoints documented
   - **Time:** 2h
@@ -1457,6 +1532,7 @@
 
 **Dependencies:** All modules  
 **Acceptance Criteria:**
+
 - Devs can understand system architecture
 - Deployment guide is complete
 
@@ -1468,6 +1544,7 @@
 **Estimated:** 6 hours
 
 #### Tasks:
+
 - [ ] 5.3.1 Create GitHub Actions workflow
   - Run tests on push
   - **Time:** 2h
@@ -1486,6 +1563,7 @@
 
 **Dependencies:** None  
 **Acceptance Criteria:**
+
 - CI/CD pipeline works
 - Deployment is automated
 
@@ -1497,6 +1575,7 @@
 **Estimated:** 4 hours
 
 #### Tasks:
+
 - [ ] 5.4.1 Prepare production environment
   - Setup server, database, Redis
   - **Time:** 1h
@@ -1519,6 +1598,7 @@
 
 **Dependencies:** 5.3, All modules tested  
 **Acceptance Criteria:**
+
 - Application is live
 - No critical issues in first 24 hours
 
@@ -1526,15 +1606,15 @@
 
 ## Task Summary by Priority
 
-| Priority | Tasks | Estimated Hours | Sprints |
-|----------|-------|-----------------|---------|
-| **P1 - Critical** | PAUD Module | 116h | 1-2 |
-| **P2 - High** | Tahfidz Enhancement | 112h | 3-4 |
-| **P3 - Medium** | Multi-Unit Dashboard | 88h | 5 |
-| **P4 - Low** | Daily Report (minor enhancements) | 0h (already done) | - |
-| **P5 - Enhancement** | Integration & Testing | 80h | 6 |
-| **P5 - Enhancement** | Documentation & Deployment | 24h | 6 |
-| **TOTAL** | | **420h** | **6 sprints** |
+| Priority             | Tasks                             | Estimated Hours   | Sprints       |
+| -------------------- | --------------------------------- | ----------------- | ------------- |
+| **P1 - Critical**    | PAUD Module                       | 116h              | 1-2           |
+| **P2 - High**        | Tahfidz Enhancement               | 112h              | 3-4           |
+| **P3 - Medium**      | Multi-Unit Dashboard              | 88h               | 5             |
+| **P4 - Low**         | Daily Report (minor enhancements) | 0h (already done) | -             |
+| **P5 - Enhancement** | Integration & Testing             | 80h               | 6             |
+| **P5 - Enhancement** | Documentation & Deployment        | 24h               | 6             |
+| **TOTAL**            |                                   | **420h**          | **6 sprints** |
 
 ---
 
@@ -1547,37 +1627,37 @@ Database (2.1-2.3)
    ↓
 ┌──────────────┬──────────────┬──────────────┐
 │              │              │              │
-PAUD Module    Tahfidz        Dashboard      
-(1.1-1.10)     (2.1-2.9)      (3.1-3.8)     
-116h           112h           88h            
-Sprint 1-2     Sprint 3-4     Sprint 5       
-   │              │              │            
-   └──────────────┴──────────────┘            
-                  ↓                            
-         Integration & Testing                
-              (4.1-4.7)                        
-                80h                            
-              Sprint 6                         
-                  ↓                            
-        Documentation & Deployment             
-              (5.1-5.4)                        
-                24h                            
-              Sprint 6                         
+PAUD Module    Tahfidz        Dashboard
+(1.1-1.10)     (2.1-2.9)      (3.1-3.8)
+116h           112h           88h
+Sprint 1-2     Sprint 3-4     Sprint 5
+   │              │              │
+   └──────────────┴──────────────┘
+                  ↓
+         Integration & Testing
+              (4.1-4.7)
+                80h
+              Sprint 6
+                  ↓
+        Documentation & Deployment
+              (5.1-5.4)
+                24h
+              Sprint 6
 ```
 
 ---
 
 ## Risk Mitigation
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Backend API changes needed during frontend dev | Medium | Thoroughly review API specs before starting |
-| Chart libraries don't support required features | Medium | Prototype charts early (week 1) |
-| PDF generation is complex | High | Start PDF work early, have fallback (HTML print) |
-| WebSocket implementation issues | Medium | Test WebSocket early, have polling fallback |
-| Mobile responsive issues | Low | Test mobile throughout development, not at end |
-| Performance problems under load | Medium | Run load tests early (week 4), optimize as needed |
-| Integration test failures | High | Write integration tests incrementally, not at end |
+| Risk                                            | Impact | Mitigation                                        |
+| ----------------------------------------------- | ------ | ------------------------------------------------- |
+| Backend API changes needed during frontend dev  | Medium | Thoroughly review API specs before starting       |
+| Chart libraries don't support required features | Medium | Prototype charts early (week 1)                   |
+| PDF generation is complex                       | High   | Start PDF work early, have fallback (HTML print)  |
+| WebSocket implementation issues                 | Medium | Test WebSocket early, have polling fallback       |
+| Mobile responsive issues                        | Low    | Test mobile throughout development, not at end    |
+| Performance problems under load                 | Medium | Run load tests early (week 4), optimize as needed |
+| Integration test failures                       | High   | Write integration tests incrementally, not at end |
 
 ---
 
@@ -1585,15 +1665,16 @@ Sprint 1-2     Sprint 3-4     Sprint 5
 
 For optimal velocity, consider this team structure:
 
-| Role | Count | Focus |
-|------|-------|-------|
-| Frontend Developer | 2 | 1 on PAUD, 1 on Tahfidz |
-| Full-stack Developer | 1 | Dashboard + integrations |
-| QA Engineer | 1 | Testing all modules |
-| DevOps Engineer | 0.5 | CI/CD + deployment (part-time) |
-| **Total** | **4.5 FTE** | |
+| Role                 | Count       | Focus                          |
+| -------------------- | ----------- | ------------------------------ |
+| Frontend Developer   | 2           | 1 on PAUD, 1 on Tahfidz        |
+| Full-stack Developer | 1           | Dashboard + integrations       |
+| QA Engineer          | 1           | Testing all modules            |
+| DevOps Engineer      | 0.5         | CI/CD + deployment (part-time) |
+| **Total**            | **4.5 FTE** |                                |
 
 **Timeline with this team:**
+
 - Sprint 1-2 (4 weeks): Frontend devs on PAUD + Tahfidz in parallel
 - Sprint 3-4 (4 weeks): Continue + Dashboard starts
 - Sprint 5 (2 weeks): Wrap up Dashboard

@@ -16,13 +16,12 @@ import {
   SharedPaginatedResponse,
   Pagination,
   AccountType,
-  FinanceReportPeriod
+  FinanceReportPeriod,
 } from '@cipansor/shared';
 import { Prisma } from '@prisma/client';
 import { checkPeriodStatus } from './period.service';
 
 export class FinanceEnhancementService {
-
   // ==================== ACCOUNT CODES ====================
 
   async getAccountCodes(params: {
@@ -40,7 +39,7 @@ export class FinanceEnhancementService {
     if (search) {
       whereClause.OR = [
         { code: { contains: search, mode: 'insensitive' } },
-        { name: { contains: search, mode: 'insensitive' } }
+        { name: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -49,13 +48,13 @@ export class FinanceEnhancementService {
         where: whereClause,
         include: {
           parent: { select: { id: true, code: true, name: true, type: true } },
-          children: { select: { id: true, code: true, name: true, type: true } }
+          children: { select: { id: true, code: true, name: true, type: true } },
         },
         orderBy: { code: 'asc' },
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       }),
-      prisma.accountCode.count({ where: whereClause })
+      prisma.accountCode.count({ where: whereClause }),
     ]);
 
     return {
@@ -66,9 +65,9 @@ export class FinanceEnhancementService {
           page,
           limit,
           total,
-          totalPages: Math.ceil(total / limit)
-        }
-      }
+          totalPages: Math.ceil(total / limit),
+        },
+      },
     };
   }
 
@@ -85,8 +84,8 @@ export class FinanceEnhancementService {
         type: input.type,
         parentId: input.parentId,
         isActive: input.isActive ?? true,
-        cashFlowCategory: input.cashFlowCategory
-      }
+        cashFlowCategory: input.cashFlowCategory,
+      },
     });
 
     return this.mapToAccountCode(accountCode);
@@ -98,8 +97,8 @@ export class FinanceEnhancementService {
       data: {
         ...input,
         type: input.type ? input.type : undefined,
-        cashFlowCategory: input.cashFlowCategory
-      }
+        cashFlowCategory: input.cashFlowCategory,
+      },
     });
     return this.mapToAccountCode(accountCode);
   }
@@ -135,13 +134,13 @@ export class FinanceEnhancementService {
         include: {
           unit: { select: { id: true, name: true } },
           account: { select: { id: true, code: true, name: true, type: true } },
-          createdBy: { select: { id: true, name: true } }
+          createdBy: { select: { id: true, name: true } },
         },
         orderBy: { date: 'desc' },
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       }),
-      prisma.journalEntry.count({ where: whereClause })
+      prisma.journalEntry.count({ where: whereClause }),
     ]);
 
     return {
@@ -152,13 +151,15 @@ export class FinanceEnhancementService {
           page,
           limit,
           total,
-          totalPages: Math.ceil(total / limit)
-        }
-      }
+          totalPages: Math.ceil(total / limit),
+        },
+      },
     };
   }
 
-  async createJournalEntry(input: CreateJournalEntryInput & { createdById: string }): Promise<JournalEntry> {
+  async createJournalEntry(
+    input: CreateJournalEntryInput & { createdById: string }
+  ): Promise<JournalEntry> {
     // Check if period is closed
     await checkPeriodStatus(input.unitId, new Date(input.date));
 
@@ -172,12 +173,12 @@ export class FinanceEnhancementService {
         credit: input.credit || 0,
         reference: input.reference,
         referenceType: input.referenceType ?? null,
-        createdById: input.createdById
+        createdById: input.createdById,
       },
       include: {
         unit: { select: { name: true } },
-        account: { select: { code: true, name: true } }
-      }
+        account: { select: { code: true, name: true } },
+      },
     });
 
     return this.mapToJournalEntry(entry);
@@ -189,8 +190,8 @@ export class FinanceEnhancementService {
       include: {
         unit: { select: { id: true, name: true } },
         account: { select: { id: true, code: true, name: true, type: true } },
-        createdBy: { select: { id: true, name: true } }
-      }
+        createdBy: { select: { id: true, name: true } },
+      },
     });
 
     if (!entry) return null;
@@ -221,13 +222,13 @@ export class FinanceEnhancementService {
         where: whereClause,
         include: {
           unit: { select: { id: true, name: true } },
-          _count: { select: { recipients: true, discounts: true } }
+          _count: { select: { recipients: true, discounts: true } },
         },
         orderBy: { name: 'asc' },
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       }),
-      prisma.scholarship.count({ where: whereClause })
+      prisma.scholarship.count({ where: whereClause }),
     ]);
 
     return {
@@ -238,9 +239,9 @@ export class FinanceEnhancementService {
           page,
           limit,
           total,
-          totalPages: Math.ceil(total / limit)
-        }
-      }
+          totalPages: Math.ceil(total / limit),
+        },
+      },
     };
   }
 
@@ -256,8 +257,8 @@ export class FinanceEnhancementService {
         startDate: new Date(input.startDate),
         endDate: input.endDate ? new Date(input.endDate) : null,
         unitId: input.unitId,
-        isActive: input.isActive ?? true
-      }
+        isActive: input.isActive ?? true,
+      },
     });
 
     return this.mapToScholarship(scholarship);
@@ -270,22 +271,25 @@ export class FinanceEnhancementService {
         unit: { select: { id: true, name: true } },
         discounts: {
           include: {
-            component: { select: { code: true, name: true, amount: true } }
-          }
+            component: { select: { code: true, name: true, amount: true } },
+          },
         },
-        _count: { select: { recipients: true } }
-      }
+        _count: { select: { recipients: true } },
+      },
     });
 
     if (!scholarship) return null;
     return this.mapToScholarship(scholarship);
   }
 
-  async getScholarshipRecipients(id: string, params: {
-    status?: string;
-    page: number;
-    limit: number;
-  }): Promise<SharedPaginatedResponse<ScholarshipRecipient>> {
+  async getScholarshipRecipients(
+    id: string,
+    params: {
+      status?: string;
+      page: number;
+      limit: number;
+    }
+  ): Promise<SharedPaginatedResponse<ScholarshipRecipient>> {
     const { status, page, limit } = params;
 
     const whereClause: Prisma.ScholarshipRecipientWhereInput = { scholarshipId: id };
@@ -301,17 +305,17 @@ export class FinanceEnhancementService {
               enrollments: {
                 where: { status: 'ACTIVE' },
                 include: { class: { select: { name: true } } },
-                take: 1
-              }
-            }
+                take: 1,
+              },
+            },
           },
-          academicYear: { select: { name: true } }
+          academicYear: { select: { name: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       }),
-      prisma.scholarshipRecipient.count({ where: whereClause })
+      prisma.scholarshipRecipient.count({ where: whereClause }),
     ]);
 
     return {
@@ -322,9 +326,9 @@ export class FinanceEnhancementService {
           page,
           limit,
           total,
-          totalPages: Math.ceil(total / limit)
-        }
-      }
+          totalPages: Math.ceil(total / limit),
+        },
+      },
     };
   }
 
@@ -333,8 +337,8 @@ export class FinanceEnhancementService {
       where: {
         scholarshipId: input.scholarshipId,
         studentId: input.studentId,
-        academicYearId: input.academicYearId
-      }
+        academicYearId: input.academicYearId,
+      },
     });
 
     if (existing) {
@@ -349,14 +353,14 @@ export class FinanceEnhancementService {
         startDate: new Date(input.startDate),
         endDate: input.endDate ? new Date(input.endDate) : null,
         notes: input.notes,
-        status: 'ACTIVE'
+        status: 'ACTIVE',
       },
       include: {
         scholarship: { select: { name: true } },
         student: {
-          include: { user: { select: { name: true } } }
-        }
-      }
+          include: { user: { select: { name: true } } },
+        },
+      },
     });
 
     return this.mapToScholarshipRecipient(recipient);
@@ -382,18 +386,18 @@ export class FinanceEnhancementService {
       prisma.paymentComponent.findMany({
         where: whereClause,
         include: {
-          unit: { select: { id: true, name: true } }
+          unit: { select: { id: true, name: true } },
         },
         orderBy: { name: 'asc' },
         skip: (page - 1) * limit,
-        take: limit
+        take: limit,
       }),
-      prisma.paymentComponent.count({ where: whereClause })
+      prisma.paymentComponent.count({ where: whereClause }),
     ]);
 
-    const mappedData = data.map(item => ({
+    const mappedData = data.map((item) => ({
       ...item,
-      amount: Number(item.amount)
+      amount: Number(item.amount),
     }));
 
     return {
@@ -404,9 +408,9 @@ export class FinanceEnhancementService {
           page,
           limit,
           total,
-          totalPages: Math.ceil(total / limit)
-        }
-      }
+          totalPages: Math.ceil(total / limit),
+        },
+      },
     };
   }
 
@@ -419,13 +423,13 @@ export class FinanceEnhancementService {
         category: input.category as string,
         amount: input.amount,
         unitId: input.unitId,
-        isActive: input.isActive ?? true
-      }
+        isActive: input.isActive ?? true,
+      },
     });
 
     return {
       ...component,
-      amount: Number(component.amount)
+      amount: Number(component.amount),
     } as unknown as PaymentComponent;
   }
 
@@ -442,36 +446,38 @@ export class FinanceEnhancementService {
       by: ['accountId'],
       where: {
         unitId,
-        date: { gte: startDate, lte: endDate }
+        date: { gte: startDate, lte: endDate },
       },
       _sum: {
         debit: true,
-        credit: true
-      }
+        credit: true,
+      },
     });
 
-    const accountIds = grouped.map(g => g.accountId);
+    const accountIds = grouped.map((g) => g.accountId);
     const accounts = await prisma.accountCode.findMany({
-      where: { id: { in: accountIds } }
+      where: { id: { in: accountIds } },
     });
 
-    const accountMap = new Map(accounts.map(a => [a.id, a]));
+    const accountMap = new Map(accounts.map((a) => [a.id, a]));
 
-    const resultAccounts = grouped.map(group => {
-      const account = accountMap.get(group.accountId);
-      return {
-        code: account?.code || 'UNKNOWN',
-        name: account?.name || 'Unknown Account',
-        type: account?.type || 'OTHER',
-        debit: Number(group._sum.debit || 0),
-        credit: Number(group._sum.credit || 0)
-      };
-    }).sort((a, b) => a.code.localeCompare(b.code));
+    const resultAccounts = grouped
+      .map((group) => {
+        const account = accountMap.get(group.accountId);
+        return {
+          code: account?.code || 'UNKNOWN',
+          name: account?.name || 'Unknown Account',
+          type: account?.type || 'OTHER',
+          debit: Number(group._sum.debit || 0),
+          credit: Number(group._sum.credit || 0),
+        };
+      })
+      .sort((a, b) => a.code.localeCompare(b.code));
 
     const totals = resultAccounts.reduce(
       (acc, item) => ({
         debit: acc.debit + item.debit,
-        credit: acc.credit + item.credit
+        credit: acc.credit + item.credit,
       }),
       { debit: 0, credit: 0 }
     );
@@ -479,11 +485,11 @@ export class FinanceEnhancementService {
     return {
       period: {
         startDate: startDate.toISOString(),
-        endDate: endDate.toISOString()
+        endDate: endDate.toISOString(),
       },
       accounts: resultAccounts,
       totals,
-      isBalanced: Math.abs(totals.debit - totals.credit) < 0.01
+      isBalanced: Math.abs(totals.debit - totals.credit) < 0.01,
     };
   }
 
@@ -498,7 +504,7 @@ export class FinanceEnhancementService {
     const dateFormat = groupBy === FinanceReportPeriod.MONTH ? 'YYYY-MM' : 'YYYY-MM-DD';
 
     // Optimization: Using Enum constants instead of hardcoded strings
-    const results = await prisma.$queryRaw<Array<{ period: string, type: string, total: bigint }>>`
+    const results = await prisma.$queryRaw<Array<{ period: string; type: string; total: bigint }>>`
       SELECT
         TO_CHAR(je.date, ${dateFormat}) as period,
         ac.type,
@@ -541,21 +547,21 @@ export class FinanceEnhancementService {
         period,
         income: data.income,
         expense: data.expense,
-        net: data.income - data.expense
+        net: data.income - data.expense,
       }))
       .sort((a, b) => a.period.localeCompare(b.period));
 
     return {
       period: {
         startDate: startDate.toISOString(),
-        endDate: endDate.toISOString()
+        endDate: endDate.toISOString(),
       },
       summary: {
         totalIncome,
         totalExpense,
-        netIncome: totalIncome - totalExpense
+        netIncome: totalIncome - totalExpense,
       },
-      breakdown
+      breakdown,
     };
   }
 
@@ -572,20 +578,24 @@ export class FinanceEnhancementService {
       createdAt: prismaAccount.createdAt,
       updatedAt: prismaAccount.updatedAt,
       // Map relations if they exist
-      parent: prismaAccount.parent ? {
-        id: prismaAccount.parent.id,
-        code: prismaAccount.parent.code,
-        name: prismaAccount.parent.name,
-        type: prismaAccount.parent.type as AccountType,
-        isActive: true // Partial mapping for relation
-      } : undefined,
-      children: prismaAccount.children ? prismaAccount.children.map((c: any) => ({
-        id: c.id,
-        code: c.code,
-        name: c.name,
-        type: c.type as AccountType,
-        isActive: true
-      })) : undefined
+      parent: prismaAccount.parent
+        ? {
+            id: prismaAccount.parent.id,
+            code: prismaAccount.parent.code,
+            name: prismaAccount.parent.name,
+            type: prismaAccount.parent.type as AccountType,
+            isActive: true, // Partial mapping for relation
+          }
+        : undefined,
+      children: prismaAccount.children
+        ? prismaAccount.children.map((c: any) => ({
+            id: c.id,
+            code: c.code,
+            name: c.name,
+            type: c.type as AccountType,
+            isActive: true,
+          }))
+        : undefined,
     };
   }
 
@@ -605,14 +615,16 @@ export class FinanceEnhancementService {
       updatedAt: prismaEntry.updatedAt,
 
       unit: prismaEntry.unit,
-      account: prismaEntry.account ? {
-        id: prismaEntry.account.id,
-        code: prismaEntry.account.code,
-        name: prismaEntry.account.name,
-        type: prismaEntry.account.type as AccountType,
-        isActive: true
-      } : undefined,
-      createdBy: prismaEntry.createdBy
+      account: prismaEntry.account
+        ? {
+            id: prismaEntry.account.id,
+            code: prismaEntry.account.code,
+            name: prismaEntry.account.name,
+            type: prismaEntry.account.type as AccountType,
+            isActive: true,
+          }
+        : undefined,
+      createdBy: prismaEntry.createdBy,
     };
   }
 
@@ -632,7 +644,7 @@ export class FinanceEnhancementService {
       createdAt: prismaScholarship.createdAt,
       updatedAt: prismaScholarship.updatedAt,
       unit: prismaScholarship.unit,
-      _count: prismaScholarship._count
+      _count: prismaScholarship._count,
     };
   }
 
@@ -648,14 +660,16 @@ export class FinanceEnhancementService {
       status: prismaRecipient.status,
       createdAt: prismaRecipient.createdAt,
       updatedAt: prismaRecipient.updatedAt,
-      student: prismaRecipient.student ? {
-        id: prismaRecipient.student.id,
-        nis: prismaRecipient.student.nis,
-        name: prismaRecipient.student.user?.name || '',
-        class: prismaRecipient.student.enrollments?.[0]?.class?.name || '-'
-      } : undefined,
+      student: prismaRecipient.student
+        ? {
+            id: prismaRecipient.student.id,
+            nis: prismaRecipient.student.nis,
+            name: prismaRecipient.student.user?.name || '',
+            class: prismaRecipient.student.enrollments?.[0]?.class?.name || '-',
+          }
+        : undefined,
       academicYear: prismaRecipient.academicYear,
-      scholarship: prismaRecipient.scholarship
+      scholarship: prismaRecipient.scholarship,
     };
   }
 }

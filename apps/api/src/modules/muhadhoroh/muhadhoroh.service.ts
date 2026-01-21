@@ -54,7 +54,8 @@ export class MuhadhorohService {
   // ==================
 
   async list(query: ListMuhadhorohQuery, currentUser: AuthenticatedUser) {
-    const { page, limit, unitId, studentId, evaluatorId, status, language, startDate, endDate } = query;
+    const { page, limit, unitId, studentId, evaluatorId, status, language, startDate, endDate } =
+      query;
     const skip = (page - 1) * limit;
 
     const where: Prisma.MuhadhorohWhereInput = {};
@@ -113,7 +114,7 @@ export class MuhadhorohService {
     ]);
 
     return {
-      data: records.map(r => ({
+      data: records.map((r) => ({
         ...r,
         student: {
           id: r.student.id,
@@ -121,10 +122,12 @@ export class MuhadhorohService {
           name: r.student.user.name,
           class: r.student.enrollments[0]?.class || null,
         },
-        evaluator: r.evaluator ? {
-          id: r.evaluator.id,
-          name: r.evaluator.user.name,
-        } : null,
+        evaluator: r.evaluator
+          ? {
+              id: r.evaluator.id,
+              name: r.evaluator.user.name,
+            }
+          : null,
       })),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
@@ -166,10 +169,12 @@ export class MuhadhorohService {
         email: record.student.user.email,
         class: record.student.enrollments[0]?.class || null,
       },
-      evaluator: record.evaluator ? {
-        id: record.evaluator.id,
-        name: record.evaluator.user.name,
-      } : null,
+      evaluator: record.evaluator
+        ? {
+            id: record.evaluator.id,
+            name: record.evaluator.user.name,
+          }
+        : null,
     };
   }
 
@@ -315,7 +320,7 @@ export class MuhadhorohService {
       },
     });
 
-    return records.map(r => ({
+    return records.map((r) => ({
       ...r,
       student: {
         id: r.student.id,
@@ -374,8 +379,8 @@ export class MuhadhorohService {
 
     return {
       total,
-      byStatus: byStatus.map(s => ({ status: s.status, count: s._count.status })),
-      byLanguage: byLanguage.map(l => ({ language: l.language, count: l._count.language })),
+      byStatus: byStatus.map((s) => ({ status: s.status, count: s._count.status })),
+      byLanguage: byLanguage.map((l) => ({ language: l.language, count: l._count.language })),
       averages: {
         content: avgScores._avg.contentScore || 0,
         delivery: avgScores._avg.deliveryScore || 0,
@@ -399,7 +404,7 @@ export class MuhadhorohService {
       take: limit,
     });
 
-    const studentIds = performers.map(p => p.studentId);
+    const studentIds = performers.map((p) => p.studentId);
     const students = await prisma.student.findMany({
       where: { id: { in: studentIds } },
       include: {
@@ -412,9 +417,9 @@ export class MuhadhorohService {
       },
     });
 
-    const studentMap = new Map(students.map(s => [s.id, s]));
+    const studentMap = new Map(students.map((s) => [s.id, s]));
 
-    return performers.map(p => {
+    return performers.map((p) => {
       const student = studentMap.get(p.studentId);
       return {
         studentId: p.studentId,

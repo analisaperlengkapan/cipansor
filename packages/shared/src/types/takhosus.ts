@@ -37,7 +37,7 @@ export interface TakhosusEnrollment {
     teacher?: { id: string; name: string };
   };
   enrolledAt: Date;
-  status: 'ACTIVE' | 'COMPLETED' | 'DROPPED' | 'SUSPENDED';
+  status: "ACTIVE" | "COMPLETED" | "DROPPED" | "SUSPENDED";
   targetJuz: number;
   targetCompletionDate?: Date | null;
   completedAt?: Date | null;
@@ -76,7 +76,7 @@ export interface MurojaahRecord {
   halaqoh?: { id: string; name: string };
   recordedById: string;
   recordedBy?: { id: string; name: string };
-  murojaahType: 'YAUMIYAH' | 'USBUIYAH' | 'SYAHRIYAH' | 'TASMI';
+  murojaahType: "YAUMIYAH" | "USBUIYAH" | "SYAHRIYAH" | "TASMI";
   murojaahDate: Date;
   juzStart: number;
   juzEnd: number;
@@ -95,7 +95,7 @@ export interface MurojaahRecord {
 export interface MurojaahMistake {
   id: string;
   murojaahId: string;
-  mistakeType: 'LAHIN_JALI' | 'LAHIN_KHAFI' | 'TAJWID' | 'LUPA' | 'URUTAN';
+  mistakeType: "LAHIN_JALI" | "LAHIN_KHAFI" | "TAJWID" | "LUPA" | "URUTAN";
   juz: number;
   surahNumber: number;
   ayahNumber?: number | null;
@@ -110,7 +110,7 @@ export interface SimaanExam {
   enrollmentId?: string | null;
   halaqohId?: string | null;
   halaqoh?: { id: string; name: string };
-  simaanType: 'BIN_NAZHR' | 'BIL_GHAIB' | 'TAHDIR' | 'TASMI' | 'KHATAM';
+  simaanType: "BIN_NAZHR" | "BIL_GHAIB" | "TAHDIR" | "TASMI" | "KHATAM";
   examDate: Date;
   sessionNumber: number;
   totalSessions: number;

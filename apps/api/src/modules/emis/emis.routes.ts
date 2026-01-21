@@ -14,7 +14,11 @@ const adminRoles = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
 // Export endpoints
 router.get('/export/students', authorize(...adminRoles), emisController.exportStudents);
 router.get('/export/teachers', authorize(...adminRoles), emisController.exportTeachers);
-router.get('/export/institution/:unitId', authorize(...adminRoles), emisController.exportInstitution);
+router.get(
+  '/export/institution/:unitId',
+  authorize(...adminRoles),
+  emisController.exportInstitution
+);
 
 // Summary and validation
 router.get('/summary/:unitId', authorize(...adminRoles), emisController.getSummary);

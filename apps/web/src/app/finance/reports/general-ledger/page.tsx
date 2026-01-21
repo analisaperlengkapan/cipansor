@@ -5,17 +5,30 @@ import { format } from "date-fns";
 import { useJournals, useAccounts } from "@/hooks/use-accounting";
 import { Loader2, Download, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Pagination } from "@/components/shared/pagination";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 export default function GeneralLedgerPage() {
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({
     from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    to: new Date()
+    to: new Date(),
   });
   const [accountId, setAccountId] = useState<string>("all");
   const [page, setPage] = useState(1);
@@ -38,7 +51,9 @@ export default function GeneralLedgerPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">General Ledger</h1>
-          <p className="text-muted-foreground">View all financial transactions and journal entries.</p>
+          <p className="text-muted-foreground">
+            View all financial transactions and journal entries.
+          </p>
         </div>
         <Button onClick={handlePrint} variant="outline">
           <Download className="mr-2 h-4 w-4" /> Print / PDF
@@ -48,7 +63,13 @@ export default function GeneralLedgerPage() {
       <div className="flex flex-col md:flex-row gap-4 items-end bg-card p-4 rounded-lg border print:hidden">
         <div className="grid gap-1.5 flex-1 w-full md:w-auto">
           <Label>Filter by Account</Label>
-          <Select value={accountId} onValueChange={(val) => { setAccountId(val); setPage(1); }}>
+          <Select
+            value={accountId}
+            onValueChange={(val) => {
+              setAccountId(val);
+              setPage(1);
+            }}
+          >
             <SelectTrigger>
               <SelectValue placeholder="All Accounts" />
             </SelectTrigger>
@@ -96,28 +117,39 @@ export default function GeneralLedgerPage() {
               </TableRow>
             ) : !journalsData?.data || journalsData.data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                <TableCell
+                  colSpan={6}
+                  className="text-center h-24 text-muted-foreground"
+                >
                   No transactions found for the selected criteria.
                 </TableCell>
               </TableRow>
             ) : (
               journalsData.data.map((entry) => (
                 <TableRow key={entry.id}>
-                  <TableCell>{format(new Date(entry.date), "dd/MM/yyyy")}</TableCell>
+                  <TableCell>
+                    {format(new Date(entry.date), "dd/MM/yyyy")}
+                  </TableCell>
                   <TableCell>
                     <span className="font-medium">{entry.account.code}</span>
                     <br />
-                    <span className="text-xs text-muted-foreground">{entry.account.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {entry.account.name}
+                    </span>
                   </TableCell>
                   <TableCell>{entry.description}</TableCell>
                   <TableCell className="text-xs text-muted-foreground font-mono">
-                    {entry.referenceType || 'MANUAL'}
+                    {entry.referenceType || "MANUAL"}
                   </TableCell>
                   <TableCell className="text-right">
-                    {entry.debit > 0 ? formatCurrency(Number(entry.debit)) : '-'}
+                    {entry.debit > 0
+                      ? formatCurrency(Number(entry.debit))
+                      : "-"}
                   </TableCell>
                   <TableCell className="text-right">
-                    {entry.credit > 0 ? formatCurrency(Number(entry.credit)) : '-'}
+                    {entry.credit > 0
+                      ? formatCurrency(Number(entry.credit))
+                      : "-"}
                   </TableCell>
                 </TableRow>
               ))

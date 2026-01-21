@@ -1,12 +1,12 @@
-import { User } from './auth';
+import { User } from "./auth";
 
 export enum MessageCategory {
-  ACADEMIC = 'ACADEMIC',
-  BEHAVIOR = 'BEHAVIOR',
-  HEALTH = 'HEALTH',
-  GENERAL = 'GENERAL',
-  ATTENDANCE = 'ATTENDANCE',
-  TAHFIDZ = 'TAHFIDZ',
+  ACADEMIC = "ACADEMIC",
+  BEHAVIOR = "BEHAVIOR",
+  HEALTH = "HEALTH",
+  GENERAL = "GENERAL",
+  ATTENDANCE = "ATTENDANCE",
+  TAHFIDZ = "TAHFIDZ",
 }
 
 export interface Message {

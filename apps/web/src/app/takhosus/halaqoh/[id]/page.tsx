@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { use } from 'react';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { use } from "react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
   BookOpen,
@@ -12,18 +12,18 @@ import {
   MapPin,
   Pencil,
   Medal,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -31,14 +31,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   useHalaqoh,
   useHalaqohProgress,
   HALAQOH_DAYS,
-} from '@/hooks/use-takhosus';
+} from "@/hooks/use-takhosus";
 
 interface HalaqohDetailPageProps {
   params: Promise<{ id: string }>;
@@ -52,7 +52,7 @@ export default function HalaqohDetailPage({ params }: HalaqohDetailPageProps) {
   const getDayLabels = (days: string[]) => {
     return days
       .map((d) => HALAQOH_DAYS.find((day) => day.value === d)?.label || d)
-      .join(', ');
+      .join(", ");
   };
 
   if (halaqohLoading) {
@@ -76,7 +76,9 @@ export default function HalaqohDetailPage({ params }: HalaqohDetailPageProps) {
       <MainLayout>
         <div className="text-center py-12">
           <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Halaqoh Tidak Ditemukan</h2>
+          <h2 className="text-xl font-semibold mb-2">
+            Halaqoh Tidak Ditemukan
+          </h2>
           <p className="text-muted-foreground mb-4">
             Halaqoh yang Anda cari tidak ditemukan
           </p>
@@ -122,7 +124,9 @@ export default function HalaqohDetailPage({ params }: HalaqohDetailPageProps) {
               <Users className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Pembimbing</span>
             </div>
-            <p className="text-lg font-semibold">{halaqoh.teacher?.name || '-'}</p>
+            <p className="text-lg font-semibold">
+              {halaqoh.teacher?.name || "-"}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -149,7 +153,9 @@ export default function HalaqohDetailPage({ params }: HalaqohDetailPageProps) {
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Medal className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Rata-rata Progress</span>
+              <span className="text-sm text-muted-foreground">
+                Rata-rata Progress
+              </span>
             </div>
             <p className="text-lg font-semibold text-green-600">
               {progress?.averageProgress || 0}%
@@ -179,7 +185,9 @@ export default function HalaqohDetailPage({ params }: HalaqohDetailPageProps) {
                 <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
                   <p className="font-medium">Waktu</p>
-                  <p className="text-sm text-muted-foreground">{halaqoh.scheduleTime}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {halaqoh.scheduleTime}
+                  </p>
                 </div>
               </div>
             )}
@@ -188,7 +196,9 @@ export default function HalaqohDetailPage({ params }: HalaqohDetailPageProps) {
                 <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
                   <p className="font-medium">Lokasi</p>
-                  <p className="text-sm text-muted-foreground">{halaqoh.location}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {halaqoh.location}
+                  </p>
                 </div>
               </div>
             )}
@@ -201,14 +211,16 @@ export default function HalaqohDetailPage({ params }: HalaqohDetailPageProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Status Halaqoh</span>
-              <Badge variant={halaqoh.isActive ? 'default' : 'secondary'}>
-                {halaqoh.isActive ? 'Aktif' : 'Nonaktif'}
+              <span className="text-sm text-muted-foreground">
+                Status Halaqoh
+              </span>
+              <Badge variant={halaqoh.isActive ? "default" : "secondary"}>
+                {halaqoh.isActive ? "Aktif" : "Nonaktif"}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Unit</span>
-              <span className="font-medium">{halaqoh.unit?.name || '-'}</span>
+              <span className="font-medium">{halaqoh.unit?.name || "-"}</span>
             </div>
             {halaqoh.description && (
               <div>
@@ -252,27 +264,39 @@ export default function HalaqohDetailPage({ params }: HalaqohDetailPageProps) {
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8">
                     <Users className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-muted-foreground">Belum ada santri terdaftar</p>
+                    <p className="text-muted-foreground">
+                      Belum ada santri terdaftar
+                    </p>
                   </TableCell>
                 </TableRow>
               ) : (
                 progress.students.map((student) => (
                   <TableRow key={student.id}>
-                    <TableCell className="font-medium">{student.name}</TableCell>
+                    <TableCell className="font-medium">
+                      {student.name}
+                    </TableCell>
                     <TableCell>
-                      {format(new Date(student.enrolledAt), 'd MMM yyyy', { locale: localeId })}
+                      {format(new Date(student.enrolledAt), "d MMM yyyy", {
+                        locale: localeId,
+                      })}
                     </TableCell>
                     <TableCell>{student.targetJuz} Juz</TableCell>
                     <TableCell>
                       <div className="space-y-1 w-32">
-                        <Progress value={student.progressPercentage} className="h-2" />
+                        <Progress
+                          value={student.progressPercentage}
+                          className="h-2"
+                        />
                         <p className="text-xs text-muted-foreground">
-                          {student.completedJuz}/{student.targetJuz} ({student.progressPercentage}%)
+                          {student.completedJuz}/{student.targetJuz} (
+                          {student.progressPercentage}%)
                         </p>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{student.sanadCount} Sanad</Badge>
+                      <Badge variant="secondary">
+                        {student.sanadCount} Sanad
+                      </Badge>
                     </TableCell>
                   </TableRow>
                 ))

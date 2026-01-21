@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useParams, useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Printer, Loader2, Download, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { useParams, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  ArrowLeft,
+  Printer,
+  Loader2,
+  Download,
+  AlertCircle,
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
 interface SkhunData {
   student: {
@@ -52,10 +58,16 @@ export default function SkhunPrintPage() {
   const studentId = params.studentId as string;
   const academicYearId = params.academicYearId as string;
 
-  const { data: skhunData, isLoading, error } = useQuery<SkhunData>({
-    queryKey: ['skhun', studentId, academicYearId],
+  const {
+    data: skhunData,
+    isLoading,
+    error,
+  } = useQuery<SkhunData>({
+    queryKey: ["skhun", studentId, academicYearId],
     queryFn: async () => {
-      const res = await api.get(`/assessment/reports/skhun?studentId=${studentId}&academicYearId=${academicYearId}`);
+      const res = await api.get(
+        `/assessment/reports/skhun?studentId=${studentId}&academicYearId=${academicYearId}`,
+      );
       return res.data.data;
     },
     enabled: !!studentId && !!academicYearId,
@@ -143,10 +155,15 @@ export default function SkhunPrintPage() {
                 <p className="text-sm font-medium text-gray-600 uppercase">
                   Kementerian Agama Republik Indonesia
                 </p>
-                <h1 className="text-lg font-bold uppercase">{skhunData.school.name}</h1>
-                <p className="text-xs text-gray-600">{skhunData.school.address}</p>
+                <h1 className="text-lg font-bold uppercase">
+                  {skhunData.school.name}
+                </h1>
                 <p className="text-xs text-gray-600">
-                  NPSN: {skhunData.school.npsn ?? '-'} | Akreditasi: {skhunData.school.accreditation ?? '-'}
+                  {skhunData.school.address}
+                </p>
+                <p className="text-xs text-gray-600">
+                  NPSN: {skhunData.school.npsn ?? "-"} | Akreditasi:{" "}
+                  {skhunData.school.accreditation ?? "-"}
                 </p>
               </div>
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-3xl">
@@ -157,47 +174,69 @@ export default function SkhunPrintPage() {
               <h2 className="text-base font-bold uppercase tracking-wide">
                 Surat Keterangan Hasil Ujian Nasional
               </h2>
-              <p className="text-xs">
-                Nomor: {skhunData.skhunNumber}
-              </p>
+              <p className="text-xs">Nomor: {skhunData.skhunNumber}</p>
             </div>
           </div>
 
           {/* Student Info */}
           <div className="mb-6 no-break">
             <p className="text-sm mb-3">
-              Yang bertanda tangan di bawah ini, Kepala {skhunData.school.name}, menerangkan bahwa:
+              Yang bertanda tangan di bawah ini, Kepala {skhunData.school.name},
+              menerangkan bahwa:
             </p>
             <div className="bg-gray-50 p-4 rounded-lg">
               <table className="text-sm w-full">
                 <tbody>
                   <tr>
                     <td className="py-1 w-40 text-gray-600">Nama Peserta</td>
-                    <td className="py-1 font-semibold">: {skhunData.student.name}</td>
+                    <td className="py-1 font-semibold">
+                      : {skhunData.student.name}
+                    </td>
                   </tr>
                   <tr>
                     <td className="py-1 text-gray-600">NIS / NISN</td>
-                    <td className="py-1">: {skhunData.student.nis} / {skhunData.student.nisn ?? '-'}</td>
+                    <td className="py-1">
+                      : {skhunData.student.nis} /{" "}
+                      {skhunData.student.nisn ?? "-"}
+                    </td>
                   </tr>
                   <tr>
-                    <td className="py-1 text-gray-600">Tempat, Tanggal Lahir</td>
+                    <td className="py-1 text-gray-600">
+                      Tempat, Tanggal Lahir
+                    </td>
                     <td className="py-1">
-                      : {skhunData.student.birthPlace ?? '-'}, {skhunData.student.birthDate ? format(new Date(skhunData.student.birthDate), 'd MMMM yyyy', { locale: idLocale }) : '-'}
+                      : {skhunData.student.birthPlace ?? "-"},{" "}
+                      {skhunData.student.birthDate
+                        ? format(
+                            new Date(skhunData.student.birthDate),
+                            "d MMMM yyyy",
+                            { locale: idLocale },
+                          )
+                        : "-"}
                     </td>
                   </tr>
                   <tr>
                     <td className="py-1 text-gray-600">Jenis Kelamin</td>
-                    <td className="py-1">: {skhunData.student.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}</td>
+                    <td className="py-1">
+                      :{" "}
+                      {skhunData.student.gender === "MALE"
+                        ? "Laki-laki"
+                        : "Perempuan"}
+                    </td>
                   </tr>
                   <tr>
                     <td className="py-1 text-gray-600">Nama Orang Tua/Wali</td>
-                    <td className="py-1">: {skhunData.student.parentName ?? '-'}</td>
+                    <td className="py-1">
+                      : {skhunData.student.parentName ?? "-"}
+                    </td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <p className="text-sm mt-3">
-              telah mengikuti Ujian Nasional/Ujian Sekolah periode {skhunData.examPeriod} Tahun Pelajaran {skhunData.academicYear.name}
+              telah mengikuti Ujian Nasional/Ujian Sekolah periode{" "}
+              {skhunData.examPeriod} Tahun Pelajaran{" "}
+              {skhunData.academicYear.name}
               dan memperoleh nilai sebagai berikut:
             </p>
           </div>
@@ -207,35 +246,63 @@ export default function SkhunPrintPage() {
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="bg-green-100">
-                  <th className="border border-gray-400 p-2 w-12 text-center">No</th>
-                  <th className="border border-gray-400 p-2 text-left">Mata Pelajaran</th>
-                  <th className="border border-gray-400 p-2 w-24 text-center">Nilai</th>
-                  <th className="border border-gray-400 p-2 w-24 text-center">Keterangan</th>
+                  <th className="border border-gray-400 p-2 w-12 text-center">
+                    No
+                  </th>
+                  <th className="border border-gray-400 p-2 text-left">
+                    Mata Pelajaran
+                  </th>
+                  <th className="border border-gray-400 p-2 w-24 text-center">
+                    Nilai
+                  </th>
+                  <th className="border border-gray-400 p-2 w-24 text-center">
+                    Keterangan
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {skhunData.grades.map((grade, index) => (
                   <tr key={index}>
-                    <td className="border border-gray-400 p-2 text-center">{index + 1}</td>
-                    <td className="border border-gray-400 p-2">{grade.subjectName}</td>
+                    <td className="border border-gray-400 p-2 text-center">
+                      {index + 1}
+                    </td>
+                    <td className="border border-gray-400 p-2">
+                      {grade.subjectName}
+                    </td>
                     <td className="border border-gray-400 p-2 text-center font-semibold">
                       {grade.score.toFixed(2)}
                     </td>
-                    <td className={`border border-gray-400 p-2 text-center font-medium ${grade.isPassed ? 'text-green-600' : 'text-red-600'}`}>
-                      {grade.isPassed ? 'Lulus' : 'Tidak Lulus'}
+                    <td
+                      className={`border border-gray-400 p-2 text-center font-medium ${grade.isPassed ? "text-green-600" : "text-red-600"}`}
+                    >
+                      {grade.isPassed ? "Lulus" : "Tidak Lulus"}
                     </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr className="bg-green-50 font-bold">
-                  <td colSpan={2} className="border border-gray-400 p-2 text-right">Jumlah Nilai</td>
-                  <td className="border border-gray-400 p-2 text-center">{skhunData.totalScore.toFixed(2)}</td>
+                  <td
+                    colSpan={2}
+                    className="border border-gray-400 p-2 text-right"
+                  >
+                    Jumlah Nilai
+                  </td>
+                  <td className="border border-gray-400 p-2 text-center">
+                    {skhunData.totalScore.toFixed(2)}
+                  </td>
                   <td className="border border-gray-400 p-2"></td>
                 </tr>
                 <tr className="bg-green-50 font-bold">
-                  <td colSpan={2} className="border border-gray-400 p-2 text-right">Rata-rata</td>
-                  <td className="border border-gray-400 p-2 text-center">{skhunData.average.toFixed(2)}</td>
+                  <td
+                    colSpan={2}
+                    className="border border-gray-400 p-2 text-right"
+                  >
+                    Rata-rata
+                  </td>
+                  <td className="border border-gray-400 p-2 text-center">
+                    {skhunData.average.toFixed(2)}
+                  </td>
                   <td className="border border-gray-400 p-2"></td>
                 </tr>
               </tfoot>
@@ -244,14 +311,19 @@ export default function SkhunPrintPage() {
 
           {/* Result */}
           <div className="mb-6 no-break">
-            <div className={`p-4 rounded-lg text-center ${skhunData.isPassed ? 'bg-green-100 border-2 border-green-500' : 'bg-red-100 border-2 border-red-500'}`}>
+            <div
+              className={`p-4 rounded-lg text-center ${skhunData.isPassed ? "bg-green-100 border-2 border-green-500" : "bg-red-100 border-2 border-red-500"}`}
+            >
               <p className="text-sm text-gray-600">Keputusan</p>
-              <p className={`text-2xl font-bold ${skhunData.isPassed ? 'text-green-700' : 'text-red-700'}`}>
-                {skhunData.isPassed ? 'LULUS' : 'TIDAK LULUS'}
+              <p
+                className={`text-2xl font-bold ${skhunData.isPassed ? "text-green-700" : "text-red-700"}`}
+              >
+                {skhunData.isPassed ? "LULUS" : "TIDAK LULUS"}
               </p>
               {skhunData.rank && (
                 <p className="text-sm text-gray-600 mt-1">
-                  Peringkat: {skhunData.rank} dari {skhunData.totalStudents} peserta
+                  Peringkat: {skhunData.rank} dari {skhunData.totalStudents}{" "}
+                  peserta
                 </p>
               )}
             </div>
@@ -260,27 +332,38 @@ export default function SkhunPrintPage() {
           {/* Footer */}
           <div className="mt-8 no-break">
             <p className="text-sm mb-6">
-              Demikian surat keterangan ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya.
+              Demikian surat keterangan ini dibuat dengan sebenarnya untuk dapat
+              dipergunakan sebagaimana mestinya.
             </p>
 
             <div className="grid grid-cols-2 gap-8">
               <div></div>
               <div className="text-center text-sm">
                 <p>
-                  {skhunData.school.address?.split(',')[0] ?? 'Bandung'}, {format(new Date(skhunData.issuedDate), 'd MMMM yyyy', { locale: idLocale })}
+                  {skhunData.school.address?.split(",")[0] ?? "Bandung"},{" "}
+                  {format(new Date(skhunData.issuedDate), "d MMMM yyyy", {
+                    locale: idLocale,
+                  })}
                 </p>
                 <p className="font-semibold">Kepala Madrasah</p>
                 <div className="h-20"></div>
                 <p className="font-semibold border-t border-black pt-1">
                   ___________________
                 </p>
-                <p className="text-xs text-gray-600">NIP. ___________________</p>
+                <p className="text-xs text-gray-600">
+                  NIP. ___________________
+                </p>
               </div>
             </div>
 
             <div className="text-center text-xs text-gray-500 mt-8 pt-4 border-t">
               <p>Dokumen ini dicetak dari Sistem Informasi Manajemen Sekolah</p>
-              <p>Tanggal Cetak: {format(new Date(), "EEEE, d MMMM yyyy 'pukul' HH:mm 'WIB'", { locale: idLocale })}</p>
+              <p>
+                Tanggal Cetak:{" "}
+                {format(new Date(), "EEEE, d MMMM yyyy 'pukul' HH:mm 'WIB'", {
+                  locale: idLocale,
+                })}
+              </p>
             </div>
           </div>
         </div>

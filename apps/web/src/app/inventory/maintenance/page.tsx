@@ -13,7 +13,7 @@ export default function MaintenancePage() {
           </div>
         </div>
         <div className="space-y-4">
-            <MaintenanceList />
+          <MaintenanceList />
         </div>
       </div>
     </MainLayout>

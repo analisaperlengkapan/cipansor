@@ -1,6 +1,13 @@
 import { prisma } from '@/lib/prisma';
 import { Errors } from '@/middleware/error';
-import { UserRole, CounselingStatus, CounselingCategory, CounselingPriority, ReferralType, Prisma } from '@prisma/client';
+import {
+  UserRole,
+  CounselingStatus,
+  CounselingCategory,
+  CounselingPriority,
+  ReferralType,
+  Prisma,
+} from '@prisma/client';
 import {
   CounselingSession as SharedCounselingSession,
   CounselingNote as SharedCounselingNote,
@@ -10,7 +17,7 @@ import {
   UpdateCounselingSessionInput,
   CreateCounselingNoteInput,
   CreateCounselingReferralInput,
-  CounselingListParams
+  CounselingListParams,
 } from '@cipansor/shared';
 
 // User type from JwtPayload
@@ -36,7 +43,7 @@ export class CounselingService {
     if (filters.category) where.category = filters.category as CounselingCategory;
     if (filters.priority) where.priority = filters.priority as CounselingPriority;
     if (filters.studentId) where.studentId = filters.studentId;
-    
+
     if (filters.search) {
       where.OR = [
         { title: { contains: filters.search, mode: 'insensitive' } },
@@ -45,17 +52,17 @@ export class CounselingService {
         {
           student: {
             user: {
-              name: { contains: filters.search, mode: 'insensitive' }
-            }
-          }
+              name: { contains: filters.search, mode: 'insensitive' },
+            },
+          },
         },
         {
           counselor: {
             user: {
-              name: { contains: filters.search, mode: 'insensitive' }
-            }
-          }
-        }
+              name: { contains: filters.search, mode: 'insensitive' },
+            },
+          },
+        },
       ];
     }
 
@@ -79,8 +86,8 @@ export class CounselingService {
               enrollments: {
                 where: { status: 'active' },
                 take: 1,
-                include: { class: { select: { id: true, name: true } } }
-              }
+                include: { class: { select: { id: true, name: true } } },
+              },
             },
           },
           counselor: {
@@ -98,12 +105,12 @@ export class CounselingService {
       prisma.counselingSession.count({ where }),
     ]);
 
-    const mappedSessions = sessions.map(s => ({
+    const mappedSessions = sessions.map((s) => ({
       ...s,
       student: {
         ...s.student,
-        currentClass: s.student.enrollments[0]?.class || null
-      }
+        currentClass: s.student.enrollments[0]?.class || null,
+      },
     }));
 
     return { data: mappedSessions as unknown as SharedCounselingSession[], total };
@@ -159,8 +166,8 @@ export class CounselingService {
       ...session,
       student: {
         ...session.student,
-        currentClass: session.student.enrollments[0]?.class || null
-      }
+        currentClass: session.student.enrollments[0]?.class || null,
+      },
     };
 
     return mappedSession as unknown as SharedCounselingSession;
@@ -169,10 +176,7 @@ export class CounselingService {
   /**
    * Create counseling session
    */
-  async createSession(
-    input: CreateCounselingSessionInput,
-    currentUser: AuthenticatedUser
-  ) {
+  async createSession(input: CreateCounselingSessionInput, currentUser: AuthenticatedUser) {
     const student = await prisma.student.findUnique({
       where: { id: input.studentId, deletedAt: null },
     });
@@ -190,11 +194,11 @@ export class CounselingService {
     if (teacher) {
       counselorId = teacher.id;
     } else {
-        if (currentUser.role === UserRole.SUPER_ADMIN || currentUser.role === UserRole.UNIT_ADMIN) {
-             throw Errors.forbidden('You must have a Teacher profile to be assigned as a counselor.');
-        } else {
-             throw Errors.forbidden('Only teachers can create counseling sessions');
-        }
+      if (currentUser.role === UserRole.SUPER_ADMIN || currentUser.role === UserRole.UNIT_ADMIN) {
+        throw Errors.forbidden('You must have a Teacher profile to be assigned as a counselor.');
+      } else {
+        throw Errors.forbidden('Only teachers can create counseling sessions');
+      }
     }
 
     const session = await prisma.counselingSession.create({
@@ -446,7 +450,10 @@ export class CounselingService {
       throw Errors.notFound('Referral not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && referral.session.unitId !== currentUser.unitId) {
+    if (
+      currentUser.role !== UserRole.SUPER_ADMIN &&
+      referral.session.unitId !== currentUser.unitId
+    ) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -482,7 +489,10 @@ export class CounselingService {
       throw Errors.notFound('Referral not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && referral.session.unitId !== currentUser.unitId) {
+    if (
+      currentUser.role !== UserRole.SUPER_ADMIN &&
+      referral.session.unitId !== currentUser.unitId
+    ) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -574,9 +584,18 @@ export class CounselingService {
 
     return {
       totalSessions,
-      byStatus: byStatus.map((s) => ({ status: s.status as unknown as any, count: s._count.status })),
-      byCategory: byCategory.map((c) => ({ category: c.category as unknown as any, count: c._count.category })),
-      byPriority: byPriority.map((p) => ({ priority: p.priority as unknown as any, count: p._count.priority })),
+      byStatus: byStatus.map((s) => ({
+        status: s.status as unknown as any,
+        count: s._count.status,
+      })),
+      byCategory: byCategory.map((c) => ({
+        category: c.category as unknown as any,
+        count: c._count.category,
+      })),
+      byPriority: byPriority.map((p) => ({
+        priority: p.priority as unknown as any,
+        count: p._count.priority,
+      })),
     };
   }
 }

@@ -21,7 +21,7 @@ export async function listLands(query: ListLandsQuery) {
   const { page, limit, unitId, ownership, search } = query;
 
   const whereClause: Prisma.LandWhereInput = {};
-  
+
   if (unitId) whereClause.unitId = unitId;
   if (ownership) whereClause.ownership = ownership;
   if (search) {
@@ -115,7 +115,9 @@ export async function deleteLand(id: string) {
   // Check if land has buildings
   const buildingCount = await prisma.building.count({ where: { landId: id } });
   if (buildingCount > 0) {
-    throw new Error('Tidak dapat menghapus tanah yang memiliki bangunan. Hapus bangunan terlebih dahulu.');
+    throw new Error(
+      'Tidak dapat menghapus tanah yang memiliki bangunan. Hapus bangunan terlebih dahulu.'
+    );
   }
 
   return prisma.land.delete({ where: { id } });
@@ -127,7 +129,7 @@ export async function listBuildings(query: ListBuildingsQuery) {
   const { page, limit, unitId, landId, condition, search } = query;
 
   const whereClause: Prisma.BuildingWhereInput = {};
-  
+
   if (unitId) whereClause.unitId = unitId;
   if (landId) whereClause.landId = landId;
   if (condition) whereClause.condition = condition;
@@ -229,7 +231,9 @@ export async function deleteBuilding(id: string) {
   // Check if building has rooms
   const roomCount = await prisma.facilityRoom.count({ where: { buildingId: id } });
   if (roomCount > 0) {
-    throw new Error('Tidak dapat menghapus gedung yang memiliki ruangan. Hapus ruangan terlebih dahulu.');
+    throw new Error(
+      'Tidak dapat menghapus gedung yang memiliki ruangan. Hapus ruangan terlebih dahulu.'
+    );
   }
 
   return prisma.building.delete({ where: { id } });
@@ -292,7 +296,7 @@ export async function listRooms(query: ListRoomsQuery) {
   const { page, limit, unitId, buildingId, roomTypeId, condition, isActive, search } = query;
 
   const whereClause: Prisma.FacilityRoomWhereInput = {};
-  
+
   if (unitId) whereClause.unitId = unitId;
   if (buildingId) whereClause.buildingId = buildingId;
   if (roomTypeId) whereClause.roomTypeId = roomTypeId;

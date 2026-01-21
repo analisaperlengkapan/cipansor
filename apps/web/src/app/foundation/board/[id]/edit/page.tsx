@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import { use, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { use, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -17,23 +23,23 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from 'sonner';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
 import {
   useFoundationBoardMember,
   useUpdateFoundationBoardMember,
-} from '@/hooks';
+} from "@/hooks";
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Nama wajib diisi'),
-  position: z.string().min(1, 'Jabatan wajib diisi'),
+  name: z.string().min(1, "Nama wajib diisi"),
+  position: z.string().min(1, "Jabatan wajib diisi"),
   phone: z.string().optional(),
-  email: z.string().email('Email tidak valid').optional().or(z.literal('')),
+  email: z.string().email("Email tidak valid").optional().or(z.literal("")),
   address: z.string().optional(),
-  startDate: z.string().min(1, 'Tanggal mulai jabatan wajib diisi'),
+  startDate: z.string().min(1, "Tanggal mulai jabatan wajib diisi"),
   endDate: z.string().optional(),
   isActive: z.boolean(),
   bio: z.string().optional(),
@@ -55,15 +61,15 @@ export default function EditBoardMemberPage({ params }: PageProps) {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      position: '',
-      phone: '',
-      email: '',
-      address: '',
-      startDate: '',
-      endDate: '',
+      name: "",
+      position: "",
+      phone: "",
+      email: "",
+      address: "",
+      startDate: "",
+      endDate: "",
       isActive: true,
-      bio: '',
+      bio: "",
     },
   });
 
@@ -72,17 +78,17 @@ export default function EditBoardMemberPage({ params }: PageProps) {
       form.reset({
         name: member.name,
         position: member.position,
-        phone: member.phone || '',
-        email: member.email || '',
-        address: member.address || '',
+        phone: member.phone || "",
+        email: member.email || "",
+        address: member.address || "",
         startDate: member.startDate
-          ? new Date(member.startDate).toISOString().split('T')[0]
-          : '',
+          ? new Date(member.startDate).toISOString().split("T")[0]
+          : "",
         endDate: member.endDate
-          ? new Date(member.endDate).toISOString().split('T')[0]
-          : '',
+          ? new Date(member.endDate).toISOString().split("T")[0]
+          : "",
         isActive: member.isActive,
-        bio: member.bio || '',
+        bio: member.bio || "",
       });
     }
   }, [member, form]);
@@ -100,10 +106,10 @@ export default function EditBoardMemberPage({ params }: PageProps) {
           bio: data.bio || undefined,
         },
       });
-      toast.success('Pengurus berhasil diperbarui');
-      router.push('/foundation?tab=board');
+      toast.success("Pengurus berhasil diperbarui");
+      router.push("/foundation?tab=board");
     } catch {
-      toast.error('Gagal memperbarui pengurus');
+      toast.error("Gagal memperbarui pengurus");
     }
   };
 
@@ -198,7 +204,11 @@ export default function EditBoardMemberPage({ params }: PageProps) {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="email@example.com" {...field} />
+                        <Input
+                          type="email"
+                          placeholder="email@example.com"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -212,7 +222,11 @@ export default function EditBoardMemberPage({ params }: PageProps) {
                     <FormItem>
                       <FormLabel>Alamat</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Alamat lengkap..." rows={2} {...field} />
+                        <Textarea
+                          placeholder="Alamat lengkap..."
+                          rows={2}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -305,7 +319,9 @@ export default function EditBoardMemberPage({ params }: PageProps) {
               Batal
             </Button>
             <Button type="submit" disabled={updateMember.isPending}>
-              {updateMember.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {updateMember.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Simpan Perubahan
             </Button>
           </div>

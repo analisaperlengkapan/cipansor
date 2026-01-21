@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useState } from "react";
+import Link from "next/link";
 import {
   CreditCard,
   Plus,
@@ -11,18 +11,24 @@ import {
   AlertCircle,
   CheckCircle,
   Users,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -30,9 +36,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Pagination } from '@/components/shared';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from "@/components/ui/table";
+import { Pagination } from "@/components/shared";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useBills,
   useFinancialSummary,
@@ -41,34 +47,38 @@ import {
   BillType,
   BillStatus,
   Bill,
-} from '@/hooks/use-finance';
-import { useAcademicYears, useActiveAcademicYear } from '@/hooks/use-academic-years';
+} from "@/hooks/use-finance";
+import {
+  useAcademicYears,
+  useActiveAcademicYear,
+} from "@/hooks/use-academic-years";
 
 function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
     minimumFractionDigits: 0,
   }).format(amount);
 }
 
 export default function FinancePage() {
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [billType, setBillType] = useState<BillType | 'ALL'>('ALL');
-  const [status, setStatus] = useState<BillStatus | 'ALL'>('ALL');
-  const [academicYearId, setAcademicYearId] = useState<string>('ACTIVE');
+  const [search, setSearch] = useState("");
+  const [billType, setBillType] = useState<BillType | "ALL">("ALL");
+  const [status, setStatus] = useState<BillStatus | "ALL">("ALL");
+  const [academicYearId, setAcademicYearId] = useState<string>("ACTIVE");
   const limit = 20;
 
   const { data: activeYear } = useActiveAcademicYear();
-  const selectedYearId = academicYearId === 'ACTIVE' ? activeYear?.id : academicYearId;
+  const selectedYearId =
+    academicYearId === "ACTIVE" ? activeYear?.id : academicYearId;
 
   const { data: billsData, isLoading } = useBills({
     page,
     limit,
     academicYearId: selectedYearId,
-    billType: billType === 'ALL' ? undefined : billType,
-    status: status === 'ALL' ? undefined : status,
+    billType: billType === "ALL" ? undefined : billType,
+    status: status === "ALL" ? undefined : status,
   });
 
   const { data: summary } = useFinancialSummary(selectedYearId);
@@ -89,7 +99,9 @@ export default function FinancePage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Keuangan</h1>
-          <p className="text-muted-foreground">Kelola tagihan dan pembayaran santri</p>
+          <p className="text-muted-foreground">
+            Kelola tagihan dan pembayaran santri
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
@@ -146,7 +158,7 @@ export default function FinancePage() {
             <p className="text-xs text-muted-foreground">
               {summary && summary.totalBilled > 0
                 ? `${Math.round((summary.totalPaid / summary.totalBilled) * 100)}% dari total`
-                : '0% dari total'}
+                : "0% dari total"}
             </p>
           </CardContent>
         </Card>
@@ -219,7 +231,7 @@ export default function FinancePage() {
 
                 <Select
                   value={billType}
-                  onValueChange={(v) => setBillType(v as BillType | 'ALL')}
+                  onValueChange={(v) => setBillType(v as BillType | "ALL")}
                 >
                   <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="Jenis Tagihan" />
@@ -236,7 +248,7 @@ export default function FinancePage() {
 
                 <Select
                   value={status}
-                  onValueChange={(v) => setStatus(v as BillStatus | 'ALL')}
+                  onValueChange={(v) => setStatus(v as BillStatus | "ALL")}
                 >
                   <SelectTrigger className="w-full sm:w-40">
                     <SelectValue placeholder="Status" />
@@ -264,7 +276,9 @@ export default function FinancePage() {
               ) : billsData?.data.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <CreditCard className="h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-4 text-lg font-semibold">Tidak ada tagihan</h3>
+                  <h3 className="mt-4 text-lg font-semibold">
+                    Tidak ada tagihan
+                  </h3>
                   <p className="text-muted-foreground">
                     Belum ada tagihan untuk filter yang dipilih
                   </p>
@@ -292,41 +306,50 @@ export default function FinancePage() {
                           </TableCell>
                           <TableCell>
                             <div>
-                              <p className="font-medium">{bill.student?.name}</p>
+                              <p className="font-medium">
+                                {bill.student?.name}
+                              </p>
                               <p className="text-xs text-muted-foreground">
                                 {bill.student?.nis}
                               </p>
                             </div>
                           </TableCell>
                           <TableCell>
-                            {BILL_TYPES.find((t) => t.value === bill.billType)?.label ||
-                              bill.billType}
+                            {BILL_TYPES.find((t) => t.value === bill.billType)
+                              ?.label || bill.billType}
                           </TableCell>
                           <TableCell className="font-medium">
                             {formatCurrency(bill.amount)}
                           </TableCell>
                           <TableCell
                             className={
-                              bill.paidAmount > 0 ? 'text-green-600 font-medium' : ''
+                              bill.paidAmount > 0
+                                ? "text-green-600 font-medium"
+                                : ""
                             }
                           >
                             {formatCurrency(bill.paidAmount)}
                           </TableCell>
                           <TableCell>
-                            {new Date(bill.dueDate).toLocaleDateString('id-ID')}
+                            {new Date(bill.dueDate).toLocaleDateString("id-ID")}
                           </TableCell>
                           <TableCell>{getStatusBadge(bill.status)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
-                              {bill.status !== 'PAID' && bill.status !== 'CANCELLED' && (
-                                <Button size="sm" asChild>
-                                  <Link href={`/finance/bills/${bill.id}/pay`}>
-                                    Bayar
-                                  </Link>
-                                </Button>
-                              )}
+                              {bill.status !== "PAID" &&
+                                bill.status !== "CANCELLED" && (
+                                  <Button size="sm" asChild>
+                                    <Link
+                                      href={`/finance/bills/${bill.id}/pay`}
+                                    >
+                                      Bayar
+                                    </Link>
+                                  </Button>
+                                )}
                               <Button variant="outline" size="sm" asChild>
-                                <Link href={`/finance/bills/${bill.id}`}>Detail</Link>
+                                <Link href={`/finance/bills/${bill.id}`}>
+                                  Detail
+                                </Link>
                               </Button>
                             </div>
                           </TableCell>
@@ -365,9 +388,13 @@ export default function FinancePage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Jenis Tagihan</TableHead>
-                      <TableHead className="text-right">Total Tagihan</TableHead>
+                      <TableHead className="text-right">
+                        Total Tagihan
+                      </TableHead>
                       <TableHead className="text-right">Terbayar</TableHead>
-                      <TableHead className="text-right">Belum Dibayar</TableHead>
+                      <TableHead className="text-right">
+                        Belum Dibayar
+                      </TableHead>
                       <TableHead className="text-right">Persentase</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -375,8 +402,8 @@ export default function FinancePage() {
                     {summary.billsByType.map((item) => (
                       <TableRow key={item.type}>
                         <TableCell className="font-medium">
-                          {BILL_TYPES.find((t) => t.value === item.type)?.label ||
-                            item.type}
+                          {BILL_TYPES.find((t) => t.value === item.type)
+                            ?.label || item.type}
                         </TableCell>
                         <TableCell className="text-right">
                           {formatCurrency(item.total)}
@@ -390,7 +417,7 @@ export default function FinancePage() {
                         <TableCell className="text-right">
                           {item.total > 0
                             ? `${Math.round((item.paid / item.total) * 100)}%`
-                            : '0%'}
+                            : "0%"}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -399,7 +426,9 @@ export default function FinancePage() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-8">
                   <DollarSign className="h-8 w-8 text-muted-foreground" />
-                  <p className="mt-2 text-muted-foreground">Belum ada data ringkasan</p>
+                  <p className="mt-2 text-muted-foreground">
+                    Belum ada data ringkasan
+                  </p>
                 </div>
               )}
             </CardContent>

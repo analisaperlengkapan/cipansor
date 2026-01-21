@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  Download, 
+import { useState, useMemo } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import {
+  ArrowLeft,
+  Download,
   Printer,
   FileText,
   BookOpen,
@@ -17,78 +17,104 @@ import {
   Activity,
   Star,
   Loader2,
-  AlertCircle
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
-import { useParentReportCard } from '@/hooks/use-report-card';
+  AlertCircle,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { useParentReportCard } from "@/hooks/use-report-card";
 
-type PredicateType = 'SB' | 'B' | 'C' | 'K';
+type PredicateType = "SB" | "B" | "C" | "K";
 
 const PREDICATE_COLORS: Record<PredicateType, string> = {
-  SB: 'bg-green-100 text-green-800',
-  B: 'bg-blue-100 text-blue-800',
-  C: 'bg-yellow-100 text-yellow-800',
-  K: 'bg-red-100 text-red-800',
+  SB: "bg-green-100 text-green-800",
+  B: "bg-blue-100 text-blue-800",
+  C: "bg-yellow-100 text-yellow-800",
+  K: "bg-red-100 text-red-800",
 };
 
 const PREDICATE_LABELS: Record<PredicateType, string> = {
-  SB: 'Sangat Baik',
-  B: 'Baik',
-  C: 'Cukup',
-  K: 'Kurang',
+  SB: "Sangat Baik",
+  B: "Baik",
+  C: "Cukup",
+  K: "Kurang",
 };
 
 // Map letter grade to predicate
 function getPredicateFromGrade(grade?: string): PredicateType {
-  if (!grade) return 'B';
-  if (grade === 'A' || grade.startsWith('A')) return 'SB';
-  if (grade === 'B' || grade.startsWith('B')) return 'B';
-  if (grade === 'C' || grade.startsWith('C')) return 'C';
-  return 'K';
+  if (!grade) return "B";
+  if (grade === "A" || grade.startsWith("A")) return "SB";
+  if (grade === "B" || grade.startsWith("B")) return "B";
+  if (grade === "C" || grade.startsWith("C")) return "C";
+  return "K";
 }
 
 // Map grade to description
 function getGradeDescription(score?: number): string {
-  if (!score) return '';
-  if (score >= 90) return 'Sangat Baik';
-  if (score >= 80) return 'Baik';
-  if (score >= 70) return 'Cukup';
-  if (score >= 60) return 'Kurang';
-  return 'Sangat Kurang';
+  if (!score) return "";
+  if (score >= 90) return "Sangat Baik";
+  if (score >= 80) return "Baik";
+  if (score >= 70) return "Cukup";
+  if (score >= 60) return "Kurang";
+  return "Sangat Kurang";
 }
 
 export default function ReportCardDetailPage() {
   const params = useParams();
   const reportCardId = params.id as string;
-  const [activeTab, setActiveTab] = useState('grades');
-  
+  const [activeTab, setActiveTab] = useState("grades");
+
   // Fetch report card from API
-  const { data: reportCard, isLoading, error } = useParentReportCard(reportCardId);
+  const {
+    data: reportCard,
+    isLoading,
+    error,
+  } = useParentReportCard(reportCardId);
 
   const getGradeColor = (grade?: string) => {
-    if (!grade) return '';
-    if (grade.startsWith('A')) return 'text-green-600 font-bold';
-    if (grade.startsWith('B')) return 'text-blue-600 font-semibold';
-    if (grade.startsWith('C')) return 'text-yellow-600';
-    return 'text-red-600';
+    if (!grade) return "";
+    if (grade.startsWith("A")) return "text-green-600 font-bold";
+    if (grade.startsWith("B")) return "text-blue-600 font-semibold";
+    if (grade.startsWith("C")) return "text-yellow-600";
+    return "text-red-600";
   };
 
   // Categorize grades by subject category
   const categorizedGrades = useMemo(() => {
-    if (!reportCard?.grades) return { RELIGIOUS: [], ACADEMIC: [], LOCAL: [], VOCATIONAL: [] };
-    
+    if (!reportCard?.grades)
+      return { RELIGIOUS: [], ACADEMIC: [], LOCAL: [], VOCATIONAL: [] };
+
     return {
-      RELIGIOUS: reportCard.grades.filter(g => g.subject?.category === 'RELIGIOUS' || g.subject?.category === 'AGAMA'),
-      ACADEMIC: reportCard.grades.filter(g => g.subject?.category === 'ACADEMIC' || g.subject?.category === 'UMUM'),
-      LOCAL: reportCard.grades.filter(g => g.subject?.category === 'LOCAL' || g.subject?.category === 'MUATAN_LOKAL'),
-      VOCATIONAL: reportCard.grades.filter(g => g.subject?.category === 'VOCATIONAL' || g.subject?.category === 'KETERAMPILAN'),
+      RELIGIOUS: reportCard.grades.filter(
+        (g) =>
+          g.subject?.category === "RELIGIOUS" ||
+          g.subject?.category === "AGAMA",
+      ),
+      ACADEMIC: reportCard.grades.filter(
+        (g) =>
+          g.subject?.category === "ACADEMIC" || g.subject?.category === "UMUM",
+      ),
+      LOCAL: reportCard.grades.filter(
+        (g) =>
+          g.subject?.category === "LOCAL" ||
+          g.subject?.category === "MUATAN_LOKAL",
+      ),
+      VOCATIONAL: reportCard.grades.filter(
+        (g) =>
+          g.subject?.category === "VOCATIONAL" ||
+          g.subject?.category === "KETERAMPILAN",
+      ),
     };
   }, [reportCard?.grades]);
 
@@ -96,15 +122,35 @@ export default function ReportCardDetailPage() {
   const characterAssessment = useMemo(() => {
     if (!reportCard?.behavior) return [];
     return [
-      { characterName: 'Sikap', category: 'Spiritual', predicate: reportCard.behavior.attitude, description: 'Penilaian sikap sehari-hari' },
-      { characterName: 'Disiplin', category: 'Moral', predicate: reportCard.behavior.discipline, description: 'Kedisiplinan dalam kegiatan' },
-      { characterName: 'Tanggung Jawab', category: 'Moral', predicate: reportCard.behavior.responsibility, description: 'Bertanggung jawab dalam tugas' },
-      { characterName: 'Kerja Sama', category: 'Sosial', predicate: reportCard.behavior.teamwork, description: 'Kemampuan bekerja sama' },
+      {
+        characterName: "Sikap",
+        category: "Spiritual",
+        predicate: reportCard.behavior.attitude,
+        description: "Penilaian sikap sehari-hari",
+      },
+      {
+        characterName: "Disiplin",
+        category: "Moral",
+        predicate: reportCard.behavior.discipline,
+        description: "Kedisiplinan dalam kegiatan",
+      },
+      {
+        characterName: "Tanggung Jawab",
+        category: "Moral",
+        predicate: reportCard.behavior.responsibility,
+        description: "Bertanggung jawab dalam tugas",
+      },
+      {
+        characterName: "Kerja Sama",
+        category: "Sosial",
+        predicate: reportCard.behavior.teamwork,
+        description: "Kemampuan bekerja sama",
+      },
     ];
   }, [reportCard?.behavior]);
 
   const handleDownload = () => {
-    toast.success('Rapor akan diunduh dalam format PDF');
+    toast.success("Rapor akan diunduh dalam format PDF");
   };
 
   const handlePrint = () => {
@@ -173,7 +219,9 @@ export default function ReportCardDetailPage() {
         <div className="flex-1">
           <h1 className="text-2xl font-bold">Detail Rapor</h1>
           <p className="text-muted-foreground">
-            {reportCard.student?.name || '-'} - {reportCard.academicYear?.year || '-'} Semester {reportCard.semester || 1}
+            {reportCard.student?.name || "-"} -{" "}
+            {reportCard.academicYear?.year || "-"} Semester{" "}
+            {reportCard.semester || 1}
           </p>
         </div>
         <Button variant="outline" onClick={handlePrint}>
@@ -191,9 +239,16 @@ export default function ReportCardDetailPage() {
         <CardContent className="pt-6">
           {/* School Header */}
           <div className="text-center border-b pb-4 mb-4">
-            <h2 className="text-xl font-bold uppercase">LAPORAN HASIL BELAJAR</h2>
-            <h3 className="text-lg font-semibold mt-4">LAPORAN HASIL BELAJAR PESERTA DIDIK</h3>
-            <p className="text-sm">Tahun Pelajaran {reportCard.academicYear?.year || '-'} Semester {reportCard.semester === 1 ? 'Ganjil' : 'Genap'}</p>
+            <h2 className="text-xl font-bold uppercase">
+              LAPORAN HASIL BELAJAR
+            </h2>
+            <h3 className="text-lg font-semibold mt-4">
+              LAPORAN HASIL BELAJAR PESERTA DIDIK
+            </h3>
+            <p className="text-sm">
+              Tahun Pelajaran {reportCard.academicYear?.year || "-"} Semester{" "}
+              {reportCard.semester === 1 ? "Ganjil" : "Genap"}
+            </p>
           </div>
 
           {/* Student Info */}
@@ -201,31 +256,54 @@ export default function ReportCardDetailPage() {
             <div className="space-y-2">
               <div className="grid grid-cols-3 gap-2 text-sm">
                 <span className="text-muted-foreground">Nama Siswa</span>
-                <span className="col-span-2 font-medium">: {reportCard.student?.name || '-'}</span>
+                <span className="col-span-2 font-medium">
+                  : {reportCard.student?.name || "-"}
+                </span>
               </div>
               <div className="grid grid-cols-3 gap-2 text-sm">
                 <span className="text-muted-foreground">NIS</span>
-                <span className="col-span-2 font-medium">: {reportCard.student?.nis || '-'}</span>
+                <span className="col-span-2 font-medium">
+                  : {reportCard.student?.nis || "-"}
+                </span>
               </div>
               <div className="grid grid-cols-3 gap-2 text-sm">
                 <span className="text-muted-foreground">Kelas</span>
-                <span className="col-span-2 font-medium">: {reportCard.student?.class?.name || '-'}</span>
+                <span className="col-span-2 font-medium">
+                  : {reportCard.student?.class?.name || "-"}
+                </span>
               </div>
             </div>
             <div className="space-y-2">
               <div className="grid grid-cols-3 gap-2 text-sm">
                 <span className="text-muted-foreground">Peringkat</span>
-                <span className="col-span-2 font-medium">: {reportCard.rank || '-'} {reportCard.totalStudents ? `dari ${reportCard.totalStudents} siswa` : ''}</span>
+                <span className="col-span-2 font-medium">
+                  : {reportCard.rank || "-"}{" "}
+                  {reportCard.totalStudents
+                    ? `dari ${reportCard.totalStudents} siswa`
+                    : ""}
+                </span>
               </div>
               <div className="grid grid-cols-3 gap-2 text-sm">
                 <span className="text-muted-foreground">Rata-rata</span>
-                <span className="col-span-2 font-medium">: {reportCard.gpa?.toFixed(2) || '-'}</span>
+                <span className="col-span-2 font-medium">
+                  : {reportCard.gpa?.toFixed(2) || "-"}
+                </span>
               </div>
               <div className="grid grid-cols-3 gap-2 text-sm">
                 <span className="text-muted-foreground">Status</span>
                 <span className="col-span-2">
-                  <Badge variant={reportCard.status === 'PUBLISHED' ? 'default' : 'secondary'}>
-                    {reportCard.status === 'PUBLISHED' ? 'Diterbitkan' : reportCard.status === 'FINALIZED' ? 'Final' : 'Draft'}
+                  <Badge
+                    variant={
+                      reportCard.status === "PUBLISHED"
+                        ? "default"
+                        : "secondary"
+                    }
+                  >
+                    {reportCard.status === "PUBLISHED"
+                      ? "Diterbitkan"
+                      : reportCard.status === "FINALIZED"
+                        ? "Final"
+                        : "Draft"}
                   </Badge>
                 </span>
               </div>
@@ -253,7 +331,11 @@ export default function ReportCardDetailPage() {
       </div>
 
       {/* Tab Contents */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="print:hidden">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="print:hidden"
+      >
         {/* Grades Tab */}
         <TabsContent value="grades" className="space-y-6">
           {/* Religious Subjects */}
@@ -283,19 +365,37 @@ export default function ReportCardDetailPage() {
                       {categorizedGrades.RELIGIOUS.map((grade, idx) => (
                         <tr key={grade.id} className="border-b">
                           <td className="py-2 px-2">{idx + 1}</td>
-                          <td className="py-2 px-2">{grade.subject?.name || '-'}</td>
-                          <td className="py-2 px-2 text-center">{grade.dailyScore || '-'}</td>
-                          <td className="py-2 px-2 text-center">{grade.midtermScore || '-'}</td>
-                          <td className="py-2 px-2 text-center">{grade.finalScore || '-'}</td>
-                          <td className={`py-2 px-2 text-center ${getGradeColor(grade.letterGrade)}`}>{grade.finalGrade?.toFixed(1) || '-'}</td>
-                          <td className={`py-2 px-2 text-center ${getGradeColor(grade.letterGrade)}`}>{grade.letterGrade || '-'}</td>
+                          <td className="py-2 px-2">
+                            {grade.subject?.name || "-"}
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            {grade.dailyScore || "-"}
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            {grade.midtermScore || "-"}
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            {grade.finalScore || "-"}
+                          </td>
+                          <td
+                            className={`py-2 px-2 text-center ${getGradeColor(grade.letterGrade)}`}
+                          >
+                            {grade.finalGrade?.toFixed(1) || "-"}
+                          </td>
+                          <td
+                            className={`py-2 px-2 text-center ${getGradeColor(grade.letterGrade)}`}
+                          >
+                            {grade.letterGrade || "-"}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">Belum ada nilai mata pelajaran keagamaan</p>
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Belum ada nilai mata pelajaran keagamaan
+                </p>
               )}
             </CardContent>
           </Card>
@@ -327,19 +427,37 @@ export default function ReportCardDetailPage() {
                       {categorizedGrades.ACADEMIC.map((grade, idx) => (
                         <tr key={grade.id} className="border-b">
                           <td className="py-2 px-2">{idx + 1}</td>
-                          <td className="py-2 px-2">{grade.subject?.name || '-'}</td>
-                          <td className="py-2 px-2 text-center">{grade.dailyScore || '-'}</td>
-                          <td className="py-2 px-2 text-center">{grade.midtermScore || '-'}</td>
-                          <td className="py-2 px-2 text-center">{grade.finalScore || '-'}</td>
-                          <td className={`py-2 px-2 text-center ${getGradeColor(grade.letterGrade)}`}>{grade.finalGrade?.toFixed(1) || '-'}</td>
-                          <td className={`py-2 px-2 text-center ${getGradeColor(grade.letterGrade)}`}>{grade.letterGrade || '-'}</td>
+                          <td className="py-2 px-2">
+                            {grade.subject?.name || "-"}
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            {grade.dailyScore || "-"}
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            {grade.midtermScore || "-"}
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            {grade.finalScore || "-"}
+                          </td>
+                          <td
+                            className={`py-2 px-2 text-center ${getGradeColor(grade.letterGrade)}`}
+                          >
+                            {grade.finalGrade?.toFixed(1) || "-"}
+                          </td>
+                          <td
+                            className={`py-2 px-2 text-center ${getGradeColor(grade.letterGrade)}`}
+                          >
+                            {grade.letterGrade || "-"}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">Belum ada nilai mata pelajaran umum</p>
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Belum ada nilai mata pelajaran umum
+                </p>
               )}
             </CardContent>
           </Card>
@@ -353,7 +471,8 @@ export default function ReportCardDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {[...categorizedGrades.LOCAL, ...categorizedGrades.VOCATIONAL].length > 0 ? (
+              {[...categorizedGrades.LOCAL, ...categorizedGrades.VOCATIONAL]
+                .length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -368,22 +487,43 @@ export default function ReportCardDetailPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {[...categorizedGrades.LOCAL, ...categorizedGrades.VOCATIONAL].map((grade, idx) => (
+                      {[
+                        ...categorizedGrades.LOCAL,
+                        ...categorizedGrades.VOCATIONAL,
+                      ].map((grade, idx) => (
                         <tr key={grade.id} className="border-b">
                           <td className="py-2 px-2">{idx + 1}</td>
-                          <td className="py-2 px-2">{grade.subject?.name || '-'}</td>
-                          <td className="py-2 px-2 text-center">{grade.dailyScore || '-'}</td>
-                          <td className="py-2 px-2 text-center">{grade.midtermScore || '-'}</td>
-                          <td className="py-2 px-2 text-center">{grade.finalScore || '-'}</td>
-                          <td className={`py-2 px-2 text-center ${getGradeColor(grade.letterGrade)}`}>{grade.finalGrade?.toFixed(1) || '-'}</td>
-                          <td className={`py-2 px-2 text-center ${getGradeColor(grade.letterGrade)}`}>{grade.letterGrade || '-'}</td>
+                          <td className="py-2 px-2">
+                            {grade.subject?.name || "-"}
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            {grade.dailyScore || "-"}
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            {grade.midtermScore || "-"}
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            {grade.finalScore || "-"}
+                          </td>
+                          <td
+                            className={`py-2 px-2 text-center ${getGradeColor(grade.letterGrade)}`}
+                          >
+                            {grade.finalGrade?.toFixed(1) || "-"}
+                          </td>
+                          <td
+                            className={`py-2 px-2 text-center ${getGradeColor(grade.letterGrade)}`}
+                          >
+                            {grade.letterGrade || "-"}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">Belum ada nilai muatan lokal</p>
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Belum ada nilai muatan lokal
+                </p>
               )}
             </CardContent>
           </Card>
@@ -399,23 +539,33 @@ export default function ReportCardDetailPage() {
             <CardContent>
               <div className="grid grid-cols-5 gap-4 text-center">
                 <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <p className="text-2xl font-bold text-blue-600">{reportCard.attendance?.sick || 0}</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {reportCard.attendance?.sick || 0}
+                  </p>
                   <p className="text-xs text-muted-foreground">Sakit</p>
                 </div>
                 <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                  <p className="text-2xl font-bold text-purple-600">{reportCard.attendance?.permitted || 0}</p>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {reportCard.attendance?.permitted || 0}
+                  </p>
                   <p className="text-xs text-muted-foreground">Izin</p>
                 </div>
                 <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                  <p className="text-2xl font-bold text-red-600">{reportCard.attendance?.absent || 0}</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {reportCard.attendance?.absent || 0}
+                  </p>
                   <p className="text-xs text-muted-foreground">Alpha</p>
                 </div>
                 <div className="p-3 bg-gray-50 dark:bg-gray-900/20 rounded-lg">
-                  <p className="text-2xl font-bold">{reportCard.attendance?.totalDays || 0}</p>
+                  <p className="text-2xl font-bold">
+                    {reportCard.attendance?.totalDays || 0}
+                  </p>
                   <p className="text-xs text-muted-foreground">Total Hari</p>
                 </div>
                 <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <p className="text-2xl font-bold text-green-600">{reportCard.attendance?.attendanceRate?.toFixed(1) || 0}%</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {reportCard.attendance?.attendanceRate?.toFixed(1) || 0}%
+                  </p>
                   <p className="text-xs text-muted-foreground">Kehadiran</p>
                 </div>
               </div>
@@ -433,7 +583,8 @@ export default function ReportCardDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {reportCard.extracurricular && reportCard.extracurricular.length > 0 ? (
+              {reportCard.extracurricular &&
+              reportCard.extracurricular.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -449,20 +600,30 @@ export default function ReportCardDetailPage() {
                       {reportCard.extracurricular.map((activity, idx) => (
                         <tr key={activity.id || idx} className="border-b">
                           <td className="py-2 px-2">{idx + 1}</td>
-                          <td className="py-2 px-2 font-medium">{activity.name}</td>
+                          <td className="py-2 px-2 font-medium">
+                            {activity.name}
+                          </td>
                           <td className="py-2 px-2 text-center">
-                            <Badge className={activity.grade === 'A' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
-                              {activity.grade || '-'}
+                            <Badge
+                              className={
+                                activity.grade === "A"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-blue-100 text-blue-800"
+                              }
+                            >
+                              {activity.grade || "-"}
                             </Badge>
                           </td>
-                          <td className="py-2 px-2">{activity.notes || '-'}</td>
+                          <td className="py-2 px-2">{activity.notes || "-"}</td>
                           <td className="py-2 px-2">
                             {activity.achievements ? (
                               <div className="flex items-center gap-1">
                                 <Award className="h-4 w-4 text-amber-500" />
                                 <span>{activity.achievements}</span>
                               </div>
-                            ) : '-'}
+                            ) : (
+                              "-"
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -470,7 +631,9 @@ export default function ReportCardDetailPage() {
                   </table>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">Belum ada data ekstrakurikuler</p>
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Belum ada data ekstrakurikuler
+                </p>
               )}
             </CardContent>
           </Card>
@@ -491,19 +654,39 @@ export default function ReportCardDetailPage() {
                   <div className="space-y-4">
                     <div>
                       <div className="flex justify-between mb-2">
-                        <span className="text-sm text-muted-foreground">Progress Hafalan</span>
-                        <span className="font-medium">{reportCard.tahfidz?.completedJuz || 0} / {reportCard.tahfidz?.totalJuz || 30} Juz</span>
+                        <span className="text-sm text-muted-foreground">
+                          Progress Hafalan
+                        </span>
+                        <span className="font-medium">
+                          {reportCard.tahfidz?.completedJuz || 0} /{" "}
+                          {reportCard.tahfidz?.totalJuz || 30} Juz
+                        </span>
                       </div>
-                      <Progress value={(reportCard.tahfidz?.completedJuz || 0) / (reportCard.tahfidz?.totalJuz || 30) * 100} className="h-3" />
+                      <Progress
+                        value={
+                          ((reportCard.tahfidz?.completedJuz || 0) /
+                            (reportCard.tahfidz?.totalJuz || 30)) *
+                          100
+                        }
+                        className="h-3"
+                      />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground">Juz Selesai</p>
-                        <p className="text-2xl font-bold text-green-600">{reportCard.tahfidz?.completedJuz || 0}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Juz Selesai
+                        </p>
+                        <p className="text-2xl font-bold text-green-600">
+                          {reportCard.tahfidz?.completedJuz || 0}
+                        </p>
                       </div>
                       <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground">Predikat</p>
-                        <Badge className="mt-1 bg-green-100 text-green-800">{reportCard.tahfidz?.grade || '-'}</Badge>
+                        <p className="text-sm text-muted-foreground">
+                          Predikat
+                        </p>
+                        <Badge className="mt-1 bg-green-100 text-green-800">
+                          {reportCard.tahfidz?.grade || "-"}
+                        </Badge>
                       </div>
                     </div>
                   </div>
@@ -514,17 +697,30 @@ export default function ReportCardDetailPage() {
                         Posisi Hafalan Saat Ini
                       </h4>
                       <p className="text-lg">
-                        Surah <strong>{reportCard.tahfidz?.currentSurah || '-'}</strong>, Ayat <strong>{reportCard.tahfidz?.currentAyat || '-'}</strong>
+                        Surah{" "}
+                        <strong>
+                          {reportCard.tahfidz?.currentSurah || "-"}
+                        </strong>
+                        , Ayat{" "}
+                        <strong>
+                          {reportCard.tahfidz?.currentAyat || "-"}
+                        </strong>
                       </p>
                     </div>
                     <div className="p-4 bg-muted rounded-lg">
-                      <h4 className="font-medium mb-2">Catatan Ustadz/Ustadzah</h4>
-                      <p className="text-sm">{reportCard.tahfidz?.notes || '-'}</p>
+                      <h4 className="font-medium mb-2">
+                        Catatan Ustadz/Ustadzah
+                      </h4>
+                      <p className="text-sm">
+                        {reportCard.tahfidz?.notes || "-"}
+                      </p>
                     </div>
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">Belum ada data tahfidz</p>
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Belum ada data tahfidz
+                </p>
               )}
             </CardContent>
           </Card>
@@ -539,7 +735,8 @@ export default function ReportCardDetailPage() {
                 Penilaian Sikap (Karakter)
               </CardTitle>
               <CardDescription>
-                Penilaian berdasarkan Profil Pelajar Pancasila & Profil Pelajar Rahmatan Lil Alamin
+                Penilaian berdasarkan Profil Pelajar Pancasila & Profil Pelajar
+                Rahmatan Lil Alamin
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -558,12 +755,18 @@ export default function ReportCardDetailPage() {
                     {characterAssessment.map((char, idx) => (
                       <tr key={char.characterName} className="border-b">
                         <td className="py-2 px-2">{idx + 1}</td>
-                        <td className="py-2 px-2 font-medium">{char.characterName}</td>
+                        <td className="py-2 px-2 font-medium">
+                          {char.characterName}
+                        </td>
                         <td className="py-2 px-2">
                           <Badge variant="outline">{char.category}</Badge>
                         </td>
                         <td className="py-2 px-2 text-center">
-                          <Badge className={PREDICATE_COLORS[char.predicate as PredicateType]}>
+                          <Badge
+                            className={
+                              PREDICATE_COLORS[char.predicate as PredicateType]
+                            }
+                          >
                             {PREDICATE_LABELS[char.predicate as PredicateType]}
                           </Badge>
                         </td>
@@ -576,10 +779,19 @@ export default function ReportCardDetailPage() {
               <div className="mt-4 p-4 bg-muted rounded-lg">
                 <h4 className="font-medium mb-2">Keterangan Predikat:</h4>
                 <div className="flex flex-wrap gap-3 text-sm">
-                  <span><Badge className={PREDICATE_COLORS.SB}>SB</Badge> = Sangat Baik</span>
-                  <span><Badge className={PREDICATE_COLORS.B}>B</Badge> = Baik</span>
-                  <span><Badge className={PREDICATE_COLORS.C}>C</Badge> = Cukup</span>
-                  <span><Badge className={PREDICATE_COLORS.K}>K</Badge> = Kurang</span>
+                  <span>
+                    <Badge className={PREDICATE_COLORS.SB}>SB</Badge> = Sangat
+                    Baik
+                  </span>
+                  <span>
+                    <Badge className={PREDICATE_COLORS.B}>B</Badge> = Baik
+                  </span>
+                  <span>
+                    <Badge className={PREDICATE_COLORS.C}>C</Badge> = Cukup
+                  </span>
+                  <span>
+                    <Badge className={PREDICATE_COLORS.K}>K</Badge> = Kurang
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -597,13 +809,21 @@ export default function ReportCardDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="p-4 bg-muted rounded-lg">
-                <p className="italic">&ldquo;{reportCard.teacherNotes || reportCard.homeroomTeacherNotes || 'Belum ada catatan'}&rdquo;</p>
+                <p className="italic">
+                  &ldquo;
+                  {reportCard.teacherNotes ||
+                    reportCard.homeroomTeacherNotes ||
+                    "Belum ada catatan"}
+                  &rdquo;
+                </p>
               </div>
               <div className="mt-4 flex items-center gap-3">
                 <User className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="font-medium">Wali Kelas</p>
-                  <p className="text-sm text-muted-foreground">Kelas {reportCard.student?.class?.name || '-'}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Kelas {reportCard.student?.class?.name || "-"}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -618,13 +838,18 @@ export default function ReportCardDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="p-4 bg-muted rounded-lg">
-                <p className="italic">&ldquo;{reportCard.principalNotes || 'Belum ada catatan'}&rdquo;</p>
+                <p className="italic">
+                  &ldquo;{reportCard.principalNotes || "Belum ada catatan"}
+                  &rdquo;
+                </p>
               </div>
               <div className="mt-4 flex items-center gap-3">
                 <User className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="font-medium">Kepala Sekolah</p>
-                  <p className="text-sm text-muted-foreground">Pesantren Cipansor</p>
+                  <p className="text-sm text-muted-foreground">
+                    Pesantren Cipansor
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -635,20 +860,28 @@ export default function ReportCardDetailPage() {
             <CardContent className="pt-6">
               <div className="grid md:grid-cols-3 gap-6 text-center">
                 <div className="space-y-12">
-                  <p className="text-sm text-muted-foreground">Orang Tua/Wali</p>
+                  <p className="text-sm text-muted-foreground">
+                    Orang Tua/Wali
+                  </p>
                   <div className="border-b border-black mx-8"></div>
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Wali Kelas</p>
                   <div className="h-10"></div>
                   <p className="font-medium">________________</p>
-                  <p className="text-xs text-muted-foreground">Kelas {reportCard.student?.class?.name || '-'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Kelas {reportCard.student?.class?.name || "-"}
+                  </p>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Kepala Sekolah</p>
+                  <p className="text-sm text-muted-foreground">
+                    Kepala Sekolah
+                  </p>
                   <div className="h-10"></div>
                   <p className="font-medium">________________</p>
-                  <p className="text-xs text-muted-foreground">Pesantren Cipansor</p>
+                  <p className="text-xs text-muted-foreground">
+                    Pesantren Cipansor
+                  </p>
                 </div>
               </div>
             </CardContent>

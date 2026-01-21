@@ -1,7 +1,17 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
 
-export type EmployeeDocumentType = 'KTP' | 'KK' | 'NPWP' | 'IJAZAH' | 'TRANSKRIP_NILAI' | 'SERTIFIKAT' | 'SK_PENGANGKATAN' | 'KONTRAK_KERJA' | 'CV' | 'LAINNYA';
+export type EmployeeDocumentType =
+  | "KTP"
+  | "KK"
+  | "NPWP"
+  | "IJAZAH"
+  | "TRANSKRIP_NILAI"
+  | "SERTIFIKAT"
+  | "SK_PENGANGKATAN"
+  | "KONTRAK_KERJA"
+  | "CV"
+  | "LAINNYA";
 
 export interface EmployeeDocument {
   id: string;
@@ -16,7 +26,7 @@ export interface EmployeeDocument {
 
 export function useEmployeeDocuments(userId: string) {
   return useQuery({
-    queryKey: ['employee-documents', userId],
+    queryKey: ["employee-documents", userId],
     queryFn: async () => {
       const response = await api.get(`/hr/employees/${userId}/documents`);
       return response.data.data as EmployeeDocument[];
@@ -30,12 +40,14 @@ export function useCreateEmployeeDocument() {
 
   return useMutation({
     mutationFn: async (data: Partial<EmployeeDocument>) => {
-      const response = await api.post('/hr/documents', data);
+      const response = await api.post("/hr/documents", data);
       return response.data.data;
     },
     onSuccess: (_, variables) => {
       if (variables.userId) {
-        queryClient.invalidateQueries({ queryKey: ['employee-documents', variables.userId] });
+        queryClient.invalidateQueries({
+          queryKey: ["employee-documents", variables.userId],
+        });
       }
     },
   });
@@ -49,7 +61,7 @@ export function useDeleteEmployeeDocument() {
       await api.delete(`/hr/documents/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employee-documents'] });
+      queryClient.invalidateQueries({ queryKey: ["employee-documents"] });
     },
   });
 }

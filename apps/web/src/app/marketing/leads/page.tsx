@@ -1,17 +1,26 @@
-'use client';
+"use client";
 
-import { useRegistrations } from '@/hooks/use-psb';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Loader2, Eye } from 'lucide-react';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+import { useRegistrations } from "@/hooks/use-psb";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Loader2, Eye } from "lucide-react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 export default function LeadsPage() {
-  const { data: registrationsData, isLoading } = useRegistrations({ limit: 50 });
+  const { data: registrationsData, isLoading } = useRegistrations({
+    limit: 50,
+  });
   const registrations = registrationsData?.data || [];
 
   return (
@@ -41,37 +50,53 @@ export default function LeadsPage() {
                     <Loader2 className="animate-spin h-6 w-6 mx-auto" />
                   </TableCell>
                 </TableRow>
-              ) : registrations.map((reg) => (
-                <TableRow key={reg.id}>
-                  <TableCell>
-                    <div className="font-medium">{reg.fullName}</div>
-                    <div className="text-xs text-muted-foreground">{reg.parentPhone}</div>
-                  </TableCell>
-                  <TableCell>
-                    {reg.source ? <Badge variant="outline">{reg.source}</Badge> : '-'}
-                  </TableCell>
-                  <TableCell>
-                    {reg.campaign ? (
-                      <Badge variant="secondary">{reg.campaign.name}</Badge>
-                    ) : '-'}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={reg.status === 'ACCEPTED' ? 'default' : 'secondary'}>
-                      {reg.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(reg.createdAt), 'd MMM yyyy', { locale: idLocale })}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" asChild>
-                      <Link href={`/marketing/leads/${reg.id}`}>
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              ) : (
+                registrations.map((reg) => (
+                  <TableRow key={reg.id}>
+                    <TableCell>
+                      <div className="font-medium">{reg.fullName}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {reg.parentPhone}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {reg.source ? (
+                        <Badge variant="outline">{reg.source}</Badge>
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {reg.campaign ? (
+                        <Badge variant="secondary">{reg.campaign.name}</Badge>
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          reg.status === "ACCEPTED" ? "default" : "secondary"
+                        }
+                      >
+                        {reg.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(reg.createdAt), "d MMM yyyy", {
+                        locale: idLocale,
+                      })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" asChild>
+                        <Link href={`/marketing/leads/${reg.id}`}>
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

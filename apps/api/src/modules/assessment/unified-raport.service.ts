@@ -8,11 +8,7 @@ export class UnifiedRaportService {
    * Generate Unified SD IT Raport
    * Combines Kurikulum Merdeka (Academic) and Pesantren (Islamic) data
    */
-  static async generateUnifiedRaport(
-    studentId: string,
-    academicYearId: string,
-    semester: number
-  ) {
+  static async generateUnifiedRaport(studentId: string, academicYearId: string, semester: number) {
     // 1. Get Student & School Info
     const student = await prisma.student.findUnique({
       where: { id: studentId },
@@ -27,13 +23,13 @@ export class UnifiedRaportService {
                 name: true,
                 level: true,
                 homeroomTeacher: {
-                  include: { user: { select: { name: true } } }
-                }
-              }
-            }
-          }
-        }
-      }
+                  include: { user: { select: { name: true } } },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!student) {
@@ -48,7 +44,7 @@ export class UnifiedRaportService {
     // 2. Run Generators in Parallel
     const [raportMerdeka, raporPesantren] = await Promise.all([
       RaportMerdekaService.generateRaportMerdeka(studentId, academicYearId, semester),
-      generateRaporPesantren({ studentId, academicYearId, semester, unitId: student.unitId })
+      generateRaporPesantren({ studentId, academicYearId, semester, unitId: student.unitId }),
     ]);
 
     // 3. Structure the Unified Data
@@ -102,7 +98,7 @@ export class UnifiedRaportService {
         principal: 'Kepala Sekolah', // Should be fetched from Unit/Staff structure
         guardian: 'Orang Tua / Wali',
         date: new Date(),
-      }
+      },
     };
   }
 
@@ -118,8 +114,8 @@ export class UnifiedRaportService {
       layout: {
         paperSize: 'A4',
         orientation: 'portrait',
-        margins: { top: 20, right: 20, bottom: 20, left: 20 }
-      }
+        margins: { top: 20, right: 20, bottom: 20, left: 20 },
+      },
     };
   }
 }

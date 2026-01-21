@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useState } from "react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   Plus,
   Search,
@@ -14,10 +14,16 @@ import {
   Filter,
   Clock,
   RotateCcw,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -25,19 +31,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Pagination } from '@/components/shared/pagination';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Pagination } from "@/components/shared/pagination";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { toast } from "sonner";
 import {
   useBooks,
   useBookCategories,
@@ -49,8 +55,8 @@ import {
   BookCategory,
   BorrowStatus,
   BookStatus,
-} from '@/hooks/use-library';
-import { useAuthStore } from '@/stores/auth';
+} from "@/hooks/use-library";
+import { useAuthStore } from "@/stores/auth";
 
 function getStatusBadge(status: BorrowStatus) {
   const statusInfo = BORROW_STATUSES.find((s) => s.value === status);
@@ -62,12 +68,12 @@ function getStatusBadge(status: BorrowStatus) {
 }
 
 export default function LibraryPage() {
-  const [activeTab, setActiveTab] = useState<'books' | 'borrows'>('books');
+  const [activeTab, setActiveTab] = useState<"books" | "borrows">("books");
   const [booksPage, setBooksPage] = useState(1);
   const [borrowsPage, setBorrowsPage] = useState(1);
-  const [bookSearch, setBookSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [bookSearch, setBookSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const user = useAuthStore((state) => state.user);
   const unitId = user?.unitId;
 
@@ -77,14 +83,14 @@ export default function LibraryPage() {
     page: booksPage,
     limit: 10,
     search: bookSearch || undefined,
-    categoryId: categoryFilter !== 'ALL' ? categoryFilter : undefined,
+    categoryId: categoryFilter !== "ALL" ? categoryFilter : undefined,
     unitId: unitId || undefined,
   });
 
   const { data: borrowsData, isLoading: borrowsLoading } = useBorrows({
     page: borrowsPage,
     limit: 10,
-    status: statusFilter !== 'ALL' ? (statusFilter as BorrowStatus) : undefined,
+    status: statusFilter !== "ALL" ? (statusFilter as BorrowStatus) : undefined,
   });
 
   const { data: summaryData } = useLibrarySummary(unitId || undefined);
@@ -94,9 +100,9 @@ export default function LibraryPage() {
   const handleDeleteBook = async (id: string) => {
     try {
       await deleteBookMutation.mutateAsync(id);
-      toast.success('Buku berhasil dihapus');
+      toast.success("Buku berhasil dihapus");
     } catch {
-      toast.error('Gagal menghapus buku');
+      toast.error("Gagal menghapus buku");
     }
   };
 
@@ -105,12 +111,12 @@ export default function LibraryPage() {
       await returnMutation.mutateAsync({
         id,
         data: {
-          notes: 'Dikembalikan via Dashboard',
+          notes: "Dikembalikan via Dashboard",
         },
       });
-      toast.success('Buku berhasil dikembalikan');
+      toast.success("Buku berhasil dikembalikan");
     } catch {
-      toast.error('Gagal mengembalikan buku');
+      toast.error("Gagal mengembalikan buku");
     }
   };
 
@@ -120,7 +126,9 @@ export default function LibraryPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Perpustakaan</h1>
-          <p className="text-muted-foreground">Kelola koleksi buku dan peminjaman</p>
+          <p className="text-muted-foreground">
+            Kelola koleksi buku dan peminjaman
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
@@ -146,7 +154,9 @@ export default function LibraryPage() {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summaryData?.totalTitles || 0}</div>
+            <div className="text-2xl font-bold">
+              {summaryData?.totalTitles || 0}
+            </div>
             <p className="text-xs text-muted-foreground">
               {summaryData?.totalBooks || 0} eksemplar
             </p>
@@ -187,7 +197,10 @@ export default function LibraryPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'books' | 'borrows')}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as "books" | "borrows")}
+      >
         <TabsList>
           <TabsTrigger value="books">Koleksi Buku</TabsTrigger>
           <TabsTrigger value="borrows">Peminjaman</TabsTrigger>
@@ -232,7 +245,9 @@ export default function LibraryPage() {
               ) : booksData?.data.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <BookOpen className="h-12 w-12 text-muted-foreground" />
-                  <p className="mt-4 text-muted-foreground">Belum ada koleksi buku</p>
+                  <p className="mt-4 text-muted-foreground">
+                    Belum ada koleksi buku
+                  </p>
                   <Button asChild className="mt-4">
                     <Link href="/library/books/new">Tambah Buku Baru</Link>
                   </Button>
@@ -252,13 +267,17 @@ export default function LibraryPage() {
                   <TableBody>
                     {booksData?.data.map((book) => (
                       <TableRow key={book.id}>
-                        <TableCell className="font-medium">{book.title}</TableCell>
+                        <TableCell className="font-medium">
+                          {book.title}
+                        </TableCell>
                         <TableCell>{book.author}</TableCell>
-                        <TableCell>{book.category?.name || '-'}</TableCell>
+                        <TableCell>{book.category?.name || "-"}</TableCell>
                         <TableCell>{book.quantity}</TableCell>
                         <TableCell>
                           <Badge
-                            variant={book.available > 0 ? 'default' : 'secondary'}
+                            variant={
+                              book.available > 0 ? "default" : "secondary"
+                            }
                           >
                             {book.available}
                           </Badge>
@@ -334,7 +353,9 @@ export default function LibraryPage() {
               ) : borrowsData?.data.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <Clock className="h-12 w-12 text-muted-foreground" />
-                  <p className="mt-4 text-muted-foreground">Belum ada peminjaman</p>
+                  <p className="mt-4 text-muted-foreground">
+                    Belum ada peminjaman
+                  </p>
                 </div>
               ) : (
                 <Table>
@@ -352,9 +373,17 @@ export default function LibraryPage() {
                     {borrowsData?.data.map((borrow) => (
                       <TableRow key={borrow.id}>
                         <TableCell>
-                          {borrow.borrowedAt ? format(new Date(borrow.borrowedAt), 'dd MMM yyyy', { locale: localeId }) : '-'}
+                          {borrow.borrowedAt
+                            ? format(
+                                new Date(borrow.borrowedAt),
+                                "dd MMM yyyy",
+                                { locale: localeId },
+                              )
+                            : "-"}
                         </TableCell>
-                        <TableCell className="font-medium">{borrow.book?.title}</TableCell>
+                        <TableCell className="font-medium">
+                          {borrow.book?.title}
+                        </TableCell>
                         <TableCell>
                           <div>
                             <p>{borrow.student?.name}</p>
@@ -364,11 +393,13 @@ export default function LibraryPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {format(new Date(borrow.dueDate), 'dd MMM yyyy', { locale: localeId })}
+                          {format(new Date(borrow.dueDate), "dd MMM yyyy", {
+                            locale: localeId,
+                          })}
                         </TableCell>
                         <TableCell>{getStatusBadge(borrow.status)}</TableCell>
                         <TableCell className="text-right">
-                          {borrow.status === 'ACTIVE' && (
+                          {borrow.status === "ACTIVE" && (
                             <Button
                               variant="outline"
                               size="sm"

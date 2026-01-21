@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { ApiResponse } from "@/lib/api";
 
 // ==================== TYPES ====================
 
@@ -61,9 +61,12 @@ interface UseProvincesParams {
 
 export function useProvinces(params?: UseProvincesParams) {
   return useQuery({
-    queryKey: ['provinces', params],
+    queryKey: ["provinces", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Province[]>>('/wilayah/provinces', { params });
+      const response = await api.get<ApiResponse<Province[]>>(
+        "/wilayah/provinces",
+        { params },
+      );
       return response.data.data;
     },
   });
@@ -71,9 +74,11 @@ export function useProvinces(params?: UseProvincesParams) {
 
 export function useProvince(id: string) {
   return useQuery({
-    queryKey: ['provinces', id],
+    queryKey: ["provinces", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Province>>(`/wilayah/provinces/${id}`);
+      const response = await api.get<ApiResponse<Province>>(
+        `/wilayah/provinces/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -87,14 +92,17 @@ export interface CreateProvinceData {
 
 export function useCreateProvince() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateProvinceData) => {
-      const response = await api.post<ApiResponse<Province>>('/wilayah/provinces', data);
+      const response = await api.post<ApiResponse<Province>>(
+        "/wilayah/provinces",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['provinces'] });
+      queryClient.invalidateQueries({ queryKey: ["provinces"] });
     },
   });
 }
@@ -110,9 +118,12 @@ interface UseRegenciesParams {
 
 export function useRegencies(params?: UseRegenciesParams) {
   return useQuery({
-    queryKey: ['regencies', params],
+    queryKey: ["regencies", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Regency[]>>('/wilayah/regencies', { params });
+      const response = await api.get<ApiResponse<Regency[]>>(
+        "/wilayah/regencies",
+        { params },
+      );
       return response.data.data;
     },
   });
@@ -120,9 +131,11 @@ export function useRegencies(params?: UseRegenciesParams) {
 
 export function useRegency(id: string) {
   return useQuery({
-    queryKey: ['regencies', id],
+    queryKey: ["regencies", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Regency>>(`/wilayah/regencies/${id}`);
+      const response = await api.get<ApiResponse<Regency>>(
+        `/wilayah/regencies/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -137,14 +150,17 @@ export interface CreateRegencyData {
 
 export function useCreateRegency() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateRegencyData) => {
-      const response = await api.post<ApiResponse<Regency>>('/wilayah/regencies', data);
+      const response = await api.post<ApiResponse<Regency>>(
+        "/wilayah/regencies",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['regencies'] });
+      queryClient.invalidateQueries({ queryKey: ["regencies"] });
     },
   });
 }
@@ -160,9 +176,12 @@ interface UseDistrictsParams {
 
 export function useDistricts(params?: UseDistrictsParams) {
   return useQuery({
-    queryKey: ['districts', params],
+    queryKey: ["districts", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<District[]>>('/wilayah/districts', { params });
+      const response = await api.get<ApiResponse<District[]>>(
+        "/wilayah/districts",
+        { params },
+      );
       return response.data.data;
     },
     enabled: params?.regencyId !== undefined || params?.regencyId === undefined,
@@ -171,9 +190,11 @@ export function useDistricts(params?: UseDistrictsParams) {
 
 export function useDistrict(id: string) {
   return useQuery({
-    queryKey: ['districts', id],
+    queryKey: ["districts", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<District>>(`/wilayah/districts/${id}`);
+      const response = await api.get<ApiResponse<District>>(
+        `/wilayah/districts/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -188,14 +209,17 @@ export interface CreateDistrictData {
 
 export function useCreateDistrict() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateDistrictData) => {
-      const response = await api.post<ApiResponse<District>>('/wilayah/districts', data);
+      const response = await api.post<ApiResponse<District>>(
+        "/wilayah/districts",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['districts'] });
+      queryClient.invalidateQueries({ queryKey: ["districts"] });
     },
   });
 }
@@ -211,20 +235,26 @@ interface UseVillagesParams {
 
 export function useVillages(params?: UseVillagesParams) {
   return useQuery({
-    queryKey: ['villages', params],
+    queryKey: ["villages", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Village[]>>('/wilayah/villages', { params });
+      const response = await api.get<ApiResponse<Village[]>>(
+        "/wilayah/villages",
+        { params },
+      );
       return response.data.data;
     },
-    enabled: params?.districtId !== undefined || params?.districtId === undefined,
+    enabled:
+      params?.districtId !== undefined || params?.districtId === undefined,
   });
 }
 
 export function useVillage(id: string) {
   return useQuery({
-    queryKey: ['villages', id],
+    queryKey: ["villages", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Village>>(`/wilayah/villages/${id}`);
+      const response = await api.get<ApiResponse<Village>>(
+        `/wilayah/villages/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -240,14 +270,17 @@ export interface CreateVillageData {
 
 export function useCreateVillage() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateVillageData) => {
-      const response = await api.post<ApiResponse<Village>>('/wilayah/villages', data);
+      const response = await api.post<ApiResponse<Village>>(
+        "/wilayah/villages",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['villages'] });
+      queryClient.invalidateQueries({ queryKey: ["villages"] });
     },
   });
 }
@@ -258,13 +291,13 @@ export function useCreateVillage() {
  * Hook for wilayah selection with all levels
  * Use individual hooks (useRegencies, useDistricts, useVillages) with proper params
  * instead of this helper for cascading selection
- * 
+ *
  * @example
  * ```tsx
  * const [provinceId, setProvinceId] = useState<string>('');
  * const [regencyId, setRegencyId] = useState<string>('');
  * const [districtId, setDistrictId] = useState<string>('');
- * 
+ *
  * const { data: provinces } = useProvinces();
  * const { data: regencies } = useRegencies({ provinceId: provinceId || undefined });
  * const { data: districts } = useDistricts({ regencyId: regencyId || undefined });
@@ -278,7 +311,7 @@ export function useWilayahCascadeState(initialValues?: {
   villageId?: string;
 }) {
   const provinces = useProvinces();
-  
+
   return {
     provinces,
     // Consumers should use useRegencies/useDistricts/useVillages directly with their selected IDs

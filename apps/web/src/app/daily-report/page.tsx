@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Calendar as CalendarIcon,
   Search,
@@ -14,57 +14,57 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar } from '@/components/ui/calendar';
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
+} from "@/components/ui/popover";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 
-import { useDailyReports } from '@/hooks/use-daily-report';
-import { useClasses } from '@/hooks/use-classes';
-import { useUnits } from '@/hooks/use-units';
-import { cn } from '@/lib/utils';
-import Link from 'next/link';
+import { useDailyReports } from "@/hooks/use-daily-report";
+import { useClasses } from "@/hooks/use-classes";
+import { useUnits } from "@/hooks/use-units";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export default function DailyReportPage() {
   const router = useRouter();
   const [date, setDate] = useState<Date>(new Date());
-  const [search, setSearch] = useState('');
-  const [unitId, setUnitId] = useState<string>('');
-  const [classId, setClassId] = useState<string>('');
+  const [search, setSearch] = useState("");
+  const [unitId, setUnitId] = useState<string>("");
+  const [classId, setClassId] = useState<string>("");
   const [page, setPage] = useState(1);
 
   // Fetch data
@@ -80,23 +80,47 @@ export default function DailyReportPage() {
   });
 
   const reports = reportsData?.data || [];
-  const pagination: any = reportsData?.meta || { totalPages: 1, page: 1, total: 0 };
+  const pagination: any = reportsData?.meta || {
+    totalPages: 1,
+    page: 1,
+    total: 0,
+  };
 
   // Helper to format mood
   const getMoodConfig = (mood?: string | null) => {
     switch (mood) {
-      case 'HAPPY':
-        return { label: 'Senang', color: 'bg-green-100 text-green-700', icon: '😊' };
-      case 'SAD':
-        return { label: 'Sedih', color: 'bg-blue-100 text-blue-700', icon: '😢' };
-      case 'TIRED':
-        return { label: 'Lelah', color: 'bg-orange-100 text-orange-700', icon: '😴' };
-      case 'SICK':
-        return { label: 'Sakit', color: 'bg-red-100 text-red-700', icon: '🤒' };
-      case 'EXCITED':
-        return { label: 'Antusias', color: 'bg-yellow-100 text-yellow-700', icon: '🤩' };
+      case "HAPPY":
+        return {
+          label: "Senang",
+          color: "bg-green-100 text-green-700",
+          icon: "😊",
+        };
+      case "SAD":
+        return {
+          label: "Sedih",
+          color: "bg-blue-100 text-blue-700",
+          icon: "😢",
+        };
+      case "TIRED":
+        return {
+          label: "Lelah",
+          color: "bg-orange-100 text-orange-700",
+          icon: "😴",
+        };
+      case "SICK":
+        return { label: "Sakit", color: "bg-red-100 text-red-700", icon: "🤒" };
+      case "EXCITED":
+        return {
+          label: "Antusias",
+          color: "bg-yellow-100 text-yellow-700",
+          icon: "🤩",
+        };
       default:
-        return { label: 'Biasa', color: 'bg-gray-100 text-gray-700', icon: '😐' };
+        return {
+          label: "Biasa",
+          color: "bg-gray-100 text-gray-700",
+          icon: "😐",
+        };
     }
   };
 
@@ -106,9 +130,9 @@ export default function DailyReportPage() {
         title="Laporan Harian (Mutabaah)"
         description="Kelola laporan harian aktivitas dan perkembangan siswa."
         action={{
-          label: 'Buat Laporan',
+          label: "Buat Laporan",
           icon: <Plus className="h-4 w-4" />,
-          href: '/daily-report/new',
+          href: "/daily-report/new",
         }}
       />
 
@@ -134,11 +158,15 @@ export default function DailyReportPage() {
                   variant={"outline"}
                   className={cn(
                     "w-[240px] justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
+                    !date && "text-muted-foreground",
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PPP", { locale: idLocale }) : <span>Pilih Tanggal</span>}
+                  {date ? (
+                    format(date, "PPP", { locale: idLocale })
+                  ) : (
+                    <span>Pilih Tanggal</span>
+                  )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -165,7 +193,11 @@ export default function DailyReportPage() {
               </SelectContent>
             </Select>
 
-            <Select value={classId} onValueChange={setClassId} disabled={!unitId || unitId === 'ALL'}>
+            <Select
+              value={classId}
+              onValueChange={setClassId}
+              disabled={!unitId || unitId === "ALL"}
+            >
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Pilih Kelas" />
               </SelectTrigger>
@@ -214,16 +246,23 @@ export default function DailyReportPage() {
               const mood = getMoodConfig(report.mood);
 
               return (
-                <Card key={report.id} className="hover:shadow-md transition-shadow">
+                <Card
+                  key={report.id}
+                  className="hover:shadow-md transition-shadow"
+                >
                   <CardHeader className="p-4 pb-2">
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-3">
                         <Avatar>
                           <AvatarImage src={report.student?.photoUrl} />
-                          <AvatarFallback>{report.student?.user?.name?.charAt(0)}</AvatarFallback>
+                          <AvatarFallback>
+                            {report.student?.user?.name?.charAt(0)}
+                          </AvatarFallback>
                         </Avatar>
                         <div>
-                          <CardTitle className="text-base">{report.student?.user?.name}</CardTitle>
+                          <CardTitle className="text-base">
+                            {report.student?.user?.name}
+                          </CardTitle>
                           <CardDescription className="text-xs">
                             {report.student?.nis}
                           </CardDescription>
@@ -231,16 +270,24 @@ export default function DailyReportPage() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                          >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link href={`/daily-report/${report.id}`}>Lihat Detail</Link>
+                            <Link href={`/daily-report/${report.id}`}>
+                              Lihat Detail
+                            </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
-                            <Link href={`/daily-report/${report.id}/edit`}>Edit</Link>
+                            <Link href={`/daily-report/${report.id}/edit`}>
+                              Edit
+                            </Link>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -250,19 +297,32 @@ export default function DailyReportPage() {
                     <Separator />
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground text-xs">Mood:</span>
-                        <Badge variant="outline" className={cn("text-xs font-normal", mood.color)}>
+                        <span className="text-muted-foreground text-xs">
+                          Mood:
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className={cn("text-xs font-normal", mood.color)}
+                        >
                           {mood.icon} {mood.label}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-2 justify-end">
-                        <span className="text-muted-foreground text-xs">Orang Tua:</span>
+                        <span className="text-muted-foreground text-xs">
+                          Orang Tua:
+                        </span>
                         {report.parentReadAt ? (
-                          <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 text-xs gap-1">
+                          <Badge
+                            variant="secondary"
+                            className="bg-green-100 text-green-700 hover:bg-green-100 text-xs gap-1"
+                          >
                             <CheckCircle2 className="h-3 w-3" /> Dibaca
                           </Badge>
                         ) : (
-                          <Badge variant="secondary" className="bg-gray-100 text-gray-500 hover:bg-gray-100 text-xs gap-1">
+                          <Badge
+                            variant="secondary"
+                            className="bg-gray-100 text-gray-500 hover:bg-gray-100 text-xs gap-1"
+                          >
                             <Clock className="h-3 w-3" /> Belum
                           </Badge>
                         )}
@@ -271,18 +331,43 @@ export default function DailyReportPage() {
 
                     {/* Activity Snippet */}
                     <div className="bg-muted/30 p-2 rounded text-xs text-muted-foreground line-clamp-2">
-                      {report.activitiesSummary || "Tidak ada ringkasan aktivitas."}
+                      {report.activitiesSummary ||
+                        "Tidak ada ringkasan aktivitas."}
                     </div>
 
                     {/* Prayer Indicators (New Feature) */}
                     <div className="flex gap-1 justify-center pt-1">
-                      <Badge variant="outline" className={cn("text-[10px] px-1", report.sholatDhuha ? "bg-green-50 border-green-200 text-green-700" : "opacity-50")}>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-[10px] px-1",
+                          report.sholatDhuha
+                            ? "bg-green-50 border-green-200 text-green-700"
+                            : "opacity-50",
+                        )}
+                      >
                         Dhuha
                       </Badge>
-                      <Badge variant="outline" className={cn("text-[10px] px-1", report.sholatDzuhur ? "bg-green-50 border-green-200 text-green-700" : "opacity-50")}>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-[10px] px-1",
+                          report.sholatDzuhur
+                            ? "bg-green-50 border-green-200 text-green-700"
+                            : "opacity-50",
+                        )}
+                      >
                         Dzuhur
                       </Badge>
-                      <Badge variant="outline" className={cn("text-[10px] px-1", report.sholatAshar ? "bg-green-50 border-green-200 text-green-700" : "opacity-50")}>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-[10px] px-1",
+                          report.sholatAshar
+                            ? "bg-green-50 border-green-200 text-green-700"
+                            : "opacity-50",
+                        )}
+                      >
                         Ashar
                       </Badge>
                     </div>
@@ -311,7 +396,9 @@ export default function DailyReportPage() {
               variant="outline"
               size="sm"
               disabled={page === pagination.totalPages}
-              onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+              onClick={() =>
+                setPage((p) => Math.min(pagination.totalPages, p + 1))
+              }
             >
               <ChevronRight className="h-4 w-4" />
             </Button>

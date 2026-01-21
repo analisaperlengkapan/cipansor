@@ -4,7 +4,7 @@ import {
   getExams,
   updateExam,
   createGrade,
-  generateReportCard
+  generateReportCard,
 } from '../../src/modules/assessment/service';
 import { prisma } from '../../src/lib/prisma';
 import { ExamType } from '@cipansor/shared';
@@ -93,12 +93,14 @@ describe('Assessment Service', () => {
 
       const result = await createExam(input);
 
-      expect(prisma.exam.create).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({
-          title: 'Math Test',
-          duration: 60, // Default
+      expect(prisma.exam.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            title: 'Math Test',
+            duration: 60, // Default
+          }),
         })
-      }));
+      );
       expect(result.id).toBe('exam-1');
       expect(result.maxScore).toBe(100);
     });
@@ -118,13 +120,13 @@ describe('Assessment Service', () => {
           subject_name: 'Math',
           avg_daily: 80,
           avg_midterm: 85,
-          avg_final: 90
-        }
+          avg_final: 90,
+        },
       ]);
 
       // Mock Attendance
       vi.mocked(prisma.attendance.groupBy).mockResolvedValue([
-        { status: 'PRESENT', _count: 10 }
+        { status: 'PRESENT', _count: 10 },
       ] as any);
 
       // Mock Tahfidz
@@ -133,7 +135,7 @@ describe('Assessment Service', () => {
         surahName: 'An-Naba',
       } as any);
       vi.mocked(prisma.tahfidzRecord.aggregate).mockResolvedValue({
-        _sum: { totalAyah: 100 }
+        _sum: { totalAyah: 100 },
       } as any);
 
       // Mock Upsert
@@ -148,17 +150,19 @@ describe('Assessment Service', () => {
         id: 'rc-1',
         studentId,
         averageScore: new Decimal(85),
-        details: []
+        details: [],
       } as any);
 
       await generateReportCard(studentId, classId, academicYearId, semester);
 
       expect(prisma.$queryRaw).toHaveBeenCalled();
-      expect(prisma.reportCard.upsert).toHaveBeenCalledWith(expect.objectContaining({
-        create: expect.objectContaining({
-          averageScore: new Decimal(85) // (80+85+90)/3 = 85
+      expect(prisma.reportCard.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({
+            averageScore: new Decimal(85), // (80+85+90)/3 = 85
+          }),
         })
-      }));
+      );
     });
   });
 });

@@ -3,7 +3,7 @@
  * Displays key-value pairs in detail pages
  */
 
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 interface DetailItemProps {
   label: string;
@@ -13,9 +13,9 @@ interface DetailItemProps {
 
 export function DetailItem({ label, value, className }: DetailItemProps) {
   return (
-    <div className={cn('space-y-1', className)}>
+    <div className={cn("space-y-1", className)}>
       <dt className="text-sm text-muted-foreground">{label}</dt>
-      <dd className="text-sm font-medium">{value || '-'}</dd>
+      <dd className="text-sm font-medium">{value || "-"}</dd>
     </div>
   );
 }
@@ -26,15 +26,19 @@ interface DetailGridProps {
   className?: string;
 }
 
-export function DetailGrid({ children, columns = 2, className }: DetailGridProps) {
+export function DetailGrid({
+  children,
+  columns = 2,
+  className,
+}: DetailGridProps) {
   const colsClass = {
-    2: 'sm:grid-cols-2',
-    3: 'sm:grid-cols-3',
-    4: 'sm:grid-cols-2 lg:grid-cols-4',
+    2: "sm:grid-cols-2",
+    3: "sm:grid-cols-3",
+    4: "sm:grid-cols-2 lg:grid-cols-4",
   };
 
   return (
-    <dl className={cn('grid gap-4', colsClass[columns], className)}>
+    <dl className={cn("grid gap-4", colsClass[columns], className)}>
       {children}
     </dl>
   );

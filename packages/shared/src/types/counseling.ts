@@ -1,38 +1,38 @@
-import { Student, Unit } from './models';
-import { UserRole } from './enums';
-import { User } from './auth';
+import { Student, Unit } from "./models";
+import { UserRole } from "./enums";
+import { User } from "./auth";
 
 // Enums
 export enum CounselingCategory {
-  ACADEMIC = 'ACADEMIC',
-  CAREER = 'CAREER',
-  PERSONAL = 'PERSONAL',
-  SOCIAL = 'SOCIAL',
-  FAMILY = 'FAMILY',
-  SPIRITUAL = 'SPIRITUAL',
-  OTHER = 'OTHER',
+  ACADEMIC = "ACADEMIC",
+  CAREER = "CAREER",
+  PERSONAL = "PERSONAL",
+  SOCIAL = "SOCIAL",
+  FAMILY = "FAMILY",
+  SPIRITUAL = "SPIRITUAL",
+  OTHER = "OTHER",
 }
 
 export enum CounselingStatus {
-  SCHEDULED = 'SCHEDULED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
-  NO_SHOW = 'NO_SHOW',
+  SCHEDULED = "SCHEDULED",
+  IN_PROGRESS = "IN_PROGRESS",
+  COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
+  NO_SHOW = "NO_SHOW",
 }
 
 export enum CounselingPriority {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  URGENT = 'URGENT',
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",
+  URGENT = "URGENT",
 }
 
 export enum ReferralType {
-  INTERNAL = 'INTERNAL',
-  EXTERNAL = 'EXTERNAL',
-  PARENT = 'PARENT',
-  MEDICAL = 'MEDICAL',
+  INTERNAL = "INTERNAL",
+  EXTERNAL = "EXTERNAL",
+  PARENT = "PARENT",
+  MEDICAL = "MEDICAL",
 }
 
 // Teacher interface mock if missing

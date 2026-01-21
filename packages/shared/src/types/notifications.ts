@@ -1,17 +1,22 @@
 export type NotificationType =
-  | 'ANNOUNCEMENT'
-  | 'ATTENDANCE'
-  | 'FINANCE'
-  | 'ACADEMIC'
-  | 'PERMIT'
-  | 'HEALTH'
-  | 'VIOLATION'
-  | 'REWARD'
-  | 'SYSTEM';
+  | "ANNOUNCEMENT"
+  | "ATTENDANCE"
+  | "FINANCE"
+  | "ACADEMIC"
+  | "PERMIT"
+  | "HEALTH"
+  | "VIOLATION"
+  | "REWARD"
+  | "SYSTEM";
 
-export type NotificationPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
-export type NotificationChannel = 'IN_APP' | 'EMAIL' | 'SMS' | 'PUSH' | 'WHATSAPP';
-export type RecipientType = 'ALL' | 'UNIT' | 'CLASS' | 'ROLE' | 'INDIVIDUAL';
+export type NotificationPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT";
+export type NotificationChannel =
+  | "IN_APP"
+  | "EMAIL"
+  | "SMS"
+  | "PUSH"
+  | "WHATSAPP";
+export type RecipientType = "ALL" | "UNIT" | "CLASS" | "ROLE" | "INDIVIDUAL";
 
 export interface AppNotification {
   id: string;

@@ -1,6 +1,6 @@
 /**
  * PKG (Penilaian Kinerja Guru) API Routes
- * 
+ *
  * Endpoints untuk manajemen PKG berdasarkan Permendiknas No. 35 Tahun 2010
  */
 
@@ -51,13 +51,15 @@ const createEvaluationSchema = z.object({
 
 const submitScoresSchema = z.object({
   body: z.object({
-    scores: z.array(z.object({
-      detailId: z.string().uuid(),
-      selfScore: z.number().min(1).max(4).optional(),
-      assessorScore: z.number().min(1).max(4).optional(),
-      evidence: z.string().optional(),
-      notes: z.string().optional(),
-    })),
+    scores: z.array(
+      z.object({
+        detailId: z.string().uuid(),
+        selfScore: z.number().min(1).max(4).optional(),
+        assessorScore: z.number().min(1).max(4).optional(),
+        evidence: z.string().optional(),
+        notes: z.string().optional(),
+      })
+    ),
   }),
 });
 
@@ -197,7 +199,11 @@ router.post(
     try {
       const { periodId, teacherIds } = req.body;
       const evaluations = await pkgService.createBulkEvaluations(periodId, teacherIds);
-      res.status(201).json(ApiResponse.success(evaluations, `${evaluations.length} evaluasi PKG berhasil dibuat`));
+      res
+        .status(201)
+        .json(
+          ApiResponse.success(evaluations, `${evaluations.length} evaluasi PKG berhasil dibuat`)
+        );
     } catch (err) {
       next(err);
     }
@@ -292,14 +298,17 @@ router.delete(
 // =====================================
 
 // Get teacher PKG history
-router.get('/teachers/:teacherId/history', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const history = await pkgService.getTeacherPKGHistory(req.params.teacherId);
-    res.json(ApiResponse.success(history));
-  } catch (err) {
-    next(err);
+router.get(
+  '/teachers/:teacherId/history',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const history = await pkgService.getTeacherPKGHistory(req.params.teacherId);
+      res.json(ApiResponse.success(history));
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 // Get PKG statistics
 router.get('/statistics', async (req: Request, res: Response, next: NextFunction) => {

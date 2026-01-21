@@ -1,7 +1,7 @@
 /**
  * Payroll Service
  * Layanan Penggajian untuk Yayasan/Pesantren/Sekolah
- * 
+ *
  * Fitur:
  * - Komponen gaji (tunjangan & potongan)
  * - Pengaturan gaji per karyawan
@@ -29,14 +29,14 @@ import {
 
 // PTKP 2024 (Penghasilan Tidak Kena Pajak)
 const PTKP: Record<string, number> = {
-  'TK/0': 54000000,   // Tidak Kawin, 0 tanggungan
-  'TK/1': 58500000,   // Tidak Kawin, 1 tanggungan
-  'TK/2': 63000000,   // Tidak Kawin, 2 tanggungan
-  'TK/3': 67500000,   // Tidak Kawin, 3 tanggungan
-  'K/0': 58500000,    // Kawin, 0 tanggungan
-  'K/1': 63000000,    // Kawin, 1 tanggungan
-  'K/2': 67500000,    // Kawin, 2 tanggungan
-  'K/3': 72000000,    // Kawin, 3 tanggungan
+  'TK/0': 54000000, // Tidak Kawin, 0 tanggungan
+  'TK/1': 58500000, // Tidak Kawin, 1 tanggungan
+  'TK/2': 63000000, // Tidak Kawin, 2 tanggungan
+  'TK/3': 67500000, // Tidak Kawin, 3 tanggungan
+  'K/0': 58500000, // Kawin, 0 tanggungan
+  'K/1': 63000000, // Kawin, 1 tanggungan
+  'K/2': 67500000, // Kawin, 2 tanggungan
+  'K/3': 72000000, // Kawin, 3 tanggungan
   'K/I/0': 112500000, // Kawin, istri bekerja, 0 tanggungan
   'K/I/1': 117000000, // Kawin, istri bekerja, 1 tanggungan
   'K/I/2': 121500000, // Kawin, istri bekerja, 2 tanggungan
@@ -48,7 +48,7 @@ const TAX_BRACKETS = [
   { limit: 60000000, rate: 0.05 },
   { limit: 250000000, rate: 0.15 },
   { limit: 500000000, rate: 0.25 },
-  { limit: 5000000000, rate: 0.30 },
+  { limit: 5000000000, rate: 0.3 },
   { limit: Infinity, rate: 0.35 },
 ];
 
@@ -77,27 +77,27 @@ function calculateMonthlyPph21(
   hasNpwp: boolean = true
 ): number {
   const ptkp = PTKP[taxStatus] || PTKP['TK/0'];
-  
+
   // Annualized calculation
   const annualGross = monthlyGrossIncome * 12;
-  
+
   // Biaya jabatan (5% max 6jt/tahun)
   const biayaJabatan = Math.min(annualGross * 0.05, 6000000);
-  
+
   // Penghasilan Neto
   const annualNet = annualGross - biayaJabatan;
-  
+
   // PKP (Penghasilan Kena Pajak)
   const pkp = Math.max(0, annualNet - ptkp);
-  
+
   // Hitung pajak tahunan
   let annualTax = calculateAnnualTax(pkp);
-  
+
   // Jika tidak punya NPWP, tambah 20%
   if (!hasNpwp) {
     annualTax *= 1.2;
   }
-  
+
   // PPh 21 bulanan
   return Math.round(annualTax / 12);
 }
@@ -107,11 +107,7 @@ function calculateMonthlyPph21(
 // ============================================
 
 export const salaryComponentService = {
-  async list(params: {
-    type?: SalaryComponentType;
-    isActive?: boolean;
-    search?: string;
-  }) {
+  async list(params: { type?: SalaryComponentType; isActive?: boolean; search?: string }) {
     const where: Prisma.SalaryComponentWhereInput = {};
 
     if (params.type) where.type = params.type;
@@ -151,12 +147,18 @@ export const salaryComponentService = {
       where: { id },
       data: {
         ...data,
-        defaultAmount: data.defaultAmount !== undefined 
-          ? (data.defaultAmount ? new Prisma.Decimal(data.defaultAmount) : null)
-          : undefined,
-        defaultRate: data.defaultRate !== undefined
-          ? (data.defaultRate ? new Prisma.Decimal(data.defaultRate) : null)
-          : undefined,
+        defaultAmount:
+          data.defaultAmount !== undefined
+            ? data.defaultAmount
+              ? new Prisma.Decimal(data.defaultAmount)
+              : null
+            : undefined,
+        defaultRate:
+          data.defaultRate !== undefined
+            ? data.defaultRate
+              ? new Prisma.Decimal(data.defaultRate)
+              : null
+            : undefined,
       },
     });
   },
@@ -177,23 +179,141 @@ export const salaryComponentService = {
   async seedDefaults() {
     const defaultComponents = [
       // Earnings
-      { code: 'GAJI_POKOK', name: 'Gaji Pokok', type: 'EARNING' as SalaryComponentType, isFixed: true, isTaxable: true, sortOrder: 1 },
-      { code: 'TUNJ_JABATAN', name: 'Tunjangan Jabatan', type: 'EARNING' as SalaryComponentType, isFixed: true, isTaxable: true, sortOrder: 2 },
-      { code: 'TUNJ_MENGAJAR', name: 'Tunjangan Mengajar', type: 'EARNING' as SalaryComponentType, isFixed: true, isTaxable: true, sortOrder: 3 },
-      { code: 'TUNJ_SERTIFIKASI', name: 'Tunjangan Sertifikasi', type: 'EARNING' as SalaryComponentType, isFixed: true, isTaxable: true, sortOrder: 4 },
-      { code: 'TUNJ_KELUARGA', name: 'Tunjangan Keluarga', type: 'EARNING' as SalaryComponentType, isFixed: true, isTaxable: true, sortOrder: 5 },
-      { code: 'TUNJ_TRANSPORT', name: 'Tunjangan Transport', type: 'EARNING' as SalaryComponentType, isFixed: true, isTaxable: false, sortOrder: 6 },
-      { code: 'TUNJ_MAKAN', name: 'Tunjangan Makan', type: 'EARNING' as SalaryComponentType, isFixed: true, isTaxable: false, sortOrder: 7 },
-      { code: 'HONOR_TAMBAHAN', name: 'Honor Mengajar Tambahan', type: 'EARNING' as SalaryComponentType, isFixed: false, isTaxable: true, sortOrder: 8 },
-      { code: 'BONUS', name: 'Bonus', type: 'EARNING' as SalaryComponentType, isFixed: false, isTaxable: true, sortOrder: 9 },
-      { code: 'LEMBUR', name: 'Upah Lembur', type: 'EARNING' as SalaryComponentType, isFixed: false, isTaxable: true, sortOrder: 10 },
+      {
+        code: 'GAJI_POKOK',
+        name: 'Gaji Pokok',
+        type: 'EARNING' as SalaryComponentType,
+        isFixed: true,
+        isTaxable: true,
+        sortOrder: 1,
+      },
+      {
+        code: 'TUNJ_JABATAN',
+        name: 'Tunjangan Jabatan',
+        type: 'EARNING' as SalaryComponentType,
+        isFixed: true,
+        isTaxable: true,
+        sortOrder: 2,
+      },
+      {
+        code: 'TUNJ_MENGAJAR',
+        name: 'Tunjangan Mengajar',
+        type: 'EARNING' as SalaryComponentType,
+        isFixed: true,
+        isTaxable: true,
+        sortOrder: 3,
+      },
+      {
+        code: 'TUNJ_SERTIFIKASI',
+        name: 'Tunjangan Sertifikasi',
+        type: 'EARNING' as SalaryComponentType,
+        isFixed: true,
+        isTaxable: true,
+        sortOrder: 4,
+      },
+      {
+        code: 'TUNJ_KELUARGA',
+        name: 'Tunjangan Keluarga',
+        type: 'EARNING' as SalaryComponentType,
+        isFixed: true,
+        isTaxable: true,
+        sortOrder: 5,
+      },
+      {
+        code: 'TUNJ_TRANSPORT',
+        name: 'Tunjangan Transport',
+        type: 'EARNING' as SalaryComponentType,
+        isFixed: true,
+        isTaxable: false,
+        sortOrder: 6,
+      },
+      {
+        code: 'TUNJ_MAKAN',
+        name: 'Tunjangan Makan',
+        type: 'EARNING' as SalaryComponentType,
+        isFixed: true,
+        isTaxable: false,
+        sortOrder: 7,
+      },
+      {
+        code: 'HONOR_TAMBAHAN',
+        name: 'Honor Mengajar Tambahan',
+        type: 'EARNING' as SalaryComponentType,
+        isFixed: false,
+        isTaxable: true,
+        sortOrder: 8,
+      },
+      {
+        code: 'BONUS',
+        name: 'Bonus',
+        type: 'EARNING' as SalaryComponentType,
+        isFixed: false,
+        isTaxable: true,
+        sortOrder: 9,
+      },
+      {
+        code: 'LEMBUR',
+        name: 'Upah Lembur',
+        type: 'EARNING' as SalaryComponentType,
+        isFixed: false,
+        isTaxable: true,
+        sortOrder: 10,
+      },
       // Deductions
-      { code: 'PPH21', name: 'PPh 21', type: 'DEDUCTION' as SalaryComponentType, isFixed: false, isTaxable: false, sortOrder: 1 },
-      { code: 'BPJS_KES', name: 'BPJS Kesehatan', type: 'DEDUCTION' as SalaryComponentType, isFixed: false, isPercentage: true, percentageOf: 'GAJI_POKOK', defaultRate: 0.01, isTaxable: false, sortOrder: 2 },
-      { code: 'BPJS_TK', name: 'BPJS Ketenagakerjaan', type: 'DEDUCTION' as SalaryComponentType, isFixed: false, isPercentage: true, percentageOf: 'GAJI_POKOK', defaultRate: 0.02, isTaxable: false, sortOrder: 3 },
-      { code: 'POT_KOPERASI', name: 'Potongan Koperasi', type: 'DEDUCTION' as SalaryComponentType, isFixed: false, isTaxable: false, sortOrder: 4 },
-      { code: 'POT_PINJAMAN', name: 'Potongan Pinjaman', type: 'DEDUCTION' as SalaryComponentType, isFixed: false, isTaxable: false, sortOrder: 5 },
-      { code: 'POT_LAIN', name: 'Potongan Lain-lain', type: 'DEDUCTION' as SalaryComponentType, isFixed: false, isTaxable: false, sortOrder: 6 },
+      {
+        code: 'PPH21',
+        name: 'PPh 21',
+        type: 'DEDUCTION' as SalaryComponentType,
+        isFixed: false,
+        isTaxable: false,
+        sortOrder: 1,
+      },
+      {
+        code: 'BPJS_KES',
+        name: 'BPJS Kesehatan',
+        type: 'DEDUCTION' as SalaryComponentType,
+        isFixed: false,
+        isPercentage: true,
+        percentageOf: 'GAJI_POKOK',
+        defaultRate: 0.01,
+        isTaxable: false,
+        sortOrder: 2,
+      },
+      {
+        code: 'BPJS_TK',
+        name: 'BPJS Ketenagakerjaan',
+        type: 'DEDUCTION' as SalaryComponentType,
+        isFixed: false,
+        isPercentage: true,
+        percentageOf: 'GAJI_POKOK',
+        defaultRate: 0.02,
+        isTaxable: false,
+        sortOrder: 3,
+      },
+      {
+        code: 'POT_KOPERASI',
+        name: 'Potongan Koperasi',
+        type: 'DEDUCTION' as SalaryComponentType,
+        isFixed: false,
+        isTaxable: false,
+        sortOrder: 4,
+      },
+      {
+        code: 'POT_PINJAMAN',
+        name: 'Potongan Pinjaman',
+        type: 'DEDUCTION' as SalaryComponentType,
+        isFixed: false,
+        isTaxable: false,
+        sortOrder: 5,
+      },
+      {
+        code: 'POT_LAIN',
+        name: 'Potongan Lain-lain',
+        type: 'DEDUCTION' as SalaryComponentType,
+        isFixed: false,
+        isTaxable: false,
+        sortOrder: 6,
+      },
     ];
 
     for (const comp of defaultComponents) {
@@ -216,17 +336,12 @@ export const salaryComponentService = {
 // ============================================
 
 export const employeeSalaryService = {
-  async list(params: {
-    unitId?: string;
-    search?: string;
-    page: number;
-    limit: number;
-  }) {
+  async list(params: { unitId?: string; search?: string; page: number; limit: number }) {
     const { unitId, search, page, limit } = params;
     const skip = (page - 1) * limit;
 
     const where: Prisma.EmployeeSalaryWhereInput = {};
-    
+
     if (unitId) {
       where.staff = { unitId };
     }
@@ -331,17 +446,13 @@ export const employeeSalaryService = {
       const salary = await tx.employeeSalary.update({
         where: { staffId },
         data: {
-          baseSalary: salaryData.baseSalary 
-            ? new Prisma.Decimal(salaryData.baseSalary) 
-            : undefined,
+          baseSalary: salaryData.baseSalary ? new Prisma.Decimal(salaryData.baseSalary) : undefined,
           bankName: salaryData.bankName,
           bankAccount: salaryData.bankAccount,
           bankHolder: salaryData.bankHolder,
           taxStatus: salaryData.taxStatus,
           npwp: salaryData.npwp,
-          effectiveAt: salaryData.effectiveAt 
-            ? new Date(salaryData.effectiveAt) 
-            : undefined,
+          effectiveAt: salaryData.effectiveAt ? new Date(salaryData.effectiveAt) : undefined,
           notes: salaryData.notes,
         },
       });
@@ -401,7 +512,7 @@ export const payrollPeriodService = {
     const skip = (page - 1) * limit;
 
     const where: Prisma.PayrollPeriodWhereInput = {};
-    
+
     if (unitId) where.unitId = unitId;
     if (year) where.year = year;
     if (status) where.status = status;
@@ -464,7 +575,7 @@ export const payrollPeriodService = {
 
   async update(id: string, data: UpdatePayrollPeriodInput) {
     const period = await prisma.payrollPeriod.findUnique({ where: { id } });
-    
+
     if (!period) {
       throw new Error('Periode penggajian tidak ditemukan');
     }
@@ -626,7 +737,7 @@ export const payrollService = {
     const skip = (page - 1) * limit;
 
     const where: Prisma.PayrollWhereInput = {};
-    
+
     if (periodId) where.periodId = periodId;
     if (staffId) where.staffId = staffId;
     if (search) {
@@ -739,7 +850,7 @@ export const payrollService = {
     const attendanceSummary = await prisma.staffAttendance.groupBy({
       by: ['staffId', 'status'],
       where: {
-        staffId: { in: staffList.map(s => s.id) },
+        staffId: { in: staffList.map((s) => s.id) },
         date: {
           gte: period.startDate,
           lte: period.endDate,
@@ -793,7 +904,7 @@ export const payrollService = {
           const payrollItems: Prisma.PayrollItemCreateManyInput[] = [];
 
           // Add base salary as first item
-          const baseSalaryComponent = components.find(c => c.code === 'GAJI_POKOK');
+          const baseSalaryComponent = components.find((c) => c.code === 'GAJI_POKOK');
           if (baseSalaryComponent) {
             payrollItems.push({
               payrollId: '', // Will be set after payroll creation
@@ -842,8 +953,8 @@ export const payrollService = {
           // Calculate PPh 21
           const hasNpwp = !!empSalary.npwp;
           const taxAmount = calculateMonthlyPph21(taxableIncome, empSalary.taxStatus, hasNpwp);
-          
-          const pph21Component = components.find(c => c.code === 'PPH21');
+
+          const pph21Component = components.find((c) => c.code === 'PPH21');
           if (pph21Component && taxAmount > 0) {
             totalDeductions += taxAmount;
             payrollItems.push({
@@ -893,7 +1004,7 @@ export const payrollService = {
 
             // Create items
             await tx.payrollItem.createMany({
-              data: payrollItems.map(item => ({
+              data: payrollItems.map((item) => ({
                 ...item,
                 payrollId: existing.id,
               })),
@@ -930,7 +1041,7 @@ export const payrollService = {
 
             // Create items
             await tx.payrollItem.createMany({
-              data: payrollItems.map(item => ({
+              data: payrollItems.map((item) => ({
                 ...item,
                 payrollId: payroll.id,
               })),
@@ -1065,8 +1176,11 @@ export const payrollService = {
     });
 
     // Aggregate by component
-    const byComponent: Record<string, { name: string; type: string; total: number; count: number }> = {};
-    
+    const byComponent: Record<
+      string,
+      { name: string; type: string; total: number; count: number }
+    > = {};
+
     for (const payroll of payrolls) {
       for (const item of payroll.items) {
         const key = item.componentCode;
@@ -1124,14 +1238,15 @@ export const payrollService = {
 function calculateWorkDays(startDate: Date, endDate: Date): number {
   let count = 0;
   const current = new Date(startDate);
-  
+
   while (current <= endDate) {
     const day = current.getDay();
-    if (day !== 0 && day !== 6) { // Not Sunday or Saturday
+    if (day !== 0 && day !== 6) {
+      // Not Sunday or Saturday
       count++;
     }
     current.setDate(current.getDate() + 1);
   }
-  
+
   return count;
 }

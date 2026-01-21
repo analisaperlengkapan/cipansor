@@ -1,14 +1,14 @@
-import { Router } from "express";
-import { UserRole } from "@prisma/client";
-import * as controller from "./controller";
-import { departmentController } from "./departments.controller";
-import { contractController } from "./contracts.controller";
-import { leaveBalanceController } from "./leave-balances.controller";
-import { employeeDocumentController } from "./employee-documents.controller";
-import { employmentHistoryController } from "./employment-history.controller";
-import { authenticate, authorize } from "../../middleware/auth";
-import { validateQuery } from "../../middleware/error";
-import { queryStaffAttendanceSchema, queryLeaveSchema, queryStaffSchema } from "./schema";
+import { Router } from 'express';
+import { UserRole } from '@prisma/client';
+import * as controller from './controller';
+import { departmentController } from './departments.controller';
+import { contractController } from './contracts.controller';
+import { leaveBalanceController } from './leave-balances.controller';
+import { employeeDocumentController } from './employee-documents.controller';
+import { employmentHistoryController } from './employment-history.controller';
+import { authenticate, authorize } from '../../middleware/auth';
+import { validateQuery } from '../../middleware/error';
+import { queryStaffAttendanceSchema, queryLeaveSchema, queryStaffSchema } from './schema';
 
 const router = Router();
 
@@ -45,7 +45,12 @@ router.use(authenticate);
  *       200:
  *         description: List of staff members
  */
-router.get("/staff", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), validateQuery(queryStaffSchema), controller.getStaffList);
+router.get(
+  '/staff',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validateQuery(queryStaffSchema),
+  controller.getStaffList
+);
 
 /**
  * @swagger
@@ -65,7 +70,11 @@ router.get("/staff", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), valid
  *       200:
  *         description: Staff member details
  */
-router.get("/staff/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.getStaffById);
+router.get(
+  '/staff/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.getStaffById
+);
 
 // ==================== STAFF ATTENDANCE ====================
 
@@ -104,7 +113,12 @@ router.get("/staff/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), c
  *       200:
  *         description: List of staff attendance records
  */
-router.get("/attendance", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), validateQuery(queryStaffAttendanceSchema), controller.getStaffAttendance);
+router.get(
+  '/attendance',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validateQuery(queryStaffAttendanceSchema),
+  controller.getStaffAttendance
+);
 
 /**
  * @swagger
@@ -143,7 +157,11 @@ router.get("/attendance", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), 
  *       201:
  *         description: Attendance recorded
  */
-router.post("/attendance", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.createStaffAttendance);
+router.post(
+  '/attendance',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.createStaffAttendance
+);
 
 /**
  * @swagger
@@ -179,7 +197,11 @@ router.post("/attendance", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
  *       201:
  *         description: Bulk attendance recorded
  */
-router.post("/attendance/bulk", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.recordBulkAttendance);
+router.post(
+  '/attendance/bulk',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.recordBulkAttendance
+);
 
 /**
  * @swagger
@@ -199,7 +221,11 @@ router.post("/attendance/bulk", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_AD
  *       200:
  *         description: Attendance record details
  */
-router.get("/attendance/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.getStaffAttendanceById);
+router.get(
+  '/attendance/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.getStaffAttendanceById
+);
 
 /**
  * @swagger
@@ -219,7 +245,11 @@ router.get("/attendance/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMI
  *       200:
  *         description: Attendance updated
  */
-router.put("/attendance/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.updateStaffAttendance);
+router.put(
+  '/attendance/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.updateStaffAttendance
+);
 
 /**
  * @swagger
@@ -239,7 +269,11 @@ router.put("/attendance/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMI
  *       204:
  *         description: Attendance deleted
  */
-router.delete("/attendance/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteStaffAttendance);
+router.delete(
+  '/attendance/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.deleteStaffAttendance
+);
 
 /**
  * @swagger
@@ -267,7 +301,11 @@ router.delete("/attendance/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_A
  *       200:
  *         description: Staff attendance summary (present, absent, late counts)
  */
-router.get("/staff/:staffId/attendance/summary", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.getStaffAttendanceSummary);
+router.get(
+  '/staff/:staffId/attendance/summary',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.getStaffAttendanceSummary
+);
 
 // ==================== LEAVES ====================
 
@@ -306,7 +344,12 @@ router.get("/staff/:staffId/attendance/summary", authorize(UserRole.SUPER_ADMIN,
  *       200:
  *         description: List of leave requests
  */
-router.get("/leaves", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), validateQuery(queryLeaveSchema), controller.getLeaves);
+router.get(
+  '/leaves',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  validateQuery(queryLeaveSchema),
+  controller.getLeaves
+);
 
 /**
  * @swagger
@@ -347,7 +390,11 @@ router.get("/leaves", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserR
  *       201:
  *         description: Leave request created
  */
-router.post("/leaves", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.createLeave);
+router.post(
+  '/leaves',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  controller.createLeave
+);
 
 /**
  * @swagger
@@ -367,7 +414,11 @@ router.post("/leaves", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, User
  *       200:
  *         description: Leave request details
  */
-router.get("/leaves/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getLeaveById);
+router.get(
+  '/leaves/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  controller.getLeaveById
+);
 
 /**
  * @swagger
@@ -387,7 +438,11 @@ router.get("/leaves/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, U
  *       200:
  *         description: Leave request updated
  */
-router.put("/leaves/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.updateLeave);
+router.put(
+  '/leaves/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  controller.updateLeave
+);
 
 /**
  * @swagger
@@ -421,7 +476,11 @@ router.put("/leaves/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, U
  *       200:
  *         description: Leave request approved/rejected
  */
-router.patch("/leaves/:id/approve", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.approveLeave);
+router.patch(
+  '/leaves/:id/approve',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.approveLeave
+);
 
 /**
  * @swagger
@@ -441,7 +500,11 @@ router.patch("/leaves/:id/approve", authorize(UserRole.SUPER_ADMIN, UserRole.UNI
  *       200:
  *         description: Leave request cancelled
  */
-router.patch("/leaves/:id/cancel", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.cancelLeave);
+router.patch(
+  '/leaves/:id/cancel',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  controller.cancelLeave
+);
 
 /**
  * @swagger
@@ -461,7 +524,11 @@ router.patch("/leaves/:id/cancel", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT
  *       204:
  *         description: Leave request deleted
  */
-router.delete("/leaves/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteLeave);
+router.delete(
+  '/leaves/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.deleteLeave
+);
 
 /**
  * @swagger
@@ -481,39 +548,115 @@ router.delete("/leaves/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN
  *       200:
  *         description: Staff leave balance by type
  */
-router.get("/staff/:staffId/leave-balance", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getLeaveBalance);
+router.get(
+  '/staff/:staffId/leave-balance',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  controller.getLeaveBalance
+);
 
 // ==================== DEPARTMENTS ====================
 
-router.post("/departments", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), departmentController.create);
-router.get("/departments", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), departmentController.findAll);
-router.get("/departments/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), departmentController.findOne);
-router.patch("/departments/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), departmentController.update);
-router.delete("/departments/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), departmentController.delete);
+router.post(
+  '/departments',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  departmentController.create
+);
+router.get(
+  '/departments',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  departmentController.findAll
+);
+router.get(
+  '/departments/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  departmentController.findOne
+);
+router.patch(
+  '/departments/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  departmentController.update
+);
+router.delete(
+  '/departments/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  departmentController.delete
+);
 
 // ==================== CONTRACTS ====================
 
-router.post("/contracts", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), contractController.create);
-router.get("/contracts", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), contractController.findAll);
-router.get("/contracts/expiring", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), contractController.getExpiring);
-router.get("/contracts/user/:userId", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), contractController.findByUser);
-router.patch("/contracts/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), contractController.update);
+router.post(
+  '/contracts',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  contractController.create
+);
+router.get(
+  '/contracts',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  contractController.findAll
+);
+router.get(
+  '/contracts/expiring',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  contractController.getExpiring
+);
+router.get(
+  '/contracts/user/:userId',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  contractController.findByUser
+);
+router.patch(
+  '/contracts/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  contractController.update
+);
 
 // ==================== EMPLOYEE DOCUMENTS ====================
 
-router.get("/employees/:userId/documents", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), employeeDocumentController.findAll);
-router.post("/documents", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), employeeDocumentController.create);
-router.delete("/documents/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), employeeDocumentController.delete);
+router.get(
+  '/employees/:userId/documents',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  employeeDocumentController.findAll
+);
+router.post(
+  '/documents',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  employeeDocumentController.create
+);
+router.delete(
+  '/documents/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  employeeDocumentController.delete
+);
 
 // ==================== EMPLOYMENT HISTORY ====================
 
-router.get("/employees/:userId/history", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), employmentHistoryController.findAll);
-router.post("/history", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), employmentHistoryController.create);
+router.get(
+  '/employees/:userId/history',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  employmentHistoryController.findAll
+);
+router.post(
+  '/history',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  employmentHistoryController.create
+);
 
 // ==================== LEAVE BALANCES (ENHANCED) ====================
 
-router.get("/leave-balances/user/:userId", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), leaveBalanceController.getBalances);
-router.post("/leave-balances/initialize", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), leaveBalanceController.initialize);
-router.patch("/leave-balances/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), leaveBalanceController.update);
+router.get(
+  '/leave-balances/user/:userId',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  leaveBalanceController.getBalances
+);
+router.post(
+  '/leave-balances/initialize',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  leaveBalanceController.initialize
+);
+router.patch(
+  '/leave-balances/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  leaveBalanceController.update
+);
 
 export default router;

@@ -1,39 +1,32 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import {
-  ArrowLeft,
-  Plus,
-  Trash2,
-  Save,
-  Clock,
-  MapPin,
-} from 'lucide-react';
-import Link from 'next/link';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { ArrowLeft, Plus, Trash2, Save, Clock, MapPin } from "lucide-react";
+import Link from "next/link";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { toast } from "sonner";
 
 import {
   useCreateExtracurricular,
@@ -41,18 +34,20 @@ import {
   DAY_NAMES,
   type CreateExtracurricularInput,
   type ExtracurricularSchedule,
-} from '@/hooks/use-extracurricular';
-import { useUnits } from '@/hooks/use-units';
-import { useAcademicYears } from '@/hooks/use-academic-years';
-import { useTeachers } from '@/hooks/use-teachers';
+} from "@/hooks/use-extracurricular";
+import { useUnits } from "@/hooks/use-units";
+import { useAcademicYears } from "@/hooks/use-academic-years";
+import { useTeachers } from "@/hooks/use-teachers";
 
-interface FormData extends Omit<CreateExtracurricularInput, 'schedules'> {
-  schedules: Array<Omit<ExtracurricularSchedule, 'id'>>;
+interface FormData extends Omit<CreateExtracurricularInput, "schedules"> {
+  schedules: Array<Omit<ExtracurricularSchedule, "id">>;
 }
 
 export default function NewExtracurricularPage() {
   const router = useRouter();
-  const [schedules, setSchedules] = useState<Array<Omit<ExtracurricularSchedule, 'id'>>>([]);
+  const [schedules, setSchedules] = useState<
+    Array<Omit<ExtracurricularSchedule, "id">>
+  >([]);
 
   const { data: unitsData } = useUnits();
   const { data: academicYearsData } = useAcademicYears();
@@ -73,15 +68,15 @@ export default function NewExtracurricularPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     defaultValues: {
-      status: 'ACTIVE',
-      academicYearId: activeYear?.id || '',
+      status: "ACTIVE",
+      academicYearId: activeYear?.id || "",
     },
   });
 
   const addSchedule = () => {
     setSchedules([
       ...schedules,
-      { dayOfWeek: 1, startTime: '14:00', endTime: '16:00', location: '' },
+      { dayOfWeek: 1, startTime: "14:00", endTime: "16:00", location: "" },
     ]);
   };
 
@@ -89,11 +84,13 @@ export default function NewExtracurricularPage() {
     setSchedules(schedules.filter((_, i) => i !== index));
   };
 
-  const updateSchedule = (index: number, field: keyof ExtracurricularSchedule, value: string | number) => {
+  const updateSchedule = (
+    index: number,
+    field: keyof ExtracurricularSchedule,
+    value: string | number,
+  ) => {
     setSchedules(
-      schedules.map((s, i) =>
-        i === index ? { ...s, [field]: value } : s
-      )
+      schedules.map((s, i) => (i === index ? { ...s, [field]: value } : s)),
     );
   };
 
@@ -104,10 +101,10 @@ export default function NewExtracurricularPage() {
         schedules,
         maxMembers: data.maxMembers ? Number(data.maxMembers) : undefined,
       });
-      toast.success('Ekstrakurikuler berhasil dibuat');
-      router.push('/extracurricular');
+      toast.success("Ekstrakurikuler berhasil dibuat");
+      router.push("/extracurricular");
     } catch {
-      toast.error('Gagal membuat ekstrakurikuler');
+      toast.error("Gagal membuat ekstrakurikuler");
     }
   };
 
@@ -124,7 +121,9 @@ export default function NewExtracurricularPage() {
         <Card>
           <CardHeader>
             <CardTitle>Informasi Dasar</CardTitle>
-            <CardDescription>Data dasar kegiatan ekstrakurikuler</CardDescription>
+            <CardDescription>
+              Data dasar kegiatan ekstrakurikuler
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -133,10 +132,12 @@ export default function NewExtracurricularPage() {
                 <Input
                   id="name"
                   placeholder="Contoh: Pramuka, PMR, Hadroh"
-                  {...register('name', { required: 'Nama wajib diisi' })}
+                  {...register("name", { required: "Nama wajib diisi" })}
                 />
                 {errors.name && (
-                  <p className="text-sm text-destructive">{errors.name.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.name.message}
+                  </p>
                 )}
               </div>
 
@@ -145,10 +146,12 @@ export default function NewExtracurricularPage() {
                 <Input
                   id="code"
                   placeholder="Contoh: PRM, PMR, HDR"
-                  {...register('code', { required: 'Kode wajib diisi' })}
+                  {...register("code", { required: "Kode wajib diisi" })}
                 />
                 {errors.code && (
-                  <p className="text-sm text-destructive">{errors.code.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.code.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -159,7 +162,7 @@ export default function NewExtracurricularPage() {
                 id="description"
                 placeholder="Deskripsi singkat kegiatan ekstrakurikuler..."
                 rows={3}
-                {...register('description')}
+                {...register("description")}
               />
             </div>
 
@@ -167,8 +170,10 @@ export default function NewExtracurricularPage() {
               <div className="space-y-2">
                 <Label>Kategori *</Label>
                 <Select
-                  onValueChange={(v) => setValue('category', v as FormData['category'])}
-                  defaultValue={watch('category')}
+                  onValueChange={(v) =>
+                    setValue("category", v as FormData["category"])
+                  }
+                  defaultValue={watch("category")}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih kategori" />
@@ -186,7 +191,9 @@ export default function NewExtracurricularPage() {
               <div className="space-y-2">
                 <Label>Status *</Label>
                 <Select
-                  onValueChange={(v) => setValue('status', v as FormData['status'])}
+                  onValueChange={(v) =>
+                    setValue("status", v as FormData["status"])
+                  }
                   defaultValue="ACTIVE"
                 >
                   <SelectTrigger>
@@ -205,7 +212,7 @@ export default function NewExtracurricularPage() {
                   id="maxMembers"
                   type="number"
                   placeholder="Kosongkan jika tidak terbatas"
-                  {...register('maxMembers')}
+                  {...register("maxMembers")}
                 />
               </div>
             </div>
@@ -216,13 +223,15 @@ export default function NewExtracurricularPage() {
         <Card>
           <CardHeader>
             <CardTitle>Unit & Tahun Ajaran</CardTitle>
-            <CardDescription>Tentukan unit dan tahun ajaran untuk ekskul ini</CardDescription>
+            <CardDescription>
+              Tentukan unit dan tahun ajaran untuk ekskul ini
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Unit *</Label>
-                <Select onValueChange={(v) => setValue('unitId', v)}>
+                <Select onValueChange={(v) => setValue("unitId", v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih unit" />
                   </SelectTrigger>
@@ -239,7 +248,7 @@ export default function NewExtracurricularPage() {
               <div className="space-y-2">
                 <Label>Tahun Ajaran *</Label>
                 <Select
-                  onValueChange={(v) => setValue('academicYearId', v)}
+                  onValueChange={(v) => setValue("academicYearId", v)}
                   defaultValue={activeYear?.id}
                 >
                   <SelectTrigger>
@@ -248,7 +257,7 @@ export default function NewExtracurricularPage() {
                   <SelectContent>
                     {academicYears.map((year) => (
                       <SelectItem key={year.id} value={year.id}>
-                        {year.name} {year.isActive && '(Aktif)'}
+                        {year.name} {year.isActive && "(Aktif)"}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -262,19 +271,21 @@ export default function NewExtracurricularPage() {
         <Card>
           <CardHeader>
             <CardTitle>Pembina</CardTitle>
-            <CardDescription>Tentukan pembina ekskul (opsional)</CardDescription>
+            <CardDescription>
+              Tentukan pembina ekskul (opsional)
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               <Label>Pembina</Label>
-              <Select onValueChange={(v) => setValue('coachId', v)}>
+              <Select onValueChange={(v) => setValue("coachId", v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih pembina" />
                 </SelectTrigger>
                 <SelectContent>
                   {teachers.map((teacher: any) => (
                     <SelectItem key={teacher.id} value={teacher.id}>
-                      {teacher.user?.name || teacher.nip || 'Unknown Teacher'}
+                      {teacher.user?.name || teacher.nip || "Unknown Teacher"}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -294,7 +305,12 @@ export default function NewExtracurricularPage() {
                 <CardTitle>Jadwal Kegiatan</CardTitle>
                 <CardDescription>Tentukan jadwal rutin ekskul</CardDescription>
               </div>
-              <Button type="button" variant="outline" size="sm" onClick={addSchedule}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addSchedule}
+              >
                 <Plus className="h-4 w-4 mr-1" />
                 Tambah Jadwal
               </Button>
@@ -327,7 +343,9 @@ export default function NewExtracurricularPage() {
                         <Label>Hari</Label>
                         <Select
                           value={schedule.dayOfWeek.toString()}
-                          onValueChange={(v) => updateSchedule(index, 'dayOfWeek', parseInt(v))}
+                          onValueChange={(v) =>
+                            updateSchedule(index, "dayOfWeek", parseInt(v))
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue />
@@ -346,7 +364,9 @@ export default function NewExtracurricularPage() {
                         <Input
                           type="time"
                           value={schedule.startTime}
-                          onChange={(e) => updateSchedule(index, 'startTime', e.target.value)}
+                          onChange={(e) =>
+                            updateSchedule(index, "startTime", e.target.value)
+                          }
                         />
                       </div>
                       <div className="space-y-2">
@@ -354,15 +374,19 @@ export default function NewExtracurricularPage() {
                         <Input
                           type="time"
                           value={schedule.endTime}
-                          onChange={(e) => updateSchedule(index, 'endTime', e.target.value)}
+                          onChange={(e) =>
+                            updateSchedule(index, "endTime", e.target.value)
+                          }
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>Lokasi</Label>
                         <Input
                           placeholder="Contoh: Lapangan, Aula"
-                          value={schedule.location || ''}
-                          onChange={(e) => updateSchedule(index, 'location', e.target.value)}
+                          value={schedule.location || ""}
+                          onChange={(e) =>
+                            updateSchedule(index, "location", e.target.value)
+                          }
                         />
                       </div>
                     </div>
@@ -390,9 +414,14 @@ export default function NewExtracurricularPage() {
               Batal
             </Link>
           </Button>
-          <Button type="submit" disabled={isSubmitting || createMutation.isPending}>
+          <Button
+            type="submit"
+            disabled={isSubmitting || createMutation.isPending}
+          >
             <Save className="h-4 w-4 mr-2" />
-            {isSubmitting || createMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+            {isSubmitting || createMutation.isPending
+              ? "Menyimpan..."
+              : "Simpan"}
           </Button>
         </div>
       </form>

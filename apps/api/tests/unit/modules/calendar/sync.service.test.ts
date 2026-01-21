@@ -48,14 +48,13 @@ describe('CalendarSyncService', () => {
 
       const result = await getAcademicEvents('unit-1');
 
-      expect(prisma.calendarEvent.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: expect.objectContaining({
-          OR: [
-            { unitId: 'unit-1' },
-            { unitId: null, isPublic: true }
-          ]
+      expect(prisma.calendarEvent.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: [{ unitId: 'unit-1' }, { unitId: null, isPublic: true }],
+          }),
         })
-      }));
+      );
 
       expect(result).toHaveLength(2);
       expect(result[0].category).toBe('academic');
@@ -71,19 +70,21 @@ describe('CalendarSyncService', () => {
 
       await getAcademicEvents('unit-1', startDate, endDate);
 
-      expect(prisma.calendarEvent.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: expect.objectContaining({
-          AND: expect.arrayContaining([
-            { startDate: { lte: endDate } },
-            {
-              OR: expect.arrayContaining([
-                { endDate: { gte: startDate } },
-                { endDate: null, startDate: { gte: startDate } },
-              ]),
-            },
-          ]),
-        }),
-      }));
+      expect(prisma.calendarEvent.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            AND: expect.arrayContaining([
+              { startDate: { lte: endDate } },
+              {
+                OR: expect.arrayContaining([
+                  { endDate: { gte: startDate } },
+                  { endDate: null, startDate: { gte: startDate } },
+                ]),
+              },
+            ]),
+          }),
+        })
+      );
     });
   });
 });

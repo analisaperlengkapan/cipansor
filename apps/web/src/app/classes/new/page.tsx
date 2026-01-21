@@ -1,44 +1,44 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { useUnits } from '@/hooks/use-units';
-import { useTeachers } from '@/hooks/use-teachers';
-import { useAcademicYears } from '@/hooks/use-academic-years';
-import { useCreateClass } from '@/hooks/use-classes';
+} from "@/components/ui/card";
+import { useUnits } from "@/hooks/use-units";
+import { useTeachers } from "@/hooks/use-teachers";
+import { useAcademicYears } from "@/hooks/use-academic-years";
+import { useCreateClass } from "@/hooks/use-classes";
 
 const classSchema = z.object({
-  name: z.string().min(1, 'Nama kelas wajib diisi'),
-  level: z.string().min(1, 'Level wajib diisi'), // Maps to grade/level
-  unitId: z.string().min(1, 'Unit wajib dipilih'),
-  academicYearId: z.string().min(1, 'Tahun ajaran wajib dipilih'),
+  name: z.string().min(1, "Nama kelas wajib diisi"),
+  level: z.string().min(1, "Level wajib diisi"), // Maps to grade/level
+  unitId: z.string().min(1, "Unit wajib dipilih"),
+  academicYearId: z.string().min(1, "Tahun ajaran wajib dipilih"),
   homeroomTeacherId: z.string().optional(),
-  capacity: z.coerce.number().min(1, 'Kapasitas minimal 1').optional(),
+  capacity: z.coerce.number().min(1, "Kapasitas minimal 1").optional(),
 });
 
 type ClassFormData = z.infer<typeof classSchema>;
@@ -46,10 +46,11 @@ type ClassFormData = z.infer<typeof classSchema>;
 export default function NewClassPage() {
   const router = useRouter();
   const createClass = useCreateClass();
-  
+
   const { data: units, isLoading: unitsLoading } = useUnits();
   const { data: teachers, isLoading: teachersLoading } = useTeachers();
-  const { data: academicYearsData, isLoading: academicYearsLoading } = useAcademicYears();
+  const { data: academicYearsData, isLoading: academicYearsLoading } =
+    useAcademicYears();
   const academicYears = academicYearsData?.data || [];
 
   const {
@@ -62,7 +63,7 @@ export default function NewClassPage() {
     resolver: zodResolver(classSchema),
   });
 
-  const selectedUnitId = watch('unitId');
+  const selectedUnitId = watch("unitId");
 
   const onSubmit = async (data: ClassFormData) => {
     try {
@@ -71,10 +72,11 @@ export default function NewClassPage() {
         homeroomTeacherId: data.homeroomTeacherId || undefined,
         capacity: data.capacity || 30, // Default fallback
       });
-      toast.success('Kelas berhasil dibuat');
-      router.push('/classes');
+      toast.success("Kelas berhasil dibuat");
+      router.push("/classes");
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal membuat kelas';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal membuat kelas";
       toast.error(errorMessage);
     }
   };
@@ -99,8 +101,12 @@ export default function NewClassPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Tambah Kelas Baru</h1>
-            <p className="text-muted-foreground">Buat kelas baru untuk unit pendidikan</p>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Tambah Kelas Baru
+            </h1>
+            <p className="text-muted-foreground">
+              Buat kelas baru untuk unit pendidikan
+            </p>
           </div>
         </div>
 
@@ -117,23 +123,23 @@ export default function NewClassPage() {
                   <Input
                     id="name"
                     placeholder="Contoh: Kelas 7A, X IPA 1"
-                    {...register('name')}
+                    {...register("name")}
                   />
                   {errors.name && (
-                    <p className="text-sm text-destructive">{errors.name.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.name.message}
+                    </p>
                   )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="level">Tingkat *</Label>
-                    <Input
-                      id="level"
-                      placeholder="7"
-                      {...register('level')}
-                    />
+                    <Input id="level" placeholder="7" {...register("level")} />
                     {errors.level && (
-                      <p className="text-sm text-destructive">{errors.level.message}</p>
+                      <p className="text-sm text-destructive">
+                        {errors.level.message}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -145,10 +151,12 @@ export default function NewClassPage() {
                     type="number"
                     min={1}
                     placeholder="30"
-                    {...register('capacity')}
+                    {...register("capacity")}
                   />
                   {errors.capacity && (
-                    <p className="text-sm text-destructive">{errors.capacity.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.capacity.message}
+                    </p>
                   )}
                 </div>
               </CardContent>
@@ -164,9 +172,9 @@ export default function NewClassPage() {
                   <Label htmlFor="unitId">Unit Pendidikan *</Label>
                   <Select
                     onValueChange={(value) => {
-                      setValue('unitId', value);
-                      setValue('academicYearId', '');
-                      setValue('homeroomTeacherId', '');
+                      setValue("unitId", value);
+                      setValue("academicYearId", "");
+                      setValue("homeroomTeacherId", "");
                     }}
                     disabled={unitsLoading}
                   >
@@ -182,51 +190,73 @@ export default function NewClassPage() {
                     </SelectContent>
                   </Select>
                   {errors.unitId && (
-                    <p className="text-sm text-destructive">{errors.unitId.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.unitId.message}
+                    </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="academicYearId">Tahun Ajaran *</Label>
                   <Select
-                    onValueChange={(value) => setValue('academicYearId', value)}
+                    onValueChange={(value) => setValue("academicYearId", value)}
                     disabled={academicYearsLoading || !selectedUnitId}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={!selectedUnitId ? 'Pilih unit terlebih dahulu' : 'Pilih tahun ajaran'} />
+                      <SelectValue
+                        placeholder={
+                          !selectedUnitId
+                            ? "Pilih unit terlebih dahulu"
+                            : "Pilih tahun ajaran"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {filteredAcademicYears?.map((ay) => (
                         <SelectItem key={ay.id} value={ay.id}>
-                          {ay.name} {ay.isActive && '(Aktif)'}
+                          {ay.name} {ay.isActive && "(Aktif)"}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   {errors.academicYearId && (
-                    <p className="text-sm text-destructive">{errors.academicYearId.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.academicYearId.message}
+                    </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="homeroomTeacherId">Wali Kelas</Label>
                   <Select
-                    onValueChange={(value) => setValue('homeroomTeacherId', value)}
+                    onValueChange={(value) =>
+                      setValue("homeroomTeacherId", value)
+                    }
                     disabled={teachersLoading || !selectedUnitId}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={!selectedUnitId ? 'Pilih unit terlebih dahulu' : 'Pilih wali kelas'} />
+                      <SelectValue
+                        placeholder={
+                          !selectedUnitId
+                            ? "Pilih unit terlebih dahulu"
+                            : "Pilih wali kelas"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {filteredTeachers?.map((teacher: any) => (
                         <SelectItem key={teacher.id} value={teacher.id}>
-                          {teacher.user?.name || teacher.nip || 'Unknown Teacher'}
+                          {teacher.user?.name ||
+                            teacher.nip ||
+                            "Unknown Teacher"}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   {errors.homeroomTeacherId && (
-                    <p className="text-sm text-destructive">{errors.homeroomTeacherId.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.homeroomTeacherId.message}
+                    </p>
                   )}
                 </div>
               </CardContent>
@@ -237,8 +267,13 @@ export default function NewClassPage() {
             <Button type="button" variant="outline" asChild>
               <Link href="/classes">Batal</Link>
             </Button>
-            <Button type="submit" disabled={isSubmitting || createClass.isPending}>
-              {isSubmitting || createClass.isPending ? 'Menyimpan...' : 'Simpan Kelas'}
+            <Button
+              type="submit"
+              disabled={isSubmitting || createClass.isPending}
+            >
+              {isSubmitting || createClass.isPending
+                ? "Menyimpan..."
+                : "Simpan Kelas"}
             </Button>
           </div>
         </form>

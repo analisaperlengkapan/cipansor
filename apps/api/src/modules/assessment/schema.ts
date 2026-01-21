@@ -1,9 +1,5 @@
 import { z } from 'zod';
-import {
-  ExamType,
-  ExamStatus,
-  GradeType
-} from '@cipansor/shared';
+import { ExamType, ExamStatus, GradeType } from '@cipansor/shared';
 
 // Exam schemas
 export const createExamSchema = z.object({

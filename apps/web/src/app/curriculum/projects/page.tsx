@@ -1,23 +1,29 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { useState, useMemo } from "react";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -25,9 +31,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { 
-  Lightbulb, 
+} from "@/components/ui/dialog";
+import {
+  Lightbulb,
   Plus,
   FileText,
   Users,
@@ -39,42 +45,56 @@ import {
   Upload,
   Edit,
   AlertCircle,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
-import { useAuthStore } from '@/stores/auth';
-import { useP5Projects, P5Project, ProjectStatus } from '@/hooks/use-kurikulum-merdeka';
-import { format } from 'date-fns';
+} from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth";
+import {
+  useP5Projects,
+  P5Project,
+  ProjectStatus,
+} from "@/hooks/use-kurikulum-merdeka";
+import { format } from "date-fns";
 
 // P5 (Profil Pelajar Pancasila) dimensions + Islamic values
 const CHARACTER_DIMENSIONS = [
-  { id: 'beriman', name: 'Beriman, Bertakwa kepada Tuhan YME', icon: '🕌', weight: 20 },
-  { id: 'berkebhinekaan', name: 'Berkebinekaan Global', icon: '🌍', weight: 15 },
-  { id: 'gotong-royong', name: 'Bergotong Royong', icon: '🤝', weight: 15 },
-  { id: 'mandiri', name: 'Mandiri', icon: '🎯', weight: 15 },
-  { id: 'bernalar-kritis', name: 'Bernalar Kritis', icon: '🧠', weight: 20 },
-  { id: 'kreatif', name: 'Kreatif', icon: '💡', weight: 15 },
+  {
+    id: "beriman",
+    name: "Beriman, Bertakwa kepada Tuhan YME",
+    icon: "🕌",
+    weight: 20,
+  },
+  {
+    id: "berkebhinekaan",
+    name: "Berkebinekaan Global",
+    icon: "🌍",
+    weight: 15,
+  },
+  { id: "gotong-royong", name: "Bergotong Royong", icon: "🤝", weight: 15 },
+  { id: "mandiri", name: "Mandiri", icon: "🎯", weight: 15 },
+  { id: "bernalar-kritis", name: "Bernalar Kritis", icon: "🧠", weight: 20 },
+  { id: "kreatif", name: "Kreatif", icon: "💡", weight: 15 },
 ];
 
 // Dimension code mapping to readable names
 const DIMENSION_MAP: Record<string, { name: string; icon: string }> = {
-  FAITH_PIETY: { name: 'Beriman', icon: '🕌' },
-  GLOBAL_DIVERSITY: { name: 'Berkebinekaan', icon: '🌍' },
-  MUTUAL_COOPERATION: { name: 'Gotong Royong', icon: '🤝' },
-  INDEPENDENCE: { name: 'Mandiri', icon: '🎯' },
-  CRITICAL_REASONING: { name: 'Bernalar Kritis', icon: '🧠' },
-  CREATIVITY: { name: 'Kreatif', icon: '💡' },
+  FAITH_PIETY: { name: "Beriman", icon: "🕌" },
+  GLOBAL_DIVERSITY: { name: "Berkebinekaan", icon: "🌍" },
+  MUTUAL_COOPERATION: { name: "Gotong Royong", icon: "🤝" },
+  INDEPENDENCE: { name: "Mandiri", icon: "🎯" },
+  CRITICAL_REASONING: { name: "Bernalar Kritis", icon: "🧠" },
+  CREATIVITY: { name: "Kreatif", icon: "💡" },
 };
 
 const getStatusBadge = (status: ProjectStatus) => {
   switch (status) {
-    case 'NOT_STARTED':
+    case "NOT_STARTED":
       return <Badge variant="outline">Belum Dimulai</Badge>;
-    case 'IN_PROGRESS':
+    case "IN_PROGRESS":
       return <Badge className="bg-blue-500">Sedang Berjalan</Badge>;
-    case 'COMPLETED':
+    case "COMPLETED":
       return <Badge className="bg-green-500">Selesai</Badge>;
-    case 'PRESENTED':
+    case "PRESENTED":
       return <Badge className="bg-purple-500">Sudah Presentasi</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
@@ -84,17 +104,22 @@ const getStatusBadge = (status: ProjectStatus) => {
 // Calculate progress based on status
 const getProgressValue = (status: ProjectStatus): number => {
   switch (status) {
-    case 'NOT_STARTED': return 0;
-    case 'IN_PROGRESS': return 50;
-    case 'COMPLETED': return 100;
-    case 'PRESENTED': return 100;
-    default: return 0;
+    case "NOT_STARTED":
+      return 0;
+    case "IN_PROGRESS":
+      return 50;
+    case "COMPLETED":
+      return 100;
+    case "PRESENTED":
+      return 100;
+    default:
+      return 0;
   }
 };
 
 export default function ProjectBasedLearningPage() {
   const { user } = useAuthStore();
-  const [selectedProject, setSelectedProject] = useState<string>('');
+  const [selectedProject, setSelectedProject] = useState<string>("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   // Fetch projects from API
@@ -108,10 +133,10 @@ export default function ProjectBasedLearningPage() {
     return projectsData.data.map((project: P5Project) => ({
       id: project.id,
       title: project.title,
-      tema: project.theme?.name || 'Tema P5',
+      tema: project.theme?.name || "Tema P5",
       status: project.status,
-      startDate: format(new Date(project.startDate), 'yyyy-MM-dd'),
-      endDate: format(new Date(project.endDate), 'yyyy-MM-dd'),
+      startDate: format(new Date(project.startDate), "yyyy-MM-dd"),
+      endDate: format(new Date(project.endDate), "yyyy-MM-dd"),
       progress: getProgressValue(project.status),
       members: project.supervisor ? [project.supervisor.name] : [],
       dimensions: project.dimensions || [],
@@ -121,7 +146,15 @@ export default function ProjectBasedLearningPage() {
   }, [projectsData]);
 
   return (
-    <MainLayout allowedRoles={['STUDENT', 'TEACHER', 'SUPER_ADMIN', 'UNIT_ADMIN', 'PARENT']}>
+    <MainLayout
+      allowedRoles={[
+        "STUDENT",
+        "TEACHER",
+        "SUPER_ADMIN",
+        "UNIT_ADMIN",
+        "PARENT",
+      ]}
+    >
       <div className="space-y-6">
         <PageHeader
           title="Proyek P5 & Kurikulum Merdeka"
@@ -144,7 +177,9 @@ export default function ProjectBasedLearningPage() {
                 <div className="space-y-4 py-4">
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Judul Proyek</label>
+                      <label className="text-sm font-medium">
+                        Judul Proyek
+                      </label>
                       <Input placeholder="Contoh: Kampanye Hemat Energi" />
                     </div>
                     <div className="space-y-2">
@@ -154,13 +189,27 @@ export default function ProjectBasedLearningPage() {
                           <SelectValue placeholder="Pilih tema" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="gaya-hidup">Gaya Hidup Berkelanjutan</SelectItem>
-                          <SelectItem value="kearifan-lokal">Kearifan Lokal</SelectItem>
-                          <SelectItem value="bhinneka">Bhinneka Tunggal Ika</SelectItem>
-                          <SelectItem value="bangunlah-jiwa">Bangunlah Jiwa dan Raganya</SelectItem>
-                          <SelectItem value="suara-demokrasi">Suara Demokrasi</SelectItem>
-                          <SelectItem value="kewirausahaan">Kewirausahaan</SelectItem>
-                          <SelectItem value="rekayasa-teknologi">Rekayasa dan Teknologi</SelectItem>
+                          <SelectItem value="gaya-hidup">
+                            Gaya Hidup Berkelanjutan
+                          </SelectItem>
+                          <SelectItem value="kearifan-lokal">
+                            Kearifan Lokal
+                          </SelectItem>
+                          <SelectItem value="bhinneka">
+                            Bhinneka Tunggal Ika
+                          </SelectItem>
+                          <SelectItem value="bangunlah-jiwa">
+                            Bangunlah Jiwa dan Raganya
+                          </SelectItem>
+                          <SelectItem value="suara-demokrasi">
+                            Suara Demokrasi
+                          </SelectItem>
+                          <SelectItem value="kewirausahaan">
+                            Kewirausahaan
+                          </SelectItem>
+                          <SelectItem value="rekayasa-teknologi">
+                            Rekayasa dan Teknologi
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -171,15 +220,25 @@ export default function ProjectBasedLearningPage() {
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Tanggal Mulai</label>
+                      <label className="text-sm font-medium">
+                        Tanggal Mulai
+                      </label>
                       <Input type="date" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Tanggal Selesai</label>
+                      <label className="text-sm font-medium">
+                        Tanggal Selesai
+                      </label>
                       <Input type="date" />
                     </div>
                   </div>
-                  <Button className="w-full" onClick={() => { setIsCreateOpen(false); toast.success('Proyek berhasil dibuat'); }}>
+                  <Button
+                    className="w-full"
+                    onClick={() => {
+                      setIsCreateOpen(false);
+                      toast.success("Proyek berhasil dibuat");
+                    }}
+                  >
                     Buat Proyek
                   </Button>
                 </div>
@@ -206,7 +265,9 @@ export default function ProjectBasedLearningPage() {
                   <span className="text-2xl">{dim.icon}</span>
                   <div className="flex-1">
                     <p className="font-medium text-sm">{dim.name}</p>
-                    <p className="text-xs text-muted-foreground">Bobot: {dim.weight}%</p>
+                    <p className="text-xs text-muted-foreground">
+                      Bobot: {dim.weight}%
+                    </p>
                   </div>
                 </div>
               ))}
@@ -243,7 +304,9 @@ export default function ProjectBasedLearningPage() {
             <Card>
               <CardContent className="py-12 text-center">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Belum ada proyek P5 yang terdaftar.</p>
+                <p className="text-muted-foreground">
+                  Belum ada proyek P5 yang terdaftar.
+                </p>
                 <p className="text-sm text-muted-foreground mt-2">
                   Klik &quot;Proyek Baru&quot; untuk menambahkan proyek.
                 </p>
@@ -270,12 +333,16 @@ export default function ProjectBasedLearningPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">{project.description}</p>
-                  
+                  <p className="text-sm text-muted-foreground">
+                    {project.description}
+                  </p>
+
                   <div className="flex flex-wrap gap-4 text-sm">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{project.startDate} - {project.endDate}</span>
+                      <span>
+                        {project.startDate} - {project.endDate}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4 text-muted-foreground" />
@@ -283,15 +350,16 @@ export default function ProjectBasedLearningPage() {
                     </div>
                   </div>
 
-                  {project.status !== 'COMPLETED' && project.status !== 'PRESENTED' && (
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Progress</span>
-                        <span>{project.progress}%</span>
+                  {project.status !== "COMPLETED" &&
+                    project.status !== "PRESENTED" && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Progress</span>
+                          <span>{project.progress}%</span>
+                        </div>
+                        <Progress value={project.progress} />
                       </div>
-                      <Progress value={project.progress} />
-                    </div>
-                  )}
+                    )}
 
                   <div className="flex flex-wrap gap-2">
                     {project.dimensions.map((dimCode: string) => {
@@ -309,23 +377,25 @@ export default function ProjectBasedLearningPage() {
                   </div>
 
                   <div className="flex gap-2 pt-2">
-                    {project.status !== 'COMPLETED' && project.status !== 'PRESENTED' && (
-                      <>
-                        <Button variant="outline" size="sm">
-                          <Edit className="mr-1 h-4 w-4" />
-                          Update Progress
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Upload className="mr-1 h-4 w-4" />
-                          Upload Bukti
-                        </Button>
-                      </>
-                    )}
+                    {project.status !== "COMPLETED" &&
+                      project.status !== "PRESENTED" && (
+                        <>
+                          <Button variant="outline" size="sm">
+                            <Edit className="mr-1 h-4 w-4" />
+                            Update Progress
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <Upload className="mr-1 h-4 w-4" />
+                            Upload Bukti
+                          </Button>
+                        </>
+                      )}
                     <Button variant="outline" size="sm">
                       <FileText className="mr-1 h-4 w-4" />
                       Lihat Detail
                     </Button>
-                    {(project.status === 'COMPLETED' || project.status === 'PRESENTED') && (
+                    {(project.status === "COMPLETED" ||
+                      project.status === "PRESENTED") && (
                       <Button variant="outline" size="sm">
                         <Presentation className="mr-1 h-4 w-4" />
                         Lihat Presentasi

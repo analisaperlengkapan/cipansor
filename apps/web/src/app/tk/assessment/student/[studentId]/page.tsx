@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useRouter, useParams } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
+import { useRouter, useParams } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
 import {
   useStudentProgressSummary,
   useTKAssessments,
@@ -12,22 +12,28 @@ import {
   ACHIEVEMENT_COLORS,
   StudentProgressSummary,
   TKAchievementLevel,
-} from '@/hooks/use-tk-assessment';
-import { useStudent } from '@/hooks/use-students';
-import { useAcademicYears } from '@/hooks/use-academic-years';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/hooks/use-tk-assessment";
+import { useStudent } from "@/hooks/use-students";
+import { useAcademicYears } from "@/hooks/use-academic-years";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft,
   TrendingUp,
@@ -37,14 +43,14 @@ import {
   Calendar,
   BarChart3,
   List,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
-import { TKRadarChart } from '@/components/tk';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { TKRadarChart } from "@/components/tk";
 
-const ASPECT_ORDER: TKAspect[] = ['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI'];
+const ASPECT_ORDER: TKAspect[] = ["NAM", "FM", "KOG", "BHS", "SE", "SNI"];
 
 const achievementToProgress: Record<string, number> = {
   BB: 25,
@@ -53,13 +59,13 @@ const achievementToProgress: Record<string, number> = {
   BSB: 100,
 };
 
-function TrendIcon({ trend }: { trend: 'UP' | 'DOWN' | 'STABLE' | 'NONE' }) {
+function TrendIcon({ trend }: { trend: "UP" | "DOWN" | "STABLE" | "NONE" }) {
   switch (trend) {
-    case 'UP':
+    case "UP":
       return <TrendingUp className="h-4 w-4 text-green-600" />;
-    case 'DOWN':
+    case "DOWN":
       return <TrendingDown className="h-4 w-4 text-red-600" />;
-    case 'STABLE':
+    case "STABLE":
       return <Minus className="h-4 w-4 text-blue-600" />;
     default:
       return <Minus className="h-4 w-4 text-muted-foreground" />;
@@ -70,16 +76,19 @@ export default function StudentProgressDashboardPage() {
   const router = useRouter();
   const params = useParams();
   const studentId = params.studentId as string;
-  const [academicYearId, setAcademicYearId] = useState<string>('');
+  const [academicYearId, setAcademicYearId] = useState<string>("");
 
   const { data: student, isLoading: loadingStudent } = useStudent(studentId);
   const { data: academicYears } = useAcademicYears();
-  const { data: summary, isLoading: loadingSummary } = useStudentProgressSummary(studentId, academicYearId || undefined);
-  const { data: assessments, isLoading: loadingAssessments } = useTKAssessments({
-    studentId,
-    academicYearId: academicYearId || undefined,
-    limit: 20,
-  });
+  const { data: summary, isLoading: loadingSummary } =
+    useStudentProgressSummary(studentId, academicYearId || undefined);
+  const { data: assessments, isLoading: loadingAssessments } = useTKAssessments(
+    {
+      studentId,
+      academicYearId: academicYearId || undefined,
+      limit: 20,
+    },
+  );
 
   const isLoading = loadingStudent || loadingSummary;
 
@@ -99,18 +108,23 @@ export default function StudentProgressDashboardPage() {
   }
 
   // Find latest assessment date from summary array
-  const lastAssessmentDate = summary?.summary?.reduce((latest: Date | null, item) => {
-    if (!item.latestDate) return latest;
-    const date = new Date(item.latestDate);
-    return !latest || date > latest ? date : latest;
-  }, null);
+  const lastAssessmentDate = summary?.summary?.reduce(
+    (latest: Date | null, item) => {
+      if (!item.latestDate) return latest;
+      const date = new Date(item.latestDate);
+      return !latest || date > latest ? date : latest;
+    },
+    null,
+  );
 
   return (
     <MainLayout>
       <div className="space-y-6">
         <PageHeader
           title="Progress Perkembangan"
-          description={student ? `${student.name} - ${student.nis}` : 'Loading...'}
+          description={
+            student ? `${student.name} - ${student.nis}` : "Loading..."
+          }
           actions={
             <div className="flex items-center gap-4">
               <Select value={academicYearId} onValueChange={setAcademicYearId}>
@@ -163,10 +177,15 @@ export default function StudentProgressDashboardPage() {
               </div>
               <div className="text-center md:text-right">
                 <p className="text-sm text-muted-foreground">Total Penilaian</p>
-                <p className="text-3xl font-bold">{summary?.totalAssessments || 0}</p>
+                <p className="text-3xl font-bold">
+                  {summary?.totalAssessments || 0}
+                </p>
                 {lastAssessmentDate && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Terakhir: {format(lastAssessmentDate, 'dd MMM yyyy', { locale: idLocale })}
+                    Terakhir:{" "}
+                    {format(lastAssessmentDate, "dd MMM yyyy", {
+                      locale: idLocale,
+                    })}
                   </p>
                 )}
               </div>
@@ -190,7 +209,9 @@ export default function StudentProgressDashboardPage() {
             {/* Aspect Progress Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {ASPECT_ORDER.map((aspect) => {
-                const aspectData = summary?.summary?.find(s => s.aspect === aspect);
+                const aspectData = summary?.summary?.find(
+                  (s) => s.aspect === aspect,
+                );
                 const progressValue = aspectData?.latestLevel
                   ? achievementToProgress[aspectData.latestLevel]
                   : 0;
@@ -199,7 +220,9 @@ export default function StudentProgressDashboardPage() {
                   <Card key={aspect} className="overflow-hidden">
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-sm font-medium">{aspect}</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          {aspect}
+                        </CardTitle>
                       </div>
                       <CardDescription>{ASPECT_LABELS[aspect]}</CardDescription>
                     </CardHeader>
@@ -207,13 +230,13 @@ export default function StudentProgressDashboardPage() {
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-2xl font-bold">
-                            {aspectData?.latestLevel || '-'}
+                            {aspectData?.latestLevel || "-"}
                           </span>
                           {aspectData?.latestLevel && (
                             <Badge
                               className={cn(
-                                'font-normal',
-                                ACHIEVEMENT_COLORS[aspectData.latestLevel]
+                                "font-normal",
+                                ACHIEVEMENT_COLORS[aspectData.latestLevel],
                               )}
                             >
                               {ACHIEVEMENT_LABELS[aspectData.latestLevel]}
@@ -234,7 +257,9 @@ export default function StudentProgressDashboardPage() {
             {/* Legend */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Keterangan Tingkat Capaian</CardTitle>
+                <CardTitle className="text-sm">
+                  Keterangan Tingkat Capaian
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -242,8 +267,8 @@ export default function StudentProgressDashboardPage() {
                     <div key={key} className="flex items-center gap-2">
                       <Badge
                         className={cn(
-                          'w-12 justify-center',
-                          ACHIEVEMENT_COLORS[key as TKAchievementLevel]
+                          "w-12 justify-center",
+                          ACHIEVEMENT_COLORS[key as TKAchievementLevel],
                         )}
                       >
                         {key}
@@ -279,35 +304,45 @@ export default function StudentProgressDashboardPage() {
                   <Card
                     key={assessment.id}
                     className="cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => router.push(`/paud/assessment/${assessment.id}`)}
+                    onClick={() =>
+                      router.push(`/paud/assessment/${assessment.id}`)
+                    }
                   >
                     <CardContent className="py-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div className="text-center">
                             <p className="text-2xl font-bold">
-                              {format(new Date(assessment.periodDate), 'dd', { locale: idLocale })}
+                              {format(new Date(assessment.periodDate), "dd", {
+                                locale: idLocale,
+                              })}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {format(new Date(assessment.periodDate), 'MMM yy', { locale: idLocale })}
+                              {format(
+                                new Date(assessment.periodDate),
+                                "MMM yy",
+                                { locale: idLocale },
+                              )}
                             </p>
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <Badge variant="outline">{assessment.aspect}</Badge>
+                              <Badge variant="outline">
+                                {assessment.aspect}
+                              </Badge>
                               <span className="text-sm font-medium">
                                 {ASPECT_LABELS[assessment.aspect]}
                               </span>
                             </div>
                             <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
-                              {assessment.narrativeText || 'Tidak ada catatan'}
+                              {assessment.narrativeText || "Tidak ada catatan"}
                             </p>
                           </div>
                         </div>
                         <Badge
                           className={cn(
-                            'text-lg px-3 py-1',
-                            ACHIEVEMENT_COLORS[assessment.achievementLevel]
+                            "text-lg px-3 py-1",
+                            ACHIEVEMENT_COLORS[assessment.achievementLevel],
                           )}
                         >
                           {assessment.achievementLevel}

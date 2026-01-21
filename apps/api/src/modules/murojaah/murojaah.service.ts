@@ -64,10 +64,7 @@ export const murojaahService = {
 
     // Filter by juz
     if (juz) {
-      where.AND = [
-        { juzStart: { lte: juz } },
-        { juzEnd: { gte: juz } },
-      ];
+      where.AND = [{ juzStart: { lte: juz } }, { juzEnd: { gte: juz } }];
     }
 
     // Search in notes
@@ -175,17 +172,18 @@ export const murojaahService = {
         tajwidScore: data.tajwidScore,
         notes: data.notes,
         improvementAreas: data.improvementAreas,
-        mistakes: data.mistakes && data.mistakes.length > 0
-          ? {
-              create: data.mistakes.map((m) => ({
-                mistakeType: m.mistakeType as TahfidzMistakeType,
-                juz: m.juz,
-                surahNumber: m.surahNumber,
-                ayahNumber: m.ayahNumber,
-                description: m.description,
-              })),
-            }
-          : undefined,
+        mistakes:
+          data.mistakes && data.mistakes.length > 0
+            ? {
+                create: data.mistakes.map((m) => ({
+                  mistakeType: m.mistakeType as TahfidzMistakeType,
+                  juz: m.juz,
+                  surahNumber: m.surahNumber,
+                  ayahNumber: m.ayahNumber,
+                  description: m.description,
+                })),
+              }
+            : undefined,
       },
       include: {
         student: { select: { id: true, user: { select: { name: true } } } },
@@ -347,12 +345,12 @@ export const murojaahService = {
     const totalPages = stats._sum.pagesReviewed || 0;
     const totalMinutes = stats._sum.durationMinutes || 0;
     const totalMistakes = stats._sum.mistakeCount || 0;
-    const avgQuality = totalSessions > 0
-      ? Math.round((stats._sum.qualityScore || 0) / totalSessions)
-      : 0;
-    const avgFluency = totalSessions > 0
-      ? Math.round(((stats._sum.fluencyLevel || 0) / totalSessions) * 10) / 10
-      : 0;
+    const avgQuality =
+      totalSessions > 0 ? Math.round((stats._sum.qualityScore || 0) / totalSessions) : 0;
+    const avgFluency =
+      totalSessions > 0
+        ? Math.round(((stats._sum.fluencyLevel || 0) / totalSessions) * 10) / 10
+        : 0;
 
     // Juz coverage analysis
     const juzCoverage: Record<number, number> = {};
@@ -387,7 +385,8 @@ export const murojaahService = {
         totalMinutes,
         avgMinutesPerSession: totalSessions > 0 ? Math.round(totalMinutes / totalSessions) : 0,
         totalMistakes,
-        avgMistakesPerSession: totalSessions > 0 ? Math.round((totalMistakes / totalSessions) * 10) / 10 : 0,
+        avgMistakesPerSession:
+          totalSessions > 0 ? Math.round((totalMistakes / totalSessions) * 10) / 10 : 0,
         avgQualityScore: avgQuality,
         avgFluencyLevel: avgFluency,
       },
@@ -502,7 +501,7 @@ export const murojaahService = {
     for (let i = 0; i < Math.min(7, Math.ceil(needsReview.length / juzPerDay)); i++) {
       const scheduleDate = new Date(today);
       scheduleDate.setDate(scheduleDate.getDate() + i);
-      
+
       const startIdx = i * juzPerDay;
       const endIdx = Math.min(startIdx + juzPerDay, needsReview.length);
       const juzForDay = needsReview.slice(startIdx, endIdx);
@@ -566,20 +565,32 @@ export const murojaahService = {
 
     // Categorize by quality ranges
     const distribution = {
-      excellent: records.filter(r => r.qualityScore >= 90).length,
-      good: records.filter(r => r.qualityScore >= 75 && r.qualityScore < 90).length,
-      fair: records.filter(r => r.qualityScore >= 60 && r.qualityScore < 75).length,
-      poor: records.filter(r => r.qualityScore < 60).length,
+      excellent: records.filter((r) => r.qualityScore >= 90).length,
+      good: records.filter((r) => r.qualityScore >= 75 && r.qualityScore < 90).length,
+      fair: records.filter((r) => r.qualityScore >= 60 && r.qualityScore < 75).length,
+      poor: records.filter((r) => r.qualityScore < 60).length,
     };
 
     const total = records.length;
 
     return {
       distribution: {
-        excellent: { count: distribution.excellent, percentage: total > 0 ? (distribution.excellent / total) * 100 : 0 },
-        good: { count: distribution.good, percentage: total > 0 ? (distribution.good / total) * 100 : 0 },
-        fair: { count: distribution.fair, percentage: total > 0 ? (distribution.fair / total) * 100 : 0 },
-        poor: { count: distribution.poor, percentage: total > 0 ? (distribution.poor / total) * 100 : 0 },
+        excellent: {
+          count: distribution.excellent,
+          percentage: total > 0 ? (distribution.excellent / total) * 100 : 0,
+        },
+        good: {
+          count: distribution.good,
+          percentage: total > 0 ? (distribution.good / total) * 100 : 0,
+        },
+        fair: {
+          count: distribution.fair,
+          percentage: total > 0 ? (distribution.fair / total) * 100 : 0,
+        },
+        poor: {
+          count: distribution.poor,
+          percentage: total > 0 ? (distribution.poor / total) * 100 : 0,
+        },
       },
       total,
       averageQuality: total > 0 ? records.reduce((sum, r) => sum + r.qualityScore, 0) / total : 0,
@@ -589,11 +600,7 @@ export const murojaahService = {
   /**
    * Get mistake patterns analytics
    */
-  async getMistakePatterns(query: {
-    dateFrom?: string;
-    dateTo?: string;
-    halaqohId?: string;
-  }) {
+  async getMistakePatterns(query: { dateFrom?: string; dateTo?: string; halaqohId?: string }) {
     const where: Prisma.MurojaahRecordWhereInput = {};
 
     if (query.dateFrom || query.dateTo) {
@@ -624,7 +631,7 @@ export const murojaahService = {
     const mistakeTypes = ['LAHIN_JALI', 'LAHIN_KHAFI', 'TAJWID', 'MAKHROJ', 'OTHERS'];
 
     for (const type of mistakeTypes) {
-      const typedMistakes = mistakes.filter(m => m.mistakeType === type);
+      const typedMistakes = mistakes.filter((m) => m.mistakeType === type);
       mistakesByType[type] = {
         count: typedMistakes.length,
         trend: 0, // Calculate trend if needed
@@ -640,12 +647,10 @@ export const murojaahService = {
   /**
    * Get consistency score analytics
    */
-  async getConsistencyScore(query: {
-    dateFrom?: string;
-    dateTo?: string;
-    halaqohId?: string;
-  }) {
-    const dateFrom = query.dateFrom ? new Date(query.dateFrom) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  async getConsistencyScore(query: { dateFrom?: string; dateTo?: string; halaqohId?: string }) {
+    const dateFrom = query.dateFrom
+      ? new Date(query.dateFrom)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const dateTo = query.dateTo ? new Date(query.dateTo) : new Date();
 
     const where: Prisma.MurojaahRecordWhereInput = {
@@ -666,7 +671,7 @@ export const murojaahService = {
 
     // Group by date
     const dailyData: Record<string, { count: number; avgQuality: number }> = {};
-    
+
     for (const record of records) {
       const dateKey = record.murojaahDate.toISOString().split('T')[0];
       if (!dailyData[dateKey]) {
@@ -733,14 +738,17 @@ export const murojaahService = {
     });
 
     // Group by student and calculate stats
-    const studentStats: Record<string, {
-      studentId: string;
-      studentName: string;
-      recordCount: number;
-      totalPages: number;
-      avgQuality: number;
-      scores: number[];
-    }> = {};
+    const studentStats: Record<
+      string,
+      {
+        studentId: string;
+        studentName: string;
+        recordCount: number;
+        totalPages: number;
+        avgQuality: number;
+        scores: number[];
+      }
+    > = {};
 
     for (const record of records) {
       if (!studentStats[record.studentId]) {
@@ -760,7 +768,7 @@ export const murojaahService = {
 
     // Calculate averages and sort
     const performers = Object.values(studentStats)
-      .map(student => ({
+      .map((student) => ({
         ...student,
         avgQuality: student.scores.reduce((sum, score) => sum + score, 0) / student.scores.length,
       }))

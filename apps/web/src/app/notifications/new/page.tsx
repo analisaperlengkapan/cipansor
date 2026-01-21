@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -16,18 +22,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
 import {
   useCreateNotification,
   NOTIFICATION_TYPES,
@@ -40,21 +46,21 @@ import {
   type NotificationPriority,
   type RecipientType,
   type NotificationChannel,
-} from '@/hooks';
-import { useClasses } from '@/hooks/use-classes';
-import { useUnits } from '@/hooks/use-units';
-import { useState } from 'react';
+} from "@/hooks";
+import { useClasses } from "@/hooks/use-classes";
+import { useUnits } from "@/hooks/use-units";
+import { useState } from "react";
 
-const priorities: NotificationPriority[] = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
+const priorities: NotificationPriority[] = ["LOW", "NORMAL", "HIGH", "URGENT"];
 
 const formSchema = z.object({
-  title: z.string().min(1, 'Judul wajib diisi'),
-  message: z.string().min(1, 'Pesan wajib diisi'),
-  type: z.string().min(1, 'Tipe wajib dipilih'),
-  priority: z.string().min(1, 'Prioritas wajib dipilih'),
-  recipientType: z.string().min(1, 'Tipe penerima wajib dipilih'),
+  title: z.string().min(1, "Judul wajib diisi"),
+  message: z.string().min(1, "Pesan wajib diisi"),
+  type: z.string().min(1, "Tipe wajib dipilih"),
+  priority: z.string().min(1, "Prioritas wajib dipilih"),
+  recipientType: z.string().min(1, "Tipe penerima wajib dipilih"),
   recipientIds: z.array(z.string()).optional(),
-  channels: z.array(z.string()).min(1, 'Minimal pilih 1 channel'),
+  channels: z.array(z.string()).min(1, "Minimal pilih 1 channel"),
   scheduledAt: z.string().optional(),
 });
 
@@ -72,25 +78,25 @@ export default function NewNotificationPage() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: '',
-      message: '',
-      type: '',
-      priority: 'NORMAL',
-      recipientType: '',
+      title: "",
+      message: "",
+      type: "",
+      priority: "NORMAL",
+      recipientType: "",
       recipientIds: [],
-      channels: ['IN_APP'],
-      scheduledAt: '',
+      channels: ["IN_APP"],
+      scheduledAt: "",
     },
   });
 
-  const recipientType = form.watch('recipientType');
+  const recipientType = form.watch("recipientType");
 
   const onSubmit = async (data: FormData) => {
     let recipientIds: string[] = [];
-    
-    if (data.recipientType === 'CLASS') {
+
+    if (data.recipientType === "CLASS") {
       recipientIds = selectedClasses;
-    } else if (data.recipientType === 'UNIT') {
+    } else if (data.recipientType === "UNIT") {
       recipientIds = selectedUnits;
     }
 
@@ -104,10 +110,10 @@ export default function NewNotificationPage() {
         channels: data.channels as NotificationChannel[],
         scheduledAt: data.scheduledAt || undefined,
       });
-      toast.success('Notifikasi berhasil dibuat');
-      router.push('/notifications');
+      toast.success("Notifikasi berhasil dibuat");
+      router.push("/notifications");
     } catch {
-      toast.error('Gagal membuat notifikasi');
+      toast.error("Gagal membuat notifikasi");
     }
   };
 
@@ -175,7 +181,10 @@ export default function NewNotificationPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tipe</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih tipe" />
@@ -200,7 +209,10 @@ export default function NewNotificationPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Prioritas</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih prioritas" />
@@ -226,7 +238,9 @@ export default function NewNotificationPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Penerima & Channel</CardTitle>
-                <CardDescription>Tentukan target penerima notifikasi</CardDescription>
+                <CardDescription>
+                  Tentukan target penerima notifikasi
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -235,7 +249,10 @@ export default function NewNotificationPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipe Penerima</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih tipe penerima" />
@@ -254,19 +271,27 @@ export default function NewNotificationPage() {
                   )}
                 />
 
-                {recipientType === 'CLASS' && (
+                {recipientType === "CLASS" && (
                   <div className="space-y-2">
                     <FormLabel>Pilih Kelas</FormLabel>
                     <div className="max-h-[200px] overflow-auto space-y-2 border rounded-md p-3">
                       {classes?.data.map((cls) => (
-                        <label key={cls.id} className="flex items-center gap-2 cursor-pointer">
+                        <label
+                          key={cls.id}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
                           <Checkbox
                             checked={selectedClasses.includes(cls.id)}
                             onCheckedChange={(checked) => {
                               if (checked) {
-                                setSelectedClasses([...selectedClasses, cls.id]);
+                                setSelectedClasses([
+                                  ...selectedClasses,
+                                  cls.id,
+                                ]);
                               } else {
-                                setSelectedClasses(selectedClasses.filter((id) => id !== cls.id));
+                                setSelectedClasses(
+                                  selectedClasses.filter((id) => id !== cls.id),
+                                );
                               }
                             }}
                           />
@@ -277,19 +302,24 @@ export default function NewNotificationPage() {
                   </div>
                 )}
 
-                {recipientType === 'UNIT' && (
+                {recipientType === "UNIT" && (
                   <div className="space-y-2">
                     <FormLabel>Pilih Unit</FormLabel>
                     <div className="max-h-[200px] overflow-auto space-y-2 border rounded-md p-3">
                       {units?.map((unit) => (
-                        <label key={unit.id} className="flex items-center gap-2 cursor-pointer">
+                        <label
+                          key={unit.id}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
                           <Checkbox
                             checked={selectedUnits.includes(unit.id)}
                             onCheckedChange={(checked) => {
                               if (checked) {
                                 setSelectedUnits([...selectedUnits, unit.id]);
                               } else {
-                                setSelectedUnits(selectedUnits.filter((id) => id !== unit.id));
+                                setSelectedUnits(
+                                  selectedUnits.filter((id) => id !== unit.id),
+                                );
                               }
                             }}
                           />
@@ -322,16 +352,19 @@ export default function NewNotificationPage() {
                                       if (checked) {
                                         field.onChange([...current, channel]);
                                       } else {
-                                        field.onChange(current.filter((c) => c !== channel));
+                                        field.onChange(
+                                          current.filter((c) => c !== channel),
+                                        );
                                       }
                                     }}
                                   />
                                 </FormControl>
                                 <FormLabel className="mt-0! font-normal">
-                                  {channel === 'IN_APP' && 'Notifikasi Aplikasi'}
-                                  {channel === 'EMAIL' && 'Email'}
-                                  {channel === 'WHATSAPP' && 'WhatsApp'}
-                                  {channel === 'SMS' && 'SMS'}
+                                  {channel === "IN_APP" &&
+                                    "Notifikasi Aplikasi"}
+                                  {channel === "EMAIL" && "Email"}
+                                  {channel === "WHATSAPP" && "WhatsApp"}
+                                  {channel === "SMS" && "SMS"}
                                 </FormLabel>
                               </FormItem>
                             )}
@@ -379,7 +412,9 @@ export default function NewNotificationPage() {
               Simpan Draft
             </Button>
             <Button type="submit" disabled={createNotification.isPending}>
-              {createNotification.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {createNotification.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Kirim Notifikasi
             </Button>
           </div>

@@ -1,17 +1,27 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Users, Trophy, Activity, BookOpen, Calendar, ArrowRight } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Users,
+  Trophy,
+  Activity,
+  BookOpen,
+  Calendar,
+  ArrowRight,
+} from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 interface TakhosusDashboardProps {
   stats?: any;
   isLoading?: boolean;
 }
 
-export function TakhosusDashboard({ stats, isLoading }: TakhosusDashboardProps) {
+export function TakhosusDashboard({
+  stats,
+  isLoading,
+}: TakhosusDashboardProps) {
   if (isLoading) {
     return <div className="p-8 text-center">Loading dashboard stats...</div>;
   }
@@ -33,24 +43,31 @@ export function TakhosusDashboard({ stats, isLoading }: TakhosusDashboardProps) 
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Selesai 30 Juz</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Selesai 30 Juz
+            </CardTitle>
             <Trophy className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.completed || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Alumni program
-            </p>
+            <p className="text-xs text-muted-foreground">Alumni program</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rata-rata Progress</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Rata-rata Progress
+            </CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.averageProgress || 0}%</div>
-            <Progress value={stats?.averageProgress || 0} className="h-2 mt-2" />
+            <div className="text-2xl font-bold">
+              {stats?.averageProgress || 0}%
+            </div>
+            <Progress
+              value={stats?.averageProgress || 0}
+              className="h-2 mt-2"
+            />
           </CardContent>
         </Card>
         <Card>
@@ -60,9 +77,7 @@ export function TakhosusDashboard({ stats, isLoading }: TakhosusDashboardProps) 
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.dropped || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Total dropped out
-            </p>
+            <p className="text-xs text-muted-foreground">Total dropped out</p>
           </CardContent>
         </Card>
       </div>
@@ -80,7 +95,9 @@ export function TakhosusDashboard({ stats, isLoading }: TakhosusDashboardProps) 
                 </div>
                 <div>
                   <h3 className="font-medium">Input Murojaah</h3>
-                  <p className="text-sm text-muted-foreground">Catat setoran hafalan santri</p>
+                  <p className="text-sm text-muted-foreground">
+                    Catat setoran hafalan santri
+                  </p>
                 </div>
               </div>
               <Button variant="ghost" size="icon" asChild>
@@ -97,7 +114,9 @@ export function TakhosusDashboard({ stats, isLoading }: TakhosusDashboardProps) 
                 </div>
                 <div>
                   <h3 className="font-medium">Jadwal Simaan</h3>
-                  <p className="text-sm text-muted-foreground">Kelola ujian simaan santri</p>
+                  <p className="text-sm text-muted-foreground">
+                    Kelola ujian simaan santri
+                  </p>
                 </div>
               </div>
               <Button variant="ghost" size="icon" asChild>
@@ -115,7 +134,7 @@ export function TakhosusDashboard({ stats, isLoading }: TakhosusDashboardProps) 
           </CardHeader>
           <CardContent>
             <div className="text-center text-muted-foreground py-8">
-               <p>Belum ada aktivitas terbaru.</p>
+              <p>Belum ada aktivitas terbaru.</p>
             </div>
           </CardContent>
         </Card>

@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -14,14 +20,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   useNotifications,
   useNotificationStats,
@@ -35,7 +41,7 @@ import {
   type NotificationType,
   type NotificationPriority,
   type AppNotification,
-} from '@/hooks';
+} from "@/hooks";
 import {
   Bell,
   Search,
@@ -51,10 +57,10 @@ import {
   Mail,
   MessageSquare,
   BarChart3,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import Link from 'next/link';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import Link from "next/link";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -65,16 +71,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { toast } from 'sonner';
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 export default function NotificationsPage() {
-  const [activeTab, setActiveTab] = useState('notifications');
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<NotificationType | 'ALL'>('ALL');
+  const [activeTab, setActiveTab] = useState("notifications");
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<NotificationType | "ALL">("ALL");
 
   const { data: notificationsData, isLoading } = useNotifications({
-    type: typeFilter !== 'ALL' ? typeFilter : undefined,
+    type: typeFilter !== "ALL" ? typeFilter : undefined,
   });
   const { data: stats } = useNotificationStats();
   const { data: templates } = useNotificationTemplates();
@@ -86,44 +92,50 @@ export default function NotificationsPage() {
   const handleSend = async (id: string) => {
     try {
       await sendNotification.mutateAsync(id);
-      toast.success('Notifikasi berhasil dikirim');
+      toast.success("Notifikasi berhasil dikirim");
     } catch {
-      toast.error('Gagal mengirim notifikasi');
+      toast.error("Gagal mengirim notifikasi");
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteNotification.mutateAsync(id);
-      toast.success('Notifikasi berhasil dihapus');
+      toast.success("Notifikasi berhasil dihapus");
     } catch {
-      toast.error('Gagal menghapus notifikasi');
+      toast.error("Gagal menghapus notifikasi");
     }
   };
 
   const getTypeBadge = (type: NotificationType) => {
     const colors: Record<NotificationType, string> = {
-      ANNOUNCEMENT: 'bg-blue-100 text-blue-800',
-      ATTENDANCE: 'bg-green-100 text-green-800',
-      FINANCE: 'bg-yellow-100 text-yellow-800',
-      ACADEMIC: 'bg-purple-100 text-purple-800',
-      PERMIT: 'bg-indigo-100 text-indigo-800',
-      HEALTH: 'bg-pink-100 text-pink-800',
-      VIOLATION: 'bg-red-100 text-red-800',
-      REWARD: 'bg-emerald-100 text-emerald-800',
-      SYSTEM: 'bg-gray-100 text-gray-800',
+      ANNOUNCEMENT: "bg-blue-100 text-blue-800",
+      ATTENDANCE: "bg-green-100 text-green-800",
+      FINANCE: "bg-yellow-100 text-yellow-800",
+      ACADEMIC: "bg-purple-100 text-purple-800",
+      PERMIT: "bg-indigo-100 text-indigo-800",
+      HEALTH: "bg-pink-100 text-pink-800",
+      VIOLATION: "bg-red-100 text-red-800",
+      REWARD: "bg-emerald-100 text-emerald-800",
+      SYSTEM: "bg-gray-100 text-gray-800",
     };
-    return <Badge className={colors[type]}>{NOTIFICATION_TYPE_LABELS[type]}</Badge>;
+    return (
+      <Badge className={colors[type]}>{NOTIFICATION_TYPE_LABELS[type]}</Badge>
+    );
   };
 
   const getPriorityBadge = (priority: NotificationPriority) => {
     const colors: Record<NotificationPriority, string> = {
-      LOW: 'bg-gray-100 text-gray-800',
-      NORMAL: 'bg-blue-100 text-blue-800',
-      HIGH: 'bg-orange-100 text-orange-800',
-      URGENT: 'bg-red-100 text-red-800',
+      LOW: "bg-gray-100 text-gray-800",
+      NORMAL: "bg-blue-100 text-blue-800",
+      HIGH: "bg-orange-100 text-orange-800",
+      URGENT: "bg-red-100 text-red-800",
     };
-    return <Badge className={colors[priority]}>{NOTIFICATION_PRIORITY_LABELS[priority]}</Badge>;
+    return (
+      <Badge className={colors[priority]}>
+        {NOTIFICATION_PRIORITY_LABELS[priority]}
+      </Badge>
+    );
   };
 
   return (
@@ -157,7 +169,9 @@ export default function NotificationsPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Notifikasi</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Notifikasi
+              </CardTitle>
               <Bell className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -169,24 +183,30 @@ export default function NotificationsPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Tingkat Pengiriman</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Tingkat Pengiriman
+              </CardTitle>
               <Send className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {stats?.deliveryRate ? `${stats.deliveryRate.toFixed(1)}%` : '-'}
+                {stats?.deliveryRate
+                  ? `${stats.deliveryRate.toFixed(1)}%`
+                  : "-"}
               </div>
               <p className="text-xs text-muted-foreground">Berhasil dikirim</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Tingkat Baca</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Tingkat Baca
+              </CardTitle>
               <Eye className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                {stats?.readRate ? `${stats.readRate.toFixed(1)}%` : '-'}
+                {stats?.readRate ? `${stats.readRate.toFixed(1)}%` : "-"}
               </div>
               <p className="text-xs text-muted-foreground">Dibaca penerima</p>
             </CardContent>
@@ -199,7 +219,7 @@ export default function NotificationsPage() {
             <CardContent>
               <div className="text-2xl font-bold">{templates?.length ?? 0}</div>
               <p className="text-xs text-muted-foreground">
-                {templates?.filter(t => t.isActive).length ?? 0} aktif
+                {templates?.filter((t) => t.isActive).length ?? 0} aktif
               </p>
             </CardContent>
           </Card>
@@ -237,7 +257,9 @@ export default function NotificationsPage() {
                   </div>
                   <Select
                     value={typeFilter}
-                    onValueChange={(v) => setTypeFilter(v as NotificationType | 'ALL')}
+                    onValueChange={(v) =>
+                      setTypeFilter(v as NotificationType | "ALL")
+                    }
                   >
                     <SelectTrigger className="w-full md:w-[180px]">
                       <SelectValue placeholder="Semua Tipe" />
@@ -287,12 +309,15 @@ export default function NotificationsPage() {
                           </div>
                         </TableCell>
                         <TableCell>{getTypeBadge(notif.type)}</TableCell>
-                        <TableCell>{getPriorityBadge(notif.priority)}</TableCell>
+                        <TableCell>
+                          {getPriorityBadge(notif.priority)}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Users className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm">
-                              {notif.totalRecipients} ({RECIPIENT_TYPE_LABELS[notif.recipientType]})
+                              {notif.totalRecipients} (
+                              {RECIPIENT_TYPE_LABELS[notif.recipientType]})
                             </span>
                           </div>
                         </TableCell>
@@ -314,7 +339,9 @@ export default function NotificationsPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {format(new Date(notif.createdAt), 'd MMM yyyy', { locale: id })}
+                          {format(new Date(notif.createdAt), "d MMM yyyy", {
+                            locale: id,
+                          })}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
@@ -341,14 +368,18 @@ export default function NotificationsPage() {
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Hapus Notifikasi?</AlertDialogTitle>
+                                  <AlertDialogTitle>
+                                    Hapus Notifikasi?
+                                  </AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Tindakan ini tidak dapat dibatalkan.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Batal</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(notif.id)}>
+                                  <AlertDialogAction
+                                    onClick={() => handleDelete(notif.id)}
+                                  >
                                     Hapus
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
@@ -360,7 +391,10 @@ export default function NotificationsPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={7}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         Belum ada notifikasi
                       </TableCell>
                     </TableRow>
@@ -387,13 +421,17 @@ export default function NotificationsPage() {
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle className="text-lg">{template.name}</CardTitle>
+                        <CardTitle className="text-lg">
+                          {template.name}
+                        </CardTitle>
                         <CardDescription>
                           {NOTIFICATION_TYPE_LABELS[template.type]}
                         </CardDescription>
                       </div>
-                      <Badge variant={template.isActive ? 'default' : 'secondary'}>
-                        {template.isActive ? 'Aktif' : 'Nonaktif'}
+                      <Badge
+                        variant={template.isActive ? "default" : "secondary"}
+                      >
+                        {template.isActive ? "Aktif" : "Nonaktif"}
                       </Badge>
                     </div>
                   </CardHeader>
@@ -401,16 +439,28 @@ export default function NotificationsPage() {
                     <div className="space-y-3">
                       <div>
                         <p className="text-sm font-medium">Template Judul:</p>
-                        <p className="text-sm text-muted-foreground">{template.titleTemplate}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {template.titleTemplate}
+                        </p>
                       </div>
                       <div>
                         <p className="text-sm font-medium">Channel:</p>
                         <div className="flex flex-wrap gap-1 mt-1">
                           {template.channels.map((channel: string) => (
-                            <Badge key={channel} variant="outline" className="text-xs">
-                              {channel === 'EMAIL' && <Mail className="mr-1 h-3 w-3" />}
-                              {channel === 'IN_APP' && <Bell className="mr-1 h-3 w-3" />}
-                              {channel === 'WHATSAPP' && <MessageSquare className="mr-1 h-3 w-3" />}
+                            <Badge
+                              key={channel}
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              {channel === "EMAIL" && (
+                                <Mail className="mr-1 h-3 w-3" />
+                              )}
+                              {channel === "IN_APP" && (
+                                <Bell className="mr-1 h-3 w-3" />
+                              )}
+                              {channel === "WHATSAPP" && (
+                                <MessageSquare className="mr-1 h-3 w-3" />
+                              )}
                               {channel}
                             </Badge>
                           ))}
@@ -419,13 +469,15 @@ export default function NotificationsPage() {
                       <div>
                         <p className="text-sm font-medium">Variabel:</p>
                         <p className="text-sm text-muted-foreground">
-                          {template.variables.join(', ') || '-'}
+                          {template.variables.join(", ") || "-"}
                         </p>
                       </div>
                     </div>
                     <div className="mt-4 flex justify-end gap-2">
                       <Button variant="outline" size="sm" asChild>
-                        <Link href={`/notifications/templates/${template.id}/edit`}>
+                        <Link
+                          href={`/notifications/templates/${template.id}/edit`}
+                        >
                           Edit
                         </Link>
                       </Button>
@@ -449,7 +501,9 @@ export default function NotificationsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Distribusi per Tipe</CardTitle>
-                  <CardDescription>Notifikasi berdasarkan kategori</CardDescription>
+                  <CardDescription>
+                    Notifikasi berdasarkan kategori
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -479,7 +533,9 @@ export default function NotificationsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Performa Pengiriman</CardTitle>
-                  <CardDescription>Statistik pengiriman notifikasi</CardDescription>
+                  <CardDescription>
+                    Statistik pengiriman notifikasi
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
@@ -488,7 +544,9 @@ export default function NotificationsPage() {
                         <div className="text-3xl font-bold text-green-600">
                           {stats?.deliveryRate?.toFixed(1) ?? 0}%
                         </div>
-                        <p className="text-sm text-muted-foreground">Terkirim</p>
+                        <p className="text-sm text-muted-foreground">
+                          Terkirim
+                        </p>
                       </div>
                       <div>
                         <div className="text-3xl font-bold text-blue-600">

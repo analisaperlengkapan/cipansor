@@ -1,11 +1,9 @@
-import * as Sentry from "@sentry/node";
-import { nodeProfilingIntegration } from "@sentry/profiling-node";
+import * as Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
-  integrations: [
-    nodeProfilingIntegration(),
-  ],
+  integrations: [nodeProfilingIntegration()],
   // Tracing
   tracesSampleRate: 1.0, //  Capture 100% of the transactions
   // Set sampling rate for profiling - this is relative to tracesSampleRate
@@ -58,19 +56,19 @@ async function bootstrap() {
     // Graceful shutdown
     const shutdown = async (signal: string) => {
       logger.info(`${signal} received. Shutting down gracefully...`);
-      
+
       // Stop scheduled jobs
       stopScheduler();
 
       // Close real-time connections
       await closeRealtimeConnections();
-      
+
       httpServer.close(async () => {
         logger.info('HTTP server closed');
-        
+
         await prisma.$disconnect();
         logger.info('Database connection closed');
-        
+
         process.exit(0);
       });
 
@@ -93,7 +91,6 @@ async function bootstrap() {
       logger.error('Uncaught Exception:', error);
       process.exit(1);
     });
-
   } catch (error) {
     logger.error('Failed to start server:', error);
     await prisma.$disconnect();

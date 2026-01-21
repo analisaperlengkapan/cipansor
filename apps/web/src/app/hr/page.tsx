@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -14,14 +20,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   useEmployees,
   useLeaveRequests,
@@ -34,8 +40,8 @@ import {
   LEAVE_TYPE_LABELS,
   type EmployeeStatus,
   type LeaveStatus,
-} from '@/hooks';
-import { useUnits } from '@/hooks';
+} from "@/hooks";
+import { useUnits } from "@/hooks";
 import {
   Users,
   Search,
@@ -50,26 +56,31 @@ import {
   Clock,
   Loader2,
   AlertCircle,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import Link from 'next/link';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import Link from "next/link";
 
 export default function HRPage() {
-  const [activeTab, setActiveTab] = useState('employees');
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<EmployeeStatus | 'ALL'>('ALL');
-  const [unitFilter, setUnitFilter] = useState<string>('');
-  const [leaveStatusFilter, setLeaveStatusFilter] = useState<LeaveStatus | 'ALL'>('ALL');
+  const [activeTab, setActiveTab] = useState("employees");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<EmployeeStatus | "ALL">(
+    "ALL",
+  );
+  const [unitFilter, setUnitFilter] = useState<string>("");
+  const [leaveStatusFilter, setLeaveStatusFilter] = useState<
+    LeaveStatus | "ALL"
+  >("ALL");
 
   const { data: employeesData, isLoading: loadingEmployees } = useEmployees({
     search: search || undefined,
-    status: statusFilter !== 'ALL' ? statusFilter : undefined,
+    status: statusFilter !== "ALL" ? statusFilter : undefined,
     unitId: unitFilter || undefined,
   });
-  const { data: leaveRequestsData, isLoading: loadingLeaves } = useLeaveRequests({
-    status: leaveStatusFilter !== 'ALL' ? leaveStatusFilter : undefined,
-  });
+  const { data: leaveRequestsData, isLoading: loadingLeaves } =
+    useLeaveRequests({
+      status: leaveStatusFilter !== "ALL" ? leaveStatusFilter : undefined,
+    });
   const { data: departments } = useDepartments();
   const { data: units } = useUnits();
   const { data: expiringContracts } = useExpiringContracts();
@@ -77,30 +88,38 @@ export default function HRPage() {
   const employees = employeesData?.data || [];
   const leaveRequests = leaveRequestsData?.data || [];
 
-  const activeEmployees = employees.filter(e => e.status === 'ACTIVE').length;
-  const onLeaveEmployees = employees.filter(e => e.status === 'ON_LEAVE').length;
-  const pendingLeaves = leaveRequests.filter(l => l.status === 'PENDING').length;
+  const activeEmployees = employees.filter((e) => e.status === "ACTIVE").length;
+  const onLeaveEmployees = employees.filter(
+    (e) => e.status === "ON_LEAVE",
+  ).length;
+  const pendingLeaves = leaveRequests.filter(
+    (l) => l.status === "PENDING",
+  ).length;
   const expiringCount = expiringContracts?.length || 0;
 
   const getStatusBadge = (status: EmployeeStatus) => {
     const colors: Record<EmployeeStatus, string> = {
-      ACTIVE: 'bg-green-100 text-green-800',
-      INACTIVE: 'bg-gray-100 text-gray-800',
-      ON_LEAVE: 'bg-yellow-100 text-yellow-800',
-      RESIGNED: 'bg-red-100 text-red-800',
-      RETIRED: 'bg-blue-100 text-blue-800',
+      ACTIVE: "bg-green-100 text-green-800",
+      INACTIVE: "bg-gray-100 text-gray-800",
+      ON_LEAVE: "bg-yellow-100 text-yellow-800",
+      RESIGNED: "bg-red-100 text-red-800",
+      RETIRED: "bg-blue-100 text-blue-800",
     };
-    return <Badge className={colors[status]}>{EMPLOYEE_STATUS_LABELS[status]}</Badge>;
+    return (
+      <Badge className={colors[status]}>{EMPLOYEE_STATUS_LABELS[status]}</Badge>
+    );
   };
 
   const getLeaveStatusBadge = (status: LeaveStatus) => {
     const colors: Record<LeaveStatus, string> = {
-      PENDING: 'bg-yellow-100 text-yellow-800',
-      APPROVED: 'bg-green-100 text-green-800',
-      REJECTED: 'bg-red-100 text-red-800',
-      CANCELLED: 'bg-gray-100 text-gray-800',
+      PENDING: "bg-yellow-100 text-yellow-800",
+      APPROVED: "bg-green-100 text-green-800",
+      REJECTED: "bg-red-100 text-red-800",
+      CANCELLED: "bg-gray-100 text-gray-800",
     };
-    return <Badge className={colors[status]}>{LEAVE_STATUS_LABELS[status]}</Badge>;
+    return (
+      <Badge className={colors[status]}>{LEAVE_STATUS_LABELS[status]}</Badge>
+    );
   };
 
   return (
@@ -109,7 +128,9 @@ export default function HRPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">SDM & Kepegawaian</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              SDM & Kepegawaian
+            </h1>
             <p className="text-muted-foreground">
               Kelola data karyawan, cuti, dan penggajian
             </p>
@@ -140,7 +161,9 @@ export default function HRPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Karyawan</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Karyawan
+              </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -152,11 +175,15 @@ export default function HRPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Karyawan Aktif</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Karyawan Aktif
+              </CardTitle>
               <UserCheck className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{activeEmployees}</div>
+              <div className="text-2xl font-bold text-green-600">
+                {activeEmployees}
+              </div>
               <p className="text-xs text-muted-foreground">Bekerja saat ini</p>
             </CardContent>
           </Card>
@@ -166,28 +193,42 @@ export default function HRPage() {
               <Calendar className="h-4 w-4 text-yellow-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{onLeaveEmployees}</div>
+              <div className="text-2xl font-bold text-yellow-600">
+                {onLeaveEmployees}
+              </div>
               <p className="text-xs text-muted-foreground">Karyawan cuti</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Pengajuan Cuti</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Pengajuan Cuti
+              </CardTitle>
               <Clock className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{pendingLeaves}</div>
-              <p className="text-xs text-muted-foreground">Menunggu persetujuan</p>
+              <div className="text-2xl font-bold text-blue-600">
+                {pendingLeaves}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Menunggu persetujuan
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Kontrak Habis</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Kontrak Habis
+              </CardTitle>
               <AlertCircle className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{expiringCount}</div>
-              <p className="text-xs text-muted-foreground">Dalam 30 hari ke depan</p>
+              <div className="text-2xl font-bold text-red-600">
+                {expiringCount}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Dalam 30 hari ke depan
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -218,7 +259,10 @@ export default function HRPage() {
                       className="pl-9"
                     />
                   </div>
-                  <Select value={unitFilter} onValueChange={(v) => setUnitFilter(v === 'ALL' ? '' : v)}>
+                  <Select
+                    value={unitFilter}
+                    onValueChange={(v) => setUnitFilter(v === "ALL" ? "" : v)}
+                  >
                     <SelectTrigger className="w-full md:w-[180px]">
                       <SelectValue placeholder="Semua Unit" />
                     </SelectTrigger>
@@ -233,7 +277,9 @@ export default function HRPage() {
                   </Select>
                   <Select
                     value={statusFilter}
-                    onValueChange={(v) => setStatusFilter(v as EmployeeStatus | 'ALL')}
+                    onValueChange={(v) =>
+                      setStatusFilter(v as EmployeeStatus | "ALL")
+                    }
                   >
                     <SelectTrigger className="w-full md:w-[150px]">
                       <SelectValue placeholder="Semua Status" />
@@ -274,14 +320,18 @@ export default function HRPage() {
                   ) : employees.length ? (
                     employees.map((emp) => (
                       <TableRow key={emp.id}>
-                        <TableCell className="font-mono text-sm">{emp.nip}</TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {emp.nip}
+                        </TableCell>
                         <TableCell>
                           <div>
                             <p className="font-medium">{emp.fullName}</p>
-                            <p className="text-sm text-muted-foreground">{emp.email}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {emp.email}
+                            </p>
                           </div>
                         </TableCell>
-                        <TableCell>{emp.unit?.name ?? '-'}</TableCell>
+                        <TableCell>{emp.unit?.name ?? "-"}</TableCell>
                         <TableCell>{emp.position}</TableCell>
                         <TableCell>
                           <Badge variant="outline">
@@ -307,7 +357,10 @@ export default function HRPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={7}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         Belum ada data karyawan
                       </TableCell>
                     </TableRow>
@@ -322,7 +375,9 @@ export default function HRPage() {
             <div className="flex justify-between items-center">
               <Select
                 value={leaveStatusFilter}
-                onValueChange={(v) => setLeaveStatusFilter(v as LeaveStatus | 'ALL')}
+                onValueChange={(v) =>
+                  setLeaveStatusFilter(v as LeaveStatus | "ALL")
+                }
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Semua Status" />
@@ -367,18 +422,29 @@ export default function HRPage() {
                       <TableRow key={leave.id}>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{leave.employee?.fullName}</p>
+                            <p className="font-medium">
+                              {leave.employee?.fullName}
+                            </p>
                             <p className="text-sm text-muted-foreground">
                               {leave.employee?.position}
                             </p>
                           </div>
                         </TableCell>
-                        <TableCell>{LEAVE_TYPE_LABELS[leave.leaveType]}</TableCell>
+                        <TableCell>
+                          {LEAVE_TYPE_LABELS[leave.leaveType]}
+                        </TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            <p>{format(new Date(leave.startDate), 'd MMM', { locale: id })}</p>
+                            <p>
+                              {format(new Date(leave.startDate), "d MMM", {
+                                locale: id,
+                              })}
+                            </p>
                             <p className="text-muted-foreground">
-                              - {format(new Date(leave.endDate), 'd MMM yyyy', { locale: id })}
+                              -{" "}
+                              {format(new Date(leave.endDate), "d MMM yyyy", {
+                                locale: id,
+                              })}
                             </p>
                           </div>
                         </TableCell>
@@ -386,7 +452,9 @@ export default function HRPage() {
                         <TableCell className="max-w-[200px] truncate">
                           {leave.reason}
                         </TableCell>
-                        <TableCell>{getLeaveStatusBadge(leave.status)}</TableCell>
+                        <TableCell>
+                          {getLeaveStatusBadge(leave.status)}
+                        </TableCell>
                         <TableCell className="text-right">
                           <Button variant="ghost" size="icon" asChild>
                             <Link href={`/hr/leaves/${leave.id}`}>
@@ -398,7 +466,10 @@ export default function HRPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={7}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         Belum ada pengajuan cuti
                       </TableCell>
                     </TableRow>

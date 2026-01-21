@@ -1,23 +1,23 @@
-'use client';
+"use client";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { ApiResponse, PaginatedResponse } from "@/lib/api";
 
 // Types
-export type DutyType = 
-  | 'CLEANING_CLASSROOM' 
-  | 'CLEANING_BATHROOM' 
-  | 'CLEANING_YARD' 
-  | 'CLEANING_MOSQUE' 
-  | 'SECURITY' 
-  | 'CANTEEN' 
-  | 'LIBRARY'
-  | 'GARDEN'
-  | 'KITCHEN';
+export type DutyType =
+  | "CLEANING_CLASSROOM"
+  | "CLEANING_BATHROOM"
+  | "CLEANING_YARD"
+  | "CLEANING_MOSQUE"
+  | "SECURITY"
+  | "CANTEEN"
+  | "LIBRARY"
+  | "GARDEN"
+  | "KITCHEN";
 
-export type DutyStatus = 'PENDING' | 'COMPLETED' | 'ABSENT' | 'SUBSTITUTED';
+export type DutyStatus = "PENDING" | "COMPLETED" | "ABSENT" | "SUBSTITUTED";
 
-export type DutyShift = 'MORNING' | 'AFTERNOON' | 'EVENING';
+export type DutyShift = "MORNING" | "AFTERNOON" | "EVENING";
 
 export interface DutyAssignment {
   id: string;
@@ -103,28 +103,28 @@ export interface DutyStatistics {
 
 // Labels
 export const DUTY_TYPE_LABELS: Record<DutyType, string> = {
-  CLEANING_CLASSROOM: 'Piket Kelas',
-  CLEANING_BATHROOM: 'Piket Kamar Mandi',
-  CLEANING_YARD: 'Piket Halaman',
-  CLEANING_MOSQUE: 'Piket Masjid',
-  SECURITY: 'Piket Keamanan',
-  CANTEEN: 'Piket Kantin',
-  LIBRARY: 'Piket Perpustakaan',
-  GARDEN: 'Piket Taman',
-  KITCHEN: 'Piket Dapur',
+  CLEANING_CLASSROOM: "Piket Kelas",
+  CLEANING_BATHROOM: "Piket Kamar Mandi",
+  CLEANING_YARD: "Piket Halaman",
+  CLEANING_MOSQUE: "Piket Masjid",
+  SECURITY: "Piket Keamanan",
+  CANTEEN: "Piket Kantin",
+  LIBRARY: "Piket Perpustakaan",
+  GARDEN: "Piket Taman",
+  KITCHEN: "Piket Dapur",
 };
 
 export const DUTY_SHIFT_LABELS: Record<DutyShift, string> = {
-  MORNING: 'Pagi',
-  AFTERNOON: 'Siang',
-  EVENING: 'Sore/Malam',
+  MORNING: "Pagi",
+  AFTERNOON: "Siang",
+  EVENING: "Sore/Malam",
 };
 
 export const DUTY_STATUS_LABELS: Record<DutyStatus, string> = {
-  PENDING: 'Menunggu',
-  COMPLETED: 'Selesai',
-  ABSENT: 'Tidak Hadir',
-  SUBSTITUTED: 'Digantikan',
+  PENDING: "Menunggu",
+  COMPLETED: "Selesai",
+  ABSENT: "Tidak Hadir",
+  SUBSTITUTED: "Digantikan",
 };
 
 // Get duty roster list
@@ -139,19 +139,21 @@ export function useDutyRosters(params?: {
   limit?: number;
 }) {
   const queryParams = new URLSearchParams();
-  if (params?.date) queryParams.append('date', params.date);
-  if (params?.startDate) queryParams.append('startDate', params.startDate);
-  if (params?.endDate) queryParams.append('endDate', params.endDate);
-  if (params?.dutyType) queryParams.append('dutyType', params.dutyType);
-  if (params?.shift) queryParams.append('shift', params.shift);
-  if (params?.classId) queryParams.append('classId', params.classId);
-  if (params?.page) queryParams.append('page', params.page.toString());
-  if (params?.limit) queryParams.append('limit', params.limit.toString());
+  if (params?.date) queryParams.append("date", params.date);
+  if (params?.startDate) queryParams.append("startDate", params.startDate);
+  if (params?.endDate) queryParams.append("endDate", params.endDate);
+  if (params?.dutyType) queryParams.append("dutyType", params.dutyType);
+  if (params?.shift) queryParams.append("shift", params.shift);
+  if (params?.classId) queryParams.append("classId", params.classId);
+  if (params?.page) queryParams.append("page", params.page.toString());
+  if (params?.limit) queryParams.append("limit", params.limit.toString());
 
   return useQuery<PaginatedResponse<DutyRoster>>({
-    queryKey: ['duty-rosters', params],
+    queryKey: ["duty-rosters", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<DutyRoster>>(`/duty-rosters?${queryParams.toString()}`);
+      const response = await api.get<PaginatedResponse<DutyRoster>>(
+        `/duty-rosters?${queryParams.toString()}`,
+      );
       return response.data;
     },
   });
@@ -160,9 +162,11 @@ export function useDutyRosters(params?: {
 // Get duty roster detail
 export function useDutyRoster(id?: string) {
   return useQuery<DutyRoster>({
-    queryKey: ['duty-rosters', id],
+    queryKey: ["duty-rosters", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<DutyRoster>>(`/duty-rosters/${id}`);
+      const response = await api.get<ApiResponse<DutyRoster>>(
+        `/duty-rosters/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -172,9 +176,11 @@ export function useDutyRoster(id?: string) {
 // Get duty assignment detail
 export function useDutyAssignment(id?: string) {
   return useQuery<DutyAssignment>({
-    queryKey: ['duty-assignments', id],
+    queryKey: ["duty-assignments", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<DutyAssignment>>(`/duty-assignments/${id}`);
+      const response = await api.get<ApiResponse<DutyAssignment>>(
+        `/duty-assignments/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -188,14 +194,16 @@ export function useMyDuties(params?: {
   status?: DutyStatus;
 }) {
   const queryParams = new URLSearchParams();
-  if (params?.startDate) queryParams.append('startDate', params.startDate);
-  if (params?.endDate) queryParams.append('endDate', params.endDate);
-  if (params?.status) queryParams.append('status', params.status);
+  if (params?.startDate) queryParams.append("startDate", params.startDate);
+  if (params?.endDate) queryParams.append("endDate", params.endDate);
+  if (params?.status) queryParams.append("status", params.status);
 
   return useQuery<DutyAssignment[]>({
-    queryKey: ['duty-assignments', 'my-duties', params],
+    queryKey: ["duty-assignments", "my-duties", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<DutyAssignment[]>>(`/duty-assignments/my-duties?${queryParams.toString()}`);
+      const response = await api.get<ApiResponse<DutyAssignment[]>>(
+        `/duty-assignments/my-duties?${queryParams.toString()}`,
+      );
       return response.data.data;
     },
   });
@@ -209,15 +217,17 @@ export function useDutyStatistics(params?: {
   studentId?: string;
 }) {
   const queryParams = new URLSearchParams();
-  if (params?.startDate) queryParams.append('startDate', params.startDate);
-  if (params?.endDate) queryParams.append('endDate', params.endDate);
-  if (params?.classId) queryParams.append('classId', params.classId);
-  if (params?.studentId) queryParams.append('studentId', params.studentId);
+  if (params?.startDate) queryParams.append("startDate", params.startDate);
+  if (params?.endDate) queryParams.append("endDate", params.endDate);
+  if (params?.classId) queryParams.append("classId", params.classId);
+  if (params?.studentId) queryParams.append("studentId", params.studentId);
 
   return useQuery<DutyStatistics>({
-    queryKey: ['duty-statistics', params],
+    queryKey: ["duty-statistics", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<DutyStatistics>>(`/duty-rosters/statistics?${queryParams.toString()}`);
+      const response = await api.get<ApiResponse<DutyStatistics>>(
+        `/duty-rosters/statistics?${queryParams.toString()}`,
+      );
       return response.data.data;
     },
   });
@@ -226,15 +236,18 @@ export function useDutyStatistics(params?: {
 // Create duty roster
 export function useCreateDutyRoster() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateDutyRosterInput) => {
-      const response = await api.post<ApiResponse<DutyRoster>>('/duty-rosters', data);
+      const response = await api.post<ApiResponse<DutyRoster>>(
+        "/duty-rosters",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['duty-rosters'] });
-      queryClient.invalidateQueries({ queryKey: ['duty-statistics'] });
+      queryClient.invalidateQueries({ queryKey: ["duty-rosters"] });
+      queryClient.invalidateQueries({ queryKey: ["duty-statistics"] });
     },
   });
 }
@@ -242,16 +255,27 @@ export function useCreateDutyRoster() {
 // Update duty roster
 export function useUpdateDutyRoster() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateDutyRosterInput> }) => {
-      const response = await api.put<ApiResponse<DutyRoster>>(`/duty-rosters/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateDutyRosterInput>;
+    }) => {
+      const response = await api.put<ApiResponse<DutyRoster>>(
+        `/duty-rosters/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['duty-rosters'] });
-      queryClient.invalidateQueries({ queryKey: ['duty-rosters', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['duty-statistics'] });
+      queryClient.invalidateQueries({ queryKey: ["duty-rosters"] });
+      queryClient.invalidateQueries({
+        queryKey: ["duty-rosters", variables.id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["duty-statistics"] });
     },
   });
 }
@@ -259,15 +283,17 @@ export function useUpdateDutyRoster() {
 // Delete duty roster
 export function useDeleteDutyRoster() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.delete<ApiResponse<void>>(`/duty-rosters/${id}`);
+      const response = await api.delete<ApiResponse<void>>(
+        `/duty-rosters/${id}`,
+      );
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['duty-rosters'] });
-      queryClient.invalidateQueries({ queryKey: ['duty-statistics'] });
+      queryClient.invalidateQueries({ queryKey: ["duty-rosters"] });
+      queryClient.invalidateQueries({ queryKey: ["duty-statistics"] });
     },
   });
 }
@@ -275,27 +301,30 @@ export function useDeleteDutyRoster() {
 // Update duty assignment status
 export function useUpdateDutyStatus() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ 
-      assignmentId, 
-      status, 
-      notes 
-    }: { 
-      assignmentId: string; 
-      status: DutyStatus; 
+    mutationFn: async ({
+      assignmentId,
+      status,
+      notes,
+    }: {
+      assignmentId: string;
+      status: DutyStatus;
       notes?: string;
     }) => {
-      const response = await api.patch<ApiResponse<DutyAssignment>>(`/duty-assignments/${assignmentId}/status`, {
-        status,
-        notes,
-      });
+      const response = await api.patch<ApiResponse<DutyAssignment>>(
+        `/duty-assignments/${assignmentId}/status`,
+        {
+          status,
+          notes,
+        },
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['duty-rosters'] });
-      queryClient.invalidateQueries({ queryKey: ['duty-assignments'] });
-      queryClient.invalidateQueries({ queryKey: ['duty-statistics'] });
+      queryClient.invalidateQueries({ queryKey: ["duty-rosters"] });
+      queryClient.invalidateQueries({ queryKey: ["duty-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["duty-statistics"] });
     },
   });
 }
@@ -303,26 +332,29 @@ export function useUpdateDutyStatus() {
 // Request substitution
 export function useRequestSubstitution() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ 
-      assignmentId, 
-      substituteStudentId, 
-      reason 
-    }: { 
-      assignmentId: string; 
+    mutationFn: async ({
+      assignmentId,
+      substituteStudentId,
+      reason,
+    }: {
+      assignmentId: string;
       substituteStudentId: string;
       reason: string;
     }) => {
-      const response = await api.post<ApiResponse<DutyAssignment>>(`/duty-assignments/${assignmentId}/substitute`, {
-        substituteStudentId,
-        reason,
-      });
+      const response = await api.post<ApiResponse<DutyAssignment>>(
+        `/duty-assignments/${assignmentId}/substitute`,
+        {
+          substituteStudentId,
+          reason,
+        },
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['duty-rosters'] });
-      queryClient.invalidateQueries({ queryKey: ['duty-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ["duty-rosters"] });
+      queryClient.invalidateQueries({ queryKey: ["duty-assignments"] });
     },
   });
 }
@@ -330,24 +362,27 @@ export function useRequestSubstitution() {
 // Complete duty assignment
 export function useCompleteDutyAssignment() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ 
-      assignmentId, 
-      notes 
-    }: { 
-      assignmentId: string; 
+    mutationFn: async ({
+      assignmentId,
+      notes,
+    }: {
+      assignmentId: string;
       notes?: string;
     }) => {
-      const response = await api.post<ApiResponse<DutyAssignment>>(`/duty-assignments/${assignmentId}/complete`, {
-        notes,
-      });
+      const response = await api.post<ApiResponse<DutyAssignment>>(
+        `/duty-assignments/${assignmentId}/complete`,
+        {
+          notes,
+        },
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['duty-rosters'] });
-      queryClient.invalidateQueries({ queryKey: ['duty-assignments'] });
-      queryClient.invalidateQueries({ queryKey: ['duty-statistics'] });
+      queryClient.invalidateQueries({ queryKey: ["duty-rosters"] });
+      queryClient.invalidateQueries({ queryKey: ["duty-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["duty-statistics"] });
     },
   });
 }
@@ -359,17 +394,20 @@ export function useExportDutyReport() {
       startDate: string;
       endDate: string;
       classId?: string;
-      format?: 'pdf' | 'excel';
+      format?: "pdf" | "excel";
     }) => {
       const queryParams = new URLSearchParams();
-      queryParams.append('startDate', params.startDate);
-      queryParams.append('endDate', params.endDate);
-      if (params.classId) queryParams.append('classId', params.classId);
-      if (params.format) queryParams.append('format', params.format);
+      queryParams.append("startDate", params.startDate);
+      queryParams.append("endDate", params.endDate);
+      if (params.classId) queryParams.append("classId", params.classId);
+      if (params.format) queryParams.append("format", params.format);
 
-      const response = await api.get(`/duty-rosters/export?${queryParams.toString()}`, {
-        responseType: 'blob',
-      });
+      const response = await api.get(
+        `/duty-rosters/export?${queryParams.toString()}`,
+        {
+          responseType: "blob",
+        },
+      );
       return response.data;
     },
   });

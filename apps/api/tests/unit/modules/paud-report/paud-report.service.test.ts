@@ -116,8 +116,9 @@ describe('PAUDReportService', () => {
       (prisma.dailyStudentReport.findMany as any).mockResolvedValue([]);
       (prisma.growthRecord.findFirst as any).mockResolvedValue(mockGrowthRecord);
       (prisma.tahfidzRecord.findFirst as any).mockResolvedValue(mockTahfidzRecord);
-      (prisma.pAUDNarrativeReport.create as any).mockImplementation((args: any) => Promise.resolve(args.data));
-
+      (prisma.pAUDNarrativeReport.create as any).mockImplementation((args: any) =>
+        Promise.resolve(args.data)
+      );
 
       // Execute
       const result = await PAUDReportService.generateReportFromAssessments(input, context as any);

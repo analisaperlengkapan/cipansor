@@ -19,19 +19,21 @@ const generateReportSchema = z.object({
     'HR_SUMMARY',
   ]),
   format: z.enum(['JSON', 'CSV']).default('JSON'),
-  filters: z.object({
-    unitId: z.string().uuid().optional(),
-    academicYearId: z.string().uuid().optional(),
-    startDate: z.string().datetime().optional(),
-    endDate: z.string().datetime().optional(),
-    status: z.string().optional(),
-  }).optional(),
+  filters: z
+    .object({
+      unitId: z.string().uuid().optional(),
+      academicYearId: z.string().uuid().optional(),
+      startDate: z.string().datetime().optional(),
+      endDate: z.string().datetime().optional(),
+      status: z.string().optional(),
+    })
+    .optional(),
 });
 
 export async function generateReport(req: Request, res: Response, next: NextFunction) {
   try {
     const body = generateReportSchema.parse(req.body);
-    
+
     const filters = {
       ...body.filters,
       startDate: body.filters?.startDate ? new Date(body.filters.startDate) : undefined,
@@ -46,7 +48,10 @@ export async function generateReport(req: Request, res: Response, next: NextFunc
 
     if (body.format === 'CSV') {
       res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename="${body.type.toLowerCase()}_${Date.now()}.csv"`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${body.type.toLowerCase()}_${Date.now()}.csv"`
+      );
       return res.send(result.data);
     }
 

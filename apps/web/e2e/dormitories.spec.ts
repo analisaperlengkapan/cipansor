@@ -1,103 +1,107 @@
-import { test, expect } from './fixtures/auth.fixture';
-import { LoginPage } from './page-objects';
+import { test, expect } from "./fixtures/auth.fixture";
+import { LoginPage } from "./page-objects";
 
 /**
  * Dormitories Module E2E Tests
  * Tests dormitory management, room assignments, and student housing
  */
 
-test.describe('Dormitories - Navigation', () => {
-  test('should navigate to dormitories page', async ({ page }) => {
+test.describe("Dormitories - Navigation", () => {
+  test("should navigate to dormitories page", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/dormitories');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/dormitories");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     expect(page.url()).toMatch(/dormitories/);
   });
 
-  test('should display dormitories interface', async ({ page }) => {
+  test("should display dormitories interface", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/dormitories');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/dormitories");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     const content = await page.content();
     expect(content.length).toBeGreaterThan(1000);
   });
 });
 
-test.describe('Dormitories - Features', () => {
-  test('should display dormitory list or rooms', async ({ page }) => {
+test.describe("Dormitories - Features", () => {
+  test("should display dormitory list or rooms", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/dormitories');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
-    const hasDormList = await page.locator('table, [class*="room"], [class*="dorm"]')
+    await page.goto("/dormitories");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
+    const hasDormList = await page
+      .locator('table, [class*="room"], [class*="dorm"]')
       .first()
-      .isVisible({ timeout: 5000 }).catch(() => false);
-    
-    expect(hasDormList || page.url().includes('dormitories')).toBeTruthy();
+      .isVisible({ timeout: 5000 })
+      .catch(() => false);
+
+    expect(hasDormList || page.url().includes("dormitories")).toBeTruthy();
   });
 
-  test('should have room assignment functionality', async ({ page }) => {
+  test("should have room assignment functionality", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/dormitories');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/dormitories");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     const content = await page.content();
-    const hasAssignment = content.includes('Kamar') || 
-                         content.includes('Room') || 
-                         content.includes('Asrama');
-    
-    expect(hasAssignment || page.url().includes('dormitories')).toBeTruthy();
+    const hasAssignment =
+      content.includes("Kamar") ||
+      content.includes("Room") ||
+      content.includes("Asrama");
+
+    expect(hasAssignment || page.url().includes("dormitories")).toBeTruthy();
   });
 
-  test('should display student occupancy', async ({ page }) => {
+  test("should display student occupancy", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/dormitories');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/dormitories");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     const content = await page.content();
-    const hasOccupancy = content.includes('Penghuni') || 
-                        content.includes('Occupancy') || 
-                        content.includes('Siswa');
-    
-    expect(hasOccupancy || page.url().includes('dormitories')).toBeTruthy();
+    const hasOccupancy =
+      content.includes("Penghuni") ||
+      content.includes("Occupancy") ||
+      content.includes("Siswa");
+
+    expect(hasOccupancy || page.url().includes("dormitories")).toBeTruthy();
   });
 });
 
-test.describe('Dormitories - Performance', () => {
-  test('should load dormitories page quickly', async ({ page }) => {
+test.describe("Dormitories - Performance", () => {
+  test("should load dormitories page quickly", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    
+
     const startTime = Date.now();
-    await page.goto('/dormitories');
-    await page.waitForLoadState('domcontentloaded', { timeout: 15000 });
+    await page.goto("/dormitories");
+    await page.waitForLoadState("domcontentloaded", { timeout: 15000 });
     const loadTime = Date.now() - startTime;
-    
+
     expect(loadTime).toBeLessThan(15000);
   });
 });

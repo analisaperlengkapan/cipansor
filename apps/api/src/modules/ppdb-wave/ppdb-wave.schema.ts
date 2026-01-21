@@ -4,12 +4,7 @@ import { z } from 'zod';
 // WAVE STATUS ENUM (matching Prisma schema)
 // =====================================
 
-export const WaveStatusEnum = z.enum([
-  'UPCOMING',
-  'OPEN',
-  'CLOSED',
-  'FULL',
-]);
+export const WaveStatusEnum = z.enum(['UPCOMING', 'OPEN', 'CLOSED', 'FULL']);
 
 // =====================================
 // ADMISSION WAVE SCHEMAS

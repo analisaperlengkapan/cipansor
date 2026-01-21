@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import { use, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft, Building2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { use, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft, Building2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -17,31 +23,38 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from 'sonner';
-import { useDormitory, useUpdateDormitory, DORMITORY_TYPES } from '@/hooks/use-dormitory';
-import { useUnits } from '@/hooks/use-units';
-import { useTeachers } from '@/hooks/use-teachers';
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import {
+  useDormitory,
+  useUpdateDormitory,
+  DORMITORY_TYPES,
+} from "@/hooks/use-dormitory";
+import { useUnits } from "@/hooks/use-units";
+import { useTeachers } from "@/hooks/use-teachers";
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Nama asrama wajib diisi'),
-  code: z.string().min(1, 'Kode asrama wajib diisi').max(10, 'Kode maksimal 10 karakter'),
-  type: z.enum(['MALE', 'FEMALE'], {
-    required_error: 'Tipe asrama wajib dipilih',
+  name: z.string().min(1, "Nama asrama wajib diisi"),
+  code: z
+    .string()
+    .min(1, "Kode asrama wajib diisi")
+    .max(10, "Kode maksimal 10 karakter"),
+  type: z.enum(["MALE", "FEMALE"], {
+    required_error: "Tipe asrama wajib dipilih",
   }),
-  capacity: z.coerce.number().min(1, 'Kapasitas minimal 1'),
-  unitId: z.string().min(1, 'Unit wajib dipilih'),
+  capacity: z.coerce.number().min(1, "Kapasitas minimal 1"),
+  unitId: z.string().min(1, "Unit wajib dipilih"),
   supervisorId: z.string().optional(),
   description: z.string().optional(),
   facilities: z.string().optional(),
@@ -68,14 +81,14 @@ export default function EditDormitoryPage({
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      code: '',
-      type: 'MALE',
+      name: "",
+      code: "",
+      type: "MALE",
       capacity: 50,
-      unitId: '',
-      supervisorId: '',
-      description: '',
-      facilities: '',
+      unitId: "",
+      supervisorId: "",
+      description: "",
+      facilities: "",
       isActive: true,
     },
   });
@@ -88,9 +101,9 @@ export default function EditDormitoryPage({
         type: dormitory.type,
         capacity: dormitory.capacity,
         unitId: dormitory.unitId,
-        supervisorId: dormitory.supervisorId || '',
-        description: dormitory.description || '',
-        facilities: dormitory.facilities || '',
+        supervisorId: dormitory.supervisorId || "",
+        description: dormitory.description || "",
+        facilities: dormitory.facilities || "",
         isActive: dormitory.isActive,
       });
     }
@@ -107,10 +120,10 @@ export default function EditDormitoryPage({
           facilities: data.facilities || undefined,
         },
       });
-      toast.success('Asrama berhasil diperbarui');
+      toast.success("Asrama berhasil diperbarui");
       router.push(`/dormitories/${id}`);
     } catch {
-      toast.error('Gagal memperbarui asrama');
+      toast.error("Gagal memperbarui asrama");
     }
   };
 
@@ -163,7 +176,9 @@ export default function EditDormitoryPage({
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Edit Asrama</h1>
-          <p className="text-muted-foreground">Perbarui data asrama {dormitory.name}</p>
+          <p className="text-muted-foreground">
+            Perbarui data asrama {dormitory.name}
+          </p>
         </div>
       </div>
 
@@ -199,7 +214,9 @@ export default function EditDormitoryPage({
                       <FormControl>
                         <Input placeholder="ASR-001" {...field} />
                       </FormControl>
-                      <FormDescription>Kode unik untuk identifikasi asrama</FormDescription>
+                      <FormDescription>
+                        Kode unik untuk identifikasi asrama
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -211,7 +228,10 @@ export default function EditDormitoryPage({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipe Asrama</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih tipe" />
@@ -239,7 +259,9 @@ export default function EditDormitoryPage({
                       <FormControl>
                         <Input type="number" min={1} {...field} />
                       </FormControl>
-                      <FormDescription>Jumlah maksimal penghuni</FormDescription>
+                      <FormDescription>
+                        Jumlah maksimal penghuni
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -294,7 +316,9 @@ export default function EditDormitoryPage({
                           <SelectItem value="">Tidak ada</SelectItem>
                           {teachers.map((teacher: any) => (
                             <SelectItem key={teacher.id} value={teacher.id}>
-                              {teacher.user?.name || teacher.nip || 'Unknown Teacher'}
+                              {teacher.user?.name ||
+                                teacher.nip ||
+                                "Unknown Teacher"}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -349,11 +373,15 @@ export default function EditDormitoryPage({
                     <div className="space-y-0.5">
                       <FormLabel className="text-base">Status Aktif</FormLabel>
                       <FormDescription>
-                        Asrama yang tidak aktif tidak dapat menerima penghuni baru
+                        Asrama yang tidak aktif tidak dapat menerima penghuni
+                        baru
                       </FormDescription>
                     </div>
                     <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
                     </FormControl>
                   </FormItem>
                 )}
@@ -364,7 +392,9 @@ export default function EditDormitoryPage({
                   <Link href={`/dormitories/${id}`}>Batal</Link>
                 </Button>
                 <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
+                  {updateMutation.isPending
+                    ? "Menyimpan..."
+                    : "Simpan Perubahan"}
                 </Button>
               </div>
             </form>

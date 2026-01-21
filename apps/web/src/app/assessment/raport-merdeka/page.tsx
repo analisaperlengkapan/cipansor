@@ -1,11 +1,17 @@
-'use client';
+"use client";
 
-import { useState, useRef } from 'react';
-import { MainLayout } from '@/components/layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState, useRef } from "react";
+import { MainLayout } from "@/components/layout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -13,14 +19,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   BookOpen,
   Users,
@@ -37,13 +43,13 @@ import {
   Palette,
   HandHelping,
   FileText,
-} from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api';
-import { useCurrentUnit } from '@/hooks';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { useCurrentUnit } from "@/hooks";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { toast } from "sonner";
 
 // P5 Dimension Icons
 const P5_ICONS: Record<string, React.ReactNode> = {
@@ -57,18 +63,18 @@ const P5_ICONS: Record<string, React.ReactNode> = {
 
 // Capaian level colors
 const CAPAIAN_COLORS: Record<string, string> = {
-  'SANGAT BAIK': 'bg-green-100 text-green-800 border-green-200',
-  BAIK: 'bg-blue-100 text-blue-800 border-blue-200',
-  CUKUP: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  'PERLU BIMBINGAN': 'bg-red-100 text-red-800 border-red-200',
+  "SANGAT BAIK": "bg-green-100 text-green-800 border-green-200",
+  BAIK: "bg-blue-100 text-blue-800 border-blue-200",
+  CUKUP: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  "PERLU BIMBINGAN": "bg-red-100 text-red-800 border-red-200",
 };
 
 // P5 Achievement levels
 const P5_LEVELS = [
-  { code: 'MB', name: 'Mulai Berkembang', color: 'bg-yellow-500' },
-  { code: 'SB', name: 'Sedang Berkembang', color: 'bg-blue-500' },
-  { code: 'BSH', name: 'Berkembang Sesuai Harapan', color: 'bg-green-500' },
-  { code: 'SBH', name: 'Sangat Berkembang', color: 'bg-purple-500' },
+  { code: "MB", name: "Mulai Berkembang", color: "bg-yellow-500" },
+  { code: "SB", name: "Sedang Berkembang", color: "bg-blue-500" },
+  { code: "BSH", name: "Berkembang Sesuai Harapan", color: "bg-green-500" },
+  { code: "SBH", name: "Sangat Berkembang", color: "bg-purple-500" },
 ];
 
 interface P5Dimension {
@@ -80,82 +86,82 @@ interface P5Dimension {
 
 export default function RaportMerdekaPage() {
   const { data: currentUnit } = useCurrentUnit();
-  const [selectedTab, setSelectedTab] = useState('overview');
+  const [selectedTab, setSelectedTab] = useState("overview");
   const reportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
 
   // Fetch P5 dimensions
   const { data: p5Dimensions, isLoading: p5Loading } = useQuery<P5Dimension[]>({
-    queryKey: ['p5-dimensions'],
+    queryKey: ["p5-dimensions"],
     queryFn: async () => {
-      const res = await api.get('/assessment/raport-merdeka/p5-dimensions');
+      const res = await api.get("/assessment/raport-merdeka/p5-dimensions");
       return res.data.data;
     },
   });
 
   // Fetch CP mappings for reference
   const { data: cpMtk } = useQuery({
-    queryKey: ['cp-mapping', 'MTK'],
+    queryKey: ["cp-mapping", "MTK"],
     queryFn: async () => {
-      const res = await api.get('/assessment/raport-merdeka/cp/MTK/7-9');
+      const res = await api.get("/assessment/raport-merdeka/cp/MTK/7-9");
       return res.data.data;
     },
   });
 
   const { data: cpThf } = useQuery({
-    queryKey: ['cp-mapping', 'THF'],
+    queryKey: ["cp-mapping", "THF"],
     queryFn: async () => {
-      const res = await api.get('/assessment/raport-merdeka/cp/THF/7-9');
+      const res = await api.get("/assessment/raport-merdeka/cp/THF/7-9");
       return res.data.data;
     },
   });
 
   const handleExportPDF = async () => {
     if (!reportRef.current) return;
-    
+
     try {
       setIsExporting(true);
       const canvas = await html2canvas(reportRef.current, {
         scale: 2, // Higher quality
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: "#ffffff",
       });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      
+
       // Calculate scaling to fit A4 width
       const imgProps = pdf.getImageProperties(imgData);
       const pdfHeightCalculated = (imgProps.height * pdfWidth) / imgProps.width;
-      
+
       // If height > A4, we might need multiple pages, but for now let's just fit width or auto-page (advanced)
       // For this MVP preview which is A4-sized visually, we just place it.
       // Since our preview might be multiple pages (scroll), html2canvas captures essentialy one long image.
       // A better approach for multi-page is capturing each "page" div separately, but let's stick to single long capture for now or simplified.
-      // Actually, if we want "Premium" multi-page PDF, we should capture separate page elements. 
+      // Actually, if we want "Premium" multi-page PDF, we should capture separate page elements.
       // Let's assume the reportRef wraps the container of pages.
-      
+
       // Simple strategy: One long page or just fit (it will shrink if too long).
       // Let's go with adding image.
-      
+
       if (pdfHeightCalculated > pdfHeight) {
-          // crude pagination or just long page? PDF doesn't support infinite height easily without custom format.
-          // Let's force it to fit for now or just save as is.
-          // Better: Create new page per A4 section. 
-          // Implementation detail: User sees ONE preview. We can export that.
-           pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeightCalculated);
+        // crude pagination or just long page? PDF doesn't support infinite height easily without custom format.
+        // Let's force it to fit for now or just save as is.
+        // Better: Create new page per A4 section.
+        // Implementation detail: User sees ONE preview. We can export that.
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeightCalculated);
       } else {
-           pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeightCalculated);
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeightCalculated);
       }
 
       pdf.save(`Raport_Merdeka_Ahmad_Fulan.pdf`);
-      toast.success('Raport berhasil diexport!');
+      toast.success("Raport berhasil diexport!");
     } catch (error) {
       console.error(error);
-      toast.error('Gagal export PDF');
+      toast.error("Gagal export PDF");
     } finally {
       setIsExporting(false);
     }
@@ -178,7 +184,9 @@ export default function RaportMerdekaPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Raport Kurikulum Merdeka</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Raport Kurikulum Merdeka
+            </h1>
             <p className="text-muted-foreground">
               Penilaian berbasis Capaian Pembelajaran (CP) dan Projek P5
             </p>
@@ -195,7 +203,11 @@ export default function RaportMerdekaPage() {
           </div>
         </div>
 
-        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
+        <Tabs
+          value={selectedTab}
+          onValueChange={setSelectedTab}
+          className="space-y-4"
+        >
           <TabsList className="grid grid-cols-4 w-full max-w-2xl">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="p5">Projek P5</TabsTrigger>
@@ -209,7 +221,9 @@ export default function RaportMerdekaPage() {
             <div className="grid gap-4 md:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Format Raport</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Format Raport
+                  </CardTitle>
                   <BookOpen className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -222,7 +236,9 @@ export default function RaportMerdekaPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Dimensi P5</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Dimensi P5
+                  </CardTitle>
                   <Sparkles className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -235,7 +251,9 @@ export default function RaportMerdekaPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Fase Pembelajaran</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Fase Pembelajaran
+                  </CardTitle>
                   <Target className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -252,7 +270,8 @@ export default function RaportMerdekaPage() {
               <CardHeader>
                 <CardTitle>Konversi Nilai ke Capaian</CardTitle>
                 <CardDescription>
-                  Standar penilaian Kurikulum Merdeka berdasarkan level capaian kompetensi
+                  Standar penilaian Kurikulum Merdeka berdasarkan level capaian
+                  kompetensi
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -268,27 +287,46 @@ export default function RaportMerdekaPage() {
                   <TableBody>
                     <TableRow>
                       <TableCell className="font-medium">91 - 100</TableCell>
-                      <TableCell><Badge className="bg-green-500">A</Badge></TableCell>
+                      <TableCell>
+                        <Badge className="bg-green-500">A</Badge>
+                      </TableCell>
                       <TableCell>Sangat Baik</TableCell>
-                      <TableCell className="text-sm">Sangat mampu mendemonstrasikan pemahaman dan keterampilan di atas standar</TableCell>
+                      <TableCell className="text-sm">
+                        Sangat mampu mendemonstrasikan pemahaman dan
+                        keterampilan di atas standar
+                      </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-medium">76 - 90</TableCell>
-                      <TableCell><Badge className="bg-blue-500">B</Badge></TableCell>
+                      <TableCell>
+                        <Badge className="bg-blue-500">B</Badge>
+                      </TableCell>
                       <TableCell>Baik</TableCell>
-                      <TableCell className="text-sm">Mampu mendemonstrasikan pemahaman dan keterampilan sesuai standar</TableCell>
+                      <TableCell className="text-sm">
+                        Mampu mendemonstrasikan pemahaman dan keterampilan
+                        sesuai standar
+                      </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-medium">61 - 75</TableCell>
-                      <TableCell><Badge className="bg-yellow-500">C</Badge></TableCell>
+                      <TableCell>
+                        <Badge className="bg-yellow-500">C</Badge>
+                      </TableCell>
                       <TableCell>Cukup</TableCell>
-                      <TableCell className="text-sm">Cukup mampu mendemonstrasikan pemahaman sesuai standar minimal</TableCell>
+                      <TableCell className="text-sm">
+                        Cukup mampu mendemonstrasikan pemahaman sesuai standar
+                        minimal
+                      </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-medium">0 - 60</TableCell>
-                      <TableCell><Badge className="bg-red-500">D</Badge></TableCell>
+                      <TableCell>
+                        <Badge className="bg-red-500">D</Badge>
+                      </TableCell>
                       <TableCell>Perlu Bimbingan</TableCell>
-                      <TableCell className="text-sm">Perlu bimbingan lebih lanjut untuk mencapai kompetensi</TableCell>
+                      <TableCell className="text-sm">
+                        Perlu bimbingan lebih lanjut untuk mencapai kompetensi
+                      </TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -315,43 +353,57 @@ export default function RaportMerdekaPage() {
                   </TableHeader>
                   <TableBody>
                     <TableRow>
-                      <TableCell><Badge variant="outline">Fondasi</Badge></TableCell>
+                      <TableCell>
+                        <Badge variant="outline">Fondasi</Badge>
+                      </TableCell>
                       <TableCell>PAUD</TableCell>
                       <TableCell>TK A - TK B</TableCell>
                       <TableCell>5 - 6</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell><Badge className="bg-blue-500">A</Badge></TableCell>
+                      <TableCell>
+                        <Badge className="bg-blue-500">A</Badge>
+                      </TableCell>
                       <TableCell>SD</TableCell>
                       <TableCell>1 - 2</TableCell>
                       <TableCell>6 - 8</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell><Badge className="bg-green-500">B</Badge></TableCell>
+                      <TableCell>
+                        <Badge className="bg-green-500">B</Badge>
+                      </TableCell>
                       <TableCell>SD</TableCell>
                       <TableCell>3 - 4</TableCell>
                       <TableCell>8 - 10</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell><Badge className="bg-yellow-500">C</Badge></TableCell>
+                      <TableCell>
+                        <Badge className="bg-yellow-500">C</Badge>
+                      </TableCell>
                       <TableCell>SD</TableCell>
                       <TableCell>5 - 6</TableCell>
                       <TableCell>10 - 12</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell><Badge className="bg-orange-500">D</Badge></TableCell>
+                      <TableCell>
+                        <Badge className="bg-orange-500">D</Badge>
+                      </TableCell>
                       <TableCell>SMP</TableCell>
                       <TableCell>7 - 9</TableCell>
                       <TableCell>12 - 15</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell><Badge className="bg-purple-500">E</Badge></TableCell>
+                      <TableCell>
+                        <Badge className="bg-purple-500">E</Badge>
+                      </TableCell>
                       <TableCell>SMA/SMK</TableCell>
                       <TableCell>10</TableCell>
                       <TableCell>15 - 16</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell><Badge className="bg-pink-500">F</Badge></TableCell>
+                      <TableCell>
+                        <Badge className="bg-pink-500">F</Badge>
+                      </TableCell>
                       <TableCell>SMA/SMK</TableCell>
                       <TableCell>11 - 12</TableCell>
                       <TableCell>16 - 18</TableCell>
@@ -377,18 +429,27 @@ export default function RaportMerdekaPage() {
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {p5Dimensions?.map((dim) => (
-                    <Card key={dim.code} className="hover:shadow-md transition-shadow">
+                    <Card
+                      key={dim.code}
+                      className="hover:shadow-md transition-shadow"
+                    >
                       <CardHeader>
                         <div className="flex items-center gap-3">
                           {P5_ICONS[dim.code]}
                           <div>
-                            <CardTitle className="text-base">{dim.code}</CardTitle>
-                            <CardDescription className="text-xs">{dim.name}</CardDescription>
+                            <CardTitle className="text-base">
+                              {dim.code}
+                            </CardTitle>
+                            <CardDescription className="text-xs">
+                              {dim.name}
+                            </CardDescription>
                           </div>
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-sm text-muted-foreground mb-3">{dim.description}</p>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          {dim.description}
+                        </p>
                         <div className="space-y-1">
                           <p className="text-xs font-medium">Elemen:</p>
                           <ul className="text-xs text-muted-foreground space-y-1">
@@ -423,7 +484,10 @@ export default function RaportMerdekaPage() {
               <CardContent>
                 <div className="grid grid-cols-4 gap-4">
                   {P5_LEVELS.map((level) => (
-                    <div key={level.code} className="text-center p-4 border rounded-lg">
+                    <div
+                      key={level.code}
+                      className="text-center p-4 border rounded-lg"
+                    >
                       <Badge className={level.color}>{level.code}</Badge>
                       <p className="font-medium mt-2">{level.name}</p>
                     </div>
@@ -443,21 +507,47 @@ export default function RaportMerdekaPage() {
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-2">
                   {[
-                    { tema: 'Gaya Hidup Berkelanjutan', desc: 'Eco-friendly living dan sustainability' },
-                    { tema: 'Kearifan Lokal', desc: 'Budaya dan tradisi masyarakat setempat' },
-                    { tema: 'Bhinneka Tunggal Ika', desc: 'Keberagaman dan toleransi' },
-                    { tema: 'Bangunlah Jiwa dan Raganya', desc: 'Kesehatan fisik dan mental' },
-                    { tema: 'Suara Demokrasi', desc: 'Partisipasi warga dan demokrasi' },
-                    { tema: 'Berekayasa dan Berteknologi', desc: 'Inovasi dan teknologi untuk kebaikan' },
-                    { tema: 'Kewirausahaan', desc: 'Entrepreneurship dan kreativitas ekonomi' },
+                    {
+                      tema: "Gaya Hidup Berkelanjutan",
+                      desc: "Eco-friendly living dan sustainability",
+                    },
+                    {
+                      tema: "Kearifan Lokal",
+                      desc: "Budaya dan tradisi masyarakat setempat",
+                    },
+                    {
+                      tema: "Bhinneka Tunggal Ika",
+                      desc: "Keberagaman dan toleransi",
+                    },
+                    {
+                      tema: "Bangunlah Jiwa dan Raganya",
+                      desc: "Kesehatan fisik dan mental",
+                    },
+                    {
+                      tema: "Suara Demokrasi",
+                      desc: "Partisipasi warga dan demokrasi",
+                    },
+                    {
+                      tema: "Berekayasa dan Berteknologi",
+                      desc: "Inovasi dan teknologi untuk kebaikan",
+                    },
+                    {
+                      tema: "Kewirausahaan",
+                      desc: "Entrepreneurship dan kreativitas ekonomi",
+                    },
                   ].map((item, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3 border rounded-lg">
+                    <div
+                      key={i}
+                      className="flex items-start gap-3 p-3 border rounded-lg"
+                    >
                       <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-bold text-primary">
                         {i + 1}
                       </div>
                       <div>
                         <p className="font-medium">{item.tema}</p>
-                        <p className="text-sm text-muted-foreground">{item.desc}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {item.desc}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -470,9 +560,12 @@ export default function RaportMerdekaPage() {
           <TabsContent value="cp-tp" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Capaian Pembelajaran (CP) & Tujuan Pembelajaran (TP)</CardTitle>
+                <CardTitle>
+                  Capaian Pembelajaran (CP) & Tujuan Pembelajaran (TP)
+                </CardTitle>
                 <CardDescription>
-                  CP adalah kompetensi yang harus dicapai, TP adalah langkah menuju CP
+                  CP adalah kompetensi yang harus dicapai, TP adalah langkah
+                  menuju CP
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -484,7 +577,9 @@ export default function RaportMerdekaPage() {
                       <span className="font-medium">Matematika</span>
                       <Badge variant="outline">Fase {cpMtk.fase}</Badge>
                     </div>
-                    <p className="text-sm font-medium mb-2">Capaian Pembelajaran:</p>
+                    <p className="text-sm font-medium mb-2">
+                      Capaian Pembelajaran:
+                    </p>
                     <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
                       {cpMtk.cp?.map((item: string, i: number) => (
                         <li key={i}>{item}</li>
@@ -501,7 +596,9 @@ export default function RaportMerdekaPage() {
                       <span className="font-medium">Tahfidz Al-Qur'an</span>
                       <Badge variant="outline">Fase {cpThf.fase}</Badge>
                     </div>
-                    <p className="text-sm font-medium mb-2">Capaian Pembelajaran:</p>
+                    <p className="text-sm font-medium mb-2">
+                      Capaian Pembelajaran:
+                    </p>
                     <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
                       {cpThf.cp?.map((item: string, i: number) => (
                         <li key={i}>{item}</li>
@@ -512,7 +609,9 @@ export default function RaportMerdekaPage() {
 
                 {/* Select Subject for more CP */}
                 <div className="border rounded-lg p-4 bg-muted/50">
-                  <p className="text-sm font-medium mb-3">Lihat CP mata pelajaran lain:</p>
+                  <p className="text-sm font-medium mb-3">
+                    Lihat CP mata pelajaran lain:
+                  </p>
                   <div className="flex gap-2">
                     <Select>
                       <SelectTrigger className="w-48">
@@ -555,7 +654,8 @@ export default function RaportMerdekaPage() {
                   Generate Raport Merdeka
                 </CardTitle>
                 <CardDescription>
-                  Pilih kelas dan semester untuk generate raport format Kurikulum Merdeka
+                  Pilih kelas dan semester untuk generate raport format
+                  Kurikulum Merdeka
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -623,306 +723,470 @@ export default function RaportMerdekaPage() {
 
             {/* Live Preview Section */}
             <div className="border rounded-xl bg-muted/30 p-8 flex flex-col items-center gap-8 overflow-auto max-h-[800px]">
-               {/* Container for PDF Capture */}
-               <div ref={reportRef} className="space-y-8 bg-muted/30 p-4">
-               
-               {/* PAGE 1: AKADEMIK */}
-               <div className="w-[210mm] min-h-[297mm] bg-white shadow-lg rounded-sm p-[15mm] text-black text-sm space-y-4 relative print:shadow-none print:w-full print:border-none mx-auto">
+              {/* Container for PDF Capture */}
+              <div ref={reportRef} className="space-y-8 bg-muted/30 p-4">
+                {/* PAGE 1: AKADEMIK */}
+                <div className="w-[210mm] min-h-[297mm] bg-white shadow-lg rounded-sm p-[15mm] text-black text-sm space-y-4 relative print:shadow-none print:w-full print:border-none mx-auto">
                   {/* Watermark */}
                   <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
-                     <div className="text-[100px] font-bold -rotate-45">PREVIEW</div>
+                    <div className="text-[100px] font-bold -rotate-45">
+                      PREVIEW
+                    </div>
                   </div>
 
                   {/* Header */}
                   <div className="text-center border-b-2 border-double border-black pb-4 mb-6">
-                     <h2 className="font-bold text-lg uppercase tracking-wider">Laporan Hasil Belajar</h2>
-                     <h3 className="font-bold text-base uppercase">Sekolah Menengah Pertama (SMP) Cipansor</h3>
-                     <p className="text-xs mt-1">Jl. Pendidikan No. 123, Kabupaten Bogor, Jawa Barat</p>
+                    <h2 className="font-bold text-lg uppercase tracking-wider">
+                      Laporan Hasil Belajar
+                    </h2>
+                    <h3 className="font-bold text-base uppercase">
+                      Sekolah Menengah Pertama (SMP) Cipansor
+                    </h3>
+                    <p className="text-xs mt-1">
+                      Jl. Pendidikan No. 123, Kabupaten Bogor, Jawa Barat
+                    </p>
                   </div>
 
                   {/* Student Info */}
                   <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-xs mb-6">
-                     <div className="grid grid-cols-[100px_1fr]">
-                        <div>Nama Peserta Didik</div>
-                        <div className="font-semibold">: Ahmad Fulan</div>
-                        <div>NIS / NISN</div>
-                        <div>: 12345 / 0012345678</div>
-                        <div>Sekolah</div>
-                        <div>: SMP Cipansor</div>
-                     </div>
-                     <div className="grid grid-cols-[100px_1fr]">
-                        <div>Kelas</div>
-                        <div>: VII A</div>
-                        <div>Fase</div>
-                        <div>: D</div>
-                        <div>Semester</div>
-                        <div>: 1 (Ganjil)</div>
-                        <div>Tahun Pelajaran</div>
-                        <div>: 2024/2025</div>
-                     </div>
+                    <div className="grid grid-cols-[100px_1fr]">
+                      <div>Nama Peserta Didik</div>
+                      <div className="font-semibold">: Ahmad Fulan</div>
+                      <div>NIS / NISN</div>
+                      <div>: 12345 / 0012345678</div>
+                      <div>Sekolah</div>
+                      <div>: SMP Cipansor</div>
+                    </div>
+                    <div className="grid grid-cols-[100px_1fr]">
+                      <div>Kelas</div>
+                      <div>: VII A</div>
+                      <div>Fase</div>
+                      <div>: D</div>
+                      <div>Semester</div>
+                      <div>: 1 (Ganjil)</div>
+                      <div>Tahun Pelajaran</div>
+                      <div>: 2024/2025</div>
+                    </div>
                   </div>
 
                   {/* Content - Academic */}
                   <div className="space-y-4">
-                     <h4 className="font-bold text-sm">A. Nilai Akademik</h4>
-                     <table className="w-full border-collapse border border-black text-xs">
-                        <thead>
-                           <tr className="bg-gray-100">
-                              <th className="border border-black p-2 w-8">No</th>
-                              <th className="border border-black p-2 w-[25%] font-bold text-left">Mata Pelajaran</th>
-                              <th className="border border-black p-2 w-12 font-bold">Nilai Akhir</th>
-                              <th className="border border-black p-2 font-bold text-left">Capaian Kompetensi</th>
-                           </tr>
-                        </thead>
-                        <tbody>
-                           <tr className="align-top">
-                              <td className="border border-black p-2 text-center">1</td>
-                              <td className="border border-black p-2 font-medium">Pendidikan Agama Islam</td>
-                              <td className="border border-black p-2 text-center font-bold">88</td>
-                              <td className="border border-black p-2">
-                                 <div className="space-y-1">
-                                    <p><span className="font-semibold">Menunjukkan penguasaan yang sangat baik</span> dalam memahami rukun iman dan rukun islam.</p>
-                                    <p className="text-gray-600 italic">Perlu bimbingan dalam mempraktikkan bacaan tajwid secara konsisten.</p>
-                                 </div>
-                              </td>
-                           </tr>
-                           <tr className="align-top">
-                              <td className="border border-black p-2 text-center">2</td>
-                              <td className="border border-black p-2 font-medium">Bahasa Indonesia</td>
-                              <td className="border border-black p-2 text-center font-bold">92</td>
-                              <td className="border border-black p-2">
-                                 <div className="space-y-1">
-                                    <p><span className="font-semibold">Menunjukkan penguasaan yang sangat baik</span> dalam menulis teks deskripsi dan narasi.</p>
-                                 </div>
-                              </td>
-                           </tr>
-                           <tr className="align-top">
-                              <td className="border border-black p-2 text-center">3</td>
-                              <td className="border border-black p-2 font-medium">Matematika</td>
-                              <td className="border border-black p-2 text-center font-bold">78</td>
-                              <td className="border border-black p-2">
-                                 <div className="space-y-1">
-                                    <p><span className="font-semibold">Menunjukkan penguasaan yang baik</span> dalam operasi bilangan bulat.</p>
-                                    <p className="text-gray-600 italic">Perlu bimbingan dalam menyelesaikan persamaan linear satu variabel.</p>
-                                 </div>
-                              </td>
-                           </tr>
-                        </tbody>
-                     </table>
+                    <h4 className="font-bold text-sm">A. Nilai Akademik</h4>
+                    <table className="w-full border-collapse border border-black text-xs">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border border-black p-2 w-8">No</th>
+                          <th className="border border-black p-2 w-[25%] font-bold text-left">
+                            Mata Pelajaran
+                          </th>
+                          <th className="border border-black p-2 w-12 font-bold">
+                            Nilai Akhir
+                          </th>
+                          <th className="border border-black p-2 font-bold text-left">
+                            Capaian Kompetensi
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="align-top">
+                          <td className="border border-black p-2 text-center">
+                            1
+                          </td>
+                          <td className="border border-black p-2 font-medium">
+                            Pendidikan Agama Islam
+                          </td>
+                          <td className="border border-black p-2 text-center font-bold">
+                            88
+                          </td>
+                          <td className="border border-black p-2">
+                            <div className="space-y-1">
+                              <p>
+                                <span className="font-semibold">
+                                  Menunjukkan penguasaan yang sangat baik
+                                </span>{" "}
+                                dalam memahami rukun iman dan rukun islam.
+                              </p>
+                              <p className="text-gray-600 italic">
+                                Perlu bimbingan dalam mempraktikkan bacaan
+                                tajwid secara konsisten.
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr className="align-top">
+                          <td className="border border-black p-2 text-center">
+                            2
+                          </td>
+                          <td className="border border-black p-2 font-medium">
+                            Bahasa Indonesia
+                          </td>
+                          <td className="border border-black p-2 text-center font-bold">
+                            92
+                          </td>
+                          <td className="border border-black p-2">
+                            <div className="space-y-1">
+                              <p>
+                                <span className="font-semibold">
+                                  Menunjukkan penguasaan yang sangat baik
+                                </span>{" "}
+                                dalam menulis teks deskripsi dan narasi.
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr className="align-top">
+                          <td className="border border-black p-2 text-center">
+                            3
+                          </td>
+                          <td className="border border-black p-2 font-medium">
+                            Matematika
+                          </td>
+                          <td className="border border-black p-2 text-center font-bold">
+                            78
+                          </td>
+                          <td className="border border-black p-2">
+                            <div className="space-y-1">
+                              <p>
+                                <span className="font-semibold">
+                                  Menunjukkan penguasaan yang baik
+                                </span>{" "}
+                                dalam operasi bilangan bulat.
+                              </p>
+                              <p className="text-gray-600 italic">
+                                Perlu bimbingan dalam menyelesaikan persamaan
+                                linear satu variabel.
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
 
                   {/* Content - Extracurricular */}
                   <div className="space-y-4 pt-4">
-                     <h4 className="font-bold text-sm">B. Ekstrakurikuler</h4>
-                     <table className="w-full border-collapse border border-black text-xs">
-                        <thead>
-                           <tr className="bg-gray-100">
-                              <th className="border border-black p-2 w-8">No</th>
-                              <th className="border border-black p-2 w-[30%] font-bold text-left">Kegiatan Ekstrakurikuler</th>
-                              <th className="border border-black p-2 w-16 font-bold">Predikat</th>
-                              <th className="border border-black p-2 font-bold text-left">Keterangan</th>
-                           </tr>
-                        </thead>
-                        <tbody>
-                           <tr>
-                              <td className="border border-black p-2 text-center">1</td>
-                              <td className="border border-black p-2">Pramuka</td>
-                              <td className="border border-black p-2 text-center">Baik</td>
-                              <td className="border border-black p-2">Mampu mengikuti kegiatan kepramukaan dengan disiplin.</td>
-                           </tr>
-                           <tr>
-                              <td className="border border-black p-2 text-center">2</td>
-                              <td className="border border-black p-2">Futsal</td>
-                              <td className="border border-black p-2 text-center">Sangat Baik</td>
-                              <td className="border border-black p-2">Menunjukkan bakat kepemimpinan dalam tim.</td>
-                           </tr>
-                        </tbody>
-                     </table>
+                    <h4 className="font-bold text-sm">B. Ekstrakurikuler</h4>
+                    <table className="w-full border-collapse border border-black text-xs">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border border-black p-2 w-8">No</th>
+                          <th className="border border-black p-2 w-[30%] font-bold text-left">
+                            Kegiatan Ekstrakurikuler
+                          </th>
+                          <th className="border border-black p-2 w-16 font-bold">
+                            Predikat
+                          </th>
+                          <th className="border border-black p-2 font-bold text-left">
+                            Keterangan
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="border border-black p-2 text-center">
+                            1
+                          </td>
+                          <td className="border border-black p-2">Pramuka</td>
+                          <td className="border border-black p-2 text-center">
+                            Baik
+                          </td>
+                          <td className="border border-black p-2">
+                            Mampu mengikuti kegiatan kepramukaan dengan
+                            disiplin.
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="border border-black p-2 text-center">
+                            2
+                          </td>
+                          <td className="border border-black p-2">Futsal</td>
+                          <td className="border border-black p-2 text-center">
+                            Sangat Baik
+                          </td>
+                          <td className="border border-black p-2">
+                            Menunjukkan bakat kepemimpinan dalam tim.
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
-                  
+
                   {/* Attendance */}
                   <div className="space-y-4 pt-4">
-                     <h4 className="font-bold text-sm">C. Ketidakhadiran</h4>
-                     <div className="border border-black w-1/2 text-xs">
-                        <div className="grid grid-cols-[1fr_60px] border-b border-black last:border-0">
-                           <div className="p-2 border-r border-black">Sakit</div>
-                           <div className="p-2 text-center">1 hari</div>
+                    <h4 className="font-bold text-sm">C. Ketidakhadiran</h4>
+                    <div className="border border-black w-1/2 text-xs">
+                      <div className="grid grid-cols-[1fr_60px] border-b border-black last:border-0">
+                        <div className="p-2 border-r border-black">Sakit</div>
+                        <div className="p-2 text-center">1 hari</div>
+                      </div>
+                      <div className="grid grid-cols-[1fr_60px] border-b border-black last:border-0">
+                        <div className="p-2 border-r border-black">Izin</div>
+                        <div className="p-2 text-center">0 hari</div>
+                      </div>
+                      <div className="grid grid-cols-[1fr_60px] border-b border-black last:border-0">
+                        <div className="p-2 border-r border-black">
+                          Tanpa Keterangan
                         </div>
-                        <div className="grid grid-cols-[1fr_60px] border-b border-black last:border-0">
-                           <div className="p-2 border-r border-black">Izin</div>
-                           <div className="p-2 text-center">0 hari</div>
-                        </div>
-                         <div className="grid grid-cols-[1fr_60px] border-b border-black last:border-0">
-                           <div className="p-2 border-r border-black">Tanpa Keterangan</div>
-                           <div className="p-2 text-center">0 hari</div>
-                        </div>
-                     </div>
+                        <div className="p-2 text-center">0 hari</div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Signature */}
                   <div className="flex justify-between items-end pt-12 text-xs px-8">
-                      <div className="text-center">
-                          <p>Mengetahui,</p>
-                          <p>Orang Tua/Wali</p>
-                          <br /><br /><br />
-                          <p className="border-b border-black min-w-[150px] inline-block"></p>
-                      </div>
-                      <div className="text-center">
-                          <p>Bogor, 20 Desember 2024</p>
-                          <p>Wali Kelas</p>
-                          <br /><br /><br />
-                          <p className="font-bold underline">Nama Wali Kelas, S.Pd</p>
-                          <p>NIP. 19800101 200501 1 001</p>
-                      </div>
-                   </div>
+                    <div className="text-center">
+                      <p>Mengetahui,</p>
+                      <p>Orang Tua/Wali</p>
+                      <br />
+                      <br />
+                      <br />
+                      <p className="border-b border-black min-w-[150px] inline-block"></p>
+                    </div>
+                    <div className="text-center">
+                      <p>Bogor, 20 Desember 2024</p>
+                      <p>Wali Kelas</p>
+                      <br />
+                      <br />
+                      <br />
+                      <p className="font-bold underline">
+                        Nama Wali Kelas, S.Pd
+                      </p>
+                      <p>NIP. 19800101 200501 1 001</p>
+                    </div>
+                  </div>
                 </div>
 
-               {/* PAGE 2: PESANTREN (TAHFIDZ & BEHAVIOR) */}
-               <div className="w-[210mm] min-h-[297mm] bg-white shadow-lg rounded-sm p-[15mm] text-black text-sm space-y-6 relative print:shadow-none print:w-full print:border-none mx-auto">
-                   {/* Header Page 2 */}
+                {/* PAGE 2: PESANTREN (TAHFIDZ & BEHAVIOR) */}
+                <div className="w-[210mm] min-h-[297mm] bg-white shadow-lg rounded-sm p-[15mm] text-black text-sm space-y-6 relative print:shadow-none print:w-full print:border-none mx-auto">
+                  {/* Header Page 2 */}
                   <div className="text-center border-b-2 border-double border-black pb-4 mb-6">
-                     <h2 className="font-bold text-lg uppercase tracking-wider">Laporan Perkembangan Pesantren</h2>
-                     <h3 className="font-bold text-base uppercase">SMP Islam Terpadu Cipansor</h3>
+                    <h2 className="font-bold text-lg uppercase tracking-wider">
+                      Laporan Perkembangan Pesantren
+                    </h2>
+                    <h3 className="font-bold text-base uppercase">
+                      SMP Islam Terpadu Cipansor
+                    </h3>
                   </div>
 
                   {/* Student Info Review */}
                   <div className="border-b pb-2 mb-4">
-                     <p className="font-semibold">Nama: Ahmad Fulan (Kelas VII A)</p>
+                    <p className="font-semibold">
+                      Nama: Ahmad Fulan (Kelas VII A)
+                    </p>
                   </div>
 
                   {/* D. TAHFIDZ AL-QURAN */}
                   <div className="space-y-4">
-                     <div className="flex items-center justify-between bg-green-50 p-2 rounded border border-green-100">
-                        <h4 className="font-bold text-green-900">D. Tahfidz Al-Qur'an</h4>
-                        <Badge className="bg-green-600">Target: Juz 30 & 29</Badge>
-                     </div>
-                     
-                     <div className="grid grid-cols-2 gap-4">
-                        <div className="border rounded p-4 space-y-2">
-                           <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Capaian Hafalan (Ziyadah)</div>
-                           <div className="text-3xl font-bold text-green-700">1.5 Juz</div>
-                           <p className="text-sm">Terakhir: QS. Al-Mulk ayat 1-30</p>
-                        </div>
-                        <div className="border rounded p-4 space-y-2">
-                           <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Predikat Murojaah</div>
-                           <div className="text-3xl font-bold text-blue-700">Mumtaz</div>
-                           <p className="text-sm">Sangat lancar dalam mengulang hafalan lama.</p>
-                        </div>
-                     </div>
+                    <div className="flex items-center justify-between bg-green-50 p-2 rounded border border-green-100">
+                      <h4 className="font-bold text-green-900">
+                        D. Tahfidz Al-Qur'an
+                      </h4>
+                      <Badge className="bg-green-600">
+                        Target: Juz 30 & 29
+                      </Badge>
+                    </div>
 
-                     <table className="w-full border-collapse border border-black text-xs">
-                        <thead>
-                           <tr className="bg-gray-50">
-                              <th className="border border-black p-2 text-left">Aspek Penilaian</th>
-                              <th className="border border-black p-2 w-24 text-center">Predikat</th>
-                              <th className="border border-black p-2 text-left">Deskripsi</th>
-                           </tr>
-                        </thead>
-                        <tbody>
-                           <tr>
-                              <td className="border border-black p-2">Kelancaran (Fashohah)</td>
-                              <td className="border border-black p-2 text-center font-bold">A</td>
-                              <td className="border border-black p-2">Mampu membaca dengan sangat lancar dan fasih.</td>
-                           </tr>
-                           <tr>
-                              <td className="border border-black p-2">Tajwid</td>
-                              <td className="border border-black p-2 text-center font-bold">B</td>
-                              <td className="border border-black p-2">Penerapan hukum bacaan sudah baik, perlu ketelitian mad lazim.</td>
-                           </tr>
-                        </tbody>
-                     </table>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="border rounded p-4 space-y-2">
+                        <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                          Capaian Hafalan (Ziyadah)
+                        </div>
+                        <div className="text-3xl font-bold text-green-700">
+                          1.5 Juz
+                        </div>
+                        <p className="text-sm">
+                          Terakhir: QS. Al-Mulk ayat 1-30
+                        </p>
+                      </div>
+                      <div className="border rounded p-4 space-y-2">
+                        <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                          Predikat Murojaah
+                        </div>
+                        <div className="text-3xl font-bold text-blue-700">
+                          Mumtaz
+                        </div>
+                        <p className="text-sm">
+                          Sangat lancar dalam mengulang hafalan lama.
+                        </p>
+                      </div>
+                    </div>
+
+                    <table className="w-full border-collapse border border-black text-xs">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="border border-black p-2 text-left">
+                            Aspek Penilaian
+                          </th>
+                          <th className="border border-black p-2 w-24 text-center">
+                            Predikat
+                          </th>
+                          <th className="border border-black p-2 text-left">
+                            Deskripsi
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="border border-black p-2">
+                            Kelancaran (Fashohah)
+                          </td>
+                          <td className="border border-black p-2 text-center font-bold">
+                            A
+                          </td>
+                          <td className="border border-black p-2">
+                            Mampu membaca dengan sangat lancar dan fasih.
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="border border-black p-2">Tajwid</td>
+                          <td className="border border-black p-2 text-center font-bold">
+                            B
+                          </td>
+                          <td className="border border-black p-2">
+                            Penerapan hukum bacaan sudah baik, perlu ketelitian
+                            mad lazim.
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
 
                   {/* E. KEPRIBADIAN & AKHLAK */}
                   <div className="space-y-4 pt-4">
-                     <div className="flex items-center justify-between bg-blue-50 p-2 rounded border border-blue-100">
-                        <h4 className="font-bold text-blue-900">E. Kepribadian & Akhlak (Behavior)</h4>
-                        <div className="flex gap-2">
-                           <Badge variant="outline" className="border-green-500 text-green-700 bg-green-50">+150 Poin</Badge>
-                           <Badge variant="outline" className="border-red-500 text-red-700 bg-red-50">-10 Poin</Badge>
-                        </div>
-                     </div>
+                    <div className="flex items-center justify-between bg-blue-50 p-2 rounded border border-blue-100">
+                      <h4 className="font-bold text-blue-900">
+                        E. Kepribadian & Akhlak (Behavior)
+                      </h4>
+                      <div className="flex gap-2">
+                        <Badge
+                          variant="outline"
+                          className="border-green-500 text-green-700 bg-green-50"
+                        >
+                          +150 Poin
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className="border-red-500 text-red-700 bg-red-50"
+                        >
+                          -10 Poin
+                        </Badge>
+                      </div>
+                    </div>
 
-                     <table className="w-full border-collapse border border-black text-xs">
-                        <thead>
-                           <tr className="bg-gray-50">
-                              <th className="border border-black p-2 w-8 text-center">No</th>
-                              <th className="border border-black p-2">Kategori</th>
-                              <th className="border border-black p-2">Catatan Guru / Musyrif</th>
-                           </tr>
-                        </thead>
-                        <tbody>
-                           <tr>
-                              <td className="border border-black p-2 text-center">1</td>
-                              <td className="border border-black p-2 font-medium">Kedisiplinan</td>
-                              <td className="border border-black p-2">
-                                 Sangat disiplin dalam sholat berjamaah. <span className="text-green-600 font-semibold">(+50 Poin)</span>
-                              </td>
-                           </tr>
-                           <tr>
-                              <td className="border border-black p-2 text-center">2</td>
-                              <td className="border border-black p-2 font-medium">Kebersihan</td>
-                              <td className="border border-black p-2">
-                                 Lupa merapikan tempat tidur pada pekan ke-3. <span className="text-red-600 font-semibold">(-10 Poin)</span>
-                              </td>
-                           </tr>
-                            <tr>
-                              <td className="border border-black p-2 text-center">3</td>
-                              <td className="border border-black p-2 font-medium">Sosial</td>
-                              <td className="border border-black p-2">
-                                 Sering membantu teman yang sakit. Ananda memiliki jiwa sosial yang tinggi.
-                              </td>
-                           </tr>
-                        </tbody>
-                     </table>
+                    <table className="w-full border-collapse border border-black text-xs">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="border border-black p-2 w-8 text-center">
+                            No
+                          </th>
+                          <th className="border border-black p-2">Kategori</th>
+                          <th className="border border-black p-2">
+                            Catatan Guru / Musyrif
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="border border-black p-2 text-center">
+                            1
+                          </td>
+                          <td className="border border-black p-2 font-medium">
+                            Kedisiplinan
+                          </td>
+                          <td className="border border-black p-2">
+                            Sangat disiplin dalam sholat berjamaah.{" "}
+                            <span className="text-green-600 font-semibold">
+                              (+50 Poin)
+                            </span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="border border-black p-2 text-center">
+                            2
+                          </td>
+                          <td className="border border-black p-2 font-medium">
+                            Kebersihan
+                          </td>
+                          <td className="border border-black p-2">
+                            Lupa merapikan tempat tidur pada pekan ke-3.{" "}
+                            <span className="text-red-600 font-semibold">
+                              (-10 Poin)
+                            </span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="border border-black p-2 text-center">
+                            3
+                          </td>
+                          <td className="border border-black p-2 font-medium">
+                            Sosial
+                          </td>
+                          <td className="border border-black p-2">
+                            Sering membantu teman yang sakit. Ananda memiliki
+                            jiwa sosial yang tinggi.
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
 
                   {/* F. IBADAH HARIAN */}
                   <div className="space-y-4 pt-4">
-                     <h4 className="font-bold text-sm bg-gray-100 p-1">F. Ibadah Harian</h4>
-                     <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                        <div className="border p-2 rounded">
-                           <div className="text-muted-foreground">Sholat Berjamaah</div>
-                           <div className="text-lg font-bold">95%</div>
+                    <h4 className="font-bold text-sm bg-gray-100 p-1">
+                      F. Ibadah Harian
+                    </h4>
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                      <div className="border p-2 rounded">
+                        <div className="text-muted-foreground">
+                          Sholat Berjamaah
                         </div>
-                        <div className="border p-2 rounded">
-                           <div className="text-muted-foreground">Sholat Dhuha</div>
-                           <div className="text-lg font-bold">80%</div>
+                        <div className="text-lg font-bold">95%</div>
+                      </div>
+                      <div className="border p-2 rounded">
+                        <div className="text-muted-foreground">
+                          Sholat Dhuha
                         </div>
-                        <div className="border p-2 rounded">
-                           <div className="text-muted-foreground">Puasa Sunnah</div>
-                           <div className="text-lg font-bold">Senin-Kamis</div>
+                        <div className="text-lg font-bold">80%</div>
+                      </div>
+                      <div className="border p-2 rounded">
+                        <div className="text-muted-foreground">
+                          Puasa Sunnah
                         </div>
-                     </div>
+                        <div className="text-lg font-bold">Senin-Kamis</div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Signature */}
                   <div className="flex justify-between items-end pt-8 text-xs px-8">
-                      <div className="text-center">
-                          <p>Mengetahui,</p>
-                          <p>Kepala Pesantren</p>
-                          <br /><br /><br />
-                          <p className="font-bold underline">KH. Abdullah, Lc</p>
-                      </div>
-                      <div className="text-center">
-                          <p>Bogor, 20 Desember 2024</p>
-                          <p>Musyrif Kamar</p>
-                          <br /><br /><br />
-                          <p className="font-bold underline">Ustadz Ahmad</p>
-                      </div>
+                    <div className="text-center">
+                      <p>Mengetahui,</p>
+                      <p>Kepala Pesantren</p>
+                      <br />
+                      <br />
+                      <br />
+                      <p className="font-bold underline">KH. Abdullah, Lc</p>
+                    </div>
+                    <div className="text-center">
+                      <p>Bogor, 20 Desember 2024</p>
+                      <p>Musyrif Kamar</p>
+                      <br />
+                      <br />
+                      <br />
+                      <p className="font-bold underline">Ustadz Ahmad</p>
+                    </div>
                   </div>
-                  
-                   {/* Footer Page 2 */}
-                   <div className="absolute bottom-10 right-10 text-[10px] text-gray-400">
-                      Halaman 2 dari 2
-                   </div>
-               </div>
+
+                  {/* Footer Page 2 */}
+                  <div className="absolute bottom-10 right-10 text-[10px] text-gray-400">
+                    Halaman 2 dari 2
+                  </div>
+                </div>
+              </div>
             </div>
-           </div>
           </TabsContent>
         </Tabs>
       </div>
     </MainLayout>
   );
 }
-

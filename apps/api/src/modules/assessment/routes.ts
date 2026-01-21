@@ -731,7 +731,10 @@ router.get('/reports/students/:studentId/transcript', reportsController.getTrans
  *       200:
  *         description: Transcript export data
  */
-router.get('/reports/students/:studentId/transcript/export', reportsController.exportTranscriptExcel);
+router.get(
+  '/reports/students/:studentId/transcript/export',
+  reportsController.exportTranscriptExcel
+);
 
 /**
  * @swagger

@@ -9,7 +9,7 @@ import {
   Assignment,
   AssignmentSubmission,
   AssignmentType,
-  SubmissionStatus
+  SubmissionStatus,
 } from '@cipansor/shared';
 
 export class AssignmentsService {
@@ -17,7 +17,18 @@ export class AssignmentsService {
    * Create an assignment
    */
   async create(input: CreateAssignmentRequest) {
-    const { unitId, academicYearId, teacherId, subjectId, classId, title, description, type, dueDate, attachments } = input;
+    const {
+      unitId,
+      academicYearId,
+      teacherId,
+      subjectId,
+      classId,
+      title,
+      description,
+      type,
+      dueDate,
+      attachments,
+    } = input;
 
     const assignment = await prisma.assignment.create({
       data: {
@@ -36,7 +47,7 @@ export class AssignmentsService {
         subject: { select: { name: true, code: true } },
         class: { select: { name: true } },
         teacher: { include: { user: { select: { name: true } } } },
-      }
+      },
     });
 
     return assignment;
@@ -55,7 +66,16 @@ export class AssignmentsService {
     page?: number;
     limit?: number;
   }) {
-    const { unitId, academicYearId, teacherId, classId, subjectId, studentId, page = 1, limit = 10 } = query;
+    const {
+      unitId,
+      academicYearId,
+      teacherId,
+      classId,
+      subjectId,
+      studentId,
+      page = 1,
+      limit = 10,
+    } = query;
     const skip = (page - 1) * limit;
 
     const where: Prisma.AssignmentWhereInput = {};
@@ -68,9 +88,9 @@ export class AssignmentsService {
     if (studentId) {
       const enrollments = await prisma.classEnrollment.findMany({
         where: { studentId, status: 'active' },
-        select: { classId: true }
+        select: { classId: true },
       });
-      const classIds = enrollments.map(e => e.classId);
+      const classIds = enrollments.map((e) => e.classId);
 
       if (!where.classId) {
         where.classId = { in: classIds };
@@ -87,20 +107,22 @@ export class AssignmentsService {
           subject: { select: { name: true, code: true } },
           class: { select: { name: true } },
           teacher: { include: { user: { select: { name: true } } } },
-          ...(studentId ? {
-            submissions: {
-              where: { studentId },
-              take: 1
-            }
-          } : {})
-        }
+          ...(studentId
+            ? {
+                submissions: {
+                  where: { studentId },
+                  take: 1,
+                },
+              }
+            : {}),
+        },
       }),
-      prisma.assignment.count({ where })
+      prisma.assignment.count({ where }),
     ]);
 
-    const data = assignments.map(a => ({
+    const data = assignments.map((a) => ({
       ...a,
-      submission: studentId && a.submissions?.[0] ? a.submissions[0] : null
+      submission: studentId && a.submissions?.[0] ? a.submissions[0] : null,
     }));
 
     return {
@@ -109,8 +131,8 @@ export class AssignmentsService {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit)
-      }
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -124,7 +146,7 @@ export class AssignmentsService {
         subject: { select: { name: true, code: true } },
         class: { select: { name: true } },
         teacher: { include: { user: { select: { name: true } } } },
-      }
+      },
     });
 
     if (!assignment) throw Errors.notFound('Assignment');
@@ -147,7 +169,7 @@ export class AssignmentsService {
         ...(type && { type: type as any }),
         ...(dueDate && { dueDate: new Date(dueDate) }),
         ...(attachments && { attachments: attachments as any }),
-      }
+      },
     });
     return updated;
   }
@@ -177,8 +199,8 @@ export class AssignmentsService {
       where: {
         assignmentId_studentId: {
           assignmentId,
-          studentId
-        }
+          studentId,
+        },
       },
       create: {
         assignmentId,
@@ -186,14 +208,14 @@ export class AssignmentsService {
         content,
         attachments: attachments ? (attachments as any) : Prisma.JsonNull,
         status: status as any,
-        submittedAt: now
+        submittedAt: now,
       },
       update: {
         content,
         attachments: attachments ? (attachments as any) : Prisma.JsonNull,
         status: status as any,
-        submittedAt: now
-      }
+        submittedAt: now,
+      },
     });
 
     return submission;
@@ -209,14 +231,14 @@ export class AssignmentsService {
       where: {
         assignmentId_studentId: {
           assignmentId,
-          studentId
-        }
+          studentId,
+        },
       },
       data: {
         grade,
         feedback,
-        status: SubmissionStatus.GRADED as any
-      }
+        status: SubmissionStatus.GRADED as any,
+      },
     });
 
     return submission;
@@ -233,21 +255,21 @@ export class AssignmentsService {
           select: {
             id: true,
             nis: true,
-            user: { select: { name: true, photoUrl: true } }
-          }
-        }
+            user: { select: { name: true, photoUrl: true } },
+          },
+        },
       },
-      orderBy: { submittedAt: 'desc' }
+      orderBy: { submittedAt: 'desc' },
     });
 
-    return submissions.map(s => ({
+    return submissions.map((s) => ({
       ...s,
       student: {
         id: s.student.id,
         nis: s.student.nis,
         name: s.student.user.name,
-        photoUrl: s.student.user.photoUrl
-      }
+        photoUrl: s.student.user.photoUrl,
+      },
     }));
   }
 }

@@ -161,9 +161,9 @@ class DapodikService {
       },
       include: {
         enrollments: {
-            where: { status: 'active' },
-            include: { class: true },
-            take: 1
+          where: { status: 'active' },
+          include: { class: true },
+          take: 1,
         },
         user: true,
       },
@@ -171,41 +171,41 @@ class DapodikService {
     });
 
     return students.map((student, index) => {
-        const currentClass = student.enrollments[0]?.class;
-        return {
-            no: index + 1,
-            nisn: student.nisn || '',
-            nik: student.nik || '',
-            namaLengkap: student.user.name,
-            tempatLahir: student.birthPlace || '',
-            tanggalLahir: student.birthDate ? this.formatDate(student.birthDate) : '',
-            jenisKelamin: student.gender === Gender.MALE ? 'L' : 'P',
-            agama: student.religion || 'Islam',
-            alamat: student.address || '',
-            rt: student.rt || '',
-            rw: student.rw || '',
-            kelurahan: student.villageId || '',
-            kecamatan: student.districtId || '',
-            kabupaten: student.regencyId || '',
-            provinsi: student.provinceId || '',
-            kodePos: student.postalCode || '',
-            namaAyah: student.fatherName || '',
-            nikAyah: student.fatherNik || '',
-            pekerjaanAyah: student.fatherOccupation || '',
-            namaIbu: student.motherName || '',
-            nikIbu: student.motherNik || '',
-            pekerjaanIbu: student.motherOccupation || '',
-            noTelepon: student.parentPhone || '',
-            email: student.parentEmail || '',
-            tingkat: currentClass?.level || '',
-            rombelId: currentClass?.id || '',
-            rombelNama: currentClass?.name || '',
-            jurusan: '',
-            tahunMasuk: student.entryYear,
-            statusPesertaDidik: student.status === 'active' ? 'Aktif' : 'Keluar',
-            jenisKeluar: student.status === 'active' ? null : 'Mutasi',
-            tanggalKeluar: null,
-        };
+      const currentClass = student.enrollments[0]?.class;
+      return {
+        no: index + 1,
+        nisn: student.nisn || '',
+        nik: student.nik || '',
+        namaLengkap: student.user.name,
+        tempatLahir: student.birthPlace || '',
+        tanggalLahir: student.birthDate ? this.formatDate(student.birthDate) : '',
+        jenisKelamin: student.gender === Gender.MALE ? 'L' : 'P',
+        agama: student.religion || 'Islam',
+        alamat: student.address || '',
+        rt: student.rt || '',
+        rw: student.rw || '',
+        kelurahan: student.villageId || '',
+        kecamatan: student.districtId || '',
+        kabupaten: student.regencyId || '',
+        provinsi: student.provinceId || '',
+        kodePos: student.postalCode || '',
+        namaAyah: student.fatherName || '',
+        nikAyah: student.fatherNik || '',
+        pekerjaanAyah: student.fatherOccupation || '',
+        namaIbu: student.motherName || '',
+        nikIbu: student.motherNik || '',
+        pekerjaanIbu: student.motherOccupation || '',
+        noTelepon: student.parentPhone || '',
+        email: student.parentEmail || '',
+        tingkat: currentClass?.level || '',
+        rombelId: currentClass?.id || '',
+        rombelNama: currentClass?.name || '',
+        jurusan: '',
+        tahunMasuk: student.entryYear,
+        statusPesertaDidik: student.status === 'active' ? 'Aktif' : 'Keluar',
+        jenisKeluar: student.status === 'active' ? null : 'Mutasi',
+        tanggalKeluar: null,
+      };
     });
   }
 
@@ -261,7 +261,9 @@ class DapodikService {
       tanggalMasuk: teacher.joinDate ? this.formatDate(teacher.joinDate) : '',
       tmtPegawai: teacher.tmtGuru ? this.formatDate(teacher.tmtGuru) : null,
       masaKerja: teacher.joinDate
-        ? Math.floor((startDate.getTime() - teacher.joinDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+        ? Math.floor(
+            (startDate.getTime() - teacher.joinDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
+          )
         : 0,
     }));
   }
@@ -295,9 +297,9 @@ class DapodikService {
           select: { enrollments: { where: { status: 'active' } } },
         },
         enrollments: {
-            where: { status: 'active' },
-            include: { student: true }
-        }
+          where: { status: 'active' },
+          include: { student: true },
+        },
       },
       orderBy: [{ level: 'asc' }, { name: 'asc' }],
     });
@@ -332,7 +334,7 @@ class DapodikService {
             students: { where: { status: 'active' } },
             classes: true,
             teachers: true,
-            staff: true
+            staff: true,
           },
         },
       },
@@ -429,7 +431,12 @@ class DapodikService {
       throw Errors.forbidden('Tidak memiliki akses');
     }
 
-    const issues: { type: string; severity: 'error' | 'warning'; message: string; count: number }[] = [];
+    const issues: {
+      type: string;
+      severity: 'error' | 'warning';
+      message: string;
+      count: number;
+    }[] = [];
 
     // Check students without NISN
     const studentsWithoutNisn = await prisma.student.count({
@@ -499,13 +506,13 @@ class DapodikService {
       SMP_IT: 'SMP',
       SMA_QURAN: 'SMA',
       PESANTREN: 'Pondok Pesantren',
-      OTHER: 'Lainnya'
+      OTHER: 'Lainnya',
     };
     return map[type] || type;
   }
 
   private calculateReadinessScore(data: { nisnRate: number; nuptkRate: number }): number {
-    return Math.round((data.nisnRate * 0.6 + data.nuptkRate * 0.4));
+    return Math.round(data.nisnRate * 0.6 + data.nuptkRate * 0.4);
   }
 }
 

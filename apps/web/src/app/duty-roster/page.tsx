@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import Link from 'next/link';
-import { 
-  CalendarDays, 
-  Clock, 
+import { useState, useMemo } from "react";
+import Link from "next/link";
+import {
+  CalendarDays,
+  Clock,
   Users,
   CheckCircle,
   XCircle,
@@ -18,75 +18,128 @@ import {
   Award,
   ClipboardList,
   Settings,
-  Loader2
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
+  Loader2,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  DUTY_TYPE_LABELS, 
-  DutyType, 
-  DutyStatus, 
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DUTY_TYPE_LABELS,
+  DutyType,
+  DutyStatus,
   DutyShift,
-  useDutyRosters, 
-  useDutyStatistics 
-} from '@/hooks/use-duty-roster';
+  useDutyRosters,
+  useDutyStatistics,
+} from "@/hooks/use-duty-roster";
 
 // Extended UI status for local display
-type UIStatus = DutyStatus | 'SCHEDULED' | 'IN_PROGRESS' | 'MISSED' | 'EXCUSED';
+type UIStatus = DutyStatus | "SCHEDULED" | "IN_PROGRESS" | "MISSED" | "EXCUSED";
 
-const STATUS_CONFIG: Record<UIStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  PENDING: { label: 'Menunggu', color: 'bg-gray-100 text-gray-800', icon: <Clock className="h-4 w-4" /> },
-  SCHEDULED: { label: 'Terjadwal', color: 'bg-gray-100 text-gray-800', icon: <Clock className="h-4 w-4" /> },
-  IN_PROGRESS: { label: 'Berlangsung', color: 'bg-blue-100 text-blue-800', icon: <Clock className="h-4 w-4" /> },
-  COMPLETED: { label: 'Selesai', color: 'bg-green-100 text-green-800', icon: <CheckCircle className="h-4 w-4" /> },
-  ABSENT: { label: 'Tidak Hadir', color: 'bg-red-100 text-red-800', icon: <XCircle className="h-4 w-4" /> },
-  MISSED: { label: 'Tidak Hadir', color: 'bg-red-100 text-red-800', icon: <XCircle className="h-4 w-4" /> },
-  SUBSTITUTED: { label: 'Digantikan', color: 'bg-yellow-100 text-yellow-800', icon: <AlertCircle className="h-4 w-4" /> },
-  EXCUSED: { label: 'Izin', color: 'bg-yellow-100 text-yellow-800', icon: <AlertCircle className="h-4 w-4" /> },
+const STATUS_CONFIG: Record<
+  UIStatus,
+  { label: string; color: string; icon: React.ReactNode }
+> = {
+  PENDING: {
+    label: "Menunggu",
+    color: "bg-gray-100 text-gray-800",
+    icon: <Clock className="h-4 w-4" />,
+  },
+  SCHEDULED: {
+    label: "Terjadwal",
+    color: "bg-gray-100 text-gray-800",
+    icon: <Clock className="h-4 w-4" />,
+  },
+  IN_PROGRESS: {
+    label: "Berlangsung",
+    color: "bg-blue-100 text-blue-800",
+    icon: <Clock className="h-4 w-4" />,
+  },
+  COMPLETED: {
+    label: "Selesai",
+    color: "bg-green-100 text-green-800",
+    icon: <CheckCircle className="h-4 w-4" />,
+  },
+  ABSENT: {
+    label: "Tidak Hadir",
+    color: "bg-red-100 text-red-800",
+    icon: <XCircle className="h-4 w-4" />,
+  },
+  MISSED: {
+    label: "Tidak Hadir",
+    color: "bg-red-100 text-red-800",
+    icon: <XCircle className="h-4 w-4" />,
+  },
+  SUBSTITUTED: {
+    label: "Digantikan",
+    color: "bg-yellow-100 text-yellow-800",
+    icon: <AlertCircle className="h-4 w-4" />,
+  },
+  EXCUSED: {
+    label: "Izin",
+    color: "bg-yellow-100 text-yellow-800",
+    icon: <AlertCircle className="h-4 w-4" />,
+  },
 };
 
 const SHIFT_CONFIG: Record<DutyShift, { label: string; color: string }> = {
-  MORNING: { label: 'Pagi', color: 'bg-amber-100 text-amber-800' },
-  AFTERNOON: { label: 'Siang', color: 'bg-orange-100 text-orange-800' },
-  EVENING: { label: 'Sore/Malam', color: 'bg-purple-100 text-purple-800' },
+  MORNING: { label: "Pagi", color: "bg-amber-100 text-amber-800" },
+  AFTERNOON: { label: "Siang", color: "bg-orange-100 text-orange-800" },
+  EVENING: { label: "Sore/Malam", color: "bg-purple-100 text-purple-800" },
 };
 
-const DAYS_OF_WEEK = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+const DAYS_OF_WEEK = [
+  "Minggu",
+  "Senin",
+  "Selasa",
+  "Rabu",
+  "Kamis",
+  "Jumat",
+  "Sabtu",
+];
 
 export default function DutyRosterPage() {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [filterShift, setFilterShift] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState('today');
-  
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
+  const [filterShift, setFilterShift] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState("today");
+
   // Fetch rosters for selected date
-  const { data: rostersData, isLoading: isLoadingRosters } = useDutyRosters({ 
-    date: selectedDate 
+  const { data: rostersData, isLoading: isLoadingRosters } = useDutyRosters({
+    date: selectedDate,
   });
-  
+
   // Fetch statistics for report view
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
-  const { data: statisticsData, isLoading: isLoadingStats } = useDutyStatistics({
-    startDate: startOfMonth.toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
-  });
-  
+  const { data: statisticsData, isLoading: isLoadingStats } = useDutyStatistics(
+    {
+      startDate: startOfMonth.toISOString().split("T")[0],
+      endDate: new Date().toISOString().split("T")[0],
+    },
+  );
+
   // Transform API data to UI format
   const todayRosters = useMemo(() => {
     if (!rostersData?.data) return [];
-    return rostersData.data.map(roster => ({
+    return rostersData.data.map((roster) => ({
       id: roster.id,
       date: roster.date,
       dayOfWeek: new Date(roster.date).getDay(),
@@ -95,55 +148,62 @@ export default function DutyRosterPage() {
       shift: roster.shift,
       startTime: roster.startTime,
       endTime: roster.endTime,
-      students: roster.assignments?.map(a => ({
-        id: a.id,
-        studentId: a.student.id,
-        student: a.student,
-        status: a.status as UIStatus,
-        checkInTime: a.completedAt?.slice(11, 16),
-        checkOutTime: undefined,
-        rating: undefined,
-        points: undefined,
-      })) || [],
+      students:
+        roster.assignments?.map((a) => ({
+          id: a.id,
+          studentId: a.student.id,
+          student: a.student,
+          status: a.status as UIStatus,
+          checkInTime: a.completedAt?.slice(11, 16),
+          checkOutTime: undefined,
+          rating: undefined,
+          points: undefined,
+        })) || [],
       supervisor: roster.supervisor,
     }));
   }, [rostersData]);
-  
+
   // Transform statistics for report
-  const report = useMemo(() => ({
-    totalAssignments: statisticsData?.totalAssignments || 0,
-    completed: statisticsData?.completed || 0,
-    missed: statisticsData?.absent || 0,
-    excused: 0,
-    averageRating: 0,
-    topPerformers: [],
-  }), [statisticsData]);
+  const report = useMemo(
+    () => ({
+      totalAssignments: statisticsData?.totalAssignments || 0,
+      completed: statisticsData?.completed || 0,
+      missed: statisticsData?.absent || 0,
+      excused: 0,
+      averageRating: 0,
+      topPerformers: [],
+    }),
+    [statisticsData],
+  );
 
-  const filteredRosters = filterShift === 'all' 
-    ? todayRosters 
-    : todayRosters.filter(r => r.shift === filterShift);
+  const filteredRosters =
+    filterShift === "all"
+      ? todayRosters
+      : todayRosters.filter((r) => r.shift === filterShift);
 
-  const getCompletionRate = (roster: typeof todayRosters[0]) => {
-    const completed = roster.students.filter(s => s.status === 'COMPLETED').length;
+  const getCompletionRate = (roster: (typeof todayRosters)[0]) => {
+    const completed = roster.students.filter(
+      (s) => s.status === "COMPLETED",
+    ).length;
     return (completed / roster.students.length) * 100;
   };
 
-  const navigateDate = (direction: 'prev' | 'next') => {
+  const navigateDate = (direction: "prev" | "next") => {
     const date = new Date(selectedDate);
-    date.setDate(date.getDate() + (direction === 'next' ? 1 : -1));
-    setSelectedDate(date.toISOString().split('T')[0]);
+    date.setDate(date.getDate() + (direction === "next" ? 1 : -1));
+    setSelectedDate(date.toISOString().split("T")[0]);
   };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('id-ID', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString("id-ID", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
-  
+
   // Loading state
   if (isLoadingRosters && isLoadingStats) {
     return (
@@ -258,8 +318,12 @@ export default function DutyRosterPage() {
                 <Star className="h-5 w-5 text-amber-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{report.averageRating.toFixed(1)}</p>
-                <p className="text-sm text-muted-foreground">Rata-rata Rating</p>
+                <p className="text-2xl font-bold">
+                  {report.averageRating.toFixed(1)}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Rata-rata Rating
+                </p>
               </div>
             </div>
           </CardContent>
@@ -280,16 +344,26 @@ export default function DutyRosterPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center justify-between">
-                <Button variant="ghost" size="icon" onClick={() => navigateDate('prev')}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigateDate("prev")}
+                >
                   <ChevronLeft className="h-5 w-5" />
                 </Button>
                 <div className="text-center">
                   <div className="flex items-center gap-2 justify-center">
                     <CalendarDays className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium">{formatDate(selectedDate)}</span>
+                    <span className="font-medium">
+                      {formatDate(selectedDate)}
+                    </span>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => navigateDate('next')}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigateDate("next")}
+                >
                   <ChevronRight className="h-5 w-5" />
                 </Button>
               </div>
@@ -300,7 +374,9 @@ export default function DutyRosterPage() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Filter Shift:</span>
+              <span className="text-sm text-muted-foreground">
+                Filter Shift:
+              </span>
             </div>
             <Select value={filterShift} onValueChange={setFilterShift}>
               <SelectTrigger className="w-40">
@@ -317,12 +393,14 @@ export default function DutyRosterPage() {
 
           {/* Roster List */}
           <div className="grid gap-4 md:grid-cols-2">
-            {filteredRosters.map(roster => (
+            {filteredRosters.map((roster) => (
               <Card key={roster.id} className="overflow-hidden">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle className="text-lg">{DUTY_TYPE_LABELS[roster.dutyType]}</CardTitle>
+                      <CardTitle className="text-lg">
+                        {DUTY_TYPE_LABELS[roster.dutyType]}
+                      </CardTitle>
                       <CardDescription className="flex items-center gap-1 mt-1">
                         <MapPin className="h-3 w-3" />
                         {roster.location}
@@ -351,31 +429,44 @@ export default function DutyRosterPage() {
                       <span>Progress</span>
                       <span>{getCompletionRate(roster).toFixed(0)}%</span>
                     </div>
-                    <Progress value={getCompletionRate(roster)} className="h-2" />
+                    <Progress
+                      value={getCompletionRate(roster)}
+                      className="h-2"
+                    />
                   </div>
                   <div className="space-y-2">
-                    {roster.students.map(assignment => (
-                      <div 
-                        key={assignment.id} 
+                    {roster.students.map((assignment) => (
+                      <div
+                        key={assignment.id}
                         className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
                       >
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarFallback>{assignment.student.name.charAt(0)}</AvatarFallback>
+                            <AvatarFallback>
+                              {assignment.student.name.charAt(0)}
+                            </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="text-sm font-medium">{assignment.student.name}</p>
-                            <p className="text-xs text-muted-foreground">{assignment.student.class.name}</p>
+                            <p className="text-sm font-medium">
+                              {assignment.student.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {assignment.student.class.name}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           {assignment.rating && (
                             <div className="flex items-center gap-1 text-amber-500">
                               <Star className="h-3 w-3 fill-current" />
-                              <span className="text-xs">{assignment.rating}</span>
+                              <span className="text-xs">
+                                {assignment.rating}
+                              </span>
                             </div>
                           )}
-                          <Badge className={`text-xs ${STATUS_CONFIG[assignment.status].color}`}>
+                          <Badge
+                            className={`text-xs ${STATUS_CONFIG[assignment.status].color}`}
+                          >
                             <span className="flex items-center gap-1">
                               {STATUS_CONFIG[assignment.status].icon}
                               {STATUS_CONFIG[assignment.status].label}
@@ -401,7 +492,9 @@ export default function DutyRosterPage() {
             <Card>
               <CardContent className="py-12 text-center">
                 <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Tidak ada jadwal piket untuk tanggal ini</p>
+                <p className="text-muted-foreground">
+                  Tidak ada jadwal piket untuk tanggal ini
+                </p>
               </CardContent>
             </Card>
           )}
@@ -412,14 +505,18 @@ export default function DutyRosterPage() {
           <Card>
             <CardHeader>
               <CardTitle>Kalender Piket</CardTitle>
-              <CardDescription>Lihat jadwal piket dalam tampilan kalender</CardDescription>
+              <CardDescription>
+                Lihat jadwal piket dalam tampilan kalender
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-96 flex items-center justify-center bg-muted rounded-lg">
                 <div className="text-center">
                   <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
                   <p className="text-muted-foreground">Tampilan Kalender</p>
-                  <p className="text-sm text-muted-foreground">(Integrasi kalender interaktif)</p>
+                  <p className="text-sm text-muted-foreground">
+                    (Integrasi kalender interaktif)
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -436,42 +533,62 @@ export default function DutyRosterPage() {
                   <Award className="h-5 w-5 text-amber-500" />
                   Santri Terbaik
                 </CardTitle>
-                <CardDescription>Berdasarkan penyelesaian tugas dan rating</CardDescription>
+                <CardDescription>
+                  Berdasarkan penyelesaian tugas dan rating
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {report.topPerformers.map((performer, index) => (
-                    <div 
+                    <div
                       key={performer.student.id}
                       className={`flex items-center gap-4 p-4 rounded-lg ${
-                        index === 0 ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800' :
-                        index === 1 ? 'bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800' :
-                        index === 2 ? 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800' :
-                        'bg-muted/50'
+                        index === 0
+                          ? "bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
+                          : index === 1
+                            ? "bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800"
+                            : index === 2
+                              ? "bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800"
+                              : "bg-muted/50"
                       }`}
                     >
-                      <div className={`flex items-center justify-center w-10 h-10 rounded-full font-bold ${
-                        index === 0 ? 'bg-amber-500 text-white' :
-                        index === 1 ? 'bg-gray-400 text-white' :
-                        index === 2 ? 'bg-orange-400 text-white' :
-                        'bg-muted text-muted-foreground'
-                      }`}>
+                      <div
+                        className={`flex items-center justify-center w-10 h-10 rounded-full font-bold ${
+                          index === 0
+                            ? "bg-amber-500 text-white"
+                            : index === 1
+                              ? "bg-gray-400 text-white"
+                              : index === 2
+                                ? "bg-orange-400 text-white"
+                                : "bg-muted text-muted-foreground"
+                        }`}
+                      >
                         {index + 1}
                       </div>
                       <Avatar className="h-12 w-12">
-                        <AvatarFallback>{performer.student.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>
+                          {performer.student.name.charAt(0)}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
                         <p className="font-medium">{performer.student.name}</p>
-                        <p className="text-sm text-muted-foreground">{performer.student.nis}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {performer.student.nis}
+                        </p>
                       </div>
                       <div className="text-right">
                         <div className="flex items-center gap-1 justify-end">
                           <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
-                          <span className="font-medium">{performer.averageRating.toFixed(1)}</span>
+                          <span className="font-medium">
+                            {performer.averageRating.toFixed(1)}
+                          </span>
                         </div>
-                        <p className="text-sm text-muted-foreground">{performer.completedDuties} tugas</p>
-                        <p className="text-xs text-green-600">{performer.totalPoints} poin</p>
+                        <p className="text-sm text-muted-foreground">
+                          {performer.completedDuties} tugas
+                        </p>
+                        <p className="text-xs text-green-600">
+                          {performer.totalPoints} poin
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -487,18 +604,22 @@ export default function DutyRosterPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {Object.entries(DUTY_TYPE_LABELS).slice(0, 6).map(([type, label]) => {
-                    const completionRate = Math.random() * 30 + 70; // Demo
-                    return (
-                      <div key={type} className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>{label}</span>
-                          <span className="font-medium">{completionRate.toFixed(0)}%</span>
+                  {Object.entries(DUTY_TYPE_LABELS)
+                    .slice(0, 6)
+                    .map(([type, label]) => {
+                      const completionRate = Math.random() * 30 + 70; // Demo
+                      return (
+                        <div key={type} className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>{label}</span>
+                            <span className="font-medium">
+                              {completionRate.toFixed(0)}%
+                            </span>
+                          </div>
+                          <Progress value={completionRate} className="h-2" />
                         </div>
-                        <Progress value={completionRate} className="h-2" />
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               </CardContent>
             </Card>

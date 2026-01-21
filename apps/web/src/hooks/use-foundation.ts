@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 // Types
 export interface Foundation {
@@ -42,36 +42,36 @@ export interface FoundationDocument {
   updatedAt: string;
 }
 
-export type DocumentType = 
-  | 'AKTA_PENDIRIAN'
-  | 'SK_KEMENKUMHAM'
-  | 'NPWP'
-  | 'IZIN_OPERASIONAL'
-  | 'AKREDITASI'
-  | 'SERTIFIKAT_TANAH'
-  | 'IMB'
-  | 'OTHER';
+export type DocumentType =
+  | "AKTA_PENDIRIAN"
+  | "SK_KEMENKUMHAM"
+  | "NPWP"
+  | "IZIN_OPERASIONAL"
+  | "AKREDITASI"
+  | "SERTIFIKAT_TANAH"
+  | "IMB"
+  | "OTHER";
 
 export const DOCUMENT_TYPES: DocumentType[] = [
-  'AKTA_PENDIRIAN',
-  'SK_KEMENKUMHAM',
-  'NPWP',
-  'IZIN_OPERASIONAL',
-  'AKREDITASI',
-  'SERTIFIKAT_TANAH',
-  'IMB',
-  'OTHER',
+  "AKTA_PENDIRIAN",
+  "SK_KEMENKUMHAM",
+  "NPWP",
+  "IZIN_OPERASIONAL",
+  "AKREDITASI",
+  "SERTIFIKAT_TANAH",
+  "IMB",
+  "OTHER",
 ];
 
 export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
-  AKTA_PENDIRIAN: 'Akta Pendirian',
-  SK_KEMENKUMHAM: 'SK Kemenkumham',
-  NPWP: 'NPWP',
-  IZIN_OPERASIONAL: 'Izin Operasional',
-  AKREDITASI: 'Akreditasi',
-  SERTIFIKAT_TANAH: 'Sertifikat Tanah',
-  IMB: 'IMB',
-  OTHER: 'Lainnya',
+  AKTA_PENDIRIAN: "Akta Pendirian",
+  SK_KEMENKUMHAM: "SK Kemenkumham",
+  NPWP: "NPWP",
+  IZIN_OPERASIONAL: "Izin Operasional",
+  AKREDITASI: "Akreditasi",
+  SERTIFIKAT_TANAH: "Sertifikat Tanah",
+  IMB: "IMB",
+  OTHER: "Lainnya",
 };
 
 export interface FoundationBoardMember {
@@ -94,9 +94,9 @@ export interface FoundationBoardMember {
 // Foundation queries
 export function useFoundation() {
   return useQuery({
-    queryKey: ['foundation'],
+    queryKey: ["foundation"],
     queryFn: async () => {
-      const response = await api.get('/foundation');
+      const response = await api.get("/foundation");
       return response.data.data as Foundation;
     },
   });
@@ -107,11 +107,11 @@ export function useUpdateFoundation() {
 
   return useMutation({
     mutationFn: async (data: Partial<Foundation>) => {
-      const response = await api.put('/foundation', data);
+      const response = await api.put("/foundation", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['foundation'] });
+      queryClient.invalidateQueries({ queryKey: ["foundation"] });
     },
   });
 }
@@ -149,9 +149,9 @@ export interface FinancialSummary {
 
 export function useFinancialSummary(foundationId?: string) {
   return useQuery({
-    queryKey: ['foundation', 'financial-summary', foundationId],
+    queryKey: ["foundation", "financial-summary", foundationId],
     queryFn: async () => {
-      const response = await api.get('/foundation/stats/financial');
+      const response = await api.get("/foundation/stats/financial");
       return response.data.data as FinancialSummary;
     },
     enabled: !!foundationId,
@@ -161,9 +161,9 @@ export function useFinancialSummary(foundationId?: string) {
 // Document queries
 export function useFoundationDocuments() {
   return useQuery({
-    queryKey: ['foundation-documents'],
+    queryKey: ["foundation-documents"],
     queryFn: async () => {
-      const response = await api.get('/foundation/documents');
+      const response = await api.get("/foundation/documents");
       return response.data.data as FoundationDocument[];
     },
   });
@@ -171,7 +171,7 @@ export function useFoundationDocuments() {
 
 export function useFoundationDocument(id: string) {
   return useQuery({
-    queryKey: ['foundation-document', id],
+    queryKey: ["foundation-document", id],
     queryFn: async () => {
       const response = await api.get(`/foundation/documents/${id}`);
       return response.data.data as FoundationDocument;
@@ -185,13 +185,13 @@ export function useCreateFoundationDocument() {
 
   return useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await api.post('/foundation/documents', data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const response = await api.post("/foundation/documents", data, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['foundation-documents'] });
+      queryClient.invalidateQueries({ queryKey: ["foundation-documents"] });
     },
   });
 }
@@ -202,12 +202,12 @@ export function useUpdateFoundationDocument() {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: FormData }) => {
       const response = await api.put(`/foundation/documents/${id}`, data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { "Content-Type": "multipart/form-data" },
       });
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['foundation-documents'] });
+      queryClient.invalidateQueries({ queryKey: ["foundation-documents"] });
     },
   });
 }
@@ -220,7 +220,7 @@ export function useDeleteFoundationDocument() {
       await api.delete(`/foundation/documents/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['foundation-documents'] });
+      queryClient.invalidateQueries({ queryKey: ["foundation-documents"] });
     },
   });
 }
@@ -228,9 +228,9 @@ export function useDeleteFoundationDocument() {
 // Board member queries
 export function useFoundationBoardMembers(params?: { isActive?: boolean }) {
   return useQuery({
-    queryKey: ['foundation-board-members', params],
+    queryKey: ["foundation-board-members", params],
     queryFn: async () => {
-      const response = await api.get('/foundation/board-members', { params });
+      const response = await api.get("/foundation/board-members", { params });
       return response.data.data as FoundationBoardMember[];
     },
   });
@@ -238,7 +238,7 @@ export function useFoundationBoardMembers(params?: { isActive?: boolean }) {
 
 export function useFoundationBoardMember(id: string) {
   return useQuery({
-    queryKey: ['foundation-board-member', id],
+    queryKey: ["foundation-board-member", id],
     queryFn: async () => {
       const response = await api.get(`/foundation/board-members/${id}`);
       return response.data.data as FoundationBoardMember;
@@ -252,11 +252,11 @@ export function useCreateFoundationBoardMember() {
 
   return useMutation({
     mutationFn: async (data: Partial<FoundationBoardMember>) => {
-      const response = await api.post('/foundation/board-members', data);
+      const response = await api.post("/foundation/board-members", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['foundation-board-members'] });
+      queryClient.invalidateQueries({ queryKey: ["foundation-board-members"] });
     },
   });
 }
@@ -265,12 +265,18 @@ export function useUpdateFoundationBoardMember() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<FoundationBoardMember> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<FoundationBoardMember>;
+    }) => {
       const response = await api.put(`/foundation/board-members/${id}`, data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['foundation-board-members'] });
+      queryClient.invalidateQueries({ queryKey: ["foundation-board-members"] });
     },
   });
 }
@@ -283,7 +289,7 @@ export function useDeleteFoundationBoardMember() {
       await api.delete(`/foundation/board-members/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['foundation-board-members'] });
+      queryClient.invalidateQueries({ queryKey: ["foundation-board-members"] });
     },
   });
 }

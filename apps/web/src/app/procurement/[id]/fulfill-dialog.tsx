@@ -2,10 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import {
-  PurchaseRequest,
-  PurchaseRequestItem
-} from "@cipansor/shared";
+import { PurchaseRequest, PurchaseRequestItem } from "@cipansor/shared";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -35,7 +32,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
@@ -52,21 +53,27 @@ const formSchema = z.object({
   purchaseOrderNo: z.string().optional(),
   supplier: z.string().optional(),
   supplierId: z.string().optional(),
-  items: z.array(z.object({
-    itemId: z.string(),
-    itemName: z.string(), // Just for display/tracking
-    quantityReceived: z.coerce.number().min(1),
-    actualPrice: z.coerce.number().min(0),
-    condition: z.enum(["GOOD", "FAIR", "POOR"]),
-    roomId: z.string().optional(),
-    notes: z.string().optional()
-  }))
+  items: z.array(
+    z.object({
+      itemId: z.string(),
+      itemName: z.string(), // Just for display/tracking
+      quantityReceived: z.coerce.number().min(1),
+      actualPrice: z.coerce.number().min(0),
+      condition: z.enum(["GOOD", "FAIR", "POOR"]),
+      roomId: z.string().optional(),
+      notes: z.string().optional(),
+    }),
+  ),
 });
 
 export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
   const [open, setOpen] = useState(false);
-  const [accounts, setAccounts] = useState<{id: string, name: string, code: string}[]>([]);
-  const [rooms, setRooms] = useState<{id: string, name: string, code: string}[]>([]);
+  const [accounts, setAccounts] = useState<
+    { id: string; name: string; code: string }[]
+  >([]);
+  const [rooms, setRooms] = useState<
+    { id: string; name: string; code: string }[]
+  >([]);
 
   const { data: suppliers } = useSuppliers({ isActive: true });
 
@@ -74,34 +81,38 @@ export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       receiptDate: new Date(),
-      items: request.items?.map(item => ({
-        itemId: item.id,
-        itemName: item.itemName,
-        quantityReceived: item.quantity,
-        actualPrice: item.estimatedPrice,
-        condition: "GOOD",
-        notes: ""
-      })) || []
+      items:
+        request.items?.map((item) => ({
+          itemId: item.id,
+          itemName: item.itemName,
+          quantityReceived: item.quantity,
+          actualPrice: item.estimatedPrice,
+          condition: "GOOD",
+          notes: "",
+        })) || [],
     },
   });
 
   useEffect(() => {
     if (open) {
       // Fetch Cash/Bank accounts
-      api.get('/finance/accounts?type=ASSET&isCash=true')
-        .then(res => {
-          const cashAccounts = res.data.data.filter((acc: any) =>
-            acc.name.toLowerCase().includes('kas') ||
-            acc.name.toLowerCase().includes('bank') ||
-            acc.code.startsWith('1-1')
+      api
+        .get("/finance/accounts?type=ASSET&isCash=true")
+        .then((res) => {
+          const cashAccounts = res.data.data.filter(
+            (acc: any) =>
+              acc.name.toLowerCase().includes("kas") ||
+              acc.name.toLowerCase().includes("bank") ||
+              acc.code.startsWith("1-1"),
           );
           setAccounts(cashAccounts);
         })
         .catch(console.error);
 
       // Fetch Rooms for asset location
-      api.get('/facilities/rooms')
-        .then(res => {
+      api
+        .get("/facilities/rooms")
+        .then((res) => {
           setRooms(res.data.data);
         })
         .catch(console.error);
@@ -129,13 +140,13 @@ export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
         <DialogHeader>
           <DialogTitle>Fulfill Purchase Request</DialogTitle>
           <DialogDescription>
-            Confirm receipt of items, enter actual costs, and select payment source.
+            Confirm receipt of items, enter actual costs, and select payment
+            source.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -150,7 +161,7 @@ export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
                             variant={"outline"}
                             className={cn(
                               "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
+                              !field.value && "text-muted-foreground",
                             )}
                           >
                             {field.value ? (
@@ -185,7 +196,10 @@ export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Payment Account (Credit)</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select Cash/Bank Account" />
@@ -226,15 +240,15 @@ export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
                   <FormItem>
                     <FormLabel>Supplier</FormLabel>
                     <Select
-                        onValueChange={(val) => {
-                            field.onChange(val);
-                            // Set legacy string name for compatibility
-                            const selected = suppliers?.find(s => s.id === val);
-                            if (selected) {
-                                form.setValue('supplier', selected.name);
-                            }
-                        }}
-                        defaultValue={field.value}
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        // Set legacy string name for compatibility
+                        const selected = suppliers?.find((s) => s.id === val);
+                        if (selected) {
+                          form.setValue("supplier", selected.name);
+                        }
+                      }}
+                      defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -256,9 +270,14 @@ export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-medium text-sm text-muted-foreground">Items Received</h3>
+              <h3 className="font-medium text-sm text-muted-foreground">
+                Items Received
+              </h3>
               {form.watch("items").map((item, index) => (
-                <div key={item.itemId} className="border p-4 rounded-md space-y-3">
+                <div
+                  key={item.itemId}
+                  className="border p-4 rounded-md space-y-3"
+                >
                   <div className="font-semibold">{item.itemName}</div>
                   <div className="grid grid-cols-4 gap-3">
                     <FormField
@@ -293,7 +312,10 @@ export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Condition</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select" />
@@ -315,15 +337,20 @@ export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Location</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select Room" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {rooms.map(room => (
-                                <SelectItem key={room.id} value={room.id}>{room.name}</SelectItem>
+                              {rooms.map((room) => (
+                                <SelectItem key={room.id} value={room.id}>
+                                  {room.name}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -338,7 +365,9 @@ export function FulfillDialog({ request, onSuccess }: FulfillDialogProps) {
 
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {form.formState.isSubmitting && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 Confirm Fulfillment
               </Button>
             </DialogFooter>

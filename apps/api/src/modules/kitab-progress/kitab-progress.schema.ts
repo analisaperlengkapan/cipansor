@@ -5,43 +5,38 @@ import { z } from 'zod';
 // ======================
 
 export const KitabCategory = z.enum([
-  'AKIDAH',           // Tauhid, Aqidah
-  'FIQIH',            // Hukum Islam
-  'HADITS',           // Hadis dan Ulumul Hadis
-  'TAFSIR',           // Tafsir Al-Quran
-  'NAHWU',            // Tata Bahasa Arab
-  'SHOROF',           // Morfologi Arab
-  'AKHLAK',           // Etika dan Tasawuf
-  'TARIKH',           // Sejarah Islam
-  'MANTIQ',           // Logika
-  'BALAGHAH',         // Sastra Arab
-  'USHUL_FIQH',       // Dasar-dasar Fiqih
+  'AKIDAH', // Tauhid, Aqidah
+  'FIQIH', // Hukum Islam
+  'HADITS', // Hadis dan Ulumul Hadis
+  'TAFSIR', // Tafsir Al-Quran
+  'NAHWU', // Tata Bahasa Arab
+  'SHOROF', // Morfologi Arab
+  'AKHLAK', // Etika dan Tasawuf
+  'TARIKH', // Sejarah Islam
+  'MANTIQ', // Logika
+  'BALAGHAH', // Sastra Arab
+  'USHUL_FIQH', // Dasar-dasar Fiqih
   'MUSTHOLAH_HADITS', // Ilmu Hadis
-  'FARAID',           // Waris
-  'OTHER',            // Lainnya
+  'FARAID', // Waris
+  'OTHER', // Lainnya
 ]);
 
 export const KitabLevel = z.enum([
-  'IBTIDAIYYAH',      // Dasar
-  'TSANAWIYYAH',      // Menengah
-  'ALIYAH',           // Lanjutan
-  'MUTAKHARIJIN',     // Tingkat Tinggi
+  'IBTIDAIYYAH', // Dasar
+  'TSANAWIYYAH', // Menengah
+  'ALIYAH', // Lanjutan
+  'MUTAKHARIJIN', // Tingkat Tinggi
 ]);
 
-export const ProgressStatus = z.enum([
-  'NOT_STARTED',
-  'IN_PROGRESS',
-  'COMPLETED',
-  'ON_HOLD',
-]);
+export const ProgressStatus = z.enum(['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD']);
 
 export const AssessmentType = z.enum([
-  'SOROGAN',          // Setoran individu
-  'BANDONGAN',        // Pembelajaran klasikal
-  'MUSYAWARAH',       // Diskusi/debat
-  'WRITTEN',          // Ujian tertulis
-  'ORAL',             // Ujian lisan
-  'HAFALAN',          // Hafalan
+  'SOROGAN', // Setoran individu
+  'BANDONGAN', // Pembelajaran klasikal
+  'MUSYAWARAH', // Diskusi/debat
+  'WRITTEN', // Ujian tertulis
+  'ORAL', // Ujian lisan
+  'HAFALAN', // Hafalan
 ]);
 
 // ======================
@@ -53,7 +48,10 @@ export const listKitabQuerySchema = z.object({
   category: KitabCategory.optional(),
   level: KitabLevel.optional(),
   search: z.string().optional(),
-  isActive: z.enum(['true', 'false']).transform(v => v === 'true').optional(),
+  isActive: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
 });
@@ -96,11 +94,14 @@ export const createKitabAssignmentSchema = z.object({
   academicYearId: z.string().uuid(),
   teacherId: z.string().uuid(),
   semester: z.enum(['GANJIL', 'GENAP', '1', '2']),
-  schedule: z.object({
-    dayOfWeek: z.number().min(0).max(6),
-    startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/),
-    endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/),
-  }).array().optional(),
+  schedule: z
+    .object({
+      dayOfWeek: z.number().min(0).max(6),
+      startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/),
+      endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/),
+    })
+    .array()
+    .optional(),
   targetBab: z.number().int().positive().optional(),
   notes: z.string().max(1000).optional(),
 });
@@ -166,15 +167,19 @@ export const bulkCreateProgressRecordsSchema = z.object({
   kitabAssignmentId: z.string().uuid(),
   date: z.string().datetime(),
   assessmentType: AssessmentType,
-  records: z.array(z.object({
-    studentId: z.string().uuid(),
-    babNumber: z.number().int().positive().optional(),
-    halamanStart: z.number().int().positive().optional(),
-    halamanEnd: z.number().int().positive().optional(),
-    score: z.number().min(0).max(100).optional(),
-    isPassed: z.boolean().default(true),
-    notes: z.string().max(500).optional(),
-  })).min(1),
+  records: z
+    .array(
+      z.object({
+        studentId: z.string().uuid(),
+        babNumber: z.number().int().positive().optional(),
+        halamanStart: z.number().int().positive().optional(),
+        halamanEnd: z.number().int().positive().optional(),
+        score: z.number().min(0).max(100).optional(),
+        isPassed: z.boolean().default(true),
+        notes: z.string().max(500).optional(),
+      })
+    )
+    .min(1),
 });
 
 // ======================

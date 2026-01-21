@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -16,14 +22,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -32,14 +38,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
+} from "@/components/ui/sheet";
 import {
   useStaffSalaries,
   useCreateStaffSalary,
@@ -49,8 +55,8 @@ import {
   type StaffSalary,
   type SalaryComponent,
   COMPONENT_TYPE_LABELS,
-} from '@/hooks';
-import { useUnits } from '@/hooks';
+} from "@/hooks";
+import { useUnits } from "@/hooks";
 import {
   ArrowLeft,
   Plus,
@@ -60,12 +66,12 @@ import {
   DollarSign,
   User,
   Settings2,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { toast } from 'sonner';
-import api from '@/lib/api';
-import { useQuery } from '@tanstack/react-query';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { toast } from "sonner";
+import api from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 
 interface Staff {
   id: string;
@@ -79,27 +85,31 @@ interface Staff {
 
 export default function StaffSalaryPage() {
   const router = useRouter();
-  const [search, setSearch] = useState('');
-  const [unitFilter, setUnitFilter] = useState<string>('');
+  const [search, setSearch] = useState("");
+  const [unitFilter, setUnitFilter] = useState<string>("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isComponentsOpen, setIsComponentsOpen] = useState(false);
   const [editingSalary, setEditingSalary] = useState<StaffSalary | null>(null);
-  const [selectedSalary, setSelectedSalary] = useState<StaffSalary | null>(null);
+  const [selectedSalary, setSelectedSalary] = useState<StaffSalary | null>(
+    null,
+  );
 
   // Form state
-  const [selectedStaffId, setSelectedStaffId] = useState('');
-  const [baseSalary, setBaseSalary] = useState('');
+  const [selectedStaffId, setSelectedStaffId] = useState("");
+  const [baseSalary, setBaseSalary] = useState("");
   const [effectiveDate, setEffectiveDate] = useState(
-    format(new Date(), 'yyyy-MM-dd')
+    format(new Date(), "yyyy-MM-dd"),
   );
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState("");
 
   // Components state
-  const [selectedComponents, setSelectedComponents] = useState<{
-    componentId: string;
-    customAmount?: number;
-    customPercentage?: number;
-  }[]>([]);
+  const [selectedComponents, setSelectedComponents] = useState<
+    {
+      componentId: string;
+      customAmount?: number;
+      customPercentage?: number;
+    }[]
+  >([]);
 
   const { data: salariesData, isLoading } = useStaffSalaries({
     unitId: unitFilter || undefined,
@@ -107,9 +117,9 @@ export default function StaffSalaryPage() {
   });
   const { data: units } = useUnits();
   const { data: staffList } = useQuery({
-    queryKey: ['staff-list'],
+    queryKey: ["staff-list"],
     queryFn: async () => {
-      const response = await api.get('/hr/staff');
+      const response = await api.get("/hr/staff");
       return response.data.data as Staff[];
     },
   });
@@ -122,18 +132,18 @@ export default function StaffSalaryPage() {
   const salaries = salariesData?.data || [];
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
       minimumFractionDigits: 0,
     }).format(amount);
   };
 
   const resetForm = () => {
-    setSelectedStaffId('');
-    setBaseSalary('');
-    setEffectiveDate(format(new Date(), 'yyyy-MM-dd'));
-    setNotes('');
+    setSelectedStaffId("");
+    setBaseSalary("");
+    setEffectiveDate(format(new Date(), "yyyy-MM-dd"));
+    setNotes("");
     setEditingSalary(null);
   };
 
@@ -141,26 +151,27 @@ export default function StaffSalaryPage() {
     setEditingSalary(salary);
     setSelectedStaffId(salary.staffId);
     setBaseSalary(salary.baseSalary.toString());
-    setEffectiveDate(format(new Date(salary.effectiveDate), 'yyyy-MM-dd'));
-    setNotes(salary.notes || '');
+    setEffectiveDate(format(new Date(salary.effectiveDate), "yyyy-MM-dd"));
+    setNotes(salary.notes || "");
     setIsFormOpen(true);
   };
 
   const openComponentsSheet = (salary: StaffSalary) => {
     setSelectedSalary(salary);
     // Initialize selected components from existing salary components
-    const existing = salary.components?.map((c) => ({
-      componentId: c.componentId,
-      customAmount: c.customAmount,
-      customPercentage: c.customPercentage,
-    })) || [];
+    const existing =
+      salary.components?.map((c) => ({
+        componentId: c.componentId,
+        customAmount: c.customAmount,
+        customPercentage: c.customPercentage,
+      })) || [];
     setSelectedComponents(existing);
     setIsComponentsOpen(true);
   };
 
   const handleSubmit = async () => {
     if (!selectedStaffId || !baseSalary) {
-      toast.error('Staff dan gaji pokok wajib diisi');
+      toast.error("Staff dan gaji pokok wajib diisi");
       return;
     }
 
@@ -174,15 +185,15 @@ export default function StaffSalaryPage() {
     try {
       if (editingSalary) {
         await updateSalary.mutateAsync({ id: editingSalary.id, data });
-        toast.success('Konfigurasi gaji berhasil diupdate');
+        toast.success("Konfigurasi gaji berhasil diupdate");
       } else {
         await createSalary.mutateAsync(data);
-        toast.success('Konfigurasi gaji berhasil dibuat');
+        toast.success("Konfigurasi gaji berhasil dibuat");
       }
       setIsFormOpen(false);
       resetForm();
     } catch (error) {
-      toast.error('Gagal menyimpan konfigurasi gaji');
+      toast.error("Gagal menyimpan konfigurasi gaji");
     }
   };
 
@@ -194,27 +205,34 @@ export default function StaffSalaryPage() {
         staffSalaryId: selectedSalary.id,
         components: selectedComponents,
       });
-      toast.success('Komponen gaji berhasil disimpan');
+      toast.success("Komponen gaji berhasil disimpan");
       setIsComponentsOpen(false);
     } catch (error) {
-      toast.error('Gagal menyimpan komponen gaji');
+      toast.error("Gagal menyimpan komponen gaji");
     }
   };
 
   const toggleComponent = (componentId: string) => {
-    const exists = selectedComponents.find((c) => c.componentId === componentId);
+    const exists = selectedComponents.find(
+      (c) => c.componentId === componentId,
+    );
     if (exists) {
-      setSelectedComponents(selectedComponents.filter((c) => c.componentId !== componentId));
+      setSelectedComponents(
+        selectedComponents.filter((c) => c.componentId !== componentId),
+      );
     } else {
       setSelectedComponents([...selectedComponents, { componentId }]);
     }
   };
 
-  const updateComponentAmount = (componentId: string, amount: number | undefined) => {
+  const updateComponentAmount = (
+    componentId: string,
+    amount: number | undefined,
+  ) => {
     setSelectedComponents(
       selectedComponents.map((c) =>
-        c.componentId === componentId ? { ...c, customAmount: amount } : c
-      )
+        c.componentId === componentId ? { ...c, customAmount: amount } : c,
+      ),
     );
   };
 
@@ -230,12 +248,16 @@ export default function StaffSalaryPage() {
   });
 
   // Calculate totals
-  const totalBaseSalary = filteredSalaries.reduce((sum, s) => sum + s.baseSalary, 0);
+  const totalBaseSalary = filteredSalaries.reduce(
+    (sum, s) => sum + s.baseSalary,
+    0,
+  );
 
   // Get staff without salary config
-  const staffWithoutSalary = staffList?.filter(
-    (staff) => !salaries.some((s) => s.staffId === staff.id)
-  ) || [];
+  const staffWithoutSalary =
+    staffList?.filter(
+      (staff) => !salaries.some((s) => s.staffId === staff.id),
+    ) || [];
 
   return (
     <MainLayout>
@@ -243,11 +265,17 @@ export default function StaffSalaryPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.push('/hr/payroll')}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/hr/payroll")}
+            >
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Konfigurasi Gaji Karyawan</h1>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Konfigurasi Gaji Karyawan
+              </h1>
               <p className="text-muted-foreground">
                 Kelola gaji pokok dan komponen gaji per karyawan
               </p>
@@ -269,12 +297,14 @@ export default function StaffSalaryPage() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>
-                  {editingSalary ? 'Edit Konfigurasi Gaji' : 'Tambah Konfigurasi Gaji'}
+                  {editingSalary
+                    ? "Edit Konfigurasi Gaji"
+                    : "Tambah Konfigurasi Gaji"}
                 </DialogTitle>
                 <DialogDescription>
                   {editingSalary
-                    ? 'Update konfigurasi gaji karyawan'
-                    : 'Buat konfigurasi gaji untuk karyawan baru'}
+                    ? "Update konfigurasi gaji karyawan"
+                    : "Buat konfigurasi gaji untuk karyawan baru"}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -289,14 +319,13 @@ export default function StaffSalaryPage() {
                       <SelectValue placeholder="Pilih karyawan" />
                     </SelectTrigger>
                     <SelectContent>
-                      {(editingSalary
-                        ? staffList
-                        : staffWithoutSalary
-                      )?.map((staff) => (
-                        <SelectItem key={staff.id} value={staff.id}>
-                          {staff.fullName} {staff.nip ? `(${staff.nip})` : ''}
-                        </SelectItem>
-                      ))}
+                      {(editingSalary ? staffList : staffWithoutSalary)?.map(
+                        (staff) => (
+                          <SelectItem key={staff.id} value={staff.id}>
+                            {staff.fullName} {staff.nip ? `(${staff.nip})` : ""}
+                          </SelectItem>
+                        ),
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -337,7 +366,7 @@ export default function StaffSalaryPage() {
                   {(createSalary.isPending || updateSalary.isPending) && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  {editingSalary ? 'Update' : 'Simpan'}
+                  {editingSalary ? "Update" : "Simpan"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -348,11 +377,15 @@ export default function StaffSalaryPage() {
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Karyawan</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Karyawan
+              </CardTitle>
               <User className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{filteredSalaries.length}</div>
+              <div className="text-2xl font-bold">
+                {filteredSalaries.length}
+              </div>
               <p className="text-xs text-muted-foreground">
                 dengan konfigurasi gaji
               </p>
@@ -360,17 +393,23 @@ export default function StaffSalaryPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Gaji Pokok</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Gaji Pokok
+              </CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totalBaseSalary)}</div>
+              <div className="text-2xl font-bold">
+                {formatCurrency(totalBaseSalary)}
+              </div>
               <p className="text-xs text-muted-foreground">per bulan</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Belum Dikonfigurasi</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Belum Dikonfigurasi
+              </CardTitle>
               <Settings2 className="h-4 w-4 text-yellow-500" />
             </CardHeader>
             <CardContent>
@@ -437,19 +476,21 @@ export default function StaffSalaryPage() {
                 filteredSalaries.map((salary) => (
                   <TableRow key={salary.id}>
                     <TableCell className="font-mono text-sm">
-                      {salary.staff?.nip || '-'}
+                      {salary.staff?.nip || "-"}
                     </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium">{salary.staff?.fullName}</p>
                       </div>
                     </TableCell>
-                    <TableCell>{salary.staff?.position || '-'}</TableCell>
+                    <TableCell>{salary.staff?.position || "-"}</TableCell>
                     <TableCell className="text-right font-semibold">
                       {formatCurrency(salary.baseSalary)}
                     </TableCell>
                     <TableCell>
-                      {format(new Date(salary.effectiveDate), 'd MMM yyyy', { locale: id })}
+                      {format(new Date(salary.effectiveDate), "d MMM yyyy", {
+                        locale: id,
+                      })}
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge variant="outline">
@@ -478,7 +519,10 @@ export default function StaffSalaryPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell
+                    colSpan={7}
+                    className="text-center py-8 text-muted-foreground"
+                  >
                     Belum ada konfigurasi gaji
                   </TableCell>
                 </TableRow>
@@ -493,7 +537,8 @@ export default function StaffSalaryPage() {
             <SheetHeader>
               <SheetTitle>Komponen Gaji</SheetTitle>
               <SheetDescription>
-                Atur komponen tunjangan dan potongan untuk {selectedSalary?.staff?.fullName}
+                Atur komponen tunjangan dan potongan untuk{" "}
+                {selectedSalary?.staff?.fullName}
               </SheetDescription>
             </SheetHeader>
             <div className="mt-6 space-y-6">
@@ -502,10 +547,10 @@ export default function StaffSalaryPage() {
                 <h3 className="font-semibold text-green-700 mb-3">Tunjangan</h3>
                 <div className="space-y-3">
                   {components
-                    ?.filter((c) => c.type === 'ALLOWANCE')
+                    ?.filter((c) => c.type === "ALLOWANCE")
                     .map((component) => {
                       const selected = selectedComponents.find(
-                        (s) => s.componentId === component.id
+                        (s) => s.componentId === component.id,
                       );
                       return (
                         <div
@@ -514,32 +559,38 @@ export default function StaffSalaryPage() {
                         >
                           <Checkbox
                             checked={!!selected}
-                            onCheckedChange={() => toggleComponent(component.id)}
+                            onCheckedChange={() =>
+                              toggleComponent(component.id)
+                            }
                           />
                           <div className="flex-1">
                             <p className="font-medium">{component.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              Default: {component.defaultAmount
+                              Default:{" "}
+                              {component.defaultAmount
                                 ? formatCurrency(component.defaultAmount)
                                 : component.percentage
-                                ? `${component.percentage}%`
-                                : '-'}
+                                  ? `${component.percentage}%`
+                                  : "-"}
                             </p>
                           </div>
-                          {selected && component.calculationType === 'FIXED' && (
-                            <Input
-                              type="number"
-                              placeholder="Custom"
-                              className="w-32"
-                              value={selected.customAmount || ''}
-                              onChange={(e) =>
-                                updateComponentAmount(
-                                  component.id,
-                                  e.target.value ? parseFloat(e.target.value) : undefined
-                                )
-                              }
-                            />
-                          )}
+                          {selected &&
+                            component.calculationType === "FIXED" && (
+                              <Input
+                                type="number"
+                                placeholder="Custom"
+                                className="w-32"
+                                value={selected.customAmount || ""}
+                                onChange={(e) =>
+                                  updateComponentAmount(
+                                    component.id,
+                                    e.target.value
+                                      ? parseFloat(e.target.value)
+                                      : undefined,
+                                  )
+                                }
+                              />
+                            )}
                         </div>
                       );
                     })}
@@ -551,10 +602,10 @@ export default function StaffSalaryPage() {
                 <h3 className="font-semibold text-red-700 mb-3">Potongan</h3>
                 <div className="space-y-3">
                   {components
-                    ?.filter((c) => c.type === 'DEDUCTION')
+                    ?.filter((c) => c.type === "DEDUCTION")
                     .map((component) => {
                       const selected = selectedComponents.find(
-                        (s) => s.componentId === component.id
+                        (s) => s.componentId === component.id,
                       );
                       return (
                         <div
@@ -563,32 +614,38 @@ export default function StaffSalaryPage() {
                         >
                           <Checkbox
                             checked={!!selected}
-                            onCheckedChange={() => toggleComponent(component.id)}
+                            onCheckedChange={() =>
+                              toggleComponent(component.id)
+                            }
                           />
                           <div className="flex-1">
                             <p className="font-medium">{component.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              Default: {component.defaultAmount
+                              Default:{" "}
+                              {component.defaultAmount
                                 ? formatCurrency(component.defaultAmount)
                                 : component.percentage
-                                ? `${component.percentage}%`
-                                : '-'}
+                                  ? `${component.percentage}%`
+                                  : "-"}
                             </p>
                           </div>
-                          {selected && component.calculationType === 'FIXED' && (
-                            <Input
-                              type="number"
-                              placeholder="Custom"
-                              className="w-32"
-                              value={selected.customAmount || ''}
-                              onChange={(e) =>
-                                updateComponentAmount(
-                                  component.id,
-                                  e.target.value ? parseFloat(e.target.value) : undefined
-                                )
-                              }
-                            />
-                          )}
+                          {selected &&
+                            component.calculationType === "FIXED" && (
+                              <Input
+                                type="number"
+                                placeholder="Custom"
+                                className="w-32"
+                                value={selected.customAmount || ""}
+                                onChange={(e) =>
+                                  updateComponentAmount(
+                                    component.id,
+                                    e.target.value
+                                      ? parseFloat(e.target.value)
+                                      : undefined,
+                                  )
+                                }
+                              />
+                            )}
                         </div>
                       );
                     })}

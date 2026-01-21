@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { useState } from "react";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -12,14 +12,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { useQuestionBanks, useDeleteQuestionBank } from '@/hooks/use-cbt';
-import { Plus, Search, Eye, Trash2, Loader2, BookOpen } from 'lucide-react';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { toast } from 'sonner';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { useQuestionBanks, useDeleteQuestionBank } from "@/hooks/use-cbt";
+import { Plus, Search, Eye, Trash2, Loader2, BookOpen } from "lucide-react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,10 +30,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 
 export default function QuestionBanksPage() {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const { data: response, isLoading } = useQuestionBanks({ search });
   const deleteBank = useDeleteQuestionBank();
 
@@ -42,9 +42,9 @@ export default function QuestionBanksPage() {
   const handleDelete = async (id: string) => {
     try {
       await deleteBank.mutateAsync(id);
-      toast.success('Bank soal berhasil dihapus');
+      toast.success("Bank soal berhasil dihapus");
     } catch (error) {
-      toast.error('Gagal menghapus bank soal');
+      toast.error("Gagal menghapus bank soal");
     }
   };
 
@@ -117,17 +117,21 @@ export default function QuestionBanksPage() {
                         {bank.subject ? (
                           <Badge variant="outline">{bank.subject.name}</Badge>
                         ) : (
-                          '-'
+                          "-"
                         )}
                       </TableCell>
-                      <TableCell>{bank.teacherRel?.user?.name || '-'}</TableCell>
+                      <TableCell>
+                        {bank.teacherRel?.user?.name || "-"}
+                      </TableCell>
                       <TableCell>
                         <Badge variant="secondary">
                           {bank._count?.questions || 0} Soal
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {format(new Date(bank.updatedAt), 'd MMM yyyy HH:mm', { locale: id })}
+                        {format(new Date(bank.updatedAt), "d MMM yyyy HH:mm", {
+                          locale: id,
+                        })}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -139,15 +143,23 @@ export default function QuestionBanksPage() {
 
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Hapus Bank Soal?</AlertDialogTitle>
+                                <AlertDialogTitle>
+                                  Hapus Bank Soal?
+                                </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Tindakan ini tidak dapat dibatalkan. Bank soal dan seluruh pertanyaan di dalamnya akan dihapus.
+                                  Tindakan ini tidak dapat dibatalkan. Bank soal
+                                  dan seluruh pertanyaan di dalamnya akan
+                                  dihapus.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -167,7 +179,10 @@ export default function QuestionBanksPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={6}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       <div className="flex flex-col items-center gap-2">
                         <BookOpen className="h-8 w-8 text-muted-foreground/50" />
                         <p>Belum ada bank soal</p>

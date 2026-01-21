@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { 
+import {
   listStudentsQuerySchema as sharedListSchema,
   createStudentSchema as sharedCreateSchema,
-  updateStudentSchema as sharedUpdateSchema
+  updateStudentSchema as sharedUpdateSchema,
 } from '@cipansor/shared';
 
 // Query params
@@ -11,7 +11,8 @@ export const listStudentsQuerySchema = sharedListSchema;
 // Create student
 // API extends shared schema to enforce stricter password policy for creation
 export const createStudentSchema = sharedCreateSchema.extend({
-  password: z.string()
+  password: z
+    .string()
     .min(8, 'Password must be at least 8 characters')
     .regex(/[A-Z]/, 'Password must contain uppercase letter')
     .regex(/[a-z]/, 'Password must contain lowercase letter')

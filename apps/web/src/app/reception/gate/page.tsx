@@ -3,12 +3,25 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Scan, Search, LogOut, LogIn, CheckCircle, XCircle } from "lucide-react";
+import {
+  Scan,
+  Search,
+  LogOut,
+  LogIn,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 import Image from "next/image";
 
 interface Permit {
@@ -39,7 +52,11 @@ export default function ReceptionGatePage() {
   const [searchCode, setSearchCode] = useState("");
   const [activeCode, setActiveCode] = useState("");
 
-  const { data: permit, isLoading, refetch } = useQuery<Permit>({
+  const {
+    data: permit,
+    isLoading,
+    refetch,
+  } = useQuery<Permit>({
     queryKey: ["permit", activeCode],
     queryFn: async () => {
       const res = await api.get(`/permits/code/${activeCode}`);
@@ -82,9 +99,12 @@ export default function ReceptionGatePage() {
   });
 
   const getStatusBadge = (permit: Permit) => {
-    if (permit.returnedAt) return <Badge className="bg-blue-500">RETURNED</Badge>;
-    if (permit.departedAt) return <Badge className="bg-orange-500">OUT (KELUAR)</Badge>;
-    if (permit.status === 'APPROVED') return <Badge className="bg-green-500">APPROVED</Badge>;
+    if (permit.returnedAt)
+      return <Badge className="bg-blue-500">RETURNED</Badge>;
+    if (permit.departedAt)
+      return <Badge className="bg-orange-500">OUT (KELUAR)</Badge>;
+    if (permit.status === "APPROVED")
+      return <Badge className="bg-green-500">APPROVED</Badge>;
     return <Badge variant="secondary">{permit.status}</Badge>;
   };
 
@@ -92,13 +112,17 @@ export default function ReceptionGatePage() {
     <div className="container mx-auto py-8 space-y-8 max-w-3xl">
       <div className="flex flex-col space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Security Gate</h1>
-        <p className="text-muted-foreground">Scan or enter permit code to verify student movement.</p>
+        <p className="text-muted-foreground">
+          Scan or enter permit code to verify student movement.
+        </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Scan Permit</CardTitle>
-          <CardDescription>Enter the code from the student's permit card.</CardDescription>
+          <CardDescription>
+            Enter the code from the student's permit card.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSearch} className="flex gap-4">
@@ -123,7 +147,13 @@ export default function ReceptionGatePage() {
       {isLoading && <div className="text-center py-4">Checking permit...</div>}
 
       {permit && (
-        <Card className={permit.status === 'APPROVED' || permit.status === 'COMPLETED' ? "border-green-500/50" : "border-red-500/50"}>
+        <Card
+          className={
+            permit.status === "APPROVED" || permit.status === "COMPLETED"
+              ? "border-green-500/50"
+              : "border-red-500/50"
+          }
+        >
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
@@ -131,11 +161,17 @@ export default function ReceptionGatePage() {
                   {permit.student.user.name}
                   {getStatusBadge(permit)}
                 </CardTitle>
-                <CardDescription>{permit.student.unit.name} • {permit.student.nis}</CardDescription>
+                <CardDescription>
+                  {permit.student.unit.name} • {permit.student.nis}
+                </CardDescription>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-mono font-bold">{permit.code}</div>
-                <div className="text-sm text-muted-foreground">{permit.type}</div>
+                <div className="text-2xl font-mono font-bold">
+                  {permit.code}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {permit.type}
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -150,19 +186,29 @@ export default function ReceptionGatePage() {
                     className="object-cover"
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-muted-foreground">No Photo</div>
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    No Photo
+                  </div>
                 )}
               </div>
 
               <div className="space-y-2 flex-1">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-muted-foreground block">Start Date</span>
-                    <span className="font-medium">{new Date(permit.startDate).toLocaleString('id-ID')}</span>
+                    <span className="text-muted-foreground block">
+                      Start Date
+                    </span>
+                    <span className="font-medium">
+                      {new Date(permit.startDate).toLocaleString("id-ID")}
+                    </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block">End Date</span>
-                    <span className="font-medium">{new Date(permit.endDate).toLocaleString('id-ID')}</span>
+                    <span className="text-muted-foreground block">
+                      End Date
+                    </span>
+                    <span className="font-medium">
+                      {new Date(permit.endDate).toLocaleString("id-ID")}
+                    </span>
                   </div>
                   <div className="col-span-2">
                     <span className="text-muted-foreground block">Reason</span>
@@ -174,7 +220,7 @@ export default function ReceptionGatePage() {
 
             {/* Actions */}
             <div className="flex gap-4 pt-4 border-t">
-              {!permit.departedAt && permit.status === 'APPROVED' && (
+              {!permit.departedAt && permit.status === "APPROVED" && (
                 <Button
                   className="flex-1 bg-green-600 hover:bg-green-700"
                   size="lg"
@@ -199,18 +245,20 @@ export default function ReceptionGatePage() {
               )}
 
               {permit.returnedAt && (
-                 <div className="w-full p-4 bg-blue-50 text-blue-800 rounded-md flex items-center justify-center gap-2">
-                    <CheckCircle className="h-5 w-5" />
-                    Student has returned at {new Date(permit.returnedAt).toLocaleTimeString('id-ID')}
-                 </div>
+                <div className="w-full p-4 bg-blue-50 text-blue-800 rounded-md flex items-center justify-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  Student has returned at{" "}
+                  {new Date(permit.returnedAt).toLocaleTimeString("id-ID")}
+                </div>
               )}
 
-              {permit.status !== 'APPROVED' && permit.status !== 'COMPLETED' && (
-                 <div className="w-full p-4 bg-red-50 text-red-800 rounded-md flex items-center justify-center gap-2">
+              {permit.status !== "APPROVED" &&
+                permit.status !== "COMPLETED" && (
+                  <div className="w-full p-4 bg-red-50 text-red-800 rounded-md flex items-center justify-center gap-2">
                     <XCircle className="h-5 w-5" />
                     Permit is {permit.status}. Cannot process.
-                 </div>
-              )}
+                  </div>
+                )}
             </div>
           </CardContent>
         </Card>

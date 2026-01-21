@@ -11,7 +11,8 @@ export class DutyRosterController {
       const query = {
         unitId: req.query.unitId as string | undefined,
         category: req.query.category as any,
-        isActive: req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined,
+        isActive:
+          req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined,
         page: parseInt(req.query.page as string) || 1,
         limit: parseInt(req.query.limit as string) || 20,
       };

@@ -15,7 +15,13 @@ router.use(authenticate);
 // GET /calendar - List all events
 router.get(
   '/',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.PARENT),
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.TEACHER,
+    UserRole.STUDENT,
+    UserRole.PARENT
+  ),
   calendarController.listEvents.bind(calendarController)
 );
 
@@ -29,28 +35,52 @@ router.get(
 // GET /calendar/upcoming/:unitId - Get upcoming events for a unit
 router.get(
   '/upcoming/:unitId',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.PARENT),
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.TEACHER,
+    UserRole.STUDENT,
+    UserRole.PARENT
+  ),
   calendarController.getUpcomingEvents.bind(calendarController)
 );
 
 // GET /calendar/today/:unitId - Get today's events for a unit
 router.get(
   '/today/:unitId',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.PARENT),
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.TEACHER,
+    UserRole.STUDENT,
+    UserRole.PARENT
+  ),
   calendarController.getTodayEvents.bind(calendarController)
 );
 
 // GET /calendar/holidays/:unitId/:academicYearId - Get holidays for academic year
 router.get(
   '/holidays/:unitId/:academicYearId',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.PARENT),
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.TEACHER,
+    UserRole.STUDENT,
+    UserRole.PARENT
+  ),
   calendarController.getHolidays.bind(calendarController)
 );
 
 // GET /calendar/:id - Get event by ID
 router.get(
   '/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.PARENT),
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.TEACHER,
+    UserRole.STUDENT,
+    UserRole.PARENT
+  ),
   calendarController.getEventById.bind(calendarController)
 );
 

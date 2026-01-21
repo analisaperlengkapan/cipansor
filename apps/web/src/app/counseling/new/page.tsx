@@ -1,53 +1,47 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import {
-  ArrowLeft,
-  Save,
-  AlertTriangle,
-  User,
-  Shield,
-} from 'lucide-react';
-import Link from 'next/link';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { ArrowLeft, Save, AlertTriangle, User, Shield } from "lucide-react";
+import Link from "next/link";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { toast } from "sonner";
 
 import {
   useCreateCounselingRecord,
   COUNSELING_CATEGORIES,
   COUNSELING_PRIORITIES,
   type CreateCounselingInput,
-} from '@/hooks/use-counseling';
-import { useStudents } from '@/hooks/use-students';
-import { useUnits } from '@/hooks/use-units';
-import { useDebounce } from '@/hooks/use-debounce';
+} from "@/hooks/use-counseling";
+import { useStudents } from "@/hooks/use-students";
+import { useUnits } from "@/hooks/use-units";
+import { useDebounce } from "@/hooks/use-debounce";
 
 export default function NewCounselingPage() {
   const router = useRouter();
-  const [studentSearch, setStudentSearch] = useState('');
+  const [studentSearch, setStudentSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<{
     id: string;
     name: string;
@@ -79,15 +73,15 @@ export default function NewCounselingPage() {
   } = useForm<CreateCounselingInput>({
     defaultValues: {
       isConfidential: false,
-      priority: 'MEDIUM',
+      priority: "MEDIUM",
     },
   });
 
-  const isConfidential = watch('isConfidential');
+  const isConfidential = watch("isConfidential");
 
   const onSubmit = async (data: CreateCounselingInput) => {
     if (!selectedStudent) {
-      toast.error('Pilih siswa terlebih dahulu');
+      toast.error("Pilih siswa terlebih dahulu");
       return;
     }
 
@@ -96,10 +90,10 @@ export default function NewCounselingPage() {
         ...data,
         studentId: selectedStudent.id,
       });
-      toast.success('Catatan konseling berhasil dibuat');
-      router.push('/counseling');
+      toast.success("Catatan konseling berhasil dibuat");
+      router.push("/counseling");
     } catch {
-      toast.error('Gagal membuat catatan konseling');
+      toast.error("Gagal membuat catatan konseling");
     }
   };
 
@@ -119,7 +113,9 @@ export default function NewCounselingPage() {
               <User className="h-5 w-5" />
               Informasi Siswa
             </CardTitle>
-            <CardDescription>Pilih siswa yang akan dibuat catatan konseling</CardDescription>
+            <CardDescription>
+              Pilih siswa yang akan dibuat catatan konseling
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -132,9 +128,13 @@ export default function NewCounselingPage() {
               {studentSearch && !selectedStudent && (
                 <div className="border rounded-lg max-h-48 overflow-y-auto">
                   {studentsLoading ? (
-                    <p className="p-3 text-sm text-muted-foreground">Mencari...</p>
+                    <p className="p-3 text-sm text-muted-foreground">
+                      Mencari...
+                    </p>
                   ) : students.length === 0 ? (
-                    <p className="p-3 text-sm text-muted-foreground">Siswa tidak ditemukan</p>
+                    <p className="p-3 text-sm text-muted-foreground">
+                      Siswa tidak ditemukan
+                    </p>
                   ) : (
                     students.map((student) => (
                       <button
@@ -150,12 +150,13 @@ export default function NewCounselingPage() {
                             parentPhone: student.parentPhone,
                             currentClass: student.currentClass,
                           });
-                          setStudentSearch('');
+                          setStudentSearch("");
                         }}
                       >
                         <p className="font-medium">{student.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          NIS: {student.nis} • {student.currentClass?.name || '-'}
+                          NIS: {student.nis} •{" "}
+                          {student.currentClass?.name || "-"}
                         </p>
                       </button>
                     ))
@@ -170,10 +171,12 @@ export default function NewCounselingPage() {
                   <div>
                     <p className="font-semibold">{selectedStudent.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      NIS: {selectedStudent.nis} • {selectedStudent.currentClass?.name || '-'}
+                      NIS: {selectedStudent.nis} •{" "}
+                      {selectedStudent.currentClass?.name || "-"}
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Orang Tua: {selectedStudent.parentName} ({selectedStudent.parentPhone})
+                      Orang Tua: {selectedStudent.parentName} (
+                      {selectedStudent.parentPhone})
                     </p>
                   </div>
                   <Button
@@ -194,7 +197,9 @@ export default function NewCounselingPage() {
         <Card>
           <CardHeader>
             <CardTitle>Informasi Kasus</CardTitle>
-            <CardDescription>Detail permasalahan atau kasus yang ditangani</CardDescription>
+            <CardDescription>
+              Detail permasalahan atau kasus yang ditangani
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -202,17 +207,23 @@ export default function NewCounselingPage() {
               <Input
                 id="title"
                 placeholder="Ringkasan singkat masalah..."
-                {...register('title', { required: 'Judul wajib diisi' })}
+                {...register("title", { required: "Judul wajib diisi" })}
               />
               {errors.title && (
-                <p className="text-sm text-destructive">{errors.title.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.title.message}
+                </p>
               )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Kategori *</Label>
-                <Select onValueChange={(v) => setValue('category', v as CreateCounselingInput['category'])}>
+                <Select
+                  onValueChange={(v) =>
+                    setValue("category", v as CreateCounselingInput["category"])
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih kategori" />
                   </SelectTrigger>
@@ -223,7 +234,9 @@ export default function NewCounselingPage() {
                           <span>{cat.icon}</span>
                           <div>
                             <p>{cat.label}</p>
-                            <p className="text-xs text-muted-foreground">{cat.description}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {cat.description}
+                            </p>
                           </div>
                         </div>
                       </SelectItem>
@@ -236,7 +249,9 @@ export default function NewCounselingPage() {
                 <Label>Prioritas *</Label>
                 <Select
                   defaultValue="MEDIUM"
-                  onValueChange={(v) => setValue('priority', v as CreateCounselingInput['priority'])}
+                  onValueChange={(v) =>
+                    setValue("priority", v as CreateCounselingInput["priority"])
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -258,10 +273,14 @@ export default function NewCounselingPage() {
                 id="description"
                 placeholder="Jelaskan detail permasalahan, kronologi, dan observasi awal..."
                 rows={5}
-                {...register('description', { required: 'Deskripsi wajib diisi' })}
+                {...register("description", {
+                  required: "Deskripsi wajib diisi",
+                })}
               />
               {errors.description && (
-                <p className="text-sm text-destructive">{errors.description.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.description.message}
+                </p>
               )}
             </div>
 
@@ -270,7 +289,7 @@ export default function NewCounselingPage() {
               <Input
                 id="reportedBy"
                 placeholder="Nama pelapor (guru, wali kelas, dll)"
-                {...register('reportedBy')}
+                {...register("reportedBy")}
               />
             </div>
           </CardContent>
@@ -284,7 +303,7 @@ export default function NewCounselingPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Unit *</Label>
-              <Select onValueChange={(v) => setValue('unitId', v)}>
+              <Select onValueChange={(v) => setValue("unitId", v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih unit" />
                 </SelectTrigger>
@@ -300,7 +319,9 @@ export default function NewCounselingPage() {
 
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center gap-3">
-                <Shield className={`h-5 w-5 ${isConfidential ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                <Shield
+                  className={`h-5 w-5 ${isConfidential ? "text-amber-500" : "text-muted-foreground"}`}
+                />
                 <div>
                   <p className="font-medium">Kasus Rahasia</p>
                   <p className="text-sm text-muted-foreground">
@@ -310,7 +331,7 @@ export default function NewCounselingPage() {
               </div>
               <Switch
                 checked={isConfidential}
-                onCheckedChange={(v) => setValue('isConfidential', v)}
+                onCheckedChange={(v) => setValue("isConfidential", v)}
               />
             </div>
 
@@ -318,7 +339,8 @@ export default function NewCounselingPage() {
               <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
                 <p className="text-sm text-amber-800">
-                  Kasus ini akan ditandai sebagai rahasia. Data hanya dapat diakses oleh konselor dan admin yang berwenang.
+                  Kasus ini akan ditandai sebagai rahasia. Data hanya dapat
+                  diakses oleh konselor dan admin yang berwenang.
                 </p>
               </div>
             )}
@@ -333,9 +355,16 @@ export default function NewCounselingPage() {
               Batal
             </Link>
           </Button>
-          <Button type="submit" disabled={isSubmitting || createMutation.isPending || !selectedStudent}>
+          <Button
+            type="submit"
+            disabled={
+              isSubmitting || createMutation.isPending || !selectedStudent
+            }
+          >
             <Save className="h-4 w-4 mr-2" />
-            {isSubmitting || createMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+            {isSubmitting || createMutation.isPending
+              ? "Menyimpan..."
+              : "Simpan"}
           </Button>
         </div>
       </form>

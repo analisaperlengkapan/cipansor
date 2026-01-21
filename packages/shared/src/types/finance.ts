@@ -1,67 +1,67 @@
-import { Unit } from './models';
+import { Unit } from "./models";
 
 // Enums
 export enum AccountType {
-  ASSET = 'ASSET',
-  LIABILITY = 'LIABILITY',
-  EQUITY = 'EQUITY',
-  REVENUE = 'REVENUE',
-  EXPENSE = 'EXPENSE'
+  ASSET = "ASSET",
+  LIABILITY = "LIABILITY",
+  EQUITY = "EQUITY",
+  REVENUE = "REVENUE",
+  EXPENSE = "EXPENSE",
 }
 
 export enum CashFlowCategory {
-  OPERATING = 'OPERATING',
-  INVESTING = 'INVESTING',
-  FINANCING = 'FINANCING'
+  OPERATING = "OPERATING",
+  INVESTING = "INVESTING",
+  FINANCING = "FINANCING",
 }
 
 export enum JournalReferenceType {
-  MANUAL = 'MANUAL',
-  INVOICE = 'INVOICE',
-  PAYMENT = 'PAYMENT',
-  SCHOLARSHIP = 'SCHOLARSHIP',
-  PAYROLL = 'PAYROLL',
-  OTHER = 'OTHER'
+  MANUAL = "MANUAL",
+  INVOICE = "INVOICE",
+  PAYMENT = "PAYMENT",
+  SCHOLARSHIP = "SCHOLARSHIP",
+  PAYROLL = "PAYROLL",
+  OTHER = "OTHER",
 }
 
 export enum ScholarshipType {
-  FULL = 'FULL',
-  PARTIAL = 'PARTIAL',
-  FIXED_AMOUNT = 'FIXED_AMOUNT',
-  SPECIFIC = 'SPECIFIC'
+  FULL = "FULL",
+  PARTIAL = "PARTIAL",
+  FIXED_AMOUNT = "FIXED_AMOUNT",
+  SPECIFIC = "SPECIFIC",
 }
 
 export enum ScholarshipSource {
-  INTERNAL = 'INTERNAL',
-  GOVERNMENT = 'GOVERNMENT',
-  FOUNDATION = 'FOUNDATION',
-  DONOR = 'DONOR',
-  COMPANY = 'COMPANY',
-  OTHER = 'OTHER'
+  INTERNAL = "INTERNAL",
+  GOVERNMENT = "GOVERNMENT",
+  FOUNDATION = "FOUNDATION",
+  DONOR = "DONOR",
+  COMPANY = "COMPANY",
+  OTHER = "OTHER",
 }
 
 export enum ScholarshipStatus {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-  EXPIRED = 'EXPIRED',
-  REVOKED = 'REVOKED'
+  ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
+  EXPIRED = "EXPIRED",
+  REVOKED = "REVOKED",
 }
 
 export enum PaymentCategory {
-  SPP = 'SPP',
-  REGISTRATION = 'REGISTRATION',
-  BUILDING = 'BUILDING',
-  UNIFORM = 'UNIFORM',
-  BOOK = 'BOOK',
-  ACTIVITY = 'ACTIVITY',
-  EXAM = 'EXAM',
-  OTHER = 'OTHER'
+  SPP = "SPP",
+  REGISTRATION = "REGISTRATION",
+  BUILDING = "BUILDING",
+  UNIFORM = "UNIFORM",
+  BOOK = "BOOK",
+  ACTIVITY = "ACTIVITY",
+  EXAM = "EXAM",
+  OTHER = "OTHER",
 }
 
 export enum FinanceReportPeriod {
-  DAY = 'day',
-  MONTH = 'month',
-  YEAR = 'year'
+  DAY = "day",
+  MONTH = "month",
+  YEAR = "year",
 }
 
 // Interfaces
@@ -73,7 +73,7 @@ export interface AccountCode {
   type: AccountType | string;
   parentId?: string | null;
   isActive: boolean;
-  normalBalance?: 'DEBIT' | 'CREDIT';
+  normalBalance?: "DEBIT" | "CREDIT";
   cashFlowCategory?: CashFlowCategory | string | null;
   createdAt?: Date;
   updatedAt?: Date;
@@ -88,7 +88,7 @@ export interface Budget {
   accountId: string;
   amount: number;
   usedAmount: number;
-  periodType: 'YEARLY' | 'MONTHLY';
+  periodType: "YEARLY" | "MONTHLY";
   notes?: string | null;
   createdById: string;
   createdAt?: Date;
@@ -251,7 +251,7 @@ export interface CreateBudgetInput {
   academicYearId: string;
   accountId: string;
   amount: number;
-  periodType?: 'YEARLY' | 'MONTHLY';
+  periodType?: "YEARLY" | "MONTHLY";
   notes?: string;
 }
 
@@ -274,9 +274,9 @@ export interface TrialBalanceItem {
   name: string;
   type: string;
   startBalance: number; // Saldo Awal
-  debit: number;        // Mutasi Debit
-  credit: number;       // Mutasi Credit
-  endBalance: number;   // Saldo Akhir
+  debit: number; // Mutasi Debit
+  credit: number; // Mutasi Credit
+  endBalance: number; // Saldo Akhir
 }
 
 export interface TrialBalanceReport {

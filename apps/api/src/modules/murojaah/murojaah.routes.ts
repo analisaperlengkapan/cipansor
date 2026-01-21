@@ -51,12 +51,7 @@ const router: Router = Router();
  *       200:
  *         description: List of murojaah records
  */
-router.get(
-  '/',
-  authenticate,
-  validateQuery(listMurojaahQuerySchema),
-  controller.listMurojaah
-);
+router.get('/', authenticate, validateQuery(listMurojaahQuerySchema), controller.listMurojaah);
 
 /**
  * @openapi
@@ -216,11 +211,7 @@ router.get(
  *       200:
  *         description: Student murojaah summary
  */
-router.get(
-  '/students/:studentId/summary',
-  authenticate,
-  controller.getStudentSummary
-);
+router.get('/students/:studentId/summary', authenticate, controller.getStudentSummary);
 
 /**
  * @openapi
@@ -235,11 +226,7 @@ router.get(
  *       200:
  *         description: Murojaah schedule recommendation
  */
-router.get(
-  '/students/:studentId/schedule',
-  authenticate,
-  controller.getMurojaahSchedule
-);
+router.get('/students/:studentId/schedule', authenticate, controller.getMurojaahSchedule);
 
 /**
  * @openapi
@@ -298,11 +285,7 @@ router.get(
  *       200:
  *         description: Quality distribution data
  */
-router.get(
-  '/analytics/quality-distribution',
-  authenticate,
-  controller.getQualityDistribution
-);
+router.get('/analytics/quality-distribution', authenticate, controller.getQualityDistribution);
 
 /**
  * @openapi
@@ -317,11 +300,7 @@ router.get(
  *       200:
  *         description: Mistake patterns data
  */
-router.get(
-  '/analytics/mistake-patterns',
-  authenticate,
-  controller.getMistakePatterns
-);
+router.get('/analytics/mistake-patterns', authenticate, controller.getMistakePatterns);
 
 /**
  * @openapi
@@ -336,11 +315,7 @@ router.get(
  *       200:
  *         description: Consistency score data
  */
-router.get(
-  '/analytics/consistency-score',
-  authenticate,
-  controller.getConsistencyScore
-);
+router.get('/analytics/consistency-score', authenticate, controller.getConsistencyScore);
 
 /**
  * @openapi
@@ -361,10 +336,6 @@ router.get(
  *       200:
  *         description: Top performers list
  */
-router.get(
-  '/analytics/top-performers',
-  authenticate,
-  controller.getTopPerformers
-);
+router.get('/analytics/top-performers', authenticate, controller.getTopPerformers);
 
 export default router;

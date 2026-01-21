@@ -1,15 +1,22 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useSuppliers, useSupplierMutation } from '@/hooks/use-suppliers';
-import { Plus, Search, Edit, Trash2 } from 'lucide-react';
-import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useSuppliers, useSupplierMutation } from "@/hooks/use-suppliers";
+import { Plus, Search, Edit, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,8 +30,11 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function SuppliersPage() {
-  const [search, setSearch] = useState('');
-  const { data: suppliers, isLoading } = useSuppliers({ search, isActive: true });
+  const [search, setSearch] = useState("");
+  const { data: suppliers, isLoading } = useSuppliers({
+    search,
+    isActive: true,
+  });
   const { remove } = useSupplierMutation();
 
   return (
@@ -33,7 +43,9 @@ export default function SuppliersPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Data Supplier</h1>
-            <p className="text-muted-foreground">Kelola data pemasok barang dan jasa.</p>
+            <p className="text-muted-foreground">
+              Kelola data pemasok barang dan jasa.
+            </p>
           </div>
           <Button asChild>
             <Link href="/procurement/suppliers/create">
@@ -74,53 +86,76 @@ export default function SuppliersPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                    <TableCell colSpan={6} className="text-center">
+                      Loading...
+                    </TableCell>
                   </TableRow>
                 ) : !suppliers?.length ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center">Tidak ada data</TableCell>
+                    <TableCell colSpan={6} className="text-center">
+                      Tidak ada data
+                    </TableCell>
                   </TableRow>
                 ) : (
                   suppliers.map((supplier) => (
                     <TableRow key={supplier.id}>
-                      <TableCell className="font-medium">{supplier.name}</TableCell>
+                      <TableCell className="font-medium">
+                        {supplier.name}
+                      </TableCell>
                       <TableCell>
                         {supplier.category ? (
                           <Badge variant="outline">{supplier.category}</Badge>
-                        ) : '-'}
+                        ) : (
+                          "-"
+                        )}
                       </TableCell>
-                      <TableCell>{supplier.contactPerson || '-'}</TableCell>
+                      <TableCell>{supplier.contactPerson || "-"}</TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <div>{supplier.email || '-'}</div>
-                          <div className="text-muted-foreground">{supplier.phone || '-'}</div>
+                          <div>{supplier.email || "-"}</div>
+                          <div className="text-muted-foreground">
+                            {supplier.phone || "-"}
+                          </div>
                         </div>
                       </TableCell>
-                      <TableCell>{supplier.rating ? `⭐ ${supplier.rating}` : '-'}</TableCell>
+                      <TableCell>
+                        {supplier.rating ? `⭐ ${supplier.rating}` : "-"}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button variant="ghost" size="icon" asChild>
-                            <Link href={`/procurement/suppliers/${supplier.id}`}>
+                            <Link
+                              href={`/procurement/suppliers/${supplier.id}`}
+                            >
                               <Edit className="h-4 w-4" />
                             </Link>
                           </Button>
 
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-500 hover:text-red-600"
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Hapus Supplier?</AlertDialogTitle>
+                                <AlertDialogTitle>
+                                  Hapus Supplier?
+                                </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Data supplier akan dinonaktifkan (soft delete).
+                                  Data supplier akan dinonaktifkan (soft
+                                  delete).
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Batal</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => remove.mutate(supplier.id)}>
+                                <AlertDialogAction
+                                  onClick={() => remove.mutate(supplier.id)}
+                                >
                                   Hapus
                                 </AlertDialogAction>
                               </AlertDialogFooter>

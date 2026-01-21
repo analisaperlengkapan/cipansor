@@ -1,20 +1,33 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AssignmentType } from '@cipansor/shared';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { AssignmentType } from "@cipansor/shared";
 
 const formSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
+  title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   type: z.nativeEnum(AssignmentType),
   dueDate: z.string(),
-  subjectId: z.string().min(1, 'Subject is required'),
-  classId: z.string().min(1, 'Class is required'),
+  subjectId: z.string().min(1, "Subject is required"),
+  classId: z.string().min(1, "Class is required"),
 });
 
 interface AssignmentFormProps {
@@ -25,16 +38,22 @@ interface AssignmentFormProps {
   classes?: any[];
 }
 
-export function AssignmentForm({ initialData, onSubmit, isLoading, subjects, classes }: AssignmentFormProps) {
+export function AssignmentForm({
+  initialData,
+  onSubmit,
+  isLoading,
+  subjects,
+  classes,
+}: AssignmentFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
-      title: '',
-      description: '',
+      title: "",
+      description: "",
       type: AssignmentType.INDIVIDUAL,
-      dueDate: '',
-      subjectId: '',
-      classId: '',
+      dueDate: "",
+      subjectId: "",
+      classId: "",
     },
   });
 
@@ -62,7 +81,10 @@ export function AssignmentForm({ initialData, onSubmit, isLoading, subjects, cla
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Subject</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select subject" />
@@ -87,7 +109,10 @@ export function AssignmentForm({ initialData, onSubmit, isLoading, subjects, cla
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Class</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select class" />
@@ -114,14 +139,19 @@ export function AssignmentForm({ initialData, onSubmit, isLoading, subjects, cla
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value={AssignmentType.INDIVIDUAL}>Individual</SelectItem>
+                    <SelectItem value={AssignmentType.INDIVIDUAL}>
+                      Individual
+                    </SelectItem>
                     <SelectItem value={AssignmentType.GROUP}>Group</SelectItem>
                   </SelectContent>
                 </Select>
@@ -160,7 +190,7 @@ export function AssignmentForm({ initialData, onSubmit, isLoading, subjects, cla
         />
 
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Saving...' : 'Save Assignment'}
+          {isLoading ? "Saving..." : "Save Assignment"}
         </Button>
       </form>
     </Form>

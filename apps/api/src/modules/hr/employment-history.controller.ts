@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from "express";
-import { employmentHistoryService } from "./employment-history.service";
-import { z } from "zod";
-import { EmploymentAction } from "@prisma/client";
+import { Request, Response, NextFunction } from 'express';
+import { employmentHistoryService } from './employment-history.service';
+import { z } from 'zod';
+import { EmploymentAction } from '@prisma/client';
 
 const createHistorySchema = z.object({
   userId: z.string().uuid(),
@@ -33,5 +33,5 @@ export const employmentHistoryController = {
     } catch (error) {
       next(error);
     }
-  }
+  },
 };

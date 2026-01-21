@@ -1,5 +1,5 @@
-import type { Request, Response, NextFunction } from "express";
-import * as service from "./service";
+import type { Request, Response, NextFunction } from 'express';
+import * as service from './service';
 import {
   createInventoryCategorySchema,
   updateInventoryCategorySchema,
@@ -18,8 +18,8 @@ import {
   createAssetAuditSchema,
   queryAssetAuditSchema,
   updateAssetAuditItemSchema,
-} from "./schema";
-import { Errors } from "../../middleware/error";
+} from './schema';
+import { Errors } from '../../middleware/error';
 
 // ==================== INVENTORY CATEGORY ====================
 
@@ -92,7 +92,7 @@ export async function getAuditById(req: Request, res: Response, next: NextFuncti
   try {
     const audit = await service.getAuditById(req.params.id);
     if (!audit) {
-      throw Errors.notFound("Audit not found");
+      throw Errors.notFound('Audit not found');
     }
     res.json({ success: true, data: audit });
   } catch (error) {
@@ -134,7 +134,7 @@ export async function getCategoryById(req: Request, res: Response, next: NextFun
   try {
     const category = await service.getCategoryById(req.params.id);
     if (!category) {
-      throw Errors.notFound("Category not found");
+      throw Errors.notFound('Category not found');
     }
     res.json({ success: true, data: category });
   } catch (error) {
@@ -165,7 +165,7 @@ export async function updateCategory(req: Request, res: Response, next: NextFunc
 export async function deleteCategory(req: Request, res: Response, next: NextFunction) {
   try {
     await service.deleteCategory(req.params.id);
-    res.json({ success: true, message: "Category deleted" });
+    res.json({ success: true, message: 'Category deleted' });
   } catch (error) {
     next(error);
   }
@@ -196,7 +196,7 @@ export async function getItemById(req: Request, res: Response, next: NextFunctio
   try {
     const item = await service.getItemById(req.params.id);
     if (!item) {
-      throw Errors.notFound("Item not found");
+      throw Errors.notFound('Item not found');
     }
     res.json({ success: true, data: item });
   } catch (error) {
@@ -227,7 +227,7 @@ export async function updateItem(req: Request, res: Response, next: NextFunction
 export async function deleteItem(req: Request, res: Response, next: NextFunction) {
   try {
     await service.deleteItem(req.params.id);
-    res.json({ success: true, message: "Item deleted" });
+    res.json({ success: true, message: 'Item deleted' });
   } catch (error) {
     next(error);
   }
@@ -236,7 +236,11 @@ export async function deleteItem(req: Request, res: Response, next: NextFunction
 export async function completeMaintenance(req: Request, res: Response, next: NextFunction) {
   try {
     const maintenance = await service.completeMaintenance(req.params.id);
-    res.json({ success: true, data: maintenance, message: "Maintenance completed, asset status restored" });
+    res.json({
+      success: true,
+      data: maintenance,
+      message: 'Maintenance completed, asset status restored',
+    });
   } catch (error) {
     next(error);
   }
@@ -258,7 +262,7 @@ export async function getMaintenanceById(req: Request, res: Response, next: Next
   try {
     const maintenance = await service.getMaintenanceById(req.params.id);
     if (!maintenance) {
-      throw Errors.notFound("Maintenance record not found");
+      throw Errors.notFound('Maintenance record not found');
     }
     res.json({ success: true, data: maintenance });
   } catch (error) {
@@ -311,7 +315,7 @@ export async function updateMaintenanceStatus(req: Request, res: Response, next:
 export async function deleteMaintenance(req: Request, res: Response, next: NextFunction) {
   try {
     await service.deleteMaintenance(req.params.id);
-    res.json({ success: true, message: "Maintenance record deleted" });
+    res.json({ success: true, message: 'Maintenance record deleted' });
   } catch (error) {
     next(error);
   }
@@ -325,7 +329,7 @@ export async function disposeAsset(req: Request, res: Response, next: NextFuncti
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (req as any).user.id;
     await service.disposeAsset(req.params.id, data, userId);
-    res.json({ success: true, message: "Asset disposed successfully" });
+    res.json({ success: true, message: 'Asset disposed successfully' });
   } catch (error) {
     next(error);
   }

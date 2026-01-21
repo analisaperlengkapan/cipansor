@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { MedicalRecordType, HealthStatus } from "@cipansor/shared";
+import { z } from 'zod';
+import { MedicalRecordType, HealthStatus } from '@cipansor/shared';
 
 // Medical Record schemas
 export const createMedicalRecordSchema = z.object({
@@ -27,7 +27,9 @@ export const createMedicalRecordSchema = z.object({
   notifyParent: z.boolean().optional(),
 });
 
-export const updateMedicalRecordSchema = createMedicalRecordSchema.partial().omit({ studentId: true });
+export const updateMedicalRecordSchema = createMedicalRecordSchema
+  .partial()
+  .omit({ studentId: true });
 
 export const queryMedicalRecordSchema = z.object({
   page: z.coerce.number().int().positive().default(1),

@@ -22,8 +22,8 @@ describe('Analytics Alerts Service', () => {
       // This test ensures we're not using lowercase strings
       const invalidStatuses = ['present', 'absent', 'late', 'sick', 'excused'];
       const validStatuses = Object.values(AttendanceStatus);
-      
-      invalidStatuses.forEach(invalid => {
+
+      invalidStatuses.forEach((invalid) => {
         expect(validStatuses).not.toContain(invalid);
       });
     });
@@ -32,24 +32,24 @@ describe('Analytics Alerts Service', () => {
   describe('Alert Rule Structure', () => {
     it('should have valid alert rule types', () => {
       const validTypes = ['attendance', 'payment', 'academic', 'behavior'];
-      
-      validTypes.forEach(type => {
+
+      validTypes.forEach((type) => {
         expect(['attendance', 'payment', 'academic', 'behavior']).toContain(type);
       });
     });
 
     it('should have valid comparison operators', () => {
       const validOperators = ['lt', 'lte', 'gt', 'gte', 'eq'];
-      
-      validOperators.forEach(op => {
+
+      validOperators.forEach((op) => {
         expect(['lt', 'lte', 'gt', 'gte', 'eq']).toContain(op);
       });
     });
 
     it('should have valid action types', () => {
       const validActions = ['notify', 'email', 'whatsapp', 'all'];
-      
-      validActions.forEach(action => {
+
+      validActions.forEach((action) => {
         expect(['notify', 'email', 'whatsapp', 'all']).toContain(action);
       });
     });

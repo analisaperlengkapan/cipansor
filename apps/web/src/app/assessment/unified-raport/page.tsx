@@ -1,29 +1,35 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Loader2, Printer } from 'lucide-react';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, Printer } from "lucide-react";
 
 // Basic API fetcher wrapper if @/lib/api doesn't work as expected in this context,
 // but usually it does. I'll use standard fetch for safety in this snippet.
-const fetchUnifiedRaport = async (studentId: string, academicYearId: string, semester: number) => {
-  const res = await fetch(`/api/assessment/unified-raport/students/${studentId}?academicYearId=${academicYearId}&semester=${semester}`);
-  if (!res.ok) throw new Error('Failed to fetch report');
+const fetchUnifiedRaport = async (
+  studentId: string,
+  academicYearId: string,
+  semester: number,
+) => {
+  const res = await fetch(
+    `/api/assessment/unified-raport/students/${studentId}?academicYearId=${academicYearId}&semester=${semester}`,
+  );
+  if (!res.ok) throw new Error("Failed to fetch report");
   return res.json();
 };
 
 export default function UnifiedRaportPage() {
-  const [studentId, setStudentId] = useState('');
-  const [academicYearId, setAcademicYearId] = useState('');
+  const [studentId, setStudentId] = useState("");
+  const [academicYearId, setAcademicYearId] = useState("");
   const [semester, setSemester] = useState(1);
   const [shouldFetch, setShouldFetch] = useState(false);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['unified-raport', studentId, academicYearId, semester],
+    queryKey: ["unified-raport", studentId, academicYearId, semester],
     queryFn: () => fetchUnifiedRaport(studentId, academicYearId, semester),
     enabled: shouldFetch && !!studentId && !!academicYearId,
   });
@@ -95,7 +101,9 @@ export default function UnifiedRaportPage() {
             </div>
           </div>
           <Button onClick={handleGenerate} disabled={isLoading}>
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
             Generate Report
           </Button>
         </CardContent>
@@ -120,20 +128,40 @@ export default function UnifiedRaportPage() {
           <div className="bg-white p-8 shadow-lg print:shadow-none print:p-0">
             {/* Header */}
             <div className="text-center border-b-2 border-double border-black pb-4 mb-6">
-              <h2 className="text-xl font-bold uppercase">{data.data.school.name}</h2>
+              <h2 className="text-xl font-bold uppercase">
+                {data.data.school.name}
+              </h2>
               <p className="text-sm">{data.data.school.address}</p>
-              <h3 className="text-lg font-bold mt-4">LAPORAN HASIL BELAJAR (RAPOR)</h3>
+              <h3 className="text-lg font-bold mt-4">
+                LAPORAN HASIL BELAJAR (RAPOR)
+              </h3>
             </div>
 
             {/* Student Info */}
             <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
               <div>
-                <p><span className="font-semibold w-24 inline-block">Nama</span>: {data.data.student.name}</p>
-                <p><span className="font-semibold w-24 inline-block">NIS/NISN</span>: {data.data.student.nis} / {data.data.student.nisn}</p>
+                <p>
+                  <span className="font-semibold w-24 inline-block">Nama</span>:{" "}
+                  {data.data.student.name}
+                </p>
+                <p>
+                  <span className="font-semibold w-24 inline-block">
+                    NIS/NISN
+                  </span>
+                  : {data.data.student.nis} / {data.data.student.nisn}
+                </p>
               </div>
               <div>
-                <p><span className="font-semibold w-24 inline-block">Kelas</span>: {data.data.student.class}</p>
-                <p><span className="font-semibold w-24 inline-block">Semester</span>: {data.data.meta.semester}</p>
+                <p>
+                  <span className="font-semibold w-24 inline-block">Kelas</span>
+                  : {data.data.student.class}
+                </p>
+                <p>
+                  <span className="font-semibold w-24 inline-block">
+                    Semester
+                  </span>
+                  : {data.data.meta.semester}
+                </p>
               </div>
             </div>
 
@@ -150,30 +178,46 @@ export default function UnifiedRaportPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.data.academic.intrakurikuler.kelompokUmum.map((subject: any, idx: number) => (
-                    <tr key={idx}>
-                      <td className="border p-2">{subject.subjectName}</td>
-                      <td className="border p-2 text-center">{subject.nilaiAkhir}</td>
-                      <td className="border p-2 text-center">{subject.predikat}</td>
-                      <td className="border p-2 text-xs">{subject.deskripsi}</td>
-                    </tr>
-                  ))}
+                  {data.data.academic.intrakurikuler.kelompokUmum.map(
+                    (subject: any, idx: number) => (
+                      <tr key={idx}>
+                        <td className="border p-2">{subject.subjectName}</td>
+                        <td className="border p-2 text-center">
+                          {subject.nilaiAkhir}
+                        </td>
+                        <td className="border p-2 text-center">
+                          {subject.predikat}
+                        </td>
+                        <td className="border p-2 text-xs">
+                          {subject.deskripsi}
+                        </td>
+                      </tr>
+                    ),
+                  )}
                 </tbody>
               </table>
             </div>
 
             {/* Section B: Tahfidz & Pesantren */}
             <div className="mb-6 break-inside-avoid">
-              <h4 className="font-bold border-b mb-2">B. CAPAIAN TAHFIDZ & PESANTREN</h4>
+              <h4 className="font-bold border-b mb-2">
+                B. CAPAIAN TAHFIDZ & PESANTREN
+              </h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Tahfidz */}
                 <div className="border p-4 rounded">
                   <h5 className="font-semibold mb-2">Tahfidz Al-Qur'an</h5>
                   <div className="space-y-1 text-sm">
-                    <p>Total Hafalan: {data.data.islamic.tahfidz.totalJuz} Juz</p>
-                    <p>Surah Terakhir: {data.data.islamic.tahfidz.surahTerakhir}</p>
-                    <p className="mt-2 italic">"{data.data.islamic.tahfidz.catatan}"</p>
+                    <p>
+                      Total Hafalan: {data.data.islamic.tahfidz.totalJuz} Juz
+                    </p>
+                    <p>
+                      Surah Terakhir: {data.data.islamic.tahfidz.surahTerakhir}
+                    </p>
+                    <p className="mt-2 italic">
+                      "{data.data.islamic.tahfidz.catatan}"
+                    </p>
                   </div>
                 </div>
 
@@ -182,7 +226,9 @@ export default function UnifiedRaportPage() {
                   <h5 className="font-semibold mb-2">Kedisiplinan Ibadah</h5>
                   <div className="space-y-1 text-sm">
                     <p>Sholat Berjamaah: {data.data.islamic.ibadah.grade}</p>
-                    <p>Puasa Sunnah: {data.data.islamic.ibadah.completionRate}%</p>
+                    <p>
+                      Puasa Sunnah: {data.data.islamic.ibadah.completionRate}%
+                    </p>
                   </div>
                 </div>
               </div>
@@ -191,15 +237,24 @@ export default function UnifiedRaportPage() {
             {/* Section C: P5 Projects */}
             {data.data.academic.p5.length > 0 && (
               <div className="mb-6 break-inside-avoid">
-                <h4 className="font-bold border-b mb-2">C. PROJEK PENGUATAN PROFIL PELAJAR PANCASILA</h4>
+                <h4 className="font-bold border-b mb-2">
+                  C. PROJEK PENGUATAN PROFIL PELAJAR PANCASILA
+                </h4>
                 {data.data.academic.p5.map((project: any, idx: number) => (
                   <div key={idx} className="mb-4 border p-3 rounded">
-                    <p className="font-semibold">{project.tema} - {project.judul}</p>
-                    <p className="text-sm text-gray-600 mb-2">{project.deskripsiProyek}</p>
+                    <p className="font-semibold">
+                      {project.tema} - {project.judul}
+                    </p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {project.deskripsiProyek}
+                    </p>
                     <ul className="list-disc pl-5 text-sm">
                       {project.dimensiTerkait.map((dim: any, dIdx: number) => (
                         <li key={dIdx}>
-                          <span className="font-medium">{dim.dimensiName}:</span> {dim.deskripsi} ({dim.capaian})
+                          <span className="font-medium">
+                            {dim.dimensiName}:
+                          </span>{" "}
+                          {dim.deskripsi} ({dim.capaian})
                         </li>
                       ))}
                     </ul>
@@ -220,7 +275,9 @@ export default function UnifiedRaportPage() {
               <div>
                 <p>Wali Kelas</p>
                 <div className="h-20"></div>
-                <p className="font-bold underline">{data.data.signatures.homeroomTeacher}</p>
+                <p className="font-bold underline">
+                  {data.data.signatures.homeroomTeacher}
+                </p>
               </div>
             </div>
           </div>

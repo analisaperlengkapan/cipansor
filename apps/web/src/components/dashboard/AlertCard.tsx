@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { ReactNode } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { ReactNode } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   AlertTriangle,
   AlertCircle,
@@ -11,12 +11,12 @@ import {
   CheckCircle2,
   ArrowRight,
   X,
-  Bell
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import Link from 'next/link';
+  Bell,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
 
-export type AlertSeverity = 'critical' | 'warning' | 'info' | 'success';
+export type AlertSeverity = "critical" | "warning" | "info" | "success";
 
 export interface AlertItem {
   id: string;
@@ -46,36 +46,36 @@ interface AlertCardProps {
 const severityConfig = {
   critical: {
     icon: AlertTriangle,
-    bgColor: 'bg-red-50 dark:bg-red-950/30',
-    borderColor: 'border-red-200 dark:border-red-900',
-    iconColor: 'text-red-600 dark:text-red-400',
-    badgeVariant: 'destructive' as const,
+    bgColor: "bg-red-50 dark:bg-red-950/30",
+    borderColor: "border-red-200 dark:border-red-900",
+    iconColor: "text-red-600 dark:text-red-400",
+    badgeVariant: "destructive" as const,
   },
   warning: {
     icon: AlertCircle,
-    bgColor: 'bg-amber-50 dark:bg-amber-950/30',
-    borderColor: 'border-amber-200 dark:border-amber-900',
-    iconColor: 'text-amber-600 dark:text-amber-400',
-    badgeVariant: 'secondary' as const,
+    bgColor: "bg-amber-50 dark:bg-amber-950/30",
+    borderColor: "border-amber-200 dark:border-amber-900",
+    iconColor: "text-amber-600 dark:text-amber-400",
+    badgeVariant: "secondary" as const,
   },
   info: {
     icon: Info,
-    bgColor: 'bg-blue-50 dark:bg-blue-950/30',
-    borderColor: 'border-blue-200 dark:border-blue-900',
-    iconColor: 'text-blue-600 dark:text-blue-400',
-    badgeVariant: 'secondary' as const,
+    bgColor: "bg-blue-50 dark:bg-blue-950/30",
+    borderColor: "border-blue-200 dark:border-blue-900",
+    iconColor: "text-blue-600 dark:text-blue-400",
+    badgeVariant: "secondary" as const,
   },
   success: {
     icon: CheckCircle2,
-    bgColor: 'bg-green-50 dark:bg-green-950/30',
-    borderColor: 'border-green-200 dark:border-green-900',
-    iconColor: 'text-green-600 dark:text-green-400',
-    badgeVariant: 'outline' as const,
+    bgColor: "bg-green-50 dark:bg-green-950/30",
+    borderColor: "border-green-200 dark:border-green-900",
+    iconColor: "text-green-600 dark:text-green-400",
+    badgeVariant: "outline" as const,
   },
 };
 
 export function AlertCard({
-  title = 'Notifikasi & Peringatan',
+  title = "Notifikasi & Peringatan",
   alerts,
   onDismiss,
   onAction,
@@ -100,8 +100,8 @@ export function AlertCard({
     return 0;
   });
 
-  const criticalCount = alerts.filter(a => a.severity === 'critical').length;
-  const warningCount = alerts.filter(a => a.severity === 'warning').length;
+  const criticalCount = alerts.filter((a) => a.severity === "critical").length;
+  const warningCount = alerts.filter((a) => a.severity === "warning").length;
 
   if (alerts.length === 0) {
     return (
@@ -143,7 +143,10 @@ export function AlertCard({
               </Badge>
             )}
             {warningCount > 0 && (
-              <Badge variant="outline" className="text-xs border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400">
+              <Badge
+                variant="outline"
+                className="text-xs border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400"
+              >
                 {warningCount} peringatan
               </Badge>
             )}
@@ -162,11 +165,16 @@ export function AlertCard({
                 className={cn(
                   "rounded-lg border p-3 transition-colors",
                   config.bgColor,
-                  config.borderColor
+                  config.borderColor,
                 )}
               >
                 <div className="flex items-start gap-3">
-                  <Icon className={cn("h-5 w-5 mt-0.5 flex-shrink-0", config.iconColor)} />
+                  <Icon
+                    className={cn(
+                      "h-5 w-5 mt-0.5 flex-shrink-0",
+                      config.iconColor,
+                    )}
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium">{alert.title}</p>
@@ -187,37 +195,48 @@ export function AlertCard({
                       </p>
                     )}
                     {/* Metadata */}
-                    {alert.metadata && Object.keys(alert.metadata).length > 0 && !compact && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {Object.entries(alert.metadata).map(([key, value]) => (
-                          <span
-                            key={key}
-                            className="text-xs bg-white/50 dark:bg-black/20 px-2 py-0.5 rounded"
-                          >
-                            {key}: <strong>{value}</strong>
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    {alert.metadata &&
+                      Object.keys(alert.metadata).length > 0 &&
+                      !compact && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {Object.entries(alert.metadata).map(
+                            ([key, value]) => (
+                              <span
+                                key={key}
+                                className="text-xs bg-white/50 dark:bg-black/20 px-2 py-0.5 rounded"
+                              >
+                                {key}: <strong>{value}</strong>
+                              </span>
+                            ),
+                          )}
+                        </div>
+                      )}
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {alert.actionUrl ? (
                       <Link href={alert.actionUrl}>
-                        <Button variant="ghost" size="sm" className="h-7 text-xs">
-                          {alert.actionLabel || 'Lihat'}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs"
+                        >
+                          {alert.actionLabel || "Lihat"}
                           <ArrowRight className="h-3 w-3 ml-1" />
                         </Button>
                       </Link>
-                    ) : alert.actionLabel && onAction && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs"
-                        onClick={() => onAction(alert)}
-                      >
-                        {alert.actionLabel}
-                        <ArrowRight className="h-3 w-3 ml-1" />
-                      </Button>
+                    ) : (
+                      alert.actionLabel &&
+                      onAction && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => onAction(alert)}
+                        >
+                          {alert.actionLabel}
+                          <ArrowRight className="h-3 w-3 ml-1" />
+                        </Button>
+                      )
                     )}
                     {alert.dismissible && onDismiss && (
                       <Button
@@ -260,16 +279,16 @@ function formatTimeAgo(date: Date): string {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'Baru saja';
+  if (diffMins < 1) return "Baru saja";
   if (diffMins < 60) return `${diffMins} menit lalu`;
   if (diffHours < 24) return `${diffHours} jam lalu`;
-  if (diffDays === 1) return 'Kemarin';
+  if (diffDays === 1) return "Kemarin";
   if (diffDays < 7) return `${diffDays} hari lalu`;
 
-  return date.toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'short',
-    year: diffDays > 365 ? 'numeric' : undefined,
+  return date.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: diffDays > 365 ? "numeric" : undefined,
   });
 }
 

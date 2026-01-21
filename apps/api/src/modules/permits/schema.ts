@@ -1,17 +1,19 @@
-import { z } from "zod";
-import { PermitType, PermitStatus } from "@prisma/client";
+import { z } from 'zod';
+import { PermitType, PermitStatus } from '@prisma/client';
 
-export const createPermitSchema = z.object({
-  studentId: z.string().uuid("Invalid student ID"),
-  type: z.nativeEnum(PermitType),
-  reason: z.string().min(10, "Reason must be at least 10 characters"),
-  destination: z.string().optional(),
-  startDate: z.string().datetime("Invalid start date"),
-  endDate: z.string().datetime("Invalid end date"),
-}).refine((data) => new Date(data.endDate) > new Date(data.startDate), {
-  message: "End date must be after start date",
-  path: ["endDate"],
-});
+export const createPermitSchema = z
+  .object({
+    studentId: z.string().uuid('Invalid student ID'),
+    type: z.nativeEnum(PermitType),
+    reason: z.string().min(10, 'Reason must be at least 10 characters'),
+    destination: z.string().optional(),
+    startDate: z.string().datetime('Invalid start date'),
+    endDate: z.string().datetime('Invalid end date'),
+  })
+  .refine((data) => new Date(data.endDate) > new Date(data.startDate), {
+    message: 'End date must be after start date',
+    path: ['endDate'],
+  });
 
 export const updatePermitStatusSchema = z.object({
   status: z.nativeEnum(PermitStatus),

@@ -1,18 +1,39 @@
-'use client';
+"use client";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { useActiveAcademicYear } from '@/hooks/use-academic-years';
-import { useAuth } from '@/hooks/use-auth';
-import { useStandardDetails, useDeleteEvidence, useQualityStandards } from '@/hooks/use-quality';
-import { useParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { FileText, Trash2, ArrowLeft, ExternalLink, AlertCircle } from 'lucide-react';
-import Link from 'next/link';
-import { EvidenceUploadDialog } from '@/components/quality/evidence-upload-dialog';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { MainLayout } from "@/components/layout/main-layout";
+import { useActiveAcademicYear } from "@/hooks/use-academic-years";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  useStandardDetails,
+  useDeleteEvidence,
+  useQualityStandards,
+} from "@/hooks/use-quality";
+import { useParams } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  FileText,
+  Trash2,
+  ArrowLeft,
+  ExternalLink,
+  AlertCircle,
+} from "lucide-react";
+import Link from "next/link";
+import { EvidenceUploadDialog } from "@/components/quality/evidence-upload-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function StandardDetailPage() {
   const params = useParams();
@@ -23,15 +44,30 @@ export default function StandardDetailPage() {
 
   const { data: standard, isLoading } = useStandardDetails(
     standardId,
-    unitId || '',
-    activeAcademicYear?.id || ''
+    unitId || "",
+    activeAcademicYear?.id || "",
   );
 
   const deleteEvidence = useDeleteEvidence();
 
-  if (!unitId) return <MainLayout><div>Access Denied</div></MainLayout>;
-  if (isLoading) return <MainLayout><div>Loading...</div></MainLayout>;
-  if (!standard) return <MainLayout><div>Standard not found</div></MainLayout>;
+  if (!unitId)
+    return (
+      <MainLayout>
+        <div>Access Denied</div>
+      </MainLayout>
+    );
+  if (isLoading)
+    return (
+      <MainLayout>
+        <div>Loading...</div>
+      </MainLayout>
+    );
+  if (!standard)
+    return (
+      <MainLayout>
+        <div>Standard not found</div>
+      </MainLayout>
+    );
 
   return (
     <MainLayout>
@@ -43,7 +79,9 @@ export default function StandardDetailPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{standard.name}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {standard.name}
+            </h1>
             <p className="text-muted-foreground">{standard.description}</p>
           </div>
         </div>
@@ -52,23 +90,34 @@ export default function StandardDetailPage() {
           <CardHeader>
             <CardTitle>Indikator & Bukti Fisik</CardTitle>
             <CardDescription>
-              Daftar indikator pemenuhan standar dan dokumen bukti yang telah diunggah.
+              Daftar indikator pemenuhan standar dan dokumen bukti yang telah
+              diunggah.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Accordion type="single" collapsible className="w-full">
               {standard.indicators.map((indicator) => {
-                const hasEvidence = indicator.evidences && indicator.evidences.length > 0;
+                const hasEvidence =
+                  indicator.evidences && indicator.evidences.length > 0;
 
                 return (
                   <AccordionItem key={indicator.id} value={indicator.id}>
                     <AccordionTrigger className="hover:no-underline">
                       <div className="flex items-center justify-between w-full pr-4 text-left">
                         <div className="flex items-center gap-3">
-                          <Badge variant={hasEvidence ? "default" : "outline"} className={hasEvidence ? "bg-green-600 hover:bg-green-700" : ""}>
+                          <Badge
+                            variant={hasEvidence ? "default" : "outline"}
+                            className={
+                              hasEvidence
+                                ? "bg-green-600 hover:bg-green-700"
+                                : ""
+                            }
+                          >
                             {indicator.code}
                           </Badge>
-                          <span className="text-sm font-medium">{indicator.name}</span>
+                          <span className="text-sm font-medium">
+                            {indicator.name}
+                          </span>
                         </div>
                         {hasEvidence && (
                           <Badge variant="secondary" className="ml-auto">
@@ -89,23 +138,38 @@ export default function StandardDetailPage() {
                           />
                         </div>
 
-                        {indicator.evidences && indicator.evidences.length > 0 ? (
+                        {indicator.evidences &&
+                        indicator.evidences.length > 0 ? (
                           <div className="grid gap-2">
                             {indicator.evidences.map((evidence) => (
-                              <div key={evidence.id} className="flex items-center justify-between border rounded-md p-3">
+                              <div
+                                key={evidence.id}
+                                className="flex items-center justify-between border rounded-md p-3"
+                              >
                                 <div className="flex items-center gap-3 overflow-hidden">
                                   <FileText className="h-8 w-8 text-blue-500 shrink-0" />
                                   <div className="min-w-0">
-                                    <p className="text-sm font-medium truncate">{evidence.name}</p>
-                                    <p className="text-xs text-muted-foreground truncate">{evidence.description}</p>
+                                    <p className="text-sm font-medium truncate">
+                                      {evidence.name}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {evidence.description}
+                                    </p>
                                     <p className="text-xs text-muted-foreground mt-1">
-                                      Oleh: {evidence.uploadedBy?.name} • {new Date(evidence.createdAt).toLocaleDateString()}
+                                      Oleh: {evidence.uploadedBy?.name} •{" "}
+                                      {new Date(
+                                        evidence.createdAt,
+                                      ).toLocaleDateString()}
                                     </p>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Button variant="ghost" size="icon" asChild>
-                                    <a href={evidence.fileUrl} target="_blank" rel="noopener noreferrer">
+                                    <a
+                                      href={evidence.fileUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
                                       <ExternalLink className="h-4 w-4" />
                                     </a>
                                   </Button>
@@ -114,7 +178,11 @@ export default function StandardDetailPage() {
                                     size="icon"
                                     className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                     onClick={() => {
-                                      if (confirm('Apakah Anda yakin ingin menghapus bukti ini?')) {
+                                      if (
+                                        confirm(
+                                          "Apakah Anda yakin ingin menghapus bukti ini?",
+                                        )
+                                      ) {
                                         deleteEvidence.mutate(evidence.id);
                                       }
                                     }}
@@ -130,7 +198,8 @@ export default function StandardDetailPage() {
                             <AlertCircle className="h-4 w-4" />
                             <AlertTitle>Belum ada bukti</AlertTitle>
                             <AlertDescription>
-                              Silakan unggah dokumen bukti fisik untuk indikator ini.
+                              Silakan unggah dokumen bukti fisik untuk indikator
+                              ini.
                             </AlertDescription>
                           </Alert>
                         )}

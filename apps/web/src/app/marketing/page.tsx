@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   useMarketingStats,
   useCampaigns,
@@ -10,19 +10,19 @@ import {
   useUpdateCampaign,
   useRecentLeads,
   useUpcomingFollowUps,
-} from '@/hooks/use-marketing';
-import { useAuth } from '@/hooks/use-auth';
+} from "@/hooks/use-marketing";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -30,7 +30,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -38,28 +38,23 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+} from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   ResponsiveContainer,
   BarChart,
@@ -74,7 +69,7 @@ import {
   Line,
   CartesianGrid,
   Legend,
-} from 'recharts';
+} from "recharts";
 import {
   Loader2,
   Plus,
@@ -98,22 +93,30 @@ import {
   ExternalLink,
   Copy,
   CheckCircle,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+} from "lucide-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
+const COLORS = [
+  "#0088FE",
+  "#00C49F",
+  "#FFBB28",
+  "#FF8042",
+  "#8884d8",
+  "#82ca9d",
+  "#ffc658",
+];
 
 const CHANNEL_OPTIONS = [
-  { value: 'SOCIAL_MEDIA', label: 'Media Sosial', icon: Globe },
-  { value: 'WHATSAPP', label: 'WhatsApp', icon: MessageSquare },
-  { value: 'WEBSITE', label: 'Website', icon: Globe },
-  { value: 'REFERRAL', label: 'Referral', icon: Users },
-  { value: 'EVENT', label: 'Event', icon: Calendar },
-  { value: 'PHONE', label: 'Telepon', icon: Phone },
-  { value: 'EMAIL', label: 'Email', icon: Mail },
-  { value: 'OTHER', label: 'Lainnya', icon: Megaphone },
+  { value: "SOCIAL_MEDIA", label: "Media Sosial", icon: Globe },
+  { value: "WHATSAPP", label: "WhatsApp", icon: MessageSquare },
+  { value: "WEBSITE", label: "Website", icon: Globe },
+  { value: "REFERRAL", label: "Referral", icon: Users },
+  { value: "EVENT", label: "Event", icon: Calendar },
+  { value: "PHONE", label: "Telepon", icon: Phone },
+  { value: "EMAIL", label: "Email", icon: Mail },
+  { value: "OTHER", label: "Lainnya", icon: Megaphone },
 ];
 
 interface Campaign {
@@ -134,37 +137,41 @@ interface Campaign {
 export default function MarketingDashboard() {
   const { user } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: stats, isLoading: loadingStats } = useMarketingStats(user?.unitId);
-  const { data: campaigns, isLoading: loadingCampaigns } = useCampaigns(user?.unitId);
+  const { data: stats, isLoading: loadingStats } = useMarketingStats(
+    user?.unitId,
+  );
+  const { data: campaigns, isLoading: loadingCampaigns } = useCampaigns(
+    user?.unitId,
+  );
   const { data: recentLeads } = useRecentLeads(user?.unitId);
   const { data: followUps } = useUpcomingFollowUps(user?.unitId);
   const createCampaign = useCreateCampaign();
   const updateCampaign = useUpdateCampaign();
 
   const [campaignForm, setCampaignForm] = useState({
-    code: '',
-    name: '',
-    description: '',
-    channel: 'SOCIAL_MEDIA',
-    startDate: format(new Date(), 'yyyy-MM-dd'),
-    endDate: '',
+    code: "",
+    name: "",
+    description: "",
+    channel: "SOCIAL_MEDIA",
+    startDate: format(new Date(), "yyyy-MM-dd"),
+    endDate: "",
     budget: 0,
     isActive: true,
   });
 
   const resetForm = () => {
     setCampaignForm({
-      code: '',
-      name: '',
-      description: '',
-      channel: 'SOCIAL_MEDIA',
-      startDate: format(new Date(), 'yyyy-MM-dd'),
-      endDate: '',
+      code: "",
+      name: "",
+      description: "",
+      channel: "SOCIAL_MEDIA",
+      startDate: format(new Date(), "yyyy-MM-dd"),
+      endDate: "",
       budget: 0,
       isActive: true,
     });
@@ -173,7 +180,7 @@ export default function MarketingDashboard() {
 
   const handleCreateCampaign = async () => {
     if (!campaignForm.code || !campaignForm.name) {
-      toast.error('Kode dan nama kampanye wajib diisi');
+      toast.error("Kode dan nama kampanye wajib diisi");
       return;
     }
 
@@ -183,18 +190,18 @@ export default function MarketingDashboard() {
           id: editingCampaign.id,
           data: campaignForm,
         });
-        toast.success('Kampanye berhasil diperbarui');
+        toast.success("Kampanye berhasil diperbarui");
       } else {
         await createCampaign.mutateAsync({
           ...campaignForm,
-          unitId: user?.unitId || '',
+          unitId: user?.unitId || "",
         });
-        toast.success('Kampanye berhasil dibuat');
+        toast.success("Kampanye berhasil dibuat");
       }
       setShowCreateDialog(false);
       resetForm();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal menyimpan kampanye');
+      toast.error(error.response?.data?.message || "Gagal menyimpan kampanye");
     }
   };
 
@@ -203,10 +210,12 @@ export default function MarketingDashboard() {
     setCampaignForm({
       code: campaign.code,
       name: campaign.name,
-      description: campaign.description || '',
+      description: campaign.description || "",
       channel: campaign.channel,
-      startDate: format(new Date(campaign.startDate), 'yyyy-MM-dd'),
-      endDate: campaign.endDate ? format(new Date(campaign.endDate), 'yyyy-MM-dd') : '',
+      startDate: format(new Date(campaign.startDate), "yyyy-MM-dd"),
+      endDate: campaign.endDate
+        ? format(new Date(campaign.endDate), "yyyy-MM-dd")
+        : "",
       budget: campaign.budget || 0,
       isActive: campaign.isActive,
     });
@@ -216,17 +225,18 @@ export default function MarketingDashboard() {
   const copyTrackingLink = (code: string) => {
     const link = `${window.location.origin}/psb?ref=${code}`;
     navigator.clipboard.writeText(link);
-    toast.success('Link tracking berhasil disalin');
+    toast.success("Link tracking berhasil disalin");
   };
 
-  const filteredCampaigns = campaigns?.filter(
-    (c: Campaign) =>
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.code.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredCampaigns =
+    campaigns?.filter(
+      (c: Campaign) =>
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.code.toLowerCase().includes(searchQuery.toLowerCase()),
+    ) || [];
 
   const getChannelBadge = (channel: string) => {
-    const option = CHANNEL_OPTIONS.find(o => o.value === channel);
+    const option = CHANNEL_OPTIONS.find((o) => o.value === channel);
     return (
       <Badge variant="outline" className="flex items-center gap-1">
         {option?.icon && <option.icon className="h-3 w-3" />}
@@ -236,9 +246,9 @@ export default function MarketingDashboard() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
       minimumFractionDigits: 0,
     }).format(amount);
   };
@@ -271,22 +281,24 @@ export default function MarketingDashboard() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Pendaftar</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Pendaftar
+            </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {stats?.sources?.reduce((sum, s) => sum + s.count, 0) || 0}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Dari semua sumber
-            </p>
+            <p className="text-xs text-muted-foreground">Dari semua sumber</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Kampanye Aktif</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Kampanye Aktif
+            </CardTitle>
             <Megaphone className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -306,7 +318,7 @@ export default function MarketingDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats?.sources?.[0]?.source || 'N/A'}
+              {stats?.sources?.[0]?.source || "N/A"}
             </div>
             <p className="text-xs text-muted-foreground">
               {stats?.sources?.[0]?.count || 0} pendaftar
@@ -316,21 +328,24 @@ export default function MarketingDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Konversi Rata-rata</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Konversi Rata-rata
+            </CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {stats?.topCampaigns?.length > 0
                 ? Math.round(
-                    stats.topCampaigns.reduce((sum, c) => sum + (c.conversionRate || 0), 0) /
-                    stats.topCampaigns.length
+                    stats.topCampaigns.reduce(
+                      (sum, c) => sum + (c.conversionRate || 0),
+                      0,
+                    ) / stats.topCampaigns.length,
                   )
-                : 0}%
+                : 0}
+              %
             </div>
-            <p className="text-xs text-muted-foreground">
-              Lead to Registrant
-            </p>
+            <p className="text-xs text-muted-foreground">Lead to Registrant</p>
           </CardContent>
         </Card>
       </div>
@@ -358,7 +373,9 @@ export default function MarketingDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Sumber Pendaftar</CardTitle>
-                <CardDescription>Distribusi berdasarkan channel</CardDescription>
+                <CardDescription>
+                  Distribusi berdasarkan channel
+                </CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
                 {stats?.sources && stats.sources.length > 0 ? (
@@ -369,14 +386,19 @@ export default function MarketingDashboard() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ source, percent }) => `${source || 'Direct'} ${(percent * 100).toFixed(0)}%`}
+                        label={({ source, percent }) =>
+                          `${source || "Direct"} ${(percent * 100).toFixed(0)}%`
+                        }
                         outerRadius={100}
                         fill="#8884d8"
                         dataKey="count"
                         nameKey="source"
                       >
                         {stats.sources.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -403,7 +425,11 @@ export default function MarketingDashboard() {
                       <XAxis dataKey="code" />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="registrants" fill="#8884d8" name="Pendaftar" />
+                      <Bar
+                        dataKey="registrants"
+                        fill="#8884d8"
+                        name="Pendaftar"
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -437,19 +463,34 @@ export default function MarketingDashboard() {
                       <TableRow key={lead.id}>
                         <TableCell>
                           <div className="font-medium">{lead.fullName}</div>
-                          <div className="text-xs text-muted-foreground">{lead.status}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {lead.status}
+                          </div>
                         </TableCell>
                         <TableCell>
-                          {lead.campaign ? <Badge variant="outline" className="text-xs">{lead.campaign.code}</Badge> : '-'}
+                          {lead.campaign ? (
+                            <Badge variant="outline" className="text-xs">
+                              {lead.campaign.code}
+                            </Badge>
+                          ) : (
+                            "-"
+                          )}
                         </TableCell>
                         <TableCell className="text-right text-xs text-muted-foreground">
-                          {format(new Date(lead.createdAt), 'd MMM', { locale: localeId })}
+                          {format(new Date(lead.createdAt), "d MMM", {
+                            locale: localeId,
+                          })}
                         </TableCell>
                       </TableRow>
                     ))}
                     {!recentLeads?.length && (
                       <TableRow>
-                        <TableCell colSpan={3} className="text-center text-muted-foreground">Belum ada leads baru</TableCell>
+                        <TableCell
+                          colSpan={3}
+                          className="text-center text-muted-foreground"
+                        >
+                          Belum ada leads baru
+                        </TableCell>
                       </TableRow>
                     )}
                   </TableBody>
@@ -466,27 +507,44 @@ export default function MarketingDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Tugas Follow-up</CardTitle>
-                <CardDescription>Jadwal tindak lanjut mendatang</CardDescription>
+                <CardDescription>
+                  Jadwal tindak lanjut mendatang
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {followUps?.map((task) => (
-                    <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+                    <div
+                      key={task.id}
+                      className="flex items-center justify-between p-3 border rounded-lg bg-muted/50"
+                    >
                       <div>
-                        <div className="font-medium text-sm">{task.registrant.fullName}</div>
+                        <div className="font-medium text-sm">
+                          {task.registrant.fullName}
+                        </div>
                         <div className="text-xs text-muted-foreground flex gap-2">
                           <span>{task.registrant.parentPhone}</span>
                           <span>•</span>
-                          <span>{format(new Date(task.nextActionDate), 'd MMM HH:mm', { locale: localeId })}</span>
+                          <span>
+                            {format(
+                              new Date(task.nextActionDate),
+                              "d MMM HH:mm",
+                              { locale: localeId },
+                            )}
+                          </span>
                         </div>
                       </div>
                       <Button size="sm" variant="outline" asChild>
-                        <Link href={`/marketing/leads/${task.registrant.id}`}>Detail</Link>
+                        <Link href={`/marketing/leads/${task.registrant.id}`}>
+                          Detail
+                        </Link>
                       </Button>
                     </div>
                   ))}
                   {!followUps?.length && (
-                    <div className="text-center text-muted-foreground py-4">Tidak ada tugas follow-up</div>
+                    <div className="text-center text-muted-foreground py-4">
+                      Tidak ada tugas follow-up
+                    </div>
                   )}
                 </div>
               </CardContent>
@@ -504,7 +562,8 @@ export default function MarketingDashboard() {
                 <div className="flex justify-center py-8">
                   <RefreshCw className="h-6 w-6 animate-spin" />
                 </div>
-              ) : filteredCampaigns.filter((c: Campaign) => c.isActive).length === 0 ? (
+              ) : filteredCampaigns.filter((c: Campaign) => c.isActive)
+                  .length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   Tidak ada kampanye aktif
                 </div>
@@ -518,21 +577,36 @@ export default function MarketingDashboard() {
                         <CardContent className="pt-6">
                           <div className="flex items-start justify-between">
                             <div>
-                              <Badge variant="outline" className="mb-2">{campaign.code}</Badge>
+                              <Badge variant="outline" className="mb-2">
+                                {campaign.code}
+                              </Badge>
                               <h4 className="font-semibold">{campaign.name}</h4>
                               <p className="text-sm text-muted-foreground mt-1">
-                                {format(new Date(campaign.startDate), 'dd MMM yyyy', { locale: localeId })}
-                                {campaign.endDate && ` - ${format(new Date(campaign.endDate), 'dd MMM yyyy', { locale: localeId })}`}
+                                {format(
+                                  new Date(campaign.startDate),
+                                  "dd MMM yyyy",
+                                  { locale: localeId },
+                                )}
+                                {campaign.endDate &&
+                                  ` - ${format(new Date(campaign.endDate), "dd MMM yyyy", { locale: localeId })}`}
                               </p>
                             </div>
                             {getChannelBadge(campaign.channel)}
                           </div>
                           <div className="mt-4 flex items-center justify-between">
                             <div className="text-sm">
-                              <span className="text-2xl font-bold">{campaign.registrantCount || 0}</span>
-                              <span className="text-muted-foreground ml-1">pendaftar</span>
+                              <span className="text-2xl font-bold">
+                                {campaign.registrantCount || 0}
+                              </span>
+                              <span className="text-muted-foreground ml-1">
+                                pendaftar
+                              </span>
                             </div>
-                            <Button variant="ghost" size="sm" onClick={() => copyTrackingLink(campaign.code)}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyTrackingLink(campaign.code)}
+                            >
                               <Copy className="h-4 w-4" />
                             </Button>
                           </div>
@@ -552,7 +626,9 @@ export default function MarketingDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Daftar Kampanye</CardTitle>
-                  <CardDescription>Kelola semua kampanye marketing</CardDescription>
+                  <CardDescription>
+                    Kelola semua kampanye marketing
+                  </CardDescription>
                 </div>
                 <div className="flex gap-2">
                   <div className="relative">
@@ -593,24 +669,35 @@ export default function MarketingDashboard() {
                   <TableBody>
                     {filteredCampaigns.map((campaign: Campaign) => (
                       <TableRow key={campaign.id}>
-                        <TableCell className="font-medium">{campaign.code}</TableCell>
+                        <TableCell className="font-medium">
+                          {campaign.code}
+                        </TableCell>
                         <TableCell>{campaign.name}</TableCell>
-                        <TableCell>{getChannelBadge(campaign.channel)}</TableCell>
+                        <TableCell>
+                          {getChannelBadge(campaign.channel)}
+                        </TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            {format(new Date(campaign.startDate), 'dd/MM/yy')}
-                            {campaign.endDate && ` - ${format(new Date(campaign.endDate), 'dd/MM/yy')}`}
+                            {format(new Date(campaign.startDate), "dd/MM/yy")}
+                            {campaign.endDate &&
+                              ` - ${format(new Date(campaign.endDate), "dd/MM/yy")}`}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          {campaign.budget ? formatCurrency(campaign.budget) : '-'}
+                          {campaign.budget
+                            ? formatCurrency(campaign.budget)
+                            : "-"}
                         </TableCell>
                         <TableCell className="text-right font-semibold">
                           {campaign.registrantCount || 0}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={campaign.isActive ? 'default' : 'secondary'}>
-                            {campaign.isActive ? 'Aktif' : 'Nonaktif'}
+                          <Badge
+                            variant={
+                              campaign.isActive ? "default" : "secondary"
+                            }
+                          >
+                            {campaign.isActive ? "Aktif" : "Nonaktif"}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -621,15 +708,26 @@ export default function MarketingDashboard() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEditCampaign(campaign)}>
+                              <DropdownMenuItem
+                                onClick={() => handleEditCampaign(campaign)}
+                              >
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => copyTrackingLink(campaign.code)}>
+                              <DropdownMenuItem
+                                onClick={() => copyTrackingLink(campaign.code)}
+                              >
                                 <Copy className="mr-2 h-4 w-4" />
                                 Salin Link
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => window.open(`/psb?ref=${campaign.code}`, '_blank')}>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  window.open(
+                                    `/psb?ref=${campaign.code}`,
+                                    "_blank",
+                                  )
+                                }
+                              >
                                 <ExternalLink className="mr-2 h-4 w-4" />
                                 Buka Link
                               </DropdownMenuItem>
@@ -654,18 +752,31 @@ export default function MarketingDashboard() {
               </CardHeader>
               <CardContent>
                 {stats?.sources?.map((source, index) => (
-                  <div key={index} className="flex items-center justify-between py-2 border-b last:border-0">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between py-2 border-b last:border-0"
+                  >
                     <div className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{
+                          backgroundColor: COLORS[index % COLORS.length],
+                        }}
                       />
-                      <span>{source.source || 'Direct'}</span>
+                      <span>{source.source || "Direct"}</span>
                     </div>
                     <div className="flex items-center gap-4">
                       <span className="font-semibold">{source.count}</span>
                       <span className="text-sm text-muted-foreground w-12 text-right">
-                        {Math.round((source.count / (stats?.sources?.reduce((sum, s) => sum + s.count, 0) || 1)) * 100)}%
+                        {Math.round(
+                          (source.count /
+                            (stats?.sources?.reduce(
+                              (sum, s) => sum + s.count,
+                              0,
+                            ) || 1)) *
+                            100,
+                        )}
+                        %
                       </span>
                     </div>
                   </div>
@@ -679,13 +790,20 @@ export default function MarketingDashboard() {
               </CardHeader>
               <CardContent>
                 {stats?.topCampaigns?.map((campaign, index) => (
-                  <div key={index} className="flex items-center justify-between py-2 border-b last:border-0">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between py-2 border-b last:border-0"
+                  >
                     <div>
                       <span className="font-medium">{campaign.code}</span>
-                      <p className="text-sm text-muted-foreground">{campaign.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {campaign.name}
+                      </p>
                     </div>
                     <div className="text-right">
-                      <span className="font-semibold">{campaign.registrants}</span>
+                      <span className="font-semibold">
+                        {campaign.registrants}
+                      </span>
                       <p className="text-xs text-muted-foreground">pendaftar</p>
                     </div>
                   </div>
@@ -697,19 +815,22 @@ export default function MarketingDashboard() {
       </Tabs>
 
       {/* Create/Edit Campaign Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={(open) => {
-        if (!open) resetForm();
-        setShowCreateDialog(open);
-      }}>
+      <Dialog
+        open={showCreateDialog}
+        onOpenChange={(open) => {
+          if (!open) resetForm();
+          setShowCreateDialog(open);
+        }}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editingCampaign ? 'Edit Kampanye' : 'Buat Kampanye Baru'}
+              {editingCampaign ? "Edit Kampanye" : "Buat Kampanye Baru"}
             </DialogTitle>
             <DialogDescription>
-              {editingCampaign 
-                ? 'Perbarui informasi kampanye marketing'
-                : 'Buat kampanye baru untuk tracking sumber pendaftar'}
+              {editingCampaign
+                ? "Perbarui informasi kampanye marketing"
+                : "Buat kampanye baru untuk tracking sumber pendaftar"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -718,7 +839,12 @@ export default function MarketingDashboard() {
                 <Label>Kode Kampanye*</Label>
                 <Input
                   value={campaignForm.code}
-                  onChange={(e) => setCampaignForm({ ...campaignForm, code: e.target.value.toUpperCase() })}
+                  onChange={(e) =>
+                    setCampaignForm({
+                      ...campaignForm,
+                      code: e.target.value.toUpperCase(),
+                    })
+                  }
                   placeholder="PSB2026-IG"
                   disabled={!!editingCampaign}
                 />
@@ -730,7 +856,9 @@ export default function MarketingDashboard() {
                 <Label>Channel*</Label>
                 <Select
                   value={campaignForm.channel}
-                  onValueChange={(v) => setCampaignForm({ ...campaignForm, channel: v })}
+                  onValueChange={(v) =>
+                    setCampaignForm({ ...campaignForm, channel: v })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -753,7 +881,9 @@ export default function MarketingDashboard() {
               <Label>Nama Kampanye*</Label>
               <Input
                 value={campaignForm.name}
-                onChange={(e) => setCampaignForm({ ...campaignForm, name: e.target.value })}
+                onChange={(e) =>
+                  setCampaignForm({ ...campaignForm, name: e.target.value })
+                }
                 placeholder="Kampanye Instagram PSB 2026"
               />
             </div>
@@ -762,7 +892,12 @@ export default function MarketingDashboard() {
               <Label>Deskripsi</Label>
               <Textarea
                 value={campaignForm.description}
-                onChange={(e) => setCampaignForm({ ...campaignForm, description: e.target.value })}
+                onChange={(e) =>
+                  setCampaignForm({
+                    ...campaignForm,
+                    description: e.target.value,
+                  })
+                }
                 placeholder="Deskripsi kampanye (opsional)"
               />
             </div>
@@ -773,7 +908,12 @@ export default function MarketingDashboard() {
                 <Input
                   type="date"
                   value={campaignForm.startDate}
-                  onChange={(e) => setCampaignForm({ ...campaignForm, startDate: e.target.value })}
+                  onChange={(e) =>
+                    setCampaignForm({
+                      ...campaignForm,
+                      startDate: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -781,7 +921,12 @@ export default function MarketingDashboard() {
                 <Input
                   type="date"
                   value={campaignForm.endDate}
-                  onChange={(e) => setCampaignForm({ ...campaignForm, endDate: e.target.value })}
+                  onChange={(e) =>
+                    setCampaignForm({
+                      ...campaignForm,
+                      endDate: e.target.value,
+                    })
+                  }
                 />
               </div>
             </div>
@@ -791,7 +936,12 @@ export default function MarketingDashboard() {
               <Input
                 type="number"
                 value={campaignForm.budget}
-                onChange={(e) => setCampaignForm({ ...campaignForm, budget: parseInt(e.target.value) || 0 })}
+                onChange={(e) =>
+                  setCampaignForm({
+                    ...campaignForm,
+                    budget: parseInt(e.target.value) || 0,
+                  })
+                }
                 placeholder="0"
               />
             </div>
@@ -800,20 +950,27 @@ export default function MarketingDashboard() {
               <Switch
                 id="isActive"
                 checked={campaignForm.isActive}
-                onCheckedChange={(checked) => setCampaignForm({ ...campaignForm, isActive: checked })}
+                onCheckedChange={(checked) =>
+                  setCampaignForm({ ...campaignForm, isActive: checked })
+                }
               />
               <Label htmlFor="isActive">Kampanye Aktif</Label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateDialog(false)}
+            >
               Batal
             </Button>
-            <Button 
-              onClick={handleCreateCampaign} 
+            <Button
+              onClick={handleCreateCampaign}
               disabled={createCampaign.isPending || updateCampaign.isPending}
             >
-              {(createCampaign.isPending || updateCampaign.isPending) ? 'Menyimpan...' : 'Simpan'}
+              {createCampaign.isPending || updateCampaign.isPending
+                ? "Menyimpan..."
+                : "Simpan"}
             </Button>
           </DialogFooter>
         </DialogContent>

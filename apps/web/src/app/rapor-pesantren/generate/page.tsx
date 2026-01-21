@@ -1,38 +1,44 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { 
-  FileText, 
-  Users, 
-  Loader2, 
-  CheckCircle2, 
+} from "@/components/ui/select";
+import {
+  FileText,
+  Users,
+  Loader2,
+  CheckCircle2,
   AlertCircle,
   Download,
   Settings,
   BookOpen,
   Sparkles,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { useClasses } from '@/hooks/use-classes';
-import { useAcademicYears } from '@/hooks/use-academic-years';
-import { useAuthStore } from '@/stores/auth';
+} from "lucide-react";
+import { toast } from "sonner";
+import { useClasses } from "@/hooks/use-classes";
+import { useAcademicYears } from "@/hooks/use-academic-years";
+import { useAuthStore } from "@/stores/auth";
 
 // Weight configuration for rapor components
 const DEFAULT_WEIGHTS = {
@@ -54,9 +60,9 @@ interface GenerationProgress {
 export default function RaporPesantrenGeneratePage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [selectedClass, setSelectedClass] = useState<string>('');
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('');
-  const [semester, setSemester] = useState<string>('1');
+  const [selectedClass, setSelectedClass] = useState<string>("");
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+  const [semester, setSemester] = useState<string>("1");
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState<GenerationProgress | null>(null);
   const [weights, setWeights] = useState(DEFAULT_WEIGHTS);
@@ -73,23 +79,28 @@ export default function RaporPesantrenGeneratePage() {
 
   const handleGenerate = async () => {
     if (!selectedClass || !selectedPeriod) {
-      toast.error('Pilih kelas dan tahun ajaran');
+      toast.error("Pilih kelas dan tahun ajaran");
       return;
     }
 
     if (!isWeightValid) {
-      toast.error('Total bobot harus 100%');
+      toast.error("Total bobot harus 100%");
       return;
     }
 
     setIsGenerating(true);
-    setProgress({ total: 0, completed: 0, current: 'Mempersiapkan...', errors: [] });
+    setProgress({
+      total: 0,
+      completed: 0,
+      current: "Mempersiapkan...",
+      errors: [],
+    });
 
     try {
       // Simulate generation process
-      const response = await fetch('/api/rapor-pesantren/generate-batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/rapor-pesantren/generate-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           classId: selectedClass,
           academicYearId: selectedPeriod,
@@ -98,33 +109,36 @@ export default function RaporPesantrenGeneratePage() {
         }),
       });
 
-      if (!response.ok) throw new Error('Gagal generate rapor');
+      if (!response.ok) throw new Error("Gagal generate rapor");
 
       const result = await response.json();
-      
+
       setProgress({
         total: result.total,
         completed: result.successful,
-        current: 'Selesai',
+        current: "Selesai",
         errors: result.errors || [],
       });
 
       toast.success(`${result.successful} rapor berhasil di-generate`);
     } catch (error) {
-      toast.error('Gagal generate rapor');
+      toast.error("Gagal generate rapor");
     } finally {
       setIsGenerating(false);
     }
   };
 
   return (
-    <MainLayout allowedRoles={['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']}>
+    <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN", "TEACHER"]}>
       <div className="space-y-6">
         <PageHeader
           title="Generate Rapor Pesantren"
           description="Buat rapor pesantren untuk seluruh santri dalam satu kelas"
           actions={
-            <Button variant="outline" onClick={() => router.push('/rapor-pesantren')}>
+            <Button
+              variant="outline"
+              onClick={() => router.push("/rapor-pesantren")}
+            >
               Lihat Daftar Rapor
             </Button>
           }
@@ -158,7 +172,10 @@ export default function RaporPesantrenGeneratePage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>Kelas</Label>
-                    <Select value={selectedClass} onValueChange={setSelectedClass}>
+                    <Select
+                      value={selectedClass}
+                      onValueChange={setSelectedClass}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih kelas" />
                       </SelectTrigger>
@@ -174,7 +191,10 @@ export default function RaporPesantrenGeneratePage() {
 
                   <div className="space-y-2">
                     <Label>Tahun Ajaran</Label>
-                    <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                    <Select
+                      value={selectedPeriod}
+                      onValueChange={setSelectedPeriod}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih tahun ajaran" />
                       </SelectTrigger>
@@ -274,7 +294,7 @@ export default function RaporPesantrenGeneratePage() {
                         <Button
                           variant="outline"
                           className="w-full"
-                          onClick={() => router.push('/rapor-pesantren')}
+                          onClick={() => router.push("/rapor-pesantren")}
                         >
                           <Download className="mr-2 h-4 w-4" />
                           Lihat Hasil
@@ -303,12 +323,12 @@ export default function RaporPesantrenGeneratePage() {
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {[
-                    { key: 'tahfidz', label: 'Tahfidz', icon: '📖' },
-                    { key: 'ibadah', label: 'Ibadah', icon: '🕌' },
-                    { key: 'muhadhoroh', label: 'Muhadhoroh', icon: '🎤' },
-                    { key: 'muhadatsah', label: 'Muhadatsah', icon: '💬' },
-                    { key: 'kitabProgress', label: 'Kitab Kuning', icon: '📚' },
-                    { key: 'akhlak', label: 'Akhlak', icon: '⭐' },
+                    { key: "tahfidz", label: "Tahfidz", icon: "📖" },
+                    { key: "ibadah", label: "Ibadah", icon: "🕌" },
+                    { key: "muhadhoroh", label: "Muhadhoroh", icon: "🎤" },
+                    { key: "muhadatsah", label: "Muhadatsah", icon: "💬" },
+                    { key: "kitabProgress", label: "Kitab Kuning", icon: "📚" },
+                    { key: "akhlak", label: "Akhlak", icon: "⭐" },
                   ].map((item) => (
                     <div key={item.key} className="space-y-2">
                       <Label className="flex items-center gap-2">
@@ -324,7 +344,7 @@ export default function RaporPesantrenGeneratePage() {
                           onChange={(e) =>
                             handleWeightChange(
                               item.key as keyof typeof weights,
-                              parseInt(e.target.value) || 0
+                              parseInt(e.target.value) || 0,
                             )
                           }
                         />
@@ -336,7 +356,7 @@ export default function RaporPesantrenGeneratePage() {
 
                 <div className="mt-6 flex items-center justify-between p-4 border rounded-lg">
                   <span className="font-medium">Total Bobot:</span>
-                  <Badge variant={isWeightValid ? 'default' : 'destructive'}>
+                  <Badge variant={isWeightValid ? "default" : "destructive"}>
                     {totalWeight}%
                   </Badge>
                 </div>

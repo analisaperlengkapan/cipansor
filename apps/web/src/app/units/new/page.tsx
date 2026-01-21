@@ -1,42 +1,42 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { useCreateUnit, UNIT_TYPES } from '@/hooks/use-units';
+} from "@/components/ui/card";
+import { useCreateUnit, UNIT_TYPES } from "@/hooks/use-units";
 
 const unitSchema = z.object({
-  name: z.string().min(1, 'Nama unit wajib diisi'),
-  type: z.enum(['PESANTREN', 'TK_QURAN', 'SD_IT', 'SMP_IT', 'SMA_QURAN'], {
-    required_error: 'Tipe unit wajib dipilih',
+  name: z.string().min(1, "Nama unit wajib diisi"),
+  type: z.enum(["PESANTREN", "TK_QURAN", "SD_IT", "SMP_IT", "SMA_QURAN"], {
+    required_error: "Tipe unit wajib dipilih",
   }),
   address: z.string().optional(),
   phone: z.string().optional(),
-  email: z.string().email('Email tidak valid').optional().or(z.literal('')),
+  email: z.string().email("Email tidak valid").optional().or(z.literal("")),
   headName: z.string().optional(),
 });
 
@@ -64,10 +64,11 @@ export default function NewUnitPage() {
         email: data.email || undefined,
         headName: data.headName || undefined,
       });
-      toast.success('Unit berhasil dibuat');
-      router.push('/units');
+      toast.success("Unit berhasil dibuat");
+      router.push("/units");
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal membuat unit';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal membuat unit";
       toast.error(errorMessage);
     }
   };
@@ -82,7 +83,9 @@ export default function NewUnitPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Tambah Unit Baru</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Tambah Unit Baru
+            </h1>
             <p className="text-muted-foreground">Buat unit pendidikan baru</p>
           </div>
         </div>
@@ -100,17 +103,21 @@ export default function NewUnitPage() {
                   <Input
                     id="name"
                     placeholder="Contoh: SMP IT Al-Hikmah"
-                    {...register('name')}
+                    {...register("name")}
                   />
                   {errors.name && (
-                    <p className="text-sm text-destructive">{errors.name.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.name.message}
+                    </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="type">Tipe Unit *</Label>
                   <Select
-                    onValueChange={(value) => setValue('type', value as UnitFormData['type'])}
+                    onValueChange={(value) =>
+                      setValue("type", value as UnitFormData["type"])
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih tipe unit" />
@@ -124,7 +131,9 @@ export default function NewUnitPage() {
                     </SelectContent>
                   </Select>
                   {errors.type && (
-                    <p className="text-sm text-destructive">{errors.type.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.type.message}
+                    </p>
                   )}
                 </div>
 
@@ -133,10 +142,12 @@ export default function NewUnitPage() {
                   <Input
                     id="headName"
                     placeholder="Nama kepala sekolah/pimpinan"
-                    {...register('headName')}
+                    {...register("headName")}
                   />
                   {errors.headName && (
-                    <p className="text-sm text-destructive">{errors.headName.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.headName.message}
+                    </p>
                   )}
                 </div>
               </CardContent>
@@ -154,10 +165,12 @@ export default function NewUnitPage() {
                     id="address"
                     placeholder="Alamat lengkap unit"
                     rows={3}
-                    {...register('address')}
+                    {...register("address")}
                   />
                   {errors.address && (
-                    <p className="text-sm text-destructive">{errors.address.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.address.message}
+                    </p>
                   )}
                 </div>
 
@@ -166,10 +179,12 @@ export default function NewUnitPage() {
                   <Input
                     id="phone"
                     placeholder="021-12345678"
-                    {...register('phone')}
+                    {...register("phone")}
                   />
                   {errors.phone && (
-                    <p className="text-sm text-destructive">{errors.phone.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.phone.message}
+                    </p>
                   )}
                 </div>
 
@@ -179,10 +194,12 @@ export default function NewUnitPage() {
                     id="email"
                     type="email"
                     placeholder="unit@pesantren.sch.id"
-                    {...register('email')}
+                    {...register("email")}
                   />
                   {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.email.message}
+                    </p>
                   )}
                 </div>
               </CardContent>
@@ -193,8 +210,13 @@ export default function NewUnitPage() {
             <Button type="button" variant="outline" asChild>
               <Link href="/units">Batal</Link>
             </Button>
-            <Button type="submit" disabled={isSubmitting || createUnit.isPending}>
-              {isSubmitting || createUnit.isPending ? 'Menyimpan...' : 'Simpan Unit'}
+            <Button
+              type="submit"
+              disabled={isSubmitting || createUnit.isPending}
+            >
+              {isSubmitting || createUnit.isPending
+                ? "Menyimpan..."
+                : "Simpan Unit"}
             </Button>
           </div>
         </form>

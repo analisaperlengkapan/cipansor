@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  CheckCircle, 
-  Clock, 
+import { useState, useMemo } from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  CheckCircle,
+  Clock,
   MapPin,
   Users,
   Star,
@@ -15,15 +15,21 @@ import {
   AlertTriangle,
   MessageSquare,
   Save,
-  Loader2
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
+  Loader2,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -31,20 +37,20 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { toast } from 'sonner';
-import { 
-  DUTY_TYPE_LABELS, 
-  DutyType, 
-  DutyStatus, 
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import {
+  DUTY_TYPE_LABELS,
+  DutyType,
+  DutyStatus,
   DutyShift,
-  DUTY_STATUS_LABELS, 
+  DUTY_STATUS_LABELS,
   useDutyRoster,
-  useUpdateDutyStatus 
-} from '@/hooks/use-duty-roster';
+  useUpdateDutyStatus,
+} from "@/hooks/use-duty-roster";
 
 // Extended status for UI display (includes additional states used in demo)
-type UIStatus = DutyStatus | 'SCHEDULED' | 'IN_PROGRESS' | 'MISSED' | 'EXCUSED';
+type UIStatus = DutyStatus | "SCHEDULED" | "IN_PROGRESS" | "MISSED" | "EXCUSED";
 
 interface StudentAssignment {
   id: string;
@@ -63,32 +69,76 @@ interface StudentAssignment {
   feedback?: string;
 }
 
-const STATUS_CONFIG: Record<UIStatus, { label: string; color: string; icon: React.ReactNode; bgColor: string }> = {
-  PENDING: { label: 'Menunggu', color: 'bg-gray-100 text-gray-800', bgColor: 'bg-gray-50', icon: <Clock className="h-4 w-4" /> },
-  SCHEDULED: { label: 'Terjadwal', color: 'bg-gray-100 text-gray-800', bgColor: 'bg-gray-50', icon: <Clock className="h-4 w-4" /> },
-  IN_PROGRESS: { label: 'Berlangsung', color: 'bg-blue-100 text-blue-800', bgColor: 'bg-blue-50', icon: <Clock className="h-4 w-4" /> },
-  COMPLETED: { label: 'Selesai', color: 'bg-green-100 text-green-800', bgColor: 'bg-green-50', icon: <CheckCircle className="h-4 w-4" /> },
-  ABSENT: { label: 'Tidak Hadir', color: 'bg-red-100 text-red-800', bgColor: 'bg-red-50', icon: <AlertTriangle className="h-4 w-4" /> },
-  MISSED: { label: 'Tidak Hadir', color: 'bg-red-100 text-red-800', bgColor: 'bg-red-50', icon: <AlertTriangle className="h-4 w-4" /> },
-  SUBSTITUTED: { label: 'Digantikan', color: 'bg-yellow-100 text-yellow-800', bgColor: 'bg-yellow-50', icon: <AlertTriangle className="h-4 w-4" /> },
-  EXCUSED: { label: 'Izin', color: 'bg-yellow-100 text-yellow-800', bgColor: 'bg-yellow-50', icon: <AlertTriangle className="h-4 w-4" /> },
+const STATUS_CONFIG: Record<
+  UIStatus,
+  { label: string; color: string; icon: React.ReactNode; bgColor: string }
+> = {
+  PENDING: {
+    label: "Menunggu",
+    color: "bg-gray-100 text-gray-800",
+    bgColor: "bg-gray-50",
+    icon: <Clock className="h-4 w-4" />,
+  },
+  SCHEDULED: {
+    label: "Terjadwal",
+    color: "bg-gray-100 text-gray-800",
+    bgColor: "bg-gray-50",
+    icon: <Clock className="h-4 w-4" />,
+  },
+  IN_PROGRESS: {
+    label: "Berlangsung",
+    color: "bg-blue-100 text-blue-800",
+    bgColor: "bg-blue-50",
+    icon: <Clock className="h-4 w-4" />,
+  },
+  COMPLETED: {
+    label: "Selesai",
+    color: "bg-green-100 text-green-800",
+    bgColor: "bg-green-50",
+    icon: <CheckCircle className="h-4 w-4" />,
+  },
+  ABSENT: {
+    label: "Tidak Hadir",
+    color: "bg-red-100 text-red-800",
+    bgColor: "bg-red-50",
+    icon: <AlertTriangle className="h-4 w-4" />,
+  },
+  MISSED: {
+    label: "Tidak Hadir",
+    color: "bg-red-100 text-red-800",
+    bgColor: "bg-red-50",
+    icon: <AlertTriangle className="h-4 w-4" />,
+  },
+  SUBSTITUTED: {
+    label: "Digantikan",
+    color: "bg-yellow-100 text-yellow-800",
+    bgColor: "bg-yellow-50",
+    icon: <AlertTriangle className="h-4 w-4" />,
+  },
+  EXCUSED: {
+    label: "Izin",
+    color: "bg-yellow-100 text-yellow-800",
+    bgColor: "bg-yellow-50",
+    icon: <AlertTriangle className="h-4 w-4" />,
+  },
 };
 
 const SHIFT_CONFIG: Record<DutyShift, { label: string; color: string }> = {
-  MORNING: { label: 'Pagi', color: 'bg-amber-100 text-amber-800' },
-  AFTERNOON: { label: 'Siang', color: 'bg-orange-100 text-orange-800' },
-  EVENING: { label: 'Sore/Malam', color: 'bg-purple-100 text-purple-800' },
+  MORNING: { label: "Pagi", color: "bg-amber-100 text-amber-800" },
+  AFTERNOON: { label: "Siang", color: "bg-orange-100 text-orange-800" },
+  EVENING: { label: "Sore/Malam", color: "bg-purple-100 text-purple-800" },
 };
 
 export default function DutyRosterDetailPage() {
   const params = useParams();
   const router = useRouter();
   const rosterId = params.id as string;
-  
+
   // Fetch roster detail from API
-  const { data: rosterData, isLoading: isLoadingRoster } = useDutyRoster(rosterId);
+  const { data: rosterData, isLoading: isLoadingRoster } =
+    useDutyRoster(rosterId);
   const updateStatusMutation = useUpdateDutyStatus();
-  
+
   // Transform API data to UI format
   const roster = useMemo(() => {
     if (!rosterData) return null;
@@ -103,44 +153,49 @@ export default function DutyRosterDetailPage() {
       endTime: rosterData.endTime,
       notes: rosterData.notes,
       supervisor: rosterData.supervisor,
-      students: rosterData.assignments?.map(a => ({
-        id: a.id,
-        studentId: a.student.id,
-        student: a.student,
-        status: a.status as UIStatus,
-        checkInTime: a.completedAt?.slice(11, 16),
-        checkOutTime: undefined,
-        rating: undefined,
-        points: undefined,
-        feedback: a.completionNotes,
-      })) || [],
+      students:
+        rosterData.assignments?.map((a) => ({
+          id: a.id,
+          studentId: a.student.id,
+          student: a.student,
+          status: a.status as UIStatus,
+          checkInTime: a.completedAt?.slice(11, 16),
+          checkOutTime: undefined,
+          rating: undefined,
+          points: undefined,
+          feedback: a.completionNotes,
+        })) || [],
     };
   }, [rosterData]);
 
-  const [selectedAssignment, setSelectedAssignment] = useState<StudentAssignment | null>(null);
+  const [selectedAssignment, setSelectedAssignment] =
+    useState<StudentAssignment | null>(null);
   const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
   const [verifyForm, setVerifyForm] = useState({
     rating: 5,
-    feedback: '',
+    feedback: "",
     points: 10,
   });
 
   const handleCheckIn = (assignmentId: string) => {
-    updateStatusMutation.mutate({
-      id: assignmentId,
-      status: 'PENDING', // In a real scenario, you might have a different status or the backend handles this
-    }, {
-      onSuccess: () => {
-        toast.success('Check-in berhasil');
+    updateStatusMutation.mutate(
+      {
+        id: assignmentId,
+        status: "PENDING", // In a real scenario, you might have a different status or the backend handles this
       },
-      onError: (error) => {
-        toast.error('Gagal check-in: ' + (error as Error).message);
-      }
-    });
+      {
+        onSuccess: () => {
+          toast.success("Check-in berhasil");
+        },
+        onError: (error) => {
+          toast.error("Gagal check-in: " + (error as Error).message);
+        },
+      },
+    );
   };
 
   const handleCheckOut = (assignmentId: string) => {
-    const assignment = roster?.students.find(s => s.id === assignmentId);
+    const assignment = roster?.students.find((s) => s.id === assignmentId);
     if (assignment) {
       setSelectedAssignment(assignment);
       setVerifyDialogOpen(true);
@@ -150,59 +205,74 @@ export default function DutyRosterDetailPage() {
   const handleVerify = () => {
     if (!selectedAssignment) return;
 
-    updateStatusMutation.mutate({
-      id: selectedAssignment.id,
-      status: 'COMPLETED',
-      notes: verifyForm.feedback,
-    }, {
-      onSuccess: () => {
-        setVerifyDialogOpen(false);
-        setSelectedAssignment(null);
-        setVerifyForm({ rating: 5, feedback: '', points: 10 });
-        toast.success('Tugas berhasil diverifikasi');
+    updateStatusMutation.mutate(
+      {
+        id: selectedAssignment.id,
+        status: "COMPLETED",
+        notes: verifyForm.feedback,
       },
-      onError: (error) => {
-        toast.error('Gagal verifikasi: ' + (error as Error).message);
-      }
-    });
+      {
+        onSuccess: () => {
+          setVerifyDialogOpen(false);
+          setSelectedAssignment(null);
+          setVerifyForm({ rating: 5, feedback: "", points: 10 });
+          toast.success("Tugas berhasil diverifikasi");
+        },
+        onError: (error) => {
+          toast.error("Gagal verifikasi: " + (error as Error).message);
+        },
+      },
+    );
   };
 
   const handleMarkMissed = (assignmentId: string) => {
-    updateStatusMutation.mutate({
-      id: assignmentId,
-      status: 'ABSENT',
-    }, {
-      onSuccess: () => {
-        toast.warning('Santri ditandai tidak hadir');
+    updateStatusMutation.mutate(
+      {
+        id: assignmentId,
+        status: "ABSENT",
       },
-      onError: (error) => {
-        toast.error('Gagal update status: ' + (error as Error).message);
-      }
-    });
+      {
+        onSuccess: () => {
+          toast.warning("Santri ditandai tidak hadir");
+        },
+        onError: (error) => {
+          toast.error("Gagal update status: " + (error as Error).message);
+        },
+      },
+    );
   };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('id-ID', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString("id-ID", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   const getCompletionStats = () => {
-    if (!roster) return { total: 0, completed: 0, inProgress: 0, scheduled: 0, missed: 0 };
+    if (!roster)
+      return { total: 0, completed: 0, inProgress: 0, scheduled: 0, missed: 0 };
     const total = roster.students.length;
-    const completed = roster.students.filter(s => s.status === 'COMPLETED').length;
-    const inProgress = roster.students.filter(s => s.status === 'IN_PROGRESS').length;
-    const scheduled = roster.students.filter(s => s.status === 'PENDING' || s.status === 'SCHEDULED').length;
-    const missed = roster.students.filter(s => s.status === 'ABSENT' || s.status === 'MISSED').length;
+    const completed = roster.students.filter(
+      (s) => s.status === "COMPLETED",
+    ).length;
+    const inProgress = roster.students.filter(
+      (s) => s.status === "IN_PROGRESS",
+    ).length;
+    const scheduled = roster.students.filter(
+      (s) => s.status === "PENDING" || s.status === "SCHEDULED",
+    ).length;
+    const missed = roster.students.filter(
+      (s) => s.status === "ABSENT" || s.status === "MISSED",
+    ).length;
     return { total, completed, inProgress, scheduled, missed };
   };
 
   const stats = getCompletionStats();
-  
+
   // Loading state
   if (isLoadingRoster) {
     return (
@@ -219,7 +289,7 @@ export default function DutyRosterDetailPage() {
       </div>
     );
   }
-  
+
   // Not found state
   if (!roster) {
     return (
@@ -253,7 +323,9 @@ export default function DutyRosterDetailPage() {
           </Button>
         </Link>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold">{DUTY_TYPE_LABELS[roster.dutyType]}</h1>
+          <h1 className="text-2xl font-bold">
+            {DUTY_TYPE_LABELS[roster.dutyType]}
+          </h1>
           <p className="text-muted-foreground">{formatDate(roster.date)}</p>
         </div>
       </div>
@@ -273,7 +345,9 @@ export default function DutyRosterDetailPage() {
               <Clock className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">Waktu</p>
-                <p className="font-medium">{roster.startTime} - {roster.endTime}</p>
+                <p className="font-medium">
+                  {roster.startTime} - {roster.endTime}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -285,13 +359,15 @@ export default function DutyRosterDetailPage() {
               <Users className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">Pengawas</p>
-                <p className="font-medium">{roster.supervisor?.name || '-'}</p>
+                <p className="font-medium">{roster.supervisor?.name || "-"}</p>
               </div>
             </div>
           </div>
           {roster.notes && (
             <div className="mt-4 p-3 bg-muted rounded-lg">
-              <p className="text-sm"><strong>Catatan:</strong> {roster.notes}</p>
+              <p className="text-sm">
+                <strong>Catatan:</strong> {roster.notes}
+              </p>
             </div>
           )}
         </CardContent>
@@ -307,19 +383,25 @@ export default function DutyRosterDetailPage() {
         </Card>
         <Card>
           <CardContent className="pt-4 text-center">
-            <p className="text-3xl font-bold text-green-600">{stats.completed}</p>
+            <p className="text-3xl font-bold text-green-600">
+              {stats.completed}
+            </p>
             <p className="text-sm text-muted-foreground">Selesai</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 text-center">
-            <p className="text-3xl font-bold text-blue-600">{stats.inProgress}</p>
+            <p className="text-3xl font-bold text-blue-600">
+              {stats.inProgress}
+            </p>
             <p className="text-sm text-muted-foreground">Berlangsung</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 text-center">
-            <p className="text-3xl font-bold text-gray-600">{stats.scheduled}</p>
+            <p className="text-3xl font-bold text-gray-600">
+              {stats.scheduled}
+            </p>
             <p className="text-sm text-muted-foreground">Terjadwal</p>
           </CardContent>
         </Card>
@@ -335,24 +417,29 @@ export default function DutyRosterDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle>Daftar Santri Piket</CardTitle>
-          <CardDescription>Kelola kehadiran dan verifikasi tugas</CardDescription>
+          <CardDescription>
+            Kelola kehadiran dan verifikasi tugas
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {roster.students.map(assignment => (
-              <div 
+            {roster.students.map((assignment) => (
+              <div
                 key={assignment.id}
                 className={`p-4 rounded-lg border ${STATUS_CONFIG[assignment.status].bgColor}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-12 w-12">
-                      <AvatarFallback>{assignment.student.name.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>
+                        {assignment.student.name.charAt(0)}
+                      </AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-medium">{assignment.student.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {assignment.student.nis} • {assignment.student.class.name}
+                        {assignment.student.nis} •{" "}
+                        {assignment.student.class.name}
                       </p>
                     </div>
                   </div>
@@ -383,21 +470,23 @@ export default function DutyRosterDetailPage() {
                 )}
 
                 {/* Rating & Feedback */}
-                {assignment.status === 'COMPLETED' && (
+                {assignment.status === "COMPLETED" && (
                   <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded-lg">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map(star => (
+                        {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
                             className={`h-4 w-4 ${
                               star <= (assignment.rating || 0)
-                                ? 'text-amber-500 fill-amber-500'
-                                : 'text-gray-300'
+                                ? "text-amber-500 fill-amber-500"
+                                : "text-gray-300"
                             }`}
                           />
                         ))}
-                        <span className="ml-2 text-sm font-medium">{assignment.rating}/5</span>
+                        <span className="ml-2 text-sm font-medium">
+                          {assignment.rating}/5
+                        </span>
                       </div>
                       {assignment.points && (
                         <Badge className="bg-green-100 text-green-800">
@@ -416,17 +505,18 @@ export default function DutyRosterDetailPage() {
 
                 {/* Actions */}
                 <div className="mt-4 flex gap-2">
-                  {(assignment.status === 'PENDING' || assignment.status === 'SCHEDULED') && (
+                  {(assignment.status === "PENDING" ||
+                    assignment.status === "SCHEDULED") && (
                     <>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         onClick={() => handleCheckIn(assignment.id)}
                       >
                         <LogIn className="h-4 w-4 mr-1" />
                         Check-in
                       </Button>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="outline"
                         className="text-red-600"
                         onClick={() => handleMarkMissed(assignment.id)}
@@ -436,9 +526,9 @@ export default function DutyRosterDetailPage() {
                       </Button>
                     </>
                   )}
-                  {assignment.status === 'IN_PROGRESS' && (
-                    <Button 
-                      size="sm" 
+                  {assignment.status === "IN_PROGRESS" && (
+                    <Button
+                      size="sm"
                       onClick={() => handleCheckOut(assignment.id)}
                     >
                       <LogOut className="h-4 w-4 mr-1" />
@@ -465,23 +555,31 @@ export default function DutyRosterDetailPage() {
             <div className="space-y-2">
               <Label>Rating</Label>
               <div className="flex items-center gap-2">
-                {[1, 2, 3, 4, 5].map(star => (
+                {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
                     type="button"
-                    onClick={() => setVerifyForm(prev => ({ ...prev, rating: star, points: star * 2 }))}
+                    onClick={() =>
+                      setVerifyForm((prev) => ({
+                        ...prev,
+                        rating: star,
+                        points: star * 2,
+                      }))
+                    }
                     className="focus:outline-none"
                   >
                     <Star
                       className={`h-8 w-8 transition-colors ${
                         star <= verifyForm.rating
-                          ? 'text-amber-500 fill-amber-500'
-                          : 'text-gray-300 hover:text-amber-300'
+                          ? "text-amber-500 fill-amber-500"
+                          : "text-gray-300 hover:text-amber-300"
                       }`}
                     />
                   </button>
                 ))}
-                <span className="ml-2 text-lg font-medium">{verifyForm.rating}/5</span>
+                <span className="ml-2 text-lg font-medium">
+                  {verifyForm.rating}/5
+                </span>
               </div>
             </div>
 
@@ -491,7 +589,9 @@ export default function DutyRosterDetailPage() {
                 <Badge className="text-lg px-4 py-2 bg-green-100 text-green-800">
                   +{verifyForm.points} poin
                 </Badge>
-                <span className="text-sm text-muted-foreground">(otomatis berdasarkan rating)</span>
+                <span className="text-sm text-muted-foreground">
+                  (otomatis berdasarkan rating)
+                </span>
               </div>
             </div>
 
@@ -500,13 +600,21 @@ export default function DutyRosterDetailPage() {
               <Textarea
                 placeholder="Berikan catatan atau masukan..."
                 value={verifyForm.feedback}
-                onChange={(e) => setVerifyForm(prev => ({ ...prev, feedback: e.target.value }))}
+                onChange={(e) =>
+                  setVerifyForm((prev) => ({
+                    ...prev,
+                    feedback: e.target.value,
+                  }))
+                }
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setVerifyDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setVerifyDialogOpen(false)}
+            >
               Batal
             </Button>
             <Button onClick={handleVerify}>

@@ -1,15 +1,21 @@
-'use client';
+"use client";
 
-import { use } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { use } from "react";
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,11 +26,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { toast } from 'sonner';
-import { useSimaanExam, useDeleteSimaan, useCompleteSimaan } from '@/hooks/use-simaan';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import {
+  useSimaanExam,
+  useDeleteSimaan,
+  useCompleteSimaan,
+} from "@/hooks/use-simaan";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 import {
   ArrowLeft,
   Calendar,
@@ -41,38 +51,44 @@ import {
   FileText,
   Play,
   MapPin,
-} from 'lucide-react';
+} from "lucide-react";
 
-type ExamType = 'JUZ_30' | 'JUZ_PILIHAN' | 'FULL_QURAN' | 'CUSTOM';
-type ExamStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+type ExamType = "JUZ_30" | "JUZ_PILIHAN" | "FULL_QURAN" | "CUSTOM";
+type ExamStatus = "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 
 const examTypeLabels: Record<ExamType, string> = {
   JUZ_30: "Juz 30 (Juz 'Amma)",
-  JUZ_PILIHAN: 'Juz Pilihan',
-  FULL_QURAN: '30 Juz (Full Quran)',
-  CUSTOM: 'Custom',
+  JUZ_PILIHAN: "Juz Pilihan",
+  FULL_QURAN: "30 Juz (Full Quran)",
+  CUSTOM: "Custom",
 };
 
-const examTypeBadgeVariant: Record<ExamType, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  JUZ_30: 'secondary',
-  JUZ_PILIHAN: 'default',
-  FULL_QURAN: 'destructive',
-  CUSTOM: 'outline',
+const examTypeBadgeVariant: Record<
+  ExamType,
+  "default" | "secondary" | "destructive" | "outline"
+> = {
+  JUZ_30: "secondary",
+  JUZ_PILIHAN: "default",
+  FULL_QURAN: "destructive",
+  CUSTOM: "outline",
 };
 
 const statusLabels: Record<ExamStatus, string> = {
-  SCHEDULED: 'Terjadwal',
-  IN_PROGRESS: 'Sedang Berlangsung',
-  COMPLETED: 'Selesai',
-  CANCELLED: 'Dibatalkan',
+  SCHEDULED: "Terjadwal",
+  IN_PROGRESS: "Sedang Berlangsung",
+  COMPLETED: "Selesai",
+  CANCELLED: "Dibatalkan",
 };
 
 const StatusBadge = ({ status }: { status: ExamStatus }) => {
-  const variants: Record<ExamStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-    SCHEDULED: 'outline',
-    IN_PROGRESS: 'secondary',
-    COMPLETED: 'default',
-    CANCELLED: 'destructive',
+  const variants: Record<
+    ExamStatus,
+    "default" | "secondary" | "destructive" | "outline"
+  > = {
+    SCHEDULED: "outline",
+    IN_PROGRESS: "secondary",
+    COMPLETED: "default",
+    CANCELLED: "destructive",
   };
 
   const icons: Record<ExamStatus, React.ReactNode> = {
@@ -83,14 +99,21 @@ const StatusBadge = ({ status }: { status: ExamStatus }) => {
   };
 
   return (
-    <Badge variant={variants[status] || 'default'} className="flex items-center w-fit">
+    <Badge
+      variant={variants[status] || "default"}
+      className="flex items-center w-fit"
+    >
       {icons[status]}
       {statusLabels[status]}
     </Badge>
   );
 };
 
-export default function SimaanDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function SimaanDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const resolvedParams = use(params);
   const router = useRouter();
 
@@ -101,10 +124,10 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(resolvedParams.id);
-      toast.success('Data ujian simaan berhasil dihapus');
-      router.push('/tahfidz/simaan');
+      toast.success("Data ujian simaan berhasil dihapus");
+      router.push("/tahfidz/simaan");
     } catch {
-      toast.error('Gagal menghapus data ujian simaan');
+      toast.error("Gagal menghapus data ujian simaan");
     }
   };
 
@@ -114,11 +137,11 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
         id: resolvedParams.id,
         data: {
           overallGrade: exam?.overallGrade || 0,
-        }
+        },
       });
-      toast.success('Ujian simaan berhasil diselesaikan');
+      toast.success("Ujian simaan berhasil diselesaikan");
     } catch {
-      toast.error('Gagal menyelesaikan ujian simaan');
+      toast.error("Gagal menyelesaikan ujian simaan");
     }
   };
 
@@ -142,8 +165,13 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
         <div className="text-center py-12">
           <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
           <h2 className="mt-4 text-lg font-semibold">Data Tidak Ditemukan</h2>
-          <p className="text-muted-foreground">Data ujian simaan tidak ditemukan</p>
-          <Button className="mt-4" onClick={() => router.push('/tahfidz/simaan')}>
+          <p className="text-muted-foreground">
+            Data ujian simaan tidak ditemukan
+          </p>
+          <Button
+            className="mt-4"
+            onClick={() => router.push("/tahfidz/simaan")}
+          >
             Kembali ke Daftar
           </Button>
         </div>
@@ -151,9 +179,9 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
     );
   }
 
-  const canEdit = exam.status === 'SCHEDULED' || exam.status === 'IN_PROGRESS';
-  const canFinalize = exam.status === 'IN_PROGRESS';
-  const canDelete = exam.status === 'SCHEDULED';
+  const canEdit = exam.status === "SCHEDULED" || exam.status === "IN_PROGRESS";
+  const canFinalize = exam.status === "IN_PROGRESS";
+  const canDelete = exam.status === "SCHEDULED";
 
   return (
     <MainLayout>
@@ -161,7 +189,11 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.push('/tahfidz/simaan')}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/tahfidz/simaan")}
+            >
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <PageHeader
@@ -174,7 +206,9 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
             {canEdit && (
               <Button
                 variant="outline"
-                onClick={() => router.push(`/tahfidz/simaan/${resolvedParams.id}/edit`)}
+                onClick={() =>
+                  router.push(`/tahfidz/simaan/${resolvedParams.id}/edit`)
+                }
               >
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
@@ -190,10 +224,13 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Selesaikan Ujian Simaan?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      Selesaikan Ujian Simaan?
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      Tindakan ini akan menyelesaikan ujian simaan dan tidak dapat dibatalkan.
-                      Pastikan semua penguji telah memberikan nilai.
+                      Tindakan ini akan menyelesaikan ujian simaan dan tidak
+                      dapat dibatalkan. Pastikan semua penguji telah memberikan
+                      nilai.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -217,7 +254,8 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
                   <AlertDialogHeader>
                     <AlertDialogTitle>Hapus Ujian Simaan?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Tindakan ini tidak dapat dibatalkan. Data ujian simaan akan dihapus permanen.
+                      Tindakan ini tidak dapat dibatalkan. Data ujian simaan
+                      akan dihapus permanen.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -251,13 +289,20 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
                 <Avatar className="h-16 w-16">
                   <AvatarImage src={exam.student?.photoUrl} />
                   <AvatarFallback className="text-lg">
-                    {exam.student?.user?.name?.substring(0, 2).toUpperCase() || 'ST'}
+                    {exam.student?.user?.name?.substring(0, 2).toUpperCase() ||
+                      "ST"}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-lg font-semibold">{exam.student?.user?.name || 'N/A'}</h3>
-                  <p className="text-sm text-muted-foreground">{exam.student?.nis || '-'}</p>
-                  <p className="text-sm text-muted-foreground">{exam.halaqoh?.name || '-'}</p>
+                  <h3 className="text-lg font-semibold">
+                    {exam.student?.user?.name || "N/A"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {exam.student?.nis || "-"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {exam.halaqoh?.name || "-"}
+                  </p>
                 </div>
               </div>
 
@@ -272,7 +317,9 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
 
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Tipe Ujian</span>
-                  <Badge variant={examTypeBadgeVariant[exam.examType as ExamType]}>
+                  <Badge
+                    variant={examTypeBadgeVariant[exam.examType as ExamType]}
+                  >
                     {examTypeLabels[exam.examType as ExamType] || exam.examType}
                   </Badge>
                 </div>
@@ -282,7 +329,9 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
                     <Calendar className="h-4 w-4" /> Tanggal
                   </span>
                   <span className="font-medium">
-                    {format(new Date(exam.examDate), 'EEEE, dd MMMM yyyy', { locale: id })}
+                    {format(new Date(exam.examDate), "EEEE, dd MMMM yyyy", {
+                      locale: id,
+                    })}
                   </span>
                 </div>
 
@@ -298,14 +347,18 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
                 {exam.startSurah && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Surah Mulai</span>
-                    <span className="font-medium">{exam.startSurah} : {exam.startAyat || 1}</span>
+                    <span className="font-medium">
+                      {exam.startSurah} : {exam.startAyat || 1}
+                    </span>
                   </div>
                 )}
 
                 {exam.endSurah && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Surah Akhir</span>
-                    <span className="font-medium">{exam.endSurah} : {exam.endAyat || 'Terakhir'}</span>
+                    <span className="font-medium">
+                      {exam.endSurah} : {exam.endAyat || "Terakhir"}
+                    </span>
                   </div>
                 )}
 
@@ -329,14 +382,16 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
               <CardDescription>Nilai dan predikat dari penguji</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {exam.status === 'COMPLETED' && exam.finalScore !== undefined ? (
+              {exam.status === "COMPLETED" && exam.finalScore !== undefined ? (
                 <>
                   {/* Final Score */}
                   <div className="text-center py-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-lg">
                     <div className="text-5xl font-bold text-green-600 dark:text-green-400">
                       {(exam.finalScore || exam.overallGrade || 0).toFixed(1)}
                     </div>
-                    <div className="text-muted-foreground mt-1">Nilai Akhir</div>
+                    <div className="text-muted-foreground mt-1">
+                      Nilai Akhir
+                    </div>
                     {(exam.predicate || exam.grade) && (
                       <Badge className="mt-3" variant="default">
                         {exam.predicate || exam.grade}
@@ -363,13 +418,20 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
                   </div>
 
                   {/* Pass/Fail Status */}
-                  {(exam.isPassed !== undefined || exam.passed !== undefined) && (
+                  {(exam.isPassed !== undefined ||
+                    exam.passed !== undefined) && (
                     <div className="flex items-center justify-center pt-4">
                       <Badge
-                        variant={(exam.isPassed || exam.passed) ? 'default' : 'destructive'}
+                        variant={
+                          exam.isPassed || exam.passed
+                            ? "default"
+                            : "destructive"
+                        }
                         className="text-lg py-2 px-4"
                       >
-                        {(exam.isPassed || exam.passed) ? '✓ LULUS' : '✗ TIDAK LULUS'}
+                        {exam.isPassed || exam.passed
+                          ? "✓ LULUS"
+                          : "✗ TIDAK LULUS"}
                       </Badge>
                     </div>
                   )}
@@ -378,11 +440,11 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
                 <div className="text-center py-12">
                   <Clock className="mx-auto h-12 w-12 text-muted-foreground" />
                   <p className="mt-4 text-muted-foreground">
-                    {exam.status === 'SCHEDULED'
-                      ? 'Ujian belum dimulai'
-                      : exam.status === 'IN_PROGRESS'
-                        ? 'Ujian sedang berlangsung'
-                        : 'Ujian dibatalkan'}
+                    {exam.status === "SCHEDULED"
+                      ? "Ujian belum dimulai"
+                      : exam.status === "IN_PROGRESS"
+                        ? "Ujian sedang berlangsung"
+                        : "Ujian dibatalkan"}
                   </p>
                 </div>
               )}
@@ -397,7 +459,9 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
               <Users className="h-5 w-5" />
               Dewan Penguji ({exam.examiners?.length || 0})
             </CardTitle>
-            <CardDescription>Daftar penguji dan nilai yang diberikan</CardDescription>
+            <CardDescription>
+              Daftar penguji dan nilai yang diberikan
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {exam.examiners && exam.examiners.length > 0 ? (
@@ -408,13 +472,19 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
                       <div className="flex items-center gap-3 mb-4">
                         <Avatar>
                           <AvatarFallback>
-                            {examiner.teacher?.name?.substring(0, 2).toUpperCase() || `P${index + 1}`}
+                            {examiner.teacher?.name
+                              ?.substring(0, 2)
+                              .toUpperCase() || `P${index + 1}`}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">{examiner.teacher?.name || `Penguji ${index + 1}`}</p>
+                          <p className="font-medium">
+                            {examiner.teacher?.name || `Penguji ${index + 1}`}
+                          </p>
                           <p className="text-xs text-muted-foreground">
-                            {examiner.isChairman ? 'Ketua Penguji' : 'Anggota Penguji'}
+                            {examiner.isChairman
+                              ? "Ketua Penguji"
+                              : "Anggota Penguji"}
                           </p>
                         </div>
                       </div>
@@ -422,7 +492,9 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
                       {examiner.score !== undefined ? (
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Nilai</span>
+                            <span className="text-sm text-muted-foreground">
+                              Nilai
+                            </span>
                             <Badge variant="default">{examiner.score}</Badge>
                           </div>
                           {examiner.notes && (
@@ -432,7 +504,9 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
                           )}
                         </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground">Belum memberikan nilai</p>
+                        <p className="text-sm text-muted-foreground">
+                          Belum memberikan nilai
+                        </p>
                       )}
                     </CardContent>
                   </Card>
@@ -441,7 +515,9 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
             ) : (
               <div className="text-center py-8">
                 <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-                <p className="mt-4 text-muted-foreground">Belum ada penguji yang ditambahkan</p>
+                <p className="mt-4 text-muted-foreground">
+                  Belum ada penguji yang ditambahkan
+                </p>
               </div>
             )}
           </CardContent>
@@ -457,7 +533,9 @@ export default function SimaanDetailPage({ params }: { params: Promise<{ id: str
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground whitespace-pre-wrap">{exam.notes}</p>
+              <p className="text-muted-foreground whitespace-pre-wrap">
+                {exam.notes}
+              </p>
             </CardContent>
           </Card>
         )}
@@ -471,12 +549,12 @@ function ScoreBar({ label, score }: { label: string; score: number }) {
   const percentage = Math.min(100, Math.max(0, score));
   const colorClass =
     percentage >= 85
-      ? 'bg-green-500'
+      ? "bg-green-500"
       : percentage >= 70
-        ? 'bg-blue-500'
+        ? "bg-blue-500"
         : percentage >= 55
-          ? 'bg-yellow-500'
-          : 'bg-red-500';
+          ? "bg-yellow-500"
+          : "bg-red-500";
 
   return (
     <div className="space-y-1">

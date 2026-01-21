@@ -17,7 +17,7 @@ describe('Notifications Controller', () => {
       params: {},
       query: {},
       body: {},
-      user: { sub: 'user-id', role: 'USER' }
+      user: { sub: 'user-id', role: 'USER' },
     };
     res = {
       json: vi.fn(),
@@ -62,11 +62,15 @@ describe('Notifications Controller', () => {
 
       await controller.getNotificationById(req, res, next);
 
-      const expectedError = Errors.forbidden("You do not have permission to view this notification");
-      expect(next).toHaveBeenCalledWith(expect.objectContaining({
-        message: expectedError.message,
-        code: expectedError.code
-      }));
+      const expectedError = Errors.forbidden(
+        'You do not have permission to view this notification'
+      );
+      expect(next).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expectedError.message,
+          code: expectedError.code,
+        })
+      );
     });
 
     it('should throw NotFound error when notification does not exist', async () => {
@@ -75,11 +79,13 @@ describe('Notifications Controller', () => {
 
       await controller.getNotificationById(req, res, next);
 
-      const expectedError = Errors.notFound("Notification not found");
-      expect(next).toHaveBeenCalledWith(expect.objectContaining({
-        message: expectedError.message,
-        code: expectedError.code
-      }));
+      const expectedError = Errors.notFound('Notification not found');
+      expect(next).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expectedError.message,
+          code: expectedError.code,
+        })
+      );
     });
   });
 });

@@ -227,23 +227,25 @@ export const dailyReportService = {
         teacherNotes: data.parentNotes,
         homeActivity: data.homeworkSuggestion,
         createdById: userId,
-        photos: data.photoUrls && data.photoUrls.length > 0
-          ? {
-            create: data.photoUrls.map((url) => ({
-              photoUrl: url,
-              caption: '',
-            })),
-          }
-          : undefined,
-        homework: data.homework && data.homework.length > 0
-          ? {
-            create: data.homework.map((hw) => ({
-              subjectName: hw.subjectName,
-              description: hw.description,
-              dueDate: hw.dueDate ? new Date(hw.dueDate) : null,
-            })),
-          }
-          : undefined,
+        photos:
+          data.photoUrls && data.photoUrls.length > 0
+            ? {
+                create: data.photoUrls.map((url) => ({
+                  photoUrl: url,
+                  caption: '',
+                })),
+              }
+            : undefined,
+        homework:
+          data.homework && data.homework.length > 0
+            ? {
+                create: data.homework.map((hw) => ({
+                  subjectName: hw.subjectName,
+                  description: hw.description,
+                  dueDate: hw.dueDate ? new Date(hw.dueDate) : null,
+                })),
+              }
+            : undefined,
       },
       include: {
         student: { select: { id: true, user: { select: { name: true } } } },
@@ -261,14 +263,16 @@ export const dailyReportService = {
       });
 
       if (studentData?.parentPhone) {
-        whatsAppService.sendDailyReportNotification({
-          parentPhone: studentData.parentPhone,
-          parentName: studentData.parentName || 'Orang Tua',
-          studentName: report.student.user.name,
-          date: reportDate,
-          mood: data.morningMood,
-          healthStatus: data.healthNotes,
-        }).catch(err => logger.error(`Failed to send WA notification: ${err}`));
+        whatsAppService
+          .sendDailyReportNotification({
+            parentPhone: studentData.parentPhone,
+            parentName: studentData.parentName || 'Orang Tua',
+            studentName: report.student.user.name,
+            date: reportDate,
+            mood: data.morningMood,
+            healthStatus: data.healthNotes,
+          })
+          .catch((err) => logger.error(`Failed to send WA notification: ${err}`));
       }
     } catch (err) {
       logger.error(`Error in daily report notification trigger: ${err}`);
@@ -287,7 +291,7 @@ export const dailyReportService = {
       select: { type: true },
     });
 
-    const studentIds = data.reports.map(r => r.studentId);
+    const studentIds = data.reports.map((r) => r.studentId);
 
     // 1. Batch fetch existing reports to identify duplicates
     const existingReports = await prisma.dailyStudentReport.findMany({
@@ -297,7 +301,7 @@ export const dailyReportService = {
       },
       select: { studentId: true },
     });
-    const existingStudentIds = new Set(existingReports.map(r => r.studentId));
+    const existingStudentIds = new Set(existingReports.map((r) => r.studentId));
 
     // 2. Batch fetch parent info for notifications
     const studentsInfo = await prisma.student.findMany({
@@ -306,10 +310,10 @@ export const dailyReportService = {
         id: true,
         parentName: true,
         parentPhone: true,
-        user: { select: { name: true } }
-      }
+        user: { select: { name: true } },
+      },
     });
-    const studentInfoMap = new Map(studentsInfo.map(s => [s.id, s]));
+    const studentInfoMap = new Map(studentsInfo.map((s) => [s.id, s]));
 
     const results: { success: string[]; failed: { studentId: string; error: string }[] } = {
       success: [],
@@ -418,7 +422,9 @@ export const dailyReportService = {
         mood: data.morningMood as DailyMood | undefined,
         healthStatus: data.healthNotes,
         temperature: data.temperature,
-        hadBreakfast: data.breakfastConsumption ? (data.breakfastConsumption === 'FULL' || data.breakfastConsumption === 'HALF') : undefined,
+        hadBreakfast: data.breakfastConsumption
+          ? data.breakfastConsumption === 'FULL' || data.breakfastConsumption === 'HALF'
+          : undefined,
         mealStatus: data.lunchConsumption as MealConsumption | undefined,
         snackStatus: data.snackConsumption as MealConsumption | undefined,
         napDuration: data.napDurationMinutes,

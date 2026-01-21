@@ -169,8 +169,17 @@ async function findAllAssessments(
   context: { role: string; unitId?: string | null }
 ) {
   const {
-    page, limit, studentId, unitId, academicYearId,
-    semester, aspect, periodType, startDate, endDate, achievementLevel
+    page,
+    limit,
+    studentId,
+    unitId,
+    academicYearId,
+    semester,
+    aspect,
+    periodType,
+    startDate,
+    endDate,
+    achievementLevel,
   } = query;
   const skip = (page - 1) * limit;
 
@@ -303,7 +312,8 @@ async function createAssessment(input: CreatePAUDAssessmentInput, assessedById: 
 }
 
 async function bulkCreateAssessments(input: BulkCreatePAUDAssessmentInput, assessedById: string) {
-  const { studentId, unitId, academicYearId, semester, periodType, periodDate, assessments } = input;
+  const { studentId, unitId, academicYearId, semester, periodType, periodDate, assessments } =
+    input;
 
   // Validate student
   const student = await prisma.student.findUnique({
@@ -348,8 +358,21 @@ async function bulkCreateAssessments(input: BulkCreatePAUDAssessmentInput, asses
   };
 }
 
-async function createClassAssessment(input: BulkCreateClassPAUDAssessmentInput, assessedById: string) {
-  const { classId, unitId, academicYearId, semester, periodType, periodDate, aspect, indicatorId, assessments } = input;
+async function createClassAssessment(
+  input: BulkCreateClassPAUDAssessmentInput,
+  assessedById: string
+) {
+  const {
+    classId,
+    unitId,
+    academicYearId,
+    semester,
+    periodType,
+    periodDate,
+    aspect,
+    indicatorId,
+    assessments,
+  } = input;
 
   // Validate class belongs to unit (optional, but good practice)
   const classData = await prisma.class.findUnique({
@@ -577,7 +600,9 @@ async function createNarrativeReport(input: CreatePAUDNarrativeReportInput, crea
   });
 
   if (existing) {
-    throw new Error('Narrative report already exists for this student, academic year, and semester');
+    throw new Error(
+      'Narrative report already exists for this student, academic year, and semester'
+    );
   }
 
   return prisma.pAUDNarrativeReport.create({
@@ -636,10 +661,16 @@ async function updateNarrativeReport(id: string, input: UpdatePAUDNarrativeRepor
       ...(input.narrativeSE !== undefined && { narrativeSE: input.narrativeSE }),
       ...(input.narrativeSNI !== undefined && { narrativeSNI: input.narrativeSNI }),
       ...(input.overallStrengths !== undefined && { overallStrengths: input.overallStrengths }),
-      ...(input.areasForDevelopment !== undefined && { areasForDevelopment: input.areasForDevelopment }),
-      ...(input.parentRecommendations !== undefined && { parentRecommendations: input.parentRecommendations }),
+      ...(input.areasForDevelopment !== undefined && {
+        areasForDevelopment: input.areasForDevelopment,
+      }),
+      ...(input.parentRecommendations !== undefined && {
+        parentRecommendations: input.parentRecommendations,
+      }),
       ...(input.teacherSignature !== undefined && { teacherSignature: input.teacherSignature }),
-      ...(input.principalSignature !== undefined && { principalSignature: input.principalSignature }),
+      ...(input.principalSignature !== undefined && {
+        principalSignature: input.principalSignature,
+      }),
       ...(input.totalDays !== undefined && { totalDays: input.totalDays }),
       ...(input.presentDays !== undefined && { presentDays: input.presentDays }),
       ...(input.sickDays !== undefined && { sickDays: input.sickDays }),
@@ -726,7 +757,7 @@ async function getStudentAssessmentSummary(query: AssessmentSummaryQuery) {
   const summary = aspects.map((aspect) => {
     const aspectAssessments = assessments.filter((a) => a.aspect === aspect);
     const total = aspectAssessments.length;
-    
+
     if (total === 0) {
       return {
         aspect,
@@ -806,7 +837,7 @@ async function getClassSummary(query: ClassSummaryQuery) {
   const studentSummaries = students.map((student) => {
     const studentAssessments = assessments.filter((a) => a.studentId === student.id);
     const distribution = { BB: 0, MB: 0, BSH: 0, BSB: 0 };
-    
+
     studentAssessments.forEach((a) => {
       distribution[a.achievementLevel as PAUDAchievementLevel]++;
     });

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Building,
   Building2,
@@ -15,30 +15,30 @@ import {
   Trash2,
   ChevronRight,
   LayoutGrid,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { ColumnDef } from '@tanstack/react-table';
+} from "lucide-react";
+import { toast } from "sonner";
+import { ColumnDef } from "@tanstack/react-table";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { DataTable } from '@/components/shared/data-table';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { DataTable } from "@/components/shared/data-table";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -47,13 +47,13 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 
-import { useUnits } from '@/hooks/use-units';
+import { useUnits } from "@/hooks/use-units";
 import {
   useLands,
   useBuildings,
@@ -76,80 +76,85 @@ import {
   BUILDING_CONDITION_TYPES,
   LandOwnership,
   BuildingCondition,
-} from '@/hooks/use-facilities';
+} from "@/hooks/use-facilities";
 
 export default function FacilitiesPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('lands');
-  const [searchQuery, setSearchQuery] = useState('');
-  
+  const [activeTab, setActiveTab] = useState("lands");
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Filter states
-  const [selectedUnit, setSelectedUnit] = useState<string>('ALL');
-  const [selectedLand, setSelectedLand] = useState<string>('ALL');
-  const [selectedBuilding, setSelectedBuilding] = useState<string>('ALL');
-  
+  const [selectedUnit, setSelectedUnit] = useState<string>("ALL");
+  const [selectedLand, setSelectedLand] = useState<string>("ALL");
+  const [selectedBuilding, setSelectedBuilding] = useState<string>("ALL");
+
   // Dialog states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  
+
   // Form states
   const [landForm, setLandForm] = useState({
-    name: '',
-    address: '',
+    name: "",
+    address: "",
     area: 0,
-    ownership: 'MILIK_SENDIRI' as LandOwnership,
-    certificateNo: '',
-    nop: '',
-    unitId: '',
-    notes: '',
+    ownership: "MILIK_SENDIRI" as LandOwnership,
+    certificateNo: "",
+    nop: "",
+    unitId: "",
+    notes: "",
   });
-  
+
   const [buildingForm, setBuildingForm] = useState({
-    name: '',
-    code: '',
-    landId: '',
-    unitId: '',
+    name: "",
+    code: "",
+    landId: "",
+    unitId: "",
     floors: 1,
     yearBuilt: new Date().getFullYear(),
     length: 0,
     width: 0,
-    condition: 'BAIK' as BuildingCondition,
-    notes: '',
+    condition: "BAIK" as BuildingCondition,
+    notes: "",
   });
-  
+
   const [roomTypeForm, setRoomTypeForm] = useState({
-    name: '',
-    code: '',
-    description: '',
+    name: "",
+    code: "",
+    description: "",
   });
-  
+
   const [roomForm, setRoomForm] = useState({
-    name: '',
-    code: '',
-    buildingId: '',
-    roomTypeId: '',
+    name: "",
+    code: "",
+    buildingId: "",
+    roomTypeId: "",
     floor: 1,
     capacity: 0,
     length: 0,
     width: 0,
-    notes: '',
+    notes: "",
   });
-  
+
   // Data hooks
   const { data: units } = useUnits();
-  const { data: lands, isLoading: loadingLands } = useLands({ search: searchQuery, unitId: selectedUnit !== 'ALL' ? selectedUnit : undefined });
-  const { data: buildings, isLoading: loadingBuildings } = useBuildings({ 
-    search: searchQuery, 
-    unitId: selectedUnit !== 'ALL' ? selectedUnit : undefined,
-    landId: selectedLand !== 'ALL' ? selectedLand : undefined 
+  const { data: lands, isLoading: loadingLands } = useLands({
+    search: searchQuery,
+    unitId: selectedUnit !== "ALL" ? selectedUnit : undefined,
+  });
+  const { data: buildings, isLoading: loadingBuildings } = useBuildings({
+    search: searchQuery,
+    unitId: selectedUnit !== "ALL" ? selectedUnit : undefined,
+    landId: selectedLand !== "ALL" ? selectedLand : undefined,
   });
   const { data: roomTypes, isLoading: loadingRoomTypes } = useRoomTypes();
-  const { data: rooms, isLoading: loadingRooms } = useRooms({ 
-    search: searchQuery, 
-    buildingId: selectedBuilding !== 'ALL' ? selectedBuilding : undefined 
+  const { data: rooms, isLoading: loadingRooms } = useRooms({
+    search: searchQuery,
+    buildingId: selectedBuilding !== "ALL" ? selectedBuilding : undefined,
   });
-  const { data: summary } = useFacilitySummary(selectedUnit !== 'ALL' ? selectedUnit : undefined);
-  
+  const { data: summary } = useFacilitySummary(
+    selectedUnit !== "ALL" ? selectedUnit : undefined,
+  );
+
   // Mutations
   const createLand = useCreateLand();
   const createBuilding = useCreateBuilding();
@@ -159,58 +164,62 @@ export default function FacilitiesPage() {
   const deleteBuilding = useDeleteBuilding();
   const deleteRoomType = useDeleteRoomType();
   const deleteRoom = useDeleteRoom();
-  
+
   // Land columns
   const landColumns: ColumnDef<Land>[] = [
     {
-      accessorKey: 'name',
-      header: 'Nama Tanah',
+      accessorKey: "name",
+      header: "Nama Tanah",
       cell: ({ row }) => (
         <div>
-          <div className="font-medium">{row.getValue('name')}</div>
+          <div className="font-medium">{row.getValue("name")}</div>
           {row.original.address && (
-            <div className="text-sm text-muted-foreground">{row.original.address}</div>
+            <div className="text-sm text-muted-foreground">
+              {row.original.address}
+            </div>
           )}
         </div>
       ),
     },
     {
-      accessorKey: 'area',
-      header: 'Luas (m²)',
+      accessorKey: "area",
+      header: "Luas (m²)",
       cell: ({ row }) => (
-        <span>{Number(row.getValue('area')).toLocaleString('id-ID')} m²</span>
+        <span>{Number(row.getValue("area")).toLocaleString("id-ID")} m²</span>
       ),
     },
     {
-      accessorKey: 'ownership',
-      header: 'Status Kepemilikan',
+      accessorKey: "ownership",
+      header: "Status Kepemilikan",
       cell: ({ row }) => {
-        const ownership = row.getValue('ownership') as LandOwnership;
-        const label = LAND_OWNERSHIP_TYPES.find(t => t.value === ownership)?.label || ownership;
+        const ownership = row.getValue("ownership") as LandOwnership;
+        const label =
+          LAND_OWNERSHIP_TYPES.find((t) => t.value === ownership)?.label ||
+          ownership;
         return <Badge variant="outline">{label}</Badge>;
       },
     },
     {
-      accessorKey: 'certificateNo',
-      header: 'No. Sertifikat',
+      accessorKey: "certificateNo",
+      header: "No. Sertifikat",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.getValue('certificateNo') || '-'}
+          {row.getValue("certificateNo") || "-"}
         </span>
       ),
     },
     {
-      id: 'unit',
-      header: 'Unit',
+      id: "unit",
+      header: "Unit",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.original.unit?.name || '-'}
+          {row.original.unit?.name || "-"}
         </span>
       ),
     },
     {
-      id: 'buildings',
-      header: 'Gedung',
+      id: "buildings",
+      header: "Gedung",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
           {row.original._count?.buildings || 0} gedung
@@ -218,8 +227,8 @@ export default function FacilitiesPage() {
       ),
     },
     {
-      id: 'actions',
-      header: '',
+      id: "actions",
+      header: "",
       cell: ({ row }) => (
         <div className="flex gap-1">
           <Button
@@ -227,7 +236,7 @@ export default function FacilitiesPage() {
             size="sm"
             onClick={() => {
               setSelectedLand(row.original.id);
-              setActiveTab('buildings');
+              setActiveTab("buildings");
             }}
           >
             <ChevronRight className="h-4 w-4" />
@@ -244,62 +253,68 @@ export default function FacilitiesPage() {
       ),
     },
   ];
-  
+
   // Building columns
   const buildingColumns: ColumnDef<BuildingType>[] = [
     {
-      accessorKey: 'name',
-      header: 'Nama Gedung',
+      accessorKey: "name",
+      header: "Nama Gedung",
       cell: ({ row }) => (
         <div>
-          <div className="font-medium">{row.getValue('name')}</div>
+          <div className="font-medium">{row.getValue("name")}</div>
           {row.original.code && (
-            <Badge variant="outline" className="text-xs">{row.original.code}</Badge>
+            <Badge variant="outline" className="text-xs">
+              {row.original.code}
+            </Badge>
           )}
         </div>
       ),
     },
     {
-      accessorKey: 'floors',
-      header: 'Lantai',
+      accessorKey: "floors",
+      header: "Lantai",
+      cell: ({ row }) => <span>{row.getValue("floors")} lantai</span>,
+    },
+    {
+      accessorKey: "area",
+      header: "Luas (m²)",
       cell: ({ row }) => (
-        <span>{row.getValue('floors')} lantai</span>
+        <span>
+          {row.original.area
+            ? `${Number(row.original.area).toLocaleString("id-ID")} m²`
+            : "-"}
+        </span>
       ),
     },
     {
-      accessorKey: 'area',
-      header: 'Luas (m²)',
-      cell: ({ row }) => (
-        <span>{row.original.area ? `${Number(row.original.area).toLocaleString('id-ID')} m²` : '-'}</span>
-      ),
-    },
-    {
-      accessorKey: 'condition',
-      header: 'Kondisi',
+      accessorKey: "condition",
+      header: "Kondisi",
       cell: ({ row }) => {
-        const condition = row.getValue('condition') as BuildingCondition;
-        const label = BUILDING_CONDITION_TYPES.find(t => t.value === condition)?.label || condition;
+        const condition = row.getValue("condition") as BuildingCondition;
+        const label =
+          BUILDING_CONDITION_TYPES.find((t) => t.value === condition)?.label ||
+          condition;
         const colorMap: Record<BuildingCondition, string> = {
-          'BAIK': 'bg-green-100 text-green-800',
-          'RUSAK_RINGAN': 'bg-yellow-100 text-yellow-800',
-          'RUSAK_SEDANG': 'bg-orange-100 text-orange-800',
-          'RUSAK_BERAT': 'bg-red-100 text-red-800',
+          BAIK: "bg-green-100 text-green-800",
+          RUSAK_RINGAN: "bg-yellow-100 text-yellow-800",
+          RUSAK_SEDANG: "bg-orange-100 text-orange-800",
+          RUSAK_BERAT: "bg-red-100 text-red-800",
         };
         return <Badge className={colorMap[condition]}>{label}</Badge>;
       },
     },
     {
-      accessorKey: 'yearBuilt',
-      header: 'Tahun Dibangun',
+      accessorKey: "yearBuilt",
+      header: "Tahun Dibangun",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.getValue('yearBuilt') || '-'}
+          {row.getValue("yearBuilt") || "-"}
         </span>
       ),
     },
     {
-      id: 'rooms',
-      header: 'Ruang',
+      id: "rooms",
+      header: "Ruang",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
           {row.original._count?.rooms || 0} ruang
@@ -307,8 +322,8 @@ export default function FacilitiesPage() {
       ),
     },
     {
-      id: 'actions',
-      header: '',
+      id: "actions",
+      header: "",
       cell: ({ row }) => (
         <div className="flex gap-1">
           <Button
@@ -316,7 +331,7 @@ export default function FacilitiesPage() {
             size="sm"
             onClick={() => {
               setSelectedBuilding(row.original.id);
-              setActiveTab('rooms');
+              setActiveTab("rooms");
             }}
           >
             <ChevronRight className="h-4 w-4" />
@@ -333,35 +348,35 @@ export default function FacilitiesPage() {
       ),
     },
   ];
-  
+
   // Room Type columns
   const roomTypeColumns: ColumnDef<RoomType>[] = [
     {
-      accessorKey: 'code',
-      header: 'Kode',
+      accessorKey: "code",
+      header: "Kode",
       cell: ({ row }) => (
-        <Badge variant="outline">{row.getValue('code')}</Badge>
+        <Badge variant="outline">{row.getValue("code")}</Badge>
       ),
     },
     {
-      accessorKey: 'name',
-      header: 'Nama Tipe Ruang',
+      accessorKey: "name",
+      header: "Nama Tipe Ruang",
       cell: ({ row }) => (
-        <div className="font-medium">{row.getValue('name')}</div>
+        <div className="font-medium">{row.getValue("name")}</div>
       ),
     },
     {
-      accessorKey: 'description',
-      header: 'Deskripsi',
+      accessorKey: "description",
+      header: "Deskripsi",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.getValue('description') || '-'}
+          {row.getValue("description") || "-"}
         </span>
       ),
     },
     {
-      id: 'rooms',
-      header: 'Jumlah Ruang',
+      id: "rooms",
+      header: "Jumlah Ruang",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
           {row.original._count?.rooms || 0} ruang
@@ -369,17 +384,17 @@ export default function FacilitiesPage() {
       ),
     },
     {
-      accessorKey: 'isActive',
-      header: 'Status',
+      accessorKey: "isActive",
+      header: "Status",
       cell: ({ row }) => (
-        <Badge variant={row.getValue('isActive') ? 'default' : 'secondary'}>
-          {row.getValue('isActive') ? 'Aktif' : 'Nonaktif'}
+        <Badge variant={row.getValue("isActive") ? "default" : "secondary"}>
+          {row.getValue("isActive") ? "Aktif" : "Nonaktif"}
         </Badge>
       ),
     },
     {
-      id: 'actions',
-      header: '',
+      id: "actions",
+      header: "",
       cell: ({ row }) => (
         <Button
           variant="ghost"
@@ -392,70 +407,72 @@ export default function FacilitiesPage() {
       ),
     },
   ];
-  
+
   // Room columns
   const roomColumns: ColumnDef<FacilityRoom>[] = [
     {
-      accessorKey: 'name',
-      header: 'Nama Ruang',
+      accessorKey: "name",
+      header: "Nama Ruang",
       cell: ({ row }) => (
         <div>
-          <div className="font-medium">{row.getValue('name')}</div>
+          <div className="font-medium">{row.getValue("name")}</div>
           {row.original.code && (
-            <Badge variant="outline" className="text-xs">{row.original.code}</Badge>
+            <Badge variant="outline" className="text-xs">
+              {row.original.code}
+            </Badge>
           )}
         </div>
       ),
     },
     {
-      id: 'roomType',
-      header: 'Tipe Ruang',
+      id: "roomType",
+      header: "Tipe Ruang",
       cell: ({ row }) => (
-        <Badge variant="secondary">{row.original.roomType?.name || '-'}</Badge>
+        <Badge variant="secondary">{row.original.roomType?.name || "-"}</Badge>
       ),
     },
     {
-      id: 'building',
-      header: 'Gedung',
+      id: "building",
+      header: "Gedung",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.original.building?.name || '-'}
+          {row.original.building?.name || "-"}
         </span>
       ),
     },
     {
-      accessorKey: 'floor',
-      header: 'Lantai',
+      accessorKey: "floor",
+      header: "Lantai",
+      cell: ({ row }) => <span>Lantai {row.getValue("floor")}</span>,
+    },
+    {
+      accessorKey: "capacity",
+      header: "Kapasitas",
+      cell: ({ row }) => <span>{row.getValue("capacity") || "-"} orang</span>,
+    },
+    {
+      accessorKey: "area",
+      header: "Luas",
       cell: ({ row }) => (
-        <span>Lantai {row.getValue('floor')}</span>
+        <span>
+          {row.original.area
+            ? `${Number(row.original.area).toLocaleString("id-ID")} m²`
+            : "-"}
+        </span>
       ),
     },
     {
-      accessorKey: 'capacity',
-      header: 'Kapasitas',
+      accessorKey: "isActive",
+      header: "Status",
       cell: ({ row }) => (
-        <span>{row.getValue('capacity') || '-'} orang</span>
-      ),
-    },
-    {
-      accessorKey: 'area',
-      header: 'Luas',
-      cell: ({ row }) => (
-        <span>{row.original.area ? `${Number(row.original.area).toLocaleString('id-ID')} m²` : '-'}</span>
-      ),
-    },
-    {
-      accessorKey: 'isActive',
-      header: 'Status',
-      cell: ({ row }) => (
-        <Badge variant={row.getValue('isActive') ? 'default' : 'secondary'}>
-          {row.getValue('isActive') ? 'Aktif' : 'Nonaktif'}
+        <Badge variant={row.getValue("isActive") ? "default" : "secondary"}>
+          {row.getValue("isActive") ? "Aktif" : "Nonaktif"}
         </Badge>
       ),
     },
     {
-      id: 'actions',
-      header: '',
+      id: "actions",
+      header: "",
       cell: ({ row }) => (
         <Button
           variant="ghost"
@@ -468,12 +485,12 @@ export default function FacilitiesPage() {
       ),
     },
   ];
-  
+
   const handleAdd = async () => {
     try {
-      if (activeTab === 'lands') {
+      if (activeTab === "lands") {
         if (!landForm.unitId) {
-          toast.error('Pilih unit terlebih dahulu');
+          toast.error("Pilih unit terlebih dahulu");
           return;
         }
         await createLand.mutateAsync({
@@ -486,11 +503,20 @@ export default function FacilitiesPage() {
           unitId: landForm.unitId,
           notes: landForm.notes || undefined,
         });
-        toast.success('Tanah berhasil ditambahkan');
-        setLandForm({ name: '', address: '', area: 0, ownership: 'MILIK_SENDIRI', certificateNo: '', nop: '', unitId: '', notes: '' });
-      } else if (activeTab === 'buildings') {
+        toast.success("Tanah berhasil ditambahkan");
+        setLandForm({
+          name: "",
+          address: "",
+          area: 0,
+          ownership: "MILIK_SENDIRI",
+          certificateNo: "",
+          nop: "",
+          unitId: "",
+          notes: "",
+        });
+      } else if (activeTab === "buildings") {
         if (!buildingForm.landId || !buildingForm.unitId) {
-          toast.error('Pilih tanah dan unit terlebih dahulu');
+          toast.error("Pilih tanah dan unit terlebih dahulu");
           return;
         }
         await createBuilding.mutateAsync({
@@ -505,19 +531,30 @@ export default function FacilitiesPage() {
           condition: buildingForm.condition,
           notes: buildingForm.notes || undefined,
         });
-        toast.success('Gedung berhasil ditambahkan');
-        setBuildingForm({ name: '', code: '', landId: '', unitId: '', floors: 1, yearBuilt: new Date().getFullYear(), length: 0, width: 0, condition: 'BAIK', notes: '' });
-      } else if (activeTab === 'room-types') {
+        toast.success("Gedung berhasil ditambahkan");
+        setBuildingForm({
+          name: "",
+          code: "",
+          landId: "",
+          unitId: "",
+          floors: 1,
+          yearBuilt: new Date().getFullYear(),
+          length: 0,
+          width: 0,
+          condition: "BAIK",
+          notes: "",
+        });
+      } else if (activeTab === "room-types") {
         await createRoomType.mutateAsync({
           name: roomTypeForm.name,
           code: roomTypeForm.code,
           description: roomTypeForm.description || undefined,
         });
-        toast.success('Tipe ruang berhasil ditambahkan');
-        setRoomTypeForm({ name: '', code: '', description: '' });
-      } else if (activeTab === 'rooms') {
+        toast.success("Tipe ruang berhasil ditambahkan");
+        setRoomTypeForm({ name: "", code: "", description: "" });
+      } else if (activeTab === "rooms") {
         if (!roomForm.buildingId || !roomForm.roomTypeId) {
-          toast.error('Pilih gedung dan tipe ruang terlebih dahulu');
+          toast.error("Pilih gedung dan tipe ruang terlebih dahulu");
           return;
         }
         await createRoom.mutateAsync({
@@ -531,82 +568,103 @@ export default function FacilitiesPage() {
           width: roomForm.width || undefined,
           notes: roomForm.notes || undefined,
         });
-        toast.success('Ruang berhasil ditambahkan');
-        setRoomForm({ name: '', code: '', buildingId: '', roomTypeId: '', floor: 1, capacity: 0, length: 0, width: 0, notes: '' });
+        toast.success("Ruang berhasil ditambahkan");
+        setRoomForm({
+          name: "",
+          code: "",
+          buildingId: "",
+          roomTypeId: "",
+          floor: 1,
+          capacity: 0,
+          length: 0,
+          width: 0,
+          notes: "",
+        });
       }
       setIsAddDialogOpen(false);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal menambahkan data';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal menambahkan data";
       toast.error(errorMessage);
     }
   };
-  
+
   const handleDelete = async () => {
     if (!deleteId) return;
-    
+
     try {
-      if (activeTab === 'lands') {
+      if (activeTab === "lands") {
         await deleteLand.mutateAsync(deleteId);
-        toast.success('Tanah berhasil dihapus');
-      } else if (activeTab === 'buildings') {
+        toast.success("Tanah berhasil dihapus");
+      } else if (activeTab === "buildings") {
         await deleteBuilding.mutateAsync(deleteId);
-        toast.success('Gedung berhasil dihapus');
-      } else if (activeTab === 'room-types') {
+        toast.success("Gedung berhasil dihapus");
+      } else if (activeTab === "room-types") {
         await deleteRoomType.mutateAsync(deleteId);
-        toast.success('Tipe ruang berhasil dihapus');
-      } else if (activeTab === 'rooms') {
+        toast.success("Tipe ruang berhasil dihapus");
+      } else if (activeTab === "rooms") {
         await deleteRoom.mutateAsync(deleteId);
-        toast.success('Ruang berhasil dihapus');
+        toast.success("Ruang berhasil dihapus");
       }
       setDeleteId(null);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal menghapus data';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal menghapus data";
       toast.error(errorMessage);
     }
   };
-  
+
   const getTabLabel = () => {
     switch (activeTab) {
-      case 'lands': return 'Tanah';
-      case 'buildings': return 'Gedung';
-      case 'room-types': return 'Tipe Ruang';
-      case 'rooms': return 'Ruang';
-      default: return '';
+      case "lands":
+        return "Tanah";
+      case "buildings":
+        return "Gedung";
+      case "room-types":
+        return "Tipe Ruang";
+      case "rooms":
+        return "Ruang";
+      default:
+        return "";
     }
   };
-  
+
   const stats = [
     {
-      title: 'Total Tanah',
+      title: "Total Tanah",
       value: summary?.totalLands || 0,
-      subValue: summary?.totalLandArea ? `${Number(summary.totalLandArea).toLocaleString('id-ID')} m²` : '0 m²',
+      subValue: summary?.totalLandArea
+        ? `${Number(summary.totalLandArea).toLocaleString("id-ID")} m²`
+        : "0 m²",
       icon: Map,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
+      color: "text-green-600",
+      bgColor: "bg-green-100",
     },
     {
-      title: 'Total Gedung',
+      title: "Total Gedung",
       value: summary?.totalBuildings || 0,
-      subValue: summary?.totalBuildingArea ? `${Number(summary.totalBuildingArea).toLocaleString('id-ID')} m²` : '0 m²',
+      subValue: summary?.totalBuildingArea
+        ? `${Number(summary.totalBuildingArea).toLocaleString("id-ID")} m²`
+        : "0 m²",
       icon: Building2,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      color: "text-blue-600",
+      bgColor: "bg-blue-100",
     },
     {
-      title: 'Total Ruang',
+      title: "Total Ruang",
       value: summary?.totalRooms || 0,
       subValue: `Kapasitas ${summary?.totalRoomCapacity || 0} orang`,
       icon: DoorOpen,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      color: "text-purple-600",
+      bgColor: "bg-purple-100",
     },
     {
-      title: 'Tipe Ruang',
+      title: "Tipe Ruang",
       value: roomTypes?.length || 0,
-      subValue: 'Kategori ruang',
+      subValue: "Kategori ruang",
       icon: LayoutGrid,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100',
+      color: "text-orange-600",
+      bgColor: "bg-orange-100",
     },
   ];
 
@@ -616,8 +674,8 @@ export default function FacilitiesPage() {
         title="Manajemen Fasilitas"
         description="Kelola data tanah, gedung, dan ruang di pesantren/sekolah"
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Fasilitas' },
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Fasilitas" },
         ]}
       />
 
@@ -633,7 +691,9 @@ export default function FacilitiesPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">{stat.title}</p>
                   <p className="text-2xl font-bold">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground">{stat.subValue}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {stat.subValue}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -688,8 +748,8 @@ export default function FacilitiesPage() {
                       Masukkan data {getTabLabel().toLowerCase()} baru
                     </DialogDescription>
                   </DialogHeader>
-                  
-                  {activeTab === 'lands' && (
+
+                  {activeTab === "lands" && (
                     <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
                       <div className="grid gap-2">
                         <Label htmlFor="land-name">Nama Tanah *</Label>
@@ -697,12 +757,19 @@ export default function FacilitiesPage() {
                           id="land-name"
                           placeholder="Masukkan nama tanah"
                           value={landForm.name}
-                          onChange={(e) => setLandForm({ ...landForm, name: e.target.value })}
+                          onChange={(e) =>
+                            setLandForm({ ...landForm, name: e.target.value })
+                          }
                         />
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="land-unit">Unit *</Label>
-                        <Select value={landForm.unitId} onValueChange={(val) => setLandForm({ ...landForm, unitId: val })}>
+                        <Select
+                          value={landForm.unitId}
+                          onValueChange={(val) =>
+                            setLandForm({ ...landForm, unitId: val })
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih unit" />
                           </SelectTrigger>
@@ -721,13 +788,23 @@ export default function FacilitiesPage() {
                           id="land-area"
                           type="number"
                           placeholder="0"
-                          value={landForm.area || ''}
-                          onChange={(e) => setLandForm({ ...landForm, area: Number(e.target.value) })}
+                          value={landForm.area || ""}
+                          onChange={(e) =>
+                            setLandForm({
+                              ...landForm,
+                              area: Number(e.target.value),
+                            })
+                          }
                         />
                       </div>
                       <div className="grid gap-2">
                         <Label>Status Kepemilikan *</Label>
-                        <Select value={landForm.ownership} onValueChange={(val: LandOwnership) => setLandForm({ ...landForm, ownership: val })}>
+                        <Select
+                          value={landForm.ownership}
+                          onValueChange={(val: LandOwnership) =>
+                            setLandForm({ ...landForm, ownership: val })
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
@@ -746,7 +823,12 @@ export default function FacilitiesPage() {
                           id="land-address"
                           placeholder="Alamat tanah"
                           value={landForm.address}
-                          onChange={(e) => setLandForm({ ...landForm, address: e.target.value })}
+                          onChange={(e) =>
+                            setLandForm({
+                              ...landForm,
+                              address: e.target.value,
+                            })
+                          }
                         />
                       </div>
                       <div className="grid gap-2">
@@ -755,22 +837,31 @@ export default function FacilitiesPage() {
                           id="land-cert"
                           placeholder="Nomor sertifikat"
                           value={landForm.certificateNo}
-                          onChange={(e) => setLandForm({ ...landForm, certificateNo: e.target.value })}
+                          onChange={(e) =>
+                            setLandForm({
+                              ...landForm,
+                              certificateNo: e.target.value,
+                            })
+                          }
                         />
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="land-nop">NOP (Nomor Objek Pajak)</Label>
+                        <Label htmlFor="land-nop">
+                          NOP (Nomor Objek Pajak)
+                        </Label>
                         <Input
                           id="land-nop"
                           placeholder="NOP"
                           value={landForm.nop}
-                          onChange={(e) => setLandForm({ ...landForm, nop: e.target.value })}
+                          onChange={(e) =>
+                            setLandForm({ ...landForm, nop: e.target.value })
+                          }
                         />
                       </div>
                     </div>
                   )}
-                  
-                  {activeTab === 'buildings' && (
+
+                  {activeTab === "buildings" && (
                     <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
                       <div className="grid gap-2">
                         <Label htmlFor="building-name">Nama Gedung *</Label>
@@ -778,7 +869,12 @@ export default function FacilitiesPage() {
                           id="building-name"
                           placeholder="Masukkan nama gedung"
                           value={buildingForm.name}
-                          onChange={(e) => setBuildingForm({ ...buildingForm, name: e.target.value })}
+                          onChange={(e) =>
+                            setBuildingForm({
+                              ...buildingForm,
+                              name: e.target.value,
+                            })
+                          }
                         />
                       </div>
                       <div className="grid gap-2">
@@ -787,12 +883,22 @@ export default function FacilitiesPage() {
                           id="building-code"
                           placeholder="GD001"
                           value={buildingForm.code}
-                          onChange={(e) => setBuildingForm({ ...buildingForm, code: e.target.value })}
+                          onChange={(e) =>
+                            setBuildingForm({
+                              ...buildingForm,
+                              code: e.target.value,
+                            })
+                          }
                         />
                       </div>
                       <div className="grid gap-2">
                         <Label>Unit *</Label>
-                        <Select value={buildingForm.unitId} onValueChange={(val) => setBuildingForm({ ...buildingForm, unitId: val })}>
+                        <Select
+                          value={buildingForm.unitId}
+                          onValueChange={(val) =>
+                            setBuildingForm({ ...buildingForm, unitId: val })
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih unit" />
                           </SelectTrigger>
@@ -807,7 +913,12 @@ export default function FacilitiesPage() {
                       </div>
                       <div className="grid gap-2">
                         <Label>Tanah *</Label>
-                        <Select value={buildingForm.landId} onValueChange={(val) => setBuildingForm({ ...buildingForm, landId: val })}>
+                        <Select
+                          value={buildingForm.landId}
+                          onValueChange={(val) =>
+                            setBuildingForm({ ...buildingForm, landId: val })
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih tanah" />
                           </SelectTrigger>
@@ -822,13 +933,20 @@ export default function FacilitiesPage() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
-                          <Label htmlFor="building-floors">Jumlah Lantai *</Label>
+                          <Label htmlFor="building-floors">
+                            Jumlah Lantai *
+                          </Label>
                           <Input
                             id="building-floors"
                             type="number"
                             min="1"
                             value={buildingForm.floors}
-                            onChange={(e) => setBuildingForm({ ...buildingForm, floors: Number(e.target.value) })}
+                            onChange={(e) =>
+                              setBuildingForm({
+                                ...buildingForm,
+                                floors: Number(e.target.value),
+                              })
+                            }
                           />
                         </div>
                         <div className="grid gap-2">
@@ -836,8 +954,13 @@ export default function FacilitiesPage() {
                           <Input
                             id="building-year"
                             type="number"
-                            value={buildingForm.yearBuilt || ''}
-                            onChange={(e) => setBuildingForm({ ...buildingForm, yearBuilt: Number(e.target.value) })}
+                            value={buildingForm.yearBuilt || ""}
+                            onChange={(e) =>
+                              setBuildingForm({
+                                ...buildingForm,
+                                yearBuilt: Number(e.target.value),
+                              })
+                            }
                           />
                         </div>
                       </div>
@@ -847,8 +970,13 @@ export default function FacilitiesPage() {
                           <Input
                             id="building-length"
                             type="number"
-                            value={buildingForm.length || ''}
-                            onChange={(e) => setBuildingForm({ ...buildingForm, length: Number(e.target.value) })}
+                            value={buildingForm.length || ""}
+                            onChange={(e) =>
+                              setBuildingForm({
+                                ...buildingForm,
+                                length: Number(e.target.value),
+                              })
+                            }
                           />
                         </div>
                         <div className="grid gap-2">
@@ -856,14 +984,24 @@ export default function FacilitiesPage() {
                           <Input
                             id="building-width"
                             type="number"
-                            value={buildingForm.width || ''}
-                            onChange={(e) => setBuildingForm({ ...buildingForm, width: Number(e.target.value) })}
+                            value={buildingForm.width || ""}
+                            onChange={(e) =>
+                              setBuildingForm({
+                                ...buildingForm,
+                                width: Number(e.target.value),
+                              })
+                            }
                           />
                         </div>
                       </div>
                       <div className="grid gap-2">
                         <Label>Kondisi *</Label>
-                        <Select value={buildingForm.condition} onValueChange={(val: BuildingCondition) => setBuildingForm({ ...buildingForm, condition: val })}>
+                        <Select
+                          value={buildingForm.condition}
+                          onValueChange={(val: BuildingCondition) =>
+                            setBuildingForm({ ...buildingForm, condition: val })
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
@@ -878,8 +1016,8 @@ export default function FacilitiesPage() {
                       </div>
                     </div>
                   )}
-                  
-                  {activeTab === 'room-types' && (
+
+                  {activeTab === "room-types" && (
                     <div className="grid gap-4 py-4">
                       <div className="grid gap-2">
                         <Label htmlFor="roomtype-code">Kode *</Label>
@@ -887,7 +1025,12 @@ export default function FacilitiesPage() {
                           id="roomtype-code"
                           placeholder="KLS"
                           value={roomTypeForm.code}
-                          onChange={(e) => setRoomTypeForm({ ...roomTypeForm, code: e.target.value })}
+                          onChange={(e) =>
+                            setRoomTypeForm({
+                              ...roomTypeForm,
+                              code: e.target.value,
+                            })
+                          }
                         />
                       </div>
                       <div className="grid gap-2">
@@ -896,7 +1039,12 @@ export default function FacilitiesPage() {
                           id="roomtype-name"
                           placeholder="Kelas"
                           value={roomTypeForm.name}
-                          onChange={(e) => setRoomTypeForm({ ...roomTypeForm, name: e.target.value })}
+                          onChange={(e) =>
+                            setRoomTypeForm({
+                              ...roomTypeForm,
+                              name: e.target.value,
+                            })
+                          }
                         />
                       </div>
                       <div className="grid gap-2">
@@ -905,13 +1053,18 @@ export default function FacilitiesPage() {
                           id="roomtype-desc"
                           placeholder="Deskripsi tipe ruang"
                           value={roomTypeForm.description}
-                          onChange={(e) => setRoomTypeForm({ ...roomTypeForm, description: e.target.value })}
+                          onChange={(e) =>
+                            setRoomTypeForm({
+                              ...roomTypeForm,
+                              description: e.target.value,
+                            })
+                          }
                         />
                       </div>
                     </div>
                   )}
-                  
-                  {activeTab === 'rooms' && (
+
+                  {activeTab === "rooms" && (
                     <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
                       <div className="grid gap-2">
                         <Label htmlFor="room-name">Nama Ruang *</Label>
@@ -919,7 +1072,9 @@ export default function FacilitiesPage() {
                           id="room-name"
                           placeholder="Ruang Kelas 1A"
                           value={roomForm.name}
-                          onChange={(e) => setRoomForm({ ...roomForm, name: e.target.value })}
+                          onChange={(e) =>
+                            setRoomForm({ ...roomForm, name: e.target.value })
+                          }
                         />
                       </div>
                       <div className="grid gap-2">
@@ -928,12 +1083,19 @@ export default function FacilitiesPage() {
                           id="room-code"
                           placeholder="KLS-1A"
                           value={roomForm.code}
-                          onChange={(e) => setRoomForm({ ...roomForm, code: e.target.value })}
+                          onChange={(e) =>
+                            setRoomForm({ ...roomForm, code: e.target.value })
+                          }
                         />
                       </div>
                       <div className="grid gap-2">
                         <Label>Gedung *</Label>
-                        <Select value={roomForm.buildingId} onValueChange={(val) => setRoomForm({ ...roomForm, buildingId: val })}>
+                        <Select
+                          value={roomForm.buildingId}
+                          onValueChange={(val) =>
+                            setRoomForm({ ...roomForm, buildingId: val })
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih gedung" />
                           </SelectTrigger>
@@ -948,7 +1110,12 @@ export default function FacilitiesPage() {
                       </div>
                       <div className="grid gap-2">
                         <Label>Tipe Ruang *</Label>
-                        <Select value={roomForm.roomTypeId} onValueChange={(val) => setRoomForm({ ...roomForm, roomTypeId: val })}>
+                        <Select
+                          value={roomForm.roomTypeId}
+                          onValueChange={(val) =>
+                            setRoomForm({ ...roomForm, roomTypeId: val })
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih tipe ruang" />
                           </SelectTrigger>
@@ -969,7 +1136,12 @@ export default function FacilitiesPage() {
                             type="number"
                             min="1"
                             value={roomForm.floor}
-                            onChange={(e) => setRoomForm({ ...roomForm, floor: Number(e.target.value) })}
+                            onChange={(e) =>
+                              setRoomForm({
+                                ...roomForm,
+                                floor: Number(e.target.value),
+                              })
+                            }
                           />
                         </div>
                         <div className="grid gap-2">
@@ -978,8 +1150,13 @@ export default function FacilitiesPage() {
                             id="room-capacity"
                             type="number"
                             placeholder="30"
-                            value={roomForm.capacity || ''}
-                            onChange={(e) => setRoomForm({ ...roomForm, capacity: Number(e.target.value) })}
+                            value={roomForm.capacity || ""}
+                            onChange={(e) =>
+                              setRoomForm({
+                                ...roomForm,
+                                capacity: Number(e.target.value),
+                              })
+                            }
                           />
                         </div>
                       </div>
@@ -989,8 +1166,13 @@ export default function FacilitiesPage() {
                           <Input
                             id="room-length"
                             type="number"
-                            value={roomForm.length || ''}
-                            onChange={(e) => setRoomForm({ ...roomForm, length: Number(e.target.value) })}
+                            value={roomForm.length || ""}
+                            onChange={(e) =>
+                              setRoomForm({
+                                ...roomForm,
+                                length: Number(e.target.value),
+                              })
+                            }
                           />
                         </div>
                         <div className="grid gap-2">
@@ -998,23 +1180,41 @@ export default function FacilitiesPage() {
                           <Input
                             id="room-width"
                             type="number"
-                            value={roomForm.width || ''}
-                            onChange={(e) => setRoomForm({ ...roomForm, width: Number(e.target.value) })}
+                            value={roomForm.width || ""}
+                            onChange={(e) =>
+                              setRoomForm({
+                                ...roomForm,
+                                width: Number(e.target.value),
+                              })
+                            }
                           />
                         </div>
                       </div>
                     </div>
                   )}
-                  
+
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsAddDialogOpen(false)}
+                    >
                       Batal
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleAdd}
-                      disabled={createLand.isPending || createBuilding.isPending || createRoomType.isPending || createRoom.isPending}
+                      disabled={
+                        createLand.isPending ||
+                        createBuilding.isPending ||
+                        createRoomType.isPending ||
+                        createRoom.isPending
+                      }
                     >
-                      {(createLand.isPending || createBuilding.isPending || createRoomType.isPending || createRoom.isPending) ? 'Menyimpan...' : 'Simpan'}
+                      {createLand.isPending ||
+                      createBuilding.isPending ||
+                      createRoomType.isPending ||
+                      createRoom.isPending
+                        ? "Menyimpan..."
+                        : "Simpan"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -1042,9 +1242,9 @@ export default function FacilitiesPage() {
                 Ruang
               </TabsTrigger>
             </TabsList>
-            
+
             {/* Filter Bar */}
-            {activeTab === 'buildings' && (
+            {activeTab === "buildings" && (
               <div className="mb-4 flex gap-2">
                 <Select value={selectedLand} onValueChange={setSelectedLand}>
                   <SelectTrigger className="w-[200px]">
@@ -1060,16 +1260,19 @@ export default function FacilitiesPage() {
                   </SelectContent>
                 </Select>
                 {selectedLand && (
-                  <Button variant="outline" onClick={() => setSelectedLand('')}>
+                  <Button variant="outline" onClick={() => setSelectedLand("")}>
                     Reset Filter
                   </Button>
                 )}
               </div>
             )}
-            
-            {activeTab === 'rooms' && (
+
+            {activeTab === "rooms" && (
               <div className="mb-4 flex gap-2">
-                <Select value={selectedBuilding} onValueChange={setSelectedBuilding}>
+                <Select
+                  value={selectedBuilding}
+                  onValueChange={setSelectedBuilding}
+                >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Filter by Gedung" />
                   </SelectTrigger>
@@ -1083,13 +1286,16 @@ export default function FacilitiesPage() {
                   </SelectContent>
                 </Select>
                 {selectedBuilding && (
-                  <Button variant="outline" onClick={() => setSelectedBuilding('')}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedBuilding("")}
+                  >
                     Reset Filter
                   </Button>
                 )}
               </div>
             )}
-            
+
             <TabsContent value="lands">
               <DataTable
                 columns={landColumns}
@@ -1097,7 +1303,7 @@ export default function FacilitiesPage() {
                 isLoading={loadingLands}
               />
             </TabsContent>
-            
+
             <TabsContent value="buildings">
               <DataTable
                 columns={buildingColumns}
@@ -1105,7 +1311,7 @@ export default function FacilitiesPage() {
                 isLoading={loadingBuildings}
               />
             </TabsContent>
-            
+
             <TabsContent value="room-types">
               <DataTable
                 columns={roomTypeColumns}
@@ -1113,7 +1319,7 @@ export default function FacilitiesPage() {
                 isLoading={loadingRoomTypes}
               />
             </TabsContent>
-            
+
             <TabsContent value="rooms">
               <DataTable
                 columns={roomColumns}
@@ -1131,7 +1337,12 @@ export default function FacilitiesPage() {
         title={`Hapus ${getTabLabel()}`}
         description={`Apakah Anda yakin ingin menghapus ${getTabLabel().toLowerCase()} ini? Data yang terkait juga akan terhapus.`}
         onConfirm={handleDelete}
-        isLoading={deleteLand.isPending || deleteBuilding.isPending || deleteRoomType.isPending || deleteRoom.isPending}
+        isLoading={
+          deleteLand.isPending ||
+          deleteBuilding.isPending ||
+          deleteRoomType.isPending ||
+          deleteRoom.isPending
+        }
       />
     </MainLayout>
   );

@@ -2,11 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { ApiError } from '@/middleware/error';
 import httpStatus from 'http-status';
-import {
-  CreateSimaanInput,
-  UpdateSimaanResultInput,
-  ListSimaanQuery,
-} from './takhosus.schema';
+import { CreateSimaanInput, UpdateSimaanResultInput, ListSimaanQuery } from './takhosus.schema';
 
 export const simaanService = {
   async create(data: CreateSimaanInput, creatorId: string) {
@@ -58,12 +54,13 @@ export const simaanService = {
       ...(studentId && { studentId }),
       ...(unitId && { student: { unitId } }),
       ...(classId && { student: { enrollments: { some: { classId, status: 'active' } } } }),
-      ...(startDate && endDate && {
-        examDate: {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
-        },
-      }),
+      ...(startDate &&
+        endDate && {
+          examDate: {
+            gte: new Date(startDate),
+            lte: new Date(endDate),
+          },
+        }),
       // @ts-ignore
       ...(status && { status }), // Note: status field might be string in schema but inferred as enum in Prisma types
     };
@@ -83,7 +80,7 @@ export const simaanService = {
           },
           _count: {
             select: { examiners: true },
-          }
+          },
         },
       }),
       prisma.simaanExam.count({ where }),

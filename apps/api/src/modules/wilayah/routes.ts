@@ -14,12 +14,12 @@ const router = Router();
 router.get('/provinces', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const provinces = await (prisma as any).province.findMany({
-      orderBy: { name: 'asc' }
+      orderBy: { name: 'asc' },
     });
 
     res.json({
       success: true,
-      data: provinces
+      data: provinces,
     });
   } catch (error) {
     next(error);
@@ -33,26 +33,26 @@ router.get('/provinces', async (req: Request, res: Response, next: NextFunction)
 router.get('/provinces/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    
+
     const province = await (prisma as any).province.findUnique({
       where: { id },
       include: {
         regencies: {
-          select: { id: true, name: true, code: true }
-        }
-      }
+          select: { id: true, name: true, code: true },
+        },
+      },
     });
 
     if (!province) {
       return res.status(404).json({
         success: false,
-        message: 'Province not found'
+        message: 'Province not found',
       });
     }
 
     res.json({
       success: true,
-      data: province
+      data: province,
     });
   } catch (error) {
     next(error);
@@ -78,14 +78,14 @@ router.get('/regencies', async (req: Request, res: Response, next: NextFunction)
     const regencies = await (prisma as any).regency.findMany({
       where: whereClause,
       include: {
-        province: { select: { id: true, name: true } }
+        province: { select: { id: true, name: true } },
       },
-      orderBy: { name: 'asc' }
+      orderBy: { name: 'asc' },
     });
 
     res.json({
       success: true,
-      data: regencies
+      data: regencies,
     });
   } catch (error) {
     next(error);
@@ -99,25 +99,25 @@ router.get('/regencies', async (req: Request, res: Response, next: NextFunction)
 router.get('/regencies/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    
+
     const regency = await (prisma as any).regency.findUnique({
       where: { id },
       include: {
         province: { select: { id: true, name: true } },
-        districts: { select: { id: true, name: true, code: true } }
-      }
+        districts: { select: { id: true, name: true, code: true } },
+      },
     });
 
     if (!regency) {
       return res.status(404).json({
         success: false,
-        message: 'Regency not found'
+        message: 'Regency not found',
       });
     }
 
     res.json({
       success: true,
-      data: regency
+      data: regency,
     });
   } catch (error) {
     next(error);
@@ -143,14 +143,14 @@ router.get('/districts', async (req: Request, res: Response, next: NextFunction)
     const districts = await (prisma as any).district.findMany({
       where: whereClause,
       include: {
-        regency: { select: { id: true, name: true } }
+        regency: { select: { id: true, name: true } },
       },
-      orderBy: { name: 'asc' }
+      orderBy: { name: 'asc' },
     });
 
     res.json({
       success: true,
-      data: districts
+      data: districts,
     });
   } catch (error) {
     next(error);
@@ -164,25 +164,25 @@ router.get('/districts', async (req: Request, res: Response, next: NextFunction)
 router.get('/districts/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    
+
     const district = await (prisma as any).district.findUnique({
       where: { id },
       include: {
         regency: { select: { id: true, name: true } },
-        villages: { select: { id: true, name: true, code: true } }
-      }
+        villages: { select: { id: true, name: true, code: true } },
+      },
     });
 
     if (!district) {
       return res.status(404).json({
         success: false,
-        message: 'District not found'
+        message: 'District not found',
       });
     }
 
     res.json({
       success: true,
-      data: district
+      data: district,
     });
   } catch (error) {
     next(error);
@@ -209,13 +209,13 @@ router.get('/villages', async (req: Request, res: Response, next: NextFunction) 
       (prisma as any).village.findMany({
         where: whereClause,
         include: {
-          district: { select: { id: true, name: true } }
+          district: { select: { id: true, name: true } },
         },
         orderBy: { name: 'asc' },
         skip: (Number(page) - 1) * Number(limit),
-        take: Number(limit)
+        take: Number(limit),
       }),
-      (prisma as any).village.count({ where: whereClause })
+      (prisma as any).village.count({ where: whereClause }),
     ]);
 
     res.json({
@@ -225,8 +225,8 @@ router.get('/villages', async (req: Request, res: Response, next: NextFunction) 
         page: Number(page),
         limit: Number(limit),
         total,
-        totalPages: Math.ceil(total / Number(limit))
-      }
+        totalPages: Math.ceil(total / Number(limit)),
+      },
     });
   } catch (error) {
     next(error);
@@ -240,7 +240,7 @@ router.get('/villages', async (req: Request, res: Response, next: NextFunction) 
 router.get('/villages/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    
+
     const village = await (prisma as any).village.findUnique({
       where: { id },
       include: {
@@ -248,24 +248,24 @@ router.get('/villages/:id', async (req: Request, res: Response, next: NextFuncti
           include: {
             regency: {
               include: {
-                province: true
-              }
-            }
-          }
-        }
-      }
+                province: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!village) {
       return res.status(404).json({
         success: false,
-        message: 'Village not found'
+        message: 'Village not found',
       });
     }
 
     res.json({
       success: true,
-      data: village
+      data: village,
     });
   } catch (error) {
     next(error);
@@ -280,88 +280,104 @@ router.use(authenticate);
  * @route POST /api/wilayah/provinces
  * @desc Create province (admin only)
  */
-router.post('/provinces', authorize(UserRole.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { code, name } = req.body;
+router.post(
+  '/provinces',
+  authorize(UserRole.SUPER_ADMIN),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { code, name } = req.body;
 
-    const province = await (prisma as any).province.create({
-      data: { code, name }
-    });
+      const province = await (prisma as any).province.create({
+        data: { code, name },
+      });
 
-    res.status(201).json({
-      success: true,
-      message: 'Province created',
-      data: province
-    });
-  } catch (error) {
-    next(error);
+      res.status(201).json({
+        success: true,
+        message: 'Province created',
+        data: province,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 /**
  * @route POST /api/wilayah/regencies
  * @desc Create regency (admin only)
  */
-router.post('/regencies', authorize(UserRole.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { code, name, provinceId } = req.body;
+router.post(
+  '/regencies',
+  authorize(UserRole.SUPER_ADMIN),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { code, name, provinceId } = req.body;
 
-    const regency = await (prisma as any).regency.create({
-      data: { code, name, provinceId }
-    });
+      const regency = await (prisma as any).regency.create({
+        data: { code, name, provinceId },
+      });
 
-    res.status(201).json({
-      success: true,
-      message: 'Regency created',
-      data: regency
-    });
-  } catch (error) {
-    next(error);
+      res.status(201).json({
+        success: true,
+        message: 'Regency created',
+        data: regency,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 /**
  * @route POST /api/wilayah/districts
  * @desc Create district (admin only)
  */
-router.post('/districts', authorize(UserRole.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { code, name, regencyId } = req.body;
+router.post(
+  '/districts',
+  authorize(UserRole.SUPER_ADMIN),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { code, name, regencyId } = req.body;
 
-    const district = await (prisma as any).district.create({
-      data: { code, name, regencyId }
-    });
+      const district = await (prisma as any).district.create({
+        data: { code, name, regencyId },
+      });
 
-    res.status(201).json({
-      success: true,
-      message: 'District created',
-      data: district
-    });
-  } catch (error) {
-    next(error);
+      res.status(201).json({
+        success: true,
+        message: 'District created',
+        data: district,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 /**
  * @route POST /api/wilayah/villages
  * @desc Create village (admin only)
  */
-router.post('/villages', authorize(UserRole.SUPER_ADMIN), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { code, name, districtId, postalCode } = req.body;
+router.post(
+  '/villages',
+  authorize(UserRole.SUPER_ADMIN),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { code, name, districtId, postalCode } = req.body;
 
-    const village = await (prisma as any).village.create({
-      data: { code, name, districtId, postalCode }
-    });
+      const village = await (prisma as any).village.create({
+        data: { code, name, districtId, postalCode },
+      });
 
-    res.status(201).json({
-      success: true,
-      message: 'Village created',
-      data: village
-    });
-  } catch (error) {
-    next(error);
+      res.status(201).json({
+        success: true,
+        message: 'Village created',
+        data: village,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 export default router;

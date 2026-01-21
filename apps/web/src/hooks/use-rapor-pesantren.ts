@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
 // =====================
 // TYPES
@@ -22,7 +22,7 @@ export interface RaporPesantren {
   };
   academicYearId: string;
   semester: number;
-  status: 'DRAFT' | 'FINAL' | 'PUBLISHED';
+  status: "DRAFT" | "FINAL" | "PUBLISHED";
   student: {
     id: string;
     name: string;
@@ -254,13 +254,16 @@ export interface LegerItem {
 // =====================
 
 export const raporPesantrenKeys = {
-  all: ['rapor-pesantren'] as const,
-  lists: () => [...raporPesantrenKeys.all, 'list'] as const,
-  list: (filters: Record<string, unknown>) => [...raporPesantrenKeys.lists(), filters] as const,
-  details: () => [...raporPesantrenKeys.all, 'detail'] as const,
+  all: ["rapor-pesantren"] as const,
+  lists: () => [...raporPesantrenKeys.all, "list"] as const,
+  list: (filters: Record<string, unknown>) =>
+    [...raporPesantrenKeys.lists(), filters] as const,
+  details: () => [...raporPesantrenKeys.all, "detail"] as const,
   detail: (id: string) => [...raporPesantrenKeys.details(), id] as const,
-  config: (unitId: string) => [...raporPesantrenKeys.all, 'config', unitId] as const,
-  leger: (filters: Record<string, unknown>) => [...raporPesantrenKeys.all, 'leger', filters] as const,
+  config: (unitId: string) =>
+    [...raporPesantrenKeys.all, "config", unitId] as const,
+  leger: (filters: Record<string, unknown>) =>
+    [...raporPesantrenKeys.all, "leger", filters] as const,
 };
 
 // =====================
@@ -278,7 +281,7 @@ interface ListRaporParams {
 }
 
 async function listRapor(params: ListRaporParams) {
-  const { data } = await api.get('/rapor-pesantren', { params });
+  const { data } = await api.get("/rapor-pesantren", { params });
   return data;
 }
 
@@ -295,7 +298,7 @@ interface GenerateRaporParams {
 }
 
 async function generateRapor(params: GenerateRaporParams) {
-  const { data } = await api.post('/rapor-pesantren/generate', params);
+  const { data } = await api.post("/rapor-pesantren/generate", params);
   return data.data as RaporPesantren;
 }
 
@@ -308,7 +311,7 @@ interface GenerateBatchParams {
 }
 
 async function generateBatchRapor(params: GenerateBatchParams) {
-  const { data } = await api.post('/rapor-pesantren/generate-batch', params);
+  const { data } = await api.post("/rapor-pesantren/generate-batch", params);
   return data.data as { total: number; success: number; failed: number };
 }
 
@@ -339,7 +342,10 @@ async function getRaporConfig(unitId: string) {
 }
 
 async function saveRaporConfig(config: RaporConfig) {
-  const { data } = await api.put(`/rapor-pesantren/config/${config.unitId}`, config);
+  const { data } = await api.put(
+    `/rapor-pesantren/config/${config.unitId}`,
+    config,
+  );
   return data.data as RaporConfig;
 }
 
@@ -351,7 +357,7 @@ interface GetLegerParams {
 }
 
 async function getLeger(params: GetLegerParams) {
-  const { data } = await api.get('/rapor-pesantren/leger', { params });
+  const { data } = await api.get("/rapor-pesantren/leger", { params });
   return data.data as LegerItem[];
 }
 
@@ -397,7 +403,12 @@ export function useLeger(params: Partial<GetLegerParams>) {
   return useQuery({
     queryKey: raporPesantrenKeys.leger(params as Record<string, unknown>),
     queryFn: () => getLeger(params as GetLegerParams),
-    enabled: !!(params.unitId && params.classId && params.academicYearId && params.semester),
+    enabled: !!(
+      params.unitId &&
+      params.classId &&
+      params.academicYearId &&
+      params.semester
+    ),
   });
 }
 
@@ -418,7 +429,9 @@ export function useUpdateRapor() {
   return useMutation({
     mutationFn: updateRapor,
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: raporPesantrenKeys.detail(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: raporPesantrenKeys.detail(variables.id),
+      });
       queryClient.invalidateQueries({ queryKey: raporPesantrenKeys.lists() });
     },
   });
@@ -441,7 +454,9 @@ export function useSaveRaporConfig() {
   return useMutation({
     mutationFn: saveRaporConfig,
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: raporPesantrenKeys.config(variables.unitId) });
+      queryClient.invalidateQueries({
+        queryKey: raporPesantrenKeys.config(variables.unitId),
+      });
     },
   });
 }
@@ -451,26 +466,26 @@ export function useSaveRaporConfig() {
 // =====================
 
 export const RAPOR_STATUS = {
-  DRAFT: { label: 'Draft', color: 'gray' },
-  FINAL: { label: 'Final', color: 'blue' },
-  PUBLISHED: { label: 'Terpublikasi', color: 'green' },
+  DRAFT: { label: "Draft", color: "gray" },
+  FINAL: { label: "Final", color: "blue" },
+  PUBLISHED: { label: "Terpublikasi", color: "green" },
 } as const;
 
 export const GRADE_COLORS = {
-  MUMTAZ: 'green',
-  JAYYID_JIDDAN: 'blue',
-  JAYYID: 'cyan',
-  MAQBUL: 'yellow',
-  RASIB: 'red',
+  MUMTAZ: "green",
+  JAYYID_JIDDAN: "blue",
+  JAYYID: "cyan",
+  MAQBUL: "yellow",
+  RASIB: "red",
 } as const;
 
 export const COMPONENT_LABELS = {
-  tahfidz: 'Tahfidz Al-Quran',
-  ibadah: 'Ibadah Harian',
-  muhadhoroh: 'Muhadhoroh (Pidato)',
-  muhadatsah: 'Muhadatsah (Percakapan)',
-  kitabProgress: 'Kitab Kuning',
-  akhlak: 'Akhlak & Perilaku',
+  tahfidz: "Tahfidz Al-Quran",
+  ibadah: "Ibadah Harian",
+  muhadhoroh: "Muhadhoroh (Pidato)",
+  muhadatsah: "Muhadatsah (Percakapan)",
+  kitabProgress: "Kitab Kuning",
+  akhlak: "Akhlak & Perilaku",
 } as const;
 
 export const DEFAULT_WEIGHTS = {

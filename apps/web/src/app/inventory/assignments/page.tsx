@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -12,10 +12,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Pagination } from '@/components/shared/pagination';
-import { useAssetAssignments } from '@/hooks/use-inventory';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Pagination } from "@/components/shared/pagination";
+import { useAssetAssignments } from "@/hooks/use-inventory";
 
 export default function InventoryAssignmentsPage() {
   const [page, setPage] = useState(1);
@@ -25,11 +25,11 @@ export default function InventoryAssignmentsPage() {
   });
 
   const formatDate = (dateString?: string | Date | null) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
     });
   };
 
@@ -43,8 +43,12 @@ export default function InventoryAssignmentsPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Peminjaman Aset</h1>
-            <p className="text-muted-foreground">Kelola peminjaman aset ke pegawai/guru</p>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Peminjaman Aset
+            </h1>
+            <p className="text-muted-foreground">
+              Kelola peminjaman aset ke pegawai/guru
+            </p>
           </div>
         </div>
         {/* Creating assignment usually happens from Asset Detail or a specific form, simplified here */}
@@ -78,21 +82,31 @@ export default function InventoryAssignmentsPage() {
                   <TableRow key={item.id}>
                     <TableCell>
                       <div className="font-medium">{item.asset?.name}</div>
-                      <div className="text-xs text-muted-foreground">{item.asset?.code}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {item.asset?.code}
+                      </div>
                     </TableCell>
-                    <TableCell>{item.user?.name || '-'}</TableCell>
+                    <TableCell>{item.user?.name || "-"}</TableCell>
                     <TableCell>{formatDate(item.assignedAt)}</TableCell>
                     <TableCell>{formatDate(item.dueDate)}</TableCell>
                     <TableCell>{formatDate(item.returnedAt)}</TableCell>
                     <TableCell>
-                      <Badge variant={item.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                      <Badge
+                        variant={
+                          item.status === "ACTIVE" ? "default" : "secondary"
+                        }
+                      >
                         {item.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       {item.assetId && (
                         <Button variant="outline" size="sm" asChild>
-                          <Link href={`/inventory/${item.assetId}?tab=assignments`}>Lihat Aset</Link>
+                          <Link
+                            href={`/inventory/${item.assetId}?tab=assignments`}
+                          >
+                            Lihat Aset
+                          </Link>
                         </Button>
                       )}
                     </TableCell>

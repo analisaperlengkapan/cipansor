@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { BookStatus, BorrowingStatus } from "@cipansor/shared";
+import { z } from 'zod';
+import { BookStatus, BorrowingStatus } from '@cipansor/shared';
 
 // Book Category schemas
 export const createBookCategorySchema = z.object({
@@ -20,7 +20,7 @@ export const createBookSchema = z.object({
   author: z.string().min(1).max(255),
   publisher: z.string().optional(),
   publishYear: z.number().int().min(1900).max(2100).optional(),
-  language: z.string().default("Indonesia"),
+  language: z.string().default('Indonesia'),
   pageCount: z.number().int().positive().optional(),
   shelfLocation: z.string().optional(),
   quantity: z.number().int().positive().default(1),
@@ -40,17 +40,19 @@ export const queryBookSchema = z.object({
 });
 
 // Borrowing schemas
-export const createBorrowingSchema = z.object({
-  bookId: z.string().uuid(),
-  studentId: z.string().uuid().optional(),
-  borrowerId: z.string().uuid().optional(),
-  borrowerType: z.enum(["STUDENT", "STAFF", "TEACHER"]).optional().default("STUDENT"),
-  dueDate: z.coerce.date(),
-  notes: z.string().optional(),
-}).refine((data) => data.studentId || data.borrowerId, {
-  message: "Either studentId or borrowerId must be provided",
-  path: ["studentId"],
-});
+export const createBorrowingSchema = z
+  .object({
+    bookId: z.string().uuid(),
+    studentId: z.string().uuid().optional(),
+    borrowerId: z.string().uuid().optional(),
+    borrowerType: z.enum(['STUDENT', 'STAFF', 'TEACHER']).optional().default('STUDENT'),
+    dueDate: z.coerce.date(),
+    notes: z.string().optional(),
+  })
+  .refine((data) => data.studentId || data.borrowerId, {
+    message: 'Either studentId or borrowerId must be provided',
+    path: ['studentId'],
+  });
 
 export const returnBookSchema = z.object({
   lateFee: z.number().nonnegative().optional(),

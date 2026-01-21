@@ -83,7 +83,9 @@ export const scheduleQuerySchema = z.object({
   academicYearId: z.string().uuid().optional(),
   classId: z.string().uuid().optional(),
   teacherId: z.string().uuid().optional(),
-  dayOfWeek: z.enum(['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']).optional(),
+  dayOfWeek: z
+    .enum(['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'])
+    .optional(),
   isActive: z.coerce.boolean().optional(),
 });
 

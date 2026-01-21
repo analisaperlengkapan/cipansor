@@ -137,7 +137,7 @@ export async function createLearningOutcome(data: CreateLearningOutcomeInput) {
 
 export async function updateLearningOutcome(id: string, data: UpdateLearningOutcomeInput) {
   const updateData: Record<string, unknown> = {};
-  
+
   if (data.code !== undefined) updateData.code = data.code;
   if (data.description !== undefined) updateData.description = data.description;
   if (data.elements !== undefined) updateData.elements = data.elements;
@@ -232,13 +232,14 @@ export async function createLearningObjective(data: CreateLearningObjectiveInput
 
 export async function updateLearningObjective(id: string, data: UpdateLearningObjectiveInput) {
   const updateData: Record<string, unknown> = {};
-  
+
   if (data.code !== undefined) updateData.code = data.code;
   if (data.description !== undefined) updateData.description = data.description;
   if (data.indicators !== undefined) updateData.indicators = data.indicators;
   if (data.sequence !== undefined) updateData.sequence = data.sequence;
   if (data.isActive !== undefined) updateData.isActive = data.isActive;
-  if (data.learningOutcomeId !== undefined) updateData.learningOutcome = { connect: { id: data.learningOutcomeId } };
+  if (data.learningOutcomeId !== undefined)
+    updateData.learningOutcome = { connect: { id: data.learningOutcomeId } };
 
   return prisma.learningObjective.update({
     where: { id },
@@ -344,7 +345,7 @@ export async function createTeachingModule(data: CreateTeachingModuleInput) {
 
 export async function updateTeachingModule(id: string, data: UpdateTeachingModuleInput) {
   const updateData: Record<string, unknown> = {};
-  
+
   if (data.title !== undefined) updateData.title = data.title;
   if (data.topic !== undefined) updateData.topic = data.topic;
   if (data.duration !== undefined) updateData.duration = data.duration;
@@ -358,8 +359,10 @@ export async function updateTeachingModule(id: string, data: UpdateTeachingModul
   if (data.reflection !== undefined) updateData.reflection = data.reflection;
   if (data.attachments !== undefined) updateData.attachments = data.attachments;
   if (data.isPublished !== undefined) updateData.isPublished = data.isPublished;
-  if (data.learningObjectiveId !== undefined) updateData.learningObjective = { connect: { id: data.learningObjectiveId } };
-  if (data.classId !== undefined) updateData.class = data.classId ? { connect: { id: data.classId } } : { disconnect: true };
+  if (data.learningObjectiveId !== undefined)
+    updateData.learningObjective = { connect: { id: data.learningObjectiveId } };
+  if (data.classId !== undefined)
+    updateData.class = data.classId ? { connect: { id: data.classId } } : { disconnect: true };
 
   return prisma.teachingModule.update({
     where: { id },
@@ -621,7 +624,8 @@ export async function deleteP5Assessment(id: string) {
 // ==================== MERDEKA ASSESSMENTS ====================
 
 export async function listMerdekaAssessments(query: ListMerdekaAssessmentsQueryInput) {
-  const { unitId, classId, subjectId, teacherId, academicYearId, category, status, page, limit } = query;
+  const { unitId, classId, subjectId, teacherId, academicYearId, category, status, page, limit } =
+    query;
 
   const where = {
     ...(unitId && { unitId }),
@@ -817,15 +821,13 @@ export async function createMerdekaResult(data: CreateMerdekaResultInput) {
 
 export async function updateMerdekaResult(id: string, data: UpdateMerdekaResultInput) {
   const updateData: Record<string, unknown> = {};
-  
+
   if (data.score !== undefined) updateData.score = data.score;
   if (data.percentage !== undefined) updateData.percentage = data.percentage;
   if (data.grade !== undefined) updateData.grade = data.grade;
   if (data.feedback !== undefined) updateData.feedback = data.feedback;
   if (data.attachments !== undefined) {
-    updateData.attachments = data.attachments === null 
-      ? { unset: true } 
-      : data.attachments;
+    updateData.attachments = data.attachments === null ? { unset: true } : data.attachments;
   }
 
   return prisma.merdekaAssessmentResult.update({

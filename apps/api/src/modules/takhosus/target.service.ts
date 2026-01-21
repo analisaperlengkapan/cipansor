@@ -25,9 +25,9 @@ export class TargetService {
           notes: input.notes,
         },
         include: {
-            student: { select: { id: true, user: { select: { name: true } } } },
-            academicYear: { select: { id: true, name: true } },
-        }
+          student: { select: { id: true, user: { select: { name: true } } } },
+          academicYear: { select: { id: true, name: true } },
+        },
       });
     }
 
@@ -54,11 +54,11 @@ export class TargetService {
     if (academicYearId) {
       where.academicYearId = academicYearId;
     } else {
-        // If no academic year provided, try to find the active one
-        const activeYear = await prisma.academicYear.findFirst({ where: { isActive: true } });
-        if (activeYear) {
-            where.academicYearId = activeYear.id;
-        }
+      // If no academic year provided, try to find the active one
+      const activeYear = await prisma.academicYear.findFirst({ where: { isActive: true } });
+      if (activeYear) {
+        where.academicYearId = activeYear.id;
+      }
     }
 
     return prisma.tahfidzTarget.findFirst({
@@ -91,29 +91,29 @@ export class TargetService {
     // 2. Get Current Achievement (Max Juz completed)
     // Logic: Count distinct juz where they passed an exam/tasmi
     const completedJuzList = await prisma.tahfidzRecord.findMany({
-        where: {
-          studentId,
-          activityType: { in: ['ASSESSMENT', 'TASMI'] },
-          score: { gte: 60 }
-        },
-        select: { juz: true },
-        distinct: ['juz'],
+      where: {
+        studentId,
+        activityType: { in: ['ASSESSMENT', 'TASMI'] },
+        score: { gte: 60 },
+      },
+      select: { juz: true },
+      distinct: ['juz'],
     });
 
     const completedJuzCount = completedJuzList.length;
 
     // 3. Get total Ayah memorized (Ziyadah)
     const totalAyah = await prisma.tahfidzRecord.aggregate({
-        where: { studentId, activityType: 'ZIYADAH' },
-        _sum: { totalAyah: true }
+      where: { studentId, activityType: 'ZIYADAH' },
+      _sum: { totalAyah: true },
     });
 
     return {
-        targetJuz: target.targetJuz,
-        completedJuz: completedJuzCount,
-        totalAyahMemorized: totalAyah._sum.totalAyah || 0,
-        percentage: Math.min(100, Math.round((completedJuzCount / target.targetJuz) * 100)),
-        isOnTrack: completedJuzCount >= target.targetJuz // Simplified logic
+      targetJuz: target.targetJuz,
+      completedJuz: completedJuzCount,
+      totalAyahMemorized: totalAyah._sum.totalAyah || 0,
+      percentage: Math.min(100, Math.round((completedJuzCount / target.targetJuz) * 100)),
+      isOnTrack: completedJuzCount >= target.targetJuz, // Simplified logic
     };
   }
 }

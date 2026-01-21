@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -16,10 +16,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -27,16 +27,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ShoppingCart,
   Plus,
@@ -53,8 +53,8 @@ import {
   List,
   Wallet,
   Banknote,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
 // Types
 interface Category {
@@ -101,8 +101,8 @@ interface CanteenStats {
 // API functions
 const api = {
   getCategories: async (): Promise<Category[]> => {
-    const res = await fetch('/api/canteen/categories');
-    if (!res.ok) throw new Error('Failed to fetch categories');
+    const res = await fetch("/api/canteen/categories");
+    if (!res.ok) throw new Error("Failed to fetch categories");
     const json = await res.json();
     return json.data;
   },
@@ -113,26 +113,27 @@ const api = {
     isAvailable?: string;
   }): Promise<{ data: CanteenItem[]; pagination: { total: number } }> => {
     const searchParams = new URLSearchParams();
-    if (params?.categoryId) searchParams.set('categoryId', params.categoryId);
-    if (params?.search) searchParams.set('search', params.search);
-    if (params?.isAvailable) searchParams.set('isAvailable', params.isAvailable);
-    searchParams.set('limit', '100');
-    
+    if (params?.categoryId) searchParams.set("categoryId", params.categoryId);
+    if (params?.search) searchParams.set("search", params.search);
+    if (params?.isAvailable)
+      searchParams.set("isAvailable", params.isAvailable);
+    searchParams.set("limit", "100");
+
     const res = await fetch(`/api/canteen/items?${searchParams}`);
-    if (!res.ok) throw new Error('Failed to fetch items');
+    if (!res.ok) throw new Error("Failed to fetch items");
     return res.json();
   },
 
   getLowStockItems: async (): Promise<CanteenItem[]> => {
-    const res = await fetch('/api/canteen/items/low-stock');
-    if (!res.ok) throw new Error('Failed to fetch low stock items');
+    const res = await fetch("/api/canteen/items/low-stock");
+    if (!res.ok) throw new Error("Failed to fetch low stock items");
     const json = await res.json();
     return json.data;
   },
 
   getStats: async (): Promise<CanteenStats> => {
-    const res = await fetch('/api/canteen/transactions/stats');
-    if (!res.ok) throw new Error('Failed to fetch stats');
+    const res = await fetch("/api/canteen/transactions/stats");
+    if (!res.ok) throw new Error("Failed to fetch stats");
     const json = await res.json();
     return json.data;
   },
@@ -144,26 +145,32 @@ const api = {
     discount: number;
     paymentMethod: string;
   }) => {
-    const res = await fetch('/api/canteen/transactions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/canteen/transactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     if (!res.ok) {
       const error = await res.json();
-      throw new Error(error.error?.message || 'Failed to create transaction');
+      throw new Error(error.error?.message || "Failed to create transaction");
     }
     return res.json();
   },
 
-  searchStudents: async (search: string): Promise<Array<{
-    id: string;
-    nis: string;
-    name: string;
-    walletBalance?: number;
-  }>> => {
+  searchStudents: async (
+    search: string,
+  ): Promise<
+    Array<{
+      id: string;
+      nis: string;
+      name: string;
+      walletBalance?: number;
+    }>
+  > => {
     if (!search) return [];
-    const res = await fetch(`/api/students?search=${encodeURIComponent(search)}&limit=10`);
+    const res = await fetch(
+      `/api/students?search=${encodeURIComponent(search)}&limit=10`,
+    );
     if (!res.ok) return [];
     const json = await res.json();
     return json.data.map((s: any) => ({
@@ -177,58 +184,62 @@ const api = {
 
 // Format currency
 const formatRupiah = (amount: number) => {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
     minimumFractionDigits: 0,
   }).format(amount);
 };
 
 export default function CanteenPage() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('pos');
-  const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [activeTab, setActiveTab] = useState("pos");
+  const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
-  const [studentSearch, setStudentSearch] = useState('');
+  const [studentSearch, setStudentSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<{
     id: string;
     nis: string;
     name: string;
     walletBalance?: number;
   } | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'WALLET' | 'CASH'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<"WALLET" | "CASH">("CASH");
   const [discount, setDiscount] = useState(0);
 
   // Queries
   const { data: categories } = useQuery({
-    queryKey: ['canteen-categories'],
+    queryKey: ["canteen-categories"],
     queryFn: api.getCategories,
   });
 
   const { data: itemsData, isLoading: itemsLoading } = useQuery({
-    queryKey: ['canteen-items', selectedCategory, search],
-    queryFn: () => api.getItems({
-      categoryId: (selectedCategory && selectedCategory !== 'ALL') ? selectedCategory : undefined,
-      search: search || undefined,
-      isAvailable: 'true',
-    }),
+    queryKey: ["canteen-items", selectedCategory, search],
+    queryFn: () =>
+      api.getItems({
+        categoryId:
+          selectedCategory && selectedCategory !== "ALL"
+            ? selectedCategory
+            : undefined,
+        search: search || undefined,
+        isAvailable: "true",
+      }),
   });
 
   const { data: lowStockItems } = useQuery({
-    queryKey: ['canteen-low-stock'],
+    queryKey: ["canteen-low-stock"],
     queryFn: api.getLowStockItems,
   });
 
   const { data: stats } = useQuery({
-    queryKey: ['canteen-stats'],
+    queryKey: ["canteen-stats"],
     queryFn: api.getStats,
   });
 
   const { data: studentResults } = useQuery({
-    queryKey: ['student-search', studentSearch],
+    queryKey: ["student-search", studentSearch],
     queryFn: () => api.searchStudents(studentSearch),
     enabled: studentSearch.length >= 2,
   });
@@ -237,10 +248,10 @@ export default function CanteenPage() {
   const createTransactionMutation = useMutation({
     mutationFn: api.createTransaction,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['canteen-items'] });
-      queryClient.invalidateQueries({ queryKey: ['canteen-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['canteen-low-stock'] });
-      toast.success('Transaksi berhasil');
+      queryClient.invalidateQueries({ queryKey: ["canteen-items"] });
+      queryClient.invalidateQueries({ queryKey: ["canteen-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["canteen-low-stock"] });
+      toast.success("Transaksi berhasil");
       setCart([]);
       setCheckoutDialogOpen(false);
       setSelectedStudent(null);
@@ -254,7 +265,7 @@ export default function CanteenPage() {
   // Cart functions
   const addToCart = (item: CanteenItem) => {
     if (item.stock <= 0) {
-      toast.error('Stok habis');
+      toast.error("Stok habis");
       return;
     }
 
@@ -266,9 +277,7 @@ export default function CanteenPage() {
           return prev;
         }
         return prev.map((c) =>
-          c.item.id === item.id
-            ? { ...c, quantity: c.quantity + 1 }
-            : c
+          c.item.id === item.id ? { ...c, quantity: c.quantity + 1 } : c,
         );
       }
       return [...prev, { item, quantity: 1 }];
@@ -311,7 +320,7 @@ export default function CanteenPage() {
 
     createTransactionMutation.mutate({
       studentId: selectedStudent?.id,
-      customerName: selectedStudent ? undefined : 'Umum',
+      customerName: selectedStudent ? undefined : "Umum",
       items: cart.map((c) => ({
         itemId: c.item.id,
         quantity: c.quantity,
@@ -322,36 +331,39 @@ export default function CanteenPage() {
   };
 
   // Stats cards
-  const statsCards = useMemo(() => [
-    {
-      title: 'Pendapatan Hari Ini',
-      value: formatRupiah(stats?.summary?.totalRevenue || 0),
-      icon: DollarSign,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
-    },
-    {
-      title: 'Transaksi Hari Ini',
-      value: stats?.summary?.totalTransactions || 0,
-      icon: TrendingUp,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
-    },
-    {
-      title: 'Total Produk',
-      value: itemsData?.pagination?.total || 0,
-      icon: Package,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
-    },
-    {
-      title: 'Stok Rendah',
-      value: lowStockItems?.length || 0,
-      icon: AlertTriangle,
-      color: 'text-red-600',
-      bgColor: 'bg-red-100',
-    },
-  ], [stats, itemsData, lowStockItems]);
+  const statsCards = useMemo(
+    () => [
+      {
+        title: "Pendapatan Hari Ini",
+        value: formatRupiah(stats?.summary?.totalRevenue || 0),
+        icon: DollarSign,
+        color: "text-green-600",
+        bgColor: "bg-green-100",
+      },
+      {
+        title: "Transaksi Hari Ini",
+        value: stats?.summary?.totalTransactions || 0,
+        icon: TrendingUp,
+        color: "text-blue-600",
+        bgColor: "bg-blue-100",
+      },
+      {
+        title: "Total Produk",
+        value: itemsData?.pagination?.total || 0,
+        icon: Package,
+        color: "text-purple-600",
+        bgColor: "bg-purple-100",
+      },
+      {
+        title: "Stok Rendah",
+        value: lowStockItems?.length || 0,
+        icon: AlertTriangle,
+        color: "text-red-600",
+        bgColor: "bg-red-100",
+      },
+    ],
+    [stats, itemsData, lowStockItems],
+  );
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -421,7 +433,10 @@ export default function CanteenPage() {
                         className="pl-10"
                       />
                     </div>
-                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <Select
+                      value={selectedCategory}
+                      onValueChange={setSelectedCategory}
+                    >
                       <SelectTrigger className="w-48">
                         <SelectValue placeholder="Semua Kategori" />
                       </SelectTrigger>
@@ -436,16 +451,16 @@ export default function CanteenPage() {
                     </Select>
                     <div className="flex border rounded-md">
                       <Button
-                        variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                        variant={viewMode === "grid" ? "default" : "ghost"}
                         size="icon"
-                        onClick={() => setViewMode('grid')}
+                        onClick={() => setViewMode("grid")}
                       >
                         <Grid className="h-4 w-4" />
                       </Button>
                       <Button
-                        variant={viewMode === 'list' ? 'default' : 'ghost'}
+                        variant={viewMode === "list" ? "default" : "ghost"}
                         size="icon"
-                        onClick={() => setViewMode('list')}
+                        onClick={() => setViewMode("list")}
                       >
                         <List className="h-4 w-4" />
                       </Button>
@@ -459,13 +474,13 @@ export default function CanteenPage() {
                 <div className="flex justify-center p-8">
                   <RefreshCw className="h-6 w-6 animate-spin" />
                 </div>
-              ) : viewMode === 'grid' ? (
+              ) : viewMode === "grid" ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {itemsData?.data.map((item) => (
                     <Card
                       key={item.id}
                       className={`cursor-pointer transition-all hover:shadow-md ${
-                        item.stock <= 0 ? 'opacity-50' : ''
+                        item.stock <= 0 ? "opacity-50" : ""
                       }`}
                       onClick={() => addToCart(item)}
                     >
@@ -487,7 +502,11 @@ export default function CanteenPage() {
                             {formatRupiah(item.price)}
                           </span>
                           <Badge
-                            variant={item.stock <= item.minStock ? 'destructive' : 'secondary'}
+                            variant={
+                              item.stock <= item.minStock
+                                ? "destructive"
+                                : "secondary"
+                            }
                           >
                             {item.stock} {item.unit}
                           </Badge>
@@ -511,14 +530,20 @@ export default function CanteenPage() {
                     <TableBody>
                       {itemsData?.data.map((item) => (
                         <TableRow key={item.id}>
-                          <TableCell className="font-medium">{item.name}</TableCell>
+                          <TableCell className="font-medium">
+                            {item.name}
+                          </TableCell>
                           <TableCell>{item.category.name}</TableCell>
                           <TableCell className="text-right">
                             {formatRupiah(item.price)}
                           </TableCell>
                           <TableCell className="text-right">
                             <Badge
-                              variant={item.stock <= item.minStock ? 'destructive' : 'secondary'}
+                              variant={
+                                item.stock <= item.minStock
+                                  ? "destructive"
+                                  : "secondary"
+                              }
                             >
                               {item.stock}
                             </Badge>
@@ -578,7 +603,9 @@ export default function CanteenPage() {
                                 variant="outline"
                                 size="icon"
                                 className="h-8 w-8"
-                                onClick={() => updateCartQuantity(cartItem.item.id, -1)}
+                                onClick={() =>
+                                  updateCartQuantity(cartItem.item.id, -1)
+                                }
                               >
                                 <Minus className="h-3 w-3" />
                               </Button>
@@ -589,7 +616,9 @@ export default function CanteenPage() {
                                 variant="outline"
                                 size="icon"
                                 className="h-8 w-8"
-                                onClick={() => updateCartQuantity(cartItem.item.id, 1)}
+                                onClick={() =>
+                                  updateCartQuantity(cartItem.item.id, 1)
+                                }
                               >
                                 <Plus className="h-3 w-3" />
                               </Button>
@@ -665,7 +694,7 @@ export default function CanteenPage() {
                   {itemsData?.data.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-mono text-sm">
-                        {item.code || '-'}
+                        {item.code || "-"}
                       </TableCell>
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell>{item.category.name}</TableCell>
@@ -676,19 +705,22 @@ export default function CanteenPage() {
                         <span
                           className={
                             item.stock <= item.minStock
-                              ? 'text-red-600 font-medium'
-                              : ''
+                              ? "text-red-600 font-medium"
+                              : ""
                           }
                         >
                           {item.stock}
                         </span>
-                        <span className="text-muted-foreground"> / {item.minStock}</span>
+                        <span className="text-muted-foreground">
+                          {" "}
+                          / {item.minStock}
+                        </span>
                       </TableCell>
                       <TableCell className="text-center">
                         <Badge
-                          variant={item.isAvailable ? 'default' : 'secondary'}
+                          variant={item.isAvailable ? "default" : "secondary"}
                         >
-                          {item.isAvailable ? 'Tersedia' : 'Tidak Tersedia'}
+                          {item.isAvailable ? "Tersedia" : "Tidak Tersedia"}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -703,9 +735,7 @@ export default function CanteenPage() {
           <Card>
             <CardHeader>
               <CardTitle>Riwayat Transaksi</CardTitle>
-              <CardDescription>
-                Daftar transaksi kantin
-              </CardDescription>
+              <CardDescription>Daftar transaksi kantin</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-center text-muted-foreground py-8">
@@ -737,35 +767,37 @@ export default function CanteenPage() {
                   setSelectedStudent(null);
                 }}
               />
-              {studentResults && studentResults.length > 0 && !selectedStudent && (
-                <div className="border rounded-md max-h-32 overflow-auto">
-                  {studentResults.map((student) => (
-                    <button
-                      key={student.id}
-                      className="w-full p-2 text-left hover:bg-muted flex justify-between items-center"
-                      onClick={() => {
-                        setSelectedStudent(student);
-                        setStudentSearch(student.name);
-                        if (student.walletBalance !== undefined) {
-                          setPaymentMethod('WALLET');
-                        }
-                      }}
-                    >
-                      <div>
-                        <span className="font-medium">{student.name}</span>
-                        <span className="text-sm text-muted-foreground ml-2">
-                          ({student.nis})
-                        </span>
-                      </div>
-                      {student.walletBalance !== undefined && (
-                        <span className="text-sm text-green-600">
-                          {formatRupiah(student.walletBalance)}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
+              {studentResults &&
+                studentResults.length > 0 &&
+                !selectedStudent && (
+                  <div className="border rounded-md max-h-32 overflow-auto">
+                    {studentResults.map((student) => (
+                      <button
+                        key={student.id}
+                        className="w-full p-2 text-left hover:bg-muted flex justify-between items-center"
+                        onClick={() => {
+                          setSelectedStudent(student);
+                          setStudentSearch(student.name);
+                          if (student.walletBalance !== undefined) {
+                            setPaymentMethod("WALLET");
+                          }
+                        }}
+                      >
+                        <div>
+                          <span className="font-medium">{student.name}</span>
+                          <span className="text-sm text-muted-foreground ml-2">
+                            ({student.nis})
+                          </span>
+                        </div>
+                        {student.walletBalance !== undefined && (
+                          <span className="text-sm text-green-600">
+                            {formatRupiah(student.walletBalance)}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
               {selectedStudent && (
                 <div className="p-3 bg-muted rounded-lg flex justify-between items-center">
                   <div>
@@ -776,7 +808,9 @@ export default function CanteenPage() {
                   </div>
                   {selectedStudent.walletBalance !== undefined && (
                     <div className="text-right">
-                      <p className="text-sm text-muted-foreground">Saldo Wallet</p>
+                      <p className="text-sm text-muted-foreground">
+                        Saldo Wallet
+                      </p>
                       <p className="font-bold text-green-600">
                         {formatRupiah(selectedStudent.walletBalance)}
                       </p>
@@ -791,33 +825,33 @@ export default function CanteenPage() {
               <Label>Metode Pembayaran</Label>
               <div className="grid grid-cols-2 gap-2">
                 <Button
-                  variant={paymentMethod === 'CASH' ? 'default' : 'outline'}
+                  variant={paymentMethod === "CASH" ? "default" : "outline"}
                   className="flex items-center gap-2"
-                  onClick={() => setPaymentMethod('CASH')}
+                  onClick={() => setPaymentMethod("CASH")}
                 >
                   <Banknote className="h-4 w-4" />
                   Tunai
                 </Button>
                 <Button
-                  variant={paymentMethod === 'WALLET' ? 'default' : 'outline'}
+                  variant={paymentMethod === "WALLET" ? "default" : "outline"}
                   className="flex items-center gap-2"
-                  onClick={() => setPaymentMethod('WALLET')}
+                  onClick={() => setPaymentMethod("WALLET")}
                   disabled={!selectedStudent}
                 >
                   <Wallet className="h-4 w-4" />
                   Wallet
                 </Button>
               </div>
-              {paymentMethod === 'WALLET' && selectedStudent && (
+              {paymentMethod === "WALLET" && selectedStudent && (
                 <p
                   className={`text-sm ${
                     (selectedStudent.walletBalance || 0) < grandTotal
-                      ? 'text-red-600'
-                      : 'text-green-600'
+                      ? "text-red-600"
+                      : "text-green-600"
                   }`}
                 >
                   {(selectedStudent.walletBalance || 0) < grandTotal
-                    ? 'Saldo tidak mencukupi'
+                    ? "Saldo tidak mencukupi"
                     : `Saldo cukup (${formatRupiah(selectedStudent.walletBalance || 0)})`}
                 </p>
               )}
@@ -829,7 +863,7 @@ export default function CanteenPage() {
               <Input
                 type="number"
                 placeholder="0"
-                value={discount || ''}
+                value={discount || ""}
                 onChange={(e) => setDiscount(Number(e.target.value) || 0)}
               />
             </div>
@@ -851,14 +885,17 @@ export default function CanteenPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCheckoutDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setCheckoutDialogOpen(false)}
+            >
               Batal
             </Button>
             <Button
               onClick={handleCheckout}
               disabled={
                 createTransactionMutation.isPending ||
-                (paymentMethod === 'WALLET' &&
+                (paymentMethod === "WALLET" &&
                   (!selectedStudent ||
                     (selectedStudent.walletBalance || 0) < grandTotal))
               }

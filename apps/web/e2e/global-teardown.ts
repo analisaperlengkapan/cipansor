@@ -1,6 +1,6 @@
-import { FullConfig } from '@playwright/test';
-import fs from 'fs';
-import path from 'path';
+import { FullConfig } from "@playwright/test";
+import fs from "fs";
+import path from "path";
 
 /**
  * Global Teardown for E2E Tests
@@ -9,26 +9,27 @@ import path from 'path';
  * - Generate test summary
  */
 async function globalTeardown(config: FullConfig) {
-  console.log('🧹 Starting E2E Test Global Teardown...');
+  console.log("🧹 Starting E2E Test Global Teardown...");
 
   // Clean up auth state files (optional - comment out if you want to keep them)
-  const authDir = path.join(__dirname, '../playwright/.auth');
+  const authDir = path.join(__dirname, "../playwright/.auth");
   if (fs.existsSync(authDir)) {
     const files = fs.readdirSync(authDir);
     for (const file of files) {
       fs.unlinkSync(path.join(authDir, file));
     }
-    console.log('✅ Cleaned up authentication state files');
+    console.log("✅ Cleaned up authentication state files");
   }
 
   // Clean up old screenshots (keep only last 100)
-  const screenshotsDir = path.join(__dirname, '../test-results/screenshots');
+  const screenshotsDir = path.join(__dirname, "../test-results/screenshots");
   if (fs.existsSync(screenshotsDir)) {
-    const files = fs.readdirSync(screenshotsDir)
-      .map(file => ({
+    const files = fs
+      .readdirSync(screenshotsDir)
+      .map((file) => ({
         name: file,
         path: path.join(screenshotsDir, file),
-        time: fs.statSync(path.join(screenshotsDir, file)).mtime.getTime()
+        time: fs.statSync(path.join(screenshotsDir, file)).mtime.getTime(),
       }))
       .sort((a, b) => b.time - a.time);
 
@@ -41,7 +42,7 @@ async function globalTeardown(config: FullConfig) {
     }
   }
 
-  console.log('✅ Global teardown completed');
+  console.log("✅ Global teardown completed");
 }
 
 export default globalTeardown;

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from "react";
 
 interface UseOnlineStatusReturn {
   /**
@@ -42,7 +42,7 @@ interface UseOnlineStatusOptions {
 
 /**
  * Hook to track online/offline status and API reachability
- * 
+ *
  * @example
  * ```tsx
  * function App() {
@@ -51,7 +51,7 @@ interface UseOnlineStatusOptions {
  *     onOffline: () => toast.error('Koneksi terputus'),
  *     onOnline: () => toast.success('Koneksi kembali'),
  *   });
- * 
+ *
  *   if (!isOnline) {
  *     return <OfflineBanner />;
  *   }
@@ -59,7 +59,7 @@ interface UseOnlineStatusOptions {
  * ```
  */
 export function useOnlineStatus(
-  options: UseOnlineStatusOptions = {}
+  options: UseOnlineStatusOptions = {},
 ): UseOnlineStatusReturn {
   const {
     pingUrl,
@@ -69,11 +69,11 @@ export function useOnlineStatus(
   } = options;
 
   const [isOnline, setIsOnline] = useState(
-    typeof navigator !== 'undefined' ? navigator.onLine : true
+    typeof navigator !== "undefined" ? navigator.onLine : true,
   );
   const [isApiReachable, setIsApiReachable] = useState(true);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
-  
+
   const previousOnlineRef = useRef(isOnline);
   const onOnlineRef = useRef(onOnline);
   const onOfflineRef = useRef(onOffline);
@@ -96,13 +96,13 @@ export function useOnlineStatus(
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
       const response = await fetch(pingUrl, {
-        method: 'HEAD',
+        method: "HEAD",
         signal: controller.signal,
-        cache: 'no-store',
+        cache: "no-store",
       });
 
       clearTimeout(timeoutId);
-      
+
       const reachable = response.ok;
       setIsApiReachable(reachable);
       setLastChecked(new Date());
@@ -135,12 +135,12 @@ export function useOnlineStatus(
       previousOnlineRef.current = false;
     };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, [checkConnection]);
 
@@ -186,19 +186,19 @@ export function useOnlineStatus(
  */
 export function useIsOnline(): boolean {
   const [isOnline, setIsOnline] = useState(
-    typeof navigator !== 'undefined' ? navigator.onLine : true
+    typeof navigator !== "undefined" ? navigator.onLine : true,
   );
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 

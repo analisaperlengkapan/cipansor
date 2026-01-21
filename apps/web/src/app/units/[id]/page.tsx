@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useParams } from 'next/navigation';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
   Building2,
@@ -16,20 +16,20 @@ import {
   Users,
   GraduationCap,
   Loader2,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { useUnit, UNIT_TYPES } from '@/hooks/use-units';
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { useUnit, UNIT_TYPES } from "@/hooks/use-units";
 
 const getUnitTypeLabel = (type: string) => {
   const unitType = UNIT_TYPES.find((t) => t.value === type);
@@ -38,18 +38,18 @@ const getUnitTypeLabel = (type: string) => {
 
 const getUnitTypeColor = (type: string) => {
   switch (type) {
-    case 'PESANTREN':
-      return 'bg-green-100 text-green-800';
-    case 'SD_IT':
-      return 'bg-blue-100 text-blue-800';
-    case 'SMP_IT':
-      return 'bg-purple-100 text-purple-800';
-    case 'SMA_IT':
-      return 'bg-orange-100 text-orange-800';
-    case 'MA':
-      return 'bg-red-100 text-red-800';
+    case "PESANTREN":
+      return "bg-green-100 text-green-800";
+    case "SD_IT":
+      return "bg-blue-100 text-blue-800";
+    case "SMP_IT":
+      return "bg-purple-100 text-purple-800";
+    case "SMA_IT":
+      return "bg-orange-100 text-orange-800";
+    case "MA":
+      return "bg-red-100 text-red-800";
     default:
-      return 'bg-gray-100 text-gray-800';
+      return "bg-gray-100 text-gray-800";
   }
 };
 
@@ -96,12 +96,19 @@ export default function UnitDetailPage() {
             </Button>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold tracking-tight">{unit.name}</h1>
-                <Badge className={getUnitTypeColor(unit.type)} variant="secondary">
+                <h1 className="text-2xl font-bold tracking-tight">
+                  {unit.name}
+                </h1>
+                <Badge
+                  className={getUnitTypeColor(unit.type)}
+                  variant="secondary"
+                >
                   {getUnitTypeLabel(unit.type)}
                 </Badge>
               </div>
-              <p className="text-muted-foreground mt-1">Detail informasi unit pendidikan</p>
+              <p className="text-muted-foreground mt-1">
+                Detail informasi unit pendidikan
+              </p>
             </div>
           </div>
           <Button asChild>
@@ -125,11 +132,15 @@ export default function UnitDetailPage() {
             <CardContent className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Nama Unit</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Nama Unit
+                  </p>
                   <p className="text-sm">{unit.name}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Tipe</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Tipe
+                  </p>
                   <p className="text-sm">{getUnitTypeLabel(unit.type)}</p>
                 </div>
               </div>
@@ -140,7 +151,9 @@ export default function UnitDetailPage() {
                 <div className="flex items-center gap-3">
                   <User className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Kepala Unit</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Kepala Unit
+                    </p>
                     <p className="text-sm">{unit.headName}</p>
                   </div>
                 </div>
@@ -150,7 +163,9 @@ export default function UnitDetailPage() {
                 <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Alamat</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Alamat
+                    </p>
                     <p className="text-sm">{unit.address}</p>
                   </div>
                 </div>
@@ -161,7 +176,9 @@ export default function UnitDetailPage() {
                   <div className="flex items-center gap-3">
                     <Phone className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Telepon</p>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Telepon
+                      </p>
                       <p className="text-sm">{unit.phone}</p>
                     </div>
                   </div>
@@ -171,7 +188,9 @@ export default function UnitDetailPage() {
                   <div className="flex items-center gap-3">
                     <Mail className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Email</p>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Email
+                      </p>
                       <p className="text-sm">{unit.email}</p>
                     </div>
                   </div>
@@ -184,18 +203,26 @@ export default function UnitDetailPage() {
                 <div className="flex items-center gap-3">
                   <Calendar className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Dibuat</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Dibuat
+                    </p>
                     <p className="text-sm">
-                      {format(new Date(unit.createdAt), 'd MMMM yyyy', { locale: localeId })}
+                      {format(new Date(unit.createdAt), "d MMMM yyyy", {
+                        locale: localeId,
+                      })}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Calendar className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Terakhir Diperbarui</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Terakhir Diperbarui
+                    </p>
                     <p className="text-sm">
-                      {format(new Date(unit.updatedAt), 'd MMMM yyyy', { locale: localeId })}
+                      {format(new Date(unit.updatedAt), "d MMMM yyyy", {
+                        locale: localeId,
+                      })}
                     </p>
                   </div>
                 </div>

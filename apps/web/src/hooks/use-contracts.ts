@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 export interface EmploymentContract {
   id: string;
@@ -8,21 +8,30 @@ export interface EmploymentContract {
   type: string;
   startDate: string;
   endDate?: string;
-  status: 'ACTIVE' | 'EXPIRED' | 'TERMINATED' | 'RENEWED';
+  status: "ACTIVE" | "EXPIRED" | "TERMINATED" | "RENEWED";
   documentUrl?: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export function useContracts(params?: { unitId?: string; search?: string; status?: string }) {
+export function useContracts(params?: {
+  unitId?: string;
+  search?: string;
+  status?: string;
+}) {
   return useQuery({
-    queryKey: ['contracts', params],
+    queryKey: ["contracts", params],
     queryFn: async () => {
-      const response = await api.get('/hr/contracts', { params });
+      const response = await api.get("/hr/contracts", { params });
       return response.data as {
         data: EmploymentContract[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
+        meta: {
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        };
       };
     },
   });
@@ -30,7 +39,7 @@ export function useContracts(params?: { unitId?: string; search?: string; status
 
 export function useUserContracts(userId: string) {
   return useQuery({
-    queryKey: ['user-contracts', userId],
+    queryKey: ["user-contracts", userId],
     queryFn: async () => {
       const response = await api.get(`/hr/contracts/user/${userId}`);
       return response.data.data as EmploymentContract[];
@@ -41,9 +50,11 @@ export function useUserContracts(userId: string) {
 
 export function useExpiringContracts(days: number = 30) {
   return useQuery({
-    queryKey: ['expiring-contracts', days],
+    queryKey: ["expiring-contracts", days],
     queryFn: async () => {
-      const response = await api.get('/hr/contracts/expiring', { params: { days } });
+      const response = await api.get("/hr/contracts/expiring", {
+        params: { days },
+      });
       return response.data.data as EmploymentContract[];
     },
   });
@@ -54,12 +65,12 @@ export function useCreateContract() {
 
   return useMutation({
     mutationFn: async (data: Partial<EmploymentContract>) => {
-      const response = await api.post('/hr/contracts', data);
+      const response = await api.post("/hr/contracts", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contracts'] });
-      queryClient.invalidateQueries({ queryKey: ['user-contracts'] });
+      queryClient.invalidateQueries({ queryKey: ["contracts"] });
+      queryClient.invalidateQueries({ queryKey: ["user-contracts"] });
     },
   });
 }
@@ -68,13 +79,19 @@ export function useUpdateContract() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<EmploymentContract> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<EmploymentContract>;
+    }) => {
       const response = await api.patch(`/hr/contracts/${id}`, data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contracts'] });
-      queryClient.invalidateQueries({ queryKey: ['user-contracts'] });
+      queryClient.invalidateQueries({ queryKey: ["contracts"] });
+      queryClient.invalidateQueries({ queryKey: ["user-contracts"] });
     },
   });
 }

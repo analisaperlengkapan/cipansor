@@ -1,6 +1,6 @@
-import { Router } from "express";
-import * as controller from "./controller";
-import { authenticate } from "@/middleware/auth";
+import { Router } from 'express';
+import * as controller from './controller';
+import { authenticate } from '@/middleware/auth';
 
 const router = Router();
 
@@ -26,7 +26,7 @@ router.use(authenticate);
  *       200:
  *         description: Alumni tracer study statistics
  */
-router.get("/stats/tracer", controller.getTracerStudyStats);
+router.get('/stats/tracer', controller.getTracerStudyStats);
 
 /**
  * @swagger
@@ -59,7 +59,7 @@ router.get("/stats/tracer", controller.getTracerStudyStats);
  *       200:
  *         description: List of alumni
  */
-router.get("/", controller.getAlumni);
+router.get('/', controller.getAlumni);
 
 /**
  * @swagger
@@ -73,7 +73,7 @@ router.get("/", controller.getAlumni);
  *       200:
  *         description: Alumni statistics (total, by year, by career, etc.)
  */
-router.get("/stats", controller.getAlumniStats);
+router.get('/stats', controller.getAlumniStats);
 
 /**
  * @swagger
@@ -95,7 +95,7 @@ router.get("/stats", controller.getAlumniStats);
  *       404:
  *         description: Alumni not found
  */
-router.get("/:id", controller.getAlumniById);
+router.get('/:id', controller.getAlumniById);
 
 /**
  * @swagger
@@ -131,7 +131,7 @@ router.get("/:id", controller.getAlumniById);
  *       201:
  *         description: Alumni created
  */
-router.post("/", controller.createAlumni);
+router.post('/', controller.createAlumni);
 
 /**
  * @swagger
@@ -159,7 +159,7 @@ router.post("/", controller.createAlumni);
  *       404:
  *         description: Alumni not found
  */
-router.put("/:id", controller.updateAlumni);
+router.put('/:id', controller.updateAlumni);
 
 /**
  * @swagger
@@ -181,7 +181,7 @@ router.put("/:id", controller.updateAlumni);
  *       404:
  *         description: Alumni not found
  */
-router.delete("/:id", controller.deleteAlumni);
+router.delete('/:id', controller.deleteAlumni);
 
 /**
  * @swagger
@@ -212,7 +212,7 @@ router.delete("/:id", controller.deleteAlumni);
  *       404:
  *         description: Student not found
  */
-router.post("/from-student/:studentId", controller.convertFromStudent);
+router.post('/from-student/:studentId', controller.convertFromStudent);
 
 // ==================== CAREERS ====================
 
@@ -234,7 +234,7 @@ router.post("/from-student/:studentId", controller.convertFromStudent);
  *       200:
  *         description: List of careers
  */
-router.get("/:alumniId/careers", controller.getCareersByAlumni);
+router.get('/:alumniId/careers', controller.getCareersByAlumni);
 
 /**
  * @swagger
@@ -276,7 +276,7 @@ router.get("/:alumniId/careers", controller.getCareersByAlumni);
  *       201:
  *         description: Career added
  */
-router.post("/:alumniId/careers", controller.createCareer);
+router.post('/:alumniId/careers', controller.createCareer);
 
 /**
  * @swagger
@@ -296,7 +296,7 @@ router.post("/:alumniId/careers", controller.createCareer);
  *       200:
  *         description: Career updated
  */
-router.put("/careers/:id", controller.updateCareer);
+router.put('/careers/:id', controller.updateCareer);
 
 /**
  * @swagger
@@ -316,7 +316,7 @@ router.put("/careers/:id", controller.updateCareer);
  *       204:
  *         description: Career deleted
  */
-router.delete("/careers/:id", controller.deleteCareer);
+router.delete('/careers/:id', controller.deleteCareer);
 
 // ==================== EDUCATION ====================
 
@@ -338,7 +338,7 @@ router.delete("/careers/:id", controller.deleteCareer);
  *       200:
  *         description: List of education records
  */
-router.get("/:alumniId/education", controller.getEducationsByAlumni);
+router.get('/:alumniId/education', controller.getEducationsByAlumni);
 
 /**
  * @swagger
@@ -378,7 +378,7 @@ router.get("/:alumniId/education", controller.getEducationsByAlumni);
  *       201:
  *         description: Education added
  */
-router.post("/:alumniId/education", controller.createEducation);
+router.post('/:alumniId/education', controller.createEducation);
 
 /**
  * @swagger
@@ -398,7 +398,7 @@ router.post("/:alumniId/education", controller.createEducation);
  *       200:
  *         description: Education updated
  */
-router.put("/education/:id", controller.updateEducation);
+router.put('/education/:id', controller.updateEducation);
 
 /**
  * @swagger
@@ -418,7 +418,7 @@ router.put("/education/:id", controller.updateEducation);
  *       204:
  *         description: Education deleted
  */
-router.delete("/education/:id", controller.deleteEducation);
+router.delete('/education/:id', controller.deleteEducation);
 
 // ==================== DONATIONS ====================
 
@@ -443,7 +443,7 @@ router.delete("/education/:id", controller.deleteEducation);
  *       200:
  *         description: List of donations
  */
-router.get("/donations/list", controller.getDonations);
+router.get('/donations/list', controller.getDonations);
 
 /**
  * @swagger
@@ -479,7 +479,7 @@ router.get("/donations/list", controller.getDonations);
  *       201:
  *         description: Donation created
  */
-router.post("/:alumniId/donations", controller.createDonation);
+router.post('/:alumniId/donations', controller.createDonation);
 
 /**
  * @swagger
@@ -499,7 +499,7 @@ router.post("/:alumniId/donations", controller.createDonation);
  *       200:
  *         description: Donation updated
  */
-router.put("/donations/:id", controller.updateDonation);
+router.put('/donations/:id', controller.updateDonation);
 
 /**
  * @swagger
@@ -519,7 +519,7 @@ router.put("/donations/:id", controller.updateDonation);
  *       204:
  *         description: Donation deleted
  */
-router.delete("/donations/:id", controller.deleteDonation);
+router.delete('/donations/:id', controller.deleteDonation);
 
 // ==================== EVENTS ====================
 
@@ -548,7 +548,7 @@ router.delete("/donations/:id", controller.deleteDonation);
  *       200:
  *         description: List of events
  */
-router.get("/events/list", controller.getEvents);
+router.get('/events/list', controller.getEvents);
 
 /**
  * @swagger
@@ -568,7 +568,7 @@ router.get("/events/list", controller.getEvents);
  *       200:
  *         description: Event details
  */
-router.get("/events/:id", controller.getEventById);
+router.get('/events/:id', controller.getEventById);
 
 /**
  * @swagger
@@ -603,7 +603,7 @@ router.get("/events/:id", controller.getEventById);
  *       201:
  *         description: Event created
  */
-router.post("/events", controller.createEvent);
+router.post('/events', controller.createEvent);
 
 /**
  * @swagger
@@ -623,7 +623,7 @@ router.post("/events", controller.createEvent);
  *       200:
  *         description: Event updated
  */
-router.put("/events/:id", controller.updateEvent);
+router.put('/events/:id', controller.updateEvent);
 
 /**
  * @swagger
@@ -643,7 +643,7 @@ router.put("/events/:id", controller.updateEvent);
  *       204:
  *         description: Event deleted
  */
-router.delete("/events/:id", controller.deleteEvent);
+router.delete('/events/:id', controller.deleteEvent);
 
 // ==================== EVENT ATTENDEES ====================
 
@@ -673,7 +673,7 @@ router.delete("/events/:id", controller.deleteEvent);
  *       201:
  *         description: Registered for event
  */
-router.post("/events/:eventId/register", controller.registerForEvent);
+router.post('/events/:eventId/register', controller.registerForEvent);
 
 /**
  * @swagger
@@ -703,7 +703,7 @@ router.post("/events/:eventId/register", controller.registerForEvent);
  *       200:
  *         description: Status updated
  */
-router.put("/events/attendees/:id/status", controller.updateAttendeeStatus);
+router.put('/events/attendees/:id/status', controller.updateAttendeeStatus);
 
 /**
  * @swagger
@@ -723,6 +723,6 @@ router.put("/events/attendees/:id/status", controller.updateAttendeeStatus);
  *       204:
  *         description: Registration cancelled
  */
-router.delete("/events/attendees/:id", controller.cancelRegistration);
+router.delete('/events/attendees/:id', controller.cancelRegistration);
 
 export default router;

@@ -1,41 +1,41 @@
-'use client';
+"use client";
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { format } from 'date-fns';
-import { ArrowLeft, Heart, CalendarIcon, User } from 'lucide-react';
-import { toast } from 'sonner';
+import { useRouter, useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { format } from "date-fns";
+import { ArrowLeft, Heart, CalendarIcon, User } from "lucide-react";
+import { toast } from "sonner";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import {
   useCampaigns,
   useCreateDonation,
@@ -44,17 +44,37 @@ import {
   formatCurrency,
   DonationType,
   PaymentMethod,
-} from '@/hooks/use-donation';
+} from "@/hooks/use-donation";
 
 const donationSchema = z.object({
   campaignId: z.string().optional(),
-  donorName: z.string().min(1, 'Nama donatur wajib diisi'),
-  donorEmail: z.string().email('Email tidak valid').optional().or(z.literal('')),
+  donorName: z.string().min(1, "Nama donatur wajib diisi"),
+  donorEmail: z
+    .string()
+    .email("Email tidak valid")
+    .optional()
+    .or(z.literal("")),
   donorPhone: z.string().optional(),
-  amount: z.coerce.number().min(1000, 'Minimal donasi Rp 1.000'),
-  type: z.enum(['INFAK', 'INFAK_BULANAN', 'ZAKAT_MAAL', 'ZAKAT_FITRAH', 'WAKAF', 'SEDEKAH_JARIYAH', 'PEMBANGUNAN', 'BEASISWA', 'OTHERS'] as const),
-  paymentMethod: z.enum(['CASH', 'BANK_TRANSFER', 'QRIS', 'EWALLET', 'OTHERS'] as const),
-  paymentDate: z.date({ required_error: 'Pilih tanggal pembayaran' }),
+  amount: z.coerce.number().min(1000, "Minimal donasi Rp 1.000"),
+  type: z.enum([
+    "INFAK",
+    "INFAK_BULANAN",
+    "ZAKAT_MAAL",
+    "ZAKAT_FITRAH",
+    "WAKAF",
+    "SEDEKAH_JARIYAH",
+    "PEMBANGUNAN",
+    "BEASISWA",
+    "OTHERS",
+  ] as const),
+  paymentMethod: z.enum([
+    "CASH",
+    "BANK_TRANSFER",
+    "QRIS",
+    "EWALLET",
+    "OTHERS",
+  ] as const),
+  paymentDate: z.date({ required_error: "Pilih tanggal pembayaran" }),
   notes: z.string().optional(),
   isAnonymous: z.boolean(),
 });
@@ -64,9 +84,12 @@ type DonationFormData = z.infer<typeof donationSchema>;
 export default function NewDonationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const preselectedCampaignId = searchParams.get('campaignId');
+  const preselectedCampaignId = searchParams.get("campaignId");
 
-  const { data: campaignsData } = useCampaigns({ status: 'ACTIVE', limit: 100 });
+  const { data: campaignsData } = useCampaigns({
+    status: "ACTIVE",
+    limit: 100,
+  });
   const createDonation = useCreateDonation();
 
   const campaigns = campaignsData?.data || [];
@@ -80,24 +103,24 @@ export default function NewDonationPage() {
   } = useForm<DonationFormData>({
     resolver: zodResolver(donationSchema),
     defaultValues: {
-      campaignId: preselectedCampaignId || '',
-      donorName: '',
-      donorEmail: '',
-      donorPhone: '',
+      campaignId: preselectedCampaignId || "",
+      donorName: "",
+      donorEmail: "",
+      donorPhone: "",
       amount: 0,
-      type: 'INFAK',
-      paymentMethod: 'BANK_TRANSFER',
+      type: "INFAK",
+      paymentMethod: "BANK_TRANSFER",
       paymentDate: new Date(),
-      notes: '',
+      notes: "",
       isAnonymous: false,
     },
   });
 
-  const isAnonymous = watch('isAnonymous');
-  const selectedCampaignId = watch('campaignId');
-  const paymentDate = watch('paymentDate');
-  const selectedType = watch('type');
-  const selectedPaymentMethod = watch('paymentMethod');
+  const isAnonymous = watch("isAnonymous");
+  const selectedCampaignId = watch("campaignId");
+  const paymentDate = watch("paymentDate");
+  const selectedType = watch("type");
+  const selectedPaymentMethod = watch("paymentMethod");
   const selectedCampaign = campaigns.find((c) => c.id === selectedCampaignId);
 
   const onSubmit = async (data: DonationFormData) => {
@@ -113,14 +136,15 @@ export default function NewDonationPage() {
         notes: data.notes || undefined,
         isAnonymous: data.isAnonymous,
       });
-      toast.success('Donasi berhasil dicatat');
+      toast.success("Donasi berhasil dicatat");
       if (preselectedCampaignId) {
         router.push(`/donation/campaigns/${preselectedCampaignId}`);
       } else {
-        router.push('/donation');
+        router.push("/donation");
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal mencatat donasi';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal mencatat donasi";
       toast.error(errorMessage);
     }
   };
@@ -133,7 +157,11 @@ export default function NewDonationPage() {
       <PageHeader
         title="Catat Donasi"
         description="Catat donasi baru dari donatur"
-        backHref={preselectedCampaignId ? `/donation/campaigns/${preselectedCampaignId}` : '/donation'}
+        backHref={
+          preselectedCampaignId
+            ? `/donation/campaigns/${preselectedCampaignId}`
+            : "/donation"
+        }
         backLabel="Kembali"
       />
 
@@ -154,14 +182,16 @@ export default function NewDonationPage() {
               <div className="space-y-2">
                 <Label htmlFor="campaignId">Campaign</Label>
                 <Select
-                  value={selectedCampaignId || ''}
-                  onValueChange={(value) => setValue('campaignId', value)}
+                  value={selectedCampaignId || ""}
+                  onValueChange={(value) => setValue("campaignId", value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih campaign (opsional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Donasi Umum (Tanpa Campaign)</SelectItem>
+                    <SelectItem value="">
+                      Donasi Umum (Tanpa Campaign)
+                    </SelectItem>
                     {campaigns.map((campaign) => (
                       <SelectItem key={campaign.id} value={campaign.id}>
                         {campaign.title}
@@ -171,15 +201,20 @@ export default function NewDonationPage() {
                 </Select>
                 {selectedCampaign && (
                   <div className="mt-2 p-3 bg-muted rounded-md">
-                    <p className="text-sm font-medium">{selectedCampaign.title}</p>
+                    <p className="text-sm font-medium">
+                      {selectedCampaign.title}
+                    </p>
                     <p className="text-xs text-muted-foreground mt-1">
                       Target: {formatCurrency(selectedCampaign.targetAmount)} |
-                      Terkumpul: {formatCurrency(selectedCampaign.collectedAmount)}
+                      Terkumpul:{" "}
+                      {formatCurrency(selectedCampaign.collectedAmount)}
                     </p>
                   </div>
                 )}
                 {errors.campaignId && (
-                  <p className="text-sm text-destructive">{errors.campaignId.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.campaignId.message}
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -199,10 +234,14 @@ export default function NewDonationPage() {
                 <Checkbox
                   id="isAnonymous"
                   checked={isAnonymous}
-                  onCheckedChange={(checked) => setValue('isAnonymous', !!checked)}
+                  onCheckedChange={(checked) =>
+                    setValue("isAnonymous", !!checked)
+                  }
                 />
                 <div className="space-y-1 leading-none">
-                  <Label htmlFor="isAnonymous">Donatur Anonim (Hamba Allah)</Label>
+                  <Label htmlFor="isAnonymous">
+                    Donatur Anonim (Hamba Allah)
+                  </Label>
                   <p className="text-sm text-muted-foreground">
                     Nama donatur tidak akan ditampilkan
                   </p>
@@ -214,8 +253,12 @@ export default function NewDonationPage() {
                 <Label htmlFor="donorName">Nama Donatur *</Label>
                 <Input
                   id="donorName"
-                  placeholder={isAnonymous ? 'Tetap diisi untuk internal' : 'Nama lengkap donatur'}
-                  {...register('donorName')}
+                  placeholder={
+                    isAnonymous
+                      ? "Tetap diisi untuk internal"
+                      : "Nama lengkap donatur"
+                  }
+                  {...register("donorName")}
                 />
                 {isAnonymous && (
                   <p className="text-sm text-muted-foreground">
@@ -223,7 +266,9 @@ export default function NewDonationPage() {
                   </p>
                 )}
                 {errors.donorName && (
-                  <p className="text-sm text-destructive">{errors.donorName.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.donorName.message}
+                  </p>
                 )}
               </div>
 
@@ -234,10 +279,12 @@ export default function NewDonationPage() {
                   <Input
                     id="donorPhone"
                     placeholder="08123456789"
-                    {...register('donorPhone')}
+                    {...register("donorPhone")}
                   />
                   {errors.donorPhone && (
-                    <p className="text-sm text-destructive">{errors.donorPhone.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.donorPhone.message}
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -246,10 +293,12 @@ export default function NewDonationPage() {
                     id="donorEmail"
                     type="email"
                     placeholder="donatur@email.com"
-                    {...register('donorEmail')}
+                    {...register("donorEmail")}
                   />
                   {errors.donorEmail && (
-                    <p className="text-sm text-destructive">{errors.donorEmail.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.donorEmail.message}
+                    </p>
                   )}
                 </div>
               </div>
@@ -267,7 +316,9 @@ export default function NewDonationPage() {
                 <Label>Tipe Donasi *</Label>
                 <Select
                   value={selectedType}
-                  onValueChange={(value) => setValue('type', value as DonationType)}
+                  onValueChange={(value) =>
+                    setValue("type", value as DonationType)
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih tipe" />
@@ -281,7 +332,9 @@ export default function NewDonationPage() {
                   </SelectContent>
                 </Select>
                 {errors.type && (
-                  <p className="text-sm text-destructive">{errors.type.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.type.message}
+                  </p>
                 )}
               </div>
 
@@ -299,7 +352,7 @@ export default function NewDonationPage() {
                     step={1000}
                     className="pl-10"
                     placeholder="100000"
-                    {...register('amount')}
+                    {...register("amount")}
                   />
                 </div>
                 {/* Amount Presets */}
@@ -310,7 +363,7 @@ export default function NewDonationPage() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => setValue('amount', preset)}
+                      onClick={() => setValue("amount", preset)}
                       className="text-xs"
                     >
                       {formatCurrency(preset)}
@@ -318,7 +371,9 @@ export default function NewDonationPage() {
                   ))}
                 </div>
                 {errors.amount && (
-                  <p className="text-sm text-destructive">{errors.amount.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.amount.message}
+                  </p>
                 )}
               </div>
 
@@ -328,7 +383,9 @@ export default function NewDonationPage() {
                   <Label>Metode Pembayaran *</Label>
                   <Select
                     value={selectedPaymentMethod}
-                    onValueChange={(value) => setValue('paymentMethod', value as PaymentMethod)}
+                    onValueChange={(value) =>
+                      setValue("paymentMethod", value as PaymentMethod)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih metode" />
@@ -342,7 +399,9 @@ export default function NewDonationPage() {
                     </SelectContent>
                   </Select>
                   {errors.paymentMethod && (
-                    <p className="text-sm text-destructive">{errors.paymentMethod.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.paymentMethod.message}
+                    </p>
                   )}
                 </div>
 
@@ -353,12 +412,12 @@ export default function NewDonationPage() {
                       <Button
                         variant="outline"
                         className={cn(
-                          'w-full pl-3 text-left font-normal',
-                          !paymentDate && 'text-muted-foreground'
+                          "w-full pl-3 text-left font-normal",
+                          !paymentDate && "text-muted-foreground",
                         )}
                       >
                         {paymentDate ? (
-                          format(paymentDate, 'PPP')
+                          format(paymentDate, "PPP")
                         ) : (
                           <span>Pilih tanggal</span>
                         )}
@@ -369,14 +428,18 @@ export default function NewDonationPage() {
                       <Calendar
                         mode="single"
                         selected={paymentDate}
-                        onSelect={(date) => date && setValue('paymentDate', date)}
+                        onSelect={(date) =>
+                          date && setValue("paymentDate", date)
+                        }
                         disabled={(date) => date > new Date()}
                         initialFocus
                       />
                     </PopoverContent>
                   </Popover>
                   {errors.paymentDate && (
-                    <p className="text-sm text-destructive">{errors.paymentDate.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.paymentDate.message}
+                    </p>
                   )}
                 </div>
               </div>
@@ -388,10 +451,12 @@ export default function NewDonationPage() {
                   id="notes"
                   placeholder="Pesan atau doa dari donatur..."
                   rows={3}
-                  {...register('notes')}
+                  {...register("notes")}
                 />
                 {errors.notes && (
-                  <p className="text-sm text-destructive">{errors.notes.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.notes.message}
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -409,7 +474,7 @@ export default function NewDonationPage() {
               Batal
             </Button>
             <Button type="submit" disabled={createDonation.isPending}>
-              {createDonation.isPending ? 'Menyimpan...' : 'Simpan Donasi'}
+              {createDonation.isPending ? "Menyimpan..." : "Simpan Donasi"}
             </Button>
           </div>
         </form>

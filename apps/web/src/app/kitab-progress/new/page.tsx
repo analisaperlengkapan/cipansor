@@ -1,31 +1,31 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowLeft, BookOpen, Save } from 'lucide-react';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, BookOpen, Save } from "lucide-react";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
 
 import {
   useCreateKitab,
@@ -37,8 +37,8 @@ import {
   getCategoryIcon,
   type KitabCategory,
   type KitabLevel,
-} from '@/hooks/use-kitab-progress';
-import { useUnits } from '@/hooks/use-units';
+} from "@/hooks/use-kitab-progress";
+import { useUnits } from "@/hooks/use-units";
 
 export default function NewKitabPage() {
   const router = useRouter();
@@ -47,14 +47,14 @@ export default function NewKitabPage() {
   const units = unitsData || [];
 
   const [formData, setFormData] = useState({
-    title: '',
-    author: '',
-    category: '' as KitabCategory | '',
-    level: '' as KitabLevel | '',
-    totalPages: '',
-    totalChapters: '',
-    description: '',
-    unitId: '',
+    title: "",
+    author: "",
+    category: "" as KitabCategory | "",
+    level: "" as KitabLevel | "",
+    totalPages: "",
+    totalChapters: "",
+    description: "",
+    unitId: "",
     isActive: true,
   });
 
@@ -64,19 +64,19 @@ export default function NewKitabPage() {
     const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = 'Judul kitab wajib diisi';
+      newErrors.title = "Judul kitab wajib diisi";
     }
     if (!formData.category) {
-      newErrors.category = 'Kategori wajib dipilih';
+      newErrors.category = "Kategori wajib dipilih";
     }
     if (!formData.level) {
-      newErrors.level = 'Level wajib dipilih';
+      newErrors.level = "Level wajib dipilih";
     }
     if (formData.totalPages && parseInt(formData.totalPages) <= 0) {
-      newErrors.totalPages = 'Jumlah halaman harus lebih dari 0';
+      newErrors.totalPages = "Jumlah halaman harus lebih dari 0";
     }
     if (formData.totalChapters && parseInt(formData.totalChapters) <= 0) {
-      newErrors.totalChapters = 'Jumlah bab harus lebih dari 0';
+      newErrors.totalChapters = "Jumlah bab harus lebih dari 0";
     }
 
     setErrors(newErrors);
@@ -87,7 +87,7 @@ export default function NewKitabPage() {
     e.preventDefault();
 
     if (!validateForm()) {
-      toast.error('Mohon lengkapi form dengan benar');
+      toast.error("Mohon lengkapi form dengan benar");
       return;
     }
 
@@ -97,16 +97,20 @@ export default function NewKitabPage() {
         author: formData.author.trim() || undefined,
         category: formData.category as KitabCategory,
         level: formData.level as KitabLevel,
-        totalPages: formData.totalPages ? parseInt(formData.totalPages) : undefined,
-        totalChapters: formData.totalChapters ? parseInt(formData.totalChapters) : undefined,
+        totalPages: formData.totalPages
+          ? parseInt(formData.totalPages)
+          : undefined,
+        totalChapters: formData.totalChapters
+          ? parseInt(formData.totalChapters)
+          : undefined,
         description: formData.description.trim() || undefined,
         unitId: formData.unitId || undefined,
       });
 
-      toast.success('Kitab berhasil ditambahkan');
-      router.push('/kitab-progress');
+      toast.success("Kitab berhasil ditambahkan");
+      router.push("/kitab-progress");
     } catch {
-      toast.error('Gagal menambahkan kitab');
+      toast.error("Gagal menambahkan kitab");
     }
   };
 
@@ -152,10 +156,12 @@ export default function NewKitabPage() {
                     setFormData({ ...formData, title: e.target.value })
                   }
                   placeholder="Contoh: Jurumiyah, Alfiyah, Fathul Qorib"
-                  className={errors.title ? 'border-destructive' : ''}
+                  className={errors.title ? "border-destructive" : ""}
                 />
                 {errors.title && (
-                  <p className="text-sm text-destructive mt-1">{errors.title}</p>
+                  <p className="text-sm text-destructive mt-1">
+                    {errors.title}
+                  </p>
                 )}
               </div>
 
@@ -181,7 +187,9 @@ export default function NewKitabPage() {
                     setFormData({ ...formData, category: v as KitabCategory })
                   }
                 >
-                  <SelectTrigger className={errors.category ? 'border-destructive' : ''}>
+                  <SelectTrigger
+                    className={errors.category ? "border-destructive" : ""}
+                  >
                     <SelectValue placeholder="Pilih kategori kitab" />
                   </SelectTrigger>
                   <SelectContent>
@@ -197,11 +205,17 @@ export default function NewKitabPage() {
                 </Select>
                 {formData.category && (
                   <p className="text-sm text-muted-foreground mt-1">
-                    {KITAB_CATEGORY_DESCRIPTIONS[formData.category as KitabCategory]}
+                    {
+                      KITAB_CATEGORY_DESCRIPTIONS[
+                        formData.category as KitabCategory
+                      ]
+                    }
                   </p>
                 )}
                 {errors.category && (
-                  <p className="text-sm text-destructive mt-1">{errors.category}</p>
+                  <p className="text-sm text-destructive mt-1">
+                    {errors.category}
+                  </p>
                 )}
               </div>
 
@@ -215,7 +229,9 @@ export default function NewKitabPage() {
                     setFormData({ ...formData, level: v as KitabLevel })
                   }
                 >
-                  <SelectTrigger className={errors.level ? 'border-destructive' : ''}>
+                  <SelectTrigger
+                    className={errors.level ? "border-destructive" : ""}
+                  >
                     <SelectValue placeholder="Pilih level kitab" />
                   </SelectTrigger>
                   <SelectContent>
@@ -227,7 +243,9 @@ export default function NewKitabPage() {
                   </SelectContent>
                 </Select>
                 {errors.level && (
-                  <p className="text-sm text-destructive mt-1">{errors.level}</p>
+                  <p className="text-sm text-destructive mt-1">
+                    {errors.level}
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -254,7 +272,7 @@ export default function NewKitabPage() {
                       setFormData({ ...formData, totalPages: e.target.value })
                     }
                     placeholder="Opsional"
-                    className={errors.totalPages ? 'border-destructive' : ''}
+                    className={errors.totalPages ? "border-destructive" : ""}
                   />
                   {errors.totalPages && (
                     <p className="text-sm text-destructive mt-1">
@@ -271,10 +289,13 @@ export default function NewKitabPage() {
                     min={1}
                     value={formData.totalChapters}
                     onChange={(e) =>
-                      setFormData({ ...formData, totalChapters: e.target.value })
+                      setFormData({
+                        ...formData,
+                        totalChapters: e.target.value,
+                      })
                     }
                     placeholder="Opsional"
-                    className={errors.totalChapters ? 'border-destructive' : ''}
+                    className={errors.totalChapters ? "border-destructive" : ""}
                   />
                   {errors.totalChapters && (
                     <p className="text-sm text-destructive mt-1">
@@ -347,12 +368,42 @@ export default function NewKitabPage() {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {[
-                { title: 'Jurumiyah', category: 'NAHWU', level: 'MUBTADI', author: 'Imam Sanhaji' },
-                { title: 'Alfiyah Ibnu Malik', category: 'NAHWU', level: 'MUTAQADDIM', author: 'Ibnu Malik' },
-                { title: 'Amtsilati Tashrif', category: 'SHOROF', level: 'MUBTADI', author: 'KH. Taufiqul Hakim' },
-                { title: 'Fathul Qorib', category: 'FIQIH', level: 'MUBTADI', author: 'Ibnu Qosim Al-Ghozi' },
-                { title: "Ta'limul Muta'allim", category: 'AKHLAK', level: 'MUBTADI', author: 'Az-Zarnuji' },
-                { title: 'Bulughul Maram', category: 'HADITS', level: 'MUTAWASSITH', author: 'Ibnu Hajar Al-Asqolani' },
+                {
+                  title: "Jurumiyah",
+                  category: "NAHWU",
+                  level: "MUBTADI",
+                  author: "Imam Sanhaji",
+                },
+                {
+                  title: "Alfiyah Ibnu Malik",
+                  category: "NAHWU",
+                  level: "MUTAQADDIM",
+                  author: "Ibnu Malik",
+                },
+                {
+                  title: "Amtsilati Tashrif",
+                  category: "SHOROF",
+                  level: "MUBTADI",
+                  author: "KH. Taufiqul Hakim",
+                },
+                {
+                  title: "Fathul Qorib",
+                  category: "FIQIH",
+                  level: "MUBTADI",
+                  author: "Ibnu Qosim Al-Ghozi",
+                },
+                {
+                  title: "Ta'limul Muta'allim",
+                  category: "AKHLAK",
+                  level: "MUBTADI",
+                  author: "Az-Zarnuji",
+                },
+                {
+                  title: "Bulughul Maram",
+                  category: "HADITS",
+                  level: "MUTAWASSITH",
+                  author: "Ibnu Hajar Al-Asqolani",
+                },
               ].map((kitab, index) => (
                 <button
                   key={index}
@@ -369,10 +420,14 @@ export default function NewKitabPage() {
                   className="text-left p-3 rounded-lg border hover:bg-muted transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-xl">{getCategoryIcon(kitab.category as KitabCategory)}</span>
+                    <span className="text-xl">
+                      {getCategoryIcon(kitab.category as KitabCategory)}
+                    </span>
                     <div>
                       <p className="font-medium">{kitab.title}</p>
-                      <p className="text-sm text-muted-foreground">{kitab.author}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {kitab.author}
+                      </p>
                     </div>
                   </div>
                 </button>
@@ -388,7 +443,7 @@ export default function NewKitabPage() {
           </Button>
           <Button type="submit" disabled={createMutation.isPending}>
             <Save className="h-4 w-4 mr-2" />
-            {createMutation.isPending ? 'Menyimpan...' : 'Simpan Kitab'}
+            {createMutation.isPending ? "Menyimpan..." : "Simpan Kitab"}
           </Button>
         </div>
       </form>

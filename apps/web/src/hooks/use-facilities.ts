@@ -1,26 +1,27 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { ApiResponse } from "@/lib/api";
 
 // ==================== TYPES ====================
 
 export const LAND_OWNERSHIP_TYPES = [
-  { value: 'MILIK_SENDIRI', label: 'Milik Sendiri' },
-  { value: 'SEWA', label: 'Sewa' },
-  { value: 'PINJAM_PAKAI', label: 'Pinjam Pakai' },
-  { value: 'WAKAF', label: 'Wakaf' },
-  { value: 'HIBAH', label: 'Hibah' },
-  { value: 'LAINNYA', label: 'Lainnya' },
+  { value: "MILIK_SENDIRI", label: "Milik Sendiri" },
+  { value: "SEWA", label: "Sewa" },
+  { value: "PINJAM_PAKAI", label: "Pinjam Pakai" },
+  { value: "WAKAF", label: "Wakaf" },
+  { value: "HIBAH", label: "Hibah" },
+  { value: "LAINNYA", label: "Lainnya" },
 ] as const;
 
 export const BUILDING_CONDITION_TYPES = [
-  { value: 'BAIK', label: 'Baik' },
-  { value: 'RUSAK_RINGAN', label: 'Rusak Ringan' },
-  { value: 'RUSAK_SEDANG', label: 'Rusak Sedang' },
-  { value: 'RUSAK_BERAT', label: 'Rusak Berat' },
+  { value: "BAIK", label: "Baik" },
+  { value: "RUSAK_RINGAN", label: "Rusak Ringan" },
+  { value: "RUSAK_SEDANG", label: "Rusak Sedang" },
+  { value: "RUSAK_BERAT", label: "Rusak Berat" },
 ] as const;
 
-export type LandOwnership = typeof LAND_OWNERSHIP_TYPES[number]['value'];
-export type BuildingCondition = typeof BUILDING_CONDITION_TYPES[number]['value'];
+export type LandOwnership = (typeof LAND_OWNERSHIP_TYPES)[number]["value"];
+export type BuildingCondition =
+  (typeof BUILDING_CONDITION_TYPES)[number]["value"];
 
 export interface Land {
   id: string;
@@ -117,9 +118,11 @@ interface UseLandsParams {
 
 export function useLands(params?: UseLandsParams) {
   return useQuery({
-    queryKey: ['lands', params],
+    queryKey: ["lands", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Land[]>>('/facilities/lands', { params });
+      const response = await api.get<ApiResponse<Land[]>>("/facilities/lands", {
+        params,
+      });
       return response.data.data;
     },
   });
@@ -127,9 +130,11 @@ export function useLands(params?: UseLandsParams) {
 
 export function useLand(id: string) {
   return useQuery({
-    queryKey: ['lands', id],
+    queryKey: ["lands", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Land>>(`/facilities/lands/${id}`);
+      const response = await api.get<ApiResponse<Land>>(
+        `/facilities/lands/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -150,45 +155,57 @@ export interface CreateLandData {
 
 export function useCreateLand() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateLandData) => {
-      const response = await api.post<ApiResponse<Land>>('/facilities/lands', data);
+      const response = await api.post<ApiResponse<Land>>(
+        "/facilities/lands",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lands'] });
-      queryClient.invalidateQueries({ queryKey: ['facilities-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["lands"] });
+      queryClient.invalidateQueries({ queryKey: ["facilities-summary"] });
     },
   });
 }
 
 export function useUpdateLand() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateLandData> }) => {
-      const response = await api.put<ApiResponse<Land>>(`/facilities/lands/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateLandData>;
+    }) => {
+      const response = await api.put<ApiResponse<Land>>(
+        `/facilities/lands/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['lands'] });
-      queryClient.invalidateQueries({ queryKey: ['lands', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['facilities-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["lands"] });
+      queryClient.invalidateQueries({ queryKey: ["lands", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["facilities-summary"] });
     },
   });
 }
 
 export function useDeleteLand() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/facilities/lands/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lands'] });
-      queryClient.invalidateQueries({ queryKey: ['facilities-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["lands"] });
+      queryClient.invalidateQueries({ queryKey: ["facilities-summary"] });
     },
   });
 }
@@ -206,9 +223,12 @@ interface UseBuildingsParams {
 
 export function useBuildings(params?: UseBuildingsParams) {
   return useQuery({
-    queryKey: ['buildings', params],
+    queryKey: ["buildings", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Building[]>>('/facilities/buildings', { params });
+      const response = await api.get<ApiResponse<Building[]>>(
+        "/facilities/buildings",
+        { params },
+      );
       return response.data.data;
     },
   });
@@ -216,9 +236,11 @@ export function useBuildings(params?: UseBuildingsParams) {
 
 export function useBuilding(id: string) {
   return useQuery({
-    queryKey: ['buildings', id],
+    queryKey: ["buildings", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Building>>(`/facilities/buildings/${id}`);
+      const response = await api.get<ApiResponse<Building>>(
+        `/facilities/buildings/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -240,45 +262,57 @@ export interface CreateBuildingData {
 
 export function useCreateBuilding() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateBuildingData) => {
-      const response = await api.post<ApiResponse<Building>>('/facilities/buildings', data);
+      const response = await api.post<ApiResponse<Building>>(
+        "/facilities/buildings",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['buildings'] });
-      queryClient.invalidateQueries({ queryKey: ['facilities-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["buildings"] });
+      queryClient.invalidateQueries({ queryKey: ["facilities-summary"] });
     },
   });
 }
 
 export function useUpdateBuilding() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateBuildingData> }) => {
-      const response = await api.put<ApiResponse<Building>>(`/facilities/buildings/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateBuildingData>;
+    }) => {
+      const response = await api.put<ApiResponse<Building>>(
+        `/facilities/buildings/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['buildings'] });
-      queryClient.invalidateQueries({ queryKey: ['buildings', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['facilities-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["buildings"] });
+      queryClient.invalidateQueries({ queryKey: ["buildings", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["facilities-summary"] });
     },
   });
 }
 
 export function useDeleteBuilding() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/facilities/buildings/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['buildings'] });
-      queryClient.invalidateQueries({ queryKey: ['facilities-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["buildings"] });
+      queryClient.invalidateQueries({ queryKey: ["facilities-summary"] });
     },
   });
 }
@@ -287,9 +321,11 @@ export function useDeleteBuilding() {
 
 export function useRoomTypes() {
   return useQuery({
-    queryKey: ['room-types'],
+    queryKey: ["room-types"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<RoomType[]>>('/facilities/room-types');
+      const response = await api.get<ApiResponse<RoomType[]>>(
+        "/facilities/room-types",
+      );
       return response.data.data;
     },
   });
@@ -303,41 +339,53 @@ export interface CreateRoomTypeData {
 
 export function useCreateRoomType() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateRoomTypeData) => {
-      const response = await api.post<ApiResponse<RoomType>>('/facilities/room-types', data);
+      const response = await api.post<ApiResponse<RoomType>>(
+        "/facilities/room-types",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['room-types'] });
+      queryClient.invalidateQueries({ queryKey: ["room-types"] });
     },
   });
 }
 
 export function useUpdateRoomType() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateRoomTypeData> }) => {
-      const response = await api.put<ApiResponse<RoomType>>(`/facilities/room-types/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateRoomTypeData>;
+    }) => {
+      const response = await api.put<ApiResponse<RoomType>>(
+        `/facilities/room-types/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['room-types'] });
+      queryClient.invalidateQueries({ queryKey: ["room-types"] });
     },
   });
 }
 
 export function useDeleteRoomType() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/facilities/room-types/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['room-types'] });
+      queryClient.invalidateQueries({ queryKey: ["room-types"] });
     },
   });
 }
@@ -355,9 +403,12 @@ interface UseRoomsParams {
 
 export function useRooms(params?: UseRoomsParams) {
   return useQuery({
-    queryKey: ['rooms', params],
+    queryKey: ["rooms", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<FacilityRoom[]>>('/facilities/rooms', { params });
+      const response = await api.get<ApiResponse<FacilityRoom[]>>(
+        "/facilities/rooms",
+        { params },
+      );
       return response.data.data;
     },
   });
@@ -365,9 +416,11 @@ export function useRooms(params?: UseRoomsParams) {
 
 export function useRoom(id: string) {
   return useQuery({
-    queryKey: ['rooms', id],
+    queryKey: ["rooms", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<FacilityRoom>>(`/facilities/rooms/${id}`);
+      const response = await api.get<ApiResponse<FacilityRoom>>(
+        `/facilities/rooms/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -388,45 +441,57 @@ export interface CreateRoomData {
 
 export function useCreateRoom() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateRoomData) => {
-      const response = await api.post<ApiResponse<FacilityRoom>>('/facilities/rooms', data);
+      const response = await api.post<ApiResponse<FacilityRoom>>(
+        "/facilities/rooms",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      queryClient.invalidateQueries({ queryKey: ['facilities-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["facilities-summary"] });
     },
   });
 }
 
 export function useUpdateRoom() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateRoomData & { isActive: boolean }> }) => {
-      const response = await api.put<ApiResponse<FacilityRoom>>(`/facilities/rooms/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateRoomData & { isActive: boolean }>;
+    }) => {
+      const response = await api.put<ApiResponse<FacilityRoom>>(
+        `/facilities/rooms/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      queryClient.invalidateQueries({ queryKey: ['rooms', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['facilities-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["rooms", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["facilities-summary"] });
     },
   });
 }
 
 export function useDeleteRoom() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/facilities/rooms/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      queryClient.invalidateQueries({ queryKey: ['facilities-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["facilities-summary"] });
     },
   });
 }
@@ -435,11 +500,14 @@ export function useDeleteRoom() {
 
 export function useFacilitySummary(unitId?: string) {
   return useQuery({
-    queryKey: ['facilities-summary', unitId],
+    queryKey: ["facilities-summary", unitId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<FacilitySummary>>('/facilities/summary', {
-        params: unitId ? { unitId } : undefined,
-      });
+      const response = await api.get<ApiResponse<FacilitySummary>>(
+        "/facilities/summary",
+        {
+          params: unitId ? { unitId } : undefined,
+        },
+      );
       return response.data.data;
     },
   });

@@ -84,17 +84,19 @@ export class MealsController {
       const { menus } = req.body;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const results = { success: 0, failed: 0, errors: [] as string[] };
-      
+
       for (const menuInput of menus) {
         try {
           await mealsService.createMenu(menuInput, user);
           results.success++;
         } catch (error) {
           results.failed++;
-          results.errors.push(`${menuInput.date}: ${error instanceof Error ? error.message : 'Failed'}`);
+          results.errors.push(
+            `${menuInput.date}: ${error instanceof Error ? error.message : 'Failed'}`
+          );
         }
       }
-      
+
       res.json({ data: results });
     } catch (error) {
       next(error);
@@ -182,7 +184,7 @@ export class MealsController {
 
   async getStatistics(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = req.query.unitId as string || req.user!.unitId || '';
+      const unitId = (req.query.unitId as string) || req.user!.unitId || '';
       const startDate = req.query.startDate as string | undefined;
       const endDate = req.query.endDate as string | undefined;
       const stats = await mealsService.getStatistics(unitId, startDate, endDate);

@@ -1,103 +1,107 @@
-import { test, expect } from './fixtures/auth.fixture';
-import { LoginPage } from './page-objects';
+import { test, expect } from "./fixtures/auth.fixture";
+import { LoginPage } from "./page-objects";
 
 /**
  * Curriculum Module E2E Tests
  * Tests curriculum management and structure
  */
 
-test.describe('Curriculum - Navigation', () => {
-  test('should navigate to curriculum page', async ({ page }) => {
+test.describe("Curriculum - Navigation", () => {
+  test("should navigate to curriculum page", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/curriculum');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/curriculum");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     expect(page.url()).toMatch(/curriculum/);
   });
 
-  test('should display curriculum interface', async ({ page }) => {
+  test("should display curriculum interface", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/curriculum');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/curriculum");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     const content = await page.content();
     expect(content.length).toBeGreaterThan(1000);
   });
 });
 
-test.describe('Curriculum - Features', () => {
-  test('should display curriculum structure', async ({ page }) => {
+test.describe("Curriculum - Features", () => {
+  test("should display curriculum structure", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/curriculum');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
-    const hasCurriculum = await page.locator('[class*="curriculum"], table, [class*="kurikulum"]')
+    await page.goto("/curriculum");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
+    const hasCurriculum = await page
+      .locator('[class*="curriculum"], table, [class*="kurikulum"]')
       .first()
-      .isVisible({ timeout: 5000 }).catch(() => false);
-    
-    expect(hasCurriculum || page.url().includes('curriculum')).toBeTruthy();
+      .isVisible({ timeout: 5000 })
+      .catch(() => false);
+
+    expect(hasCurriculum || page.url().includes("curriculum")).toBeTruthy();
   });
 
-  test('should have subject/topic management', async ({ page }) => {
+  test("should have subject/topic management", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/curriculum');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/curriculum");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     const content = await page.content();
-    const hasSubjects = content.includes('Subject') || 
-                        content.includes('Mata Pelajaran') || 
-                        content.includes('Mapel');
-    
-    expect(hasSubjects || page.url().includes('curriculum')).toBeTruthy();
+    const hasSubjects =
+      content.includes("Subject") ||
+      content.includes("Mata Pelajaran") ||
+      content.includes("Mapel");
+
+    expect(hasSubjects || page.url().includes("curriculum")).toBeTruthy();
   });
 
-  test('should display curriculum details', async ({ page }) => {
+  test("should display curriculum details", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/curriculum');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/curriculum");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     const content = await page.content();
-    const hasDetails = content.includes('Curriculum') || 
-                       content.includes('Kurikulum') ||
-                       content.includes('Subject');
-    
-    expect(hasDetails || page.url().includes('curriculum')).toBeTruthy();
+    const hasDetails =
+      content.includes("Curriculum") ||
+      content.includes("Kurikulum") ||
+      content.includes("Subject");
+
+    expect(hasDetails || page.url().includes("curriculum")).toBeTruthy();
   });
 });
 
-test.describe('Curriculum - Performance', () => {
-  test('should load curriculum page quickly', async ({ page }) => {
+test.describe("Curriculum - Performance", () => {
+  test("should load curriculum page quickly", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    
+
     const startTime = Date.now();
-    await page.goto('/curriculum');
-    await page.waitForLoadState('domcontentloaded', { timeout: 15000 });
+    await page.goto("/curriculum");
+    await page.waitForLoadState("domcontentloaded", { timeout: 15000 });
     const loadTime = Date.now() - startTime;
-    
+
     expect(loadTime).toBeLessThan(15000);
   });
 });

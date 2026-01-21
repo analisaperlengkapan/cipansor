@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useUpdateWalletLimit } from '@/hooks/use-wallet';
+import { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useUpdateWalletLimit } from "@/hooks/use-wallet";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -17,10 +17,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -29,17 +29,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Wallet,
   Plus,
@@ -55,8 +55,8 @@ import {
   DollarSign,
   Settings,
   ShieldAlert,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
 // Types
 interface WalletData {
@@ -76,7 +76,7 @@ interface Transaction {
   id: string;
   walletId: string;
   studentName: string;
-  type: 'TOPUP' | 'PURCHASE' | 'REFUND' | 'TRANSFER';
+  type: "TOPUP" | "PURCHASE" | "REFUND" | "TRANSFER";
   amount: number;
   balanceBefore: number;
   balanceAfter: number;
@@ -102,21 +102,24 @@ const api = {
     page?: number;
     limit?: number;
     search?: string;
-  }): Promise<{ data: WalletData[]; meta: { total: number; totalPages: number } }> => {
+  }): Promise<{
+    data: WalletData[];
+    meta: { total: number; totalPages: number };
+  }> => {
     const searchParams = new URLSearchParams();
-    if (params.page) searchParams.set('page', params.page.toString());
-    if (params.limit) searchParams.set('limit', params.limit.toString());
-    if (params.search) searchParams.set('search', params.search);
-    
+    if (params.page) searchParams.set("page", params.page.toString());
+    if (params.limit) searchParams.set("limit", params.limit.toString());
+    if (params.search) searchParams.set("search", params.search);
+
     const res = await fetch(`/api/wallet?${searchParams}`);
-    if (!res.ok) throw new Error('Failed to fetch wallets');
+    if (!res.ok) throw new Error("Failed to fetch wallets");
     const json = await res.json();
     return { data: json.data, meta: json.pagination };
   },
 
   getSummary: async (): Promise<WalletSummary> => {
-    const res = await fetch('/api/wallet/summary');
-    if (!res.ok) throw new Error('Failed to fetch summary');
+    const res = await fetch("/api/wallet/summary");
+    if (!res.ok) throw new Error("Failed to fetch summary");
     const json = await res.json();
     return json.data;
   },
@@ -126,15 +129,18 @@ const api = {
     limit?: number;
     studentId?: string;
     type?: string;
-  }): Promise<{ data: Transaction[]; meta: { total: number; totalPages: number } }> => {
+  }): Promise<{
+    data: Transaction[];
+    meta: { total: number; totalPages: number };
+  }> => {
     const searchParams = new URLSearchParams();
-    if (params.page) searchParams.set('page', params.page.toString());
-    if (params.limit) searchParams.set('limit', params.limit.toString());
-    if (params.studentId) searchParams.set('studentId', params.studentId);
-    if (params.type) searchParams.set('type', params.type);
-    
+    if (params.page) searchParams.set("page", params.page.toString());
+    if (params.limit) searchParams.set("limit", params.limit.toString());
+    if (params.studentId) searchParams.set("studentId", params.studentId);
+    if (params.type) searchParams.set("type", params.type);
+
     const res = await fetch(`/api/wallet/transactions?${searchParams}`);
-    if (!res.ok) throw new Error('Failed to fetch transactions');
+    if (!res.ok) throw new Error("Failed to fetch transactions");
     const json = await res.json();
     return { data: json.data, meta: json.pagination };
   },
@@ -145,14 +151,14 @@ const api = {
     description?: string;
     paymentMethod: string;
   }) => {
-    const res = await fetch('/api/wallet/topup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/wallet/topup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     if (!res.ok) {
       const error = await res.json();
-      throw new Error(error.error?.message || 'Failed to top up');
+      throw new Error(error.error?.message || "Failed to top up");
     }
     return res.json();
   },
@@ -162,14 +168,14 @@ const api = {
     amount: number;
     description?: string;
   }) => {
-    const res = await fetch('/api/wallet/deduct', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/wallet/deduct", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     if (!res.ok) {
       const error = await res.json();
-      throw new Error(error.error?.message || 'Failed to deduct');
+      throw new Error(error.error?.message || "Failed to deduct");
     }
     return res.json();
   },
@@ -177,68 +183,69 @@ const api = {
 
 // Format currency
 const formatRupiah = (amount: number) => {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
     minimumFractionDigits: 0,
   }).format(amount);
 };
 
 // Format date
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+  return new Date(date).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 };
 
 export default function WalletPage() {
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState('wallets');
+  const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("wallets");
   const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState<WalletData | null>(null);
   const [topUpForm, setTopUpForm] = useState({
-    amount: '',
-    description: '',
-    paymentMethod: 'CASH',
+    amount: "",
+    description: "",
+    paymentMethod: "CASH",
   });
-  const [transactionFilter, setTransactionFilter] = useState('');
+  const [transactionFilter, setTransactionFilter] = useState("");
 
   const [limitDialogOpen, setLimitDialogOpen] = useState(false);
-  const [limitForm, setLimitForm] = useState({ limit: '' });
+  const [limitForm, setLimitForm] = useState({ limit: "" });
   const updateLimit = useUpdateWalletLimit();
 
   // Queries
   const { data: walletsData, isLoading: walletsLoading } = useQuery({
-    queryKey: ['wallets', search],
+    queryKey: ["wallets", search],
     queryFn: () => api.getWallets({ search, limit: 20 }),
   });
 
   const { data: summary } = useQuery({
-    queryKey: ['wallet-summary'],
+    queryKey: ["wallet-summary"],
     queryFn: api.getSummary,
   });
 
   const { data: transactionsData, isLoading: transactionsLoading } = useQuery({
-    queryKey: ['wallet-transactions', transactionFilter],
-    queryFn: () => api.getTransactions({ type: transactionFilter || undefined, limit: 50 }),
+    queryKey: ["wallet-transactions", transactionFilter],
+    queryFn: () =>
+      api.getTransactions({ type: transactionFilter || undefined, limit: 50 }),
   });
 
   // Mutations
   const topUpMutation = useMutation({
     mutationFn: api.topUp,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wallets'] });
-      queryClient.invalidateQueries({ queryKey: ['wallet-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] });
-      toast.success('Top up berhasil');
+      queryClient.invalidateQueries({ queryKey: ["wallets"] });
+      queryClient.invalidateQueries({ queryKey: ["wallet-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["wallet-transactions"] });
+      toast.success("Top up berhasil");
       setTopUpDialogOpen(false);
       setSelectedWallet(null);
-      setTopUpForm({ amount: '', description: '', paymentMethod: 'CASH' });
+      setTopUpForm({ amount: "", description: "", paymentMethod: "CASH" });
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -260,7 +267,6 @@ export default function WalletPage() {
     setTopUpDialogOpen(true);
   };
 
-
   const handleUpdateLimit = async () => {
     if (!selectedWallet || !limitForm.limit) return;
     try {
@@ -270,7 +276,7 @@ export default function WalletPage() {
       });
       setLimitDialogOpen(false);
       setSelectedWallet(null);
-      setLimitForm({ limit: '' });
+      setLimitForm({ limit: "" });
     } catch (error) {
       // toast handled by hook
     }
@@ -278,42 +284,45 @@ export default function WalletPage() {
 
   const openLimitDialog = (wallet: WalletData) => {
     setSelectedWallet(wallet);
-    setLimitForm({ limit: wallet.spendingLimit?.toString() || '' });
+    setLimitForm({ limit: wallet.spendingLimit?.toString() || "" });
     setLimitDialogOpen(true);
   };
 
   // Stats cards data
-  const statsCards = useMemo(() => [
-    {
-      title: 'Total Wallet',
-      value: summary?.totalWallets || 0,
-      icon: Users,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
-    },
-    {
-      title: 'Total Saldo',
-      value: formatRupiah(summary?.totalBalance || 0),
-      icon: DollarSign,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
-    },
-    {
-      title: 'Rata-rata Saldo',
-      value: formatRupiah(summary?.averageBalance || 0),
-      icon: TrendingUp,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
-    },
-    {
-      title: 'Saldo Rendah',
-      value: summary?.walletsWithLowBalance || 0,
-      icon: AlertTriangle,
-      color: 'text-red-600',
-      bgColor: 'bg-red-100',
-      subtitle: '< Rp 50.000',
-    },
-  ], [summary]);
+  const statsCards = useMemo(
+    () => [
+      {
+        title: "Total Wallet",
+        value: summary?.totalWallets || 0,
+        icon: Users,
+        color: "text-blue-600",
+        bgColor: "bg-blue-100",
+      },
+      {
+        title: "Total Saldo",
+        value: formatRupiah(summary?.totalBalance || 0),
+        icon: DollarSign,
+        color: "text-green-600",
+        bgColor: "bg-green-100",
+      },
+      {
+        title: "Rata-rata Saldo",
+        value: formatRupiah(summary?.averageBalance || 0),
+        icon: TrendingUp,
+        color: "text-purple-600",
+        bgColor: "bg-purple-100",
+      },
+      {
+        title: "Saldo Rendah",
+        value: summary?.walletsWithLowBalance || 0,
+        icon: AlertTriangle,
+        color: "text-red-600",
+        bgColor: "bg-red-100",
+        subtitle: "< Rp 50.000",
+      },
+    ],
+    [summary],
+  );
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -340,7 +349,9 @@ export default function WalletPage() {
                   <p className="text-sm text-muted-foreground">{stat.title}</p>
                   <p className="text-2xl font-bold">{stat.value}</p>
                   {stat.subtitle && (
-                    <p className="text-xs text-muted-foreground">{stat.subtitle}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {stat.subtitle}
+                    </p>
                   )}
                 </div>
                 <div className={`p-3 rounded-full ${stat.bgColor}`}>
@@ -360,8 +371,12 @@ export default function WalletPage() {
               <CreditCard className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Transaksi Hari Ini</p>
-              <p className="text-xl font-semibold">{summary?.todayTransactions || 0}</p>
+              <p className="text-sm text-muted-foreground">
+                Transaksi Hari Ini
+              </p>
+              <p className="text-xl font-semibold">
+                {summary?.todayTransactions || 0}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -384,7 +399,9 @@ export default function WalletPage() {
               <ArrowUpRight className="h-5 w-5 text-orange-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Pembelian Hari Ini</p>
+              <p className="text-sm text-muted-foreground">
+                Pembelian Hari Ini
+              </p>
               <p className="text-xl font-semibold text-orange-600">
                 {formatRupiah(summary?.todayPurchases || 0)}
               </p>
@@ -429,7 +446,9 @@ export default function WalletPage() {
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={() => queryClient.invalidateQueries({ queryKey: ['wallets'] })}
+                    onClick={() =>
+                      queryClient.invalidateQueries({ queryKey: ["wallets"] })
+                    }
                   >
                     <RefreshCw className="h-4 w-4" />
                   </Button>
@@ -456,14 +475,20 @@ export default function WalletPage() {
                   <TableBody>
                     {walletsData?.data.map((wallet) => (
                       <TableRow key={wallet.id}>
-                        <TableCell className="font-mono">{wallet.studentNis}</TableCell>
-                        <TableCell className="font-medium">{wallet.studentName}</TableCell>
-                        <TableCell>{wallet.className || '-'}</TableCell>
+                        <TableCell className="font-mono">
+                          {wallet.studentNis}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {wallet.studentName}
+                        </TableCell>
+                        <TableCell>{wallet.className || "-"}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex flex-col items-end">
                             <span
                               className={`font-semibold ${
-                                wallet.balance < 50000 ? 'text-red-600' : 'text-green-600'
+                                wallet.balance < 50000
+                                  ? "text-red-600"
+                                  : "text-green-600"
                               }`}
                             >
                               {formatRupiah(wallet.balance)}
@@ -477,7 +502,9 @@ export default function WalletPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {wallet.lastTopUp ? formatDate(wallet.lastTopUp) : '-'}
+                          {wallet.lastTopUp
+                            ? formatDate(wallet.lastTopUp)
+                            : "-"}
                         </TableCell>
                         <TableCell className="text-center">
                           <Button
@@ -500,7 +527,10 @@ export default function WalletPage() {
                     ))}
                     {(!walletsData?.data || walletsData.data.length === 0) && (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        <TableCell
+                          colSpan={6}
+                          className="text-center py-8 text-muted-foreground"
+                        >
                           Tidak ada data wallet
                         </TableCell>
                       </TableRow>
@@ -522,7 +552,10 @@ export default function WalletPage() {
                     Semua transaksi wallet santri
                   </CardDescription>
                 </div>
-                <Select value={transactionFilter} onValueChange={setTransactionFilter}>
+                <Select
+                  value={transactionFilter}
+                  onValueChange={setTransactionFilter}
+                >
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Semua Tipe" />
                   </SelectTrigger>
@@ -559,31 +592,39 @@ export default function WalletPage() {
                         <TableCell className="text-sm">
                           {formatDate(tx.createdAt)}
                         </TableCell>
-                        <TableCell className="font-medium">{tx.studentName}</TableCell>
+                        <TableCell className="font-medium">
+                          {tx.studentName}
+                        </TableCell>
                         <TableCell>
                           <Badge
                             variant={
-                              tx.type === 'TOPUP'
-                                ? 'default'
-                                : tx.type === 'REFUND'
-                                ? 'secondary'
-                                : 'outline'
+                              tx.type === "TOPUP"
+                                ? "default"
+                                : tx.type === "REFUND"
+                                  ? "secondary"
+                                  : "outline"
                             }
                           >
-                            {tx.type === 'TOPUP' && <ArrowDownLeft className="h-3 w-3 mr-1" />}
-                            {tx.type === 'PURCHASE' && <ArrowUpRight className="h-3 w-3 mr-1" />}
+                            {tx.type === "TOPUP" && (
+                              <ArrowDownLeft className="h-3 w-3 mr-1" />
+                            )}
+                            {tx.type === "PURCHASE" && (
+                              <ArrowUpRight className="h-3 w-3 mr-1" />
+                            )}
                             {tx.type}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
                           <span
                             className={
-                              tx.type === 'TOPUP' || tx.type === 'REFUND'
-                                ? 'text-green-600'
-                                : 'text-red-600'
+                              tx.type === "TOPUP" || tx.type === "REFUND"
+                                ? "text-green-600"
+                                : "text-red-600"
                             }
                           >
-                            {tx.type === 'TOPUP' || tx.type === 'REFUND' ? '+' : '-'}
+                            {tx.type === "TOPUP" || tx.type === "REFUND"
+                              ? "+"
+                              : "-"}
                             {formatRupiah(Math.abs(tx.amount))}
                           </span>
                         </TableCell>
@@ -591,13 +632,17 @@ export default function WalletPage() {
                           {formatRupiah(tx.balanceAfter)}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground max-w-48 truncate">
-                          {tx.description || '-'}
+                          {tx.description || "-"}
                         </TableCell>
                       </TableRow>
                     ))}
-                    {(!transactionsData?.data || transactionsData.data.length === 0) && (
+                    {(!transactionsData?.data ||
+                      transactionsData.data.length === 0) && (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        <TableCell
+                          colSpan={6}
+                          className="text-center py-8 text-muted-foreground"
+                        >
                           Tidak ada transaksi
                         </TableCell>
                       </TableRow>
@@ -698,43 +743,50 @@ export default function WalletPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Limit Dialog */}
       <Dialog open={limitDialogOpen} onOpenChange={setLimitDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Atur Limit Belanja Harian</DialogTitle>
             <DialogDescription>
-              Batasi pengeluaran harian untuk {selectedWallet?.studentName}.
-              Set ke 0 untuk menghapus limit.
+              Batasi pengeluaran harian untuk {selectedWallet?.studentName}. Set
+              ke 0 untuk menghapus limit.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
-             <div className="space-y-2">
-                <Label>Limit Harian (Rp)</Label>
-                <Input
-                  type="number"
-                  placeholder="Contoh: 20000"
-                  value={limitForm.limit}
-                  onChange={(e) => setLimitForm({ limit: e.target.value })}
-                />
-             </div>
-             <div className="flex gap-2">
-                {[10000, 20000, 50000].map((val) => (
-                  <Button
-                    key={val}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setLimitForm({ limit: val.toString() })}
-                  >
-                    {formatRupiah(val)}
-                  </Button>
-                ))}
-             </div>
+            <div className="space-y-2">
+              <Label>Limit Harian (Rp)</Label>
+              <Input
+                type="number"
+                placeholder="Contoh: 20000"
+                value={limitForm.limit}
+                onChange={(e) => setLimitForm({ limit: e.target.value })}
+              />
+            </div>
+            <div className="flex gap-2">
+              {[10000, 20000, 50000].map((val) => (
+                <Button
+                  key={val}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setLimitForm({ limit: val.toString() })}
+                >
+                  {formatRupiah(val)}
+                </Button>
+              ))}
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLimitDialogOpen(false)}>Batal</Button>
-            <Button onClick={handleUpdateLimit} disabled={updateLimit.isPending}>Simpan</Button>
+            <Button variant="outline" onClick={() => setLimitDialogOpen(false)}>
+              Batal
+            </Button>
+            <Button
+              onClick={handleUpdateLimit}
+              disabled={updateLimit.isPending}
+            >
+              Simpan
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

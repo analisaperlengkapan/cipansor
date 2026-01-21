@@ -42,7 +42,12 @@ describe('AttendanceService', () => {
   describe('findAll', () => {
     it('should return paginated attendance records', async () => {
       const mockRecords = [
-        { id: '1', status: AttendanceStatus.PRESENT, date: new Date(), student: { user: { name: 'John' } } },
+        {
+          id: '1',
+          status: AttendanceStatus.PRESENT,
+          date: new Date(),
+          student: { user: { name: 'John' } },
+        },
       ];
       (prisma.attendance.findMany as any).mockResolvedValue(mockRecords);
       (prisma.attendance.count as any).mockResolvedValue(1);

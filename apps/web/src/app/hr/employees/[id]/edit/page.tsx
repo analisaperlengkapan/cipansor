@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -14,15 +20,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useEmployee,
   useUpdateEmployee,
@@ -31,8 +37,8 @@ import {
   EMPLOYEE_TYPE_LABELS,
   EMPLOYEE_STATUSES,
   EMPLOYEE_STATUS_LABELS,
-} from '@/hooks';
-import { useUnits } from '@/hooks';
+} from "@/hooks";
+import { useUnits } from "@/hooks";
 import {
   ArrowLeft,
   Save,
@@ -42,30 +48,32 @@ import {
   CreditCard,
   GraduationCap,
   AlertCircle,
-} from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
 
 const employeeSchema = z.object({
-  nip: z.string().min(1, 'NIP wajib diisi'),
-  fullName: z.string().min(1, 'Nama lengkap wajib diisi'),
-  gender: z.enum(['MALE', 'FEMALE'], { required_error: 'Jenis kelamin wajib dipilih' }),
+  nip: z.string().min(1, "NIP wajib diisi"),
+  fullName: z.string().min(1, "Nama lengkap wajib diisi"),
+  gender: z.enum(["MALE", "FEMALE"], {
+    required_error: "Jenis kelamin wajib dipilih",
+  }),
   birthPlace: z.string().optional(),
   birthDate: z.string().optional(),
   religion: z.string().optional(),
   maritalStatus: z.string().optional(),
   nik: z.string().optional(),
-  email: z.string().email('Email tidak valid').optional().or(z.literal('')),
+  email: z.string().email("Email tidak valid").optional().or(z.literal("")),
   phone: z.string().optional(),
   address: z.string().optional(),
-  unitId: z.string().min(1, 'Unit wajib dipilih'),
+  unitId: z.string().min(1, "Unit wajib dipilih"),
   departmentId: z.string().optional(),
-  position: z.string().min(1, 'Jabatan wajib diisi'),
-  employeeType: z.enum(['PERMANENT', 'CONTRACT', 'PART_TIME', 'INTERN']),
-  status: z.enum(['ACTIVE', 'INACTIVE', 'ON_LEAVE', 'RESIGNED', 'RETIRED']),
-  joinDate: z.string().min(1, 'Tanggal bergabung wajib diisi'),
+  position: z.string().min(1, "Jabatan wajib diisi"),
+  employeeType: z.enum(["PERMANENT", "CONTRACT", "PART_TIME", "INTERN"]),
+  status: z.enum(["ACTIVE", "INACTIVE", "ON_LEAVE", "RESIGNED", "RETIRED"]),
+  joinDate: z.string().min(1, "Tanggal bergabung wajib diisi"),
   resignDate: z.string().optional(),
   bankName: z.string().optional(),
   bankAccountNumber: z.string().optional(),
@@ -85,7 +93,7 @@ export default function EditEmployeePage() {
   const params = useParams();
   const router = useRouter();
   const employeeId = params.id as string;
-  const [activeTab, setActiveTab] = useState('personal');
+  const [activeTab, setActiveTab] = useState("personal");
 
   const { data: employee, isLoading } = useEmployee(employeeId);
   const updateEmployee = useUpdateEmployee();
@@ -96,34 +104,34 @@ export default function EditEmployeePage() {
   const form = useForm<EmployeeFormData>({
     resolver: zodResolver(employeeSchema),
     defaultValues: {
-      nip: '',
-      fullName: '',
+      nip: "",
+      fullName: "",
       gender: undefined,
-      birthPlace: '',
-      birthDate: '',
-      religion: '',
-      maritalStatus: '',
-      nik: '',
-      email: '',
-      phone: '',
-      address: '',
-      unitId: '',
-      departmentId: '',
-      position: '',
+      birthPlace: "",
+      birthDate: "",
+      religion: "",
+      maritalStatus: "",
+      nik: "",
+      email: "",
+      phone: "",
+      address: "",
+      unitId: "",
+      departmentId: "",
+      position: "",
       employeeType: undefined,
-      status: 'ACTIVE',
-      joinDate: '',
-      resignDate: '',
-      bankName: '',
-      bankAccountNumber: '',
-      bankAccountName: '',
-      npwp: '',
-      bpjsKesehatan: '',
-      bpjsKetenagakerjaan: '',
-      lastEducation: '',
-      educationInstitution: '',
-      educationMajor: '',
-      graduationYear: '',
+      status: "ACTIVE",
+      joinDate: "",
+      resignDate: "",
+      bankName: "",
+      bankAccountNumber: "",
+      bankAccountName: "",
+      npwp: "",
+      bpjsKesehatan: "",
+      bpjsKetenagakerjaan: "",
+      lastEducation: "",
+      educationInstitution: "",
+      educationMajor: "",
+      graduationYear: "",
     },
   });
 
@@ -133,31 +141,35 @@ export default function EditEmployeePage() {
         nip: employee.nip,
         fullName: employee.fullName,
         gender: employee.gender,
-        birthPlace: employee.birthPlace ?? '',
-        birthDate: employee.birthDate ? new Date(employee.birthDate).toISOString().split('T')[0] : '',
-        religion: employee.religion ?? '',
-        maritalStatus: employee.maritalStatus ?? '',
-        nik: employee.nik ?? '',
-        email: employee.email ?? '',
-        phone: employee.phone ?? '',
-        address: employee.address ?? '',
+        birthPlace: employee.birthPlace ?? "",
+        birthDate: employee.birthDate
+          ? new Date(employee.birthDate).toISOString().split("T")[0]
+          : "",
+        religion: employee.religion ?? "",
+        maritalStatus: employee.maritalStatus ?? "",
+        nik: employee.nik ?? "",
+        email: employee.email ?? "",
+        phone: employee.phone ?? "",
+        address: employee.address ?? "",
         unitId: employee.unitId,
-        departmentId: employee.departmentId ?? '',
+        departmentId: employee.departmentId ?? "",
         position: employee.position,
         employeeType: employee.employeeType,
         status: employee.status,
-        joinDate: new Date(employee.joinDate).toISOString().split('T')[0],
-        resignDate: employee.resignDate ? new Date(employee.resignDate).toISOString().split('T')[0] : '',
-        bankName: employee.bankName ?? '',
-        bankAccountNumber: employee.bankAccountNumber ?? '',
-        bankAccountName: employee.bankAccountName ?? '',
-        npwp: employee.npwp ?? '',
-        bpjsKesehatan: employee.bpjsKesehatan ?? '',
-        bpjsKetenagakerjaan: employee.bpjsKetenagakerjaan ?? '',
-        lastEducation: employee.lastEducation ?? '',
-        educationInstitution: employee.educationInstitution ?? '',
-        educationMajor: employee.educationMajor ?? '',
-        graduationYear: employee.graduationYear?.toString() ?? '',
+        joinDate: new Date(employee.joinDate).toISOString().split("T")[0],
+        resignDate: employee.resignDate
+          ? new Date(employee.resignDate).toISOString().split("T")[0]
+          : "",
+        bankName: employee.bankName ?? "",
+        bankAccountNumber: employee.bankAccountNumber ?? "",
+        bankAccountName: employee.bankAccountName ?? "",
+        npwp: employee.npwp ?? "",
+        bpjsKesehatan: employee.bpjsKesehatan ?? "",
+        bpjsKetenagakerjaan: employee.bpjsKetenagakerjaan ?? "",
+        lastEducation: employee.lastEducation ?? "",
+        educationInstitution: employee.educationInstitution ?? "",
+        educationMajor: employee.educationMajor ?? "",
+        graduationYear: employee.graduationYear?.toString() ?? "",
       });
     }
   }, [employee, form]);
@@ -170,13 +182,15 @@ export default function EditEmployeePage() {
           ...data,
           birthDate: data.birthDate || undefined,
           resignDate: data.resignDate || undefined,
-          graduationYear: data.graduationYear ? parseInt(data.graduationYear) : undefined,
+          graduationYear: data.graduationYear
+            ? parseInt(data.graduationYear)
+            : undefined,
         },
       });
-      toast.success('Data karyawan berhasil diperbarui');
+      toast.success("Data karyawan berhasil diperbarui");
       router.push(`/hr/employees/${employeeId}`);
     } catch (error) {
-      toast.error('Gagal memperbarui data karyawan');
+      toast.error("Gagal memperbarui data karyawan");
     }
   };
 
@@ -196,9 +210,7 @@ export default function EditEmployeePage() {
         <div className="flex flex-col items-center justify-center h-64 space-y-4">
           <AlertCircle className="h-12 w-12 text-muted-foreground" />
           <p className="text-muted-foreground">Karyawan tidak ditemukan</p>
-          <Button onClick={() => router.push('/hr')}>
-            Kembali ke Daftar
-          </Button>
+          <Button onClick={() => router.push("/hr")}>Kembali ke Daftar</Button>
         </div>
       </MainLayout>
     );
@@ -300,7 +312,10 @@ export default function EditEmployeePage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Jenis Kelamin *</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Pilih" />
@@ -308,7 +323,9 @@ export default function EditEmployeePage() {
                               </FormControl>
                               <SelectContent>
                                 <SelectItem value="MALE">Laki-laki</SelectItem>
-                                <SelectItem value="FEMALE">Perempuan</SelectItem>
+                                <SelectItem value="FEMALE">
+                                  Perempuan
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -321,7 +338,10 @@ export default function EditEmployeePage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Agama</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Pilih" />
@@ -333,7 +353,9 @@ export default function EditEmployeePage() {
                                 <SelectItem value="Katolik">Katolik</SelectItem>
                                 <SelectItem value="Hindu">Hindu</SelectItem>
                                 <SelectItem value="Buddha">Buddha</SelectItem>
-                                <SelectItem value="Konghucu">Konghucu</SelectItem>
+                                <SelectItem value="Konghucu">
+                                  Konghucu
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -377,17 +399,26 @@ export default function EditEmployeePage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Status Pernikahan</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Pilih" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="Belum Menikah">Belum Menikah</SelectItem>
+                              <SelectItem value="Belum Menikah">
+                                Belum Menikah
+                              </SelectItem>
                               <SelectItem value="Menikah">Menikah</SelectItem>
-                              <SelectItem value="Cerai Hidup">Cerai Hidup</SelectItem>
-                              <SelectItem value="Cerai Mati">Cerai Mati</SelectItem>
+                              <SelectItem value="Cerai Hidup">
+                                Cerai Hidup
+                              </SelectItem>
+                              <SelectItem value="Cerai Mati">
+                                Cerai Mati
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -461,7 +492,10 @@ export default function EditEmployeePage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Unit *</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Pilih" />
@@ -485,7 +519,10 @@ export default function EditEmployeePage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Departemen</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Pilih" />
@@ -527,7 +564,10 @@ export default function EditEmployeePage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Tipe Karyawan *</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Pilih" />
@@ -551,7 +591,10 @@ export default function EditEmployeePage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Status *</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Pilih" />
@@ -616,7 +659,10 @@ export default function EditEmployeePage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Nama Bank</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Pilih" />
@@ -630,7 +676,9 @@ export default function EditEmployeePage() {
                               <SelectItem value="Mandiri">Mandiri</SelectItem>
                               <SelectItem value="BSI">BSI</SelectItem>
                               <SelectItem value="BTN">BTN</SelectItem>
-                              <SelectItem value="CIMB Niaga">CIMB Niaga</SelectItem>
+                              <SelectItem value="CIMB Niaga">
+                                CIMB Niaga
+                              </SelectItem>
                               <SelectItem value="Lainnya">Lainnya</SelectItem>
                             </SelectContent>
                           </Select>
@@ -732,7 +780,10 @@ export default function EditEmployeePage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Jenjang Pendidikan</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Pilih" />
@@ -804,7 +855,11 @@ export default function EditEmployeePage() {
 
             {/* Submit Buttons */}
             <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => router.back()}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+              >
                 Batal
               </Button>
               <Button type="submit" disabled={updateEmployee.isPending}>

@@ -13,70 +13,70 @@ process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/cipansor_test'
 
 // Mock console.log in tests to reduce noise
 beforeAll(() => {
-    vi.spyOn(console, 'log').mockImplementation(() => { });
-    vi.spyOn(console, 'info').mockImplementation(() => { });
+  vi.spyOn(console, 'log').mockImplementation(() => {});
+  vi.spyOn(console, 'info').mockImplementation(() => {});
 });
 
 afterAll(() => {
-    vi.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 // Reset mocks between tests
 beforeEach(() => {
-    vi.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 // Global test utilities
 export const testHelpers = {
-    /**
-     * Generate a valid JWT token for testing
-     */
-    generateTestToken: (payload: Record<string, unknown> = {}) => {
-        const jwt = require('jsonwebtoken');
-        return jwt.sign(
-            {
-                userId: 'test-user-id',
-                email: 'test@example.com',
-                role: 'SUPER_ADMIN',
-                ...payload,
-            },
-            process.env.JWT_SECRET,
-            { expiresIn: '1h' }
-        );
+  /**
+   * Generate a valid JWT token for testing
+   */
+  generateTestToken: (payload: Record<string, unknown> = {}) => {
+    const jwt = require('jsonwebtoken');
+    return jwt.sign(
+      {
+        userId: 'test-user-id',
+        email: 'test@example.com',
+        role: 'SUPER_ADMIN',
+        ...payload,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+  },
+
+  /**
+   * Create mock request object
+   */
+  createMockRequest: (overrides = {}) => ({
+    body: {},
+    params: {},
+    query: {},
+    headers: {},
+    user: {
+      userId: 'test-user-id',
+      email: 'test@example.com',
+      role: 'SUPER_ADMIN',
     },
+    ...overrides,
+  }),
 
-    /**
-     * Create mock request object
-     */
-    createMockRequest: (overrides = {}) => ({
-        body: {},
-        params: {},
-        query: {},
-        headers: {},
-        user: {
-            userId: 'test-user-id',
-            email: 'test@example.com',
-            role: 'SUPER_ADMIN',
-        },
-        ...overrides,
-    }),
+  /**
+   * Create mock response object
+   */
+  createMockResponse: () => {
+    const res: Record<string, unknown> = {};
+    res.status = vi.fn().mockReturnValue(res);
+    res.json = vi.fn().mockReturnValue(res);
+    res.send = vi.fn().mockReturnValue(res);
+    res.setHeader = vi.fn().mockReturnValue(res);
+    return res;
+  },
 
-    /**
-     * Create mock response object
-     */
-    createMockResponse: () => {
-        const res: Record<string, unknown> = {};
-        res.status = vi.fn().mockReturnValue(res);
-        res.json = vi.fn().mockReturnValue(res);
-        res.send = vi.fn().mockReturnValue(res);
-        res.setHeader = vi.fn().mockReturnValue(res);
-        return res;
-    },
-
-    /**
-     * Create mock next function
-     */
-    createMockNext: () => vi.fn(),
+  /**
+   * Create mock next function
+   */
+  createMockNext: () => vi.fn(),
 };
 
 // Export for use in tests

@@ -1,12 +1,24 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { api } from '@/lib/api';
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { api } from "@/lib/api";
 import {
   Heart,
   Activity,
@@ -15,7 +27,7 @@ import {
   Stethoscope,
   Pill,
   AlertTriangle,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface Child {
   id: string;
@@ -60,11 +72,11 @@ interface HealthSummary {
 
 export default function HealthPage() {
   const searchParams = useSearchParams();
-  const selectedStudentId = searchParams.get('studentId');
+  const selectedStudentId = searchParams.get("studentId");
 
   const [loading, setLoading] = useState(true);
   const [children, setChildren] = useState<Child[]>([]);
-  const [selectedChild, setSelectedChild] = useState<string>('');
+  const [selectedChild, setSelectedChild] = useState<string>("");
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [profile, setProfile] = useState<HealthProfile | null>(null);
   const [summary, setSummary] = useState<HealthSummary | null>(null);
@@ -72,18 +84,20 @@ export default function HealthPage() {
   useEffect(() => {
     const fetchChildren = async () => {
       try {
-        const res = await api.get('/parent/children');
+        const res = await api.get("/parent/children");
         const childrenData = res.data.data || [];
         setChildren(childrenData);
-        
+
         if (childrenData.length > 0) {
-          const defaultChild = selectedStudentId 
-            ? childrenData.find((c: Child) => c.student.id === selectedStudentId)?.student.id
+          const defaultChild = selectedStudentId
+            ? childrenData.find(
+                (c: Child) => c.student.id === selectedStudentId,
+              )?.student.id
             : childrenData[0].student.id;
           setSelectedChild(defaultChild || childrenData[0].student.id);
         }
       } catch (err) {
-        console.error('Failed to fetch children:', err);
+        console.error("Failed to fetch children:", err);
       }
     };
 
@@ -101,7 +115,7 @@ export default function HealthPage() {
         setProfile(res.data.data.profile || null);
         setSummary(res.data.data.summary || null);
       } catch (err) {
-        console.error('Failed to fetch health:', err);
+        console.error("Failed to fetch health:", err);
       } finally {
         setLoading(false);
       }
@@ -112,11 +126,11 @@ export default function HealthPage() {
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'CHECKUP':
+      case "CHECKUP":
         return <Stethoscope className="h-5 w-5 text-blue-500" />;
-      case 'TREATMENT':
+      case "TREATMENT":
         return <Pill className="h-5 w-5 text-green-500" />;
-      case 'EMERGENCY':
+      case "EMERGENCY":
         return <AlertTriangle className="h-5 w-5 text-red-500" />;
       default:
         return <Activity className="h-5 w-5 text-gray-500" />;
@@ -125,22 +139,22 @@ export default function HealthPage() {
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      CHECKUP: 'Pemeriksaan',
-      TREATMENT: 'Pengobatan',
-      EMERGENCY: 'Darurat',
-      SICK: 'Sakit',
-      INJURY: 'Cedera',
+      CHECKUP: "Pemeriksaan",
+      TREATMENT: "Pengobatan",
+      EMERGENCY: "Darurat",
+      SICK: "Sakit",
+      INJURY: "Cedera",
     };
     return labels[type] || type;
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'RECOVERED':
+      case "RECOVERED":
         return <Badge className="bg-green-500">Sembuh</Badge>;
-      case 'ONGOING':
+      case "ONGOING":
         return <Badge className="bg-yellow-500">Dalam Perawatan</Badge>;
-      case 'REFERRED':
+      case "REFERRED":
         return <Badge variant="outline">Dirujuk</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
@@ -152,9 +166,7 @@ export default function HealthPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Kesehatan</h1>
-          <p className="text-muted-foreground">
-            Riwayat kesehatan anak di UKS
-          </p>
+          <p className="text-muted-foreground">Riwayat kesehatan anak di UKS</p>
         </div>
         {children.length > 1 && (
           <Select value={selectedChild} onValueChange={setSelectedChild}>
@@ -196,51 +208,76 @@ export default function HealthPage() {
               <CardContent className="space-y-3">
                 {profile?.bloodType && (
                   <div>
-                    <span className="text-sm text-muted-foreground">Golongan Darah:</span>
-                    <Badge className="ml-2 bg-red-500">{profile.bloodType}</Badge>
+                    <span className="text-sm text-muted-foreground">
+                      Golongan Darah:
+                    </span>
+                    <Badge className="ml-2 bg-red-500">
+                      {profile.bloodType}
+                    </Badge>
                   </div>
                 )}
                 {profile?.allergies && profile.allergies.length > 0 && (
                   <div>
-                    <span className="text-sm text-muted-foreground">Alergi:</span>
+                    <span className="text-sm text-muted-foreground">
+                      Alergi:
+                    </span>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {profile.allergies.map((allergy, idx) => (
-                        <Badge key={idx} variant="destructive" className="text-xs">
+                        <Badge
+                          key={idx}
+                          variant="destructive"
+                          className="text-xs"
+                        >
                           {allergy}
                         </Badge>
                       ))}
                     </div>
                   </div>
                 )}
-                {profile?.chronicConditions && profile.chronicConditions.length > 0 && (
-                  <div>
-                    <span className="text-sm text-muted-foreground">Kondisi Kronis:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {profile.chronicConditions.map((condition, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {condition}
-                        </Badge>
-                      ))}
+                {profile?.chronicConditions &&
+                  profile.chronicConditions.length > 0 && (
+                    <div>
+                      <span className="text-sm text-muted-foreground">
+                        Kondisi Kronis:
+                      </span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {profile.chronicConditions.map((condition, idx) => (
+                          <Badge
+                            key={idx}
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {condition}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
                 {profile?.medications && profile.medications.length > 0 && (
                   <div>
-                    <span className="text-sm text-muted-foreground">Obat Rutin:</span>
+                    <span className="text-sm text-muted-foreground">
+                      Obat Rutin:
+                    </span>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {profile.medications.map((med, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-xs">
+                        <Badge
+                          key={idx}
+                          variant="secondary"
+                          className="text-xs"
+                        >
                           {med}
                         </Badge>
                       ))}
                     </div>
                   </div>
                 )}
-                {!profile?.bloodType && !profile?.allergies?.length && !profile?.chronicConditions?.length && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Belum ada data profil kesehatan
-                  </p>
-                )}
+                {!profile?.bloodType &&
+                  !profile?.allergies?.length &&
+                  !profile?.chronicConditions?.length && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Belum ada data profil kesehatan
+                    </p>
+                  )}
               </CardContent>
             </Card>
 
@@ -255,32 +292,41 @@ export default function HealthPage() {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <span className="text-sm">Total Kunjungan UKS</span>
-                  <span className="text-2xl font-bold">{summary?.totalVisits || 0}</span>
+                  <span className="text-2xl font-bold">
+                    {summary?.totalVisits || 0}
+                  </span>
                 </div>
                 {summary?.lastVisit && (
                   <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                     <span className="text-sm">Kunjungan Terakhir</span>
                     <span className="font-medium">
-                      {new Date(summary.lastVisit).toLocaleDateString('id-ID', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
+                      {new Date(summary.lastVisit).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
                       })}
                     </span>
                   </div>
                 )}
-                {summary?.recentConditions && summary.recentConditions.length > 0 && (
-                  <div>
-                    <span className="text-sm text-muted-foreground">Keluhan Terakhir:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {summary.recentConditions.map((cond, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {cond}
-                        </Badge>
-                      ))}
+                {summary?.recentConditions &&
+                  summary.recentConditions.length > 0 && (
+                    <div>
+                      <span className="text-sm text-muted-foreground">
+                        Keluhan Terakhir:
+                      </span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {summary.recentConditions.map((cond, idx) => (
+                          <Badge
+                            key={idx}
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {cond}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </CardContent>
             </Card>
           </div>
@@ -316,12 +362,16 @@ export default function HealthPage() {
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium">{getTypeLabel(record.type)}</span>
+                              <span className="font-medium">
+                                {getTypeLabel(record.type)}
+                              </span>
                               {getStatusBadge(record.status)}
                             </div>
                             {record.diagnosis && (
                               <p className="mt-1">
-                                <span className="text-sm text-muted-foreground">Diagnosis:</span>{' '}
+                                <span className="text-sm text-muted-foreground">
+                                  Diagnosis:
+                                </span>{" "}
                                 {record.diagnosis}
                               </p>
                             )}
@@ -338,13 +388,16 @@ export default function HealthPage() {
                             <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <Calendar className="h-4 w-4" />
-                                {new Date(record.visitedAt).toLocaleDateString('id-ID', {
-                                  day: 'numeric',
-                                  month: 'short',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
+                                {new Date(record.visitedAt).toLocaleDateString(
+                                  "id-ID",
+                                  {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  },
+                                )}
                               </div>
                               {record.treatedBy && (
                                 <div className="flex items-center gap-1">

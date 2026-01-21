@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useAuthStore } from '@/stores/auth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuthStore } from "@/stores/auth";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   BookOpen,
   Users,
@@ -19,16 +25,16 @@ import {
   RefreshCw,
   AlertTriangle,
   GraduationCap,
-} from 'lucide-react';
-import Link from 'next/link';
+} from "lucide-react";
+import Link from "next/link";
 import {
   useTeacherDashboard,
   getGradeDisplay,
   getStatusDisplay,
   getScheduleStatusDisplay,
-} from '@/hooks/use-teacher-dashboard';
-import { formatDistanceToNow } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+} from "@/hooks/use-teacher-dashboard";
+import { formatDistanceToNow } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 
 export default function TeacherDashboard() {
   const { user } = useAuthStore();
@@ -44,32 +50,32 @@ export default function TeacherDashboard() {
 
   const quickActions = [
     {
-      title: 'Rekap Hafalan',
-      description: 'Kelola hafalan siswa',
+      title: "Rekap Hafalan",
+      description: "Kelola hafalan siswa",
       icon: BookOpen,
-      href: '/tahfidz',
-      color: 'bg-green-500',
+      href: "/tahfidz",
+      color: "bg-green-500",
     },
     {
-      title: 'Daftar Kelas',
-      description: 'Lihat kelas yang diampu',
+      title: "Daftar Kelas",
+      description: "Lihat kelas yang diampu",
       icon: Users,
-      href: '/classes',
-      color: 'bg-blue-500',
+      href: "/classes",
+      color: "bg-blue-500",
     },
     {
-      title: 'Absensi',
-      description: 'Rekap kehadiran',
+      title: "Absensi",
+      description: "Rekap kehadiran",
       icon: Calendar,
-      href: '/attendance',
-      color: 'bg-purple-500',
+      href: "/attendance",
+      color: "bg-purple-500",
     },
     {
-      title: 'Pengumuman',
-      description: 'Info terbaru',
+      title: "Pengumuman",
+      description: "Info terbaru",
       icon: Bell,
-      href: '/announcements',
-      color: 'bg-orange-500',
+      href: "/announcements",
+      color: "bg-orange-500",
     },
   ];
 
@@ -83,7 +89,8 @@ export default function TeacherDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Assalamu&apos;alaikum, {user?.name?.split(' ')[0] || 'Ustadz/ah'}! 👋
+            Assalamu&apos;alaikum, {user?.name?.split(" ")[0] || "Ustadz/ah"}!
+            👋
           </h1>
           <p className="text-muted-foreground">
             Dashboard Guru - Kelola hafalan dan pembelajaran Anda
@@ -95,7 +102,14 @@ export default function TeacherDashboard() {
             Refresh
           </Button>
           <div className="text-right text-sm text-muted-foreground">
-            <p>{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p>
+              {new Date().toLocaleDateString("id-ID", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
           </div>
         </div>
       </div>
@@ -117,7 +131,9 @@ export default function TeacherDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalStudents || 0}</div>
+            <div className="text-2xl font-bold">
+              {stats?.totalStudents || 0}
+            </div>
             <p className="text-xs text-muted-foreground">
               dari {stats?.totalClasses || 0} kelas
             </p>
@@ -125,41 +141,49 @@ export default function TeacherDashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Setoran Hari Ini</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Setoran Hari Ini
+            </CardTitle>
             <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.setoranToday || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {stats?.setoranToday && stats?.setoranYesterday ? (
-                stats.setoranToday > stats.setoranYesterday
+              {stats?.setoranToday && stats?.setoranYesterday
+                ? stats.setoranToday > stats.setoranYesterday
                   ? `+${stats.setoranToday - stats.setoranYesterday} dari kemarin`
                   : stats.setoranToday < stats.setoranYesterday
                     ? `${stats.setoranToday - stats.setoranYesterday} dari kemarin`
-                    : 'sama dengan kemarin'
-              ) : (
-                'setoran hari ini'
-              )}
+                    : "sama dengan kemarin"
+                : "setoran hari ini"}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Target Tercapai</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Target Tercapai
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.targetAchievement || 0}%</div>
+            <div className="text-2xl font-bold">
+              {stats?.targetAchievement || 0}%
+            </div>
             <p className="text-xs text-muted-foreground">semester ini</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Jadwal Hari Ini</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Jadwal Hari Ini
+            </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.todayScheduleCount || todaySchedule?.length || 0}</div>
+            <div className="text-2xl font-bold">
+              {stats?.todayScheduleCount || todaySchedule?.length || 0}
+            </div>
             <p className="text-xs text-muted-foreground">sesi mengajar</p>
           </CardContent>
         </Card>
@@ -201,7 +225,7 @@ export default function TeacherDashboard() {
               <div className="space-y-4">
                 {todaySchedule.map((item) => {
                   const statusInfo = getScheduleStatusDisplay(item.status);
-                  
+
                   return (
                     <div key={item.id} className="flex items-center gap-4">
                       <div className="text-sm font-medium text-muted-foreground w-14">
@@ -210,7 +234,9 @@ export default function TeacherDashboard() {
                       <div className="flex-1">
                         <p className="text-sm font-medium">{item.activity}</p>
                         {item.room && (
-                          <p className="text-xs text-muted-foreground">Ruang: {item.room}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Ruang: {item.room}
+                          </p>
                         )}
                       </div>
                       <Badge variant="outline" className={statusInfo.color}>
@@ -243,20 +269,33 @@ export default function TeacherDashboard() {
                 {recentSetoran.map((record) => {
                   const statusInfo = getStatusDisplay(record.status);
                   const gradeInfo = getGradeDisplay(record.grade);
-                  
+
                   return (
-                    <div key={record.id} className="flex items-center justify-between">
+                    <div
+                      key={record.id}
+                      className="flex items-center justify-between"
+                    >
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={record.studentPhoto} alt={record.studentName} />
+                          <AvatarImage
+                            src={record.studentPhoto}
+                            alt={record.studentName}
+                          />
                           <AvatarFallback>
-                            {record.studentName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                            {record.studentName
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="text-sm font-medium">{record.studentName}</p>
+                          <p className="text-sm font-medium">
+                            {record.studentName}
+                          </p>
                           <p className="text-xs text-muted-foreground">
-                            {record.surahName}: {record.ayahStart}-{record.ayahEnd}
+                            {record.surahName}: {record.ayahStart}-
+                            {record.ayahEnd}
                           </p>
                         </div>
                       </div>
@@ -315,13 +354,13 @@ export default function TeacherDashboard() {
                             {cls.studentCount} siswa
                           </p>
                         </div>
-                        <Badge variant="outline">
-                          Kelas {cls.gradeLevel}
-                        </Badge>
+                        <Badge variant="outline">Kelas {cls.gradeLevel}</Badge>
                       </div>
                       {cls.averageProgress > 0 && (
                         <div className="mt-2">
-                          <p className="text-xs text-muted-foreground">Progress rata-rata</p>
+                          <p className="text-xs text-muted-foreground">
+                            Progress rata-rata
+                          </p>
                           <p className="text-lg font-bold text-green-600">
                             {cls.averageProgress}%
                           </p>

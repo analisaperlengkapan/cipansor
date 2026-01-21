@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from "express";
-import * as service from "./service";
-import * as analyticsService from "./analytics.service";
+import { Request, Response, NextFunction } from 'express';
+import * as service from './service';
+import * as analyticsService from './analytics.service';
 import {
   createFoundationSchema,
   updateFoundationSchema,
@@ -8,8 +8,8 @@ import {
   updateBoardMemberSchema,
   createDocumentSchema,
   updateDocumentSchema,
-} from "./schema";
-import { Errors } from "../../middleware/error";
+} from './schema';
+import { Errors } from '../../middleware/error';
 
 // =====================================
 // FOUNDATION CONTROLLERS
@@ -29,7 +29,7 @@ export async function getFoundationById(req: Request, res: Response, next: NextF
   try {
     const foundation = await service.getFoundationById(req.params.id);
     if (!foundation) {
-      throw Errors.notFound("Foundation not found");
+      throw Errors.notFound('Foundation not found');
     }
     res.json({ success: true, data: foundation });
   } catch (error) {
@@ -60,7 +60,7 @@ export async function updateFoundation(req: Request, res: Response, next: NextFu
 export async function deleteFoundation(req: Request, res: Response, next: NextFunction) {
   try {
     await service.deleteFoundation(req.params.id);
-    res.json({ success: true, message: "Foundation deleted successfully" });
+    res.json({ success: true, message: 'Foundation deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -70,7 +70,7 @@ export async function getFoundationStats(req: Request, res: Response, next: Next
   try {
     const stats = await service.getFoundationStats(req.params.id);
     if (!stats) {
-      throw Errors.notFound("Foundation not found");
+      throw Errors.notFound('Foundation not found');
     }
     res.json({ success: true, data: stats });
   } catch (error) {
@@ -96,7 +96,7 @@ export async function getBoardMemberById(req: Request, res: Response, next: Next
   try {
     const member = await service.getBoardMemberById(req.params.id);
     if (!member) {
-      throw Errors.notFound("Board member not found");
+      throw Errors.notFound('Board member not found');
     }
     res.json({ success: true, data: member });
   } catch (error) {
@@ -127,7 +127,7 @@ export async function updateBoardMember(req: Request, res: Response, next: NextF
 export async function endBoardMemberTerm(req: Request, res: Response, next: NextFunction) {
   try {
     const member = await service.endBoardMemberTerm(req.params.id);
-    res.json({ success: true, data: member, message: "Board member term ended" });
+    res.json({ success: true, data: member, message: 'Board member term ended' });
   } catch (error) {
     next(error);
   }
@@ -136,7 +136,7 @@ export async function endBoardMemberTerm(req: Request, res: Response, next: Next
 export async function deleteBoardMember(req: Request, res: Response, next: NextFunction) {
   try {
     await service.deleteBoardMember(req.params.id);
-    res.json({ success: true, message: "Board member deleted successfully" });
+    res.json({ success: true, message: 'Board member deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -160,7 +160,7 @@ export async function getDocumentById(req: Request, res: Response, next: NextFun
   try {
     const doc = await service.getDocumentById(req.params.id);
     if (!doc) {
-      throw Errors.notFound("Document not found");
+      throw Errors.notFound('Document not found');
     }
     res.json({ success: true, data: doc });
   } catch (error) {
@@ -191,7 +191,7 @@ export async function updateDocument(req: Request, res: Response, next: NextFunc
 export async function deleteDocument(req: Request, res: Response, next: NextFunction) {
   try {
     await service.deleteDocument(req.params.id);
-    res.json({ success: true, message: "Document deleted successfully" });
+    res.json({ success: true, message: 'Document deleted successfully' });
   } catch (error) {
     next(error);
   }

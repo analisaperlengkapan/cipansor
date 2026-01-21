@@ -1,21 +1,27 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState, useMemo } from "react";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { 
-  Trophy, 
+} from "@/components/ui/select";
+import {
+  Trophy,
   Medal,
   Crown,
   Flame,
@@ -23,22 +29,22 @@ import {
   TrendingUp,
   Users,
   AlertCircle,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useAuthStore } from '@/stores/auth';
-import { 
-  useIbadahLeaderboard, 
-  LeaderboardPeriod, 
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth";
+import {
+  useIbadahLeaderboard,
+  LeaderboardPeriod,
   LEADERBOARD_PERIODS,
-  IbadahLeaderboard 
-} from '@/hooks/use-ibadah';
+  IbadahLeaderboard,
+} from "@/hooks/use-ibadah";
 
 // Period mapping for UI filter to API enum
 const PERIOD_MAP: Record<string, LeaderboardPeriod> = {
-  today: 'DAILY',
-  week: 'WEEKLY',
-  month: 'MONTHLY',
-  semester: 'SEMESTER',
+  today: "DAILY",
+  week: "WEEKLY",
+  month: "MONTHLY",
+  semester: "SEMESTER",
 };
 
 const getRankIcon = (rank: number) => {
@@ -57,13 +63,13 @@ const getRankIcon = (rank: number) => {
 const getRankBg = (rank: number) => {
   switch (rank) {
     case 1:
-      return 'bg-gradient-to-r from-yellow-100 to-amber-100 border-yellow-300';
+      return "bg-gradient-to-r from-yellow-100 to-amber-100 border-yellow-300";
     case 2:
-      return 'bg-gradient-to-r from-gray-100 to-slate-100 border-gray-300';
+      return "bg-gradient-to-r from-gray-100 to-slate-100 border-gray-300";
     case 3:
-      return 'bg-gradient-to-r from-amber-100 to-orange-100 border-amber-300';
+      return "bg-gradient-to-r from-amber-100 to-orange-100 border-amber-300";
     default:
-      return 'bg-background hover:bg-muted/50';
+      return "bg-background hover:bg-muted/50";
   }
 };
 
@@ -78,13 +84,13 @@ interface LeaderboardEntry {
 
 export default function IbadahLeaderboardPage() {
   const { user } = useAuthStore();
-  const [period, setPeriod] = useState('week');
-  const [category, setCategory] = useState('all');
+  const [period, setPeriod] = useState("week");
+  const [category, setCategory] = useState("all");
 
   // Fetch leaderboard data
   const { data: leaderboardData, isLoading } = useIbadahLeaderboard({
-    unitId: user?.unitId || user?.unit?.id || '',
-    periodType: PERIOD_MAP[period] || 'WEEKLY',
+    unitId: user?.unitId || user?.unit?.id || "",
+    periodType: PERIOD_MAP[period] || "WEEKLY",
     limit: 10,
   });
 
@@ -93,28 +99,39 @@ export default function IbadahLeaderboardPage() {
     if (!leaderboardData) return [];
     return leaderboardData.map((item, index) => ({
       rank: item.rank || index + 1,
-      name: item.student?.name || item.student?.user?.name || 'Unknown',
-      class: item.student?.class?.name || '-',
+      name: item.student?.name || item.student?.user?.name || "Unknown",
+      class: item.student?.class?.name || "-",
       score: item.totalPoints + (item.bonusPoints || 0),
       streak: item.streakDays || 0,
-      avatar: index < 3 ? ['🥇', '🥈', '🥉'][index] : '👤',
+      avatar: index < 3 ? ["🥇", "🥈", "🥉"][index] : "👤",
     }));
   }, [leaderboardData]);
 
   // Find current user position (from leaderboard or default)
   const currentUserEntry = useMemo(() => {
-    if (!user?.id || !leaderboardData) return { rank: '-', score: 0 };
+    if (!user?.id || !leaderboardData) return { rank: "-", score: 0 };
     const found = leaderboardData.find(
-      (item) => item.studentId === user.id || item.student?.userId === user.id
+      (item) => item.studentId === user.id || item.student?.userId === user.id,
     );
     if (found) {
-      return { rank: found.rank || '-', score: found.totalPoints + (found.bonusPoints || 0) };
+      return {
+        rank: found.rank || "-",
+        score: found.totalPoints + (found.bonusPoints || 0),
+      };
     }
-    return { rank: '-', score: 0 };
+    return { rank: "-", score: 0 };
   }, [leaderboardData, user?.id]);
 
   return (
-    <MainLayout allowedRoles={['STUDENT', 'TEACHER', 'SUPER_ADMIN', 'UNIT_ADMIN', 'PARENT']}>
+    <MainLayout
+      allowedRoles={[
+        "STUDENT",
+        "TEACHER",
+        "SUPER_ADMIN",
+        "UNIT_ADMIN",
+        "PARENT",
+      ]}
+    >
       <div className="space-y-6">
         <PageHeader
           title="Papan Peringkat Ibadah"
@@ -125,7 +142,14 @@ export default function IbadahLeaderboardPage() {
         {isLoading ? (
           <div className="grid gap-4 md:grid-cols-3">
             {[0, 1, 2].map((i) => (
-              <Card key={i} className={cn(i === 0 && 'md:order-2 md:scale-105 z-10', i === 1 && 'md:order-1', i === 2 && 'md:order-3')}>
+              <Card
+                key={i}
+                className={cn(
+                  i === 0 && "md:order-2 md:scale-105 z-10",
+                  i === 1 && "md:order-1",
+                  i === 2 && "md:order-3",
+                )}
+              >
                 <CardContent className="pt-6 text-center">
                   <Skeleton className="h-12 w-12 rounded-full mx-auto mb-2" />
                   <Skeleton className="h-6 w-6 mx-auto mb-2" />
@@ -143,7 +167,9 @@ export default function IbadahLeaderboardPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">Belum ada data leaderboard untuk periode ini.</p>
+              <p className="text-muted-foreground">
+                Belum ada data leaderboard untuk periode ini.
+              </p>
             </CardContent>
           </Card>
         ) : (
@@ -152,34 +178,40 @@ export default function IbadahLeaderboardPage() {
               <Card
                 key={student.rank}
                 className={cn(
-                  'relative overflow-hidden',
-                  index === 0 && 'md:order-2 md:scale-105 z-10',
-                  index === 1 && 'md:order-1',
-                  index === 2 && 'md:order-3'
+                  "relative overflow-hidden",
+                  index === 0 && "md:order-2 md:scale-105 z-10",
+                  index === 1 && "md:order-1",
+                  index === 2 && "md:order-3",
                 )}
               >
                 <div
                   className={cn(
-                    'absolute inset-0 opacity-10',
-                    index === 0 && 'bg-yellow-500',
-                    index === 1 && 'bg-gray-500',
-                    index === 2 && 'bg-amber-500'
+                    "absolute inset-0 opacity-10",
+                    index === 0 && "bg-yellow-500",
+                    index === 1 && "bg-gray-500",
+                    index === 2 && "bg-amber-500",
                   )}
                 />
                 <CardContent className="pt-6 text-center relative">
                   <div className="text-5xl mb-2">{student.avatar}</div>
                   <div className="mb-2">{getRankIcon(student.rank)}</div>
                   <h3 className="font-bold text-lg">{student.name}</h3>
-                  <p className="text-sm text-muted-foreground">{student.class}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {student.class}
+                  </p>
                   <div className="mt-4 flex items-center justify-center gap-4">
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-primary">{student.score}</p>
+                      <p className="text-2xl font-bold text-primary">
+                        {student.score}
+                      </p>
                       <p className="text-xs text-muted-foreground">Poin</p>
                     </div>
                     <div className="text-center">
                       <div className="flex items-center gap-1">
                         <Flame className="h-5 w-5 text-orange-500" />
-                        <span className="text-xl font-bold">{student.streak}</span>
+                        <span className="text-xl font-bold">
+                          {student.streak}
+                        </span>
                       </div>
                       <p className="text-xs text-muted-foreground">Streak</p>
                     </div>
@@ -227,7 +259,9 @@ export default function IbadahLeaderboardPage() {
                 </div>
                 <div>
                   <p className="font-medium">Posisi Kamu</p>
-                  <p className="text-sm text-muted-foreground">Terus tingkatkan ibadahmu!</p>
+                  <p className="text-sm text-muted-foreground">
+                    Terus tingkatkan ibadahmu!
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-6">
@@ -236,7 +270,9 @@ export default function IbadahLeaderboardPage() {
                   <p className="text-xs text-muted-foreground">Peringkat</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-primary">{currentUserEntry.score}</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {currentUserEntry.score}
+                  </p>
                   <p className="text-xs text-muted-foreground">Poin</p>
                 </div>
               </div>
@@ -257,7 +293,10 @@ export default function IbadahLeaderboardPage() {
             {isLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="flex items-center justify-between p-4 border rounded-xl">
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-4 border rounded-xl"
+                  >
                     <div className="flex items-center gap-4">
                       <Skeleton className="h-10 w-10 rounded-full" />
                       <div>
@@ -282,8 +321,8 @@ export default function IbadahLeaderboardPage() {
                   <div
                     key={student.rank}
                     className={cn(
-                      'flex items-center justify-between p-4 border rounded-xl transition-all',
-                      getRankBg(student.rank)
+                      "flex items-center justify-between p-4 border rounded-xl transition-all",
+                      getRankBg(student.rank),
                     )}
                   >
                     <div className="flex items-center gap-4">
@@ -292,7 +331,9 @@ export default function IbadahLeaderboardPage() {
                       </div>
                       <div>
                         <p className="font-medium">{student.name}</p>
-                        <p className="text-sm text-muted-foreground">{student.class}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {student.class}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-6">

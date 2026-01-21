@@ -1,18 +1,18 @@
 // Reception / Front Office Module Types
 
 export enum VisitStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED'
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+  COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
 }
 
 export enum PackageStatus {
-  RECEIVED = 'RECEIVED',
-  NOTIFIED = 'NOTIFIED',
-  PICKED_UP = 'PICKED_UP',
-  RETURNED = 'RETURNED'
+  RECEIVED = "RECEIVED",
+  NOTIFIED = "NOTIFIED",
+  PICKED_UP = "PICKED_UP",
+  RETURNED = "RETURNED",
 }
 
 export interface GuestBook {

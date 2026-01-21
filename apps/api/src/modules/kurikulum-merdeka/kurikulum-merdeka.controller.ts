@@ -760,7 +760,10 @@ export async function removeMerdekaResult(req: Request, res: Response, next: Nex
 export async function getSummary(req: Request, res: Response, next: NextFunction) {
   try {
     const { unitId, academicYearId } = req.query as { unitId?: string; academicYearId?: string };
-    const summary = await kurikulumMerdekaService.getKurikulumMerdekaSummary(unitId, academicYearId);
+    const summary = await kurikulumMerdekaService.getKurikulumMerdekaSummary(
+      unitId,
+      academicYearId
+    );
 
     res.json({
       success: true,

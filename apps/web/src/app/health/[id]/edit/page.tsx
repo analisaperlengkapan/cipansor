@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import { use, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft, Search, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { use, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft, Search, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -17,17 +23,17 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { toast } from "sonner";
 import {
   useHealthRecord,
   useUpdateHealthRecord,
@@ -35,17 +41,17 @@ import {
   HEALTH_STATUSES,
   HealthRecordType,
   HealthStatus,
-} from '@/hooks/use-health';
+} from "@/hooks/use-health";
 
 const formSchema = z.object({
-  recordType: z.string().min(1, 'Jenis rekam wajib dipilih'),
-  date: z.string().min(1, 'Tanggal wajib diisi'),
+  recordType: z.string().min(1, "Jenis rekam wajib dipilih"),
+  date: z.string().min(1, "Tanggal wajib diisi"),
   symptoms: z.string().optional(),
   diagnosis: z.string().optional(),
   treatment: z.string().optional(),
   medication: z.string().optional(),
   notes: z.string().optional(),
-  status: z.string().min(1, 'Status wajib dipilih'),
+  status: z.string().min(1, "Status wajib dipilih"),
   followUpDate: z.string().optional(),
   referredTo: z.string().optional(),
   temperature: z.string().optional(),
@@ -71,21 +77,21 @@ export default function EditHealthRecordPage({ params }: PageProps) {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      recordType: '',
-      date: '',
-      symptoms: '',
-      diagnosis: '',
-      treatment: '',
-      medication: '',
-      notes: '',
-      status: '',
-      followUpDate: '',
-      referredTo: '',
-      temperature: '',
-      bloodPressure: '',
-      heartRate: '',
-      weight: '',
-      height: '',
+      recordType: "",
+      date: "",
+      symptoms: "",
+      diagnosis: "",
+      treatment: "",
+      medication: "",
+      notes: "",
+      status: "",
+      followUpDate: "",
+      referredTo: "",
+      temperature: "",
+      bloodPressure: "",
+      heartRate: "",
+      weight: "",
+      height: "",
     },
   });
 
@@ -93,22 +99,24 @@ export default function EditHealthRecordPage({ params }: PageProps) {
     if (record) {
       form.reset({
         recordType: record.type,
-        date: record.visitDate ? new Date(record.visitDate).toISOString().split('T')[0] : '',
-        symptoms: record.complaint || '',
-        diagnosis: record.diagnosis || '',
-        treatment: record.treatment || '',
-        medication: record.prescription || '',
-        notes: record.notes || '',
-        status: record.status || '',
+        date: record.visitDate
+          ? new Date(record.visitDate).toISOString().split("T")[0]
+          : "",
+        symptoms: record.complaint || "",
+        diagnosis: record.diagnosis || "",
+        treatment: record.treatment || "",
+        medication: record.prescription || "",
+        notes: record.notes || "",
+        status: record.status || "",
         followUpDate: record.followUpDate
-          ? new Date(record.followUpDate).toISOString().split('T')[0]
-          : '',
-        referredTo: record.referredTo || '',
-        temperature: record.temperature?.toString() || '',
-        bloodPressure: record.bloodPressure || '',
-        heartRate: record.heartRate?.toString() || '',
-        weight: record.weight?.toString() || '',
-        height: record.height?.toString() || '',
+          ? new Date(record.followUpDate).toISOString().split("T")[0]
+          : "",
+        referredTo: record.referredTo || "",
+        temperature: record.temperature?.toString() || "",
+        bloodPressure: record.bloodPressure || "",
+        heartRate: record.heartRate?.toString() || "",
+        weight: record.weight?.toString() || "",
+        height: record.height?.toString() || "",
       });
     }
   }, [record, form]);
@@ -128,17 +136,19 @@ export default function EditHealthRecordPage({ params }: PageProps) {
           status: data.status as HealthStatus,
           followUpDate: data.followUpDate || undefined,
           referredTo: data.referredTo || undefined,
-          temperature: data.temperature ? parseFloat(data.temperature) : undefined,
+          temperature: data.temperature
+            ? parseFloat(data.temperature)
+            : undefined,
           bloodPressure: data.bloodPressure || undefined,
           heartRate: data.heartRate ? parseInt(data.heartRate) : undefined,
           weight: data.weight ? parseFloat(data.weight) : undefined,
           height: data.height ? parseFloat(data.height) : undefined,
         },
       });
-      toast.success('Rekam kesehatan berhasil diperbarui');
+      toast.success("Rekam kesehatan berhasil diperbarui");
       router.push(`/health/${recordId}`);
     } catch {
-      toast.error('Gagal memperbarui rekam kesehatan');
+      toast.error("Gagal memperbarui rekam kesehatan");
     }
   };
 
@@ -169,7 +179,9 @@ export default function EditHealthRecordPage({ params }: PageProps) {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Edit Rekam Kesehatan</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Edit Rekam Kesehatan
+          </h1>
           <p className="text-muted-foreground">
             Santri: {record.student?.name} ({record.student?.nis})
           </p>
@@ -193,7 +205,10 @@ export default function EditHealthRecordPage({ params }: PageProps) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Jenis Rekam</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih jenis" />
@@ -233,7 +248,10 @@ export default function EditHealthRecordPage({ params }: PageProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Status Kesehatan</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih status" />
@@ -345,7 +363,10 @@ export default function EditHealthRecordPage({ params }: PageProps) {
                       <FormItem>
                         <FormLabel>Dirujuk ke</FormLabel>
                         <FormControl>
-                          <Input placeholder="Nama rumah sakit/klinik" {...field} />
+                          <Input
+                            placeholder="Nama rumah sakit/klinik"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -484,7 +505,7 @@ export default function EditHealthRecordPage({ params }: PageProps) {
                   Menyimpan...
                 </>
               ) : (
-                'Simpan Perubahan'
+                "Simpan Perubahan"
               )}
             </Button>
           </div>

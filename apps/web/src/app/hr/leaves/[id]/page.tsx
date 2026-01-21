@@ -1,11 +1,17 @@
-'use client';
+"use client";
 
-import { useParams, useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
+import { useParams, useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   useLeaveRequest,
   useApproveLeaveRequest,
@@ -25,7 +31,7 @@ import {
   LEAVE_TYPE_LABELS,
   LEAVE_STATUS_LABELS,
   type LeaveStatus,
-} from '@/hooks';
+} from "@/hooks";
 import {
   ArrowLeft,
   Check,
@@ -38,17 +44,17 @@ import {
   Loader2,
   AlertCircle,
   Ban,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { useState } from 'react';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export default function LeaveDetailPage() {
   const params = useParams();
   const router = useRouter();
   const leaveId = params.id as string;
-  const [rejectReason, setRejectReason] = useState('');
+  const [rejectReason, setRejectReason] = useState("");
 
   const { data: leave, isLoading } = useLeaveRequest(leaveId);
   const approveLeave = useApproveLeaveRequest();
@@ -70,10 +76,10 @@ export default function LeaveDetailPage() {
       <MainLayout>
         <div className="flex flex-col items-center justify-center h-64 space-y-4">
           <AlertCircle className="h-12 w-12 text-muted-foreground" />
-          <p className="text-muted-foreground">Pengajuan cuti tidak ditemukan</p>
-          <Button onClick={() => router.push('/hr')}>
-            Kembali ke Daftar
-          </Button>
+          <p className="text-muted-foreground">
+            Pengajuan cuti tidak ditemukan
+          </p>
+          <Button onClick={() => router.push("/hr")}>Kembali ke Daftar</Button>
         </div>
       </MainLayout>
     );
@@ -82,43 +88,47 @@ export default function LeaveDetailPage() {
   const handleApprove = async () => {
     try {
       await approveLeave.mutateAsync(leaveId);
-      toast.success('Cuti berhasil disetujui');
+      toast.success("Cuti berhasil disetujui");
     } catch (error) {
-      toast.error('Gagal menyetujui cuti');
+      toast.error("Gagal menyetujui cuti");
     }
   };
 
   const handleReject = async () => {
     if (!rejectReason.trim()) {
-      toast.error('Alasan penolakan wajib diisi');
+      toast.error("Alasan penolakan wajib diisi");
       return;
     }
     try {
       await rejectLeave.mutateAsync({ id: leaveId, reason: rejectReason });
-      toast.success('Cuti berhasil ditolak');
-      setRejectReason('');
+      toast.success("Cuti berhasil ditolak");
+      setRejectReason("");
     } catch (error) {
-      toast.error('Gagal menolak cuti');
+      toast.error("Gagal menolak cuti");
     }
   };
 
   const handleCancel = async () => {
     try {
       await cancelLeave.mutateAsync(leaveId);
-      toast.success('Cuti berhasil dibatalkan');
+      toast.success("Cuti berhasil dibatalkan");
     } catch (error) {
-      toast.error('Gagal membatalkan cuti');
+      toast.error("Gagal membatalkan cuti");
     }
   };
 
   const getStatusBadge = (status: LeaveStatus) => {
     const colors: Record<LeaveStatus, string> = {
-      PENDING: 'bg-yellow-100 text-yellow-800',
-      APPROVED: 'bg-green-100 text-green-800',
-      REJECTED: 'bg-red-100 text-red-800',
-      CANCELLED: 'bg-gray-100 text-gray-800',
+      PENDING: "bg-yellow-100 text-yellow-800",
+      APPROVED: "bg-green-100 text-green-800",
+      REJECTED: "bg-red-100 text-red-800",
+      CANCELLED: "bg-gray-100 text-gray-800",
     };
-    return <Badge className={`${colors[status]} text-sm`}>{LEAVE_STATUS_LABELS[status]}</Badge>;
+    return (
+      <Badge className={`${colors[status]} text-sm`}>
+        {LEAVE_STATUS_LABELS[status]}
+      </Badge>
+    );
   };
 
   return (
@@ -132,7 +142,9 @@ export default function LeaveDetailPage() {
             </Button>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-3xl font-bold tracking-tight">Detail Pengajuan Cuti</h1>
+                <h1 className="text-3xl font-bold tracking-tight">
+                  Detail Pengajuan Cuti
+                </h1>
                 {getStatusBadge(leave.status)}
               </div>
               <p className="text-muted-foreground">
@@ -140,8 +152,8 @@ export default function LeaveDetailPage() {
               </p>
             </div>
           </div>
-          
-          {leave.status === 'PENDING' && (
+
+          {leave.status === "PENDING" && (
             <div className="flex gap-2">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -163,8 +175,13 @@ export default function LeaveDetailPage() {
                     onChange={(e) => setRejectReason(e.target.value)}
                   />
                   <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setRejectReason('')}>Batal</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleReject} disabled={rejectLeave.isPending}>
+                    <AlertDialogCancel onClick={() => setRejectReason("")}>
+                      Batal
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleReject}
+                      disabled={rejectLeave.isPending}
+                    >
                       Tolak Cuti
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -182,12 +199,16 @@ export default function LeaveDetailPage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Setujui Pengajuan Cuti?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Pengajuan cuti {leave.employee?.fullName} selama {leave.totalDays} hari akan disetujui.
+                      Pengajuan cuti {leave.employee?.fullName} selama{" "}
+                      {leave.totalDays} hari akan disetujui.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Batal</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleApprove} disabled={approveLeave.isPending}>
+                    <AlertDialogAction
+                      onClick={handleApprove}
+                      disabled={approveLeave.isPending}
+                    >
                       Setujui
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -196,7 +217,7 @@ export default function LeaveDetailPage() {
             </div>
           )}
 
-          {leave.status === 'APPROVED' && (
+          {leave.status === "APPROVED" && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive">
@@ -208,12 +229,16 @@ export default function LeaveDetailPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Batalkan Cuti?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Cuti yang sudah disetujui akan dibatalkan. Tindakan ini tidak dapat dibatalkan.
+                    Cuti yang sudah disetujui akan dibatalkan. Tindakan ini
+                    tidak dapat dibatalkan.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Batal</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleCancel} disabled={cancelLeave.isPending}>
+                  <AlertDialogAction
+                    onClick={handleCancel}
+                    disabled={cancelLeave.isPending}
+                  >
                     Batalkan Cuti
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -249,7 +274,7 @@ export default function LeaveDetailPage() {
                   </div>
                   <div>
                     <dt className="text-sm text-muted-foreground">Unit</dt>
-                    <dd>{leave.employee?.unit?.name ?? '-'}</dd>
+                    <dd>{leave.employee?.unit?.name ?? "-"}</dd>
                   </div>
                 </dl>
               </CardContent>
@@ -267,35 +292,57 @@ export default function LeaveDetailPage() {
                 <dl className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <dt className="text-sm text-muted-foreground">Jenis Cuti</dt>
-                      <dd className="font-medium">{LEAVE_TYPE_LABELS[leave.leaveType]}</dd>
+                      <dt className="text-sm text-muted-foreground">
+                        Jenis Cuti
+                      </dt>
+                      <dd className="font-medium">
+                        {LEAVE_TYPE_LABELS[leave.leaveType]}
+                      </dd>
                     </div>
                     <div>
-                      <dt className="text-sm text-muted-foreground">Total Hari</dt>
-                      <dd className="text-2xl font-bold">{leave.totalDays} hari</dd>
+                      <dt className="text-sm text-muted-foreground">
+                        Total Hari
+                      </dt>
+                      <dd className="text-2xl font-bold">
+                        {leave.totalDays} hari
+                      </dd>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <dt className="text-sm text-muted-foreground">Tanggal Mulai</dt>
+                      <dt className="text-sm text-muted-foreground">
+                        Tanggal Mulai
+                      </dt>
                       <dd className="font-medium">
-                        {format(new Date(leave.startDate), 'EEEE, d MMMM yyyy', { locale: idLocale })}
+                        {format(
+                          new Date(leave.startDate),
+                          "EEEE, d MMMM yyyy",
+                          { locale: idLocale },
+                        )}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-sm text-muted-foreground">Tanggal Selesai</dt>
+                      <dt className="text-sm text-muted-foreground">
+                        Tanggal Selesai
+                      </dt>
                       <dd className="font-medium">
-                        {format(new Date(leave.endDate), 'EEEE, d MMMM yyyy', { locale: idLocale })}
+                        {format(new Date(leave.endDate), "EEEE, d MMMM yyyy", {
+                          locale: idLocale,
+                        })}
                       </dd>
                     </div>
                   </div>
                   <div>
-                    <dt className="text-sm text-muted-foreground mb-1">Alasan</dt>
+                    <dt className="text-sm text-muted-foreground mb-1">
+                      Alasan
+                    </dt>
                     <dd className="p-3 bg-muted rounded-lg">{leave.reason}</dd>
                   </div>
                   {leave.attachmentUrl && (
                     <div>
-                      <dt className="text-sm text-muted-foreground mb-1">Lampiran</dt>
+                      <dt className="text-sm text-muted-foreground mb-1">
+                        Lampiran
+                      </dt>
                       <dd>
                         <a
                           href={leave.attachmentUrl}
@@ -314,7 +361,7 @@ export default function LeaveDetailPage() {
             </Card>
 
             {/* Rejection Reason */}
-            {leave.status === 'REJECTED' && leave.rejectionReason && (
+            {leave.status === "REJECTED" && leave.rejectionReason && (
               <Card className="border-red-200 bg-red-50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-red-800">
@@ -348,12 +395,14 @@ export default function LeaveDetailPage() {
                     <div>
                       <p className="font-medium">Diajukan</p>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(leave.createdAt), 'd MMM yyyy HH:mm', { locale: idLocale })}
+                        {format(new Date(leave.createdAt), "d MMM yyyy HH:mm", {
+                          locale: idLocale,
+                        })}
                       </p>
                     </div>
                   </div>
-                  
-                  {leave.status === 'APPROVED' && (
+
+                  {leave.status === "APPROVED" && (
                     <div className="flex gap-3">
                       <div className="flex flex-col items-center">
                         <div className="w-3 h-3 bg-green-500 rounded-full" />
@@ -362,7 +411,12 @@ export default function LeaveDetailPage() {
                       <div>
                         <p className="font-medium">Disetujui</p>
                         <p className="text-sm text-muted-foreground">
-                          {leave.approvedAt && format(new Date(leave.approvedAt), 'd MMM yyyy HH:mm', { locale: idLocale })}
+                          {leave.approvedAt &&
+                            format(
+                              new Date(leave.approvedAt),
+                              "d MMM yyyy HH:mm",
+                              { locale: idLocale },
+                            )}
                         </p>
                         {leave.approvedBy && (
                           <p className="text-xs text-muted-foreground">
@@ -373,7 +427,7 @@ export default function LeaveDetailPage() {
                     </div>
                   )}
 
-                  {leave.status === 'REJECTED' && (
+                  {leave.status === "REJECTED" && (
                     <div className="flex gap-3">
                       <div className="flex flex-col items-center">
                         <div className="w-3 h-3 bg-red-500 rounded-full" />
@@ -381,13 +435,18 @@ export default function LeaveDetailPage() {
                       <div>
                         <p className="font-medium text-red-600">Ditolak</p>
                         <p className="text-sm text-muted-foreground">
-                          {leave.rejectedAt && format(new Date(leave.rejectedAt), 'd MMM yyyy HH:mm', { locale: idLocale })}
+                          {leave.rejectedAt &&
+                            format(
+                              new Date(leave.rejectedAt),
+                              "d MMM yyyy HH:mm",
+                              { locale: idLocale },
+                            )}
                         </p>
                       </div>
                     </div>
                   )}
 
-                  {leave.status === 'CANCELLED' && (
+                  {leave.status === "CANCELLED" && (
                     <div className="flex gap-3">
                       <div className="flex flex-col items-center">
                         <div className="w-3 h-3 bg-gray-500 rounded-full" />
@@ -395,19 +454,26 @@ export default function LeaveDetailPage() {
                       <div>
                         <p className="font-medium text-gray-600">Dibatalkan</p>
                         <p className="text-sm text-muted-foreground">
-                          {leave.cancelledAt && format(new Date(leave.cancelledAt), 'd MMM yyyy HH:mm', { locale: idLocale })}
+                          {leave.cancelledAt &&
+                            format(
+                              new Date(leave.cancelledAt),
+                              "d MMM yyyy HH:mm",
+                              { locale: idLocale },
+                            )}
                         </p>
                       </div>
                     </div>
                   )}
 
-                  {leave.status === 'PENDING' && (
+                  {leave.status === "PENDING" && (
                     <div className="flex gap-3">
                       <div className="flex flex-col items-center">
                         <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" />
                       </div>
                       <div>
-                        <p className="font-medium text-yellow-600">Menunggu Persetujuan</p>
+                        <p className="font-medium text-yellow-600">
+                          Menunggu Persetujuan
+                        </p>
                       </div>
                     </div>
                   )}
@@ -421,7 +487,9 @@ export default function LeaveDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-center">
-                  <p className="text-4xl font-bold">{leave.employee?.leaveBalance ?? 12}</p>
+                  <p className="text-4xl font-bold">
+                    {leave.employee?.leaveBalance ?? 12}
+                  </p>
                   <p className="text-sm text-muted-foreground">hari tersisa</p>
                 </div>
               </CardContent>

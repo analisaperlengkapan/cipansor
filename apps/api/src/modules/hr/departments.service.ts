@@ -3,7 +3,13 @@ import { prisma } from '@/lib/prisma';
 import { SharedPaginatedResponse } from '@cipansor/shared';
 
 export const departmentService = {
-  async create(data: { unitId: string; code: string; name: string; description?: string; managerId?: string }) {
+  async create(data: {
+    unitId: string;
+    code: string;
+    name: string;
+    description?: string;
+    managerId?: string;
+  }) {
     return prisma.department.create({
       data: {
         unit: { connect: { id: data.unitId } },
@@ -15,14 +21,27 @@ export const departmentService = {
     });
   },
 
-  async update(id: string, data: { code?: string; name?: string; description?: string; managerId?: string; isActive?: boolean }) {
+  async update(
+    id: string,
+    data: {
+      code?: string;
+      name?: string;
+      description?: string;
+      managerId?: string;
+      isActive?: boolean;
+    }
+  ) {
     return prisma.department.update({
       where: { id },
       data: {
         code: data.code,
         name: data.name,
         description: data.description,
-        manager: data.managerId ? { connect: { id: data.managerId } } : data.managerId === null ? { disconnect: true } : undefined,
+        manager: data.managerId
+          ? { connect: { id: data.managerId } }
+          : data.managerId === null
+            ? { disconnect: true }
+            : undefined,
         isActive: data.isActive,
       },
     });
@@ -75,7 +94,9 @@ export const departmentService = {
       where: { id },
       include: {
         manager: { select: { id: true, name: true } },
-        staff: { select: { id: true, userId: true, user: { select: { name: true } }, position: true } },
+        staff: {
+          select: { id: true, userId: true, user: { select: { name: true } }, position: true },
+        },
         teachers: { select: { id: true, userId: true, user: { select: { name: true } } } },
       },
     });

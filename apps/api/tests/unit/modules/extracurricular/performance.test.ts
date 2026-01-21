@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { extracurricularService } from '../../../../src/modules/extracurricular/extracurricular.service';
 import { prisma } from '../../../../src/lib/prisma';
@@ -56,7 +55,7 @@ describe('ExtracurricularService Performance', () => {
     });
 
     // Mock findMany for optimized version
-    const mockEnrollments = attendances.map(a => ({ studentId: a.studentId }));
+    const mockEnrollments = attendances.map((a) => ({ studentId: a.studentId }));
     (prisma.extracurricularEnrollment.findMany as any).mockResolvedValue(mockEnrollments);
 
     // Mock upsert
@@ -66,11 +65,14 @@ describe('ExtracurricularService Performance', () => {
 
     const currentUser = { sub: 'user-1', role: UserRole.SUPER_ADMIN, unitId: null };
 
-    await extracurricularService.recordAttendance({
-      extracurricularId,
-      date: new Date(),
-      attendances: attendances as any,
-    }, currentUser);
+    await extracurricularService.recordAttendance(
+      {
+        extracurricularId,
+        date: new Date(),
+        attendances: attendances as any,
+      },
+      currentUser
+    );
 
     // Verify Optimization: findMany should be called once, and findUnique 0 times
     expect(prisma.extracurricularEnrollment.findMany).toHaveBeenCalledTimes(1);

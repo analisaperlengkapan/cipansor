@@ -1,14 +1,14 @@
-import { AssetCategory } from './inventory';
-import { Unit } from './models';
-import { User } from './auth';
+import { AssetCategory } from "./inventory";
+import { Unit } from "./models";
+import { User } from "./auth";
 
 export enum PurchaseRequestStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  ORDERED = 'ORDERED',
-  RECEIVED = 'RECEIVED',
-  CANCELLED = 'CANCELLED',
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+  ORDERED = "ORDERED",
+  RECEIVED = "RECEIVED",
+  CANCELLED = "CANCELLED",
 }
 
 export interface PurchaseRequestItem {
@@ -78,7 +78,7 @@ export interface FulfillPurchaseRequestItemInput {
   itemId: string; // The ID of the PurchaseRequestItem being fulfilled
   quantityReceived: number;
   actualPrice: number;
-  condition: 'GOOD' | 'FAIR' | 'POOR'; // Simplified condition enum for input
+  condition: "GOOD" | "FAIR" | "POOR"; // Simplified condition enum for input
   roomId?: string; // Location of the asset
   notes?: string;
 }

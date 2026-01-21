@@ -1,30 +1,43 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { useCreateDailyReport, useBulkCreateDailyReports } from '@/hooks/use-daily-report';
-import { useClasses } from '@/hooks/use-classes';
-import { useStudents } from '@/hooks/use-students';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import {
+  useCreateDailyReport,
+  useBulkCreateDailyReports,
+} from "@/hooks/use-daily-report";
+import { useClasses } from "@/hooks/use-classes";
+import { useStudents } from "@/hooks/use-students";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Form,
   FormControl,
@@ -32,28 +45,28 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Badge } from '@/components/ui/badge';
-import { 
-  ArrowLeft, 
-  CalendarIcon, 
-  Save, 
-  Loader2, 
-  Users, 
-  Check, 
+} from "@/components/ui/form";
+import { Badge } from "@/components/ui/badge";
+import {
+  ArrowLeft,
+  CalendarIcon,
+  Save,
+  Loader2,
+  Users,
+  Check,
   BookOpen,
   Bell,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { useAuthStore } from '@/stores/auth';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { toast } from "sonner";
+import { useAuthStore } from "@/stores/auth";
+import { cn } from "@/lib/utils";
 
 // SD/SMP/SMA Daily Report Schema
 const dailyReportSchema = z.object({
-  classId: z.string().min(1, 'Kelas wajib dipilih'),
-  reportDate: z.date({ required_error: 'Tanggal wajib diisi' }),
+  classId: z.string().min(1, "Kelas wajib dipilih"),
+  reportDate: z.date({ required_error: "Tanggal wajib diisi" }),
 });
 
 // Individual student report schema
@@ -81,9 +94,11 @@ interface StudentReport {
 export default function HomeroomDailyReportPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [studentReports, setStudentReports] = useState<Map<string, StudentReportData>>(new Map());
+  const [studentReports, setStudentReports] = useState<
+    Map<string, StudentReportData>
+  >(new Map());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: classes } = useClasses({ unitId: user?.unitId });
@@ -104,12 +119,12 @@ export default function HomeroomDailyReportPage() {
         initial.set(s.id, {
           present: true,
           sholatDhuha: false,
-          tahfidzProgress: '',
-          subjects: '',
-          homework: '',
-          behaviorNotes: '',
-          achievements: '',
-          teacherNotes: '',
+          tahfidzProgress: "",
+          subjects: "",
+          homework: "",
+          behaviorNotes: "",
+          achievements: "",
+          teacherNotes: "",
         });
       });
       setStudentReports(initial);
@@ -119,23 +134,27 @@ export default function HomeroomDailyReportPage() {
   const form = useForm<DailyReportFormData>({
     resolver: zodResolver(dailyReportSchema),
     defaultValues: {
-      classId: '',
+      classId: "",
       reportDate: new Date(),
     },
   });
 
-  const updateStudentReport = (studentId: string, field: keyof StudentReportData, value: any) => {
+  const updateStudentReport = (
+    studentId: string,
+    field: keyof StudentReportData,
+    value: any,
+  ) => {
     setStudentReports((prev) => {
       const updated = new Map(prev);
       const current = updated.get(studentId) || {
         present: true,
         sholatDhuha: false,
-        tahfidzProgress: '',
-        subjects: '',
-        homework: '',
-        behaviorNotes: '',
-        achievements: '',
-        teacherNotes: '',
+        tahfidzProgress: "",
+        subjects: "",
+        homework: "",
+        behaviorNotes: "",
+        achievements: "",
+        teacherNotes: "",
       };
       updated.set(studentId, { ...current, [field]: value });
       return updated;
@@ -144,7 +163,7 @@ export default function HomeroomDailyReportPage() {
 
   const handleSubmit = async () => {
     if (!selectedClassId) {
-      toast.error('Pilih kelas terlebih dahulu');
+      toast.error("Pilih kelas terlebih dahulu");
       return;
     }
 
@@ -155,10 +174,10 @@ export default function HomeroomDailyReportPage() {
         .map(([studentId, data]) => ({
           studentId,
           classId: selectedClassId,
-          reportDate: format(selectedDate, 'yyyy-MM-dd'),
-          unitId: user?.unitId || '',
-          academicYearId: user?.academicYearId || '',
-          attendanceStatus: 'PRESENT' as const,
+          reportDate: format(selectedDate, "yyyy-MM-dd"),
+          unitId: user?.unitId || "",
+          academicYearId: user?.academicYearId || "",
+          attendanceStatus: "PRESENT" as const,
           activitiesSummary: data.subjects,
           learningAchievements: data.achievements,
           behaviorNotes: data.behaviorNotes,
@@ -169,10 +188,10 @@ export default function HomeroomDailyReportPage() {
         }));
 
       await bulkCreateMutation.mutateAsync({
-        unitId: user?.unitId || '',
-        academicYearId: user?.academicYearId || '',
-        reportDate: format(selectedDate, 'yyyy-MM-dd'),
-        reports: reports.map(r => ({
+        unitId: user?.unitId || "",
+        academicYearId: user?.academicYearId || "",
+        reportDate: format(selectedDate, "yyyy-MM-dd"),
+        reports: reports.map((r) => ({
           studentId: r.studentId,
           attendanceStatus: r.attendanceStatus,
           activitiesSummary: r.activitiesSummary,
@@ -181,25 +200,29 @@ export default function HomeroomDailyReportPage() {
           surahPractice: r.surahPractice,
           parentNotes: r.parentNotes,
           homeworkSuggestion: r.homeworkSuggestion,
-          sholatDhuhaCompleted: r.sholatDhuhaCompleted
-        }))
+          sholatDhuhaCompleted: r.sholatDhuhaCompleted,
+        })),
       } as any);
       toast.success(`${reports.length} laporan harian berhasil dibuat`);
-      router.push('/homeroom');
+      router.push("/homeroom");
     } catch (error) {
-      toast.error('Gagal membuat laporan harian');
+      toast.error("Gagal membuat laporan harian");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   // Count statistics
-  const presentCount = Array.from(studentReports.values()).filter((r) => r.present).length;
+  const presentCount = Array.from(studentReports.values()).filter(
+    (r) => r.present,
+  ).length;
   const absentCount = students.length - presentCount;
-  const sholatCount = Array.from(studentReports.values()).filter((r) => r.sholatDhuha).length;
+  const sholatCount = Array.from(studentReports.values()).filter(
+    (r) => r.sholatDhuha,
+  ).length;
 
   return (
-    <MainLayout allowedRoles={['TEACHER', 'UNIT_ADMIN', 'SUPER_ADMIN']}>
+    <MainLayout allowedRoles={["TEACHER", "UNIT_ADMIN", "SUPER_ADMIN"]}>
       <div className="space-y-6">
         <PageHeader
           title="Laporan Harian Kelas"
@@ -234,9 +257,12 @@ export default function HomeroomDailyReportPage() {
             <label className="text-sm font-medium">Tanggal</label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="w-[200px] justify-start text-left font-normal">
+                <Button
+                  variant="outline"
+                  className="w-[200px] justify-start text-left font-normal"
+                >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {format(selectedDate, 'dd MMMM yyyy', { locale: idLocale })}
+                  {format(selectedDate, "dd MMMM yyyy", { locale: idLocale })}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -263,7 +289,9 @@ export default function HomeroomDailyReportPage() {
                     </div>
                     <div>
                       <p className="text-2xl font-bold">{students.length}</p>
-                      <p className="text-xs text-muted-foreground">Total Siswa</p>
+                      <p className="text-xs text-muted-foreground">
+                        Total Siswa
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -291,7 +319,9 @@ export default function HomeroomDailyReportPage() {
                     </div>
                     <div>
                       <p className="text-2xl font-bold">{absentCount}</p>
-                      <p className="text-xs text-muted-foreground">Tidak Hadir</p>
+                      <p className="text-xs text-muted-foreground">
+                        Tidak Hadir
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -305,7 +335,9 @@ export default function HomeroomDailyReportPage() {
                     </div>
                     <div>
                       <p className="text-2xl font-bold">{sholatCount}</p>
-                      <p className="text-xs text-muted-foreground">Sholat Dhuha</p>
+                      <p className="text-xs text-muted-foreground">
+                        Sholat Dhuha
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -317,7 +349,8 @@ export default function HomeroomDailyReportPage() {
               <CardHeader>
                 <CardTitle>Input Laporan per Siswa</CardTitle>
                 <CardDescription>
-                  Centang kehadiran dan isi informasi aktivitas masing-masing siswa
+                  Centang kehadiran dan isi informasi aktivitas masing-masing
+                  siswa
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -337,8 +370,10 @@ export default function HomeroomDailyReportPage() {
                         <Card
                           key={student.id}
                           className={cn(
-                            'transition-all',
-                            report?.present ? 'border-green-200' : 'border-red-200 bg-red-50/50'
+                            "transition-all",
+                            report?.present
+                              ? "border-green-200"
+                              : "border-red-200 bg-red-50/50",
                           )}
                         >
                           <CardContent className="py-4">
@@ -348,12 +383,18 @@ export default function HomeroomDailyReportPage() {
                                 <Checkbox
                                   checked={report?.present || false}
                                   onCheckedChange={(checked) =>
-                                    updateStudentReport(student.id, 'present', checked)
+                                    updateStudentReport(
+                                      student.id,
+                                      "present",
+                                      checked,
+                                    )
                                   }
                                 />
                                 <div>
                                   <p className="font-medium">{student.name}</p>
-                                  <p className="text-xs text-muted-foreground">{student.nis}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {student.nis}
+                                  </p>
                                 </div>
                               </div>
 
@@ -364,43 +405,64 @@ export default function HomeroomDailyReportPage() {
                                     <Checkbox
                                       checked={report?.sholatDhuha || false}
                                       onCheckedChange={(checked) =>
-                                        updateStudentReport(student.id, 'sholatDhuha', checked)
+                                        updateStudentReport(
+                                          student.id,
+                                          "sholatDhuha",
+                                          checked,
+                                        )
                                       }
                                     />
-                                    <span className="text-sm">Sholat Dhuha</span>
+                                    <span className="text-sm">
+                                      Sholat Dhuha
+                                    </span>
                                   </div>
 
                                   <Input
                                     placeholder="Tahfidz (surah/ayat)"
                                     className="h-8 text-sm"
-                                    value={report?.tahfidzProgress || ''}
+                                    value={report?.tahfidzProgress || ""}
                                     onChange={(e) =>
-                                      updateStudentReport(student.id, 'tahfidzProgress', e.target.value)
+                                      updateStudentReport(
+                                        student.id,
+                                        "tahfidzProgress",
+                                        e.target.value,
+                                      )
                                     }
                                   />
 
                                   <Input
                                     placeholder="PR hari ini"
                                     className="h-8 text-sm"
-                                    value={report?.homework || ''}
+                                    value={report?.homework || ""}
                                     onChange={(e) =>
-                                      updateStudentReport(student.id, 'homework', e.target.value)
+                                      updateStudentReport(
+                                        student.id,
+                                        "homework",
+                                        e.target.value,
+                                      )
                                     }
                                   />
 
                                   <Input
                                     placeholder="Catatan"
                                     className="h-8 text-sm"
-                                    value={report?.teacherNotes || ''}
+                                    value={report?.teacherNotes || ""}
                                     onChange={(e) =>
-                                      updateStudentReport(student.id, 'teacherNotes', e.target.value)
+                                      updateStudentReport(
+                                        student.id,
+                                        "teacherNotes",
+                                        e.target.value,
+                                      )
                                     }
                                   />
                                 </div>
                               )}
 
                               {!report?.present && (
-                                <Badge variant="destructive" className="ml-auto">
+                                <Badge
+                                  variant="destructive"
+                                  className="ml-auto"
+                                >
                                   Tidak Hadir
                                 </Badge>
                               )}
@@ -423,7 +485,10 @@ export default function HomeroomDailyReportPage() {
                 <Button variant="outline" onClick={() => router.back()}>
                   Batal
                 </Button>
-                <Button onClick={handleSubmit} disabled={isSubmitting || presentCount === 0}>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || presentCount === 0}
+                >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

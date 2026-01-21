@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // 1. Setup mocks inside vi.hoisted to allow access in mock factory
 const mocks = vi.hoisted(() => ({
@@ -63,7 +63,7 @@ vi.mock('@prisma/client', () => {
 });
 
 // 3. Mock the prisma lib instance to force usage of our mocked client
-vi.mock("../../../../../src/lib/prisma", async () => {
+vi.mock('../../../../../src/lib/prisma', async () => {
   const { PrismaClient } = await import('@prisma/client');
   return {
     prisma: new PrismaClient(),
@@ -73,32 +73,32 @@ vi.mock("../../../../../src/lib/prisma", async () => {
 import {
   createItem,
   getItems,
-  getInventoryStats
-} from "../../../../../src/modules/inventory/service";
-import { prisma } from "../../../../../src/lib/prisma";
-import { AssetStatus, AssetCondition } from "@cipansor/shared";
+  getInventoryStats,
+} from '../../../../../src/modules/inventory/service';
+import { prisma } from '../../../../../src/lib/prisma';
+import { AssetStatus, AssetCondition } from '@cipansor/shared';
 
-describe("Inventory Service", () => {
+describe('Inventory Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe("createItem", () => {
-    it("should create an item successfully", async () => {
+  describe('createItem', () => {
+    it('should create an item successfully', async () => {
       const input = {
-        unitId: "unit-123",
-        categoryId: "cat-123",
-        code: "ASSET-001",
-        name: "Laptop",
+        unitId: 'unit-123',
+        categoryId: 'cat-123',
+        code: 'ASSET-001',
+        name: 'Laptop',
         condition: AssetCondition.EXCELLENT,
         status: AssetStatus.ACTIVE,
       };
 
       const mockCreatedItem = {
-        id: "item-123",
+        id: 'item-123',
         ...input,
-        category: { id: "cat-123", name: "Electronics", code: "ELEC" },
-        unit: { id: "unit-123", name: "Main Unit" },
+        category: { id: 'cat-123', name: 'Electronics', code: 'ELEC' },
+        unit: { id: 'unit-123', name: 'Main Unit' },
       };
 
       mocks.create.mockResolvedValue(mockCreatedItem);
@@ -107,8 +107,8 @@ describe("Inventory Service", () => {
 
       expect(prisma.asset.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          code: "ASSET-001",
-          name: "Laptop",
+          code: 'ASSET-001',
+          name: 'Laptop',
         }),
         include: expect.any(Object),
       });
@@ -116,11 +116,11 @@ describe("Inventory Service", () => {
     });
   });
 
-  describe("getItems", () => {
-    it("should return paginated items", async () => {
+  describe('getItems', () => {
+    it('should return paginated items', async () => {
       const mockItems = [
-        { id: "1", name: "Item 1" },
-        { id: "2", name: "Item 2" },
+        { id: '1', name: 'Item 1' },
+        { id: '2', name: 'Item 2' },
       ];
       const mockTotal = 2;
 
@@ -134,14 +134,14 @@ describe("Inventory Service", () => {
     });
   });
 
-  describe("getInventoryStats", () => {
-    it("should return stats", async () => {
+  describe('getInventoryStats', () => {
+    it('should return stats', async () => {
       mocks.count.mockResolvedValue(100);
 
       mocks.groupBy
         .mockResolvedValueOnce([{ status: AssetStatus.ACTIVE, _count: 80 }]) // byStatus
         .mockResolvedValueOnce([{ condition: AssetCondition.GOOD, _count: 90 }]) // byCondition
-        .mockResolvedValueOnce([{ categoryId: "cat-1", _count: 50 }]); // byCategory
+        .mockResolvedValueOnce([{ categoryId: 'cat-1', _count: 50 }]); // byCategory
 
       mocks.maintenanceCount.mockResolvedValue(5);
 
@@ -150,7 +150,7 @@ describe("Inventory Service", () => {
 
       mocks.aggregate.mockResolvedValue({ _sum: { purchasePrice: mockDecimalValue } });
 
-      mocks.categoryFindMany.mockResolvedValue([{ id: "cat-1", name: "Electronics" }]);
+      mocks.categoryFindMany.mockResolvedValue([{ id: 'cat-1', name: 'Electronics' }]);
 
       const result = await getInventoryStats();
 

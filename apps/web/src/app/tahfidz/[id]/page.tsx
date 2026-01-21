@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
+import { useState } from "react";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   BookOpen,
@@ -16,20 +16,20 @@ import {
   Trash2,
   Loader2,
   FileText,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import {
   useTahfidzRecord,
   useDeleteTahfidz,
@@ -37,7 +37,7 @@ import {
   TAHFIDZ_GRADES,
   TahfidzType,
   TahfidzGrade,
-} from '@/hooks/use-tahfidz';
+} from "@/hooks/use-tahfidz";
 
 export default function TahfidzDetailPage() {
   const params = useParams();
@@ -51,10 +51,10 @@ export default function TahfidzDetailPage() {
   const handleDelete = async () => {
     try {
       await deleteTahfidz.mutateAsync(id);
-      toast.success('Catatan tahfidz berhasil dihapus');
-      router.push('/tahfidz');
+      toast.success("Catatan tahfidz berhasil dihapus");
+      router.push("/tahfidz");
     } catch {
-      toast.error('Gagal menghapus catatan');
+      toast.error("Gagal menghapus catatan");
     }
   };
 
@@ -65,14 +65,14 @@ export default function TahfidzDetailPage() {
   const getGradeBadge = (grade: TahfidzGrade) => {
     const gradeConfig = TAHFIDZ_GRADES.find((g) => g.value === grade);
     const colors: Record<string, string> = {
-      MUMTAZ: 'bg-green-100 text-green-800',
-      JAYYID_JIDDAN: 'bg-blue-100 text-blue-800',
-      JAYYID: 'bg-cyan-100 text-cyan-800',
-      MAQBUL: 'bg-yellow-100 text-yellow-800',
-      RASIB: 'bg-red-100 text-red-800',
+      MUMTAZ: "bg-green-100 text-green-800",
+      JAYYID_JIDDAN: "bg-blue-100 text-blue-800",
+      JAYYID: "bg-cyan-100 text-cyan-800",
+      MAQBUL: "bg-yellow-100 text-yellow-800",
+      RASIB: "bg-red-100 text-red-800",
     };
     return (
-      <Badge className={colors[grade] || ''}>
+      <Badge className={colors[grade] || ""}>
         {gradeConfig?.label || grade}
       </Badge>
     );
@@ -80,15 +80,11 @@ export default function TahfidzDetailPage() {
 
   const getTypeBadge = (type: TahfidzType) => {
     const colors: Record<string, string> = {
-      SETORAN: 'bg-green-100 text-green-800',
-      MURAJAAH: 'bg-blue-100 text-blue-800',
-      TASMI: 'bg-purple-100 text-purple-800',
+      SETORAN: "bg-green-100 text-green-800",
+      MURAJAAH: "bg-blue-100 text-blue-800",
+      TASMI: "bg-purple-100 text-purple-800",
     };
-    return (
-      <Badge className={colors[type] || ''}>
-        {getTypeLabel(type)}
-      </Badge>
-    );
+    return <Badge className={colors[type] || ""}>{getTypeLabel(type)}</Badge>;
   };
 
   if (isLoading) {
@@ -106,7 +102,9 @@ export default function TahfidzDetailPage() {
       <MainLayout>
         <div className="text-center py-12">
           <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-          <p className="text-muted-foreground">Catatan tahfidz tidak ditemukan</p>
+          <p className="text-muted-foreground">
+            Catatan tahfidz tidak ditemukan
+          </p>
           <Button variant="link" asChild>
             <Link href="/tahfidz">Kembali ke daftar</Link>
           </Button>
@@ -132,7 +130,9 @@ export default function TahfidzDetailPage() {
                 {getTypeBadge(record.activityType)}
               </div>
               <p className="text-muted-foreground">
-                {format(new Date(record.recordedAt), 'd MMMM yyyy', { locale: localeId })}
+                {format(new Date(record.recordedAt), "d MMMM yyyy", {
+                  locale: localeId,
+                })}
               </p>
             </div>
           </div>
@@ -166,14 +166,22 @@ export default function TahfidzDetailPage() {
                   <User className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="font-semibold text-lg">{(record.student as any)?.user?.name || (record.student as any)?.name || '-'}</p>
-                  <p className="text-sm text-muted-foreground">NIS: {record.student?.nis || '-'}</p>
+                  <p className="font-semibold text-lg">
+                    {(record.student as any)?.user?.name ||
+                      (record.student as any)?.name ||
+                      "-"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    NIS: {record.student?.nis || "-"}
+                  </p>
                 </div>
               </div>
               {(record.student as any)?.class && (
                 <div className="text-sm">
-                  <span className="text-muted-foreground">Kelas:</span>{' '}
-                  <span className="font-medium">{(record.student as any).class.name}</span>
+                  <span className="text-muted-foreground">Kelas:</span>{" "}
+                  <span className="font-medium">
+                    {(record.student as any).class.name}
+                  </span>
                 </div>
               )}
               <Button variant="outline" size="sm" asChild>
@@ -208,14 +216,16 @@ export default function TahfidzDetailPage() {
               <Separator />
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Jumlah Ayat</p>
+                  <p className="text-sm text-muted-foreground mb-1">
+                    Jumlah Ayat
+                  </p>
                   <p className="font-semibold">
                     {record.ayahEnd - record.ayahStart + 1} ayat
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Juz</p>
-                  <p className="font-semibold">{record.juz || '-'}</p>
+                  <p className="font-semibold">{record.juz || "-"}</p>
                 </div>
               </div>
             </CardContent>
@@ -236,12 +246,18 @@ export default function TahfidzDetailPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Nilai</span>
-                {record.score !== undefined ? <Badge variant="secondary">{record.score}</Badge> : (record.grade ? getGradeBadge(record.grade as TahfidzGrade) : '-')}
+                {record.score !== undefined ? (
+                  <Badge variant="secondary">{record.score}</Badge>
+                ) : record.grade ? (
+                  getGradeBadge(record.grade as TahfidzGrade)
+                ) : (
+                  "-"
+                )}
               </div>
               <Separator />
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Pembimbing</p>
-                <p className="font-medium">{record.recordedBy?.name || '-'}</p>
+                <p className="font-medium">{record.recordedBy?.name || "-"}</p>
               </div>
             </CardContent>
           </Card>
@@ -258,22 +274,30 @@ export default function TahfidzDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Tanggal</p>
                 <p className="font-medium">
-                  {format(new Date(record.recordedAt), 'EEEE, d MMMM yyyy', { locale: localeId })}
+                  {format(new Date(record.recordedAt), "EEEE, d MMMM yyyy", {
+                    locale: localeId,
+                  })}
                 </p>
               </div>
               {record.createdAt && (
                 <div>
                   <p className="text-sm text-muted-foreground">Dibuat</p>
                   <p className="text-sm">
-                    {format(new Date(record.createdAt), 'd MMMM yyyy, HH:mm', { locale: localeId })}
+                    {format(new Date(record.createdAt), "d MMMM yyyy, HH:mm", {
+                      locale: localeId,
+                    })}
                   </p>
                 </div>
               )}
               {record.updatedAt && (
                 <div>
-                  <p className="text-sm text-muted-foreground">Terakhir Diperbarui</p>
+                  <p className="text-sm text-muted-foreground">
+                    Terakhir Diperbarui
+                  </p>
                   <p className="text-sm">
-                    {format(new Date(record.updatedAt), 'd MMMM yyyy, HH:mm', { locale: localeId })}
+                    {format(new Date(record.updatedAt), "d MMMM yyyy, HH:mm", {
+                      locale: localeId,
+                    })}
                   </p>
                 </div>
               )}

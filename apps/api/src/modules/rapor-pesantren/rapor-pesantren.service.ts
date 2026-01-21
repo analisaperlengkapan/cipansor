@@ -56,9 +56,7 @@ export async function getRaporConfig(unitId: string): Promise<RaporConfig> {
 
   if (setting?.value) {
     try {
-      const parsed = typeof setting.value === 'string' 
-        ? JSON.parse(setting.value) 
-        : setting.value;
+      const parsed = typeof setting.value === 'string' ? JSON.parse(setting.value) : setting.value;
       return { unitId, ...parsed };
     } catch {
       // Fall back to default
@@ -70,7 +68,7 @@ export async function getRaporConfig(unitId: string): Promise<RaporConfig> {
 
 export async function saveRaporConfig(config: RaporConfig): Promise<RaporConfig> {
   const { unitId, ...configData } = config;
-  
+
   await prisma.setting.upsert({
     where: {
       unitId_key: {
@@ -132,12 +130,8 @@ function formatStudentInfo(student: NonNullable<StudentWithRelations>) {
     gender: student.gender,
     birthDate: student.birthDate?.toISOString(),
     photo: student.photoUrl || undefined,
-    class: currentClass 
-      ? { id: currentClass.id, name: currentClass.name }
-      : { id: '', name: '-' },
-    dormRoom: dormRoom 
-      ? { id: dormRoom.id, name: dormRoom.name }
-      : undefined,
+    class: currentClass ? { id: currentClass.id, name: currentClass.name } : { id: '', name: '-' },
+    dormRoom: dormRoom ? { id: dormRoom.id, name: dormRoom.name } : undefined,
   };
 }
 
@@ -162,19 +156,20 @@ async function getTahfidzSummary(
     orderBy: { recordedAt: 'desc' },
   });
 
-  const ziyadahRecords = records.filter(r => r.activityType === 'ZIYADAH');
-  const murojaahRecords = records.filter(r => r.activityType === 'MUROJAAH');
-  const tasmiRecords = records.filter(r => r.activityType === 'TASMI');
+  const ziyadahRecords = records.filter((r) => r.activityType === 'ZIYADAH');
+  const murojaahRecords = records.filter((r) => r.activityType === 'MUROJAAH');
+  const tasmiRecords = records.filter((r) => r.activityType === 'TASMI');
 
   const totalAyah = ziyadahRecords.reduce((sum, r) => sum + r.totalAyah, 0);
-  const uniqueSurah = [...new Set(records.map(r => r.surahName))];
-  const uniqueJuz = [...new Set(records.map(r => r.juz))];
+  const uniqueSurah = [...new Set(records.map((r) => r.surahName))];
+  const uniqueJuz = [...new Set(records.map((r) => r.juz))];
 
   // Calculate average score from assessment records
-  const assessmentRecords = records.filter(r => r.score !== null);
-  const averageScore = assessmentRecords.length > 0
-    ? assessmentRecords.reduce((sum, r) => sum + (r.score || 0), 0) / assessmentRecords.length
-    : 70; // Default score if no assessments
+  const assessmentRecords = records.filter((r) => r.score !== null);
+  const averageScore =
+    assessmentRecords.length > 0
+      ? assessmentRecords.reduce((sum, r) => sum + (r.score || 0), 0) / assessmentRecords.length
+      : 70; // Default score if no assessments
 
   // Calculate progress percentage (assuming 6236 total ayah in Quran)
   const progressPercentage = Math.min((totalAyah / 6236) * 100, 100);
@@ -195,7 +190,7 @@ async function getTahfidzSummary(
     progressPercentage,
     grade,
     score,
-    records: records.slice(0, 10).map(r => ({
+    records: records.slice(0, 10).map((r) => ({
       date: r.recordedAt.toISOString(),
       surah: r.surahName,
       juz: r.juz,
@@ -230,17 +225,24 @@ async function getIbadahSummary(
 
   const totalPoints = records.reduce((sum, r) => sum + r.pointsEarned, 0);
   const bonusPoints = records.reduce((sum, r) => sum + r.bonusEarned, 0);
-  const completedRecords = records.filter(r => r.isCompleted);
+  const completedRecords = records.filter((r) => r.isCompleted);
   const completionRate = records.length > 0 ? (completedRecords.length / records.length) * 100 : 0;
 
   // Calculate streak
-  const sortedDates = [...new Set(records.filter(r => r.isCompleted).map(r => r.date.toISOString().split('T')[0]))].sort().reverse();
+  const sortedDates = [
+    ...new Set(records.filter((r) => r.isCompleted).map((r) => r.date.toISOString().split('T')[0])),
+  ]
+    .sort()
+    .reverse();
   let currentStreak = 0;
   let longestStreak = 0;
   let tempStreak = 0;
-  
+
   for (let i = 0; i < sortedDates.length; i++) {
-    if (i === 0 || new Date(sortedDates[i-1]).getTime() - new Date(sortedDates[i]).getTime() === 86400000) {
+    if (
+      i === 0 ||
+      new Date(sortedDates[i - 1]).getTime() - new Date(sortedDates[i]).getTime() === 86400000
+    ) {
       tempStreak++;
       if (i === 0) currentStreak = tempStreak;
     } else {
@@ -251,7 +253,7 @@ async function getIbadahSummary(
 
   // Category breakdown
   const categoryMap = new Map<string, { points: number; completed: number; total: number }>();
-  records.forEach(r => {
+  records.forEach((r) => {
     const cat = r.target?.category || 'OTHER';
     const current = categoryMap.get(cat) || { points: 0, completed: 0, total: 0 };
     categoryMap.set(cat, {
@@ -303,15 +305,16 @@ async function getMuhadhorohSummary(
     orderBy: { scheduledAt: 'desc' },
   });
 
-  const completedRecords = records.filter(r => r.status === 'COMPLETED');
+  const completedRecords = records.filter((r) => r.status === 'COMPLETED');
   const totalSessions = records.length;
   const attendedSessions = completedRecords.length;
-  
-  const averageScore = completedRecords.length > 0
-    ? completedRecords.reduce((sum, r) => sum + (r.totalScore || 0), 0) / completedRecords.length
-    : 0;
-  
-  const themes = [...new Set(records.map(r => r.topic).filter(Boolean))] as string[];
+
+  const averageScore =
+    completedRecords.length > 0
+      ? completedRecords.reduce((sum, r) => sum + (r.totalScore || 0), 0) / completedRecords.length
+      : 0;
+
+  const themes = [...new Set(records.map((r) => r.topic).filter(Boolean))] as string[];
 
   const score = averageScore || 70; // Default if no records
   const grade = getGradeFromScore(score, config.gradeThresholds);
@@ -324,7 +327,7 @@ async function getMuhadhorohSummary(
     themes: themes.slice(0, 5),
     grade,
     score,
-    performances: completedRecords.slice(0, 10).map(r => ({
+    performances: completedRecords.slice(0, 10).map((r) => ({
       date: r.scheduledAt.toISOString(),
       theme: r.topic || '-',
       score: r.totalScore || 0,
@@ -354,15 +357,16 @@ async function getMuhadatsahSummary(
     orderBy: { scheduledAt: 'desc' },
   });
 
-  const completedRecords = records.filter(r => r.status === 'COMPLETED');
+  const completedRecords = records.filter((r) => r.status === 'COMPLETED');
   const totalSessions = records.length;
   const attendedSessions = completedRecords.length;
-  
-  const averageScore = completedRecords.length > 0
-    ? completedRecords.reduce((sum, r) => sum + (r.totalScore || 0), 0) / completedRecords.length
-    : 0;
-  
-  const languages = [...new Set(records.map(r => r.language).filter(Boolean))] as string[];
+
+  const averageScore =
+    completedRecords.length > 0
+      ? completedRecords.reduce((sum, r) => sum + (r.totalScore || 0), 0) / completedRecords.length
+      : 0;
+
+  const languages = [...new Set(records.map((r) => r.language).filter(Boolean))] as string[];
 
   const score = averageScore || 70; // Default if no records
   const grade = getGradeFromScore(score, config.gradeThresholds);
@@ -375,7 +379,7 @@ async function getMuhadatsahSummary(
     languages: languages.slice(0, 5),
     grade,
     score,
-    practices: completedRecords.slice(0, 10).map(r => ({
+    practices: completedRecords.slice(0, 10).map((r) => ({
       date: r.scheduledAt.toISOString(),
       language: r.language || '-',
       topic: r.topic || '-',
@@ -409,8 +413,10 @@ async function getKitabProgressSummary(
   });
 
   const totalKitab = progress.length;
-  const completedKitab = progress.filter(p => p.completedAt !== null).length;
-  const inProgressKitab = progress.filter(p => p.completedAt === null && p.currentPage > 0).length;
+  const completedKitab = progress.filter((p) => p.completedAt !== null).length;
+  const inProgressKitab = progress.filter(
+    (p) => p.completedAt === null && p.currentPage > 0
+  ).length;
 
   const totalPages = progress.reduce((sum, p) => sum + (p.kitab.totalPages || 0), 0);
   const readPages = progress.reduce((sum, p) => sum + (p.currentPage || 0), 0);
@@ -424,11 +430,13 @@ async function getKitabProgressSummary(
     MAQBUL: 65,
     RASIB: 50,
   };
-  
-  const gradedProgress = progress.filter(p => p.grade);
-  const averageGradeScore = gradedProgress.length > 0
-    ? gradedProgress.reduce((sum, p) => sum + (gradeToScore[p.grade || ''] || 0), 0) / gradedProgress.length
-    : progressPercentage || 70;
+
+  const gradedProgress = progress.filter((p) => p.grade);
+  const averageGradeScore =
+    gradedProgress.length > 0
+      ? gradedProgress.reduce((sum, p) => sum + (gradeToScore[p.grade || ''] || 0), 0) /
+        gradedProgress.length
+      : progressPercentage || 70;
 
   const score = averageGradeScore;
   const grade = getGradeFromScore(score, config.gradeThresholds);
@@ -442,7 +450,7 @@ async function getKitabProgressSummary(
     progressPercentage,
     grade,
     score,
-    kitabList: progress.map(p => ({
+    kitabList: progress.map((p) => ({
       name: p.kitab.title,
       category: p.kitab.category || '-',
       totalPages: p.kitab.totalPages || 0,
@@ -494,7 +502,7 @@ async function getAkhlakSummary(
 
   // Calculate behavior score (start from 100, subtract violation points, add reward points)
   const baseScore = 100;
-  const score = Math.max(0, Math.min(100, baseScore - violationPoints + (rewardPoints * 0.5)));
+  const score = Math.max(0, Math.min(100, baseScore - violationPoints + rewardPoints * 0.5));
   const grade = getGradeFromScore(score, config.gradeThresholds);
 
   let behaviorGrade = 'BAIK';
@@ -511,13 +519,13 @@ async function getAkhlakSummary(
     behaviorGrade,
     grade,
     score,
-    violations: violations.slice(0, 10).map(v => ({
+    violations: violations.slice(0, 10).map((v) => ({
       date: v.occurredAt.toISOString(),
       category: v.category,
       description: v.description || '-',
       points: v.points || 0,
     })),
-    rewards: rewards.slice(0, 10).map(r => ({
+    rewards: rewards.slice(0, 10).map((r) => ({
       date: r.givenAt.toISOString(),
       category: r.category,
       description: r.description || '-',
@@ -560,11 +568,11 @@ async function getAttendanceSummary(
   });
 
   const totalDays = attendances.length;
-  const presentDays = attendances.filter(a => a.status === 'PRESENT').length;
-  const absentDays = attendances.filter(a => a.status === 'ABSENT').length;
-  const sickDays = attendances.filter(a => a.status === 'SICK').length;
-  const permitDays = attendances.filter(a => a.status === 'EXCUSED').length;
-  const lateDays = attendances.filter(a => a.status === 'LATE').length;
+  const presentDays = attendances.filter((a) => a.status === 'PRESENT').length;
+  const absentDays = attendances.filter((a) => a.status === 'ABSENT').length;
+  const sickDays = attendances.filter((a) => a.status === 'SICK').length;
+  const permitDays = attendances.filter((a) => a.status === 'EXCUSED').length;
+  const lateDays = attendances.filter((a) => a.status === 'LATE').length;
 
   const attendanceRate = totalDays > 0 ? ((presentDays + lateDays) / totalDays) * 100 : 100;
   const grade = getGradeFromScore(attendanceRate, config.gradeThresholds);
@@ -616,25 +624,26 @@ export async function generateRaporPesantren(query: GetRaporQuery): Promise<Rapo
   const config = await getRaporConfig(unitId || student.unitId);
 
   // Generate all summaries in parallel
-  const [tahfidz, ibadah, muhadhoroh, muhadatsah, kitabProgress, akhlak, attendance] = await Promise.all([
-    getTahfidzSummary(studentId, startDate, endDate, config),
-    getIbadahSummary(studentId, startDate, endDate, config),
-    getMuhadhorohSummary(studentId, startDate, endDate, config),
-    getMuhadatsahSummary(studentId, startDate, endDate, config),
-    getKitabProgressSummary(studentId, startDate, endDate, config),
-    getAkhlakSummary(studentId, startDate, endDate, config),
-    getAttendanceSummary(studentId, startDate, endDate, config),
-  ]);
+  const [tahfidz, ibadah, muhadhoroh, muhadatsah, kitabProgress, akhlak, attendance] =
+    await Promise.all([
+      getTahfidzSummary(studentId, startDate, endDate, config),
+      getIbadahSummary(studentId, startDate, endDate, config),
+      getMuhadhorohSummary(studentId, startDate, endDate, config),
+      getMuhadatsahSummary(studentId, startDate, endDate, config),
+      getKitabProgressSummary(studentId, startDate, endDate, config),
+      getAkhlakSummary(studentId, startDate, endDate, config),
+      getAttendanceSummary(studentId, startDate, endDate, config),
+    ]);
 
   // Calculate overall score
   const weights = config.componentWeights;
-  const overallScore = 
-    (tahfidz.score * weights.tahfidz / 100) +
-    (ibadah.score * weights.ibadah / 100) +
-    (muhadhoroh.score * weights.muhadhoroh / 100) +
-    (muhadatsah.score * weights.muhadatsah / 100) +
-    (kitabProgress.score * weights.kitabProgress / 100) +
-    (akhlak.score * weights.akhlak / 100);
+  const overallScore =
+    (tahfidz.score * weights.tahfidz) / 100 +
+    (ibadah.score * weights.ibadah) / 100 +
+    (muhadhoroh.score * weights.muhadhoroh) / 100 +
+    (muhadatsah.score * weights.muhadatsah) / 100 +
+    (kitabProgress.score * weights.kitabProgress) / 100 +
+    (akhlak.score * weights.akhlak) / 100;
 
   const overallGrade = getGradeFromScore(overallScore, config.gradeThresholds);
 
@@ -732,7 +741,7 @@ export async function listRaporPesantren(query: ListRaporQuery) {
       where: { classId, status: 'active' },
       select: { studentId: true },
     });
-    studentIds = enrollments.map(e => e.studentId);
+    studentIds = enrollments.map((e) => e.studentId);
     where.studentId = { in: studentIds };
   }
 
@@ -854,18 +863,18 @@ export async function generateBatchRaporPesantren(input: GenerateBatchRaporInput
       where: { classId, status: 'active' },
       select: { studentId: true },
     });
-    studentIdsToProcess = enrollments.map(e => e.studentId);
+    studentIdsToProcess = enrollments.map((e) => e.studentId);
   } else {
     const students = await prisma.student.findMany({
       where: { unitId, status: 'active' },
       select: { id: true },
     });
-    studentIdsToProcess = students.map(s => s.id);
+    studentIdsToProcess = students.map((s) => s.id);
   }
 
   // Generate rapor for each student
   const results = await Promise.allSettled(
-    studentIdsToProcess.map(studentId =>
+    studentIdsToProcess.map((studentId) =>
       generateRaporPesantren({
         studentId,
         academicYearId,
@@ -875,8 +884,8 @@ export async function generateBatchRaporPesantren(input: GenerateBatchRaporInput
     )
   );
 
-  const success = results.filter(r => r.status === 'fulfilled').length;
-  const failed = results.filter(r => r.status === 'rejected').length;
+  const success = results.filter((r) => r.status === 'fulfilled').length;
+  const failed = results.filter((r) => r.status === 'rejected').length;
 
   return { total: studentIdsToProcess.length, success, failed };
 }
@@ -937,12 +946,10 @@ export async function getRaporPesantrenById(id: string): Promise<RaporPesantren 
       gender: rapor.student.gender,
       birthDate: rapor.student.birthDate?.toISOString(),
       photo: rapor.student.photoUrl || undefined,
-      class: currentClass 
+      class: currentClass
         ? { id: currentClass.id, name: currentClass.name }
         : { id: '', name: '-' },
-      dormRoom: dormRoom 
-        ? { id: dormRoom.id, name: dormRoom.name }
-        : undefined,
+      dormRoom: dormRoom ? { id: dormRoom.id, name: dormRoom.name } : undefined,
     },
     academicYear: {
       id: rapor.academicYear.id,
@@ -1003,7 +1010,7 @@ export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem
     return [];
   }
 
-  const studentIds = enrollments.map(e => e.studentId);
+  const studentIds = enrollments.map((e) => e.studentId);
 
   // 2. Get all rapors for these students
   const rapors = await prisma.raporPesantren.findMany({
@@ -1015,7 +1022,7 @@ export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem
   });
 
   // 3. Map to LegerItem
-  const raporMap = new Map(rapors.map(r => [r.studentId, r]));
+  const raporMap = new Map(rapors.map((r) => [r.studentId, r]));
 
   // Helper to safely extract score/grade from JSON
   const getComponent = (data: unknown) => {
@@ -1037,14 +1044,22 @@ export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem
         studentId: student.id,
         studentName: student.user.name,
         studentNis: student.nis,
-        tahfidzScore: 0, tahfidzGrade: '-',
-        ibadahScore: 0, ibadahGrade: '-',
-        muhadhorohScore: 0, muhadhorohGrade: '-',
-        muhadatsahScore: 0, muhadatsahGrade: '-',
-        kitabScore: 0, kitabGrade: '-',
-        akhlakScore: 0, akhlakGrade: '-',
-        attendanceScore: 0, attendanceGrade: '-',
-        overallScore: 0, overallGrade: '-',
+        tahfidzScore: 0,
+        tahfidzGrade: '-',
+        ibadahScore: 0,
+        ibadahGrade: '-',
+        muhadhorohScore: 0,
+        muhadhorohGrade: '-',
+        muhadatsahScore: 0,
+        muhadatsahGrade: '-',
+        kitabScore: 0,
+        kitabGrade: '-',
+        akhlakScore: 0,
+        akhlakGrade: '-',
+        attendanceScore: 0,
+        attendanceGrade: '-',
+        overallScore: 0,
+        overallGrade: '-',
       };
     }
 
@@ -1106,9 +1121,9 @@ export async function getLegerPesantren(query: GetLegerQuery): Promise<LegerItem
   // So modifying `item.rank` in `sortedByScore` SHOULD update the objects.
   // But to be safe and explicit, let's map back.
 
-  const rankMap = new Map(sortedByScore.map(item => [item.id, item.rank]));
+  const rankMap = new Map(sortedByScore.map((item) => [item.id, item.rank]));
 
-  return leger.map(item => ({
+  return leger.map((item) => ({
     ...item,
     rank: rankMap.get(item.id),
   }));

@@ -1,21 +1,37 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
 
 // Enums
 export const SIMAAN_TYPES = [
-  { value: 'BIN_NAZHR', label: 'Bin Nazhr (Melihat Mushaf)' },
-  { value: 'BIL_GHAIB', label: 'Bil Ghaib (Hafalan)' },
-  { value: 'TAHDIR', label: 'Tahdir (Persiapan)' },
-  { value: 'TASMI', label: 'Tasmi (Setoran)' },
-  { value: 'KHATAM', label: 'Khatam 30 Juz' },
+  { value: "BIN_NAZHR", label: "Bin Nazhr (Melihat Mushaf)" },
+  { value: "BIL_GHAIB", label: "Bil Ghaib (Hafalan)" },
+  { value: "TAHDIR", label: "Tahdir (Persiapan)" },
+  { value: "TASMI", label: "Tasmi (Setoran)" },
+  { value: "KHATAM", label: "Khatam 30 Juz" },
 ] as const;
 
 export const SIMAAN_GRADES = [
-  { value: 'MUMTAZ', label: 'Mumtaz (Istimewa)', color: 'bg-green-100 text-green-800' },
-  { value: 'JAYYID_JIDDAN', label: 'Jayyid Jiddan (Sangat Baik)', color: 'bg-blue-100 text-blue-800' },
-  { value: 'JAYYID', label: 'Jayyid (Baik)', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'MAQBUL', label: 'Maqbul (Cukup)', color: 'bg-orange-100 text-orange-800' },
-  { value: 'RASIB', label: 'Rasib (Kurang)', color: 'bg-red-100 text-red-800' },
+  {
+    value: "MUMTAZ",
+    label: "Mumtaz (Istimewa)",
+    color: "bg-green-100 text-green-800",
+  },
+  {
+    value: "JAYYID_JIDDAN",
+    label: "Jayyid Jiddan (Sangat Baik)",
+    color: "bg-blue-100 text-blue-800",
+  },
+  {
+    value: "JAYYID",
+    label: "Jayyid (Baik)",
+    color: "bg-yellow-100 text-yellow-800",
+  },
+  {
+    value: "MAQBUL",
+    label: "Maqbul (Cukup)",
+    color: "bg-orange-100 text-orange-800",
+  },
+  { value: "RASIB", label: "Rasib (Kurang)", color: "bg-red-100 text-red-800" },
 ] as const;
 
 // Types matching Backend Schema
@@ -40,7 +56,7 @@ export interface SimaanExam {
   studentId: string;
   enrollmentId?: string;
   halaqohId?: string;
-  simaanType: 'JUZ_AMMA' | 'ONE_JUZ' | 'FIVE_JUZ' | 'TEN_JUZ' | 'FULL_QURAN';
+  simaanType: "JUZ_AMMA" | "ONE_JUZ" | "FIVE_JUZ" | "TEN_JUZ" | "FULL_QURAN";
   examDate: string; // ISO Date
   sessionNumber: number;
   totalSessions: number;
@@ -50,7 +66,7 @@ export interface SimaanExam {
   tajwidScore?: number;
   fashohaScore?: number;
   tartilScore?: number;
-  grade?: 'MUMTAZ' | 'JAYYID_JIDDAN' | 'JAYYID' | 'MAQBUL' | 'RASIB';
+  grade?: "MUMTAZ" | "JAYYID_JIDDAN" | "JAYYID" | "MAQBUL" | "RASIB";
   passed: boolean;
   notes?: string;
   recommendations?: string;
@@ -105,7 +121,9 @@ export interface CreateSimaanData {
   examinerIds: string[];
 }
 
-export type UpdateSimaanData = Partial<Omit<CreateSimaanData, 'studentId' | 'examinerIds'>>;
+export type UpdateSimaanData = Partial<
+  Omit<CreateSimaanData, "studentId" | "examinerIds">
+>;
 
 export interface SubmitScoresData {
   overallScore: number;
@@ -120,12 +138,12 @@ export interface SubmitScoresData {
 
 // Query Keys
 export const simaanKeys = {
-  all: ['simaan'] as const,
-  lists: () => [...simaanKeys.all, 'list'] as const,
+  all: ["simaan"] as const,
+  lists: () => [...simaanKeys.all, "list"] as const,
   list: (filters: SimaanFilters) => [...simaanKeys.lists(), filters] as const,
-  details: () => [...simaanKeys.all, 'detail'] as const,
+  details: () => [...simaanKeys.all, "detail"] as const,
   detail: (id: string) => [...simaanKeys.details(), id] as const,
-  upcoming: () => [...simaanKeys.all, 'upcoming'] as const,
+  upcoming: () => [...simaanKeys.all, "upcoming"] as const,
 };
 
 // Hooks
@@ -136,7 +154,7 @@ export function useSimaanExams(filters: SimaanFilters = {}) {
     queryFn: async () => {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
+        if (value !== undefined && value !== null && value !== "") {
           params.append(key, String(value));
         }
       });
@@ -162,7 +180,7 @@ export function useCreateSimaan() {
 
   return useMutation({
     mutationFn: async (data: CreateSimaanData) => {
-      const response = await apiClient.post('/simaan', data);
+      const response = await apiClient.post("/simaan", data);
       return response.data;
     },
     onSuccess: () => {
@@ -175,7 +193,13 @@ export function useUpdateSimaan() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateSimaanData }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdateSimaanData;
+    }) => {
       const response = await apiClient.put(`/simaan/${id}`, data);
       return response.data;
     },
@@ -204,7 +228,13 @@ export function useSubmitSimaanScores() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: SubmitScoresData }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: SubmitScoresData;
+    }) => {
       const response = await apiClient.put(`/simaan/${id}/grade`, data);
       return response.data;
     },

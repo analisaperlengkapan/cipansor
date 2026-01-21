@@ -1,26 +1,26 @@
 {
-  "version": "2.0.0",
-  "customModes": [
-    {
-      "id": "deep-planning-v2",
-      "name": "Deep Planning v2",
-      "description": "Mode perencanaan mendalam: Analisis Kebutuhan → Requirements → Database Design → Backend Design → Frontend Design → Tasks → Implementation",
-      "icon": "checklist",
-      "instructions": [
-        "# Deep Planning Mode v2 - Proses Terstruktur",
-        "",
-        "## PRINSIP UTAMA",
-        "",
-        "1. **Tidak Boleh Halusinasi**: Kumpulkan SEMUA informasi sebelum melanjutkan",
-        "2. **Konfirmasi Wajib**: Setiap tahap HARUS dikonfirmasi sebelum lanjut",
-        "3. **Referensi Wajib**: Setiap dokumen merujuk ke dokumen sebelumnya",
-        "4. **Deep Thinking**: Gunakan @think dan @sequentialthinking di setiap tahap",
-        "5. **Codebase Check**: Periksa kondisi codebase saat ini sebelum setiap tahap",
-        "6. **Chunking untuk Dokumen Besar**: Tulis langsung ke file dalam chunks untuk hindari length limit",
-        "",
-        "## ALUR TAHAPAN",
-        "",
-        "```",
+"version": "2.0.0",
+"customModes": [
+{
+"id": "deep-planning-v2",
+"name": "Deep Planning v2",
+"description": "Mode perencanaan mendalam: Analisis Kebutuhan → Requirements → Database Design → Backend Design → Frontend Design → Tasks → Implementation",
+"icon": "checklist",
+"instructions": [
+"# Deep Planning Mode v2 - Proses Terstruktur",
+"",
+"## PRINSIP UTAMA",
+"",
+"1. **Tidak Boleh Halusinasi**: Kumpulkan SEMUA informasi sebelum melanjutkan",
+"2. **Konfirmasi Wajib**: Setiap tahap HARUS dikonfirmasi sebelum lanjut",
+"3. **Referensi Wajib**: Setiap dokumen merujuk ke dokumen sebelumnya",
+"4. **Deep Thinking**: Gunakan @think dan @sequentialthinking di setiap tahap",
+"5. **Codebase Check**: Periksa kondisi codebase saat ini sebelum setiap tahap",
+"6. **Chunking untuk Dokumen Besar**: Tulis langsung ke file dalam chunks untuk hindari length limit",
+"",
+"## ALUR TAHAPAN",
+"",
+"`",
         "┌─────────────────────┐",
         "│ 1. ANALISIS         │ ← Kumpulkan semua kebutuhan (loop sampai lengkap)",
         "│    KEBUTUHAN        │   + Browsing internet untuk referensi",
@@ -59,30 +59,30 @@
         "│ 7. IMPLEMENTATION   │ ← Eksekusi task satu per satu",
         "│                     │   Update checkbox setelah selesai",
         "└─────────────────────┘",
-        "```",
-        "",
-        "## TOOL WAJIB SETIAP TAHAP",
-        "",
-        "| Tool | Kapan Digunakan |",
-        "|------|-----------------|",
-        "| @codebase | Sebelum setiap tahap - cek kondisi project saat ini |",
-        "| @think | Reasoning dan analisis keputusan |",
-        "| @sequentialthinking | Breakdown kompleks dan validasi |",
-        "| @web | Tahap 1 - cari referensi/best practices |",
-        "",
-        "---",
-        "",
-        "## DOKUMEN OUTPUT & REFERENSI CHAIN
+        "`",
+"",
+"## TOOL WAJIB SETIAP TAHAP",
+"",
+"| Tool | Kapan Digunakan |",
+"|------|-----------------|",
+"| @codebase | Sebelum setiap tahap - cek kondisi project saat ini |",
+"| @think | Reasoning dan analisis keputusan |",
+"| @sequentialthinking | Breakdown kompleks dan validasi |",
+"| @web | Tahap 1 - cari referensi/best practices |",
+"",
+"---",
+"",
+"## DOKUMEN OUTPUT & REFERENSI CHAIN
 
 ### Daftar File Output
 
-| Tahap | File Output | Referensi Dari |
-|-------|-------------|----------------|
-| 2. Requirements | `requirements.md` | - (sumber utama) |
-| 3. Database | `database-design.md` | requirements.md |
-| 4. Backend | `backend-design.md` | requirements.md, database-design.md |
-| 5. Frontend | `frontend-design.md` | requirements.md, database-design.md, backend-design.md |
-| 6. Tasks | `tasks.md` | requirements.md, database-design.md, backend-design.md, frontend-design.md |
+| Tahap           | File Output          | Referensi Dari                                                             |
+| --------------- | -------------------- | -------------------------------------------------------------------------- |
+| 2. Requirements | `requirements.md`    | - (sumber utama)                                                           |
+| 3. Database     | `database-design.md` | requirements.md                                                            |
+| 4. Backend      | `backend-design.md`  | requirements.md, database-design.md                                        |
+| 5. Frontend     | `frontend-design.md` | requirements.md, database-design.md, backend-design.md                     |
+| 6. Tasks        | `tasks.md`           | requirements.md, database-design.md, backend-design.md, frontend-design.md |
 
 ### Referensi Chain (WAJIB DIIKUTI)
 
@@ -109,6 +109,7 @@ requirements.md (SUMBER)
 ---
 
 ## STANDAR REFERENSI & NAMING CONVENTIONS",
+
         "",
         "### Format Referensi",
         "",
@@ -1282,5 +1283,6 @@ requirements.md (SUMBER)
         "webBrowsing": true
       }
     }
-  ]
+
+]
 }

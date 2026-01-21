@@ -63,7 +63,7 @@ router.get('/components', async (req: Request, res: Response, next: NextFunction
 router.get('/components/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const component = await salaryComponentService.getById(req.params.id);
-    
+
     if (!component) {
       return res.status(404).json({
         success: false,
@@ -91,7 +91,7 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const component = await salaryComponentService.create(req.body);
-      
+
       res.status(201).json({
         success: true,
         message: 'Komponen gaji berhasil dibuat',
@@ -114,7 +114,7 @@ router.put(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const component = await salaryComponentService.update(req.params.id, req.body);
-      
+
       res.json({
         success: true,
         message: 'Komponen gaji berhasil diperbarui',
@@ -136,7 +136,7 @@ router.delete(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       await salaryComponentService.delete(req.params.id);
-      
+
       res.json({
         success: true,
         message: 'Komponen gaji berhasil dihapus',
@@ -157,7 +157,7 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const result = await salaryComponentService.seedDefaults();
-      
+
       res.json({
         success: true,
         message: 'Komponen gaji default berhasil dibuat',
@@ -204,7 +204,7 @@ router.get('/salaries', async (req: Request, res: Response, next: NextFunction) 
 router.get('/salaries/:staffId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const salary = await employeeSalaryService.getByStaffId(req.params.staffId);
-    
+
     if (!salary) {
       return res.status(404).json({
         success: false,
@@ -232,7 +232,7 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const salary = await employeeSalaryService.create(req.body);
-      
+
       res.status(201).json({
         success: true,
         message: 'Pengaturan gaji karyawan berhasil dibuat',
@@ -255,7 +255,7 @@ router.put(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const salary = await employeeSalaryService.update(req.params.staffId, req.body);
-      
+
       res.json({
         success: true,
         message: 'Pengaturan gaji karyawan berhasil diperbarui',
@@ -277,7 +277,7 @@ router.delete(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       await employeeSalaryService.delete(req.params.staffId);
-      
+
       res.json({
         success: true,
         message: 'Pengaturan gaji karyawan berhasil dihapus',
@@ -324,7 +324,7 @@ router.get('/periods', async (req: Request, res: Response, next: NextFunction) =
 router.get('/periods/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const period = await payrollPeriodService.getById(req.params.id);
-    
+
     if (!period) {
       return res.status(404).json({
         success: false,
@@ -353,7 +353,7 @@ router.post(
     try {
       const userId = (req as any).user.id;
       const period = await payrollPeriodService.create(req.body, userId);
-      
+
       res.status(201).json({
         success: true,
         message: 'Periode penggajian berhasil dibuat',
@@ -376,7 +376,7 @@ router.put(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const period = await payrollPeriodService.update(req.params.id, req.body);
-      
+
       res.json({
         success: true,
         message: 'Periode penggajian berhasil diperbarui',
@@ -400,7 +400,7 @@ router.post(
     try {
       const userId = (req as any).user.id;
       const period = await payrollPeriodService.approve(req.params.id, userId, req.body.notes);
-      
+
       res.json({
         success: true,
         message: 'Periode penggajian berhasil disetujui',
@@ -427,7 +427,7 @@ router.post(
         new Date(req.body.payDate),
         req.body.notes
       );
-      
+
       res.json({
         success: true,
         message: 'Periode penggajian berhasil ditandai sebagai dibayar',
@@ -449,7 +449,7 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const period = await payrollPeriodService.cancel(req.params.id, req.body.notes);
-      
+
       res.json({
         success: true,
         message: 'Periode penggajian berhasil dibatalkan',
@@ -471,7 +471,7 @@ router.delete(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       await payrollPeriodService.delete(req.params.id);
-      
+
       res.json({
         success: true,
         message: 'Periode penggajian berhasil dihapus',
@@ -518,7 +518,7 @@ router.get('/slips', async (req: Request, res: Response, next: NextFunction) => 
 router.get('/slips/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const payroll = await payrollService.getById(req.params.id);
-    
+
     if (!payroll) {
       return res.status(404).json({
         success: false,
@@ -546,7 +546,7 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const result = await payrollService.generate(req.body);
-      
+
       res.json({
         success: true,
         message: `${result.created} slip gaji dibuat, ${result.updated} diperbarui`,
@@ -569,7 +569,7 @@ router.put(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const payroll = await payrollService.adjustItem(req.params.id, req.body);
-      
+
       res.json({
         success: true,
         message: 'Slip gaji berhasil disesuaikan',
@@ -588,7 +588,7 @@ router.put(
 router.get('/periods/:id/summary', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const summary = await payrollService.getSummary(req.params.id);
-    
+
     res.json({
       success: true,
       data: summary,

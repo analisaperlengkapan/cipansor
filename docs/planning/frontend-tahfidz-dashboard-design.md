@@ -10,37 +10,42 @@
 ## Module Overview - Tahfidz Enhancement
 
 ### Target Users
+
 - **Santri/Siswa**: View personal progress, schedule
 - **Muhafidz**: Input murojaah, manage simaan exams
 - **Musyrif**: Monitor halaqoh performance
 - **Admin**: Sanad management, certificate generation
 
 ### Pages Summary - Tahfidz
-| Page | Route | Priority | Complexity |
-|------|-------|----------|------------|
-| Murojaah Dashboard | `/tahfidz/murojaah` | P2 | High |
-| Murojaah Create | `/tahfidz/murojaah/new` | P2 | Medium |
-| Murojaah Analytics | `/tahfidz/murojaah/analytics` | P2 | High |
-| Simaan Schedule | `/tahfidz/simaan/schedule` | P2 | Medium |
-| Simaan Exam Create | `/tahfidz/simaan/exam/new` | P2 | High |
-| Simaan Exam Detail | `/tahfidz/simaan/exam/:id` | P2 | Medium |
-| Sanad Management | `/tahfidz/sanad` | P2 | Medium |
-| Certificate Generate | `/tahfidz/sanad/certificate/new` | P2 | High |
-| Student Tahfidz Profile | `/tahfidz/student/:id` | P2 | High |
+
+| Page                    | Route                            | Priority | Complexity |
+| ----------------------- | -------------------------------- | -------- | ---------- |
+| Murojaah Dashboard      | `/tahfidz/murojaah`              | P2       | High       |
+| Murojaah Create         | `/tahfidz/murojaah/new`          | P2       | Medium     |
+| Murojaah Analytics      | `/tahfidz/murojaah/analytics`    | P2       | High       |
+| Simaan Schedule         | `/tahfidz/simaan/schedule`       | P2       | Medium     |
+| Simaan Exam Create      | `/tahfidz/simaan/exam/new`       | P2       | High       |
+| Simaan Exam Detail      | `/tahfidz/simaan/exam/:id`       | P2       | Medium     |
+| Sanad Management        | `/tahfidz/sanad`                 | P2       | Medium     |
+| Certificate Generate    | `/tahfidz/sanad/certificate/new` | P2       | High       |
+| Student Tahfidz Profile | `/tahfidz/student/:id`           | P2       | High       |
 
 ---
 
 ## Page 1: Murojaah Analytics Dashboard
 
 ### Route
+
 `/tahfidz/murojaah/analytics`
 
 ### User Stories
+
 - **As a muhafidz**, I want to see murojaah quality trends across halaqoh
 - **As a musyrif**, I want to identify students needing extra support
 - **As an admin**, I want to see overall murojaah statistics
 
 ### Layout
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ Murojaah Analytics Dashboard                     [Export]   │
@@ -120,23 +125,24 @@
 ```
 
 ### Component Implementation
+
 ```typescript
 export default function MurojaahAnalyticsPage() {
   const { data: overview } = useQuery({
     queryKey: ['murojaah-analytics-overview'],
     queryFn: api.murojaah.getAnalyticsOverview
   })
-  
+
   const { data: qualityDistribution } = useQuery({
     queryKey: ['murojaah-quality-distribution'],
     queryFn: api.murojaah.getQualityDistribution
   })
-  
+
   const { data: mistakePatterns } = useQuery({
     queryKey: ['murojaah-mistake-patterns'],
     queryFn: api.murojaah.getMistakePatterns
   })
-  
+
   return (
     <div className="space-y-6">
       <PageHeader title="Murojaah Analytics" />
@@ -154,6 +160,7 @@ export default function MurojaahAnalyticsPage() {
 ```
 
 ### Quality Distribution Chart
+
 ```typescript
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 
@@ -164,12 +171,12 @@ function QualityDistributionChart({ data }: Props) {
     { range: '11-20', count: 0 },
     // ... up to 91-100
   ]
-  
+
   data.forEach(score => {
     const binIndex = Math.floor(score / 10)
     bins[binIndex].count++
   })
-  
+
   return (
     <Card>
       <CardHeader>
@@ -194,13 +201,16 @@ function QualityDistributionChart({ data }: Props) {
 ## Page 2: Murojaah Quick Input
 
 ### Route
+
 `/tahfidz/murojaah/new`
 
 ### User Stories
+
 - **As a muhafidz**, I want to quickly record murojaah after session
 - **As a muhafidz**, I want to log mistakes efficiently
 
 ### Layout (Optimized for Mobile)
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ ← Back                Quick Murojaah Input          [Save]  │
@@ -247,6 +257,7 @@ function QualityDistributionChart({ data }: Props) {
 ```
 
 ### Quick Input Component
+
 ```typescript
 export default function MurojaahQuickInput() {
   const form = useForm<MurojaahInput>({
@@ -257,7 +268,7 @@ export default function MurojaahQuickInput() {
       mistakes: []
     }
   })
-  
+
   const { mutate: createMurojaah, isPending } = useMutation({
     mutationFn: api.murojaah.create,
     onSuccess: () => {
@@ -265,7 +276,7 @@ export default function MurojaahQuickInput() {
       router.push('/tahfidz/murojaah')
     }
   })
-  
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(createMurojaah)}>
@@ -276,7 +287,7 @@ export default function MurojaahQuickInput() {
         <QualitySlider form={form} />
         <MistakeList form={form} />
         <NotesField form={form} />
-        
+
         <div className="flex justify-end gap-2">
           <Button variant="outline" type="button">Cancel</Button>
           <Button type="submit" disabled={isPending}>
@@ -294,14 +305,17 @@ export default function MurojaahQuickInput() {
 ## Page 3: Simaan Exam Management
 
 ### Route
+
 `/tahfidz/simaan/exam/new`
 
 ### User Stories
+
 - **As a muhafidz**, I want to schedule and conduct simaan exams
 - **As a muhafidz**, I want to assign multiple examiners
 - **As a santri**, I want to see my scheduled simaan
 
 ### Layout (Marathon Exam - Multi Session)
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ New Simaan Exam                              [Save] [Cancel]│
@@ -349,6 +363,7 @@ export default function MurojaahQuickInput() {
 ```
 
 ### Simaan Scoring Interface (During Exam)
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ Simaan Exam - Session 1/6                          [Submit] │
@@ -396,14 +411,17 @@ export default function MurojaahQuickInput() {
 ## Page 4: Sanad & Certificate Management
 
 ### Route
+
 `/tahfidz/sanad/certificate/new`
 
 ### User Stories
+
 - **As an admin**, I want to generate certificates after exam completion
 - **As a student**, I want to download my certificate
 - **As a verifier**, I want to verify certificate authenticity
 
 ### Certificate Generation Form
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ Generate Sanad Certificate                  [Generate] [×]  │
@@ -449,6 +467,7 @@ export default function MurojaahQuickInput() {
 ```
 
 ### Certificate Preview (PDF Output)
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
@@ -496,32 +515,37 @@ export default function MurojaahQuickInput() {
 ## Module Overview - Multi-Unit Dashboard
 
 ### Target Users
+
 - **Yayasan Admin**: Consolidated view across all units
 - **Kepala Yayasan**: Executive KPIs and reports
 - **Unit Admins**: Benchmark against other units
 
 ### Pages Summary - Dashboard
-| Page | Route | Priority | Complexity |
-|------|-------|----------|------------|
-| Executive Dashboard | `/dashboard/executive` | P3 | High |
-| Unit Comparison | `/dashboard/comparison` | P3 | High |
-| Realtime Metrics | `/dashboard/realtime` | P3 | High |
-| Reports Generator | `/dashboard/reports` | P3 | Medium |
-| Alert Configuration | `/dashboard/alerts` | P3 | Medium |
+
+| Page                | Route                   | Priority | Complexity |
+| ------------------- | ----------------------- | -------- | ---------- |
+| Executive Dashboard | `/dashboard/executive`  | P3       | High       |
+| Unit Comparison     | `/dashboard/comparison` | P3       | High       |
+| Realtime Metrics    | `/dashboard/realtime`   | P3       | High       |
+| Reports Generator   | `/dashboard/reports`    | P3       | Medium     |
+| Alert Configuration | `/dashboard/alerts`     | P3       | Medium     |
 
 ---
 
 ## Page 5: Executive Dashboard (Yayasan Level)
 
 ### Route
+
 `/dashboard/executive`
 
 ### User Stories
+
 - **As yayasan admin**, I want consolidated metrics across all units
 - **As kepala yayasan**, I want to see trends and comparisons
 - **As board member**, I want exportable reports for meetings
 
 ### Layout
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ Yayasan Executive Dashboard          [Refresh] [Export PDF]│
@@ -588,6 +612,7 @@ export default function MurojaahQuickInput() {
 ```
 
 ### Component Implementation
+
 ```typescript
 'use client'
 
@@ -597,22 +622,22 @@ export default function ExecutiveDashboard() {
     queryFn: api.dashboard.getExecutiveOverview,
     refetchInterval: 2 * 60 * 1000 // Refresh every 2 minutes
   })
-  
+
   const { data: realtime } = useQuery({
     queryKey: ['realtime-metrics'],
     queryFn: api.dashboard.getRealtimeMetrics,
     refetchInterval: 30 * 1000 // Refresh every 30 seconds
   })
-  
+
   // WebSocket for true real-time updates
   useWebSocket('/ws/dashboard', {
     onMessage: (data) => {
       queryClient.setQueryData(['realtime-metrics'], data)
     }
   })
-  
+
   if (isLoading) return <DashboardSkeleton />
-  
+
   return (
     <div className="space-y-6">
       <DashboardHeader />
@@ -629,39 +654,38 @@ export default function ExecutiveDashboard() {
 ```
 
 ### Real-time Update Hook
+
 ```typescript
-import { useEffect } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-import { io } from 'socket.io-client'
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { io } from "socket.io-client";
 
 export function useRealtimeDashboard() {
-  const queryClient = useQueryClient()
-  
+  const queryClient = useQueryClient();
+
   useEffect(() => {
-    const socket = io(process.env.NEXT_PUBLIC_WS_URL!)
-    
-    socket.on('dashboard:update', (data) => {
-      queryClient.setQueryData(['realtime-metrics'], data)
-    })
-    
-    socket.on('alert:new', (alert) => {
-      queryClient.setQueryData(['alerts'], (old: any[]) => 
-        [alert, ...old]
-      )
-      
+    const socket = io(process.env.NEXT_PUBLIC_WS_URL!);
+
+    socket.on("dashboard:update", (data) => {
+      queryClient.setQueryData(["realtime-metrics"], data);
+    });
+
+    socket.on("alert:new", (alert) => {
+      queryClient.setQueryData(["alerts"], (old: any[]) => [alert, ...old]);
+
       // Show toast notification
       toast.info(alert.message, {
         action: {
-          label: 'View',
-          onClick: () => router.push(`/dashboard/alerts/${alert.id}`)
-        }
-      })
-    })
-    
+          label: "View",
+          onClick: () => router.push(`/dashboard/alerts/${alert.id}`),
+        },
+      });
+    });
+
     return () => {
-      socket.disconnect()
-    }
-  }, [queryClient])
+      socket.disconnect();
+    };
+  }, [queryClient]);
 }
 ```
 
@@ -670,9 +694,11 @@ export function useRealtimeDashboard() {
 ## Page 6: Unit Comparison Dashboard
 
 ### Route
+
 `/dashboard/comparison`
 
 ### Layout
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ Unit Performance Comparison                      [Export]   │
@@ -720,69 +746,70 @@ export function useRealtimeDashboard() {
 ## State Management - Tahfidz & Dashboard
 
 ### Zustand Stores
+
 ```typescript
 // Tahfidz Store
 interface TahfidzStore {
   // Murojaah state
-  selectedMurojaahType: MurojaahType
-  setMurojaahType: (type: MurojaahType) => void
-  
+  selectedMurojaahType: MurojaahType;
+  setMurojaahType: (type: MurojaahType) => void;
+
   // Simaan state
-  currentExam: Partial<SimaanExam>
-  updateCurrentExam: (data: Partial<SimaanExam>) => void
-  
+  currentExam: Partial<SimaanExam>;
+  updateCurrentExam: (data: Partial<SimaanExam>) => void;
+
   // Analytics filters
-  analyticsFilters: AnalyticsFilters
-  setAnalyticsFilters: (filters: AnalyticsFilters) => void
+  analyticsFilters: AnalyticsFilters;
+  setAnalyticsFilters: (filters: AnalyticsFilters) => void;
 }
 
 export const useTahfidzStore = create<TahfidzStore>((set) => ({
-  selectedMurojaahType: 'YAUMIYAH',
+  selectedMurojaahType: "YAUMIYAH",
   setMurojaahType: (type) => set({ selectedMurojaahType: type }),
-  
+
   currentExam: {},
-  updateCurrentExam: (data) => 
-    set((state) => ({ 
-      currentExam: { ...state.currentExam, ...data } 
+  updateCurrentExam: (data) =>
+    set((state) => ({
+      currentExam: { ...state.currentExam, ...data },
     })),
-  
+
   analyticsFilters: {},
   setAnalyticsFilters: (filters) => set({ analyticsFilters: filters }),
-}))
+}));
 
 // Dashboard Store
 interface DashboardStore {
   // Unit selection
-  selectedUnits: string[]
-  toggleUnit: (unitId: string) => void
-  
+  selectedUnits: string[];
+  toggleUnit: (unitId: string) => void;
+
   // Time range
-  dateRange: { from: Date; to: Date }
-  setDateRange: (range: { from: Date; to: Date }) => void
-  
+  dateRange: { from: Date; to: Date };
+  setDateRange: (range: { from: Date; to: Date }) => void;
+
   // Realtime connection
-  isConnected: boolean
-  setConnected: (connected: boolean) => void
+  isConnected: boolean;
+  setConnected: (connected: boolean) => void;
 }
 
 export const useDashboardStore = create<DashboardStore>((set) => ({
   selectedUnits: [],
-  toggleUnit: (unitId) => 
+  toggleUnit: (unitId) =>
     set((state) => ({
       selectedUnits: state.selectedUnits.includes(unitId)
-        ? state.selectedUnits.filter(id => id !== unitId)
-        : [...state.selectedUnits, unitId]
+        ? state.selectedUnits.filter((id) => id !== unitId)
+        : [...state.selectedUnits, unitId],
     })),
-  
+
   dateRange: {
     from: startOfMonth(new Date()),
-    to: endOfMonth(new Date())
+    to: endOfMonth(new Date()),
   },
   setDateRange: (range) => set({ dateRange: range }),
-  
+
   isConnected: false,
   setConnected: (connected) => set({ isConnected: connected }),
-}))
+}));
 ```
 
 ---
@@ -790,43 +817,45 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
 ## Performance Optimization
 
 ### Data Fetching Strategy
+
 ```typescript
 // Prefetch related data
 export function usePrefetchTahfidz() {
-  const queryClient = useQueryClient()
-  
+  const queryClient = useQueryClient();
+
   const prefetchStudentData = (studentId: string) => {
     // Prefetch related queries in parallel
     Promise.all([
       queryClient.prefetchQuery({
-        queryKey: ['murojaah-summary', studentId],
-        queryFn: () => api.murojaah.getStudentSummary(studentId)
+        queryKey: ["murojaah-summary", studentId],
+        queryFn: () => api.murojaah.getStudentSummary(studentId),
       }),
       queryClient.prefetchQuery({
-        queryKey: ['simaan-history', studentId],
-        queryFn: () => api.simaan.getStudentHistory(studentId)
+        queryKey: ["simaan-history", studentId],
+        queryFn: () => api.simaan.getStudentHistory(studentId),
       }),
       queryClient.prefetchQuery({
-        queryKey: ['tahfidz-progress', studentId],
-        queryFn: () => api.tahfidz.getProgress(studentId)
-      })
-    ])
-  }
-  
-  return { prefetchStudentData }
+        queryKey: ["tahfidz-progress", studentId],
+        queryFn: () => api.tahfidz.getProgress(studentId),
+      }),
+    ]);
+  };
+
+  return { prefetchStudentData };
 }
 ```
 
 ### Chart Performance
+
 ```typescript
 // Use React.memo for expensive chart components
 export const MurojaahQualityChart = React.memo(({ data }: Props) => {
   // Memoize chart data transformation
-  const chartData = useMemo(() => 
+  const chartData = useMemo(() =>
     transformDataForChart(data),
     [data]
   )
-  
+
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={chartData}>
@@ -845,31 +874,33 @@ export const MurojaahQualityChart = React.memo(({ data }: Props) => {
 ## Implementation Timeline
 
 ### Tahfidz Enhancement
-| Feature | Complexity | Hours |
-|---------|------------|-------|
-| Murojaah Analytics Dashboard | High | 20h |
-| Murojaah Quick Input | Medium | 8h |
-| Simaan Exam Management | High | 24h |
-| Simaan Scoring Interface | High | 16h |
-| Sanad Management | Medium | 12h |
-| Certificate Generation | High | 16h |
-| Student Tahfidz Profile | High | 16h |
-| **Subtotal** | - | **112h** |
+
+| Feature                      | Complexity | Hours    |
+| ---------------------------- | ---------- | -------- |
+| Murojaah Analytics Dashboard | High       | 20h      |
+| Murojaah Quick Input         | Medium     | 8h       |
+| Simaan Exam Management       | High       | 24h      |
+| Simaan Scoring Interface     | High       | 16h      |
+| Sanad Management             | Medium     | 12h      |
+| Certificate Generation       | High       | 16h      |
+| Student Tahfidz Profile      | High       | 16h      |
+| **Subtotal**                 | -          | **112h** |
 
 ### Multi-Unit Dashboard
-| Feature | Complexity | Hours |
-|---------|------------|-------|
-| Executive Dashboard | High | 24h |
-| Unit Comparison | High | 20h |
-| Realtime Metrics (WebSocket) | High | 16h |
-| Reports Generator | Medium | 12h |
-| Alert Configuration | Medium | 8h |
-| Export & PDF | Medium | 8h |
-| **Subtotal** | - | **88h** |
+
+| Feature                      | Complexity | Hours   |
+| ---------------------------- | ---------- | ------- |
+| Executive Dashboard          | High       | 24h     |
+| Unit Comparison              | High       | 20h     |
+| Realtime Metrics (WebSocket) | High       | 16h     |
+| Reports Generator            | Medium     | 12h     |
+| Alert Configuration          | Medium     | 8h      |
+| Export & PDF                 | Medium     | 8h      |
+| **Subtotal**                 | -          | **88h** |
 
 ### **Total Tahfidz + Dashboard**: **200 hours**
 
 ---
 
-*End of Tahfidz Enhancement & Dashboard Design*
-*Next: Chunk 4 - Integration Workflows & Testing*
+_End of Tahfidz Enhancement & Dashboard Design_
+_Next: Chunk 4 - Integration Workflows & Testing_

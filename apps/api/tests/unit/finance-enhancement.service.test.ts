@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { financeEnhancementService } from '@/modules/finance-enhancement/finance-enhancement.service';
 import { AccountType } from '@cipansor/shared';
@@ -51,7 +50,7 @@ describe('Finance Enhancement Service', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         parent: null,
-        children: []
+        children: [],
       };
 
       mockPrisma.accountCode.findMany.mockResolvedValue([mockPrismaAccount]);
@@ -59,10 +58,12 @@ describe('Finance Enhancement Service', () => {
 
       const result = await financeEnhancementService.getAccountCodes({ page: 1, limit: 10 });
 
-      expect(result.data[0]).toEqual(expect.objectContaining({
-        id: '1',
-        type: AccountType.ASSET, // Should be Enum
-      }));
+      expect(result.data[0]).toEqual(
+        expect.objectContaining({
+          id: '1',
+          type: AccountType.ASSET, // Should be Enum
+        })
+      );
     });
   });
 
@@ -83,7 +84,7 @@ describe('Finance Enhancement Service', () => {
         updatedAt: new Date(),
         unit: { id: 'unit-1', name: 'Unit 1' },
         account: { id: 'acc-1', code: '101', name: 'Cash', type: 'ASSET' },
-        createdBy: { id: 'user-1', name: 'User 1' }
+        createdBy: { id: 'user-1', name: 'User 1' },
       };
 
       mockPrisma.journalEntry.findMany.mockResolvedValue([mockEntry]);
@@ -101,7 +102,7 @@ describe('Finance Enhancement Service', () => {
     it('should use Enum values in raw query and calculate net income correctly', async () => {
       const mockRawResult = [
         { period: '2024-01', type: 'REVENUE', total: BigInt(5000000) },
-        { period: '2024-01', type: 'EXPENSE', total: BigInt(-2000000) } // Query returns credit - debit, so expense is negative usually
+        { period: '2024-01', type: 'EXPENSE', total: BigInt(-2000000) }, // Query returns credit - debit, so expense is negative usually
       ];
 
       mockPrisma.$queryRaw.mockResolvedValue(mockRawResult);
@@ -109,7 +110,7 @@ describe('Finance Enhancement Service', () => {
       const result = await financeEnhancementService.getIncomeExpenseReport({
         unitId: 'unit-1',
         startDate: new Date('2024-01-01'),
-        endDate: new Date('2024-01-31')
+        endDate: new Date('2024-01-31'),
       });
 
       // Verify the SQL call contains correct enum values
@@ -127,7 +128,7 @@ describe('Finance Enhancement Service', () => {
         period: '2024-01',
         income: 5000000,
         expense: 2000000,
-        net: 3000000
+        net: 3000000,
       });
     });
   });

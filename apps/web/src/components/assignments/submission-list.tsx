@@ -1,11 +1,11 @@
-import { ColumnDef } from '@tanstack/react-table';
-import { DataTable } from '@/components/shared';
-import { AssignmentSubmission } from '@cipansor/shared';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useState } from 'react';
-import { format } from 'date-fns';
+import { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/components/shared";
+import { AssignmentSubmission } from "@cipansor/shared";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { format } from "date-fns";
 
 interface SubmissionListProps {
   submissions: AssignmentSubmission[];
@@ -13,37 +13,47 @@ interface SubmissionListProps {
   onGrade: (studentId: string, grade: number, feedback?: string) => void;
 }
 
-export function SubmissionList({ submissions, isLoading, onGrade }: SubmissionListProps) {
+export function SubmissionList({
+  submissions,
+  isLoading,
+  onGrade,
+}: SubmissionListProps) {
   const columns: ColumnDef<AssignmentSubmission>[] = [
     {
-      accessorKey: 'student',
-      header: 'Student',
-      cell: ({ row }) => row.original.student?.name || 'Unknown',
+      accessorKey: "student",
+      header: "Student",
+      cell: ({ row }) => row.original.student?.name || "Unknown",
     },
     {
-      accessorKey: 'submittedAt',
-      header: 'Submitted At',
-      cell: ({ row }) => format(new Date(row.original.submittedAt), 'dd MMM yyyy HH:mm'),
+      accessorKey: "submittedAt",
+      header: "Submitted At",
+      cell: ({ row }) =>
+        format(new Date(row.original.submittedAt), "dd MMM yyyy HH:mm"),
     },
     {
-      accessorKey: 'status',
-      header: 'Status',
+      accessorKey: "status",
+      header: "Status",
       cell: ({ row }) => <Badge>{row.original.status}</Badge>,
     },
     {
-      accessorKey: 'content',
-      header: 'Content',
+      accessorKey: "content",
+      header: "Content",
       cell: ({ row }) => (
-        <div className="max-w-[200px] truncate" title={row.original.content || ''}>
-          {row.original.content || '-'}
+        <div
+          className="max-w-[200px] truncate"
+          title={row.original.content || ""}
+        >
+          {row.original.content || "-"}
         </div>
       ),
     },
     {
-      id: 'grading',
-      header: 'Grade',
+      id: "grading",
+      header: "Grade",
       cell: ({ row }) => {
-        const [grade, setGrade] = useState(row.original.grade?.toString() || '');
+        const [grade, setGrade] = useState(
+          row.original.grade?.toString() || "",
+        );
         const [isEditing, setIsEditing] = useState(false);
 
         const handleSave = () => {
@@ -62,14 +72,21 @@ export function SubmissionList({ submissions, isLoading, onGrade }: SubmissionLi
                 min={0}
                 max={100}
               />
-              <Button size="sm" onClick={handleSave}>Save</Button>
+              <Button size="sm" onClick={handleSave}>
+                Save
+              </Button>
             </div>
           );
         }
 
         return (
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsEditing(true)}>
-            {row.original.grade !== undefined && row.original.grade !== null ? row.original.grade : 'Grade'}
+          <div
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => setIsEditing(true)}
+          >
+            {row.original.grade !== undefined && row.original.grade !== null
+              ? row.original.grade
+              : "Grade"}
           </div>
         );
       },
@@ -77,10 +94,6 @@ export function SubmissionList({ submissions, isLoading, onGrade }: SubmissionLi
   ];
 
   return (
-    <DataTable
-      columns={columns}
-      data={submissions}
-      isLoading={isLoading}
-    />
+    <DataTable columns={columns} data={submissions} isLoading={isLoading} />
   );
 }

@@ -16,12 +16,14 @@ export const listMurojaah = async (req: Request, res: Response, next: NextFuncti
       role: (req.user as any)?.role,
       unitId: (req.user as any)?.unitId,
     });
-    res.json(ApiResponse.paginated(
-      result.records,
-      result.pagination.page,
-      result.pagination.limit,
-      result.pagination.total
-    ));
+    res.json(
+      ApiResponse.paginated(
+        result.records,
+        result.pagination.page,
+        result.pagination.limit,
+        result.pagination.total
+      )
+    );
   } catch (error) {
     next(error);
   }
@@ -112,12 +114,14 @@ export const getStudentHistory = async (req: Request, res: Response, next: NextF
     const { studentId } = req.params;
     const query = req.query as any;
     const result = await murojaahService.getStudentHistory(studentId, query);
-    res.json(ApiResponse.paginated(
-      result.records,
-      result.pagination.page,
-      result.pagination.limit,
-      result.pagination.total
-    ));
+    res.json(
+      ApiResponse.paginated(
+        result.records,
+        result.pagination.page,
+        result.pagination.limit,
+        result.pagination.total
+      )
+    );
   } catch (error) {
     next(error);
   }

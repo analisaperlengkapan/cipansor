@@ -102,7 +102,7 @@ export default function MenuDetailPage() {
   // Handle copy menu
   const handleCopyMenu = () => {
     if (!menu) return;
-    
+
     const menuText = `
 📋 ${menu.name}
 📅 ${format(new Date(menu.date), "EEEE, d MMMM yyyy", { locale: localeId })}
@@ -228,7 +228,9 @@ ${menu.calories ? `\n🔥 Kalori: ${menu.calories} kkal` : ""}
                     className={`text-base py-1.5 px-3 ${MEAL_COLORS[menu.mealType]}`}
                   >
                     {MEAL_ICONS[menu.mealType]}
-                    <span className="ml-2">{MEAL_TYPE_LABELS[menu.mealType]}</span>
+                    <span className="ml-2">
+                      {MEAL_TYPE_LABELS[menu.mealType]}
+                    </span>
                   </Badge>
                   <Badge variant="outline" className="text-base py-1.5 px-3">
                     <Calendar className="h-4 w-4 mr-2" />
@@ -306,7 +308,9 @@ ${menu.calories ? `\n🔥 Kalori: ${menu.calories} kkal` : ""}
                     <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                       <Soup className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-xs text-muted-foreground">Sup/Kuah</p>
+                        <p className="text-xs text-muted-foreground">
+                          Sup/Kuah
+                        </p>
                         <p className="font-medium">{menu.soup}</p>
                       </div>
                     </div>
@@ -378,7 +382,9 @@ ${menu.calories ? `\n🔥 Kalori: ${menu.calories} kkal` : ""}
 
                   {menu.nutritionInfo && (
                     <div>
-                      <p className="text-sm font-medium mb-2">Catatan Nutrisi</p>
+                      <p className="text-sm font-medium mb-2">
+                        Catatan Nutrisi
+                      </p>
                       <p className="text-muted-foreground">
                         {menu.nutritionInfo}
                       </p>
@@ -412,7 +418,9 @@ ${menu.calories ? `\n🔥 Kalori: ${menu.calories} kkal` : ""}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="font-medium">{menu.unit?.name || "Tidak diketahui"}</p>
+                <p className="font-medium">
+                  {menu.unit?.name || "Tidak diketahui"}
+                </p>
               </CardContent>
             </Card>
 
@@ -448,13 +456,21 @@ ${menu.calories ? `\n🔥 Kalori: ${menu.calories} kkal` : ""}
                 <CardTitle>Aksi Cepat</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-start" asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  asChild
+                >
                   <Link href={`/meals/menus/new?duplicate=${id}`}>
                     <Copy className="h-4 w-4 mr-2" />
                     Duplikasi Menu
                   </Link>
                 </Button>
-                <Button variant="outline" className="w-full justify-start" asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  asChild
+                >
                   <Link href="/meals">
                     <UtensilsCrossed className="h-4 w-4 mr-2" />
                     Lihat Jadwal
@@ -471,8 +487,8 @@ ${menu.calories ? `\n🔥 Kalori: ${menu.calories} kkal` : ""}
             <AlertDialogHeader>
               <AlertDialogTitle>Hapus Menu?</AlertDialogTitle>
               <AlertDialogDescription>
-                Anda yakin ingin menghapus menu "{menu.name}"? Tindakan ini tidak
-                dapat dibatalkan.
+                Anda yakin ingin menghapus menu "{menu.name}"? Tindakan ini
+                tidak dapat dibatalkan.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

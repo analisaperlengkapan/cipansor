@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,8 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Loader2 } from 'lucide-react';
+} from "@/components/ui/alert-dialog";
+import { Loader2 } from "lucide-react";
 
 // Controlled version props
 interface ControlledConfirmDialogProps {
@@ -25,7 +25,7 @@ interface ControlledConfirmDialogProps {
   onConfirm: () => void | Promise<void>;
   isLoading?: boolean;
   loading?: boolean; // alias for isLoading
-  variant?: 'default' | 'destructive';
+  variant?: "default" | "destructive";
   children?: never;
 }
 
@@ -39,29 +39,31 @@ interface TriggerConfirmDialogProps {
   onConfirm: () => void | Promise<void>;
   isLoading?: boolean;
   loading?: boolean; // alias for isLoading
-  variant?: 'default' | 'destructive';
+  variant?: "default" | "destructive";
   open?: never;
   onOpenChange?: never;
 }
 
-export type ConfirmDialogProps = ControlledConfirmDialogProps | TriggerConfirmDialogProps;
+export type ConfirmDialogProps =
+  | ControlledConfirmDialogProps
+  | TriggerConfirmDialogProps;
 
 export function ConfirmDialog(props: ConfirmDialogProps) {
   const {
     title,
     description,
-    confirmLabel = 'Confirm',
-    cancelLabel = 'Cancel',
+    confirmLabel = "Confirm",
+    cancelLabel = "Cancel",
     onConfirm,
     isLoading: isLoadingProp = false,
     loading: loadingProp = false,
-    variant = 'default',
+    variant = "default",
   } = props;
 
   const isLoading = isLoadingProp || loadingProp;
 
   // Check if it's a trigger version (has children)
-  if ('children' in props && props.children) {
+  if ("children" in props && props.children) {
     return (
       <TriggerConfirmDialog
         title={title}
@@ -88,14 +90,20 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading}>
+            {cancelLabel}
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={async (e) => {
               e.preventDefault();
               await onConfirm();
             }}
             disabled={isLoading}
-            className={variant === 'destructive' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
+            className={
+              variant === "destructive"
+                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                : ""
+            }
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {confirmLabel}
@@ -115,7 +123,7 @@ interface TriggerConfirmDialogInternalProps {
   cancelLabel: string;
   onConfirm: () => void | Promise<void>;
   isLoading: boolean;
-  variant: 'default' | 'destructive';
+  variant: "default" | "destructive";
 }
 
 function TriggerConfirmDialog({
@@ -144,14 +152,20 @@ function TriggerConfirmDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading}>
+            {cancelLabel}
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={async (e) => {
               e.preventDefault();
               await handleConfirm();
             }}
             disabled={isLoading}
-            className={variant === 'destructive' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
+            className={
+              variant === "destructive"
+                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                : ""
+            }
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {confirmLabel}

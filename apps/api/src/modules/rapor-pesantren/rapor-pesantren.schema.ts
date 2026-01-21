@@ -17,7 +17,7 @@ export const ComponentType = z.enum([
   'MUHADATSAH',
   'KITAB_PROGRESS',
   'AKHLAK',
-  'ATTENDANCE'
+  'ATTENDANCE',
 ]);
 export type ComponentType = z.infer<typeof ComponentType>;
 
@@ -249,7 +249,7 @@ export interface RaporPesantren {
   academicYearId: string;
   semester: number;
   status: RaporStatus;
-  
+
   // Student Info
   student: {
     id: string;
@@ -262,7 +262,7 @@ export interface RaporPesantren {
     class: { id: string; name: string };
     dormRoom?: { id: string; name: string };
   };
-  
+
   // Academic Year Info
   academicYear: {
     id: string;
@@ -270,7 +270,7 @@ export interface RaporPesantren {
     startDate: string;
     endDate: string;
   };
-  
+
   // Component Summaries
   tahfidz: TahfidzSummary;
   ibadah: IbadahSummary;
@@ -279,19 +279,19 @@ export interface RaporPesantren {
   kitabProgress: KitabProgressSummary;
   akhlak: AkhlakSummary;
   attendance: AttendanceSummary;
-  
+
   // Overall Scores
   overallScore: number;
   overallGrade: string;
   rank?: number;
   totalStudents?: number;
-  
+
   // Notes
   notes?: string;
   headTeacherNotes?: string;
   musyrifNotes?: string;
   principalNotes?: string;
-  
+
   // Metadata
   generatedAt: string;
   publishedAt?: string;
@@ -344,7 +344,12 @@ export interface LegerItem {
 // Grade mapping helper
 export const GRADE_LABELS = {
   MUMTAZ: { label: 'Mumtaz', labelAr: 'ممتاز', description: 'Sangat Baik', color: 'green' },
-  JAYYID_JIDDAN: { label: 'Jayyid Jiddan', labelAr: 'جيد جدا', description: 'Baik Sekali', color: 'blue' },
+  JAYYID_JIDDAN: {
+    label: 'Jayyid Jiddan',
+    labelAr: 'جيد جدا',
+    description: 'Baik Sekali',
+    color: 'blue',
+  },
   JAYYID: { label: 'Jayyid', labelAr: 'جيد', description: 'Baik', color: 'cyan' },
   MAQBUL: { label: 'Maqbul', labelAr: 'مقبول', description: 'Cukup', color: 'yellow' },
   RASIB: { label: 'Rasib', labelAr: 'راسب', description: 'Kurang', color: 'red' },
@@ -357,7 +362,7 @@ export function getGradeFromScore(score: number, config?: RaporConfig['gradeThre
     jayyid: 70,
     maqbul: 60,
   };
-  
+
   if (score >= thresholds.mumtaz) return 'MUMTAZ';
   if (score >= thresholds.jayyidJiddan) return 'JAYYID_JIDDAN';
   if (score >= thresholds.jayyid) return 'JAYYID';

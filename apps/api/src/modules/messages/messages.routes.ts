@@ -11,7 +11,9 @@ const createMessageSchema = z.object({
   recipientId: z.string().uuid(),
   subject: z.string().min(1),
   content: z.string().min(1),
-  category: z.enum(['ACADEMIC', 'BEHAVIOR', 'HEALTH', 'GENERAL', 'ATTENDANCE', 'TAHFIDZ']).optional(),
+  category: z
+    .enum(['ACADEMIC', 'BEHAVIOR', 'HEALTH', 'GENERAL', 'ATTENDANCE', 'TAHFIDZ'])
+    .optional(),
   parentId: z.string().uuid().optional(),
 });
 

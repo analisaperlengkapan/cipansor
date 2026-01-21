@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from "express";
-import * as service from "./accounting.service";
-import { CreateAccountDto, CreateJournalDto, UpdateAccountDto } from "./schema";
+import { Request, Response, NextFunction } from 'express';
+import * as service from './accounting.service';
+import { CreateAccountDto, CreateJournalDto, UpdateAccountDto } from './schema';
 
 // =====================================
 // ACCOUNTS
@@ -45,7 +45,7 @@ export async function getAccountById(req: Request, res: Response, next: NextFunc
     const { id } = req.params;
     const account = await service.getAccountById(id);
     if (!account) {
-      res.status(404).json({ message: "Account not found" });
+      res.status(404).json({ message: 'Account not found' });
       return;
     }
     res.json(account);
@@ -73,7 +73,7 @@ export async function createJournal(req: Request, res: Response, next: NextFunct
     const data: CreateJournalDto = req.body;
     const userId = req.user?.id;
     if (!userId) {
-      res.status(401).json({ message: "Unauthorized" });
+      res.status(401).json({ message: 'Unauthorized' });
       return;
     }
     const journals = await service.createManualJournal({
@@ -142,8 +142,12 @@ export async function getIncomeStatement(req: Request, res: Response, next: Next
     const query = req.query as any;
     // Default to current month if not specified
     const now = new Date();
-    const startDate = query.startDate ? new Date(query.startDate) : new Date(now.getFullYear(), now.getMonth(), 1);
-    const endDate = query.endDate ? new Date(query.endDate) : new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const startDate = query.startDate
+      ? new Date(query.startDate)
+      : new Date(now.getFullYear(), now.getMonth(), 1);
+    const endDate = query.endDate
+      ? new Date(query.endDate)
+      : new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
     const result = await service.getIncomeStatement({
       unitId: query.unitId,

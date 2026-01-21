@@ -1,9 +1,9 @@
-import { Router } from "express";
-import { UserRole } from "@prisma/client";
-import * as controller from "./controller";
-import { authenticate, authorize } from "../../middleware/auth";
-import { validateQuery } from "../../middleware/error";
-import { queryBookSchema, queryBorrowingSchema } from "./schema";
+import { Router } from 'express';
+import { UserRole } from '@prisma/client';
+import * as controller from './controller';
+import { authenticate, authorize } from '../../middleware/auth';
+import { validateQuery } from '../../middleware/error';
+import { queryBookSchema, queryBorrowingSchema } from './schema';
 
 const router = Router();
 
@@ -23,7 +23,7 @@ router.use(authenticate);
  *       200:
  *         description: List of book categories
  */
-router.get("/categories", controller.getBookCategories);
+router.get('/categories', controller.getBookCategories);
 
 /**
  * @swagger
@@ -43,7 +43,7 @@ router.get("/categories", controller.getBookCategories);
  *       200:
  *         description: Book category details
  */
-router.get("/categories/:id", controller.getBookCategoryById);
+router.get('/categories/:id', controller.getBookCategoryById);
 
 /**
  * @swagger
@@ -70,7 +70,11 @@ router.get("/categories/:id", controller.getBookCategoryById);
  *       201:
  *         description: Category created
  */
-router.post("/categories", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.createBookCategory);
+router.post(
+  '/categories',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.createBookCategory
+);
 
 /**
  * @swagger
@@ -90,7 +94,11 @@ router.post("/categories", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, 
  *       200:
  *         description: Category updated
  */
-router.put("/categories/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.updateBookCategory);
+router.put(
+  '/categories/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.updateBookCategory
+);
 
 /**
  * @swagger
@@ -110,7 +118,11 @@ router.put("/categories/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMI
  *       204:
  *         description: Category deleted
  */
-router.delete("/categories/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteBookCategory);
+router.delete(
+  '/categories/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.deleteBookCategory
+);
 
 // ==================== BOOKS ====================
 
@@ -152,7 +164,7 @@ router.delete("/categories/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_A
  *       200:
  *         description: List of books
  */
-router.get("/books", validateQuery(queryBookSchema), controller.getBooks);
+router.get('/books', validateQuery(queryBookSchema), controller.getBooks);
 
 /**
  * @swagger
@@ -172,7 +184,7 @@ router.get("/books", validateQuery(queryBookSchema), controller.getBooks);
  *       200:
  *         description: Book details with availability
  */
-router.get("/books/:id", controller.getBookById);
+router.get('/books/:id', controller.getBookById);
 
 /**
  * @swagger
@@ -213,7 +225,11 @@ router.get("/books/:id", controller.getBookById);
  *       201:
  *         description: Book added
  */
-router.post("/books", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.createBook);
+router.post(
+  '/books',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.createBook
+);
 
 /**
  * @swagger
@@ -233,7 +249,11 @@ router.post("/books", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserR
  *       200:
  *         description: Book updated
  */
-router.put("/books/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.updateBook);
+router.put(
+  '/books/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.updateBook
+);
 
 /**
  * @swagger
@@ -253,7 +273,11 @@ router.put("/books/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, Us
  *       204:
  *         description: Book deleted
  */
-router.delete("/books/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteBook);
+router.delete(
+  '/books/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.deleteBook
+);
 
 // ==================== BORROWINGS ====================
 
@@ -291,7 +315,7 @@ router.delete("/books/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN)
  *       200:
  *         description: List of borrowings
  */
-router.get("/borrowings", validateQuery(queryBorrowingSchema), controller.getBorrowings);
+router.get('/borrowings', validateQuery(queryBorrowingSchema), controller.getBorrowings);
 
 /**
  * @swagger
@@ -311,7 +335,7 @@ router.get("/borrowings", validateQuery(queryBorrowingSchema), controller.getBor
  *       200:
  *         description: Borrowing details
  */
-router.get("/borrowings/:id", controller.getBorrowingById);
+router.get('/borrowings/:id', controller.getBorrowingById);
 
 /**
  * @swagger
@@ -342,7 +366,11 @@ router.get("/borrowings/:id", controller.getBorrowingById);
  *       201:
  *         description: Borrowing created
  */
-router.post("/borrowings", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.createBorrowing);
+router.post(
+  '/borrowings',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.createBorrowing
+);
 
 /**
  * @swagger
@@ -372,7 +400,11 @@ router.post("/borrowings", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, 
  *       200:
  *         description: Book returned
  */
-router.patch("/borrowings/:id/return", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.returnBook);
+router.patch(
+  '/borrowings/:id/return',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.returnBook
+);
 
 /**
  * @swagger
@@ -392,7 +424,11 @@ router.patch("/borrowings/:id/return", authorize(UserRole.SUPER_ADMIN, UserRole.
  *       200:
  *         description: Book marked as lost
  */
-router.patch("/borrowings/:id/lost", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.markAsLost);
+router.patch(
+  '/borrowings/:id/lost',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.markAsLost
+);
 
 // ==================== STATISTICS ====================
 
@@ -414,6 +450,10 @@ router.patch("/borrowings/:id/lost", authorize(UserRole.SUPER_ADMIN, UserRole.UN
  *       200:
  *         description: Library statistics (total books, borrowings, popular books)
  */
-router.get("/stats/:unitId", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.getLibraryStats);
+router.get(
+  '/stats/:unitId',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.getLibraryStats
+);
 
 export default router;

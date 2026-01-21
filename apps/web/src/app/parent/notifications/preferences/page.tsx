@@ -1,104 +1,115 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Bell, 
-  MessageSquare, 
-  Mail, 
-  Smartphone, 
-  Check, 
-  X, 
+import { useState } from "react";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Bell,
+  MessageSquare,
+  Mail,
+  Smartphone,
+  Check,
+  X,
   Loader2,
   RefreshCw,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { 
-  useWhatsAppStatus, 
+} from "lucide-react";
+import { toast } from "sonner";
+import {
+  useWhatsAppStatus,
   useNotificationPreferences,
   useUpdateNotificationPreference,
-} from '@/hooks/use-whatsapp';
+} from "@/hooks/use-whatsapp";
 
 // Notification categories for parent portal
 const NOTIFICATION_CATEGORIES = [
-  { 
-    id: 'daily_report', 
-    label: 'Laporan Harian', 
-    description: 'Notifikasi aktivitas anak setiap hari',
-    icon: '📋',
+  {
+    id: "daily_report",
+    label: "Laporan Harian",
+    description: "Notifikasi aktivitas anak setiap hari",
+    icon: "📋",
   },
-  { 
-    id: 'attendance', 
-    label: 'Kehadiran', 
-    description: 'Alert ketidakhadiran atau keterlambatan',
-    icon: '📍',
+  {
+    id: "attendance",
+    label: "Kehadiran",
+    description: "Alert ketidakhadiran atau keterlambatan",
+    icon: "📍",
   },
-  { 
-    id: 'payment', 
-    label: 'Pembayaran', 
-    description: 'Tagihan dan pengingat pembayaran',
-    icon: '💰',
+  {
+    id: "payment",
+    label: "Pembayaran",
+    description: "Tagihan dan pengingat pembayaran",
+    icon: "💰",
   },
-  { 
-    id: 'tahfidz', 
-    label: 'Progress Tahfidz', 
-    description: 'Update hafalan Al-Quran',
-    icon: '📖',
+  {
+    id: "tahfidz",
+    label: "Progress Tahfidz",
+    description: "Update hafalan Al-Quran",
+    icon: "📖",
   },
-  { 
-    id: 'violation', 
-    label: 'Pelanggaran', 
-    description: 'Notifikasi pelanggaran tata tertib',
-    icon: '⚠️',
+  {
+    id: "violation",
+    label: "Pelanggaran",
+    description: "Notifikasi pelanggaran tata tertib",
+    icon: "⚠️",
   },
-  { 
-    id: 'announcement', 
-    label: 'Pengumuman', 
-    description: 'Info penting dari sekolah',
-    icon: '📢',
+  {
+    id: "announcement",
+    label: "Pengumuman",
+    description: "Info penting dari sekolah",
+    icon: "📢",
   },
-  { 
-    id: 'report_card', 
-    label: 'Rapor', 
-    description: 'Notifikasi rapor terbit',
-    icon: '📄',
+  {
+    id: "report_card",
+    label: "Rapor",
+    description: "Notifikasi rapor terbit",
+    icon: "📄",
   },
-  { 
-    id: 'event', 
-    label: 'Kegiatan', 
-    description: 'Reminder acara dan kegiatan',
-    icon: '📅',
+  {
+    id: "event",
+    label: "Kegiatan",
+    description: "Reminder acara dan kegiatan",
+    icon: "📅",
   },
 ];
 
 export default function NotificationPreferencesPage() {
-  const { data: waStatus, isLoading: loadingStatus, refetch: refetchStatus } = useWhatsAppStatus();
-  const { data: preferences, isLoading: loadingPrefs } = useNotificationPreferences();
+  const {
+    data: waStatus,
+    isLoading: loadingStatus,
+    refetch: refetchStatus,
+  } = useWhatsAppStatus();
+  const { data: preferences, isLoading: loadingPrefs } =
+    useNotificationPreferences();
   const updatePreference = useUpdateNotificationPreference();
 
   const handleToggle = async (prefId: string, enabled: boolean) => {
     try {
       await updatePreference.mutateAsync({ id: prefId, enabled });
-      toast.success('Preferensi berhasil diperbarui');
+      toast.success("Preferensi berhasil diperbarui");
     } catch {
-      toast.error('Gagal memperbarui preferensi');
+      toast.error("Gagal memperbarui preferensi");
     }
   };
 
   const getPreferenceForCategory = (category: string, channel: string) => {
     return preferences?.find(
-      (p) => p.category === category && p.channel === channel
+      (p) => p.category === category && p.channel === channel,
     );
   };
 
   return (
-    <MainLayout allowedRoles={['PARENT', 'SUPER_ADMIN', 'UNIT_ADMIN']}>
+    <MainLayout allowedRoles={["PARENT", "SUPER_ADMIN", "UNIT_ADMIN"]}>
       <div className="space-y-6">
         <PageHeader
           title="Pengaturan Notifikasi"
@@ -132,7 +143,11 @@ export default function NotificationPreferencesPage() {
                     Tidak Aktif
                   </Badge>
                 )}
-                <Button variant="ghost" size="sm" onClick={() => refetchStatus()}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => refetchStatus()}
+                >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
@@ -141,7 +156,8 @@ export default function NotificationPreferencesPage() {
           {waStatus && (
             <CardContent>
               <div className="text-sm text-muted-foreground">
-                Provider: <span className="font-medium">{waStatus.provider}</span>
+                Provider:{" "}
+                <span className="font-medium">{waStatus.provider}</span>
               </div>
             </CardContent>
           )}
@@ -168,12 +184,19 @@ export default function NotificationPreferencesPage() {
             </TabsTrigger>
           </TabsList>
 
-          {['whatsapp', 'push', 'email', 'sms'].map((channel) => (
+          {["whatsapp", "push", "email", "sms"].map((channel) => (
             <TabsContent key={channel} value={channel}>
               <Card>
                 <CardHeader>
                   <CardTitle>
-                    Notifikasi {channel === 'whatsapp' ? 'WhatsApp' : channel === 'push' ? 'Push' : channel === 'email' ? 'Email' : 'SMS'}
+                    Notifikasi{" "}
+                    {channel === "whatsapp"
+                      ? "WhatsApp"
+                      : channel === "push"
+                        ? "Push"
+                        : channel === "email"
+                          ? "Email"
+                          : "SMS"}
                   </CardTitle>
                   <CardDescription>
                     Pilih jenis notifikasi yang ingin Anda terima
@@ -187,7 +210,10 @@ export default function NotificationPreferencesPage() {
                   ) : (
                     <div className="space-y-4">
                       {NOTIFICATION_CATEGORIES.map((cat) => {
-                        const pref = getPreferenceForCategory(cat.id, channel.toUpperCase());
+                        const pref = getPreferenceForCategory(
+                          cat.id,
+                          channel.toUpperCase(),
+                        );
                         return (
                           <div
                             key={cat.id}

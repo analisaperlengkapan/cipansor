@@ -38,14 +38,14 @@ export class AuthService {
     }
 
     const isValid = await comparePassword(input.password, user.passwordHash);
-    
+
     if (!isValid) {
       throw Errors.unauthorized('Invalid email or password');
     }
 
     // Determine active role (primary or first role)
-    const primaryRole = user.userRoles.find(r => r.isPrimary) || user.userRoles[0];
-    
+    const primaryRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
+
     // Generate tokens with roleId
     const tokens = generateTokenPair({
       sub: user.id,
@@ -288,7 +288,7 @@ export class AuthService {
     }
 
     const isValid = await comparePassword(input.currentPassword, user.passwordHash);
-    
+
     if (!isValid) {
       throw Errors.badRequest('Current password is incorrect');
     }

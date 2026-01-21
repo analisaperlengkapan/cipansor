@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useState } from "react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   Plus,
   Search,
@@ -19,34 +19,34 @@ import {
   MessageSquare,
   FileText,
   TrendingUp,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -54,10 +54,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
-import { toast } from 'sonner';
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 
 import {
   useCounselingRecords,
@@ -72,16 +72,16 @@ import {
   type CounselingCategory,
   type CounselingStatus,
   type CounselingPriority,
-} from '@/hooks/use-counseling';
-import { useUnits } from '@/hooks/use-units';
-import { useDebounce } from '@/hooks/use-debounce';
+} from "@/hooks/use-counseling";
+import { useUnits } from "@/hooks/use-units";
+import { useDebounce } from "@/hooks/use-debounce";
 
 export default function CounselingPage() {
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState<CounselingCategory | 'ALL'>('ALL');
-  const [status, setStatus] = useState<CounselingStatus | 'ALL'>('ALL');
-  const [priority, setPriority] = useState<CounselingPriority | 'ALL'>('ALL');
-  const [unitId, setUnitId] = useState<string>('ALL');
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState<CounselingCategory | "ALL">("ALL");
+  const [status, setStatus] = useState<CounselingStatus | "ALL">("ALL");
+  const [priority, setPriority] = useState<CounselingPriority | "ALL">("ALL");
+  const [unitId, setUnitId] = useState<string>("ALL");
 
   const debouncedSearch = useDebounce(search, 300);
 
@@ -90,14 +90,14 @@ export default function CounselingPage() {
 
   const { data, isLoading, error } = useCounselingRecords({
     search: debouncedSearch || undefined,
-    category: category !== 'ALL' ? category : undefined,
-    status: status !== 'ALL' ? status : undefined,
-    priority: priority !== 'ALL' ? priority : undefined,
-    unitId: unitId !== 'ALL' ? unitId : undefined,
+    category: category !== "ALL" ? category : undefined,
+    status: status !== "ALL" ? status : undefined,
+    priority: priority !== "ALL" ? priority : undefined,
+    unitId: unitId !== "ALL" ? unitId : undefined,
   });
 
   const { data: stats, isLoading: statsLoading } = useCounselingStats(
-    unitId !== 'ALL' ? unitId : undefined
+    unitId !== "ALL" ? unitId : undefined,
   );
 
   const deleteMutation = useDeleteCounselingRecord();
@@ -105,13 +105,13 @@ export default function CounselingPage() {
   const records = data?.data || [];
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Yakin ingin menghapus catatan konseling ini?')) return;
+    if (!confirm("Yakin ingin menghapus catatan konseling ini?")) return;
 
     try {
       await deleteMutation.mutateAsync(id);
-      toast.success('Catatan konseling berhasil dihapus');
+      toast.success("Catatan konseling berhasil dihapus");
     } catch {
-      toast.error('Gagal menghapus catatan konseling');
+      toast.error("Gagal menghapus catatan konseling");
     }
   };
 
@@ -121,9 +121,9 @@ export default function CounselingPage() {
         title="Bimbingan Konseling"
         description="Kelola catatan konseling dan bimbingan siswa"
         action={{
-          label: 'Buat Catatan',
+          label: "Buat Catatan",
           icon: <Plus className="h-4 w-4" />,
-          href: '/counseling/new',
+          href: "/counseling/new",
         }}
       />
 
@@ -137,7 +137,9 @@ export default function CounselingPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Kasus</p>
-                <p className="text-2xl font-bold">{statsLoading ? '-' : stats?.total || 0}</p>
+                <p className="text-2xl font-bold">
+                  {statsLoading ? "-" : stats?.total || 0}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -150,7 +152,9 @@ export default function CounselingPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Terbuka</p>
-                <p className="text-2xl font-bold">{statsLoading ? '-' : stats?.open || 0}</p>
+                <p className="text-2xl font-bold">
+                  {statsLoading ? "-" : stats?.open || 0}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -163,7 +167,9 @@ export default function CounselingPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Proses</p>
-                <p className="text-2xl font-bold">{statsLoading ? '-' : stats?.inProgress || 0}</p>
+                <p className="text-2xl font-bold">
+                  {statsLoading ? "-" : stats?.inProgress || 0}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -176,7 +182,9 @@ export default function CounselingPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Selesai</p>
-                <p className="text-2xl font-bold">{statsLoading ? '-' : stats?.resolved || 0}</p>
+                <p className="text-2xl font-bold">
+                  {statsLoading ? "-" : stats?.resolved || 0}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -190,7 +198,7 @@ export default function CounselingPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Avg. Resolusi</p>
                 <p className="text-2xl font-bold">
-                  {statsLoading ? '-' : `${stats?.avgResolutionDays || 0} hari`}
+                  {statsLoading ? "-" : `${stats?.avgResolutionDays || 0} hari`}
                 </p>
               </div>
             </div>
@@ -212,7 +220,7 @@ export default function CounselingPage() {
                   key={cat.value}
                   onClick={() => setCategory(cat.value)}
                   className={`p-2 rounded-lg text-center transition-all hover:scale-105 ${
-                    category === cat.value ? 'ring-2 ring-primary' : ''
+                    category === cat.value ? "ring-2 ring-primary" : ""
                   } ${cat.color}`}
                 >
                   <span className="text-xl block">{cat.icon}</span>
@@ -237,7 +245,10 @@ export default function CounselingPage() {
                 className="pl-10"
               />
             </div>
-            <Select value={category} onValueChange={(v) => setCategory(v as typeof category)}>
+            <Select
+              value={category}
+              onValueChange={(v) => setCategory(v as typeof category)}
+            >
               <SelectTrigger className="w-full md:w-36">
                 <SelectValue placeholder="Kategori" />
               </SelectTrigger>
@@ -250,7 +261,10 @@ export default function CounselingPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
+            <Select
+              value={status}
+              onValueChange={(v) => setStatus(v as typeof status)}
+            >
               <SelectTrigger className="w-full md:w-32">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -263,7 +277,10 @@ export default function CounselingPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={priority} onValueChange={(v) => setPriority(v as typeof priority)}>
+            <Select
+              value={priority}
+              onValueChange={(v) => setPriority(v as typeof priority)}
+            >
               <SelectTrigger className="w-full md:w-32">
                 <SelectValue placeholder="Prioritas" />
               </SelectTrigger>
@@ -305,14 +322,20 @@ export default function CounselingPage() {
           ) : error ? (
             <div className="p-6 text-center">
               <p className="text-muted-foreground">Gagal memuat data</p>
-              <Button variant="outline" className="mt-2" onClick={() => window.location.reload()}>
+              <Button
+                variant="outline"
+                className="mt-2"
+                onClick={() => window.location.reload()}
+              >
                 Coba Lagi
               </Button>
             </div>
           ) : records.length === 0 ? (
             <div className="p-12 text-center">
               <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">Belum Ada Catatan Konseling</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                Belum Ada Catatan Konseling
+              </h3>
               <p className="text-muted-foreground mb-4">
                 Buat catatan konseling pertama untuk memulai
               </p>
@@ -340,25 +363,34 @@ export default function CounselingPage() {
               </TableHeader>
               <TableBody>
                 {records.map((record) => {
-                  const catConfig = getCounselingCategoryConfig(record.category);
+                  const catConfig = getCounselingCategoryConfig(
+                    record.category,
+                  );
                   const statusConfig = getCounselingStatusConfig(record.status);
-                  const priorityConfig = getCounselingPriorityConfig(record.priority);
+                  const priorityConfig = getCounselingPriorityConfig(
+                    record.priority,
+                  );
 
                   return (
                     <TableRow key={record.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {record.isConfidential && (
-                            <span title="Rahasia" className="text-amber-500">🔒</span>
+                            <span title="Rahasia" className="text-amber-500">
+                              🔒
+                            </span>
                           )}
-                          <span className="font-mono text-sm">{record.caseNumber}</span>
+                          <span className="font-mono text-sm">
+                            {record.caseNumber}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium">{record.student?.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {record.student?.nis} • {record.student?.currentClass?.name || '-'}
+                            {record.student?.nis} •{" "}
+                            {record.student?.currentClass?.name || "-"}
                           </p>
                         </div>
                       </TableCell>
@@ -381,11 +413,15 @@ export default function CounselingPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm">{record.sessions?.length || 0} sesi</span>
+                        <span className="text-sm">
+                          {record.sessions?.length || 0} sesi
+                        </span>
                       </TableCell>
                       <TableCell>
                         <span className="text-sm">
-                          {format(new Date(record.reportedAt), 'dd MMM yyyy', { locale: localeId })}
+                          {format(new Date(record.reportedAt), "dd MMM yyyy", {
+                            locale: localeId,
+                          })}
                         </span>
                       </TableCell>
                       <TableCell>

@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useMemo, useEffect } from 'react';
-import Link from 'next/link';
-import { 
-  GraduationCap, 
-  FileText, 
-  Download, 
+import { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
+import {
+  GraduationCap,
+  FileText,
+  Download,
   Eye,
   Calendar,
   TrendingUp,
@@ -14,86 +14,116 @@ import {
   Users,
   ChevronRight,
   Loader2,
-  AlertCircle
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
+  AlertCircle,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useParentChildren, useChildReportCards, useChildGrades } from '@/hooks/use-parent-portal';
+} from "@/components/ui/select";
+import {
+  useParentChildren,
+  useChildReportCards,
+  useChildGrades,
+} from "@/hooks/use-parent-portal";
 
 export default function ParentReportCardsPage() {
   // Fetch children from API
-  const { data: childrenData, isLoading: isLoadingChildren } = useParentChildren();
-  
+  const { data: childrenData, isLoading: isLoadingChildren } =
+    useParentChildren();
+
   // Extract children array
   const children = useMemo(() => {
-    return childrenData?.map(c => ({
-      id: c.student.id,
-      nis: c.student.nis,
-      name: c.student.name,
-      gender: c.student.gender,
-      photo: c.student.photoUrl || null,
-      class: { id: c.student.class?.id || '', name: c.student.class?.name || '-' },
-      unit: { id: c.student.unit?.id || '', name: c.student.unit?.name || '-' },
-    })) || [];
+    return (
+      childrenData?.map((c) => ({
+        id: c.student.id,
+        nis: c.student.nis,
+        name: c.student.name,
+        gender: c.student.gender,
+        photo: c.student.photoUrl || null,
+        class: {
+          id: c.student.class?.id || "",
+          name: c.student.class?.name || "-",
+        },
+        unit: {
+          id: c.student.unit?.id || "",
+          name: c.student.unit?.name || "-",
+        },
+      })) || []
+    );
   }, [childrenData]);
-  
-  const [selectedChild, setSelectedChild] = useState<string>('');
-  
+
+  const [selectedChild, setSelectedChild] = useState<string>("");
+
   // Auto-select first child when data loads
   useEffect(() => {
     if (children.length > 0 && !selectedChild) {
       setSelectedChild(children[0].id);
     }
   }, [children, selectedChild]);
-  
+
   // Fetch report cards for selected child
-  const { data: reportCardsData, isLoading: isLoadingReports } = useChildReportCards(selectedChild);
-  
+  const { data: reportCardsData, isLoading: isLoadingReports } =
+    useChildReportCards(selectedChild);
+
   // Fetch grades for selected child
   const { data: gradesData } = useChildGrades(selectedChild);
 
-  const currentChild = children.find(c => c.id === selectedChild);
-  
+  const currentChild = children.find((c) => c.id === selectedChild);
+
   // Transform report cards to report history format
   const reportHistory = useMemo(() => {
     if (!reportCardsData) return [];
     return reportCardsData.map((rc, idx) => ({
       academicYearId: rc.academicYearId,
       year: rc.academicYearName,
-      semester: rc.semester === 'GANJIL' ? 1 : 2,
+      semester: rc.semester === "GANJIL" ? 1 : 2,
       averageScore: gradesData?.overallAverage || 0,
       rank: gradesData?.ranking || null,
       reportCardId: rc.id,
-      status: rc.status === 'PRINTED' ? 'DOWNLOADED' : 'PUBLISHED',
+      status: rc.status === "PRINTED" ? "DOWNLOADED" : "PUBLISHED",
       downloadUrl: rc.downloadUrl,
     }));
   }, [reportCardsData, gradesData]);
-  
+
   const latestReport = reportHistory[0];
 
   const getScoreTrend = () => {
     if (reportHistory.length < 2) return 0;
-    return (reportHistory[0].averageScore || 0) - (reportHistory[1].averageScore || 0);
+    return (
+      (reportHistory[0].averageScore || 0) -
+      (reportHistory[1].averageScore || 0)
+    );
   };
 
   const getRankTrend = () => {
-    if (reportHistory.length < 2 || !reportHistory[0].rank || !reportHistory[1].rank) return 0;
-    return (reportHistory[1].rank as number) - (reportHistory[0].rank as number);
+    if (
+      reportHistory.length < 2 ||
+      !reportHistory[0].rank ||
+      !reportHistory[1].rank
+    )
+      return 0;
+    return (
+      (reportHistory[1].rank as number) - (reportHistory[0].rank as number)
+    );
   };
 
   const scoreTrend = getScoreTrend();
   const rankTrend = getRankTrend();
-  
+
   // Loading state
   if (isLoadingChildren) {
     return (
@@ -113,7 +143,7 @@ export default function ParentReportCardsPage() {
       </div>
     );
   }
-  
+
   // No children
   if (children.length === 0) {
     return (
@@ -151,7 +181,7 @@ export default function ParentReportCardsPage() {
                 <SelectValue placeholder="Pilih anak" />
               </SelectTrigger>
               <SelectContent>
-                {children.map(child => (
+                {children.map((child) => (
                   <SelectItem key={child.id} value={child.id}>
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">
@@ -180,7 +210,9 @@ export default function ParentReportCardsPage() {
               </Avatar>
               <div className="space-y-1">
                 <h2 className="text-2xl font-bold">{currentChild.name}</h2>
-                <p className="text-muted-foreground font-mono">{currentChild.nis}</p>
+                <p className="text-muted-foreground font-mono">
+                  {currentChild.nis}
+                </p>
                 <div className="flex gap-2">
                   <Badge variant="secondary">{currentChild.class.name}</Badge>
                   <Badge variant="outline">{currentChild.unit.name}</Badge>
@@ -201,14 +233,25 @@ export default function ParentReportCardsPage() {
                   <BookOpen className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{latestReport.averageScore}</p>
-                  <p className="text-sm text-muted-foreground">Rata-rata Nilai</p>
+                  <p className="text-2xl font-bold">
+                    {latestReport.averageScore}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Rata-rata Nilai
+                  </p>
                 </div>
               </div>
               {scoreTrend !== 0 && (
-                <div className={`mt-2 flex items-center gap-1 text-sm ${scoreTrend > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  <TrendingUp className={`h-4 w-4 ${scoreTrend < 0 ? 'rotate-180' : ''}`} />
-                  <span>{scoreTrend > 0 ? '+' : ''}{scoreTrend.toFixed(1)} dari semester lalu</span>
+                <div
+                  className={`mt-2 flex items-center gap-1 text-sm ${scoreTrend > 0 ? "text-green-600" : "text-red-600"}`}
+                >
+                  <TrendingUp
+                    className={`h-4 w-4 ${scoreTrend < 0 ? "rotate-180" : ""}`}
+                  />
+                  <span>
+                    {scoreTrend > 0 ? "+" : ""}
+                    {scoreTrend.toFixed(1)} dari semester lalu
+                  </span>
                 </div>
               )}
             </CardContent>
@@ -222,13 +265,22 @@ export default function ParentReportCardsPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">#{latestReport.rank}</p>
-                  <p className="text-sm text-muted-foreground">Peringkat Kelas</p>
+                  <p className="text-sm text-muted-foreground">
+                    Peringkat Kelas
+                  </p>
                 </div>
               </div>
               {rankTrend !== 0 && (
-                <div className={`mt-2 flex items-center gap-1 text-sm ${rankTrend > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  <TrendingUp className={`h-4 w-4 ${rankTrend < 0 ? 'rotate-180' : ''}`} />
-                  <span>{rankTrend > 0 ? 'Naik' : 'Turun'} {Math.abs(rankTrend)} peringkat</span>
+                <div
+                  className={`mt-2 flex items-center gap-1 text-sm ${rankTrend > 0 ? "text-green-600" : "text-red-600"}`}
+                >
+                  <TrendingUp
+                    className={`h-4 w-4 ${rankTrend < 0 ? "rotate-180" : ""}`}
+                  />
+                  <span>
+                    {rankTrend > 0 ? "Naik" : "Turun"} {Math.abs(rankTrend)}{" "}
+                    peringkat
+                  </span>
                 </div>
               )}
             </CardContent>
@@ -241,8 +293,12 @@ export default function ParentReportCardsPage() {
                   <Calendar className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">Sem {latestReport.semester}</p>
-                  <p className="text-sm text-muted-foreground">{latestReport.year}</p>
+                  <p className="text-2xl font-bold">
+                    Sem {latestReport.semester}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {latestReport.year}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -256,7 +312,9 @@ export default function ParentReportCardsPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{reportHistory.length}</p>
-                  <p className="text-sm text-muted-foreground">Rapor Tersedia</p>
+                  <p className="text-sm text-muted-foreground">
+                    Rapor Tersedia
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -275,11 +333,14 @@ export default function ParentReportCardsPage() {
                   Rapor Terbaru
                 </CardTitle>
                 <CardDescription>
-                  Tahun Ajaran {latestReport.year} - Semester {latestReport.semester}
+                  Tahun Ajaran {latestReport.year} - Semester{" "}
+                  {latestReport.semester}
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-                <Link href={`/parent/report-cards/${latestReport.reportCardId}`}>
+                <Link
+                  href={`/parent/report-cards/${latestReport.reportCardId}`}
+                >
                   <Button>
                     <Eye className="h-4 w-4 mr-2" />
                     Lihat Detail
@@ -296,18 +357,22 @@ export default function ParentReportCardsPage() {
             <div className="grid gap-4 md:grid-cols-3">
               <div className="p-4 bg-muted rounded-lg">
                 <p className="text-sm text-muted-foreground">Rata-rata Nilai</p>
-                <p className="text-3xl font-bold mt-1">{latestReport.averageScore}</p>
+                <p className="text-3xl font-bold mt-1">
+                  {latestReport.averageScore}
+                </p>
               </div>
               <div className="p-4 bg-muted rounded-lg">
                 <p className="text-sm text-muted-foreground">Peringkat</p>
                 <p className="text-3xl font-bold mt-1">
-                  {latestReport.rank ? `#${latestReport.rank}` : '-'}
+                  {latestReport.rank ? `#${latestReport.rank}` : "-"}
                 </p>
               </div>
               <div className="p-4 bg-muted rounded-lg">
                 <p className="text-sm text-muted-foreground">Status</p>
                 <Badge className="mt-2 bg-green-100 text-green-800">
-                  {latestReport.status === 'PUBLISHED' ? 'Telah Diterbitkan' : 'Telah Diunduh'}
+                  {latestReport.status === "PUBLISHED"
+                    ? "Telah Diterbitkan"
+                    : "Telah Diunduh"}
                 </Badge>
               </div>
             </div>
@@ -329,13 +394,17 @@ export default function ParentReportCardsPage() {
               <div
                 key={report.reportCardId}
                 className={`flex items-center justify-between p-4 rounded-lg border ${
-                  index === 0 ? 'border-primary bg-primary/5' : ''
+                  index === 0 ? "border-primary bg-primary/5" : ""
                 }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-full ${
-                    index === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                  }`}>
+                  <div
+                    className={`p-3 rounded-full ${
+                      index === 0
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                    }`}
+                  >
                     <FileText className="h-5 w-5" />
                   </div>
                   <div>
@@ -344,7 +413,9 @@ export default function ParentReportCardsPage() {
                         Semester {report.semester} - {report.year}
                       </p>
                       {index === 0 && (
-                        <Badge variant="secondary" className="text-xs">Terbaru</Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          Terbaru
+                        </Badge>
                       )}
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
@@ -354,8 +425,14 @@ export default function ParentReportCardsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={report.status === 'DOWNLOADED' ? 'outline' : 'default'}>
-                    {report.status === 'DOWNLOADED' ? 'Sudah Diunduh' : 'Tersedia'}
+                  <Badge
+                    variant={
+                      report.status === "DOWNLOADED" ? "outline" : "default"
+                    }
+                  >
+                    {report.status === "DOWNLOADED"
+                      ? "Sudah Diunduh"
+                      : "Tersedia"}
                   </Badge>
                   <Link href={`/parent/report-cards/${report.reportCardId}`}>
                     <Button variant="ghost" size="icon">
@@ -385,24 +462,36 @@ export default function ParentReportCardsPage() {
             <div className="text-center">
               <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
               <p className="text-muted-foreground">Grafik perkembangan nilai</p>
-              <p className="text-sm text-muted-foreground">(Integrasi chart akan ditambahkan)</p>
+              <p className="text-sm text-muted-foreground">
+                (Integrasi chart akan ditambahkan)
+              </p>
             </div>
           </div>
           {/* Simple visual representation */}
           <div className="mt-6 flex items-end justify-around h-40 px-4">
-            {reportHistory.slice().reverse().map((report, idx) => (
-              <div key={report.reportCardId} className="flex flex-col items-center gap-2">
-                <div 
-                  className="w-16 bg-primary rounded-t transition-all"
-                  style={{ height: `${(report.averageScore / 100) * 120}px` }}
-                />
-                <div className="text-center">
-                  <p className="text-sm font-medium">{report.averageScore}</p>
-                  <p className="text-xs text-muted-foreground">Sem {report.semester}</p>
-                  <p className="text-xs text-muted-foreground">{report.year.split('/')[0]}</p>
+            {reportHistory
+              .slice()
+              .reverse()
+              .map((report, idx) => (
+                <div
+                  key={report.reportCardId}
+                  className="flex flex-col items-center gap-2"
+                >
+                  <div
+                    className="w-16 bg-primary rounded-t transition-all"
+                    style={{ height: `${(report.averageScore / 100) * 120}px` }}
+                  />
+                  <div className="text-center">
+                    <p className="text-sm font-medium">{report.averageScore}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Sem {report.semester}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {report.year.split("/")[0]}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         </CardContent>
       </Card>
@@ -415,12 +504,19 @@ export default function ParentReportCardsPage() {
               <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-blue-800 dark:text-blue-200">Informasi Penting</h3>
+              <h3 className="font-semibold text-blue-800 dark:text-blue-200">
+                Informasi Penting
+              </h3>
               <ul className="mt-2 space-y-1 text-sm text-blue-700 dark:text-blue-300">
-                <li>• Rapor akan tersedia setelah diterbitkan oleh pihak sekolah</li>
+                <li>
+                  • Rapor akan tersedia setelah diterbitkan oleh pihak sekolah
+                </li>
                 <li>• Anda dapat mengunduh rapor dalam format PDF</li>
                 <li>• Hubungi wali kelas jika ada pertanyaan mengenai nilai</li>
-                <li>• Pengambilan rapor fisik akan diumumkan melalui pengumuman sekolah</li>
+                <li>
+                  • Pengambilan rapor fisik akan diumumkan melalui pengumuman
+                  sekolah
+                </li>
               </ul>
             </div>
           </div>

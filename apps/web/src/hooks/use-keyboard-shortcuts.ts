@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef } from "react";
 
 export interface KeyboardShortcut {
   /**
@@ -50,15 +50,18 @@ function parseKeyCombo(keys: string): {
   alt: boolean;
   meta: boolean;
 } {
-  const parts = keys.toLowerCase().split('+');
+  const parts = keys.toLowerCase().split("+");
   const key = parts[parts.length - 1];
-  
+
   return {
     key,
-    ctrl: parts.includes('ctrl') || parts.includes('control'),
-    shift: parts.includes('shift'),
-    alt: parts.includes('alt'),
-    meta: parts.includes('meta') || parts.includes('cmd') || parts.includes('command'),
+    ctrl: parts.includes("ctrl") || parts.includes("control"),
+    shift: parts.includes("shift"),
+    alt: parts.includes("alt"),
+    meta:
+      parts.includes("meta") ||
+      parts.includes("cmd") ||
+      parts.includes("command"),
   };
 }
 
@@ -67,23 +70,23 @@ function parseKeyCombo(keys: string): {
  */
 function matchesKeyCombo(
   event: KeyboardEvent,
-  combo: ReturnType<typeof parseKeyCombo>
+  combo: ReturnType<typeof parseKeyCombo>,
 ): boolean {
   const eventKey = event.key.toLowerCase();
-  
+
   // Handle special keys
-  const keyMatch = 
+  const keyMatch =
     eventKey === combo.key ||
-    (combo.key === 'escape' && eventKey === 'escape') ||
-    (combo.key === 'enter' && eventKey === 'enter') ||
-    (combo.key === 'space' && (eventKey === ' ' || eventKey === 'space')) ||
-    (combo.key === 'tab' && eventKey === 'tab') ||
-    (combo.key === 'backspace' && eventKey === 'backspace') ||
-    (combo.key === 'delete' && eventKey === 'delete') ||
-    (combo.key === 'arrowup' && eventKey === 'arrowup') ||
-    (combo.key === 'arrowdown' && eventKey === 'arrowdown') ||
-    (combo.key === 'arrowleft' && eventKey === 'arrowleft') ||
-    (combo.key === 'arrowright' && eventKey === 'arrowright');
+    (combo.key === "escape" && eventKey === "escape") ||
+    (combo.key === "enter" && eventKey === "enter") ||
+    (combo.key === "space" && (eventKey === " " || eventKey === "space")) ||
+    (combo.key === "tab" && eventKey === "tab") ||
+    (combo.key === "backspace" && eventKey === "backspace") ||
+    (combo.key === "delete" && eventKey === "delete") ||
+    (combo.key === "arrowup" && eventKey === "arrowup") ||
+    (combo.key === "arrowdown" && eventKey === "arrowdown") ||
+    (combo.key === "arrowleft" && eventKey === "arrowleft") ||
+    (combo.key === "arrowright" && eventKey === "arrowright");
 
   return (
     keyMatch &&
@@ -99,22 +102,23 @@ function matchesKeyCombo(
  */
 function isInputElement(target: EventTarget | null): boolean {
   if (!target || !(target instanceof HTMLElement)) return false;
-  
+
   const tagName = target.tagName.toLowerCase();
-  const isInput = tagName === 'input' || tagName === 'textarea' || tagName === 'select';
+  const isInput =
+    tagName === "input" || tagName === "textarea" || tagName === "select";
   const isContentEditable = target.isContentEditable;
-  
+
   return isInput || isContentEditable;
 }
 
 /**
  * Hook to manage keyboard shortcuts
- * 
+ *
  * @example
  * ```tsx
  * function MyComponent() {
  *   const { registerShortcut, unregisterShortcut } = useKeyboardShortcuts();
- * 
+ *
  *   useEffect(() => {
  *     registerShortcut({
  *       id: 'save',
@@ -123,13 +127,15 @@ function isInputElement(target: EventTarget | null): boolean {
  *       description: 'Simpan',
  *       preventDefault: true,
  *     });
- * 
+ *
  *     return () => unregisterShortcut('save');
  *   }, []);
  * }
  * ```
  */
-export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) {
+export function useKeyboardShortcuts(
+  options: UseKeyboardShortcutsOptions = {},
+) {
   const { enabled = true } = options;
   const shortcutsRef = useRef<Map<string, KeyboardShortcut>>(new Map());
 
@@ -161,7 +167,7 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
         if (isInput && !shortcut.allowInInput) continue;
 
         const combo = parseKeyCombo(shortcut.keys);
-        
+
         if (matchesKeyCombo(event, combo)) {
           if (shortcut.preventDefault) {
             event.preventDefault();
@@ -172,10 +178,10 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [enabled]);
 
@@ -188,7 +194,7 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
 
 /**
  * Simple hook for a single keyboard shortcut
- * 
+ *
  * @example
  * ```tsx
  * useKeyboardShortcut('ctrl+s', handleSave, { preventDefault: true });
@@ -202,7 +208,7 @@ export function useKeyboardShortcut(
     enabled?: boolean;
     preventDefault?: boolean;
     allowInInput?: boolean;
-  } = {}
+  } = {},
 ) {
   const {
     enabled = true,
@@ -214,7 +220,7 @@ export function useKeyboardShortcut(
 
   // Update ref only on mount and when handler changes, not during render
   useEffect(() => {
-      handlerRef.current = handler;
+    handlerRef.current = handler;
   }, [handler]);
 
   useEffect(() => {
@@ -234,10 +240,10 @@ export function useKeyboardShortcut(
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [keys, enabled, preventDefault, allowInInput]);
 }
@@ -246,26 +252,29 @@ export function useKeyboardShortcut(
  * Format key combination for display
  */
 export function formatKeyCombo(keys: string): string {
-  const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
-  
+  const isMac =
+    typeof navigator !== "undefined" &&
+    /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+
   return keys
-    .split('+')
-    .map(key => {
+    .split("+")
+    .map((key) => {
       const lower = key.toLowerCase();
-      if (lower === 'ctrl' || lower === 'control') return isMac ? '⌃' : 'Ctrl';
-      if (lower === 'shift') return isMac ? '⇧' : 'Shift';
-      if (lower === 'alt') return isMac ? '⌥' : 'Alt';
-      if (lower === 'meta' || lower === 'cmd' || lower === 'command') return isMac ? '⌘' : 'Win';
-      if (lower === 'escape') return 'Esc';
-      if (lower === 'enter') return '↵';
-      if (lower === 'space') return 'Space';
-      if (lower === 'backspace') return '⌫';
-      if (lower === 'delete') return 'Del';
-      if (lower === 'arrowup') return '↑';
-      if (lower === 'arrowdown') return '↓';
-      if (lower === 'arrowleft') return '←';
-      if (lower === 'arrowright') return '→';
+      if (lower === "ctrl" || lower === "control") return isMac ? "⌃" : "Ctrl";
+      if (lower === "shift") return isMac ? "⇧" : "Shift";
+      if (lower === "alt") return isMac ? "⌥" : "Alt";
+      if (lower === "meta" || lower === "cmd" || lower === "command")
+        return isMac ? "⌘" : "Win";
+      if (lower === "escape") return "Esc";
+      if (lower === "enter") return "↵";
+      if (lower === "space") return "Space";
+      if (lower === "backspace") return "⌫";
+      if (lower === "delete") return "Del";
+      if (lower === "arrowup") return "↑";
+      if (lower === "arrowdown") return "↓";
+      if (lower === "arrowleft") return "←";
+      if (lower === "arrowright") return "→";
       return key.toUpperCase();
     })
-    .join(isMac ? '' : '+');
+    .join(isMac ? "" : "+");
 }

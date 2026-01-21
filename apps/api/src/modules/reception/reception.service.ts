@@ -8,7 +8,7 @@ import {
   UpdateStudentPackageInput,
   VisitStatus,
   PackageStatus,
-  ReceptionStats
+  ReceptionStats,
 } from '@cipansor/shared';
 import { Errors } from '../../middleware/error';
 import { Prisma } from '@prisma/client';
@@ -27,37 +27,34 @@ export const getStats = async (unitId: string): Promise<ReceptionStats> => {
         unitId,
         checkIn: {
           gte: today,
-          lt: tomorrow
-        }
-      }
+          lt: tomorrow,
+        },
+      },
     }),
     prisma.studentVisit.count({
       where: {
         unitId,
-        status: VisitStatus.CHECKED_IN
-      }
+        status: VisitStatus.CHECKED_IN,
+      },
     }),
     prisma.studentPackage.count({
       where: {
         unitId,
-        status: PackageStatus.RECEIVED
-      }
-    })
+        status: PackageStatus.RECEIVED,
+      },
+    }),
   ]);
 
   return {
     guestsToday,
     activeVisits,
-    pendingPackages
+    pendingPackages,
   };
 };
 
 // --- Guest Book ---
 
-export const getGuestBooks = async (
-  unitId: string,
-  params: { date?: string }
-) => {
+export const getGuestBooks = async (unitId: string, params: { date?: string }) => {
   const where: Prisma.GuestBookWhereInput = { unitId };
 
   if (params.date) {
@@ -68,7 +65,7 @@ export const getGuestBooks = async (
 
     where.checkIn = {
       gte: startDate,
-      lt: endDate
+      lt: endDate,
     };
   }
 
@@ -77,9 +74,9 @@ export const getGuestBooks = async (
     orderBy: { checkIn: 'desc' },
     include: {
       receivedBy: {
-        select: { name: true }
-      }
-    }
+        select: { name: true },
+      },
+    },
   });
 };
 
@@ -99,13 +96,13 @@ export const createGuestBook = async (
       vehicleNumber: data.vehicleNumber,
       notes: data.notes,
       receivedById: userId,
-      checkIn: new Date()
+      checkIn: new Date(),
     },
     include: {
       receivedBy: {
-        select: { name: true }
-      }
-    }
+        select: { name: true },
+      },
+    },
   });
 };
 
@@ -117,13 +114,13 @@ export const updateGuestBook = async (id: string, data: UpdateGuestBookInput) =>
     where: { id },
     data: {
       checkOut: data.checkOut,
-      notes: data.notes
+      notes: data.notes,
     },
     include: {
       receivedBy: {
-        select: { name: true }
-      }
-    }
+        select: { name: true },
+      },
+    },
   });
 };
 
@@ -143,7 +140,7 @@ export const getStudentVisits = async (
 
     where.checkIn = {
       gte: startDate,
-      lt: endDate
+      lt: endDate,
     };
   }
 
@@ -162,21 +159,18 @@ export const getStudentVisits = async (
           enrollments: {
             where: { status: 'active' },
             select: { class: { select: { name: true } } },
-            take: 1
-          }
-        }
-      }
-    }
+            take: 1,
+          },
+        },
+      },
+    },
   });
 };
 
-export const createStudentVisit = async (
-  unitId: string,
-  data: CreateStudentVisitInput
-) => {
+export const createStudentVisit = async (unitId: string, data: CreateStudentVisitInput) => {
   // Validate student belongs to unit
   const student = await prisma.student.findUnique({
-    where: { id: data.studentId }
+    where: { id: data.studentId },
   });
 
   if (!student) throw Errors.notFound('Student');
@@ -192,7 +186,7 @@ export const createStudentVisit = async (
       purpose: data.purpose,
       notes: data.notes,
       status: VisitStatus.CHECKED_IN,
-      checkIn: new Date()
+      checkIn: new Date(),
     },
     include: {
       student: {
@@ -202,11 +196,11 @@ export const createStudentVisit = async (
           enrollments: {
             where: { status: 'active' },
             select: { class: { select: { name: true } } },
-            take: 1
-          }
-        }
-      }
-    }
+            take: 1,
+          },
+        },
+      },
+    },
   });
 };
 
@@ -219,7 +213,7 @@ export const updateStudentVisit = async (id: string, data: UpdateStudentVisitInp
     data: {
       checkOut: data.checkOut,
       status: data.status,
-      notes: data.notes
+      notes: data.notes,
     },
     include: {
       student: {
@@ -229,11 +223,11 @@ export const updateStudentVisit = async (id: string, data: UpdateStudentVisitInp
           enrollments: {
             where: { status: 'active' },
             select: { class: { select: { name: true } } },
-            take: 1
-          }
-        }
-      }
-    }
+            take: 1,
+          },
+        },
+      },
+    },
   });
 };
 
@@ -264,14 +258,14 @@ export const getPackages = async (
           enrollments: {
             where: { status: 'active' },
             select: { class: { select: { name: true } } },
-            take: 1
-          }
-        }
+            take: 1,
+          },
+        },
       },
       receivedBy: {
-        select: { name: true }
-      }
-    }
+        select: { name: true },
+      },
+    },
   });
 };
 
@@ -291,7 +285,7 @@ export const createPackage = async (
       notes: data.notes,
       receivedById: userId,
       receivedAt: new Date(),
-      status: PackageStatus.RECEIVED
+      status: PackageStatus.RECEIVED,
     },
     include: {
       student: {
@@ -301,14 +295,14 @@ export const createPackage = async (
           enrollments: {
             where: { status: 'active' },
             select: { class: { select: { name: true } } },
-            take: 1
-          }
-        }
+            take: 1,
+          },
+        },
       },
       receivedBy: {
-        select: { name: true }
-      }
-    }
+        select: { name: true },
+      },
+    },
   });
 };
 
@@ -320,7 +314,7 @@ export const updatePackage = async (id: string, data: UpdateStudentPackageInput)
   const updateData: any = {
     status: data.status,
     notes: data.notes,
-    deliveredTo: data.deliveredTo
+    deliveredTo: data.deliveredTo,
   };
 
   if (data.status === PackageStatus.DELIVERED && !pkg.deliveredAt) {
@@ -338,13 +332,13 @@ export const updatePackage = async (id: string, data: UpdateStudentPackageInput)
           enrollments: {
             where: { status: 'active' },
             select: { class: { select: { name: true } } },
-            take: 1
-          }
-        }
+            take: 1,
+          },
+        },
       },
       receivedBy: {
-        select: { name: true }
-      }
-    }
+        select: { name: true },
+      },
+    },
   });
 };

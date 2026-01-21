@@ -1,15 +1,33 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { ApiResponse, PaginatedResponse } from "@/lib/api";
 
 // ======================
 // TYPES & ENUMS
 // ======================
 
-export type IbadahCategory = 'SHOLAT' | 'TILAWAH' | 'DZIKIR' | 'PUASA' | 'SEDEKAH' | 'SUNNAH' | 'OTHER';
-export type TargetType = 'DAILY' | 'WEEKLY' | 'MONTHLY';
-export type TargetUnit = 'TIMES' | 'MINUTES' | 'PAGES' | 'JUZ' | 'AMOUNT' | 'COUNT';
-export type LeaderboardPeriod = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'SEMESTER' | 'YEARLY';
-export type VerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
+export type IbadahCategory =
+  | "SHOLAT"
+  | "TILAWAH"
+  | "DZIKIR"
+  | "PUASA"
+  | "SEDEKAH"
+  | "SUNNAH"
+  | "OTHER";
+export type TargetType = "DAILY" | "WEEKLY" | "MONTHLY";
+export type TargetUnit =
+  | "TIMES"
+  | "MINUTES"
+  | "PAGES"
+  | "JUZ"
+  | "AMOUNT"
+  | "COUNT";
+export type LeaderboardPeriod =
+  | "DAILY"
+  | "WEEKLY"
+  | "MONTHLY"
+  | "SEMESTER"
+  | "YEARLY";
+export type VerificationStatus = "PENDING" | "VERIFIED" | "REJECTED";
 
 export interface IbadahTarget {
   id: string;
@@ -125,43 +143,106 @@ export interface StudentIbadahStats {
 // CONSTANTS
 // ======================
 
-export const IBADAH_CATEGORIES: { value: IbadahCategory; label: string; labelAr: string; icon: string; color: string }[] = [
-  { value: 'SHOLAT', label: 'Sholat', labelAr: 'الصلاة', icon: '🕌', color: 'bg-green-100 text-green-800' },
-  { value: 'TILAWAH', label: 'Tilawah Al-Quran', labelAr: 'تلاوة القرآن', icon: '📖', color: 'bg-blue-100 text-blue-800' },
-  { value: 'DZIKIR', label: 'Dzikir', labelAr: 'الذكر', icon: '📿', color: 'bg-purple-100 text-purple-800' },
-  { value: 'PUASA', label: 'Puasa', labelAr: 'الصيام', icon: '🌙', color: 'bg-amber-100 text-amber-800' },
-  { value: 'SEDEKAH', label: 'Sedekah', labelAr: 'الصدقة', icon: '💝', color: 'bg-pink-100 text-pink-800' },
-  { value: 'SUNNAH', label: 'Ibadah Sunnah', labelAr: 'السنة', icon: '⭐', color: 'bg-cyan-100 text-cyan-800' },
-  { value: 'OTHER', label: 'Lainnya', labelAr: 'أخرى', icon: '✨', color: 'bg-gray-100 text-gray-800' },
+export const IBADAH_CATEGORIES: {
+  value: IbadahCategory;
+  label: string;
+  labelAr: string;
+  icon: string;
+  color: string;
+}[] = [
+  {
+    value: "SHOLAT",
+    label: "Sholat",
+    labelAr: "الصلاة",
+    icon: "🕌",
+    color: "bg-green-100 text-green-800",
+  },
+  {
+    value: "TILAWAH",
+    label: "Tilawah Al-Quran",
+    labelAr: "تلاوة القرآن",
+    icon: "📖",
+    color: "bg-blue-100 text-blue-800",
+  },
+  {
+    value: "DZIKIR",
+    label: "Dzikir",
+    labelAr: "الذكر",
+    icon: "📿",
+    color: "bg-purple-100 text-purple-800",
+  },
+  {
+    value: "PUASA",
+    label: "Puasa",
+    labelAr: "الصيام",
+    icon: "🌙",
+    color: "bg-amber-100 text-amber-800",
+  },
+  {
+    value: "SEDEKAH",
+    label: "Sedekah",
+    labelAr: "الصدقة",
+    icon: "💝",
+    color: "bg-pink-100 text-pink-800",
+  },
+  {
+    value: "SUNNAH",
+    label: "Ibadah Sunnah",
+    labelAr: "السنة",
+    icon: "⭐",
+    color: "bg-cyan-100 text-cyan-800",
+  },
+  {
+    value: "OTHER",
+    label: "Lainnya",
+    labelAr: "أخرى",
+    icon: "✨",
+    color: "bg-gray-100 text-gray-800",
+  },
 ];
 
 export const TARGET_TYPES: { value: TargetType; label: string }[] = [
-  { value: 'DAILY', label: 'Harian' },
-  { value: 'WEEKLY', label: 'Mingguan' },
-  { value: 'MONTHLY', label: 'Bulanan' },
+  { value: "DAILY", label: "Harian" },
+  { value: "WEEKLY", label: "Mingguan" },
+  { value: "MONTHLY", label: "Bulanan" },
 ];
 
 export const TARGET_UNITS: { value: TargetUnit; label: string }[] = [
-  { value: 'TIMES', label: 'Kali' },
-  { value: 'MINUTES', label: 'Menit' },
-  { value: 'PAGES', label: 'Halaman' },
-  { value: 'JUZ', label: 'Juz' },
-  { value: 'AMOUNT', label: 'Jumlah (Rp)' },
-  { value: 'COUNT', label: 'Jumlah' },
+  { value: "TIMES", label: "Kali" },
+  { value: "MINUTES", label: "Menit" },
+  { value: "PAGES", label: "Halaman" },
+  { value: "JUZ", label: "Juz" },
+  { value: "AMOUNT", label: "Jumlah (Rp)" },
+  { value: "COUNT", label: "Jumlah" },
 ];
 
-export const LEADERBOARD_PERIODS: { value: LeaderboardPeriod; label: string }[] = [
-  { value: 'DAILY', label: 'Hari Ini' },
-  { value: 'WEEKLY', label: 'Minggu Ini' },
-  { value: 'MONTHLY', label: 'Bulan Ini' },
-  { value: 'SEMESTER', label: 'Semester Ini' },
-  { value: 'YEARLY', label: 'Tahun Ini' },
+export const LEADERBOARD_PERIODS: {
+  value: LeaderboardPeriod;
+  label: string;
+}[] = [
+  { value: "DAILY", label: "Hari Ini" },
+  { value: "WEEKLY", label: "Minggu Ini" },
+  { value: "MONTHLY", label: "Bulan Ini" },
+  { value: "SEMESTER", label: "Semester Ini" },
+  { value: "YEARLY", label: "Tahun Ini" },
 ];
 
-export const VERIFICATION_STATUSES: { value: VerificationStatus; label: string; color: string }[] = [
-  { value: 'PENDING', label: 'Menunggu Verifikasi', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'VERIFIED', label: 'Terverifikasi', color: 'bg-green-100 text-green-800' },
-  { value: 'REJECTED', label: 'Ditolak', color: 'bg-red-100 text-red-800' },
+export const VERIFICATION_STATUSES: {
+  value: VerificationStatus;
+  label: string;
+  color: string;
+}[] = [
+  {
+    value: "PENDING",
+    label: "Menunggu Verifikasi",
+    color: "bg-yellow-100 text-yellow-800",
+  },
+  {
+    value: "VERIFIED",
+    label: "Terverifikasi",
+    color: "bg-green-100 text-green-800",
+  },
+  { value: "REJECTED", label: "Ditolak", color: "bg-red-100 text-red-800" },
 ];
 
 // ======================
@@ -180,9 +261,12 @@ export interface ListTargetsParams {
 
 export function useIbadahTargets(params: ListTargetsParams = {}) {
   return useQuery({
-    queryKey: ['ibadah-targets', params],
+    queryKey: ["ibadah-targets", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<IbadahTarget>>('/ibadah/targets', { params });
+      const response = await api.get<PaginatedResponse<IbadahTarget>>(
+        "/ibadah/targets",
+        { params },
+      );
       return response.data;
     },
   });
@@ -190,9 +274,11 @@ export function useIbadahTargets(params: ListTargetsParams = {}) {
 
 export function useIbadahTarget(id: string) {
   return useQuery({
-    queryKey: ['ibadah-targets', id],
+    queryKey: ["ibadah-targets", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<IbadahTarget>>(`/ibadah/targets/${id}`);
+      const response = await api.get<ApiResponse<IbadahTarget>>(
+        `/ibadah/targets/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -220,11 +306,14 @@ export function useCreateIbadahTarget() {
 
   return useMutation({
     mutationFn: async (data: CreateTargetData) => {
-      const response = await api.post<ApiResponse<IbadahTarget>>('/ibadah/targets', data);
+      const response = await api.post<ApiResponse<IbadahTarget>>(
+        "/ibadah/targets",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ibadah-targets'] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-targets"] });
     },
   });
 }
@@ -233,13 +322,24 @@ export function useUpdateIbadahTarget() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateTargetData> }) => {
-      const response = await api.put<ApiResponse<IbadahTarget>>(`/ibadah/targets/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateTargetData>;
+    }) => {
+      const response = await api.put<ApiResponse<IbadahTarget>>(
+        `/ibadah/targets/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['ibadah-targets'] });
-      queryClient.invalidateQueries({ queryKey: ['ibadah-targets', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-targets"] });
+      queryClient.invalidateQueries({
+        queryKey: ["ibadah-targets", variables.id],
+      });
     },
   });
 }
@@ -252,7 +352,7 @@ export function useDeleteIbadahTarget() {
       await api.delete(`/ibadah/targets/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ibadah-targets'] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-targets"] });
     },
   });
 }
@@ -262,11 +362,13 @@ export function useSeedDefaultTargets() {
 
   return useMutation({
     mutationFn: async (unitId: string) => {
-      const response = await api.post<ApiResponse<IbadahTarget[]>>(`/ibadah/targets/seed/${unitId}`);
+      const response = await api.post<ApiResponse<IbadahTarget[]>>(
+        `/ibadah/targets/seed/${unitId}`,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ibadah-targets'] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-targets"] });
     },
   });
 }
@@ -293,9 +395,12 @@ export interface ListRecordsParams {
 
 export function useIbadahRecords(params: ListRecordsParams = {}) {
   return useQuery({
-    queryKey: ['ibadah-records', params],
+    queryKey: ["ibadah-records", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<IbadahRecord>>('/ibadah/records', { params });
+      const response = await api.get<PaginatedResponse<IbadahRecord>>(
+        "/ibadah/records",
+        { params },
+      );
       return response.data;
     },
   });
@@ -303,9 +408,11 @@ export function useIbadahRecords(params: ListRecordsParams = {}) {
 
 export function useIbadahRecord(id: string) {
   return useQuery({
-    queryKey: ['ibadah-records', id],
+    queryKey: ["ibadah-records", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<IbadahRecord>>(`/ibadah/records/${id}`);
+      const response = await api.get<ApiResponse<IbadahRecord>>(
+        `/ibadah/records/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -327,13 +434,16 @@ export function useCreateIbadahRecord() {
 
   return useMutation({
     mutationFn: async (data: CreateRecordData) => {
-      const response = await api.post<ApiResponse<IbadahRecord>>('/ibadah/records', data);
+      const response = await api.post<ApiResponse<IbadahRecord>>(
+        "/ibadah/records",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ibadah-records'] });
-      queryClient.invalidateQueries({ queryKey: ['ibadah-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['ibadah-leaderboard'] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-records"] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-leaderboard"] });
     },
   });
 }
@@ -342,14 +452,25 @@ export function useUpdateIbadahRecord() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateRecordData> }) => {
-      const response = await api.put<ApiResponse<IbadahRecord>>(`/ibadah/records/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateRecordData>;
+    }) => {
+      const response = await api.put<ApiResponse<IbadahRecord>>(
+        `/ibadah/records/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['ibadah-records'] });
-      queryClient.invalidateQueries({ queryKey: ['ibadah-records', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['ibadah-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-records"] });
+      queryClient.invalidateQueries({
+        queryKey: ["ibadah-records", variables.id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-stats"] });
     },
   });
 }
@@ -362,8 +483,8 @@ export function useDeleteIbadahRecord() {
       await api.delete(`/ibadah/records/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ibadah-records'] });
-      queryClient.invalidateQueries({ queryKey: ['ibadah-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-records"] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-stats"] });
     },
   });
 }
@@ -385,20 +506,23 @@ export function useBulkCreateIbadahRecords() {
 
   return useMutation({
     mutationFn: async (data: BulkCreateRecordsData) => {
-      const response = await api.post<ApiResponse<IbadahRecord[]>>('/ibadah/records/bulk', data);
+      const response = await api.post<ApiResponse<IbadahRecord[]>>(
+        "/ibadah/records/bulk",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ibadah-records'] });
-      queryClient.invalidateQueries({ queryKey: ['ibadah-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['ibadah-leaderboard'] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-records"] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-leaderboard"] });
     },
   });
 }
 
 export interface VerifyRecordsData {
   recordIds: string[];
-  status: 'VERIFIED' | 'REJECTED';
+  status: "VERIFIED" | "REJECTED";
   notes?: string;
 }
 
@@ -407,12 +531,15 @@ export function useVerifyIbadahRecords() {
 
   return useMutation({
     mutationFn: async (data: VerifyRecordsData) => {
-      const response = await api.post<ApiResponse<{ verified: number }>>('/ibadah/records/verify', data);
+      const response = await api.post<ApiResponse<{ verified: number }>>(
+        "/ibadah/records/verify",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ibadah-records'] });
-      queryClient.invalidateQueries({ queryKey: ['ibadah-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-records"] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-stats"] });
     },
   });
 }
@@ -439,17 +566,19 @@ export function useDailyCheckIn() {
 
   return useMutation({
     mutationFn: async (data: DailyCheckInData) => {
-      const response = await api.post<ApiResponse<{
-        records: IbadahRecord[];
-        totalPointsToday: number;
-        streak: number;
-      }>>('/ibadah/check-in', data);
+      const response = await api.post<
+        ApiResponse<{
+          records: IbadahRecord[];
+          totalPointsToday: number;
+          streak: number;
+        }>
+      >("/ibadah/check-in", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ibadah-records'] });
-      queryClient.invalidateQueries({ queryKey: ['ibadah-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['ibadah-leaderboard'] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-records"] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["ibadah-leaderboard"] });
     },
   });
 }
@@ -468,9 +597,12 @@ export interface LeaderboardParams {
 
 export function useIbadahLeaderboard(params: LeaderboardParams) {
   return useQuery({
-    queryKey: ['ibadah-leaderboard', params],
+    queryKey: ["ibadah-leaderboard", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<IbadahLeaderboard[]>>('/ibadah/leaderboard', { params });
+      const response = await api.get<ApiResponse<IbadahLeaderboard[]>>(
+        "/ibadah/leaderboard",
+        { params },
+      );
       return response.data.data;
     },
     enabled: !!params.unitId,
@@ -489,9 +621,12 @@ export interface StudentStatsParams {
 
 export function useStudentIbadahStats(params: StudentStatsParams) {
   return useQuery({
-    queryKey: ['ibadah-stats', 'student', params],
+    queryKey: ["ibadah-stats", "student", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<StudentIbadahStats>>('/ibadah/stats/student', { params });
+      const response = await api.get<ApiResponse<StudentIbadahStats>>(
+        "/ibadah/stats/student",
+        { params },
+      );
       return response.data.data;
     },
     enabled: !!params.studentId,
@@ -506,25 +641,27 @@ export interface UnitStatsParams {
 
 export function useUnitIbadahStats(params: UnitStatsParams) {
   return useQuery({
-    queryKey: ['ibadah-stats', 'unit', params],
+    queryKey: ["ibadah-stats", "unit", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<{
-        totalStudents: number;
-        activeStudents: number;
-        totalPoints: number;
-        averageCompletionRate: number;
-        categoryBreakdown: {
-          category: IbadahCategory;
+      const response = await api.get<
+        ApiResponse<{
+          totalStudents: number;
+          activeStudents: number;
           totalPoints: number;
-          averageCompletion: number;
-        }[];
-        topPerformers: {
-          studentId: string;
-          studentName: string;
-          points: number;
-          streak: number;
-        }[];
-      }>>('/ibadah/stats/unit', { params });
+          averageCompletionRate: number;
+          categoryBreakdown: {
+            category: IbadahCategory;
+            totalPoints: number;
+            averageCompletion: number;
+          }[];
+          topPerformers: {
+            studentId: string;
+            studentName: string;
+            points: number;
+            streak: number;
+          }[];
+        }>
+      >("/ibadah/stats/unit", { params });
       return response.data.data;
     },
     enabled: !!params.unitId,
@@ -539,19 +676,21 @@ export interface ClassStatsParams {
 
 export function useClassIbadahStats(params: ClassStatsParams) {
   return useQuery({
-    queryKey: ['ibadah-stats', 'class', params],
+    queryKey: ["ibadah-stats", "class", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<{
-        totalStudents: number;
-        averageCompletionRate: number;
-        studentStats: {
-          studentId: string;
-          studentName: string;
-          totalPoints: number;
-          completionRate: number;
-          streak: number;
-        }[];
-      }>>('/ibadah/stats/class', { params });
+      const response = await api.get<
+        ApiResponse<{
+          totalStudents: number;
+          averageCompletionRate: number;
+          studentStats: {
+            studentId: string;
+            studentName: string;
+            totalPoints: number;
+            completionRate: number;
+            streak: number;
+          }[];
+        }>
+      >("/ibadah/stats/class", { params });
       return response.data.data;
     },
     enabled: !!params.classId,
@@ -575,9 +714,12 @@ export interface ListEventsParams {
 
 export function useIslamicEvents(params: ListEventsParams = {}) {
   return useQuery({
-    queryKey: ['islamic-events', params],
+    queryKey: ["islamic-events", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<IslamicEvent>>('/ibadah/events', { params });
+      const response = await api.get<PaginatedResponse<IslamicEvent>>(
+        "/ibadah/events",
+        { params },
+      );
       return response.data;
     },
   });
@@ -585,9 +727,11 @@ export function useIslamicEvents(params: ListEventsParams = {}) {
 
 export function useIslamicEvent(id: string) {
   return useQuery({
-    queryKey: ['islamic-events', id],
+    queryKey: ["islamic-events", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<IslamicEvent>>(`/ibadah/events/${id}`);
+      const response = await api.get<ApiResponse<IslamicEvent>>(
+        `/ibadah/events/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -609,11 +753,14 @@ export function useCreateIslamicEvent() {
 
   return useMutation({
     mutationFn: async (data: CreateIslamicEventData) => {
-      const response = await api.post<ApiResponse<IslamicEvent>>('/ibadah/events', data);
+      const response = await api.post<ApiResponse<IslamicEvent>>(
+        "/ibadah/events",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['islamic-events'] });
+      queryClient.invalidateQueries({ queryKey: ["islamic-events"] });
     },
   });
 }
@@ -622,13 +769,24 @@ export function useUpdateIslamicEvent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateIslamicEventData> }) => {
-      const response = await api.put<ApiResponse<IslamicEvent>>(`/ibadah/events/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateIslamicEventData>;
+    }) => {
+      const response = await api.put<ApiResponse<IslamicEvent>>(
+        `/ibadah/events/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['islamic-events'] });
-      queryClient.invalidateQueries({ queryKey: ['islamic-events', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["islamic-events"] });
+      queryClient.invalidateQueries({
+        queryKey: ["islamic-events", variables.id],
+      });
     },
   });
 }
@@ -641,7 +799,7 @@ export function useDeleteIslamicEvent() {
       await api.delete(`/ibadah/events/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['islamic-events'] });
+      queryClient.invalidateQueries({ queryKey: ["islamic-events"] });
     },
   });
 }
@@ -651,19 +809,24 @@ export function useDeleteIslamicEvent() {
 // ======================
 
 export function getCategoryInfo(category: IbadahCategory) {
-  return IBADAH_CATEGORIES.find(c => c.value === category) || IBADAH_CATEGORIES[6];
+  return (
+    IBADAH_CATEGORIES.find((c) => c.value === category) || IBADAH_CATEGORIES[6]
+  );
 }
 
 export function getTargetTypeLabel(type: TargetType) {
-  return TARGET_TYPES.find(t => t.value === type)?.label || type;
+  return TARGET_TYPES.find((t) => t.value === type)?.label || type;
 }
 
 export function getTargetUnitLabel(unit: TargetUnit) {
-  return TARGET_UNITS.find(u => u.value === unit)?.label || unit;
+  return TARGET_UNITS.find((u) => u.value === unit)?.label || unit;
 }
 
 export function getVerificationStatusInfo(status: VerificationStatus) {
-  return VERIFICATION_STATUSES.find(s => s.value === status) || VERIFICATION_STATUSES[0];
+  return (
+    VERIFICATION_STATUSES.find((s) => s.value === status) ||
+    VERIFICATION_STATUSES[0]
+  );
 }
 
 export function formatPoints(points: number) {
@@ -674,9 +837,9 @@ export function formatPoints(points: number) {
 }
 
 export function getStreakEmoji(streak: number) {
-  if (streak >= 30) return '🔥🔥🔥';
-  if (streak >= 14) return '🔥🔥';
-  if (streak >= 7) return '🔥';
-  if (streak >= 3) return '✨';
-  return '';
+  if (streak >= 30) return "🔥🔥🔥";
+  if (streak >= 14) return "🔥🔥";
+  if (streak >= 7) return "🔥";
+  if (streak >= 3) return "✨";
+  return "";
 }

@@ -1,11 +1,11 @@
 /**
  * Portfolio React Query Hooks
- * 
+ *
  * Hooks untuk manajemen portofolio digital siswa
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 // =====================================
 // TYPES
@@ -15,7 +15,14 @@ export interface Portfolio {
   id: string;
   studentId: string;
   title: string;
-  type: 'ACADEMIC' | 'P5_PROJECT' | 'EXTRACURRICULAR' | 'ACHIEVEMENT' | 'ARTWORK' | 'TAHFIDZ' | 'OTHER';
+  type:
+    | "ACADEMIC"
+    | "P5_PROJECT"
+    | "EXTRACURRICULAR"
+    | "ACHIEVEMENT"
+    | "ARTWORK"
+    | "TAHFIDZ"
+    | "OTHER";
   category?: string;
   description?: string;
   reflection?: string;
@@ -110,12 +117,14 @@ export interface StudentShowcase {
 // =====================================
 
 export const portfolioKeys = {
-  all: ['portfolio'] as const,
-  types: () => [...portfolioKeys.all, 'types'] as const,
-  list: (params: any) => [...portfolioKeys.all, 'list', params] as const,
-  detail: (id: string) => [...portfolioKeys.all, 'detail', id] as const,
-  statistics: (params: any) => [...portfolioKeys.all, 'statistics', params] as const,
-  showcase: (studentId: string) => [...portfolioKeys.all, 'showcase', studentId] as const,
+  all: ["portfolio"] as const,
+  types: () => [...portfolioKeys.all, "types"] as const,
+  list: (params: any) => [...portfolioKeys.all, "list", params] as const,
+  detail: (id: string) => [...portfolioKeys.all, "detail", id] as const,
+  statistics: (params: any) =>
+    [...portfolioKeys.all, "statistics", params] as const,
+  showcase: (studentId: string) =>
+    [...portfolioKeys.all, "showcase", studentId] as const,
 };
 
 // =====================================
@@ -128,7 +137,7 @@ export function usePortfolioTypes() {
     queryFn: async () => {
       const { data } = await api.get<{
         data: { types: PortfolioType[]; categories: PortfolioCategories };
-      }>('/portfolio/types');
+      }>("/portfolio/types");
       return data.data;
     },
     staleTime: Infinity, // Static data
@@ -156,8 +165,13 @@ export function usePortfolios(params?: {
     queryFn: async () => {
       const { data } = await api.get<{
         data: Portfolio[];
-        pagination: { page: number; limit: number; total: number; totalPages: number };
-      }>('/portfolio', { params });
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          totalPages: number;
+        };
+      }>("/portfolio", { params });
       return data;
     },
   });
@@ -191,7 +205,10 @@ export function useCreatePortfolio() {
       isPublic?: boolean;
       isShowcase?: boolean;
     }) => {
-      const { data } = await api.post<{ data: Portfolio }>('/portfolio', payload);
+      const { data } = await api.post<{ data: Portfolio }>(
+        "/portfolio",
+        payload,
+      );
       return data.data;
     },
     onSuccess: () => {
@@ -217,12 +234,17 @@ export function useUpdatePortfolio() {
       isPublic?: boolean;
       isShowcase?: boolean;
     }) => {
-      const { data } = await api.put<{ data: Portfolio }>(`/portfolio/${id}`, payload);
+      const { data } = await api.put<{ data: Portfolio }>(
+        `/portfolio/${id}`,
+        payload,
+      );
       return data.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.detail(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: portfolioKeys.detail(variables.id),
+      });
     },
   });
 }
@@ -261,12 +283,14 @@ export function useAddPortfolioFile() {
     }) => {
       const { data } = await api.post<{ data: PortfolioFile }>(
         `/portfolio/${portfolioId}/files`,
-        payload
+        payload,
       );
       return data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.detail(variables.portfolioId) });
+      queryClient.invalidateQueries({
+        queryKey: portfolioKeys.detail(variables.portfolioId),
+      });
     },
   });
 }
@@ -287,12 +311,14 @@ export function useUpdatePortfolioFile() {
     }) => {
       const { data } = await api.patch<{ data: PortfolioFile }>(
         `/portfolio/files/${fileId}`,
-        payload
+        payload,
       );
       return { ...data.data, portfolioId };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.detail(data.portfolioId) });
+      queryClient.invalidateQueries({
+        queryKey: portfolioKeys.detail(data.portfolioId),
+      });
     },
   });
 }
@@ -301,12 +327,20 @@ export function useDeletePortfolioFile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ fileId, portfolioId }: { fileId: string; portfolioId: string }) => {
+    mutationFn: async ({
+      fileId,
+      portfolioId,
+    }: {
+      fileId: string;
+      portfolioId: string;
+    }) => {
       await api.delete(`/portfolio/files/${fileId}`);
       return portfolioId;
     },
     onSuccess: (portfolioId) => {
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.detail(portfolioId) });
+      queryClient.invalidateQueries({
+        queryKey: portfolioKeys.detail(portfolioId),
+      });
     },
   });
 }
@@ -328,12 +362,14 @@ export function useAddPortfolioComment() {
     }) => {
       const { data } = await api.post<{ data: PortfolioComment }>(
         `/portfolio/${portfolioId}/comments`,
-        { content }
+        { content },
       );
       return data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.detail(variables.portfolioId) });
+      queryClient.invalidateQueries({
+        queryKey: portfolioKeys.detail(variables.portfolioId),
+      });
     },
   });
 }
@@ -353,12 +389,14 @@ export function useUpdatePortfolioComment() {
     }) => {
       const { data } = await api.patch<{ data: PortfolioComment }>(
         `/portfolio/comments/${commentId}`,
-        { content }
+        { content },
       );
       return { ...data.data, portfolioId };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.detail(data.portfolioId) });
+      queryClient.invalidateQueries({
+        queryKey: portfolioKeys.detail(data.portfolioId),
+      });
     },
   });
 }
@@ -367,12 +405,20 @@ export function useDeletePortfolioComment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ commentId, portfolioId }: { commentId: string; portfolioId: string }) => {
+    mutationFn: async ({
+      commentId,
+      portfolioId,
+    }: {
+      commentId: string;
+      portfolioId: string;
+    }) => {
       await api.delete(`/portfolio/comments/${commentId}`);
       return portfolioId;
     },
     onSuccess: (portfolioId) => {
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.detail(portfolioId) });
+      queryClient.invalidateQueries({
+        queryKey: portfolioKeys.detail(portfolioId),
+      });
     },
   });
 }
@@ -394,14 +440,19 @@ export function useReviewPortfolio() {
       score?: number;
       feedback?: string;
     }) => {
-      const { data } = await api.post<{ data: Portfolio }>(`/portfolio/${id}/review`, {
-        score,
-        feedback,
-      });
+      const { data } = await api.post<{ data: Portfolio }>(
+        `/portfolio/${id}/review`,
+        {
+          score,
+          feedback,
+        },
+      );
       return data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.detail(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: portfolioKeys.detail(variables.id),
+      });
       queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
     },
   });
@@ -419,9 +470,12 @@ export function usePortfolioStatistics(params?: {
   return useQuery({
     queryKey: portfolioKeys.statistics(params),
     queryFn: async () => {
-      const { data } = await api.get<{ data: PortfolioStatistics }>('/portfolio/statistics/summary', {
-        params,
-      });
+      const { data } = await api.get<{ data: PortfolioStatistics }>(
+        "/portfolio/statistics/summary",
+        {
+          params,
+        },
+      );
       return data.data;
     },
   });
@@ -431,7 +485,9 @@ export function useStudentShowcase(studentId: string) {
   return useQuery({
     queryKey: portfolioKeys.showcase(studentId),
     queryFn: async () => {
-      const { data } = await api.get<{ data: StudentShowcase }>(`/portfolio/showcase/${studentId}`);
+      const { data } = await api.get<{ data: StudentShowcase }>(
+        `/portfolio/showcase/${studentId}`,
+      );
       return data.data;
     },
     enabled: !!studentId,

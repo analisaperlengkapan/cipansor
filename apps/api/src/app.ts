@@ -103,10 +103,12 @@ app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet());
-app.use(cors({
-  origin: config.cors.origin,
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: config.cors.origin,
+    credentials: true,
+  })
+);
 
 // Request parsing
 app.use(express.json({ limit: '10mb' }));
@@ -127,11 +129,13 @@ if (config.env !== 'test' && config.env !== 'development') {
 
 // Logging
 if (config.env !== 'test') {
-  app.use(morgan('combined', {
-    stream: {
-      write: (message: string) => logger.http(message.trim()),
-    },
-  }));
+  app.use(
+    morgan('combined', {
+      stream: {
+        write: (message: string) => logger.http(message.trim()),
+      },
+    })
+  );
 }
 
 // Health check endpoint (not rate limited)
@@ -147,10 +151,14 @@ app.get('/health', (_req, res) => {
 // Swagger API Documentation (disabled in production for security)
 if (config.env !== 'production') {
   console.info('App: swaggerSpec paths:', Object.keys(swaggerSpec.paths || {}));
-  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Cipansor API Documentation',
-  }));
+  app.use(
+    '/api/docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'Cipansor API Documentation',
+    })
+  );
 
   // Swagger JSON endpoint
   app.get('/api/docs.json', (_req, res) => {

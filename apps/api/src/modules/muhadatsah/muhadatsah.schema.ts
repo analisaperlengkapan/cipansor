@@ -81,20 +81,20 @@ export const updateMuhadatsahSchema = z.object({
 // =====================================
 
 export const evaluateMuhadatsahSchema = z.object({
-  fluencyScore: z
-    .coerce.number()
+  fluencyScore: z.coerce
+    .number()
     .min(0, 'Score must be at least 0')
     .max(100, 'Score must be at most 100'),
-  grammarScore: z
-    .coerce.number()
+  grammarScore: z.coerce
+    .number()
     .min(0, 'Score must be at least 0')
     .max(100, 'Score must be at most 100'),
-  vocabularyScore: z
-    .coerce.number()
+  vocabularyScore: z.coerce
+    .number()
     .min(0, 'Score must be at least 0')
     .max(100, 'Score must be at most 100'),
-  pronunciationScore: z
-    .coerce.number()
+  pronunciationScore: z.coerce
+    .number()
     .min(0, 'Score must be at least 0')
     .max(100, 'Score must be at most 100'),
   feedback: z.string().max(2000, 'Feedback too long').optional(),

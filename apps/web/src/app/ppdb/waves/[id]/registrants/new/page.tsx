@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { use } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { format } from 'date-fns';
-import { ArrowLeft, UserPlus, CalendarIcon } from 'lucide-react';
-import { toast } from 'sonner';
+import { use } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { format } from "date-fns";
+import { ArrowLeft, UserPlus, CalendarIcon } from "lucide-react";
+import { toast } from "sonner";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -20,46 +20,43 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import {
-  useWave,
-  useCreateRegistrant,
-} from '@/hooks/use-ppdb-wave';
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { useWave, useCreateRegistrant } from "@/hooks/use-ppdb-wave";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
 const registrantSchema = z.object({
-  studentName: z.string().min(3, 'Nama minimal 3 karakter'),
-  birthDate: z.date({ required_error: 'Pilih tanggal lahir' }),
-  gender: z.string().min(1, 'Pilih jenis kelamin'),
-  parentName: z.string().min(3, 'Nama orang tua minimal 3 karakter'),
-  parentPhone: z.string().min(10, 'No. HP minimal 10 digit'),
-  address: z.string().min(10, 'Alamat minimal 10 karakter'),
+  studentName: z.string().min(3, "Nama minimal 3 karakter"),
+  birthDate: z.date({ required_error: "Pilih tanggal lahir" }),
+  gender: z.string().min(1, "Pilih jenis kelamin"),
+  parentName: z.string().min(3, "Nama orang tua minimal 3 karakter"),
+  parentPhone: z.string().min(10, "No. HP minimal 10 digit"),
+  address: z.string().min(10, "Alamat minimal 10 karakter"),
   previousSchool: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -75,14 +72,14 @@ export default function NewRegistrantPage({ params }: Props) {
   const form = useForm<RegistrantFormData>({
     resolver: zodResolver(registrantSchema),
     defaultValues: {
-      studentName: '',
+      studentName: "",
       birthDate: undefined,
-      gender: '',
-      parentName: '',
-      parentPhone: '',
-      address: '',
-      previousSchool: '',
-      notes: '',
+      gender: "",
+      parentName: "",
+      parentPhone: "",
+      address: "",
+      previousSchool: "",
+      notes: "",
     },
   });
 
@@ -99,13 +96,14 @@ export default function NewRegistrantPage({ params }: Props) {
         previousSchool: data.previousSchool || undefined,
         notes: data.notes || undefined,
         registrationDate: new Date().toISOString(),
-        status: 'REGISTERED',
+        status: "REGISTERED",
         documents: [],
       });
-      toast.success('Pendaftar berhasil ditambahkan');
+      toast.success("Pendaftar berhasil ditambahkan");
       router.push(`/ppdb/waves/${id}`);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal menambahkan pendaftar';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal menambahkan pendaftar";
       toast.error(errorMessage);
     }
   };
@@ -124,7 +122,9 @@ export default function NewRegistrantPage({ params }: Props) {
     return (
       <MainLayout>
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Gelombang PPDB tidak ditemukan</p>
+          <p className="text-muted-foreground">
+            Gelombang PPDB tidak ditemukan
+          </p>
         </div>
       </MainLayout>
     );
@@ -162,7 +162,10 @@ export default function NewRegistrantPage({ params }: Props) {
                     <FormItem>
                       <FormLabel>Nama Lengkap *</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nama lengkap sesuai akta" {...field} />
+                        <Input
+                          placeholder="Nama lengkap sesuai akta"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -183,12 +186,12 @@ export default function NewRegistrantPage({ params }: Props) {
                               <Button
                                 variant="outline"
                                 className={cn(
-                                  'pl-3 text-left font-normal',
-                                  !field.value && 'text-muted-foreground'
+                                  "pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground",
                                 )}
                               >
                                 {field.value ? (
-                                  format(field.value, 'PPP')
+                                  format(field.value, "PPP")
                                 ) : (
                                   <span>Pilih tanggal</span>
                                 )}
@@ -220,7 +223,10 @@ export default function NewRegistrantPage({ params }: Props) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Jenis Kelamin *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih" />
@@ -245,7 +251,10 @@ export default function NewRegistrantPage({ params }: Props) {
                     <FormItem>
                       <FormLabel>Asal Sekolah</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nama sekolah sebelumnya" {...field} />
+                        <Input
+                          placeholder="Nama sekolah sebelumnya"
+                          {...field}
+                        />
                       </FormControl>
                       <FormDescription>
                         TK/SD/SMP asal (jika ada)
@@ -270,7 +279,10 @@ export default function NewRegistrantPage({ params }: Props) {
                     <FormItem>
                       <FormLabel>Nama Orang Tua / Wali *</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nama lengkap orang tua/wali" {...field} />
+                        <Input
+                          placeholder="Nama lengkap orang tua/wali"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -351,7 +363,9 @@ export default function NewRegistrantPage({ params }: Props) {
                 Batal
               </Button>
               <Button type="submit" disabled={createRegistrant.isPending}>
-                {createRegistrant.isPending ? 'Menyimpan...' : 'Simpan Pendaftar'}
+                {createRegistrant.isPending
+                  ? "Menyimpan..."
+                  : "Simpan Pendaftar"}
               </Button>
             </div>
           </form>

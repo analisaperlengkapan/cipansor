@@ -250,7 +250,10 @@ export class DutyRosterService {
       throw Errors.notFound('Roster not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && roster.dutyType.unitId !== currentUser.unitId) {
+    if (
+      currentUser.role !== UserRole.SUPER_ADMIN &&
+      roster.dutyType.unitId !== currentUser.unitId
+    ) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -294,7 +297,9 @@ export class DutyRosterService {
         results.success++;
       } catch (error) {
         results.failed++;
-        results.errors.push(`${input.studentId}: ${error instanceof Error ? error.message : 'Failed'}`);
+        results.errors.push(
+          `${input.studentId}: ${error instanceof Error ? error.message : 'Failed'}`
+        );
       }
     }
 
@@ -397,7 +402,9 @@ export class DutyRosterService {
       },
       orderBy: { dutyType: { name: 'asc' } },
       include: {
-        dutyType: { select: { name: true, category: true, startTime: true, endTime: true, location: true } },
+        dutyType: {
+          select: { name: true, category: true, startTime: true, endTime: true, location: true },
+        },
         student: { include: { user: { select: { name: true } } } },
       },
     });

@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
   MessageSquare,
@@ -19,29 +19,29 @@ import {
   Search,
   Users,
   Shuffle,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Command,
   CommandEmpty,
@@ -49,32 +49,32 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command';
+} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-import { useStudents } from '@/hooks/use-students';
-import { useUnits } from '@/hooks/use-units';
-import { useCreateMuhadatsah, useMatchPartners } from '@/hooks/use-muhadatsah';
+import { useStudents } from "@/hooks/use-students";
+import { useUnits } from "@/hooks/use-units";
+import { useCreateMuhadatsah, useMatchPartners } from "@/hooks/use-muhadatsah";
 
 // Form Schema
 const muhadatsahSchema = z.object({
-  studentId: z.string().min(1, 'Santri harus dipilih'),
+  studentId: z.string().min(1, "Santri harus dipilih"),
   partnerId: z.string().optional(),
-  unitId: z.string().min(1, 'Unit harus dipilih'),
+  unitId: z.string().min(1, "Unit harus dipilih"),
   scheduledAt: z.date({
-    required_error: 'Tanggal dan waktu harus diisi',
+    required_error: "Tanggal dan waktu harus diisi",
   }),
   topic: z.string().max(200).optional(),
-  language: z.enum(['Arabic', 'English'], {
-    required_error: 'Bahasa harus dipilih',
+  language: z.enum(["Arabic", "English"], {
+    required_error: "Bahasa harus dipilih",
   }),
 });
 
@@ -82,42 +82,52 @@ type MuhadatsahFormData = z.infer<typeof muhadatsahSchema>;
 
 // Language options
 const LANGUAGE_OPTIONS = [
-  { value: 'Arabic', label: 'Bahasa Arab', flag: '🕌', description: 'Al-Lughah Al-Arabiyyah' },
-  { value: 'English', label: 'Bahasa Inggris', flag: '🇬🇧', description: 'English Conversation' },
+  {
+    value: "Arabic",
+    label: "Bahasa Arab",
+    flag: "🕌",
+    description: "Al-Lughah Al-Arabiyyah",
+  },
+  {
+    value: "English",
+    label: "Bahasa Inggris",
+    flag: "🇬🇧",
+    description: "English Conversation",
+  },
 ];
 
 // Sample topics
 const TOPIC_SUGGESTIONS = {
   Arabic: [
-    'في السوق - Di Pasar',
-    'في المدرسة - Di Sekolah',
-    'في المسجد - Di Masjid',
-    'في البيت - Di Rumah',
-    'عند الطبيب - Di Dokter',
-    'في المطعم - Di Restoran',
-    'السفر والرحلة - Perjalanan',
-    'الطعام والشراب - Makanan & Minuman',
+    "في السوق - Di Pasar",
+    "في المدرسة - Di Sekolah",
+    "في المسجد - Di Masjid",
+    "في البيت - Di Rumah",
+    "عند الطبيب - Di Dokter",
+    "في المطعم - Di Restoran",
+    "السفر والرحلة - Perjalanan",
+    "الطعام والشراب - Makanan & Minuman",
   ],
   English: [
-    'At the Market',
-    'At School',
-    'At the Library',
-    'Daily Routine',
-    'My Family',
-    'Hobbies and Interests',
-    'Future Plans',
-    'Health and Fitness',
+    "At the Market",
+    "At School",
+    "At the Library",
+    "Daily Routine",
+    "My Family",
+    "Hobbies and Interests",
+    "Future Plans",
+    "Health and Fitness",
   ],
 };
 
 export default function NewMuhadatsahPage() {
   const router = useRouter();
-  const [studentSearch, setStudentSearch] = useState('');
+  const [studentSearch, setStudentSearch] = useState("");
   const [studentOpen, setStudentOpen] = useState(false);
-  const [partnerSearch, setPartnerSearch] = useState('');
+  const [partnerSearch, setPartnerSearch] = useState("");
   const [partnerOpen, setPartnerOpen] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
-  const [selectedTime, setSelectedTime] = useState('08:00');
+  const [selectedTime, setSelectedTime] = useState("08:00");
 
   // Form
   const {
@@ -129,15 +139,15 @@ export default function NewMuhadatsahPage() {
   } = useForm<MuhadatsahFormData>({
     resolver: zodResolver(muhadatsahSchema),
     defaultValues: {
-      language: 'Arabic',
+      language: "Arabic",
     },
   });
 
-  const selectedUnitId = watch('unitId');
-  const selectedLanguage = watch('language');
-  const selectedDate = watch('scheduledAt');
-  const selectedStudentId = watch('studentId');
-  const selectedPartnerId = watch('partnerId');
+  const selectedUnitId = watch("unitId");
+  const selectedLanguage = watch("language");
+  const selectedDate = watch("scheduledAt");
+  const selectedStudentId = watch("studentId");
+  const selectedPartnerId = watch("partnerId");
 
   // Data fetching
   const { data: unitsData } = useUnits();
@@ -147,7 +157,7 @@ export default function NewMuhadatsahPage() {
     unitId: selectedUnitId,
     search: studentSearch,
     limit: 50,
-    status: 'ACTIVE',
+    status: "ACTIVE",
   });
   const students = studentsData?.data || [];
 
@@ -155,33 +165,37 @@ export default function NewMuhadatsahPage() {
     unitId: selectedUnitId,
     search: partnerSearch,
     limit: 50,
-    status: 'ACTIVE',
+    status: "ACTIVE",
   });
   // Filter out selected student from partners
-  const availablePartners = (partnersData?.data || []).filter(s => s.id !== selectedStudentId);
+  const availablePartners = (partnersData?.data || []).filter(
+    (s) => s.id !== selectedStudentId,
+  );
 
   const createMuhadatsah = useCreateMuhadatsah();
 
   // Get selected student and partner info
-  const selectedStudent = students.find(s => s.id === selectedStudentId);
-  const selectedPartner = availablePartners.find(s => s.id === selectedPartnerId);
+  const selectedStudent = students.find((s) => s.id === selectedStudentId);
+  const selectedPartner = availablePartners.find(
+    (s) => s.id === selectedPartnerId,
+  );
 
   // Random partner assignment
   const handleRandomPartner = () => {
     if (availablePartners.length === 0) {
-      toast.error('Tidak ada partner yang tersedia');
+      toast.error("Tidak ada partner yang tersedia");
       return;
     }
     const randomIndex = Math.floor(Math.random() * availablePartners.length);
-    setValue('partnerId', availablePartners[randomIndex].id);
-    toast.success('Partner dipilih secara acak');
+    setValue("partnerId", availablePartners[randomIndex].id);
+    toast.success("Partner dipilih secara acak");
   };
 
   // Handle form submit
   const onSubmit = async (data: MuhadatsahFormData) => {
     try {
       // Combine date and time
-      const [hours, minutes] = selectedTime.split(':').map(Number);
+      const [hours, minutes] = selectedTime.split(":").map(Number);
       const scheduledAt = new Date(data.scheduledAt);
       scheduledAt.setHours(hours, minutes, 0, 0);
 
@@ -194,10 +208,10 @@ export default function NewMuhadatsahPage() {
         language: data.language,
       });
 
-      toast.success('Jadwal muhadatsah berhasil dibuat');
-      router.push('/muhadatsah');
+      toast.success("Jadwal muhadatsah berhasil dibuat");
+      router.push("/muhadatsah");
     } catch (error) {
-      toast.error('Gagal membuat jadwal muhadatsah');
+      toast.error("Gagal membuat jadwal muhadatsah");
     }
   };
 
@@ -238,18 +252,26 @@ export default function NewMuhadatsahPage() {
                     <Button
                       key={lang.value}
                       type="button"
-                      variant={selectedLanguage === lang.value ? 'default' : 'outline'}
+                      variant={
+                        selectedLanguage === lang.value ? "default" : "outline"
+                      }
                       className="h-auto py-4 flex flex-col gap-2"
-                      onClick={() => setValue('language', lang.value as 'Arabic' | 'English')}
+                      onClick={() =>
+                        setValue("language", lang.value as "Arabic" | "English")
+                      }
                     >
                       <span className="text-3xl">{lang.flag}</span>
                       <span className="font-medium">{lang.label}</span>
-                      <span className="text-xs opacity-70">{lang.description}</span>
+                      <span className="text-xs opacity-70">
+                        {lang.description}
+                      </span>
                     </Button>
                   ))}
                 </div>
                 {errors.language && (
-                  <p className="text-sm text-destructive mt-2">{errors.language.message}</p>
+                  <p className="text-sm text-destructive mt-2">
+                    {errors.language.message}
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -272,9 +294,9 @@ export default function NewMuhadatsahPage() {
                   <Select
                     value={selectedUnitId}
                     onValueChange={(value) => {
-                      setValue('unitId', value);
-                      setValue('studentId', '');
-                      setValue('partnerId', '');
+                      setValue("unitId", value);
+                      setValue("studentId", "");
+                      setValue("partnerId", "");
                     }}
                   >
                     <SelectTrigger>
@@ -289,7 +311,9 @@ export default function NewMuhadatsahPage() {
                     </SelectContent>
                   </Select>
                   {errors.unitId && (
-                    <p className="text-sm text-destructive">{errors.unitId.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.unitId.message}
+                    </p>
                   )}
                 </div>
 
@@ -310,14 +334,22 @@ export default function NewMuhadatsahPage() {
                             <span className="flex items-center gap-2">
                               <Avatar className="h-6 w-6">
                                 <AvatarFallback className="text-xs">
-                                  {selectedStudent.name?.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                  {selectedStudent.name
+                                    ?.split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
+                                    .slice(0, 2)}
                                 </AvatarFallback>
                               </Avatar>
-                              <span className="truncate">{selectedStudent.name}</span>
+                              <span className="truncate">
+                                {selectedStudent.name}
+                              </span>
                             </span>
                           ) : (
                             <span className="text-muted-foreground">
-                              {selectedUnitId ? 'Pilih santri...' : 'Pilih unit dulu'}
+                              {selectedUnitId
+                                ? "Pilih santri..."
+                                : "Pilih unit dulu"}
                             </span>
                           )}
                           <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -332,7 +364,9 @@ export default function NewMuhadatsahPage() {
                           />
                           <CommandList>
                             <CommandEmpty>
-                              {studentsLoading ? 'Memuat...' : 'Tidak ditemukan'}
+                              {studentsLoading
+                                ? "Memuat..."
+                                : "Tidak ditemukan"}
                             </CommandEmpty>
                             <CommandGroup>
                               {students.map((student) => (
@@ -340,9 +374,9 @@ export default function NewMuhadatsahPage() {
                                   key={student.id}
                                   value={`${student.name} ${student.nis}`}
                                   onSelect={() => {
-                                    setValue('studentId', student.id);
+                                    setValue("studentId", student.id);
                                     if (selectedPartnerId === student.id) {
-                                      setValue('partnerId', '');
+                                      setValue("partnerId", "");
                                     }
                                     setStudentOpen(false);
                                   }}
@@ -350,13 +384,20 @@ export default function NewMuhadatsahPage() {
                                   <div className="flex items-center gap-2">
                                     <Avatar className="h-8 w-8">
                                       <AvatarFallback className="text-xs">
-                                        {student.name?.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                        {student.name
+                                          ?.split(" ")
+                                          .map((n) => n[0])
+                                          .join("")
+                                          .slice(0, 2)}
                                       </AvatarFallback>
                                     </Avatar>
                                     <div>
-                                      <p className="font-medium">{student.name}</p>
+                                      <p className="font-medium">
+                                        {student.name}
+                                      </p>
                                       <p className="text-xs text-muted-foreground">
-                                        {student.nis} • {student.currentClass?.name || '-'}
+                                        {student.nis} •{" "}
+                                        {student.currentClass?.name || "-"}
                                       </p>
                                     </div>
                                   </div>
@@ -368,7 +409,9 @@ export default function NewMuhadatsahPage() {
                       </PopoverContent>
                     </Popover>
                     {errors.studentId && (
-                      <p className="text-sm text-destructive">{errors.studentId.message}</p>
+                      <p className="text-sm text-destructive">
+                        {errors.studentId.message}
+                      </p>
                     )}
                   </div>
 
@@ -381,7 +424,9 @@ export default function NewMuhadatsahPage() {
                         variant="ghost"
                         size="sm"
                         onClick={handleRandomPartner}
-                        disabled={!selectedStudentId || availablePartners.length === 0}
+                        disabled={
+                          !selectedStudentId || availablePartners.length === 0
+                        }
                       >
                         <Shuffle className="h-3 w-3 mr-1" />
                         Acak
@@ -400,14 +445,22 @@ export default function NewMuhadatsahPage() {
                             <span className="flex items-center gap-2">
                               <Avatar className="h-6 w-6">
                                 <AvatarFallback className="text-xs">
-                                  {selectedPartner.name?.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                  {selectedPartner.name
+                                    ?.split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
+                                    .slice(0, 2)}
                                 </AvatarFallback>
                               </Avatar>
-                              <span className="truncate">{selectedPartner.name}</span>
+                              <span className="truncate">
+                                {selectedPartner.name}
+                              </span>
                             </span>
                           ) : (
                             <span className="text-muted-foreground">
-                              {selectedStudentId ? 'Pilih partner (opsional)...' : 'Pilih santri 1 dulu'}
+                              {selectedStudentId
+                                ? "Pilih partner (opsional)..."
+                                : "Pilih santri 1 dulu"}
                             </span>
                           )}
                           <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -428,20 +481,27 @@ export default function NewMuhadatsahPage() {
                                   key={partner.id}
                                   value={`${partner.name} ${partner.nis}`}
                                   onSelect={() => {
-                                    setValue('partnerId', partner.id);
+                                    setValue("partnerId", partner.id);
                                     setPartnerOpen(false);
                                   }}
                                 >
                                   <div className="flex items-center gap-2">
                                     <Avatar className="h-8 w-8">
                                       <AvatarFallback className="text-xs">
-                                        {partner.name?.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                        {partner.name
+                                          ?.split(" ")
+                                          .map((n) => n[0])
+                                          .join("")
+                                          .slice(0, 2)}
                                       </AvatarFallback>
                                     </Avatar>
                                     <div>
-                                      <p className="font-medium">{partner.name}</p>
+                                      <p className="font-medium">
+                                        {partner.name}
+                                      </p>
                                       <p className="text-xs text-muted-foreground">
-                                        {partner.nis} • {partner.currentClass?.name || '-'}
+                                        {partner.nis} •{" "}
+                                        {partner.currentClass?.name || "-"}
                                       </p>
                                     </div>
                                   </div>
@@ -481,9 +541,13 @@ export default function NewMuhadatsahPage() {
                         >
                           <Calendar className="mr-2 h-4 w-4" />
                           {selectedDate ? (
-                            format(selectedDate, 'EEEE, dd MMMM yyyy', { locale: localeId })
+                            format(selectedDate, "EEEE, dd MMMM yyyy", {
+                              locale: localeId,
+                            })
                           ) : (
-                            <span className="text-muted-foreground">Pilih tanggal</span>
+                            <span className="text-muted-foreground">
+                              Pilih tanggal
+                            </span>
                           )}
                         </Button>
                       </PopoverTrigger>
@@ -493,41 +557,58 @@ export default function NewMuhadatsahPage() {
                           selected={selectedDate}
                           onSelect={(date) => {
                             if (date) {
-                              setValue('scheduledAt', date);
+                              setValue("scheduledAt", date);
                               setDateOpen(false);
                             }
                           }}
-                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                          disabled={(date) =>
+                            date < new Date(new Date().setHours(0, 0, 0, 0))
+                          }
                           initialFocus
                         />
                       </PopoverContent>
                     </Popover>
                     {errors.scheduledAt && (
-                      <p className="text-sm text-destructive">{errors.scheduledAt.message}</p>
+                      <p className="text-sm text-destructive">
+                        {errors.scheduledAt.message}
+                      </p>
                     )}
                   </div>
 
                   {/* Time */}
                   <div className="space-y-2">
                     <Label>Waktu *</Label>
-                    <Select value={selectedTime} onValueChange={setSelectedTime}>
+                    <Select
+                      value={selectedTime}
+                      onValueChange={setSelectedTime}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih waktu" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="05:30">05:30 - Ba'da Subuh</SelectItem>
+                        <SelectItem value="05:30">
+                          05:30 - Ba'da Subuh
+                        </SelectItem>
                         <SelectItem value="06:00">06:00</SelectItem>
                         <SelectItem value="07:00">07:00</SelectItem>
                         <SelectItem value="08:00">08:00</SelectItem>
                         <SelectItem value="09:00">09:00</SelectItem>
                         <SelectItem value="10:00">10:00</SelectItem>
                         <SelectItem value="11:00">11:00</SelectItem>
-                        <SelectItem value="13:30">13:30 - Ba'da Dzuhur</SelectItem>
+                        <SelectItem value="13:30">
+                          13:30 - Ba'da Dzuhur
+                        </SelectItem>
                         <SelectItem value="14:00">14:00</SelectItem>
-                        <SelectItem value="15:30">15:30 - Ba'da Ashar</SelectItem>
+                        <SelectItem value="15:30">
+                          15:30 - Ba'da Ashar
+                        </SelectItem>
                         <SelectItem value="16:00">16:00</SelectItem>
-                        <SelectItem value="18:30">18:30 - Ba'da Maghrib</SelectItem>
-                        <SelectItem value="19:30">19:30 - Ba'da Isya</SelectItem>
+                        <SelectItem value="18:30">
+                          18:30 - Ba'da Maghrib
+                        </SelectItem>
+                        <SelectItem value="19:30">
+                          19:30 - Ba'da Isya
+                        </SelectItem>
                         <SelectItem value="20:00">20:00</SelectItem>
                       </SelectContent>
                     </Select>
@@ -550,7 +631,7 @@ export default function NewMuhadatsahPage() {
                   <Textarea
                     id="topic"
                     placeholder="Contoh: Di pasar, membeli sayuran dan buah-buahan..."
-                    {...register('topic')}
+                    {...register("topic")}
                     className="min-h-20"
                   />
                 </div>
@@ -558,14 +639,18 @@ export default function NewMuhadatsahPage() {
                 {/* Topic Suggestions */}
                 {selectedLanguage && (
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground text-xs">Saran Tema:</Label>
+                    <Label className="text-muted-foreground text-xs">
+                      Saran Tema:
+                    </Label>
                     <div className="flex flex-wrap gap-2">
-                      {TOPIC_SUGGESTIONS[selectedLanguage as keyof typeof TOPIC_SUGGESTIONS].map((topic) => (
+                      {TOPIC_SUGGESTIONS[
+                        selectedLanguage as keyof typeof TOPIC_SUGGESTIONS
+                      ].map((topic) => (
                         <Badge
                           key={topic}
                           variant="outline"
                           className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-                          onClick={() => setValue('topic', topic)}
+                          onClick={() => setValue("topic", topic)}
                         >
                           {topic}
                         </Badge>
@@ -591,8 +676,8 @@ export default function NewMuhadatsahPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Bahasa</p>
                   <p className="font-medium flex items-center gap-2">
-                    {selectedLanguage === 'Arabic' && '🕌 Bahasa Arab'}
-                    {selectedLanguage === 'English' && '🇬🇧 Bahasa Inggris'}
+                    {selectedLanguage === "Arabic" && "🕌 Bahasa Arab"}
+                    {selectedLanguage === "English" && "🇬🇧 Bahasa Inggris"}
                   </p>
                 </div>
 
@@ -606,29 +691,47 @@ export default function NewMuhadatsahPage() {
                       <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback className="text-xs">
-                            {selectedStudent.name?.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                            {selectedStudent.name
+                              ?.split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
                         <div className="text-sm">
                           <p className="font-medium">{selectedStudent.name}</p>
-                          <p className="text-xs text-muted-foreground">{selectedStudent.nis}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {selectedStudent.nis}
+                          </p>
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">Belum dipilih</p>
+                      <p className="text-sm text-muted-foreground">
+                        Belum dipilih
+                      </p>
                     )}
                     {selectedPartner && (
                       <>
-                        <div className="text-center text-muted-foreground text-xs">+</div>
+                        <div className="text-center text-muted-foreground text-xs">
+                          +
+                        </div>
                         <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
                           <Avatar className="h-8 w-8">
                             <AvatarFallback className="text-xs">
-                              {selectedPartner.name?.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                              {selectedPartner.name
+                                ?.split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .slice(0, 2)}
                             </AvatarFallback>
                           </Avatar>
                           <div className="text-sm">
-                            <p className="font-medium">{selectedPartner.name}</p>
-                            <p className="text-xs text-muted-foreground">{selectedPartner.nis}</p>
+                            <p className="font-medium">
+                              {selectedPartner.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {selectedPartner.nis}
+                            </p>
                           </div>
                         </div>
                       </>
@@ -643,10 +746,14 @@ export default function NewMuhadatsahPage() {
                   <p className="text-sm text-muted-foreground">Jadwal</p>
                   <p className="font-medium">
                     {selectedDate
-                      ? format(selectedDate, 'dd MMMM yyyy', { locale: localeId })
-                      : '-'}
+                      ? format(selectedDate, "dd MMMM yyyy", {
+                          locale: localeId,
+                        })
+                      : "-"}
                   </p>
-                  <p className="text-sm text-muted-foreground">Pukul {selectedTime}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Pukul {selectedTime}
+                  </p>
                 </div>
 
                 <Separator />
@@ -655,7 +762,7 @@ export default function NewMuhadatsahPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Tema</p>
                   <p className="font-medium line-clamp-2">
-                    {watch('topic') || 'Tidak ditentukan'}
+                    {watch("topic") || "Tidak ditentukan"}
                   </p>
                 </div>
 
@@ -668,7 +775,7 @@ export default function NewMuhadatsahPage() {
                     className="w-full"
                     disabled={isSubmitting || createMuhadatsah.isPending}
                   >
-                    {(isSubmitting || createMuhadatsah.isPending) ? (
+                    {isSubmitting || createMuhadatsah.isPending ? (
                       <>
                         <span className="animate-spin mr-2">⏳</span>
                         Menyimpan...

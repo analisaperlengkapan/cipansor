@@ -1,22 +1,42 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowLeft, Edit, Trash2, QrCode, Wrench, Printer } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
-import api from '@/lib/api';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, Edit, Trash2, QrCode, Wrench, Printer } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import api from "@/lib/api";
 import {
   useInventoryItem,
   useDeleteInventoryItem,
@@ -26,22 +46,22 @@ import {
   useReturnAssignment,
   useCreateMaintenanceRequest,
   AssetCondition,
-  AssetStatus
-} from '@/hooks/use-inventory';
-import { useUnits } from '@/hooks/use-units';
-import { useTeachers } from '@/hooks/use-teachers';
+  AssetStatus,
+} from "@/hooks/use-inventory";
+import { useUnits } from "@/hooks/use-units";
+import { useTeachers } from "@/hooks/use-teachers";
 
 function getConditionBadge(condition: AssetCondition) {
   const colorMap: Record<AssetCondition, string> = {
-    [AssetCondition.EXCELLENT]: 'bg-green-100 text-green-800',
-    [AssetCondition.GOOD]: 'bg-blue-100 text-blue-800',
-    [AssetCondition.FAIR]: 'bg-yellow-100 text-yellow-800',
-    [AssetCondition.POOR]: 'bg-orange-100 text-orange-800',
-    [AssetCondition.BROKEN]: 'bg-red-100 text-red-800',
+    [AssetCondition.EXCELLENT]: "bg-green-100 text-green-800",
+    [AssetCondition.GOOD]: "bg-blue-100 text-blue-800",
+    [AssetCondition.FAIR]: "bg-yellow-100 text-yellow-800",
+    [AssetCondition.POOR]: "bg-orange-100 text-orange-800",
+    [AssetCondition.BROKEN]: "bg-red-100 text-red-800",
   };
 
   return (
-    <Badge variant="outline" className={colorMap[condition] || 'bg-gray-100'}>
+    <Badge variant="outline" className={colorMap[condition] || "bg-gray-100"}>
       {condition}
     </Badge>
   );
@@ -49,20 +69,24 @@ function getConditionBadge(condition: AssetCondition) {
 
 function getStatusBadge(status: AssetStatus) {
   const colorMap: Record<AssetStatus, string> = {
-    [AssetStatus.ACTIVE]: 'bg-green-100 text-green-800',
-    [AssetStatus.MAINTENANCE]: 'bg-yellow-100 text-yellow-800',
-    [AssetStatus.DAMAGED]: 'bg-red-100 text-red-800',
-    [AssetStatus.DISPOSED]: 'bg-gray-100 text-gray-800',
+    [AssetStatus.ACTIVE]: "bg-green-100 text-green-800",
+    [AssetStatus.MAINTENANCE]: "bg-yellow-100 text-yellow-800",
+    [AssetStatus.DAMAGED]: "bg-red-100 text-red-800",
+    [AssetStatus.DISPOSED]: "bg-gray-100 text-gray-800",
   };
 
   return (
-    <Badge variant="outline" className={colorMap[status] || 'bg-gray-100'}>
+    <Badge variant="outline" className={colorMap[status] || "bg-gray-100"}>
       {status}
     </Badge>
   );
 }
 
-export default function InventoryDetailPage({ params }: { params: { id: string } }) {
+export default function InventoryDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const router = useRouter();
   const itemId = params.id;
   const { data: item, isLoading } = useInventoryItem(itemId);
@@ -70,26 +94,27 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
   const { data: units } = useUnits();
   const { data: depreciation } = useAssetDepreciation(itemId);
   const { data: assignments } = useAssetAssignments({ assetId: itemId });
-  const { data: teachers } = useTeachers({ status: 'ACTIVE', limit: 100 });
+  const { data: teachers } = useTeachers({ status: "ACTIVE", limit: 100 });
 
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [isReturnOpen, setIsReturnOpen] = useState(false);
   const [isMaintenanceOpen, setIsMaintenanceOpen] = useState(false);
   const [isPrintOpen, setIsPrintOpen] = useState(false);
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
-  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>('');
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>("");
 
   const createAssignmentMutation = useCreateAssignment();
   const returnAssignmentMutation = useReturnAssignment();
   const createMaintenanceRequestMutation = useCreateMaintenanceRequest();
 
-  const unitName = units?.find((u) => u.id === item?.unitId)?.name || '-';
+  const unitName = units?.find((u) => u.id === item?.unitId)?.name || "-";
 
   useEffect(() => {
     if (isPrintOpen && itemId && !qrCodeUrl) {
-      api.get<{ data: string }>(`/inventory/items/${itemId}/qrcode`)
-        .then(res => setQrCodeUrl(res.data.data))
-        .catch(() => toast.error('Gagal memuat QR Code'));
+      api
+        .get<{ data: string }>(`/inventory/items/${itemId}/qrcode`)
+        .then((res) => setQrCodeUrl(res.data.data))
+        .catch(() => toast.error("Gagal memuat QR Code"));
     }
   }, [isPrintOpen, itemId, qrCodeUrl]);
 
@@ -100,10 +125,10 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(itemId);
-      toast.success('Inventaris berhasil dihapus');
-      router.push('/inventory');
+      toast.success("Inventaris berhasil dihapus");
+      router.push("/inventory");
     } catch {
-      toast.error('Gagal menghapus inventaris');
+      toast.error("Gagal menghapus inventaris");
     }
   };
 
@@ -113,16 +138,20 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
     try {
       await createAssignmentMutation.mutateAsync({
         assetId: itemId,
-        userId: formData.get('userId') as string,
-        assignedAt: new Date(formData.get('assignedAt') as string),
-        dueDate: formData.get('dueDate') ? new Date(formData.get('dueDate') as string) : undefined,
-        conditionBefore: formData.get('conditionBefore') as AssetCondition || AssetCondition.GOOD,
-        notes: formData.get('notes') as string,
+        userId: formData.get("userId") as string,
+        assignedAt: new Date(formData.get("assignedAt") as string),
+        dueDate: formData.get("dueDate")
+          ? new Date(formData.get("dueDate") as string)
+          : undefined,
+        conditionBefore:
+          (formData.get("conditionBefore") as AssetCondition) ||
+          AssetCondition.GOOD,
+        notes: formData.get("notes") as string,
       });
-      toast.success('Aset berhasil dipinjamkan');
+      toast.success("Aset berhasil dipinjamkan");
       setIsAssignOpen(false);
     } catch {
-      toast.error('Gagal meminjamkan aset');
+      toast.error("Gagal meminjamkan aset");
     }
   };
 
@@ -133,32 +162,34 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
       await returnAssignmentMutation.mutateAsync({
         id: selectedAssignmentId,
         data: {
-          returnedAt: new Date(formData.get('returnedAt') as string),
-          conditionAfter: formData.get('conditionAfter') as AssetCondition,
-          notes: formData.get('notes') as string,
-        }
+          returnedAt: new Date(formData.get("returnedAt") as string),
+          conditionAfter: formData.get("conditionAfter") as AssetCondition,
+          notes: formData.get("notes") as string,
+        },
       });
-      toast.success('Aset berhasil dikembalikan');
+      toast.success("Aset berhasil dikembalikan");
       setIsReturnOpen(false);
     } catch {
-      toast.error('Gagal mengembalikan aset');
+      toast.error("Gagal mengembalikan aset");
     }
   };
 
-  const handleMaintenanceRequest = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleMaintenanceRequest = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     try {
       await createMaintenanceRequestMutation.mutateAsync({
         assetId: itemId,
-        type: formData.get('type') as string,
-        description: formData.get('description') as string,
-        notes: formData.get('notes') as string,
+        type: formData.get("type") as string,
+        description: formData.get("description") as string,
+        notes: formData.get("notes") as string,
       });
-      toast.success('Permintaan maintenance berhasil dibuat');
+      toast.success("Permintaan maintenance berhasil dibuat");
       setIsMaintenanceOpen(false);
     } catch {
-      toast.error('Gagal membuat permintaan maintenance');
+      toast.error("Gagal membuat permintaan maintenance");
     }
   };
 
@@ -182,20 +213,20 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
   }
 
   const formatCurrency = (amount?: number | string | null) => {
-    if (!amount) return '-';
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
+    if (!amount) return "-";
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
       minimumFractionDigits: 0,
     }).format(Number(amount));
   };
 
   const formatDate = (dateString?: string | Date | null) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
     });
   };
 
@@ -220,94 +251,139 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setIsPrintOpen(true)}>
-             <QrCode className="mr-2 h-4 w-4" />
-             Label
+            <QrCode className="mr-2 h-4 w-4" />
+            Label
           </Button>
 
           <Dialog open={isMaintenanceOpen} onOpenChange={setIsMaintenanceOpen}>
-             <DialogTrigger asChild>
-                <Button variant="outline">
-                   <Wrench className="mr-2 h-4 w-4" />
-                   Lapor
-                </Button>
-             </DialogTrigger>
-             <DialogContent>
-                <DialogHeader><DialogTitle>Lapor Kerusakan / Maintenance</DialogTitle></DialogHeader>
-                <form onSubmit={handleMaintenanceRequest} className="space-y-4">
-                   <div className="space-y-2">
-                      <Label>Jenis Masalah</Label>
-                      <Select name="type" required>
-                         <SelectTrigger><SelectValue placeholder="Pilih jenis..." /></SelectTrigger>
-                         <SelectContent>
-                            <SelectItem value="Perbaikan">Perbaikan (Rusak)</SelectItem>
-                            <SelectItem value="Servis Rutin">Servis Rutin</SelectItem>
-                            <SelectItem value="Penggantian Sparepart">Penggantian Sparepart</SelectItem>
-                            <SelectItem value="Lainnya">Lainnya</SelectItem>
-                         </SelectContent>
-                      </Select>
-                   </div>
-                   <div className="space-y-2">
-                      <Label>Deskripsi Masalah</Label>
-                      <Textarea name="description" placeholder="Jelaskan detail kerusakan atau masalah..." required />
-                   </div>
-                   <div className="space-y-2">
-                      <Label>Catatan Tambahan</Label>
-                      <Textarea name="notes" placeholder="Lokasi spesifik, urgensi, dll..." />
-                   </div>
-                   <DialogFooter>
-                      <Button type="submit" disabled={createMaintenanceRequestMutation.isPending}>Kirim Laporan</Button>
-                   </DialogFooter>
-                </form>
-             </DialogContent>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Wrench className="mr-2 h-4 w-4" />
+                Lapor
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Lapor Kerusakan / Maintenance</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleMaintenanceRequest} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Jenis Masalah</Label>
+                  <Select name="type" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih jenis..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Perbaikan">
+                        Perbaikan (Rusak)
+                      </SelectItem>
+                      <SelectItem value="Servis Rutin">Servis Rutin</SelectItem>
+                      <SelectItem value="Penggantian Sparepart">
+                        Penggantian Sparepart
+                      </SelectItem>
+                      <SelectItem value="Lainnya">Lainnya</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Deskripsi Masalah</Label>
+                  <Textarea
+                    name="description"
+                    placeholder="Jelaskan detail kerusakan atau masalah..."
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Catatan Tambahan</Label>
+                  <Textarea
+                    name="notes"
+                    placeholder="Lokasi spesifik, urgensi, dll..."
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="submit"
+                    disabled={createMaintenanceRequestMutation.isPending}
+                  >
+                    Kirim Laporan
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
           </Dialog>
 
-          {item.status === 'ACTIVE' && (
-             <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="default">Pinjamkan Aset</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>Pinjamkan Aset</DialogTitle></DialogHeader>
-                  <form onSubmit={handleAssign} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Peminjam (Guru)</Label>
-                      <Select name="userId" required>
-                        <SelectTrigger><SelectValue placeholder="Pilih Peminjam" /></SelectTrigger>
-                        <SelectContent>
-                          {teachers?.data.map((t) => (
-                            <SelectItem key={t.userId} value={t.userId}>{t.user?.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Tanggal Pinjam</Label>
-                      <Input type="date" name="assignedAt" defaultValue={new Date().toISOString().split('T')[0]} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Batas Kembali (Opsional)</Label>
-                      <Input type="date" name="dueDate" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Kondisi Awal</Label>
-                      <Select name="conditionBefore" defaultValue={item.condition}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {Object.values(AssetCondition).map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Catatan</Label>
-                      <Textarea name="notes" />
-                    </div>
-                    <DialogFooter>
-                      <Button type="submit" disabled={createAssignmentMutation.isPending}>Simpan</Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-             </Dialog>
-           )}
+          {item.status === "ACTIVE" && (
+            <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
+              <DialogTrigger asChild>
+                <Button variant="default">Pinjamkan Aset</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Pinjamkan Aset</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleAssign} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Peminjam (Guru)</Label>
+                    <Select name="userId" required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih Peminjam" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teachers?.data.map((t) => (
+                          <SelectItem key={t.userId} value={t.userId}>
+                            {t.user?.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tanggal Pinjam</Label>
+                    <Input
+                      type="date"
+                      name="assignedAt"
+                      defaultValue={new Date().toISOString().split("T")[0]}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Batas Kembali (Opsional)</Label>
+                    <Input type="date" name="dueDate" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Kondisi Awal</Label>
+                    <Select
+                      name="conditionBefore"
+                      defaultValue={item.condition}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.values(AssetCondition).map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Catatan</Label>
+                    <Textarea name="notes" />
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      type="submit"
+                      disabled={createAssignmentMutation.isPending}
+                    >
+                      Simpan
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
 
           <Button variant="outline" asChild>
             <Link href={`/inventory/${itemId}/edit`}>
@@ -347,33 +423,51 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Status</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Status
+                    </p>
                     <div className="mt-1">{getStatusBadge(item.status)}</div>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Kondisi</p>
-                    <div className="mt-1">{getConditionBadge(item.condition)}</div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Kondisi
+                    </p>
+                    <div className="mt-1">
+                      {getConditionBadge(item.condition)}
+                    </div>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Brand</p>
-                    <p className="font-medium">{item.brand || '-'}</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Brand
+                    </p>
+                    <p className="font-medium">{item.brand || "-"}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Model</p>
-                    <p className="font-medium">{item.model || '-'}</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Model
+                    </p>
+                    <p className="font-medium">{item.model || "-"}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Serial Number</p>
-                    <p className="font-mono">{item.serialNumber || '-'}</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Serial Number
+                    </p>
+                    <p className="font-mono">{item.serialNumber || "-"}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Unit</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Unit
+                    </p>
                     <p className="font-medium">{unitName}</p>
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Deskripsi</p>
-                  <p className="mt-1 whitespace-pre-wrap">{item.notes || '-'}</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Deskripsi
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap">
+                    {item.notes || "-"}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -385,31 +479,51 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Lokasi</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Lokasi
+                  </p>
                   <p className="font-medium">
-                    {item.room?.name ? `${item.room.name} (${item.location || ''})` : (item.location || '-')}
+                    {item.room?.name
+                      ? `${item.room.name} (${item.location || ""})`
+                      : item.location || "-"}
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Tanggal Beli</p>
-                    <p className="font-medium">{formatDate(item.purchaseDate)}</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Tanggal Beli
+                    </p>
+                    <p className="font-medium">
+                      {formatDate(item.purchaseDate)}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Harga Beli</p>
-                    <p className="font-medium">{formatCurrency(item.purchasePrice)}</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Harga Beli
+                    </p>
+                    <p className="font-medium">
+                      {formatCurrency(item.purchasePrice)}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Supplier</p>
-                    <p className="font-medium">{item.supplier || '-'}</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Supplier
+                    </p>
+                    <p className="font-medium">{item.supplier || "-"}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Garansi Sampai</p>
-                    <p className="font-medium">{formatDate(item.warrantyExpiry)}</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Garansi Sampai
+                    </p>
+                    <p className="font-medium">
+                      {formatDate(item.warrantyExpiry)}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">No. PO</p>
-                    <p className="font-medium">{item.purchaseOrderNo || '-'}</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      No. PO
+                    </p>
+                    <p className="font-medium">{item.purchaseOrderNo || "-"}</p>
                   </div>
                 </div>
               </CardContent>
@@ -447,7 +561,9 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
                   </TableBody>
                 </Table>
               ) : (
-                <p className="text-muted-foreground text-center py-4">Belum ada riwayat maintenance</p>
+                <p className="text-muted-foreground text-center py-4">
+                  Belum ada riwayat maintenance
+                </p>
               )}
             </CardContent>
           </Card>
@@ -474,28 +590,41 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
                   <TableBody>
                     {assignments.data.map((log) => (
                       <TableRow key={log.id}>
-                        <TableCell>{log.user?.name || '-'}</TableCell>
+                        <TableCell>{log.user?.name || "-"}</TableCell>
                         <TableCell>{formatDate(log.assignedAt)}</TableCell>
                         <TableCell>{formatDate(log.dueDate)}</TableCell>
                         <TableCell>{formatDate(log.returnedAt)}</TableCell>
                         <TableCell>
-                          <Badge variant={log.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                          <Badge
+                            variant={
+                              log.status === "ACTIVE" ? "default" : "secondary"
+                            }
+                          >
                             {log.status}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                           {log.status === 'ACTIVE' && (
-                             <Button size="sm" variant="outline" onClick={() => { setSelectedAssignmentId(log.id); setIsReturnOpen(true); }}>
-                               Kembalikan
-                             </Button>
-                           )}
+                          {log.status === "ACTIVE" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedAssignmentId(log.id);
+                                setIsReturnOpen(true);
+                              }}
+                            >
+                              Kembalikan
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               ) : (
-                <p className="text-muted-foreground text-center py-4">Belum ada riwayat peminjaman</p>
+                <p className="text-muted-foreground text-center py-4">
+                  Belum ada riwayat peminjaman
+                </p>
               )}
             </CardContent>
           </Card>
@@ -510,33 +639,58 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
               {depreciation ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Masa Manfaat</p>
-                    <p className="text-xl font-semibold">{depreciation.lifeMonths || 0} Bulan</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Masa Manfaat
+                    </p>
+                    <p className="text-xl font-semibold">
+                      {depreciation.lifeMonths || 0} Bulan
+                    </p>
                   </div>
                   <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Umur Aset</p>
-                    <p className="text-xl font-semibold">{depreciation.ageMonths || 0} Bulan</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Umur Aset
+                    </p>
+                    <p className="text-xl font-semibold">
+                      {depreciation.ageMonths || 0} Bulan
+                    </p>
                   </div>
                   <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Nilai Sisa (Residual)</p>
-                    <p className="text-xl font-semibold">{formatCurrency(depreciation.residual)}</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Nilai Sisa (Residual)
+                    </p>
+                    <p className="text-xl font-semibold">
+                      {formatCurrency(depreciation.residual)}
+                    </p>
                   </div>
                   <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-                    <p className="text-sm font-medium text-primary mb-1">Nilai Buku Saat Ini</p>
-                    <p className="text-2xl font-bold text-primary">{formatCurrency(depreciation.bookValue)}</p>
+                    <p className="text-sm font-medium text-primary mb-1">
+                      Nilai Buku Saat Ini
+                    </p>
+                    <p className="text-2xl font-bold text-primary">
+                      {formatCurrency(depreciation.bookValue)}
+                    </p>
                   </div>
                   <div className="col-span-2 p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Akumulasi Penyusutan</p>
-                    <p className="text-lg font-semibold">{formatCurrency(depreciation.accumulatedDepreciation)}</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Akumulasi Penyusutan
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {formatCurrency(depreciation.accumulatedDepreciation)}
+                    </p>
                   </div>
                   <div className="col-span-2 p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Beban Penyusutan per Bulan</p>
-                    <p className="text-lg font-semibold">{formatCurrency(depreciation.monthlyDepreciation)}</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Beban Penyusutan per Bulan
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {formatCurrency(depreciation.monthlyDepreciation)}
+                    </p>
                   </div>
                 </div>
               ) : (
                 <p className="text-muted-foreground text-center py-4">
-                  Data depresiasi tidak tersedia (lengkapi harga beli, tanggal beli, dan masa manfaat)
+                  Data depresiasi tidak tersedia (lengkapi harga beli, tanggal
+                  beli, dan masa manfaat)
                 </p>
               )}
             </CardContent>
@@ -547,28 +701,46 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
       {/* Return Dialog */}
       <Dialog open={isReturnOpen} onOpenChange={setIsReturnOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Kembalikan Aset</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Kembalikan Aset</DialogTitle>
+          </DialogHeader>
           <form onSubmit={handleReturn} className="space-y-4">
-             <div className="space-y-2">
-               <Label>Tanggal Kembali</Label>
-               <Input type="date" name="returnedAt" defaultValue={new Date().toISOString().split('T')[0]} required />
-             </div>
-             <div className="space-y-2">
-               <Label>Kondisi Akhir</Label>
-               <Select name="conditionAfter" defaultValue={item.condition}>
-                 <SelectTrigger><SelectValue /></SelectTrigger>
-                 <SelectContent>
-                   {Object.values(AssetCondition).map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                 </SelectContent>
-               </Select>
-             </div>
-             <div className="space-y-2">
-               <Label>Catatan Pengembalian</Label>
-               <Textarea name="notes" />
-             </div>
-             <DialogFooter>
-               <Button type="submit" disabled={returnAssignmentMutation.isPending}>Simpan</Button>
-             </DialogFooter>
+            <div className="space-y-2">
+              <Label>Tanggal Kembali</Label>
+              <Input
+                type="date"
+                name="returnedAt"
+                defaultValue={new Date().toISOString().split("T")[0]}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Kondisi Akhir</Label>
+              <Select name="conditionAfter" defaultValue={item.condition}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(AssetCondition).map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Catatan Pengembalian</Label>
+              <Textarea name="notes" />
+            </div>
+            <DialogFooter>
+              <Button
+                type="submit"
+                disabled={returnAssignmentMutation.isPending}
+              >
+                Simpan
+              </Button>
+            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
@@ -579,22 +751,27 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
           <DialogHeader>
             <DialogTitle>Label Aset</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-lg" id="printable-label">
+          <div
+            className="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-lg"
+            id="printable-label"
+          >
             <h3 className="font-bold text-lg text-center">{item.name}</h3>
             {qrCodeUrl ? (
-               // eslint-disable-next-line @next/next/no-img-element
-               <img src={qrCodeUrl} alt="QR Code" className="w-32 h-32 my-2" />
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={qrCodeUrl} alt="QR Code" className="w-32 h-32 my-2" />
             ) : (
-               <div className="w-32 h-32 my-2 bg-muted flex items-center justify-center text-xs">Loading...</div>
+              <div className="w-32 h-32 my-2 bg-muted flex items-center justify-center text-xs">
+                Loading...
+              </div>
             )}
             <p className="font-mono font-bold text-sm">{item.code}</p>
             <p className="text-xs text-muted-foreground mt-1">{unitName}</p>
           </div>
           <DialogFooter>
-             <Button onClick={handlePrint} className="w-full">
-                <Printer className="mr-2 h-4 w-4" />
-                Cetak Label
-             </Button>
+            <Button onClick={handlePrint} className="w-full">
+              <Printer className="mr-2 h-4 w-4" />
+              Cetak Label
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -605,7 +782,8 @@ export default function InventoryDetailPage({ params }: { params: { id: string }
           body * {
             visibility: hidden;
           }
-          #printable-label, #printable-label * {
+          #printable-label,
+          #printable-label * {
             visibility: visible;
           }
           #printable-label {

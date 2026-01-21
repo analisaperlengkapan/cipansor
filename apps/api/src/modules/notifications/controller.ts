@@ -1,5 +1,5 @@
-import type { Request, Response, NextFunction } from "express";
-import * as service from "./service";
+import type { Request, Response, NextFunction } from 'express';
+import * as service from './service';
 import {
   createNotificationSchema,
   createBulkNotificationSchema,
@@ -11,12 +11,12 @@ import {
   createTemplateSchema,
   updateTemplateSchema,
   queryTemplateSchema,
-} from "./schema";
-import { Errors } from "../../middleware/error";
-import { whatsAppService } from "./whatsapp.service";
-import { notificationScheduler } from "./scheduler.service";
-import { z } from "zod";
-import { UserRole } from "@prisma/client";
+} from './schema';
+import { Errors } from '../../middleware/error';
+import { whatsAppService } from './whatsapp.service';
+import { notificationScheduler } from './scheduler.service';
+import { z } from 'zod';
+import { UserRole } from '@prisma/client';
 
 // Constants
 const ADMIN_ROLES = [UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN];
@@ -47,7 +47,7 @@ export async function getNotificationById(req: Request, res: Response, next: Nex
   try {
     const notification = await service.getNotificationById(req.params.id);
     if (!notification) {
-      throw Errors.notFound("Notification not found");
+      throw Errors.notFound('Notification not found');
     }
 
     // Security check: User must be the owner OR have admin privileges
@@ -55,7 +55,7 @@ export async function getNotificationById(req: Request, res: Response, next: Nex
     const isAdmin = ADMIN_ROLES.includes(userRole);
 
     if (notification.userId !== req.user!.sub && !isAdmin) {
-       throw Errors.forbidden("You do not have permission to view this notification");
+      throw Errors.forbidden('You do not have permission to view this notification');
     }
 
     res.json({ success: true, data: notification });
@@ -87,7 +87,7 @@ export async function createBulkNotifications(req: Request, res: Response, next:
 export async function markAsRead(req: Request, res: Response, next: NextFunction) {
   try {
     await service.markAsRead(req.params.id, req.user!.sub);
-    res.json({ success: true, message: "Notification marked as read" });
+    res.json({ success: true, message: 'Notification marked as read' });
   } catch (error) {
     next(error);
   }
@@ -108,7 +108,7 @@ export async function deleteNotification(req: Request, res: Response, next: Next
     const isAdmin = ADMIN_ROLES.includes(userRole);
 
     await service.deleteNotification(req.params.id, req.user!.sub, isAdmin);
-    res.json({ success: true, message: "Notification deleted" });
+    res.json({ success: true, message: 'Notification deleted' });
   } catch (error) {
     next(error);
   }
@@ -117,7 +117,7 @@ export async function deleteNotification(req: Request, res: Response, next: Next
 export async function sendNotification(req: Request, res: Response, next: NextFunction) {
   try {
     await service.sendNotification(req.params.id);
-    res.json({ success: true, message: "Notification queued for sending" });
+    res.json({ success: true, message: 'Notification queued for sending' });
   } catch (error) {
     next(error);
   }
@@ -168,7 +168,7 @@ export async function getTemplateById(req: Request, res: Response, next: NextFun
     const unitId = (req as any).user?.unitId;
     const result = await service.getTemplateById(req.params.id, unitId);
     if (!result) {
-      throw Errors.notFound("Template not found");
+      throw Errors.notFound('Template not found');
     }
     res.json({ success: true, data: result });
   } catch (error) {
@@ -203,7 +203,7 @@ export async function deleteTemplate(req: Request, res: Response, next: NextFunc
   try {
     const unitId = (req as any).user?.unitId;
     await service.deleteTemplate(req.params.id, unitId);
-    res.json({ success: true, message: "Template deleted" });
+    res.json({ success: true, message: 'Template deleted' });
   } catch (error) {
     next(error);
   }
@@ -225,7 +225,7 @@ export async function getAnnouncementById(req: Request, res: Response, next: Nex
   try {
     const announcement = await service.getAnnouncementById(req.params.id);
     if (!announcement) {
-      throw Errors.notFound("Announcement not found");
+      throw Errors.notFound('Announcement not found');
     }
     res.json({ success: true, data: announcement });
   } catch (error) {
@@ -256,7 +256,7 @@ export async function updateAnnouncement(req: Request, res: Response, next: Next
 export async function deleteAnnouncement(req: Request, res: Response, next: NextFunction) {
   try {
     await service.deleteAnnouncement(req.params.id);
-    res.json({ success: true, message: "Announcement deleted" });
+    res.json({ success: true, message: 'Announcement deleted' });
   } catch (error) {
     next(error);
   }
@@ -272,7 +272,9 @@ const sendWhatsAppSchema = z.object({
 const broadcastSchema = z.object({
   title: z.string().min(1),
   message: z.string().min(1),
-  type: z.enum(['INFO', 'PAYMENT', 'ACADEMIC', 'ATTENDANCE', 'HEALTH', 'COUNSELING', 'ANNOUNCEMENT']).default('ANNOUNCEMENT'),
+  type: z
+    .enum(['INFO', 'PAYMENT', 'ACADEMIC', 'ATTENDANCE', 'HEALTH', 'COUNSELING', 'ANNOUNCEMENT'])
+    .default('ANNOUNCEMENT'),
   targetType: z.enum(['ALL', 'STUDENTS', 'TEACHERS', 'UNIT', 'CLASS']).default('ALL'),
   targetId: z.string().uuid().optional(),
   useWhatsApp: z.boolean().default(false),
@@ -333,9 +335,9 @@ const triggerScheduleSchema = z.object({
 export async function triggerScheduledTask(req: Request, res: Response, next: NextFunction) {
   try {
     const { task } = triggerScheduleSchema.parse(req.body);
-    
+
     await notificationScheduler.runTask(task);
-    
+
     res.json({ success: true, message: `Task ${task} executed` });
   } catch (error) {
     next(error);

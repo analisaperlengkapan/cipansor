@@ -34,12 +34,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Plus, 
-  Search, 
-  Calculator, 
-  FileText, 
-  BookOpen, 
+import {
+  Plus,
+  Search,
+  Calculator,
+  FileText,
+  BookOpen,
   RefreshCw,
   Filter,
   DollarSign,
@@ -47,9 +47,9 @@ import {
   TrendingDown,
   Download,
   Wallet,
-  PieChart
+  PieChart,
 } from "lucide-react";
-import Link from 'next/link';
+import Link from "next/link";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as localeID } from "date-fns/locale";
@@ -64,7 +64,7 @@ import {
   type AccountCode,
   type JournalEntry,
   AccountType,
-  FinanceReportPeriod
+  FinanceReportPeriod,
 } from "@/hooks/use-finance-enhancement";
 import { useUnits } from "@/hooks/use-units";
 
@@ -92,7 +92,11 @@ function AccountCodesTab() {
   const [typeFilter, setTypeFilter] = useState<AccountType | "ALL">("ALL");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-  const { data: accountCodesData, isLoading, refetch } = useAccountCodes({
+  const {
+    data: accountCodesData,
+    isLoading,
+    refetch,
+  } = useAccountCodes({
     type: typeFilter === "ALL" ? undefined : typeFilter,
     search: search || undefined,
     limit: 100,
@@ -106,21 +110,26 @@ function AccountCodesTab() {
         code: formData.get("code") as string,
         name: formData.get("name") as string,
         type: formData.get("type") as unknown as AccountType,
-        parentId: formData.get("parentId") as string || undefined,
+        parentId: (formData.get("parentId") as string) || undefined,
         isActive: true,
       });
       toast.success("Kode akun berhasil ditambahkan");
       setIsAddDialogOpen(false);
       refetch();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal menambahkan kode akun");
+      toast.error(
+        error.response?.data?.message || "Gagal menambahkan kode akun",
+      );
     }
   };
 
   const getAccountTypeBadge = (type: AccountType) => {
-    const accountType = ACCOUNT_TYPES.find(t => t.value === type);
+    const accountType = ACCOUNT_TYPES.find((t) => t.value === type);
     return (
-      <Badge variant="outline" className={`${accountType?.color} text-white border-0`}>
+      <Badge
+        variant="outline"
+        className={`${accountType?.color} text-white border-0`}
+      >
         {accountType?.label || type}
       </Badge>
     );
@@ -139,7 +148,10 @@ function AccountCodesTab() {
             className="pl-10"
           />
         </div>
-        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as AccountType | "ALL")}>
+        <Select
+          value={typeFilter}
+          onValueChange={(v) => setTypeFilter(v as AccountType | "ALL")}
+        >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter tipe" />
           </SelectTrigger>
@@ -171,7 +183,12 @@ function AccountCodesTab() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="code">Kode Akun</Label>
-                    <Input id="code" name="code" placeholder="1-10001" required />
+                    <Input
+                      id="code"
+                      name="code"
+                      placeholder="1-10001"
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="type">Tipe Akun</Label>
@@ -211,7 +228,11 @@ function AccountCodesTab() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddDialogOpen(false)}
+                >
                   Batal
                 </Button>
                 <Button type="submit" disabled={createAccountCode.isPending}>
@@ -246,21 +267,32 @@ function AccountCodesTab() {
                 </TableRow>
               ) : accountCodesData?.data.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell
+                    colSpan={5}
+                    className="text-center py-8 text-muted-foreground"
+                  >
                     Belum ada kode akun
                   </TableCell>
                 </TableRow>
               ) : (
                 accountCodesData?.data.map((account) => (
                   <TableRow key={account.id}>
-                    <TableCell className="font-mono font-medium">{account.code}</TableCell>
+                    <TableCell className="font-mono font-medium">
+                      {account.code}
+                    </TableCell>
                     <TableCell>{account.name}</TableCell>
-                    <TableCell>{getAccountTypeBadge(account.type as AccountType)}</TableCell>
+                    <TableCell>
+                      {getAccountTypeBadge(account.type as AccountType)}
+                    </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {account.parent ? `${account.parent.code} - ${account.parent.name}` : "-"}
+                      {account.parent
+                        ? `${account.parent.code} - ${account.parent.name}`
+                        : "-"}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={account.isActive ? "default" : "secondary"}>
+                      <Badge
+                        variant={account.isActive ? "default" : "secondary"}
+                      >
                         {account.isActive ? "Aktif" : "Nonaktif"}
                       </Badge>
                     </TableCell>
@@ -282,8 +314,15 @@ function JournalEntriesTab() {
   const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>();
 
   const { data: unitsData } = useUnits();
-  const { data: accountCodesData } = useAccountCodes({ isActive: true, limit: 100 });
-  const { data: entriesData, isLoading, refetch } = useJournalEntries({
+  const { data: accountCodesData } = useAccountCodes({
+    isActive: true,
+    limit: 100,
+  });
+  const {
+    data: entriesData,
+    isLoading,
+    refetch,
+  } = useJournalEntries({
     unitId: selectedUnitId,
     search: search || undefined,
     limit: 50,
@@ -302,14 +341,14 @@ function JournalEntriesTab() {
       }
 
       await createJournalEntry.mutateAsync({
-        unitId: formData.get("unitId") as string || undefined,
+        unitId: (formData.get("unitId") as string) || undefined,
         accountId: formData.get("accountId") as string,
         date: formData.get("date") as string,
         description: formData.get("description") as string,
         debit,
         credit,
-        reference: formData.get("reference") as string || undefined,
-        referenceType: formData.get("referenceType") as string || undefined,
+        reference: (formData.get("reference") as string) || undefined,
+        referenceType: (formData.get("referenceType") as string) || undefined,
       });
       toast.success("Jurnal berhasil dicatat");
       setIsAddDialogOpen(false);
@@ -332,7 +371,10 @@ function JournalEntriesTab() {
             className="pl-10"
           />
         </div>
-        <Select value={selectedUnitId || "ALL"} onValueChange={(v) => setSelectedUnitId(v === "ALL" ? undefined : v)}>
+        <Select
+          value={selectedUnitId || "ALL"}
+          onValueChange={(v) => setSelectedUnitId(v === "ALL" ? undefined : v)}
+        >
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Filter unit" />
           </SelectTrigger>
@@ -364,12 +406,12 @@ function JournalEntriesTab() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="date">Tanggal</Label>
-                    <Input 
-                      id="date" 
-                      name="date" 
-                      type="date" 
+                    <Input
+                      id="date"
+                      name="date"
+                      type="date"
                       defaultValue={format(new Date(), "yyyy-MM-dd")}
-                      required 
+                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -406,27 +448,43 @@ function JournalEntriesTab() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">Deskripsi</Label>
-                  <Textarea 
-                    id="description" 
-                    name="description" 
+                  <Textarea
+                    id="description"
+                    name="description"
                     placeholder="Deskripsi transaksi..."
-                    required 
+                    required
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="debit">Debit (Rp)</Label>
-                    <Input id="debit" name="debit" type="number" min="0" placeholder="0" />
+                    <Input
+                      id="debit"
+                      name="debit"
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="credit">Kredit (Rp)</Label>
-                    <Input id="credit" name="credit" type="number" min="0" placeholder="0" />
+                    <Input
+                      id="credit"
+                      name="credit"
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="reference">No. Referensi</Label>
-                    <Input id="reference" name="reference" placeholder="INV-001" />
+                    <Input
+                      id="reference"
+                      name="reference"
+                      placeholder="INV-001"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="referenceType">Tipe Referensi</Label>
@@ -446,7 +504,11 @@ function JournalEntriesTab() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddDialogOpen(false)}
+                >
                   Batal
                 </Button>
                 <Button type="submit" disabled={createJournalEntry.isPending}>
@@ -482,7 +544,10 @@ function JournalEntriesTab() {
                 </TableRow>
               ) : entriesData?.data.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell
+                    colSpan={6}
+                    className="text-center py-8 text-muted-foreground"
+                  >
                     Belum ada entri jurnal
                   </TableCell>
                 </TableRow>
@@ -490,13 +555,21 @@ function JournalEntriesTab() {
                 entriesData?.data.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell>
-                      {format(new Date(entry.date), "dd MMM yyyy", { locale: localeID })}
+                      {format(new Date(entry.date), "dd MMM yyyy", {
+                        locale: localeID,
+                      })}
                     </TableCell>
                     <TableCell>
-                      <div className="font-mono text-sm">{entry.account?.code}</div>
-                      <div className="text-muted-foreground text-xs">{entry.account?.name}</div>
+                      <div className="font-mono text-sm">
+                        {entry.account?.code}
+                      </div>
+                      <div className="text-muted-foreground text-xs">
+                        {entry.account?.name}
+                      </div>
                     </TableCell>
-                    <TableCell className="max-w-[200px] truncate">{entry.description}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">
+                      {entry.description}
+                    </TableCell>
                     <TableCell className="text-right font-mono">
                       {entry.debit > 0 ? formatCurrency(entry.debit) : "-"}
                     </TableCell>
@@ -521,22 +594,22 @@ function JournalEntriesTab() {
 function ReportsTab() {
   const currentDate = new Date();
   const [startDate, setStartDate] = useState(
-    format(new Date(currentDate.getFullYear(), 0, 1), "yyyy-MM-dd")
+    format(new Date(currentDate.getFullYear(), 0, 1), "yyyy-MM-dd"),
   );
-  const [endDate, setEndDate] = useState(
-    format(currentDate, "yyyy-MM-dd")
-  );
+  const [endDate, setEndDate] = useState(format(currentDate, "yyyy-MM-dd"));
 
-  const { data: trialBalance, isLoading: trialBalanceLoading } = useTrialBalanceReport({
-    startDate,
-    endDate,
-  });
+  const { data: trialBalance, isLoading: trialBalanceLoading } =
+    useTrialBalanceReport({
+      startDate,
+      endDate,
+    });
 
-  const { data: incomeExpense, isLoading: incomeExpenseLoading } = useIncomeExpenseReport({
-    startDate,
-    endDate,
-    groupBy: FinanceReportPeriod.MONTH,
-  });
+  const { data: incomeExpense, isLoading: incomeExpenseLoading } =
+    useIncomeExpenseReport({
+      startDate,
+      endDate,
+      groupBy: FinanceReportPeriod.MONTH,
+    });
 
   return (
     <div className="space-y-6">
@@ -610,7 +683,9 @@ function ReportsTab() {
             <CardContent>
               <div className="flex items-center">
                 <DollarSign className="h-5 w-5 text-primary mr-2" />
-                <span className={`text-2xl font-bold ${incomeExpense.summary.netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <span
+                  className={`text-2xl font-bold ${incomeExpense.summary.netIncome >= 0 ? "text-green-600" : "text-red-600"}`}
+                >
                   {formatCurrency(incomeExpense.summary.netIncome)}
                 </span>
               </div>
@@ -648,7 +723,10 @@ function ReportsTab() {
                 <TableBody>
                   {trialBalance.accounts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={5}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         Belum ada data transaksi dalam periode ini
                       </TableCell>
                     </TableRow>
@@ -656,18 +734,26 @@ function ReportsTab() {
                     <>
                       {trialBalance.accounts.map((account, index) => (
                         <TableRow key={index}>
-                          <TableCell className="font-mono">{account.code}</TableCell>
+                          <TableCell className="font-mono">
+                            {account.code}
+                          </TableCell>
                           <TableCell>{account.name}</TableCell>
                           <TableCell>
                             <Badge variant="outline">
-                              {ACCOUNT_TYPES.find(t => t.value === account.type)?.label || account.type}
+                              {ACCOUNT_TYPES.find(
+                                (t) => t.value === account.type,
+                              )?.label || account.type}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right font-mono">
-                            {account.debit > 0 ? formatCurrency(account.debit) : "-"}
+                            {account.debit > 0
+                              ? formatCurrency(account.debit)
+                              : "-"}
                           </TableCell>
                           <TableCell className="text-right font-mono">
-                            {account.credit > 0 ? formatCurrency(account.credit) : "-"}
+                            {account.credit > 0
+                              ? formatCurrency(account.credit)
+                              : "-"}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -685,7 +771,9 @@ function ReportsTab() {
                 </TableBody>
               </Table>
               <div className="flex items-center justify-end gap-2">
-                <Badge variant={trialBalance.isBalanced ? "default" : "destructive"}>
+                <Badge
+                  variant={trialBalance.isBalanced ? "default" : "destructive"}
+                >
                   {trialBalance.isBalanced ? "Seimbang ✓" : "Tidak Seimbang ✗"}
                 </Badge>
               </div>
@@ -725,21 +813,28 @@ function ReportsTab() {
               <TableBody>
                 {incomeExpense.breakdown.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={4}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       Belum ada data dalam periode ini
                     </TableCell>
                   </TableRow>
                 ) : (
                   incomeExpense.breakdown.map((item, index) => (
                     <TableRow key={index}>
-                      <TableCell className="font-medium">{item.period}</TableCell>
+                      <TableCell className="font-medium">
+                        {item.period}
+                      </TableCell>
                       <TableCell className="text-right font-mono text-green-600">
                         {formatCurrency(item.income)}
                       </TableCell>
                       <TableCell className="text-right font-mono text-red-600">
                         {formatCurrency(item.expense)}
                       </TableCell>
-                      <TableCell className={`text-right font-mono font-bold ${item.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <TableCell
+                        className={`text-right font-mono font-bold ${item.net >= 0 ? "text-green-600" : "text-red-600"}`}
+                      >
                         {formatCurrency(item.net)}
                       </TableCell>
                     </TableRow>
@@ -779,17 +874,23 @@ export default function AccountingPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">-</div>
-              <p className="text-xs text-muted-foreground">Total akun terdaftar</p>
+              <p className="text-xs text-muted-foreground">
+                Total akun terdaftar
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Jurnal Bulan Ini</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Jurnal Bulan Ini
+              </CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">-</div>
-              <p className="text-xs text-muted-foreground">Total entri jurnal</p>
+              <p className="text-xs text-muted-foreground">
+                Total entri jurnal
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -804,7 +905,9 @@ export default function AccountingPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Kredit</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Kredit
+              </CardTitle>
               <TrendingDown className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
@@ -833,11 +936,17 @@ export default function AccountingPage() {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
-            <TabsTrigger value="account-codes" className="flex items-center gap-2">
+            <TabsTrigger
+              value="account-codes"
+              className="flex items-center gap-2"
+            >
               <BookOpen className="h-4 w-4" />
               Kode Akun
             </TabsTrigger>
-            <TabsTrigger value="journal-entries" className="flex items-center gap-2">
+            <TabsTrigger
+              value="journal-entries"
+              className="flex items-center gap-2"
+            >
               <FileText className="h-4 w-4" />
               Jurnal Umum
             </TabsTrigger>

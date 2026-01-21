@@ -9,7 +9,14 @@ import { useCashFlowStatement } from "@/hooks/use-finance-reports";
 import { useAuthStore } from "@/stores/auth";
 import { Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
 
@@ -17,13 +24,13 @@ export default function CashFlowPage() {
   const user = useAuthStore((state) => state.user);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    to: new Date()
+    to: new Date(),
   });
 
   const { data: report, isLoading } = useCashFlowStatement(
     user?.unitId || "",
     dateRange?.from || new Date(),
-    dateRange?.to || new Date()
+    dateRange?.to || new Date(),
   );
 
   const handlePrint = () => {
@@ -33,18 +40,24 @@ export default function CashFlowPage() {
   const renderSection = (title: string, items: any[], total: number) => (
     <>
       <TableRow className="bg-muted/30">
-        <TableCell colSpan={2} className="font-semibold pt-4 pb-2">{title}</TableCell>
+        <TableCell colSpan={2} className="font-semibold pt-4 pb-2">
+          {title}
+        </TableCell>
       </TableRow>
       {items.length === 0 ? (
         <TableRow>
-          <TableCell className="text-muted-foreground italic pl-8">Tidak ada aktivitas</TableCell>
+          <TableCell className="text-muted-foreground italic pl-8">
+            Tidak ada aktivitas
+          </TableCell>
           <TableCell className="text-right text-muted-foreground">-</TableCell>
         </TableRow>
       ) : (
         items.map((item, idx) => (
           <TableRow key={idx}>
             <TableCell className="pl-8">{item.name}</TableCell>
-            <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
+            <TableCell className="text-right">
+              {formatCurrency(item.amount)}
+            </TableCell>
           </TableRow>
         ))
       )}
@@ -70,7 +83,9 @@ export default function CashFlowPage() {
           <CardHeader className="text-center">
             <CardTitle>Laporan Arus Kas</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Periode: {dateRange?.from ? format(dateRange.from, "dd MMM yyyy") : '-'} - {dateRange?.to ? format(dateRange.to, "dd MMM yyyy") : '-'}
+              Periode:{" "}
+              {dateRange?.from ? format(dateRange.from, "dd MMM yyyy") : "-"} -{" "}
+              {dateRange?.to ? format(dateRange.to, "dd MMM yyyy") : "-"}
             </p>
           </CardHeader>
           <CardContent>
@@ -82,23 +97,43 @@ export default function CashFlowPage() {
               <div className="rounded-md border">
                 <Table>
                   <TableBody>
-                    {renderSection(report.operatingActivities.title, report.operatingActivities.items, report.operatingActivities.total)}
-                    {renderSection(report.investingActivities.title, report.investingActivities.items, report.investingActivities.total)}
-                    {renderSection(report.financingActivities.title, report.financingActivities.items, report.financingActivities.total)}
+                    {renderSection(
+                      report.operatingActivities.title,
+                      report.operatingActivities.items,
+                      report.operatingActivities.total,
+                    )}
+                    {renderSection(
+                      report.investingActivities.title,
+                      report.investingActivities.items,
+                      report.investingActivities.total,
+                    )}
+                    {renderSection(
+                      report.financingActivities.title,
+                      report.financingActivities.items,
+                      report.financingActivities.total,
+                    )}
 
-                    <TableRow className="h-8 border-none"><TableCell colSpan={2}></TableCell></TableRow>
+                    <TableRow className="h-8 border-none">
+                      <TableCell colSpan={2}></TableCell>
+                    </TableRow>
 
                     <TableRow className="font-bold text-lg bg-muted/50">
                       <TableCell>Kenaikan (Penurunan) Bersih Kas</TableCell>
-                      <TableCell className="text-right">{formatCurrency(report.netChangeInCash)}</TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(report.netChangeInCash)}
+                      </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell>Saldo Kas Awal Periode</TableCell>
-                      <TableCell className="text-right">{formatCurrency(report.beginningCashBalance)}</TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(report.beginningCashBalance)}
+                      </TableCell>
                     </TableRow>
                     <TableRow className="font-bold text-lg bg-primary/5">
                       <TableCell>Saldo Kas Akhir Periode</TableCell>
-                      <TableCell className="text-right">{formatCurrency(report.endingCashBalance)}</TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(report.endingCashBalance)}
+                      </TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>

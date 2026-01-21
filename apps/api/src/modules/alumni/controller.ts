@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from "express";
-import * as service from "./service";
+import { Request, Response, NextFunction } from 'express';
+import * as service from './service';
 import {
   createAlumniSchema,
   updateAlumniSchema,
@@ -17,7 +17,7 @@ import {
   eventQuerySchema,
   registerEventSchema,
   updateAttendeeStatusSchema,
-} from "./schema";
+} from './schema';
 
 // ==================== ALUMNI ====================
 
@@ -36,7 +36,9 @@ export async function getAlumniById(req: Request, res: Response, next: NextFunct
     const { id } = req.params;
     const alumni = await service.getAlumniById(id);
     if (!alumni) {
-      return res.status(404).json({ success: false, error: { code: "NOT_FOUND", message: "Alumni not found" } });
+      return res
+        .status(404)
+        .json({ success: false, error: { code: 'NOT_FOUND', message: 'Alumni not found' } });
     }
     res.json({ success: true, data: alumni });
   } catch (error) {
@@ -69,7 +71,7 @@ export async function deleteAlumni(req: Request, res: Response, next: NextFuncti
   try {
     const { id } = req.params;
     await service.deleteAlumni(id);
-    res.json({ success: true, message: "Alumni deleted successfully" });
+    res.json({ success: true, message: 'Alumni deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -144,7 +146,7 @@ export async function deleteCareer(req: Request, res: Response, next: NextFuncti
   try {
     const { id } = req.params;
     await service.deleteCareer(id);
-    res.json({ success: true, message: "Career deleted successfully" });
+    res.json({ success: true, message: 'Career deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -188,7 +190,7 @@ export async function deleteEducation(req: Request, res: Response, next: NextFun
   try {
     const { id } = req.params;
     await service.deleteEducation(id);
-    res.json({ success: true, message: "Education deleted successfully" });
+    res.json({ success: true, message: 'Education deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -232,7 +234,7 @@ export async function deleteDonation(req: Request, res: Response, next: NextFunc
   try {
     const { id } = req.params;
     await service.deleteDonation(id);
-    res.json({ success: true, message: "Donation deleted successfully" });
+    res.json({ success: true, message: 'Donation deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -255,7 +257,9 @@ export async function getEventById(req: Request, res: Response, next: NextFuncti
     const { id } = req.params;
     const event = await service.getEventById(id);
     if (!event) {
-      return res.status(404).json({ success: false, error: { code: "NOT_FOUND", message: "Event not found" } });
+      return res
+        .status(404)
+        .json({ success: false, error: { code: 'NOT_FOUND', message: 'Event not found' } });
     }
     res.json({ success: true, data: event });
   } catch (error) {
@@ -288,7 +292,7 @@ export async function deleteEvent(req: Request, res: Response, next: NextFunctio
   try {
     const { id } = req.params;
     await service.deleteEvent(id);
-    res.json({ success: true, message: "Event deleted successfully" });
+    res.json({ success: true, message: 'Event deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -322,7 +326,7 @@ export async function cancelRegistration(req: Request, res: Response, next: Next
   try {
     const { id } = req.params;
     await service.cancelRegistration(id);
-    res.json({ success: true, message: "Registration cancelled successfully" });
+    res.json({ success: true, message: 'Registration cancelled successfully' });
   } catch (error) {
     next(error);
   }

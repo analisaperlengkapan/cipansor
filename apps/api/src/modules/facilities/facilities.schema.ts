@@ -88,7 +88,10 @@ export const listRoomsQuerySchema = paginationSchema.extend({
   buildingId: z.string().uuid().optional(),
   roomTypeId: z.string().uuid().optional(),
   condition: z.nativeEnum(BuildingCondition).optional(),
-  isActive: z.enum(['true', 'false']).transform((v) => v === 'true').optional(),
+  isActive: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
   search: z.string().optional(),
 });
 
@@ -102,7 +105,12 @@ export const createRoomSchema = z.object({
   length: z.coerce.number().positive('Panjang harus lebih dari 0').optional().nullable(),
   width: z.coerce.number().positive('Lebar harus lebih dari 0').optional().nullable(),
   area: z.coerce.number().positive('Luas harus lebih dari 0').optional().nullable(),
-  capacity: z.coerce.number().int().nonnegative('Kapasitas tidak boleh negatif').optional().nullable(),
+  capacity: z.coerce
+    .number()
+    .int()
+    .nonnegative('Kapasitas tidak boleh negatif')
+    .optional()
+    .nullable(),
   condition: z.nativeEnum(BuildingCondition, {
     errorMap: () => ({ message: 'Kondisi ruangan tidak valid' }),
   }),

@@ -341,7 +341,12 @@ export class MealsService {
    */
   async bulkRecordAttendance(
     menuId: string,
-    records: { studentId: string; status: MealAttendanceStatus; portions?: number; notes?: string }[],
+    records: {
+      studentId: string;
+      status: MealAttendanceStatus;
+      portions?: number;
+      notes?: string;
+    }[],
     currentUser: AuthenticatedUser
   ) {
     await this.getMenuById(menuId, currentUser);
@@ -358,7 +363,9 @@ export class MealsService {
         results.success++;
       } catch (error) {
         results.failed++;
-        results.errors.push(`${record.studentId}: ${error instanceof Error ? error.message : 'Failed'}`);
+        results.errors.push(
+          `${record.studentId}: ${error instanceof Error ? error.message : 'Failed'}`
+        );
       }
     }
 
@@ -382,7 +389,10 @@ export class MealsService {
       throw Errors.notFound('Attendance record not found');
     }
 
-    if (currentUser.role !== UserRole.SUPER_ADMIN && attendance.menu.unitId !== currentUser.unitId) {
+    if (
+      currentUser.role !== UserRole.SUPER_ADMIN &&
+      attendance.menu.unitId !== currentUser.unitId
+    ) {
       throw Errors.forbidden('Access denied');
     }
 

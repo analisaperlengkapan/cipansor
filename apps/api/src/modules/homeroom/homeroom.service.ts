@@ -101,7 +101,8 @@ export class HomeroomService {
 
     const totalAttendance = attendanceSummary.reduce((acc, curr) => acc + curr._count.status, 0);
     const presentCount = attendanceSummary.find((s) => s.status === 'PRESENT')?._count.status || 0;
-    const averageAttendance = totalAttendance > 0 ? Number(((presentCount / totalAttendance) * 100).toFixed(1)) : 0;
+    const averageAttendance =
+      totalAttendance > 0 ? Number(((presentCount / totalAttendance) * 100).toFixed(1)) : 0;
 
     // 2. Academic Score Average (Current Academic Year)
     const grades = await prisma.grade.findMany({
@@ -113,7 +114,8 @@ export class HomeroomService {
     });
 
     const totalScore = grades.reduce((acc, curr) => acc + Number(curr.score), 0);
-    const averageAcademicScore = grades.length > 0 ? Number((totalScore / grades.length).toFixed(1)) : 0;
+    const averageAcademicScore =
+      grades.length > 0 ? Number((totalScore / grades.length).toFixed(1)) : 0;
 
     // 3. Recent Violations & Pending Notes
     const recentViolations = await prisma.violation.findMany({
@@ -128,11 +130,8 @@ export class HomeroomService {
     const pendingBehaviorNotes = await prisma.violation.count({
       where: {
         studentId: { in: studentIds },
-        OR: [
-          { action: null },
-          { action: '' }
-        ]
-      }
+        OR: [{ action: null }, { action: '' }],
+      },
     });
 
     // 4. Recent Achievements (Rewards + Tahfidz Assessment)
@@ -159,39 +158,41 @@ export class HomeroomService {
 
     // Combine and sort achievements
     const recentAchievements = [
-      ...recentRewards.map(r => ({
+      ...recentRewards.map((r) => ({
         id: r.id,
         type: 'REWARD',
         student: r.student,
         category: r.category,
         description: r.description,
         date: r.givenAt,
-        points: r.points
+        points: r.points,
       })),
-      ...recentTahfidz.map(t => ({
+      ...recentTahfidz.map((t) => ({
         id: t.id,
         type: 'TAHFIDZ',
         student: t.student,
         category: 'Tahfidz',
         description: `Hafalan Surat ${t.surahName} (Juz ${t.juz})`,
         date: t.recordedAt,
-        points: t.score // Use score as points for display
-      }))
-    ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 5);
+        points: t.score, // Use score as points for display
+      })),
+    ]
+      .sort((a, b) => b.date.getTime() - a.date.getTime())
+      .slice(0, 5);
 
     // 5. Upcoming Birthdays (Next 30 days)
     // Fetch all students birthdates and filter in memory
     const studentsWithBirthdays = await prisma.student.findMany({
       where: {
         id: { in: studentIds },
-        birthDate: { not: undefined } // Ensure birthDate exists
+        birthDate: { not: undefined }, // Ensure birthDate exists
       },
       select: {
         id: true,
         nis: true,
         birthDate: true,
-        user: { select: { name: true } }
-      }
+        user: { select: { name: true } },
+      },
     });
 
     const today = new Date();
@@ -199,7 +200,7 @@ export class HomeroomService {
     thirtyDaysFromNow.setDate(today.getDate() + 30);
 
     const upcomingBirthdays = studentsWithBirthdays
-      .map(student => {
+      .map((student) => {
         const dob = new Date(student.birthDate);
         // Set current year to check upcoming
         const nextBirthday = new Date(today.getFullYear(), dob.getMonth(), dob.getDate());
@@ -207,7 +208,7 @@ export class HomeroomService {
         // If birthday has passed this year, check next year (though usually we only care about 'soon')
         // For simple "upcoming in next 30 days", we handle year wrap around
         if (nextBirthday < today) {
-           nextBirthday.setFullYear(today.getFullYear() + 1);
+          nextBirthday.setFullYear(today.getFullYear() + 1);
         }
 
         const diffTime = nextBirthday.getTime() - today.getTime();
@@ -217,13 +218,13 @@ export class HomeroomService {
           student: {
             id: student.id,
             name: student.user.name,
-            nis: student.nis
+            nis: student.nis,
           },
           date: dob,
-          daysUntil: diffDays
+          daysUntil: diffDays,
         };
       })
-      .filter(item => item.daysUntil >= 0 && item.daysUntil <= 30)
+      .filter((item) => item.daysUntil >= 0 && item.daysUntil <= 30)
       .sort((a, b) => a.daysUntil - b.daysUntil);
 
     return {
@@ -240,8 +241,8 @@ export class HomeroomService {
         pendingBehaviorNotes,
         recentViolations,
         recentAchievements,
-        upcomingBirthdays
-      }
+        upcomingBirthdays,
+      },
     };
   }
 
@@ -279,7 +280,12 @@ export class HomeroomService {
   /**
    * Get attendance summary for class
    */
-  async getAttendanceSummary(classId: string, startDate: string, endDate: string, currentUser: AuthenticatedUser) {
+  async getAttendanceSummary(
+    classId: string,
+    startDate: string,
+    endDate: string,
+    currentUser: AuthenticatedUser
+  ) {
     const classData = await prisma.class.findFirst({
       where: { id: classId, deletedAt: null },
     });
@@ -362,7 +368,10 @@ export class HomeroomService {
     });
 
     if (!studentForAccess) throw Errors.notFound('Student not found');
-    if (currentUser.role !== UserRole.SUPER_ADMIN && studentForAccess.unitId !== currentUser.unitId) {
+    if (
+      currentUser.role !== UserRole.SUPER_ADMIN &&
+      studentForAccess.unitId !== currentUser.unitId
+    ) {
       throw Errors.forbidden('Access denied');
     }
 
@@ -432,7 +441,13 @@ export class HomeroomService {
    * Create student note - using violation/reward system
    */
   async createStudentNote(
-    input: { studentId: string; type: 'POSITIVE' | 'NEGATIVE'; title: string; description?: string; category?: string },
+    input: {
+      studentId: string;
+      type: 'POSITIVE' | 'NEGATIVE';
+      title: string;
+      description?: string;
+      category?: string;
+    },
     currentUser: AuthenticatedUser
   ) {
     const student = await prisma.student.findFirst({
@@ -494,7 +509,10 @@ export class HomeroomService {
         throw Errors.notFound('Note not found');
       }
 
-      if (currentUser.role !== UserRole.SUPER_ADMIN && violation.student.unitId !== currentUser.unitId) {
+      if (
+        currentUser.role !== UserRole.SUPER_ADMIN &&
+        violation.student.unitId !== currentUser.unitId
+      ) {
         throw Errors.forbidden('Access denied');
       }
 
@@ -516,7 +534,10 @@ export class HomeroomService {
         throw Errors.notFound('Note not found');
       }
 
-      if (currentUser.role !== UserRole.SUPER_ADMIN && reward.student.unitId !== currentUser.unitId) {
+      if (
+        currentUser.role !== UserRole.SUPER_ADMIN &&
+        reward.student.unitId !== currentUser.unitId
+      ) {
         throw Errors.forbidden('Access denied');
       }
 
@@ -534,7 +555,11 @@ export class HomeroomService {
   /**
    * Delete student note
    */
-  async deleteStudentNote(noteId: string, noteType: 'violation' | 'reward', currentUser: AuthenticatedUser) {
+  async deleteStudentNote(
+    noteId: string,
+    noteType: 'violation' | 'reward',
+    currentUser: AuthenticatedUser
+  ) {
     if (noteType === 'violation') {
       const violation = await prisma.violation.findUnique({
         where: { id: noteId },
@@ -542,7 +567,10 @@ export class HomeroomService {
       });
 
       if (!violation) throw Errors.notFound('Note not found');
-      if (currentUser.role !== UserRole.SUPER_ADMIN && violation.student.unitId !== currentUser.unitId) {
+      if (
+        currentUser.role !== UserRole.SUPER_ADMIN &&
+        violation.student.unitId !== currentUser.unitId
+      ) {
         throw Errors.forbidden('Access denied');
       }
 
@@ -554,7 +582,10 @@ export class HomeroomService {
       });
 
       if (!reward) throw Errors.notFound('Note not found');
-      if (currentUser.role !== UserRole.SUPER_ADMIN && reward.student.unitId !== currentUser.unitId) {
+      if (
+        currentUser.role !== UserRole.SUPER_ADMIN &&
+        reward.student.unitId !== currentUser.unitId
+      ) {
         throw Errors.forbidden('Access denied');
       }
 
@@ -608,11 +639,24 @@ export class HomeroomService {
    * Record behavior
    */
   async recordBehavior(
-    input: { studentId: string; type: 'POSITIVE' | 'NEGATIVE'; title: string; description?: string; category?: string; points?: number },
+    input: {
+      studentId: string;
+      type: 'POSITIVE' | 'NEGATIVE';
+      title: string;
+      description?: string;
+      category?: string;
+      points?: number;
+    },
     currentUser: AuthenticatedUser
   ) {
     return this.createStudentNote(
-      { studentId: input.studentId, type: input.type, title: input.title, description: input.description, category: input.category },
+      {
+        studentId: input.studentId,
+        type: input.type,
+        title: input.title,
+        description: input.description,
+        category: input.category,
+      },
       currentUser
     );
   }

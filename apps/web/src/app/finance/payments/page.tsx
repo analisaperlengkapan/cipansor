@@ -1,18 +1,24 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, CreditCard, Download, Printer, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, CreditCard, Download, Printer, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -20,29 +26,29 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Pagination } from '@/components/shared';
+} from "@/components/ui/table";
+import { Pagination } from "@/components/shared";
 import {
   usePayments,
   PAYMENT_METHODS,
   BILL_TYPES,
   PaymentMethod,
   Payment,
-} from '@/hooks/use-finance';
+} from "@/hooks/use-finance";
 
 function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
     minimumFractionDigits: 0,
   }).format(amount);
 }
 
 export default function PaymentsPage() {
   const [page, setPage] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "">("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const limit = 20;
 
   const { data: paymentsData, isLoading } = usePayments({
@@ -64,8 +70,12 @@ export default function PaymentsPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Riwayat Pembayaran</h1>
-            <p className="text-muted-foreground">Lihat semua transaksi pembayaran</p>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Riwayat Pembayaran
+            </h1>
+            <p className="text-muted-foreground">
+              Lihat semua transaksi pembayaran
+            </p>
           </div>
         </div>
         <Button variant="outline">
@@ -80,7 +90,7 @@ export default function PaymentsPage() {
           <div className="flex flex-col gap-4 sm:flex-row">
             <Select
               value={paymentMethod}
-              onValueChange={(v) => setPaymentMethod(v as PaymentMethod | '')}
+              onValueChange={(v) => setPaymentMethod(v as PaymentMethod | "")}
             >
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Metode" />
@@ -117,9 +127,9 @@ export default function PaymentsPage() {
               <Button
                 variant="ghost"
                 onClick={() => {
-                  setPaymentMethod('');
-                  setStartDate('');
-                  setEndDate('');
+                  setPaymentMethod("");
+                  setStartDate("");
+                  setEndDate("");
                 }}
               >
                 Reset Filter
@@ -139,7 +149,9 @@ export default function PaymentsPage() {
           ) : paymentsData?.data.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <CreditCard className="h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">Tidak ada pembayaran</h3>
+              <h3 className="mt-4 text-lg font-semibold">
+                Tidak ada pembayaran
+              </h3>
               <p className="text-muted-foreground">
                 Belum ada transaksi pembayaran
               </p>
@@ -165,7 +177,9 @@ export default function PaymentsPage() {
                         {payment.receiptNumber}
                       </TableCell>
                       <TableCell>
-                        {new Date(payment.paymentDate).toLocaleDateString('id-ID')}
+                        {new Date(payment.paymentDate).toLocaleDateString(
+                          "id-ID",
+                        )}
                       </TableCell>
                       <TableCell>
                         <div>
@@ -178,20 +192,29 @@ export default function PaymentsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {BILL_TYPES.find((t) => t.value === payment.bill?.billType)
-                          ?.label || payment.bill?.billType}
+                        {BILL_TYPES.find(
+                          (t) => t.value === payment.bill?.billType,
+                        )?.label || payment.bill?.billType}
                       </TableCell>
                       <TableCell>
-                        {PAYMENT_METHODS.find((m) => m.value === payment.paymentMethod)
-                          ?.label || payment.paymentMethod}
+                        {PAYMENT_METHODS.find(
+                          (m) => m.value === payment.paymentMethod,
+                        )?.label || payment.paymentMethod}
                       </TableCell>
                       <TableCell className="text-right font-medium text-green-600">
                         {formatCurrency(payment.amount)}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="sm" asChild title="Cetak Kuitansi">
-                            <Link href={`/finance/payments/${payment.id}/receipt`}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            asChild
+                            title="Cetak Kuitansi"
+                          >
+                            <Link
+                              href={`/finance/payments/${payment.id}/receipt`}
+                            >
                               <Printer className="h-4 w-4" />
                             </Link>
                           </Button>

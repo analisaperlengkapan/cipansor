@@ -42,7 +42,7 @@ describe('StudentService', () => {
         { id: '1', name: 'Student 1', enrollments: [] },
         { id: '2', name: 'Student 2', enrollments: [] },
       ];
-      
+
       (prisma.student.findMany as any).mockResolvedValue(mockStudents);
       (prisma.student.count as any).mockResolvedValue(2);
 
@@ -51,14 +51,16 @@ describe('StudentService', () => {
         { role: UserRole.ADMIN, unitId: 'unit-1' }
       );
 
-      expect(prisma.student.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: expect.objectContaining({
-          unitId: 'unit-1'
-        }),
-        skip: 0,
-        take: 10
-      }));
-      
+      expect(prisma.student.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            unitId: 'unit-1',
+          }),
+          skip: 0,
+          take: 10,
+        })
+      );
+
       expect(result.students).toHaveLength(2);
       expect(result.pagination.total).toBe(2);
     });
@@ -67,17 +69,16 @@ describe('StudentService', () => {
       (prisma.student.findMany as any).mockResolvedValue([]);
       (prisma.student.count as any).mockResolvedValue(0);
 
-      await service.findAll(
-        { page: 1, limit: 10 },
-        { role: UserRole.SUPER_ADMIN, unitId: null }
-      );
+      await service.findAll({ page: 1, limit: 10 }, { role: UserRole.SUPER_ADMIN, unitId: null });
 
       // Verify unitId is NOT enforced in where clause
-      expect(prisma.student.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: expect.not.objectContaining({
-          unitId: expect.anything() // Should check what 'where' actually contains
+      expect(prisma.student.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.not.objectContaining({
+            unitId: expect.anything(), // Should check what 'where' actually contains
+          }),
         })
-      }));
+      );
     });
   });
 
@@ -99,22 +100,24 @@ describe('StudentService', () => {
       (prisma.student.findFirst as any).mockResolvedValue(null); // No existing NIS
       (prisma.user.findFirst as any).mockResolvedValue(null); // No existing Email
       (prisma.unit.findFirst as any).mockResolvedValue({ id: 'unit-1' }); // Unit exists
-      
+
       const mockCreatedUser = { id: 'user-1', email: '12345@student.cipansor.local' };
       const mockCreatedStudent = { id: 'student-1', userId: 'user-1', ...mockInput };
-      
+
       (prisma.user.create as any).mockResolvedValue(mockCreatedUser);
       (prisma.student.create as any).mockResolvedValue(mockCreatedStudent);
 
       const result = await service.create(mockInput);
 
       expect(prisma.$transaction).toHaveBeenCalled();
-      expect(prisma.user.create).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({
-          name: mockInput.name,
-          role: UserRole.STUDENT,
+      expect(prisma.user.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            name: mockInput.name,
+            role: UserRole.STUDENT,
+          }),
         })
-      }));
+      );
       expect(prisma.student.create).toHaveBeenCalled();
       expect(result).toEqual(mockCreatedStudent);
     });
@@ -122,9 +125,7 @@ describe('StudentService', () => {
     it('should throw error if NIS already exists', async () => {
       (prisma.student.findFirst as any).mockResolvedValue({ id: 'existing' });
 
-      await expect(service.create(mockInput))
-        .rejects
-        .toThrow('NIS already exists');
+      await expect(service.create(mockInput)).rejects.toThrow('NIS already exists');
     });
   });
 });

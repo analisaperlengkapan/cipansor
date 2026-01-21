@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -14,14 +20,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   useAssessments,
   useReportCards,
@@ -29,8 +35,8 @@ import {
   ASSESSMENT_TYPE_LABELS,
   ExamType,
   type AssessmentType,
-} from '@/hooks';
-import { useClasses, useAcademicYears, useSubjects } from '@/hooks';
+} from "@/hooks";
+import { useClasses, useAcademicYears, useSubjects } from "@/hooks";
 import {
   ClipboardList,
   Search,
@@ -43,27 +49,27 @@ import {
   Clock,
   Loader2,
   Download,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import Link from 'next/link';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import Link from "next/link";
 
 export default function AssessmentPage() {
-  const [activeTab, setActiveTab] = useState('assessments');
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<AssessmentType | 'ALL'>('ALL');
-  const [classFilter, setClassFilter] = useState<string>('ALL');
-  const [subjectFilter, setSubjectFilter] = useState<string>('ALL');
-  const [semesterFilter, setSemesterFilter] = useState<string>('1');
+  const [activeTab, setActiveTab] = useState("assessments");
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<AssessmentType | "ALL">("ALL");
+  const [classFilter, setClassFilter] = useState<string>("ALL");
+  const [subjectFilter, setSubjectFilter] = useState<string>("ALL");
+  const [semesterFilter, setSemesterFilter] = useState<string>("1");
 
   const { data: assessments, isLoading: loadingAssessments } = useAssessments({
-    type: typeFilter !== 'ALL' ? typeFilter : undefined,
-    classId: classFilter === 'ALL' ? undefined : classFilter,
-    subjectId: subjectFilter === 'ALL' ? undefined : subjectFilter,
+    type: typeFilter !== "ALL" ? typeFilter : undefined,
+    classId: classFilter === "ALL" ? undefined : classFilter,
+    subjectId: subjectFilter === "ALL" ? undefined : subjectFilter,
     semester: semesterFilter ? parseInt(semesterFilter) : undefined,
   });
   const { data: reportCards, isLoading: loadingReportCards } = useReportCards({
-    classId: classFilter === 'ALL' ? undefined : classFilter,
+    classId: classFilter === "ALL" ? undefined : classFilter,
     semester: semesterFilter ? parseInt(semesterFilter) : undefined,
   });
   const { data: classes } = useClasses();
@@ -71,20 +77,24 @@ export default function AssessmentPage() {
   const { data: subjects } = useSubjects();
 
   const activeAcademicYear = academicYears?.data?.find((ay) => ay.isActive);
-  const publishedAssessments = assessments?.filter(a => a.status !== 'DRAFT').length ?? 0;
-  const draftAssessments = assessments?.filter(a => a.status === 'DRAFT').length ?? 0;
+  const publishedAssessments =
+    assessments?.filter((a) => a.status !== "DRAFT").length ?? 0;
+  const draftAssessments =
+    assessments?.filter((a) => a.status === "DRAFT").length ?? 0;
 
   const getAssessmentTypeBadge = (type: AssessmentType) => {
     const colors: Record<AssessmentType, string> = {
-      [ExamType.DAILY_TEST]: 'bg-gray-100 text-gray-800',
-      [ExamType.MIDTERM]: 'bg-purple-100 text-purple-800',
-      [ExamType.FINAL]: 'bg-red-100 text-red-800',
-      [ExamType.PRACTICAL]: 'bg-green-100 text-green-800',
-      [ExamType.PROJECT]: 'bg-yellow-100 text-yellow-800',
-      [ExamType.QUIZ]: 'bg-pink-100 text-pink-800',
-      [ExamType.TAHFIDZ_TEST]: 'bg-teal-100 text-teal-800',
+      [ExamType.DAILY_TEST]: "bg-gray-100 text-gray-800",
+      [ExamType.MIDTERM]: "bg-purple-100 text-purple-800",
+      [ExamType.FINAL]: "bg-red-100 text-red-800",
+      [ExamType.PRACTICAL]: "bg-green-100 text-green-800",
+      [ExamType.PROJECT]: "bg-yellow-100 text-yellow-800",
+      [ExamType.QUIZ]: "bg-pink-100 text-pink-800",
+      [ExamType.TAHFIDZ_TEST]: "bg-teal-100 text-teal-800",
     };
-    return <Badge className={colors[type]}>{ASSESSMENT_TYPE_LABELS[type]}</Badge>;
+    return (
+      <Badge className={colors[type]}>{ASSESSMENT_TYPE_LABELS[type]}</Badge>
+    );
   };
 
   return (
@@ -118,24 +128,34 @@ export default function AssessmentPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Penilaian</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Penilaian
+              </CardTitle>
               <ClipboardList className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{assessments?.length ?? 0}</div>
+              <div className="text-2xl font-bold">
+                {assessments?.length ?? 0}
+              </div>
               <p className="text-xs text-muted-foreground">
-                Semester {semesterFilter || '1'}
+                Semester {semesterFilter || "1"}
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Dipublikasikan</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Dipublikasikan
+              </CardTitle>
               <CheckCircle className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{publishedAssessments}</div>
-              <p className="text-xs text-muted-foreground">Nilai sudah dirilis</p>
+              <div className="text-2xl font-bold text-green-600">
+                {publishedAssessments}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Nilai sudah dirilis
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -144,8 +164,12 @@ export default function AssessmentPage() {
               <Clock className="h-4 w-4 text-yellow-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{draftAssessments}</div>
-              <p className="text-xs text-muted-foreground">Menunggu input nilai</p>
+              <div className="text-2xl font-bold text-yellow-600">
+                {draftAssessments}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Menunggu input nilai
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -154,9 +178,12 @@ export default function AssessmentPage() {
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{reportCards?.length ?? 0}</div>
+              <div className="text-2xl font-bold">
+                {reportCards?.length ?? 0}
+              </div>
               <p className="text-xs text-muted-foreground">
-                {reportCards?.filter(r => r.isPublished).length ?? 0} dipublikasikan
+                {reportCards?.filter((r) => r.isPublished).length ?? 0}{" "}
+                dipublikasikan
               </p>
             </CardContent>
           </Card>
@@ -205,7 +232,10 @@ export default function AssessmentPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+                  <Select
+                    value={subjectFilter}
+                    onValueChange={setSubjectFilter}
+                  >
                     <SelectTrigger className="w-full md:w-[180px]">
                       <SelectValue placeholder="Semua Mapel" />
                     </SelectTrigger>
@@ -220,7 +250,9 @@ export default function AssessmentPage() {
                   </Select>
                   <Select
                     value={typeFilter}
-                    onValueChange={(v) => setTypeFilter(v as AssessmentType | 'ALL')}
+                    onValueChange={(v) =>
+                      setTypeFilter(v as AssessmentType | "ALL")
+                    }
                   >
                     <SelectTrigger className="w-full md:w-[130px]">
                       <SelectValue placeholder="Semua Tipe" />
@@ -234,7 +266,10 @@ export default function AssessmentPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Select value={semesterFilter} onValueChange={setSemesterFilter}>
+                  <Select
+                    value={semesterFilter}
+                    onValueChange={setSemesterFilter}
+                  >
                     <SelectTrigger className="w-full md:w-[130px]">
                       <SelectValue placeholder="Semester" />
                     </SelectTrigger>
@@ -281,16 +316,30 @@ export default function AssessmentPage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>{assessment.class?.name ?? '-'}</TableCell>
-                        <TableCell>{assessment.subject?.name ?? '-'}</TableCell>
-                        <TableCell>{getAssessmentTypeBadge(assessment.type)}</TableCell>
+                        <TableCell>{assessment.class?.name ?? "-"}</TableCell>
+                        <TableCell>{assessment.subject?.name ?? "-"}</TableCell>
                         <TableCell>
-                          {format(new Date(assessment.scheduledAt), 'd MMM yyyy', { locale: id })}
+                          {getAssessmentTypeBadge(assessment.type)}
+                        </TableCell>
+                        <TableCell>
+                          {format(
+                            new Date(assessment.scheduledAt),
+                            "d MMM yyyy",
+                            { locale: id },
+                          )}
                         </TableCell>
                         <TableCell>{assessment.maxScore}</TableCell>
                         <TableCell>
-                          <Badge variant={assessment.status !== 'DRAFT' ? 'default' : 'secondary'}>
-                            {assessment.status !== 'DRAFT' ? 'Dipublikasikan' : 'Draft'}
+                          <Badge
+                            variant={
+                              assessment.status !== "DRAFT"
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
+                            {assessment.status !== "DRAFT"
+                              ? "Dipublikasikan"
+                              : "Draft"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -301,7 +350,9 @@ export default function AssessmentPage() {
                               </Link>
                             </Button>
                             <Button variant="ghost" size="icon" asChild>
-                              <Link href={`/assessment/${assessment.id}/grades`}>
+                              <Link
+                                href={`/assessment/${assessment.id}/grades`}
+                              >
                                 <Edit className="h-4 w-4" />
                               </Link>
                             </Button>
@@ -311,7 +362,10 @@ export default function AssessmentPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={8}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         Belum ada penilaian
                       </TableCell>
                     </TableRow>
@@ -338,7 +392,10 @@ export default function AssessmentPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={semesterFilter} onValueChange={setSemesterFilter}>
+                <Select
+                  value={semesterFilter}
+                  onValueChange={setSemesterFilter}
+                >
                   <SelectTrigger className="w-[150px]">
                     <SelectValue placeholder="Semester" />
                   </SelectTrigger>
@@ -384,38 +441,44 @@ export default function AssessmentPage() {
                           {report.student?.nis}
                         </TableCell>
                         <TableCell className="font-medium">
-                          {report.student?.user?.name || '-'}
+                          {report.student?.user?.name || "-"}
                         </TableCell>
                         <TableCell>{report.class?.name}</TableCell>
                         <TableCell>Semester {report.semester}</TableCell>
                         <TableCell>
                           <span className="font-semibold">
-                            {report.averageScore?.toFixed(1) ?? '-'}
+                            {report.averageScore?.toFixed(1) ?? "-"}
                           </span>
                         </TableCell>
                         <TableCell>
                           {report.rank ? (
-                            <Badge variant="outline">
-                              #{report.rank}
-                            </Badge>
+                            <Badge variant="outline">#{report.rank}</Badge>
                           ) : (
-                            '-'
+                            "-"
                           )}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={report.isPublished ? 'default' : 'secondary'}>
-                            {report.isPublished ? 'Dipublikasikan' : 'Draft'}
+                          <Badge
+                            variant={
+                              report.isPublished ? "default" : "secondary"
+                            }
+                          >
+                            {report.isPublished ? "Dipublikasikan" : "Draft"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button variant="ghost" size="icon" asChild>
-                              <Link href={`/assessment/report-cards/${report.id}`}>
+                              <Link
+                                href={`/assessment/report-cards/${report.id}`}
+                              >
                                 <Eye className="h-4 w-4" />
                               </Link>
                             </Button>
                             <Button variant="ghost" size="icon" asChild>
-                              <Link href={`/assessment/report-cards/${report.id}/print`}>
+                              <Link
+                                href={`/assessment/report-cards/${report.id}/print`}
+                              >
                                 <Download className="h-4 w-4" />
                               </Link>
                             </Button>
@@ -425,7 +488,10 @@ export default function AssessmentPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={8}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         Belum ada data rapor
                       </TableCell>
                     </TableRow>
@@ -446,7 +512,8 @@ export default function AssessmentPage() {
                 <CardContent>
                   <div className="space-y-4">
                     {ASSESSMENT_TYPES.map((type) => {
-                      const count = assessments?.filter(a => a.type === type).length ?? 0;
+                      const count =
+                        assessments?.filter((a) => a.type === type).length ?? 0;
                       const total = assessments?.length ?? 1;
                       const percentage = (count / total) * 100;
                       return (
@@ -477,18 +544,30 @@ export default function AssessmentPage() {
                   <div className="space-y-6">
                     <div className="text-center">
                       <div className="text-4xl font-bold">
-                        {assessments?.length ?
-                          Math.round((publishedAssessments / assessments.length) * 100) : 0}%
+                        {assessments?.length
+                          ? Math.round(
+                              (publishedAssessments / assessments.length) * 100,
+                            )
+                          : 0}
+                        %
                       </div>
-                      <p className="text-sm text-muted-foreground">Sudah dipublikasikan</p>
+                      <p className="text-sm text-muted-foreground">
+                        Sudah dipublikasikan
+                      </p>
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-center">
                       <div>
-                        <div className="text-2xl font-bold text-green-600">{publishedAssessments}</div>
-                        <p className="text-xs text-muted-foreground">Dipublikasikan</p>
+                        <div className="text-2xl font-bold text-green-600">
+                          {publishedAssessments}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Dipublikasikan
+                        </p>
                       </div>
                       <div>
-                        <div className="text-2xl font-bold text-yellow-600">{draftAssessments}</div>
+                        <div className="text-2xl font-bold text-yellow-600">
+                          {draftAssessments}
+                        </div>
                         <p className="text-xs text-muted-foreground">Draft</p>
                       </div>
                     </div>

@@ -1,11 +1,11 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, SharedPaginatedResponse } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, SharedPaginatedResponse } from "@/lib/api";
 
 // Types
 export enum QuestionType {
-  MULTIPLE_CHOICE = 'MULTIPLE_CHOICE',
-  ESSAY = 'ESSAY',
-  TRUE_FALSE = 'TRUE_FALSE',
+  MULTIPLE_CHOICE = "MULTIPLE_CHOICE",
+  ESSAY = "ESSAY",
+  TRUE_FALSE = "TRUE_FALSE",
 }
 
 export interface Question {
@@ -43,7 +43,7 @@ export interface ExamAttempt {
   startedAt: string;
   finishedAt?: string;
   score?: number;
-  status: 'IN_PROGRESS' | 'COMPLETED' | 'EXPIRED';
+  status: "IN_PROGRESS" | "COMPLETED" | "EXPIRED";
   exam?: any;
   answers?: any[];
 }
@@ -52,9 +52,9 @@ export interface ExamAttempt {
 
 export const useQuestionBanks = (params?: any) => {
   return useQuery({
-    queryKey: ['question-banks', params],
+    queryKey: ["question-banks", params],
     queryFn: async () => {
-      const { data } = await api.get('/cbt/banks', { params });
+      const { data } = await api.get("/cbt/banks", { params });
       return data;
     },
   });
@@ -62,7 +62,7 @@ export const useQuestionBanks = (params?: any) => {
 
 export const useQuestionBank = (id: string) => {
   return useQuery({
-    queryKey: ['question-bank', id],
+    queryKey: ["question-bank", id],
     queryFn: async () => {
       const { data } = await api.get(`/cbt/banks/${id}`);
       return data.data;
@@ -75,11 +75,11 @@ export const useCreateQuestionBank = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: any) => {
-      const { data: res } = await api.post('/cbt/banks', data);
+      const { data: res } = await api.post("/cbt/banks", data);
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['question-banks'] });
+      queryClient.invalidateQueries({ queryKey: ["question-banks"] });
     },
   });
 };
@@ -91,7 +91,7 @@ export const useDeleteQuestionBank = () => {
       await api.delete(`/cbt/banks/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['question-banks'] });
+      queryClient.invalidateQueries({ queryKey: ["question-banks"] });
     },
   });
 };
@@ -102,11 +102,14 @@ export const useAddQuestion = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ bankId, data }: { bankId: string; data: any }) => {
-      const { data: res } = await api.post(`/cbt/banks/${bankId}/questions`, data);
+      const { data: res } = await api.post(
+        `/cbt/banks/${bankId}/questions`,
+        data,
+      );
       return res.data;
     },
     onSuccess: (_, { bankId }) => {
-      queryClient.invalidateQueries({ queryKey: ['question-bank', bankId] });
+      queryClient.invalidateQueries({ queryKey: ["question-bank", bankId] });
     },
   });
 };
@@ -114,12 +117,23 @@ export const useAddQuestion = () => {
 export const useUpdateQuestion = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ bankId, questionId, data }: { bankId: string; questionId: string; data: any }) => {
-      const { data: res } = await api.put(`/cbt/banks/${bankId}/questions/${questionId}`, data);
+    mutationFn: async ({
+      bankId,
+      questionId,
+      data,
+    }: {
+      bankId: string;
+      questionId: string;
+      data: any;
+    }) => {
+      const { data: res } = await api.put(
+        `/cbt/banks/${bankId}/questions/${questionId}`,
+        data,
+      );
       return res.data;
     },
     onSuccess: (_, { bankId }) => {
-      queryClient.invalidateQueries({ queryKey: ['question-bank', bankId] });
+      queryClient.invalidateQueries({ queryKey: ["question-bank", bankId] });
     },
   });
 };
@@ -127,11 +141,17 @@ export const useUpdateQuestion = () => {
 export const useDeleteQuestion = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ bankId, questionId }: { bankId: string; questionId: string }) => {
+    mutationFn: async ({
+      bankId,
+      questionId,
+    }: {
+      bankId: string;
+      questionId: string;
+    }) => {
       await api.delete(`/cbt/banks/${bankId}/questions/${questionId}`);
     },
     onSuccess: (_, { bankId }) => {
-      queryClient.invalidateQueries({ queryKey: ['question-bank', bankId] });
+      queryClient.invalidateQueries({ queryKey: ["question-bank", bankId] });
     },
   });
 };
@@ -149,7 +169,7 @@ export const useStartExam = () => {
 
 export const useExamAttempt = (attemptId: string) => {
   return useQuery({
-    queryKey: ['exam-attempt', attemptId],
+    queryKey: ["exam-attempt", attemptId],
     queryFn: async () => {
       const { data } = await api.get(`/cbt/attempts/${attemptId}`);
       return data.data;
@@ -162,8 +182,19 @@ export const useExamAttempt = (attemptId: string) => {
 
 export const useSubmitAnswer = () => {
   return useMutation({
-    mutationFn: async ({ attemptId, questionId, answer }: { attemptId: string; questionId: string; answer: any }) => {
-      await api.post(`/cbt/attempts/${attemptId}/answer`, { questionId, answer });
+    mutationFn: async ({
+      attemptId,
+      questionId,
+      answer,
+    }: {
+      attemptId: string;
+      questionId: string;
+      answer: any;
+    }) => {
+      await api.post(`/cbt/attempts/${attemptId}/answer`, {
+        questionId,
+        answer,
+      });
     },
   });
 };
@@ -176,7 +207,7 @@ export const useFinishExam = () => {
       return data.data;
     },
     onSuccess: (data, attemptId) => {
-      queryClient.invalidateQueries({ queryKey: ['exam-attempt', attemptId] });
+      queryClient.invalidateQueries({ queryKey: ["exam-attempt", attemptId] });
     },
   });
 };

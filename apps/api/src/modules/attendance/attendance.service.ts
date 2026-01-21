@@ -9,12 +9,9 @@ import {
   UpdateAttendanceInput,
   Attendance,
   AttendanceCalendarResponse,
-  AttendanceSummary
+  AttendanceSummary,
 } from '@cipansor/shared';
-import type {
-  ListAttendanceQuery,
-  AttendanceSummaryQuery,
-} from './attendance.schema';
+import type { ListAttendanceQuery, AttendanceSummaryQuery } from './attendance.schema';
 
 export class AttendanceService {
   /**
@@ -30,7 +27,10 @@ export class AttendanceService {
   /**
    * Get attendance records with pagination
    */
-  async findAll(query: ListAttendanceQuery, currentUser: { role: UserRole; unitId: string | null }) {
+  async findAll(
+    query: ListAttendanceQuery,
+    currentUser: { role: UserRole; unitId: string | null }
+  ) {
     const { page, limit, classId, studentId, date, startDate, endDate, status } = query;
     const skip = (page - 1) * limit;
 
@@ -64,8 +64,12 @@ export class AttendanceService {
       // OR explicitly set UTC boundaries if the DB stores timestamps
       // Assuming DB stores DateTime (timestamp), we need range coverage
       // Using UTC methods to ignore server local timezone
-      const startOfDay = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
-      const endOfDay = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
+      const startOfDay = new Date(
+        Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0)
+      );
+      const endOfDay = new Date(
+        Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999)
+      );
 
       where.date = {
         gte: startOfDay,
@@ -170,8 +174,12 @@ export class AttendanceService {
 
     // Check for duplicate attendance on same date
     const inputDate = new Date(input.date);
-    const startOfDay = new Date(Date.UTC(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 0, 0, 0, 0));
-    const endOfDay = new Date(Date.UTC(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 23, 59, 59, 999));
+    const startOfDay = new Date(
+      Date.UTC(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 0, 0, 0, 0)
+    );
+    const endOfDay = new Date(
+      Date.UTC(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 23, 59, 59, 999)
+    );
 
     const existingAttendance = await prisma.attendance.findFirst({
       where: {
@@ -219,7 +227,7 @@ export class AttendanceService {
       unitName: attendance.student.unit?.name || '',
       status: attendance.status as any,
       date: attendance.date,
-      recordedById
+      recordedById,
     });
 
     return this.mapToShared(attendance);
@@ -239,10 +247,12 @@ export class AttendanceService {
     }
 
     // Get all enrolled students
-    const enrolledStudentIds = await prisma.classEnrollment.findMany({
-      where: { classId: input.classId, status: 'active' },
-      select: { studentId: true },
-    }).then(e => e.map(x => x.studentId));
+    const enrolledStudentIds = await prisma.classEnrollment
+      .findMany({
+        where: { classId: input.classId, status: 'active' },
+        select: { studentId: true },
+      })
+      .then((e) => e.map((x) => x.studentId));
 
     // Validate all students are enrolled
     for (const record of input.records) {
@@ -253,8 +263,20 @@ export class AttendanceService {
 
     // Check for existing attendance on this date
     const targetDate = new Date(input.date);
-    const startOfDay = new Date(Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0));
-    const endOfDay = new Date(Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59, 999));
+    const startOfDay = new Date(
+      Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0)
+    );
+    const endOfDay = new Date(
+      Date.UTC(
+        targetDate.getFullYear(),
+        targetDate.getMonth(),
+        targetDate.getDate(),
+        23,
+        59,
+        59,
+        999
+      )
+    );
 
     const existingAttendance = await prisma.attendance.findMany({
       where: {
@@ -267,10 +289,10 @@ export class AttendanceService {
       select: { studentId: true },
     });
 
-    const existingStudentIds = new Set(existingAttendance.map(a => a.studentId));
+    const existingStudentIds = new Set(existingAttendance.map((a) => a.studentId));
 
     // Filter out students who already have attendance
-    const newRecords = input.records.filter(r => !existingStudentIds.has(r.studentId));
+    const newRecords = input.records.filter((r) => !existingStudentIds.has(r.studentId));
 
     if (newRecords.length === 0) {
       throw Errors.conflict('All students already have attendance recorded for this date');
@@ -278,7 +300,7 @@ export class AttendanceService {
 
     // Create attendance records
     const created = await prisma.attendance.createMany({
-      data: newRecords.map(record => ({
+      data: newRecords.map((record) => ({
         studentId: record.studentId,
         classId: input.classId,
         date: targetDate,
@@ -297,12 +319,16 @@ export class AttendanceService {
   /**
    * Update attendance record
    */
-  async update(id: string, input: UpdateAttendanceInput, currentUser: { role: UserRole; unitId: string | null }): Promise<Attendance> {
+  async update(
+    id: string,
+    input: UpdateAttendanceInput,
+    currentUser: { role: UserRole; unitId: string | null }
+  ): Promise<Attendance> {
     const attendance = await prisma.attendance.findUnique({
       where: { id },
       include: {
-        student: { select: { unitId: true } }
-      }
+        student: { select: { unitId: true } },
+      },
     });
 
     if (!attendance) {
@@ -342,8 +368,8 @@ export class AttendanceService {
     const attendance = await prisma.attendance.findUnique({
       where: { id },
       include: {
-        student: { select: { unitId: true } }
-      }
+        student: { select: { unitId: true } },
+      },
     });
 
     if (!attendance) {
@@ -367,7 +393,10 @@ export class AttendanceService {
   /**
    * Get attendance summary/statistics
    */
-  async getSummary(query: AttendanceSummaryQuery, currentUser: { role: UserRole; unitId: string | null }): Promise<AttendanceSummary> {
+  async getSummary(
+    query: AttendanceSummaryQuery,
+    currentUser: { role: UserRole; unitId: string | null }
+  ): Promise<AttendanceSummary> {
     const { classId, studentId, startDate, endDate } = query;
 
     const where: Prisma.AttendanceWhereInput = {
@@ -417,7 +446,10 @@ export class AttendanceService {
     for (const item of statusCounts) {
       const statusKey = item.status.toString().toLowerCase();
       // Only assign if it's a known key to avoid pollution, or just assign everything if dynamic
-      if (statusKey in counts || ['present', 'absent', 'late', 'sick', 'excused'].includes(statusKey)) {
+      if (
+        statusKey in counts ||
+        ['present', 'absent', 'late', 'sick', 'excused'].includes(statusKey)
+      ) {
         counts[statusKey] = item._count._all;
       }
     }
@@ -425,7 +457,9 @@ export class AttendanceService {
     // Explicitly handle mapping if Enums don't match exactly (e.g. EXCUSED vs PERMISSION)
     // Though we try to align them, let's be safe.
     // 'PERMISSION' in DB -> 'excused' in shared type?
-    const permissionCount = statusCounts.find(s => s.status === 'PERMISSION' as PrismaAttendanceStatus)?._count._all || 0;
+    const permissionCount =
+      statusCounts.find((s) => s.status === ('PERMISSION' as PrismaAttendanceStatus))?._count
+        ._all || 0;
     if (permissionCount > 0) {
       counts.excused = (counts.excused || 0) + permissionCount;
     }
@@ -436,11 +470,11 @@ export class AttendanceService {
       absent: '0',
       late: '0',
       sick: '0',
-      excused: '0'
+      excused: '0',
     };
 
-    Object.keys(percentages).forEach(key => {
-       percentages[key] = total > 0 ? ((counts[key] / total) * 100).toFixed(1) : '0';
+    Object.keys(percentages).forEach((key) => {
+      percentages[key] = total > 0 ? ((counts[key] / total) * 100).toFixed(1) : '0';
     });
 
     // Ensure type safety for the return
@@ -454,7 +488,12 @@ export class AttendanceService {
   /**
    * Get attendance calendar for a class (monthly view)
    */
-  async getCalendar(classId: string, year: number, month: number, currentUser: { role: UserRole; unitId: string | null }): Promise<AttendanceCalendarResponse> {
+  async getCalendar(
+    classId: string,
+    year: number,
+    month: number,
+    currentUser: { role: UserRole; unitId: string | null }
+  ): Promise<AttendanceCalendarResponse> {
     // Get class info
     const classInfo = await prisma.class.findUnique({
       where: { id: classId },
@@ -495,30 +534,41 @@ export class AttendanceService {
     });
 
     // Group by date and count statuses
-    const dayMap = new Map<string, {
-      present: number;
-      absent: number;
-      late: number;
-      sick: number;
-      excused: number;
-      total: number;
-    }>();
+    const dayMap = new Map<
+      string,
+      {
+        present: number;
+        absent: number;
+        late: number;
+        sick: number;
+        excused: number;
+        total: number;
+      }
+    >();
 
     for (const att of attendances) {
       const dateKey = att.date.toISOString().split('T')[0];
-      
+
       if (!dayMap.has(dateKey)) {
         dayMap.set(dateKey, { present: 0, absent: 0, late: 0, sick: 0, excused: 0, total: 0 });
       }
-      
+
       const day = dayMap.get(dateKey)!;
       day.total++;
-      
+
       switch (att.status) {
-        case 'PRESENT': day.present++; break;
-        case 'ABSENT': day.absent++; break;
-        case 'LATE': day.late++; break;
-        case 'SICK': day.sick++; break;
+        case 'PRESENT':
+          day.present++;
+          break;
+        case 'ABSENT':
+          day.absent++;
+          break;
+        case 'LATE':
+          day.late++;
+          break;
+        case 'SICK':
+          day.sick++;
+          break;
         case 'EXCUSED':
         case 'PERMISSION' as any: // Handle generic prisma mapping
           day.excused++;
@@ -538,7 +588,8 @@ export class AttendanceService {
     const totalSchoolDays = days.length;
     const totalPresent = days.reduce((sum, d) => sum + d.present, 0);
     const totalRecords = days.reduce((sum, d) => sum + d.total, 0);
-    const avgAttendanceRate = totalRecords > 0 ? Math.round((totalPresent / totalRecords) * 100) : 0;
+    const avgAttendanceRate =
+      totalRecords > 0 ? Math.round((totalPresent / totalRecords) * 100) : 0;
 
     return {
       classId,

@@ -1,103 +1,108 @@
-import { test, expect } from './fixtures/auth.fixture';
-import { LoginPage } from './page-objects';
+import { test, expect } from "./fixtures/auth.fixture";
+import { LoginPage } from "./page-objects";
 
 /**
  * Classes Module E2E Tests
  * Tests class management and student grouping
  */
 
-test.describe('Classes - Navigation', () => {
-  test('should navigate to classes page', async ({ page }) => {
+test.describe("Classes - Navigation", () => {
+  test("should navigate to classes page", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/classes');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/classes");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     expect(page.url()).toMatch(/classes/);
   });
 
-  test('should display classes interface', async ({ page }) => {
+  test("should display classes interface", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/classes');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/classes");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     const content = await page.content();
     expect(content.length).toBeGreaterThan(1000);
   });
 });
 
-test.describe('Classes - Features', () => {
-  test('should display class list or grid', async ({ page }) => {
+test.describe("Classes - Features", () => {
+  test("should display class list or grid", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/classes');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
-    const hasClassList = await page.locator('table, [class*="grid"], [class*="class"]')
+    await page.goto("/classes");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
+    const hasClassList = await page
+      .locator('table, [class*="grid"], [class*="class"]')
       .first()
-      .isVisible({ timeout: 5000 }).catch(() => false);
-    
-    expect(hasClassList || page.url().includes('classes')).toBeTruthy();
+      .isVisible({ timeout: 5000 })
+      .catch(() => false);
+
+    expect(hasClassList || page.url().includes("classes")).toBeTruthy();
   });
 
-  test('should have add class functionality', async ({ page }) => {
+  test("should have add class functionality", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/classes');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
-    const hasAddButton = await page.locator('button:has-text("Tambah"), button:has-text("Add")')
+    await page.goto("/classes");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
+    const hasAddButton = await page
+      .locator('button:has-text("Tambah"), button:has-text("Add")')
       .first()
-      .isVisible({ timeout: 5000 }).catch(() => false);
-    
-    expect(hasAddButton || page.url().includes('classes')).toBeTruthy();
+      .isVisible({ timeout: 5000 })
+      .catch(() => false);
+
+    expect(hasAddButton || page.url().includes("classes")).toBeTruthy();
   });
 
-  test('should display class details', async ({ page }) => {
+  test("should display class details", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/classes');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/classes");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     const content = await page.content();
-    const hasClassInfo = content.includes('Kelas') || 
-                         content.includes('Class') || 
-                         content.includes('Siswa') ||
-                         content.includes('Student');
-    
-    expect(hasClassInfo || page.url().includes('classes')).toBeTruthy();
+    const hasClassInfo =
+      content.includes("Kelas") ||
+      content.includes("Class") ||
+      content.includes("Siswa") ||
+      content.includes("Student");
+
+    expect(hasClassInfo || page.url().includes("classes")).toBeTruthy();
   });
 });
 
-test.describe('Classes - Performance', () => {
-  test('should load classes page quickly', async ({ page }) => {
+test.describe("Classes - Performance", () => {
+  test("should load classes page quickly", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    
+
     const startTime = Date.now();
-    await page.goto('/classes');
-    await page.waitForLoadState('domcontentloaded', { timeout: 15000 });
+    await page.goto("/classes");
+    await page.waitForLoadState("domcontentloaded", { timeout: 15000 });
     const loadTime = Date.now() - startTime;
-    
+
     expect(loadTime).toBeLessThan(15000);
   });
 });

@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { procurementService } from './procurement.service';
-import { PurchaseRequestStatus, CreatePurchaseRequestInput, UpdatePurchaseRequestStatusInput, FulfillPurchaseRequestInput } from '@cipansor/shared';
+import {
+  PurchaseRequestStatus,
+  CreatePurchaseRequestInput,
+  UpdatePurchaseRequestStatusInput,
+  FulfillPurchaseRequestInput,
+} from '@cipansor/shared';
 import { z } from 'zod';
 
 // Zod Schemas for Validation
@@ -10,19 +15,19 @@ const createItemSchema = z.object({
   unit: z.string().min(1),
   estimatedPrice: z.number().positive(),
   assetCategoryId: z.string().optional(),
-  budgetId: z.string().optional()
+  budgetId: z.string().optional(),
 });
 
 const createRequestSchema = z.object({
   unitId: z.string().uuid(),
   date: z.string().datetime().or(z.date()),
   description: z.string().optional(),
-  items: z.array(createItemSchema).min(1)
+  items: z.array(createItemSchema).min(1),
 });
 
 const updateStatusSchema = z.object({
   status: z.nativeEnum(PurchaseRequestStatus),
-  rejectionReason: z.string().optional()
+  rejectionReason: z.string().optional(),
 });
 
 const fulfillItemSchema = z.object({
@@ -31,7 +36,7 @@ const fulfillItemSchema = z.object({
   actualPrice: z.number().positive(),
   condition: z.enum(['GOOD', 'FAIR', 'POOR']),
   roomId: z.string().uuid().optional(),
-  notes: z.string().optional()
+  notes: z.string().optional(),
 });
 
 const fulfillRequestSchema = z.object({
@@ -39,7 +44,7 @@ const fulfillRequestSchema = z.object({
   paymentAccountId: z.string().uuid(),
   receiptDate: z.string().datetime().or(z.date()),
   purchaseOrderNo: z.string().optional(),
-  supplier: z.string().optional()
+  supplier: z.string().optional(),
 });
 
 export const procurementController = {
@@ -51,14 +56,14 @@ export const procurementController = {
         unitId: input.unitId,
         date: new Date(input.date),
         description: input.description,
-        items: input.items.map(item => ({
+        items: input.items.map((item) => ({
           itemName: item.itemName,
           quantity: item.quantity,
           unit: item.unit,
           estimatedPrice: item.estimatedPrice,
           assetCategoryId: item.assetCategoryId,
-          budgetId: item.budgetId
-        }))
+          budgetId: item.budgetId,
+        })),
       };
 
       const result = await procurementService.create(serviceInput, (req as any).user.id);
@@ -66,7 +71,7 @@ export const procurementController = {
       res.status(201).json({
         success: true,
         data: result,
-        message: 'Purchase Request created successfully'
+        message: 'Purchase Request created successfully',
       });
     } catch (error) {
       next(error);
@@ -87,7 +92,7 @@ export const procurementController = {
 
       res.json({
         success: true,
-        data: result
+        data: result,
       });
     } catch (error) {
       next(error);
@@ -100,7 +105,7 @@ export const procurementController = {
       const result = await procurementService.findById(id);
       res.json({
         success: true,
-        data: result
+        data: result,
       });
     } catch (error) {
       next(error);
@@ -113,7 +118,7 @@ export const procurementController = {
       const result = await procurementService.getAuditLogs(id);
       res.json({
         success: true,
-        data: result
+        data: result,
       });
     } catch (error) {
       next(error);
@@ -128,7 +133,7 @@ export const procurementController = {
 
       const serviceInput: UpdatePurchaseRequestStatusInput = {
         status: input.status,
-        rejectionReason: input.rejectionReason
+        rejectionReason: input.rejectionReason,
       };
 
       const result = await procurementService.updateStatus(id, serviceInput, user.id, user.role);
@@ -136,7 +141,7 @@ export const procurementController = {
       res.json({
         success: true,
         data: result,
-        message: 'Status updated successfully'
+        message: 'Status updated successfully',
       });
     } catch (error) {
       next(error);
@@ -154,7 +159,7 @@ export const procurementController = {
         paymentAccountId: input.paymentAccountId,
         receiptDate: new Date(input.receiptDate),
         purchaseOrderNo: input.purchaseOrderNo,
-        supplier: input.supplier
+        supplier: input.supplier,
       };
 
       const result = await procurementService.fulfill(id, serviceInput, user.id);
@@ -162,10 +167,10 @@ export const procurementController = {
       res.json({
         success: true,
         data: result,
-        message: 'Purchase Request fulfilled. Assets and Journals created.'
+        message: 'Purchase Request fulfilled. Assets and Journals created.',
       });
     } catch (error) {
       next(error);
     }
-  }
+  },
 };

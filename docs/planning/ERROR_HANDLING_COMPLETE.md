@@ -24,6 +24,7 @@
 #### Enhanced Features:
 
 **Exponential Backoff**
+
 ```typescript
 const getReconnectDelay = useCallback((attempt: number) => {
   const baseDelay = 1000; // 1 second
@@ -34,10 +35,11 @@ const getReconnectDelay = useCallback((attempt: number) => {
 ```
 
 **Connection Configuration**
+
 ```typescript
 const newSocket = io(wsUrl, {
   auth: { token },
-  transports: ['websocket', 'polling'],
+  transports: ["websocket", "polling"],
   reconnection: true,
   reconnectionDelay: getReconnectDelay(0),
   reconnectionDelayMax: 30000,
@@ -47,11 +49,13 @@ const newSocket = io(wsUrl, {
 ```
 
 #### Enhanced State Management:
+
 - `reconnectAttempts` - Track reconnection attempts
 - `connectionError` - Store error messages
 - Better disconnect reason handling
 
 #### User Notifications:
+
 - ✅ Connection success toast
 - ✅ Disconnection warnings based on reason
 - ✅ Authentication failure detection
@@ -60,53 +64,59 @@ const newSocket = io(wsUrl, {
 #### New Event Handlers:
 
 **1. connect**
+
 ```typescript
-newSocket.on('connect', () => {
+newSocket.on("connect", () => {
   setIsConnected(true);
   setReconnectAttempts(0);
   setConnectionError(null);
-  toast.success('Dashboard terhubung', { duration: 2000 });
+  toast.success("Dashboard terhubung", { duration: 2000 });
 });
 ```
 
 **2. disconnect**
+
 ```typescript
-newSocket.on('disconnect', (reason: string) => {
+newSocket.on("disconnect", (reason: string) => {
   setIsConnected(false);
-  
-  if (reason === 'io server disconnect') {
+
+  if (reason === "io server disconnect") {
     // Auth issue - inform user to login
-    setConnectionError('Authentication failed. Please login again.');
-    toast.error('Sesi berakhir. Silakan login kembali.');
-  } else if (reason === 'transport close' || reason === 'ping timeout') {
+    setConnectionError("Authentication failed. Please login again.");
+    toast.error("Sesi berakhir. Silakan login kembali.");
+  } else if (reason === "transport close" || reason === "ping timeout") {
     // Network issue - will auto-reconnect
-    toast.warning('Koneksi terputus. Mencoba menghubungkan kembali...', { duration: 3000 });
+    toast.warning("Koneksi terputus. Mencoba menghubungkan kembali...", {
+      duration: 3000,
+    });
   }
 });
 ```
 
 **3. connect_error**
+
 ```typescript
-newSocket.on('connect_error', (error: Error) => {
+newSocket.on("connect_error", (error: Error) => {
   setIsConnected(false);
   setConnectionError(error.message);
-  
+
   const attempts = reconnectAttempts + 1;
   setReconnectAttempts(attempts);
-  
+
   if (attempts === 1) {
-    toast.error('Gagal terhubung ke server');
+    toast.error("Gagal terhubung ke server");
   } else if (attempts === 5) {
-    toast.error('Masih mencoba terhubung... Periksa koneksi internet Anda.');
+    toast.error("Masih mencoba terhubung... Periksa koneksi internet Anda.");
   }
 });
 ```
 
 **4. reconnect_attempt**
+
 ```typescript
-newSocket.on('reconnect_attempt', (attemptNumber: number) => {
+newSocket.on("reconnect_attempt", (attemptNumber: number) => {
   setReconnectAttempts(attemptNumber);
-  
+
   // Update delay for next attempt using exponential backoff
   const delay = getReconnectDelay(attemptNumber);
   newSocket.io.opts.reconnectionDelay = delay;
@@ -114,29 +124,33 @@ newSocket.on('reconnect_attempt', (attemptNumber: number) => {
 ```
 
 **5. reconnect_error & reconnect_failed**
+
 ```typescript
-newSocket.on('reconnect_error', (error: Error) => {
-  console.error('❌ Reconnection error:', error.message);
+newSocket.on("reconnect_error", (error: Error) => {
+  console.error("❌ Reconnection error:", error.message);
 });
 
-newSocket.on('reconnect_failed', () => {
-  setConnectionError('Unable to connect to server');
-  toast.error('Gagal terhubung ke dashboard real-time. Silakan refresh halaman.');
+newSocket.on("reconnect_failed", () => {
+  setConnectionError("Unable to connect to server");
+  toast.error(
+    "Gagal terhubung ke dashboard real-time. Silakan refresh halaman.",
+  );
 });
 ```
 
 #### New Return Values:
+
 ```typescript
 return {
   socket,
   isConnected,
   lastUpdate,
-  reconnectAttempts,      // NEW
-  connectionError,        // NEW
+  reconnectAttempts, // NEW
+  connectionError, // NEW
   updateSubscription,
   disconnect,
   reconnect,
-  subscribeToUnit,        // NEW
+  subscribeToUnit, // NEW
 };
 ```
 
@@ -147,32 +161,37 @@ return {
 **File:** `/apps/web/src/hooks/use-murojaah-analytics.ts`
 
 #### Retry Configuration:
+
 ```typescript
 const retryConfig = {
   retry: 3,
-  retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  retryDelay: (attemptIndex: number) =>
+    Math.min(1000 * 2 ** attemptIndex, 30000),
 };
 ```
 
 **Retry Behavior:**
+
 - Attempt 1: 1 second delay
 - Attempt 2: 2 seconds delay
 - Attempt 3: 4 seconds delay
 - Max delay: 30 seconds
 
 #### Applied to All Hooks:
+
 ```typescript
 export function useQualityDistribution(params: AnalyticsQuery = {}) {
   return useQuery({
-    queryKey: ['murojaah', 'analytics', 'quality-distribution', params],
+    queryKey: ["murojaah", "analytics", "quality-distribution", params],
     queryFn: () => fetchQualityDistribution(params),
     staleTime: 5 * 60 * 1000,
-    ...retryConfig,  // ✅ Retry logic added
+    ...retryConfig, // ✅ Retry logic added
   });
 }
 ```
 
 **4 hooks enhanced:**
+
 - `useQualityDistribution`
 - `useMistakePatterns`
 - `useConsistencyScore`
@@ -187,6 +206,7 @@ export function useQualityDistribution(params: AnalyticsQuery = {}) {
 #### Features:
 
 **ErrorBoundary Class Component**
+
 - Catches React rendering errors
 - Displays user-friendly fallback UI
 - Logs errors in development mode
@@ -194,6 +214,7 @@ export function useQualityDistribution(params: AnalyticsQuery = {}) {
 - Reset and reload functionality
 
 **Usage:**
+
 ```tsx
 <ErrorBoundary onError={(error, errorInfo) => logToService(error)}>
   <MyComponent />
@@ -201,6 +222,7 @@ export function useQualityDistribution(params: AnalyticsQuery = {}) {
 ```
 
 **withErrorBoundary HOC**
+
 ```tsx
 const SafeComponent = withErrorBoundary(MyComponent, {
   onError: (error) => console.error(error),
@@ -208,11 +230,13 @@ const SafeComponent = withErrorBoundary(MyComponent, {
 ```
 
 **AsyncErrorBoundary**
+
 - Handles unhandled promise rejections
 - Listens to `unhandledrejection` events
 - Prevents app crashes from async errors
 
 #### Fallback UI:
+
 - Alert with error icon
 - Error message (user-friendly)
 - Development mode: detailed error stack
@@ -229,6 +253,7 @@ const SafeComponent = withErrorBoundary(MyComponent, {
 #### Components:
 
 **1. DashboardErrorFallback**
+
 - Full-page error display for critical dashboard failures
 - Card-based design with icon
 - Development mode error details
@@ -236,12 +261,14 @@ const SafeComponent = withErrorBoundary(MyComponent, {
 - Support email link
 
 **2. DashboardLoadingError**
+
 - Inline error display for query errors
 - Red alert styling
 - "Reload" button with refetch callback
 - Compact design for embedding in layouts
 
 **3. ConnectionError**
+
 - WebSocket connection status indicator
 - Animated pulse dot for visual feedback
 - Shows reconnection attempt number
@@ -253,23 +280,24 @@ const SafeComponent = withErrorBoundary(MyComponent, {
 // Full-page error
 <ErrorBoundary fallback={<DashboardErrorFallback />}>
   <DashboardPage />
-</ErrorBoundary>
+</ErrorBoundary>;
 
 // Query error
-{qualityDist.isError && (
-  <DashboardLoadingError 
-    error={qualityDist.error} 
-    refetch={qualityDist.refetch} 
-  />
-)}
+{
+  qualityDist.isError && (
+    <DashboardLoadingError
+      error={qualityDist.error}
+      refetch={qualityDist.refetch}
+    />
+  );
+}
 
 // WebSocket connection
-{!isConnected && (
-  <ConnectionError 
-    reconnect={reconnect} 
-    attemptNumber={reconnectAttempts} 
-  />
-)}
+{
+  !isConnected && (
+    <ConnectionError reconnect={reconnect} attemptNumber={reconnectAttempts} />
+  );
+}
 ```
 
 ---
@@ -278,24 +306,24 @@ const SafeComponent = withErrorBoundary(MyComponent, {
 
 ### Error Types & Handlers
 
-| Error Type | Handler | User Feedback | Recovery |
-|------------|---------|---------------|----------|
-| React Render Error | ErrorBoundary | Full-page fallback | Reset/Reload |
-| API Request Error | React Query retry | Inline error message | Auto-retry 3x |
-| WebSocket Disconnect | Reconnection logic | Toast notification | Auto-reconnect ∞ |
-| Network Timeout | Query timeout | Loading error | Manual refetch |
-| Auth Failure | Disconnect handler | Login prompt | User action |
+| Error Type           | Handler            | User Feedback        | Recovery         |
+| -------------------- | ------------------ | -------------------- | ---------------- |
+| React Render Error   | ErrorBoundary      | Full-page fallback   | Reset/Reload     |
+| API Request Error    | React Query retry  | Inline error message | Auto-retry 3x    |
+| WebSocket Disconnect | Reconnection logic | Toast notification   | Auto-reconnect ∞ |
+| Network Timeout      | Query timeout      | Loading error        | Manual refetch   |
+| Auth Failure         | Disconnect handler | Login prompt         | User action      |
 
 ### Exponential Backoff Schedule
 
 | Attempt | WebSocket Delay | API Retry Delay |
-|---------|-----------------|-----------------|
-| 1 | 1s + jitter | 1s |
-| 2 | 2s + jitter | 2s |
-| 3 | 4s + jitter | 4s |
-| 4 | 8s + jitter | - |
-| 5 | 16s + jitter | - |
-| 6+ | 30s (max) | - |
+| ------- | --------------- | --------------- |
+| 1       | 1s + jitter     | 1s              |
+| 2       | 2s + jitter     | 2s              |
+| 3       | 4s + jitter     | 4s              |
+| 4       | 8s + jitter     | -               |
+| 5       | 16s + jitter    | -               |
+| 6+      | 30s (max)       | -               |
 
 ---
 
@@ -314,6 +342,7 @@ const SafeComponent = withErrorBoundary(MyComponent, {
 ### Expected Behaviors:
 
 **WebSocket Reconnection:**
+
 1. User disconnects → Warning toast appears
 2. Attempt 1 (1s delay) → "Reconnecting..."
 3. Attempt 2 (2s delay) → Still trying...
@@ -321,6 +350,7 @@ const SafeComponent = withErrorBoundary(MyComponent, {
 5. Success → "Connected" toast, reset counter
 
 **API Retry:**
+
 1. Request fails → Retry 1 (1s delay)
 2. Still failing → Retry 2 (2s delay)
 3. Still failing → Retry 3 (4s delay)
@@ -331,6 +361,7 @@ const SafeComponent = withErrorBoundary(MyComponent, {
 ## 📁 Files Modified/Created
 
 ### Created:
+
 1. `/apps/web/src/components/error-boundary.tsx` (240 lines)
    - ErrorBoundary class component
    - withErrorBoundary HOC
@@ -342,6 +373,7 @@ const SafeComponent = withErrorBoundary(MyComponent, {
    - ConnectionError - WebSocket status
 
 ### Modified:
+
 1. `/apps/web/src/hooks/use-realtime-dashboard.ts` (+80 lines)
    - Exponential backoff function
    - Enhanced state management (reconnectAttempts, connectionError)
@@ -354,6 +386,7 @@ const SafeComponent = withErrorBoundary(MyComponent, {
    - Applied to all 4 analytics hooks
 
 ### Dependencies:
+
 - ✅ `socket.io-client` installed in web app
 
 ---
@@ -361,10 +394,12 @@ const SafeComponent = withErrorBoundary(MyComponent, {
 ## 🎯 Next Steps
 
 ### Immediate (This Session):
+
 1. ✅ **Error Handling & Retry Logic** - COMPLETE
 2. ⏳ **Dashboard Metrics Caching** (2h) ← NEXT
 
 ### Following Session:
+
 3. **Unit Tests** (3h)
    - Test error boundaries
    - Test retry logic
@@ -375,6 +410,7 @@ const SafeComponent = withErrorBoundary(MyComponent, {
 ## 📊 Progress Update
 
 **Time Breakdown:**
+
 - Session 1: 12 hours
 - Session 2: 4 hours
 - Session 3: 2.5 hours
@@ -405,6 +441,7 @@ const SafeComponent = withErrorBoundary(MyComponent, {
 - ✅ Production-ready error tracking hooks
 
 **Code Quality:**
+
 - Zero compilation errors
 - TypeScript strict mode compliant
 - Consistent error handling patterns

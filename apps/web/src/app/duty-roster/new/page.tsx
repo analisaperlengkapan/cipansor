@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, 
+import { useState, useMemo } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
   Save,
   Calendar,
   Clock,
@@ -14,132 +14,163 @@ import {
   X,
   Search,
   Loader2,
-  AlertCircle
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Skeleton } from '@/components/ui/skeleton';
+  AlertCircle,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
-import { DUTY_TYPE_LABELS, DutyType, useCreateDutyRoster } from '@/hooks/use-duty-roster';
-import { useStudents } from '@/hooks/use-students';
-import { useTeachers } from '@/hooks/use-teachers';
-import { useClasses } from '@/hooks/use-classes';
-import { useAuthStore } from '@/stores/auth';
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import {
+  DUTY_TYPE_LABELS,
+  DutyType,
+  useCreateDutyRoster,
+} from "@/hooks/use-duty-roster";
+import { useStudents } from "@/hooks/use-students";
+import { useTeachers } from "@/hooks/use-teachers";
+import { useClasses } from "@/hooks/use-classes";
+import { useAuthStore } from "@/stores/auth";
 
 const LOCATIONS: Record<DutyType, string[]> = {
-  CLEANING_CLASSROOM: ['Kelas VII-A', 'Kelas VII-B', 'Kelas VIII-A', 'Kelas VIII-B'],
-  CLEANING_BATHROOM: ['Kamar Mandi Lantai 1', 'Kamar Mandi Lantai 2', 'Kamar Mandi Asrama Putra', 'Kamar Mandi Asrama Putri'],
-  CLEANING_YARD: ['Halaman Depan', 'Halaman Belakang', 'Taman Sekolah', 'Lapangan'],
-  CLEANING_MOSQUE: ['Masjid Al-Ikhlas', 'Musholla Putra', 'Musholla Putri'],
-  SECURITY: ['Gerbang Utama', 'Gerbang Samping', 'Area Parkir'],
-  CANTEEN: ['Kantin Utama', 'Kantin Asrama'],
-  LIBRARY: ['Perpustakaan'],
-  GARDEN: ['Taman Depan', 'Taman Belakang', 'Kebun Sekolah'],
-  KITCHEN: ['Dapur Asrama Putra', 'Dapur Asrama Putri'],
+  CLEANING_CLASSROOM: [
+    "Kelas VII-A",
+    "Kelas VII-B",
+    "Kelas VIII-A",
+    "Kelas VIII-B",
+  ],
+  CLEANING_BATHROOM: [
+    "Kamar Mandi Lantai 1",
+    "Kamar Mandi Lantai 2",
+    "Kamar Mandi Asrama Putra",
+    "Kamar Mandi Asrama Putri",
+  ],
+  CLEANING_YARD: [
+    "Halaman Depan",
+    "Halaman Belakang",
+    "Taman Sekolah",
+    "Lapangan",
+  ],
+  CLEANING_MOSQUE: ["Masjid Al-Ikhlas", "Musholla Putra", "Musholla Putri"],
+  SECURITY: ["Gerbang Utama", "Gerbang Samping", "Area Parkir"],
+  CANTEEN: ["Kantin Utama", "Kantin Asrama"],
+  LIBRARY: ["Perpustakaan"],
+  GARDEN: ["Taman Depan", "Taman Belakang", "Kebun Sekolah"],
+  KITCHEN: ["Dapur Asrama Putra", "Dapur Asrama Putri"],
 };
 
 export default function NewDutyRosterPage() {
   const router = useRouter();
   const { user } = useAuthStore();
   const unitId = user?.unitId || user?.unit?.id;
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterClass, setFilterClass] = useState('all');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterClass, setFilterClass] = useState("all");
 
   // Fetch real data
-  const { data: studentsData, isLoading: isLoadingStudents } = useStudents({ 
-    unitId, 
-    status: 'ACTIVE',
-    limit: 100 
+  const { data: studentsData, isLoading: isLoadingStudents } = useStudents({
+    unitId,
+    status: "ACTIVE",
+    limit: 100,
   });
-  const { data: teachersData, isLoading: isLoadingTeachers } = useTeachers({ 
-    unitId, 
-    status: 'ACTIVE' 
+  const { data: teachersData, isLoading: isLoadingTeachers } = useTeachers({
+    unitId,
+    status: "ACTIVE",
   });
   const { data: classesData } = useClasses({ unitId });
-  
+
   const createDutyRoster = useCreateDutyRoster();
-  
+
   // Extract students and teachers from API response
   const students = useMemo(() => {
-    return studentsData?.data?.map(s => ({
-      id: s.id,
-      nis: s.nis,
-      name: s.name,
-      class: { id: s.class?.id || '', name: s.class?.name || '-' },
-      gender: s.gender
-    })) || [];
+    return (
+      studentsData?.data?.map((s) => ({
+        id: s.id,
+        nis: s.nis,
+        name: s.name,
+        class: { id: s.class?.id || "", name: s.class?.name || "-" },
+        gender: s.gender,
+      })) || []
+    );
   }, [studentsData]);
-  
+
   const supervisors = useMemo(() => {
-    return teachersData?.data?.map(t => ({
-      id: t.id,
-      name: t.name
-    })) || [];
+    return (
+      teachersData?.data?.map((t) => ({
+        id: t.id,
+        name: t.name,
+      })) || []
+    );
   }, [teachersData]);
-  
+
   const classes = useMemo(() => {
     return classesData?.data || [];
   }, [classesData]);
 
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
-    dutyType: '' as DutyType | '',
-    location: '',
-    shift: '' as 'MORNING' | 'AFTERNOON' | 'EVENING' | '',
-    startTime: '',
-    endTime: '',
-    supervisorId: '',
-    notes: '',
+    date: new Date().toISOString().split("T")[0],
+    dutyType: "" as DutyType | "",
+    location: "",
+    shift: "" as "MORNING" | "AFTERNOON" | "EVENING" | "",
+    startTime: "",
+    endTime: "",
+    supervisorId: "",
+    notes: "",
     studentIds: [] as string[],
   });
 
-  const filteredStudents = students.filter(student => {
-    const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredStudents = students.filter((student) => {
+    const matchesSearch =
+      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.nis.includes(searchQuery);
-    const matchesClass = filterClass === 'all' || student.class.id === filterClass;
+    const matchesClass =
+      filterClass === "all" || student.class.id === filterClass;
     return matchesSearch && matchesClass;
   });
 
   const toggleStudent = (studentId: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       studentIds: prev.studentIds.includes(studentId)
-        ? prev.studentIds.filter(id => id !== studentId)
-        : [...prev.studentIds, studentId]
+        ? prev.studentIds.filter((id) => id !== studentId)
+        : [...prev.studentIds, studentId],
     }));
   };
 
   const getShiftTimes = (shift: string) => {
     switch (shift) {
-      case 'MORNING':
-        return { startTime: '05:00', endTime: '07:00' };
-      case 'AFTERNOON':
-        return { startTime: '12:00', endTime: '14:00' };
-      case 'EVENING':
-        return { startTime: '17:00', endTime: '19:00' };
+      case "MORNING":
+        return { startTime: "05:00", endTime: "07:00" };
+      case "AFTERNOON":
+        return { startTime: "12:00", endTime: "14:00" };
+      case "EVENING":
+        return { startTime: "17:00", endTime: "19:00" };
       default:
-        return { startTime: '', endTime: '' };
+        return { startTime: "", endTime: "" };
     }
   };
 
-  const handleShiftChange = (shift: 'MORNING' | 'AFTERNOON' | 'EVENING') => {
+  const handleShiftChange = (shift: "MORNING" | "AFTERNOON" | "EVENING") => {
     const times = getShiftTimes(shift);
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       shift,
       startTime: times.startTime,
@@ -149,19 +180,24 @@ export default function NewDutyRosterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.dutyType || !formData.location || !formData.shift || !formData.date) {
-      toast.error('Lengkapi semua data yang diperlukan');
+
+    if (
+      !formData.dutyType ||
+      !formData.location ||
+      !formData.shift ||
+      !formData.date
+    ) {
+      toast.error("Lengkapi semua data yang diperlukan");
       return;
     }
 
     if (formData.studentIds.length === 0) {
-      toast.error('Pilih minimal 1 santri');
+      toast.error("Pilih minimal 1 santri");
       return;
     }
 
     setIsSubmitting(true);
-    
+
     try {
       await createDutyRoster.mutateAsync({
         date: formData.date,
@@ -174,18 +210,20 @@ export default function NewDutyRosterPage() {
         notes: formData.notes || undefined,
         studentIds: formData.studentIds,
       });
-      
-      toast.success('Jadwal piket berhasil dibuat');
-      router.push('/duty-roster');
+
+      toast.success("Jadwal piket berhasil dibuat");
+      router.push("/duty-roster");
     } catch (error) {
-      toast.error('Gagal membuat jadwal piket');
+      toast.error("Gagal membuat jadwal piket");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const selectedStudents = students.filter(s => formData.studentIds.includes(s.id));
-  
+  const selectedStudents = students.filter((s) =>
+    formData.studentIds.includes(s.id),
+  );
+
   // Loading state
   if (isLoadingStudents) {
     return (
@@ -216,7 +254,9 @@ export default function NewDutyRosterPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold">Buat Jadwal Piket</h1>
-          <p className="text-muted-foreground">Tentukan tugas piket untuk santri</p>
+          <p className="text-muted-foreground">
+            Tentukan tugas piket untuk santri
+          </p>
         </div>
       </div>
 
@@ -237,8 +277,10 @@ export default function NewDutyRosterPage() {
                   <Input
                     type="date"
                     value={formData.date}
-                    onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, date: e.target.value }))
+                    }
+                    min={new Date().toISOString().split("T")[0]}
                   />
                 </div>
 
@@ -246,14 +288,22 @@ export default function NewDutyRosterPage() {
                   <Label>Jenis Piket</Label>
                   <Select
                     value={formData.dutyType}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, dutyType: value as DutyType, location: '' }))}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        dutyType: value as DutyType,
+                        location: "",
+                      }))
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih jenis piket" />
                     </SelectTrigger>
                     <SelectContent>
                       {Object.entries(DUTY_TYPE_LABELS).map(([key, label]) => (
-                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                        <SelectItem key={key} value={key}>
+                          {label}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -263,16 +313,21 @@ export default function NewDutyRosterPage() {
                   <Label>Lokasi</Label>
                   <Select
                     value={formData.location}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, location: value }))}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({ ...prev, location: value }))
+                    }
                     disabled={!formData.dutyType}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih lokasi" />
                     </SelectTrigger>
                     <SelectContent>
-                      {formData.dutyType && LOCATIONS[formData.dutyType]?.map(loc => (
-                        <SelectItem key={loc} value={loc}>{loc}</SelectItem>
-                      ))}
+                      {formData.dutyType &&
+                        LOCATIONS[formData.dutyType]?.map((loc) => (
+                          <SelectItem key={loc} value={loc}>
+                            {loc}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -281,15 +336,25 @@ export default function NewDutyRosterPage() {
                   <Label>Shift</Label>
                   <Select
                     value={formData.shift}
-                    onValueChange={(value) => handleShiftChange(value as 'MORNING' | 'AFTERNOON' | 'EVENING')}
+                    onValueChange={(value) =>
+                      handleShiftChange(
+                        value as "MORNING" | "AFTERNOON" | "EVENING",
+                      )
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih shift" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="MORNING">Pagi (05:00 - 07:00)</SelectItem>
-                      <SelectItem value="AFTERNOON">Siang (12:00 - 14:00)</SelectItem>
-                      <SelectItem value="EVENING">Sore/Malam (17:00 - 19:00)</SelectItem>
+                      <SelectItem value="MORNING">
+                        Pagi (05:00 - 07:00)
+                      </SelectItem>
+                      <SelectItem value="AFTERNOON">
+                        Siang (12:00 - 14:00)
+                      </SelectItem>
+                      <SelectItem value="EVENING">
+                        Sore/Malam (17:00 - 19:00)
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -300,7 +365,12 @@ export default function NewDutyRosterPage() {
                     <Input
                       type="time"
                       value={formData.startTime}
-                      onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          startTime: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -308,7 +378,12 @@ export default function NewDutyRosterPage() {
                     <Input
                       type="time"
                       value={formData.endTime}
-                      onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          endTime: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                 </div>
@@ -317,19 +392,27 @@ export default function NewDutyRosterPage() {
                   <Label>Pengawas (opsional)</Label>
                   <Select
                     value={formData.supervisorId}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, supervisorId: value }))}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({ ...prev, supervisorId: value }))
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih pengawas" />
                     </SelectTrigger>
                     <SelectContent>
                       {isLoadingTeachers ? (
-                        <SelectItem value="" disabled>Memuat...</SelectItem>
+                        <SelectItem value="" disabled>
+                          Memuat...
+                        </SelectItem>
                       ) : supervisors.length === 0 ? (
-                        <SelectItem value="" disabled>Tidak ada data guru</SelectItem>
+                        <SelectItem value="" disabled>
+                          Tidak ada data guru
+                        </SelectItem>
                       ) : (
-                        supervisors.map(sup => (
-                          <SelectItem key={sup.id} value={sup.id}>{sup.name}</SelectItem>
+                        supervisors.map((sup) => (
+                          <SelectItem key={sup.id} value={sup.id}>
+                            {sup.name}
+                          </SelectItem>
                         ))
                       )}
                     </SelectContent>
@@ -341,7 +424,12 @@ export default function NewDutyRosterPage() {
                   <Textarea
                     placeholder="Tambahkan instruksi atau catatan khusus..."
                     value={formData.notes}
-                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        notes: e.target.value,
+                      }))
+                    }
                     rows={3}
                   />
                 </div>
@@ -356,7 +444,9 @@ export default function NewDutyRosterPage() {
                     <Users className="h-5 w-5" />
                     Santri Terpilih
                   </span>
-                  <Badge variant="secondary">{selectedStudents.length} santri</Badge>
+                  <Badge variant="secondary">
+                    {selectedStudents.length} santri
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -366,18 +456,24 @@ export default function NewDutyRosterPage() {
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    {selectedStudents.map(student => (
-                      <div 
+                    {selectedStudents.map((student) => (
+                      <div
                         key={student.id}
                         className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
                       >
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
+                            <AvatarFallback>
+                              {student.name.charAt(0)}
+                            </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="text-sm font-medium">{student.name}</p>
-                            <p className="text-xs text-muted-foreground">{student.class.name}</p>
+                            <p className="text-sm font-medium">
+                              {student.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {student.class.name}
+                            </p>
                           </div>
                         </div>
                         <Button
@@ -425,8 +521,10 @@ export default function NewDutyRosterPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua</SelectItem>
-                    {classes.map(cls => (
-                      <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                    {classes.map((cls) => (
+                      <SelectItem key={cls.id} value={cls.id}>
+                        {cls.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -440,11 +538,13 @@ export default function NewDutyRosterPage() {
                     <p>Tidak ada santri ditemukan</p>
                   </div>
                 ) : (
-                  filteredStudents.map(student => (
-                    <div 
+                  filteredStudents.map((student) => (
+                    <div
                       key={student.id}
                       className={`flex items-center gap-3 p-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 ${
-                        formData.studentIds.includes(student.id) ? 'bg-primary/10' : ''
+                        formData.studentIds.includes(student.id)
+                          ? "bg-primary/10"
+                          : ""
                       }`}
                       onClick={() => toggleStudent(student.id)}
                     >
@@ -453,7 +553,9 @@ export default function NewDutyRosterPage() {
                         onCheckedChange={() => toggleStudent(student.id)}
                       />
                       <Avatar className="h-10 w-10">
-                        <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>
+                          {student.name.charAt(0)}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
                         <p className="font-medium">{student.name}</p>
@@ -461,8 +563,12 @@ export default function NewDutyRosterPage() {
                           {student.nis} • {student.class.name}
                         </p>
                       </div>
-                      <Badge variant={student.gender === 'MALE' ? 'default' : 'secondary'}>
-                        {student.gender === 'MALE' ? 'L' : 'P'}
+                      <Badge
+                        variant={
+                          student.gender === "MALE" ? "default" : "secondary"
+                        }
+                      >
+                        {student.gender === "MALE" ? "L" : "P"}
                       </Badge>
                     </div>
                   ))
@@ -480,7 +586,9 @@ export default function NewDutyRosterPage() {
         {/* Action Buttons */}
         <div className="flex justify-end gap-3">
           <Link href="/duty-roster">
-            <Button type="button" variant="outline">Batal</Button>
+            <Button type="button" variant="outline">
+              Batal
+            </Button>
           </Link>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? (

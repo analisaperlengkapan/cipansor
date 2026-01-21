@@ -2,7 +2,12 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { classService } from './class.service';
 import type { ListClassesQuery } from './class.schema';
-import { CreateClassInput, UpdateClassInput, EnrollStudentInput, UpdateEnrollmentInput } from '@cipansor/shared';
+import {
+  CreateClassInput,
+  UpdateClassInput,
+  EnrollStudentInput,
+  UpdateEnrollmentInput,
+} from '@cipansor/shared';
 
 /**
  * List classes

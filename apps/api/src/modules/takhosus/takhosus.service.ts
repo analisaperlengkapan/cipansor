@@ -53,7 +53,7 @@ export const halaqohService = {
     ]);
 
     return {
-      data: data.map(h => ({
+      data: data.map((h) => ({
         ...h,
         studentCount: h._count.enrollments,
       })),
@@ -180,18 +180,20 @@ export const enrollmentService = {
     ]);
 
     // OPTIMIZATION: Bulk fetch targets and progress to avoid N+1 queries
-    const studentIds = data.map(e => e.studentId);
+    const studentIds = data.map((e) => e.studentId);
 
     // 1. Get active academic year
     const activeYear = await prisma.academicYear.findFirst({ where: { isActive: true } });
 
     // 2. Bulk fetch targets
-    const targets = activeYear ? await prisma.tahfidzTarget.findMany({
-      where: {
-        studentId: { in: studentIds },
-        academicYearId: activeYear.id,
-      }
-    }) : [];
+    const targets = activeYear
+      ? await prisma.tahfidzTarget.findMany({
+          where: {
+            studentId: { in: studentIds },
+            academicYearId: activeYear.id,
+          },
+        })
+      : [];
 
     // 3. Bulk fetch completed juz counts (distinct juz with score >= 60)
     // Note: Prisma doesn't support complex distinct count in groupBy easily, so we use findMany with distinct
@@ -199,23 +201,28 @@ export const enrollmentService = {
       where: {
         studentId: { in: studentIds },
         activityType: { in: ['ASSESSMENT', 'TASMI'] },
-        score: { gte: 60 }
+        score: { gte: 60 },
       },
       select: { studentId: true, juz: true },
       distinct: ['studentId', 'juz'],
     });
 
     return {
-      data: data.map(e => {
-        const target = targets.find(t => t.studentId === e.studentId);
-        const completedJuzCount = completedJuzRecords.filter(r => r.studentId === e.studentId).length;
+      data: data.map((e) => {
+        const target = targets.find((t) => t.studentId === e.studentId);
+        const completedJuzCount = completedJuzRecords.filter(
+          (r) => r.studentId === e.studentId
+        ).length;
 
         // Use live target if available, otherwise fallback to enrollment data
         const finalTargetJuz = target?.targetJuz ?? e.targetJuz;
         // Use live completed count
         const finalCompletedJuz = completedJuzCount; // Prefer calculation over stored value in enrollment for accuracy
 
-        const progressPercentage = Math.min(100, Math.round((finalCompletedJuz / finalTargetJuz) * 100));
+        const progressPercentage = Math.min(
+          100,
+          Math.round((finalCompletedJuz / finalTargetJuz) * 100)
+        );
         const isOnTrack = finalCompletedJuz >= finalTargetJuz;
 
         return {
@@ -307,7 +314,9 @@ export const enrollmentService = {
     return prisma.takhosusEnrollment.create({
       data: {
         ...input,
-        targetCompletionDate: input.targetCompletionDate ? new Date(input.targetCompletionDate) : undefined,
+        targetCompletionDate: input.targetCompletionDate
+          ? new Date(input.targetCompletionDate)
+          : undefined,
       } as any,
       include: {
         student: {
@@ -325,11 +334,11 @@ export const enrollmentService = {
    */
   async update(id: string, input: UpdateEnrollmentInput) {
     const data: any = { ...input };
-    
+
     if (input.targetCompletionDate) {
       data.targetCompletionDate = new Date(input.targetCompletionDate);
     }
-    
+
     if (input.status === 'COMPLETED' && !data.completedAt) {
       data.completedAt = new Date();
     }
@@ -361,9 +370,7 @@ export const enrollmentService = {
    * Get enrollment statistics
    */
   async getStats(unitId?: string) {
-    const where = unitId 
-      ? { student: { unitId } }
-      : {};
+    const where = unitId ? { student: { unitId } } : {};
 
     const [total, active, completed, dropped] = await Promise.all([
       prisma.takhosusEnrollment.count({ where }),
@@ -383,7 +390,7 @@ export const enrollmentService = {
       active,
       completed,
       dropped,
-      averageProgress: Math.round((avgProgress._avg.completedJuz || 0) / 30 * 100),
+      averageProgress: Math.round(((avgProgress._avg.completedJuz || 0) / 30) * 100),
     };
   },
 };
@@ -611,7 +618,7 @@ export const progressService = {
     // Calculate progress by juz
     const juzProgress = Array.from({ length: 30 }, (_, i) => {
       const juz = i + 1;
-      const sanad = enrollment.sanadRecords.find(s => s.juz === juz);
+      const sanad = enrollment.sanadRecords.find((s) => s.juz === juz);
       return {
         juz,
         certified: !!sanad,
@@ -637,7 +644,7 @@ export const progressService = {
       student: enrollment.student,
       halaqoh: enrollment.halaqoh,
       juzProgress,
-      recentActivity: tahfidzRecords.map(r => ({
+      recentActivity: tahfidzRecords.map((r) => ({
         id: r.id,
         type: r.activityType,
         surah: r.surahName,
@@ -676,7 +683,7 @@ export const progressService = {
       return null;
     }
 
-    const students = halaqoh.enrollments.map(e => ({
+    const students = halaqoh.enrollments.map((e) => ({
       id: e.student.id,
       name: e.student.user.name,
       enrolledAt: e.enrolledAt,
@@ -735,7 +742,7 @@ export const dashboardService = {
       prisma.takhosusEnrollment.count({ where: enrollmentWhere }),
       prisma.halaqoh.count({ where: halaqohWhere }),
       prisma.sanadRecord.count({
-        where: unitId ? { enrollment: { student: { unitId } } } : {}
+        where: unitId ? { enrollment: { student: { unitId } } } : {},
       }),
       prisma.takhosusEnrollment.aggregate({
         where: enrollmentWhere,
@@ -770,17 +777,19 @@ export const dashboardService = {
     ]);
 
     // Process top halaqohs by avg progress
-    const halaqohPerformance = topHalaqohs.map(h => {
-      const totalJuz = h.enrollments.reduce((sum, e) => sum + e.completedJuz, 0);
-      const avgJuz = h.enrollments.length > 0 ? totalJuz / h.enrollments.length : 0;
-      return {
-        id: h.id,
-        name: h.name,
-        teacherName: h.teacher.user.name,
-        studentCount: h.enrollments.length,
-        averageJuz: avgJuz,
-      };
-    }).sort((a, b) => b.averageJuz - a.averageJuz);
+    const halaqohPerformance = topHalaqohs
+      .map((h) => {
+        const totalJuz = h.enrollments.reduce((sum, e) => sum + e.completedJuz, 0);
+        const avgJuz = h.enrollments.length > 0 ? totalJuz / h.enrollments.length : 0;
+        return {
+          id: h.id,
+          name: h.name,
+          teacherName: h.teacher.user.name,
+          studentCount: h.enrollments.length,
+          averageJuz: avgJuz,
+        };
+      })
+      .sort((a, b) => b.averageJuz - a.averageJuz);
 
     return {
       activeStudents: totalActiveStudents,
@@ -788,7 +797,7 @@ export const dashboardService = {
       totalSanadsIssued: totalSanads,
       totalJuzMemorized: progressAgg._sum.completedJuz || 0,
       averageJuzPerStudent: progressAgg._avg.completedJuz || 0,
-      recentSanads: recentSanads.map(s => ({
+      recentSanads: recentSanads.map((s) => ({
         id: s.id,
         studentName: s.enrollment.student.user.name,
         juz: s.juz,
@@ -797,7 +806,7 @@ export const dashboardService = {
       })),
       topHalaqohs: halaqohPerformance,
     };
-  }
+  },
 };
 
 export default {

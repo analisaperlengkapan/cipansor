@@ -1,5 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { halaqohService, enrollmentService, sanadService, progressService, dashboardService } from './takhosus.service';
+import {
+  halaqohService,
+  enrollmentService,
+  sanadService,
+  progressService,
+  dashboardService,
+} from './takhosus.service';
 import { murojaahService } from './murojaah.service';
 import { simaanService } from './simaan.service';
 import { targetService } from './target.service';
@@ -16,7 +22,7 @@ export const halaqohController = {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
       const { page = 1, limit = 10, unitId, teacherId, isActive, level } = req.query;
-      
+
       const result = await halaqohService.findAll({
         page: Number(page),
         limit: Number(limit),
@@ -26,7 +32,9 @@ export const halaqohController = {
         level: level ? Number(level) : undefined,
       });
 
-      res.json(ApiResponse.success(result.data, 'Halaqoh retrieved successfully', result.pagination));
+      res.json(
+        ApiResponse.success(result.data, 'Halaqoh retrieved successfully', result.pagination)
+      );
     } catch (error) {
       next(error);
     }
@@ -38,7 +46,7 @@ export const halaqohController = {
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const halaqoh = await halaqohService.findById(req.params.id);
-      
+
       if (!halaqoh) {
         return res.status(404).json(ApiResponse.error('Halaqoh not found'));
       }
@@ -91,7 +99,7 @@ export const halaqohController = {
   async getProgress(req: Request, res: Response, next: NextFunction) {
     try {
       const progress = await progressService.getHalaqohProgress(req.params.id);
-      
+
       if (!progress) {
         return res.status(404).json(ApiResponse.error('Halaqoh not found'));
       }
@@ -114,7 +122,7 @@ export const enrollmentController = {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
       const { page = 1, limit = 10, halaqohId, status, studentId } = req.query;
-      
+
       const result = await enrollmentService.findAll({
         page: Number(page),
         limit: Number(limit),
@@ -123,7 +131,9 @@ export const enrollmentController = {
         studentId: studentId as string,
       });
 
-      res.json(ApiResponse.success(result.data, 'Enrollments retrieved successfully', result.pagination));
+      res.json(
+        ApiResponse.success(result.data, 'Enrollments retrieved successfully', result.pagination)
+      );
     } catch (error) {
       next(error);
     }
@@ -135,7 +145,7 @@ export const enrollmentController = {
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const enrollment = await enrollmentService.findById(req.params.id);
-      
+
       if (!enrollment) {
         return res.status(404).json(ApiResponse.error('Enrollment not found'));
       }
@@ -152,7 +162,7 @@ export const enrollmentController = {
   async getByStudentId(req: Request, res: Response, next: NextFunction) {
     try {
       const enrollment = await enrollmentService.findByStudentId(req.params.studentId);
-      
+
       if (!enrollment) {
         return res.status(404).json(ApiResponse.error('Student not enrolled in Takhosus program'));
       }
@@ -227,7 +237,7 @@ export const sanadController = {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
       const { page = 1, limit = 10, enrollmentId, teacherId } = req.query;
-      
+
       const result = await sanadService.findAll({
         page: Number(page),
         limit: Number(limit),
@@ -235,7 +245,9 @@ export const sanadController = {
         teacherId: teacherId as string,
       });
 
-      res.json(ApiResponse.success(result.data, 'Sanad records retrieved successfully', result.pagination));
+      res.json(
+        ApiResponse.success(result.data, 'Sanad records retrieved successfully', result.pagination)
+      );
     } catch (error) {
       next(error);
     }
@@ -247,7 +259,7 @@ export const sanadController = {
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const sanad = await sanadService.findById(req.params.id);
-      
+
       if (!sanad) {
         return res.status(404).json(ApiResponse.error('Sanad record not found'));
       }
@@ -321,7 +333,10 @@ export const targetController = {
   async getByStudent(req: Request, res: Response, next: NextFunction) {
     try {
       const { academicYearId } = req.query;
-      const target = await targetService.getByStudentId(req.params.studentId, academicYearId as string);
+      const target = await targetService.getByStudentId(
+        req.params.studentId,
+        academicYearId as string
+      );
 
       if (!target) {
         return res.status(404).json(ApiResponse.error('Target not found'));
@@ -341,14 +356,16 @@ export const targetController = {
       const progress = await targetService.getProgress(req.params.studentId);
 
       if (!progress) {
-        return res.status(404).json(ApiResponse.error('Progress data not available (check if target exists)'));
+        return res
+          .status(404)
+          .json(ApiResponse.error('Progress data not available (check if target exists)'));
       }
 
       res.json(ApiResponse.success(progress));
     } catch (error) {
       next(error);
     }
-  }
+  },
 };
 
 // =====================================
@@ -362,7 +379,7 @@ export const progressController = {
   async getStudentProgress(req: Request, res: Response, next: NextFunction) {
     try {
       const progress = await progressService.getStudentProgress(req.params.studentId);
-      
+
       if (!progress) {
         return res.status(404).json(ApiResponse.error('Student not enrolled in Takhosus program'));
       }
@@ -380,13 +397,13 @@ export const progressController = {
   async getMyProgress(req: Request, res: Response, next: NextFunction) {
     try {
       const user = (req as any).user;
-      
+
       if (!user.studentId) {
         return res.status(400).json(ApiResponse.error('User is not a student'));
       }
 
       const progress = await progressService.getStudentProgress(user.studentId);
-      
+
       if (!progress) {
         return res.status(404).json(ApiResponse.error('You are not enrolled in Takhosus program'));
       }

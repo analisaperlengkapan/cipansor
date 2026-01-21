@@ -11,7 +11,7 @@ export enum ErrorCode {
   FORBIDDEN = 'FORBIDDEN',
   NOT_FOUND = 'NOT_FOUND',
   CONFLICT = 'CONFLICT',
-  
+
   // Server errors
   INTERNAL_ERROR = 'INTERNAL_ERROR',
   DATABASE_ERROR = 'DATABASE_ERROR',
@@ -55,35 +55,25 @@ export class ApiError extends Error {
 
 // Helper functions to create common errors
 export const Errors = {
-  badRequest: (message: string) => 
-    new ApiError(ErrorCode.BAD_REQUEST, message),
-  
-  validationError: (details: Array<{ field: string; message: string }>) => 
+  badRequest: (message: string) => new ApiError(ErrorCode.BAD_REQUEST, message),
+
+  validationError: (details: Array<{ field: string; message: string }>) =>
     new ApiError(ErrorCode.VALIDATION_ERROR, 'Validation failed', details),
-  
-  unauthorized: (message = 'Authentication required') => 
+
+  unauthorized: (message = 'Authentication required') =>
     new ApiError(ErrorCode.UNAUTHORIZED, message),
-  
-  forbidden: (message = 'Access denied') => 
-    new ApiError(ErrorCode.FORBIDDEN, message),
-  
-  notFound: (resource: string) => 
-    new ApiError(ErrorCode.NOT_FOUND, `${resource} not found`),
-  
-  conflict: (message: string) => 
-    new ApiError(ErrorCode.CONFLICT, message),
-  
-  internal: (message = 'Internal server error') => 
-    new ApiError(ErrorCode.INTERNAL_ERROR, message),
+
+  forbidden: (message = 'Access denied') => new ApiError(ErrorCode.FORBIDDEN, message),
+
+  notFound: (resource: string) => new ApiError(ErrorCode.NOT_FOUND, `${resource} not found`),
+
+  conflict: (message: string) => new ApiError(ErrorCode.CONFLICT, message),
+
+  internal: (message = 'Internal server error') => new ApiError(ErrorCode.INTERNAL_ERROR, message),
 };
 
 // Error handler middleware
-export function errorHandler(
-  error: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export function errorHandler(error: Error, req: Request, res: Response, next: NextFunction) {
   // Log error
   logger.error('Request error:', {
     error: error.message,
@@ -106,7 +96,7 @@ export function errorHandler(
       field: e.path.join('.'),
       message: e.message,
     }));
-    
+
     return res.status(400).json({
       success: false,
       error: {
@@ -141,7 +131,7 @@ export function errorHandler(
   // Handle Prisma errors
   if (error.name === 'PrismaClientKnownRequestError') {
     const prismaError = error as any;
-    
+
     // Unique constraint violation
     if (prismaError.code === 'P2002') {
       const field = prismaError.meta?.target?.[0] || 'field';
@@ -171,9 +161,7 @@ export function errorHandler(
     success: false,
     error: {
       code: ErrorCode.INTERNAL_ERROR,
-      message: process.env.NODE_ENV === 'production' 
-        ? 'Internal server error' 
-        : error.message,
+      message: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message,
     },
   });
 }

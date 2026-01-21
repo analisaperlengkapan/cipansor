@@ -29,19 +29,14 @@ export const dashboardService = {
     if (unitId) teacherWhere.unitId = unitId;
 
     // Get counts in parallel
-    const [
-      totalStudents,
-      activeStudents,
-      totalTeachers,
-      totalClasses,
-      totalUnits,
-    ] = await Promise.all([
-      prisma.student.count({ where: studentWhere }),
-      prisma.student.count({ where: { ...studentWhere, status: 'active' } }),
-      prisma.teacher.count({ where: teacherWhere }),
-      prisma.class.count({ where: unitId ? { unitId } : {} }),
-      prisma.unit.count(),
-    ]);
+    const [totalStudents, activeStudents, totalTeachers, totalClasses, totalUnits] =
+      await Promise.all([
+        prisma.student.count({ where: studentWhere }),
+        prisma.student.count({ where: { ...studentWhere, status: 'active' } }),
+        prisma.teacher.count({ where: teacherWhere }),
+        prisma.class.count({ where: unitId ? { unitId } : {} }),
+        prisma.unit.count(),
+      ]);
 
     // Get recent attendance stats (last 7 days)
     const sevenDaysAgo = new Date();
@@ -58,7 +53,8 @@ export const dashboardService = {
 
     const totalAttendance = attendanceStats.reduce((sum, s) => sum + (s._count?._all || 0), 0);
     const presentCount = attendanceStats.find((s) => s.status === 'PRESENT')?._count?._all || 0;
-    const attendanceRate = totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 0;
+    const attendanceRate =
+      totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 0;
 
     // Get tahfidz stats - use available fields (totalAyah, score)
     const tahfidzStats = await prisma.tahfidzRecord.aggregate({
@@ -235,9 +231,8 @@ export const dashboardService = {
 
     // Calculate trend
     const values = snapshots.map((s) => s.metricValue);
-    const trend = values.length >= 2
-      ? ((values[values.length - 1] - values[0]) / values[0]) * 100
-      : 0;
+    const trend =
+      values.length >= 2 ? ((values[values.length - 1] - values[0]) / values[0]) * 100 : 0;
 
     return {
       metricType,
@@ -319,13 +314,9 @@ export const dashboardService = {
       ])
     );
 
-    const studentsMap = new Map(
-      studentsByUnit.map((s) => [s.unitId, s._count._all])
-    );
+    const studentsMap = new Map(studentsByUnit.map((s) => [s.unitId, s._count._all]));
 
-    const teachersMap = new Map(
-      teachersByUnit.map((t) => [t.unitId, t._count._all])
-    );
+    const teachersMap = new Map(teachersByUnit.map((t) => [t.unitId, t._count._all]));
 
     // 5. Combine the data
     const comparisons = units.map((unit) => ({

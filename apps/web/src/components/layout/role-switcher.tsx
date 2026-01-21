@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,11 +9,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
-import { useAuthStore } from '@/stores/auth';
-import { ChevronDown, Check, Building2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { useAuthStore } from "@/stores/auth";
+import { ChevronDown, Check, Building2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface UserRole {
   id: string;
@@ -36,37 +36,40 @@ interface RoleSwitcherProps {
 
 // Realm display names
 const realmDisplayNames: Record<string, string> = {
-  GLOBAL: 'Global',
-  YAYASAN: 'Yayasan',
-  TK: 'PAUD',
-  SD_IT: 'SD IT',
-  SMP_IT: 'SMP IT',
-  SMA_ALQURAN: 'SMA Al-Qur\'an',
+  GLOBAL: "Global",
+  YAYASAN: "Yayasan",
+  TK: "PAUD",
+  SD_IT: "SD IT",
+  SMP_IT: "SMP IT",
+  SMA_ALQURAN: "SMA Al-Qur'an",
 };
 
 // Realm colors for badges
 const realmColors: Record<string, string> = {
-  GLOBAL: 'bg-purple-500',
-  YAYASAN: 'bg-amber-500',
-  TK: 'bg-pink-500',
-  SD_IT: 'bg-green-500',
-  SMP_IT: 'bg-blue-500',
-  SMA_ALQURAN: 'bg-emerald-500',
+  GLOBAL: "bg-purple-500",
+  YAYASAN: "bg-amber-500",
+  TK: "bg-pink-500",
+  SD_IT: "bg-green-500",
+  SMP_IT: "bg-blue-500",
+  SMA_ALQURAN: "bg-emerald-500",
 };
 
 export function RoleSwitcher({ className }: RoleSwitcherProps) {
   const { user, switchRole } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const userRoles = user?.userRoles as UserRole[] | undefined;
-  
+
   // If user has no roles or only one role, don't show switcher
   if (!userRoles || userRoles.length <= 1) {
     const singleRole = userRoles?.[0];
     if (singleRole) {
       return (
-        <div className={cn('flex items-center gap-2', className)}>
-          <Badge variant="secondary" className={cn('text-white', realmColors[singleRole.role.realm])}>
+        <div className={cn("flex items-center gap-2", className)}>
+          <Badge
+            variant="secondary"
+            className={cn("text-white", realmColors[singleRole.role.realm])}
+          >
             {realmDisplayNames[singleRole.role.realm]}
           </Badge>
           <span className="text-sm font-medium">{singleRole.role.name}</span>
@@ -75,43 +78,49 @@ export function RoleSwitcher({ className }: RoleSwitcherProps) {
     }
     return null;
   }
-  
+
   // Find current active (primary) role
-  const activeRole = userRoles.find(r => r.isPrimary) || userRoles[0];
-  
+  const activeRole = userRoles.find((r) => r.isPrimary) || userRoles[0];
+
   const handleSwitchRole = async (roleAssignmentId: string) => {
     if (roleAssignmentId === activeRole?.id) return;
-    
+
     setIsLoading(true);
     try {
       await switchRole(roleAssignmentId);
     } catch (error) {
-      console.error('Failed to switch role:', error);
+      console.error("Failed to switch role:", error);
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   // Group roles by realm
-  const rolesByRealm = userRoles.reduce((acc, role) => {
-    const realm = role.role.realm;
-    if (!acc[realm]) acc[realm] = [];
-    acc[realm].push(role);
-    return acc;
-  }, {} as Record<string, UserRole[]>);
+  const rolesByRealm = userRoles.reduce(
+    (acc, role) => {
+      const realm = role.role.realm;
+      if (!acc[realm]) acc[realm] = [];
+      acc[realm].push(role);
+      return acc;
+    },
+    {} as Record<string, UserRole[]>,
+  );
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className={cn('gap-2', className)}
+        <Button
+          variant="outline"
+          size="sm"
+          className={cn("gap-2", className)}
           disabled={isLoading}
         >
-          <Badge 
-            variant="secondary" 
-            className={cn('text-white text-xs', realmColors[activeRole.role.realm])}
+          <Badge
+            variant="secondary"
+            className={cn(
+              "text-white text-xs",
+              realmColors[activeRole.role.realm],
+            )}
           >
             {realmDisplayNames[activeRole.role.realm]}
           </Badge>
@@ -124,7 +133,7 @@ export function RoleSwitcher({ className }: RoleSwitcherProps) {
       <DropdownMenuContent className="w-64" align="end">
         <DropdownMenuLabel>Pilih Role</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        
+
         {Object.entries(rolesByRealm).map(([realm, roles]) => (
           <div key={realm}>
             <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">

@@ -6,12 +6,12 @@
 import { Router } from 'express';
 import { authenticate } from '@/middleware/auth';
 import {
-    getDashboardMetrics,
-    getQuickStats,
-    getStats,
-    getAttendanceStats,
-    getFinanceStats,
-    getTahfidzStats
+  getDashboardMetrics,
+  getQuickStats,
+  getStats,
+  getAttendanceStats,
+  getFinanceStats,
+  getTahfidzStats,
 } from './dashboard.controller';
 
 const router = Router();

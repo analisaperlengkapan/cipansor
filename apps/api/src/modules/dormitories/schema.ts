@@ -1,16 +1,16 @@
-import { z } from "zod";
-import { Gender } from "@prisma/client";
+import { z } from 'zod';
+import { Gender } from '@prisma/client';
 
 // =====================================
 // DORMITORY SCHEMAS
 // =====================================
 
 export const createDormitorySchema = z.object({
-  unitId: z.string().uuid("Invalid unit ID"),
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  code: z.string().min(2, "Code must be at least 2 characters"),
+  unitId: z.string().uuid('Invalid unit ID'),
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  code: z.string().min(2, 'Code must be at least 2 characters'),
   gender: z.nativeEnum(Gender),
-  capacity: z.number().int().positive("Capacity must be positive"),
+  capacity: z.number().int().positive('Capacity must be positive'),
   address: z.string().optional(),
   description: z.string().optional(),
 });
@@ -30,10 +30,10 @@ export const queryDormitorySchema = z.object({
 // =====================================
 
 export const createRoomSchema = z.object({
-  dormitoryId: z.string().uuid("Invalid dormitory ID"),
-  name: z.string().min(1, "Name is required"),
+  dormitoryId: z.string().uuid('Invalid dormitory ID'),
+  name: z.string().min(1, 'Name is required'),
   floor: z.number().int().positive().default(1),
-  capacity: z.number().int().positive("Capacity must be positive"),
+  capacity: z.number().int().positive('Capacity must be positive'),
   description: z.string().optional(),
   isActive: z.boolean().default(true),
 });
@@ -53,13 +53,13 @@ export const queryRoomSchema = z.object({
 // =====================================
 
 export const createRoomAssignmentSchema = z.object({
-  studentId: z.string().uuid("Invalid student ID"),
-  roomId: z.string().uuid("Invalid room ID"),
+  studentId: z.string().uuid('Invalid student ID'),
+  roomId: z.string().uuid('Invalid room ID'),
   notes: z.string().optional(),
 });
 
 export const updateRoomAssignmentSchema = z.object({
-  roomId: z.string().uuid("Invalid room ID").optional(),
+  roomId: z.string().uuid('Invalid room ID').optional(),
   notes: z.string().optional(),
   isActive: z.boolean().optional(),
   endedAt: z.string().datetime().optional(),

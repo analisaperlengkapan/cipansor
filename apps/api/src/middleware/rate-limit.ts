@@ -11,29 +11,29 @@ import { logger } from '@/lib/logger';
  * Default rate limiter for general API endpoints
  */
 export const defaultLimiter: RateLimitRequestHandler = rateLimit({
-    windowMs: config.rateLimit.windowMs, // 1 minute default
-    max: config.rateLimit.maxRequests, // 100 requests per minute default
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: {
-        success: false,
-        error: {
-            code: 'RATE_LIMIT_EXCEEDED',
-            message: 'Too many requests, please try again later.',
-        },
+  windowMs: config.rateLimit.windowMs, // 1 minute default
+  max: config.rateLimit.maxRequests, // 100 requests per minute default
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many requests, please try again later.',
     },
-    handler: (req, res, _next, options) => {
-        logger.warn('Rate limit exceeded', {
-            ip: req.ip,
-            path: req.path,
-            method: req.method,
-        });
-        res.status(options.statusCode).json(options.message);
-    },
-    skip: (req) => {
-        // Skip rate limiting for health checks
-        return req.path === '/health';
-    },
+  },
+  handler: (req, res, _next, options) => {
+    logger.warn('Rate limit exceeded', {
+      ip: req.ip,
+      path: req.path,
+      method: req.method,
+    });
+    res.status(options.statusCode).json(options.message);
+  },
+  skip: (req) => {
+    // Skip rate limiting for health checks
+    return req.path === '/health';
+  },
 });
 
 /**
@@ -41,74 +41,74 @@ export const defaultLimiter: RateLimitRequestHandler = rateLimit({
  * Prevents brute force attacks
  */
 export const authLimiter: RateLimitRequestHandler = rateLimit({
-    windowMs: 60 * 1000, // 1 minute
-    max: 5, // Only 5 login attempts per minute
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: {
-        success: false,
-        error: {
-            code: 'RATE_LIMIT_EXCEEDED',
-            message: 'Too many authentication attempts, please try again later.',
-        },
+  windowMs: 60 * 1000, // 1 minute
+  max: 5, // Only 5 login attempts per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many authentication attempts, please try again later.',
     },
-    handler: (req, res, _next, options) => {
-        logger.warn('Auth rate limit exceeded', {
-            ip: req.ip,
-            path: req.path,
-            email: req.body?.email,
-        });
-        res.status(options.statusCode).json(options.message);
-    },
+  },
+  handler: (req, res, _next, options) => {
+    logger.warn('Auth rate limit exceeded', {
+      ip: req.ip,
+      path: req.path,
+      email: req.body?.email,
+    });
+    res.status(options.statusCode).json(options.message);
+  },
 });
 
 /**
  * Strict rate limiter for password reset
  */
 export const passwordResetLimiter: RateLimitRequestHandler = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 3, // Only 3 password reset requests per 15 minutes
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: {
-        success: false,
-        error: {
-            code: 'RATE_LIMIT_EXCEEDED',
-            message: 'Too many password reset attempts, please try again later.',
-        },
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 3, // Only 3 password reset requests per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many password reset attempts, please try again later.',
     },
+  },
 });
 
 /**
  * Rate limiter for file uploads
  */
 export const uploadLimiter: RateLimitRequestHandler = rateLimit({
-    windowMs: 60 * 1000, // 1 minute
-    max: 10, // 10 uploads per minute
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: {
-        success: false,
-        error: {
-            code: 'RATE_LIMIT_EXCEEDED',
-            message: 'Too many file uploads, please try again later.',
-        },
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 uploads per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many file uploads, please try again later.',
     },
+  },
 });
 
 /**
  * Very strict limiter for API key generation/sensitive operations
  */
 export const sensitiveOperationLimiter: RateLimitRequestHandler = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 10, // 10 requests per hour
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: {
-        success: false,
-        error: {
-            code: 'RATE_LIMIT_EXCEEDED',
-            message: 'Too many requests for sensitive operations, please try again later.',
-        },
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // 10 requests per hour
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many requests for sensitive operations, please try again later.',
     },
+  },
 });

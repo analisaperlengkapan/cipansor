@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { AdmissionStatus } from "@prisma/client";
+import { z } from 'zod';
+import { AdmissionStatus } from '@prisma/client';
 
 // Admission Period schemas
 export const createAdmissionPeriodSchema = z.object({
@@ -13,21 +13,26 @@ export const createAdmissionPeriodSchema = z.object({
   requirements: z.string().optional(),
 });
 
-export const updateAdmissionPeriodSchema = createAdmissionPeriodSchema.partial().omit({ unitId: true, academicYearId: true });
+export const updateAdmissionPeriodSchema = createAdmissionPeriodSchema
+  .partial()
+  .omit({ unitId: true, academicYearId: true });
 
 export const queryAdmissionPeriodSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
   unitId: z.string().uuid().optional(),
   academicYearId: z.string().uuid().optional(),
-  isActive: z.enum(["true", "false"]).transform((v) => v === "true").optional(),
+  isActive: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
 });
 
 // Registrant schemas
 export const createRegistrantSchema = z.object({
   admissionPeriodId: z.string().uuid(),
   name: z.string().min(2).max(100),
-  gender: z.enum(["MALE", "FEMALE"]),
+  gender: z.enum(['MALE', 'FEMALE']),
   birthPlace: z.string().min(2).max(100),
   birthDate: z.string().datetime(),
   address: z.string().min(5),
@@ -73,7 +78,7 @@ export const queryRegistrantSchema = z.object({
   limit: z.coerce.number().min(1).max(100).default(20),
   admissionPeriodId: z.string().uuid().optional(),
   status: z.nativeEnum(AdmissionStatus).optional(),
-  gender: z.enum(["MALE", "FEMALE"]).optional(),
+  gender: z.enum(['MALE', 'FEMALE']).optional(),
   search: z.string().optional(),
 });
 
@@ -81,7 +86,7 @@ export const queryRegistrantSchema = z.object({
 export const createRegistrantDocumentSchema = z.object({
   registrantId: z.string().uuid(),
   name: z.string().min(2).max(200),
-  type: z.enum(["akta", "ijazah", "kk", "foto", "rapor", "lainnya"]),
+  type: z.enum(['akta', 'ijazah', 'kk', 'foto', 'rapor', 'lainnya']),
   fileUrl: z.string().url().optional(),
   notes: z.string().optional(),
 });

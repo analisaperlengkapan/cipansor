@@ -1,33 +1,47 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { Building2, Plus, Users, Bed, Pencil, Trash2, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from "react";
+import Link from "next/link";
+import {
+  Building2,
+  Plus,
+  Users,
+  Bed,
+  Pencil,
+  Trash2,
+  ChevronRight,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { ConfirmDialog, Pagination } from '@/components/shared';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog, Pagination } from "@/components/shared";
+import { toast } from "sonner";
 import {
   useDormitories,
   useDeleteDormitory,
   DORMITORY_TYPES,
   DormitoryType,
   Dormitory,
-} from '@/hooks/use-dormitory';
-import { useUnits } from '@/hooks/use-units';
+} from "@/hooks/use-dormitory";
+import { useUnits } from "@/hooks/use-units";
 
 export default function DormitoriesPage() {
   const [page, setPage] = useState(1);
-  const [unitId, setUnitId] = useState<string>('');
-  const [type, setType] = useState<DormitoryType | ''>('');
+  const [unitId, setUnitId] = useState<string>("");
+  const [type, setType] = useState<DormitoryType | "">("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const limit = 12;
 
@@ -45,22 +59,24 @@ export default function DormitoriesPage() {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      toast.success('Asrama berhasil dihapus');
+      toast.success("Asrama berhasil dihapus");
       setDeleteId(null);
     } catch {
-      toast.error('Gagal menghapus asrama');
+      toast.error("Gagal menghapus asrama");
     }
   };
 
   const getTypeColor = (dormitoryType: DormitoryType) => {
-    return dormitoryType === 'MALE' ? 'bg-blue-100 text-blue-800' : 'bg-pink-100 text-pink-800';
+    return dormitoryType === "MALE"
+      ? "bg-blue-100 text-blue-800"
+      : "bg-pink-100 text-pink-800";
   };
 
   const getOccupancyColor = (current: number, capacity: number) => {
     const ratio = current / capacity;
-    if (ratio >= 0.9) return 'text-red-600';
-    if (ratio >= 0.7) return 'text-yellow-600';
-    return 'text-green-600';
+    if (ratio >= 0.9) return "text-red-600";
+    if (ratio >= 0.7) return "text-yellow-600";
+    return "text-green-600";
   };
 
   return (
@@ -69,7 +85,9 @@ export default function DormitoriesPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Asrama</h1>
-          <p className="text-muted-foreground">Kelola asrama dan kamar santri</p>
+          <p className="text-muted-foreground">
+            Kelola asrama dan kamar santri
+          </p>
         </div>
         <Button asChild>
           <Link href="/dormitories/new">
@@ -86,7 +104,10 @@ export default function DormitoriesPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 sm:flex-row">
-            <Select value={unitId} onValueChange={(v) => setUnitId(v === 'ALL' ? '' : v)}>
+            <Select
+              value={unitId}
+              onValueChange={(v) => setUnitId(v === "ALL" ? "" : v)}
+            >
               <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Semua Unit" />
               </SelectTrigger>
@@ -100,7 +121,12 @@ export default function DormitoriesPage() {
               </SelectContent>
             </Select>
 
-            <Select value={type} onValueChange={(v) => setType(v === 'ALL' ? '' : v as DormitoryType)}>
+            <Select
+              value={type}
+              onValueChange={(v) =>
+                setType(v === "ALL" ? "" : (v as DormitoryType))
+              }
+            >
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Semua Tipe" />
               </SelectTrigger>
@@ -118,8 +144,8 @@ export default function DormitoriesPage() {
               <Button
                 variant="ghost"
                 onClick={() => {
-                  setUnitId('');
-                  setType('');
+                  setUnitId("");
+                  setType("");
                 }}
               >
                 Reset Filter
@@ -172,9 +198,11 @@ export default function DormitoriesPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <CardTitle className="text-lg">{dormitory.name}</CardTitle>
+                        <CardTitle className="text-lg">
+                          {dormitory.name}
+                        </CardTitle>
                         <Badge className={getTypeColor(dormitory.type)}>
-                          {dormitory.type === 'MALE' ? 'Putra' : 'Putri'}
+                          {dormitory.type === "MALE" ? "Putra" : "Putri"}
                         </Badge>
                       </div>
                       <CardDescription>{dormitory.code}</CardDescription>
@@ -194,13 +222,16 @@ export default function DormitoriesPage() {
                     <div className="flex items-center gap-2">
                       <Bed className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">
-                        {dormitory.capacity - (dormitory.currentOccupancy || 0)} kosong
+                        {dormitory.capacity - (dormitory.currentOccupancy || 0)}{" "}
+                        kosong
                       </span>
                     </div>
                   </div>
 
                   {dormitory.unit && (
-                    <p className="text-sm text-muted-foreground">Unit: {dormitory.unit.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Unit: {dormitory.unit.name}
+                    </p>
                   )}
 
                   {dormitory.supervisor && (
@@ -214,11 +245,15 @@ export default function DormitoriesPage() {
                     <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                       <div
                         className={`h-full transition-all ${
-                          (dormitory.currentOccupancy || 0) / dormitory.capacity >= 0.9
-                            ? 'bg-red-500'
-                            : (dormitory.currentOccupancy || 0) / dormitory.capacity >= 0.7
-                              ? 'bg-yellow-500'
-                              : 'bg-green-500'
+                          (dormitory.currentOccupancy || 0) /
+                            dormitory.capacity >=
+                          0.9
+                            ? "bg-red-500"
+                            : (dormitory.currentOccupancy || 0) /
+                                  dormitory.capacity >=
+                                0.7
+                              ? "bg-yellow-500"
+                              : "bg-green-500"
                         }`}
                         style={{
                           width: `${Math.min(((dormitory.currentOccupancy || 0) / dormitory.capacity) * 100, 100)}%`,
@@ -226,8 +261,12 @@ export default function DormitoriesPage() {
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {Math.round(((dormitory.currentOccupancy || 0) / dormitory.capacity) * 100)}%
-                      terisi
+                      {Math.round(
+                        ((dormitory.currentOccupancy || 0) /
+                          dormitory.capacity) *
+                          100,
+                      )}
+                      % terisi
                     </p>
                   </div>
 

@@ -8,7 +8,7 @@ import { logger } from '../../lib/logger';
 import { Prisma, PaymentStatus } from '@prisma/client';
 
 export type ReportFormat = 'JSON' | 'CSV';
-export type ReportType = 
+export type ReportType =
   | 'STUDENT_LIST'
   | 'ATTENDANCE_SUMMARY'
   | 'TAHFIDZ_PROGRESS'
@@ -129,7 +129,7 @@ class ReportingService {
     });
 
     return {
-      records: students.map(s => ({
+      records: students.map((s) => ({
         nis: s.nis,
         name: s.user.name,
         email: s.user.email,
@@ -147,9 +147,10 @@ class ReportingService {
   private async generateAttendanceSummaryReport(filters: ReportFilter) {
     const where: Prisma.AttendanceWhereInput = {
       ...(filters.unitId && { student: { unitId: filters.unitId } }),
-      ...(filters.startDate && filters.endDate && {
-        date: { gte: filters.startDate, lte: filters.endDate },
-      }),
+      ...(filters.startDate &&
+        filters.endDate && {
+          date: { gte: filters.startDate, lte: filters.endDate },
+        }),
     };
 
     const byStatus = await prisma.attendance.groupBy({
@@ -159,10 +160,10 @@ class ReportingService {
     });
 
     const totalRecords = byStatus.reduce((sum, s) => sum + s._count, 0);
-    const presentCount = byStatus.find(s => s.status === 'PRESENT')?._count || 0;
+    const presentCount = byStatus.find((s) => s.status === 'PRESENT')?._count || 0;
 
     return {
-      byStatus: Object.fromEntries(byStatus.map(s => [s.status, s._count])),
+      byStatus: Object.fromEntries(byStatus.map((s) => [s.status, s._count])),
       summary: {
         totalRecords,
         presentCount,
@@ -175,9 +176,10 @@ class ReportingService {
   private async generateTahfidzProgressReport(filters: ReportFilter) {
     const where: Prisma.TahfidzRecordWhereInput = {
       ...(filters.unitId && { student: { unitId: filters.unitId } }),
-      ...(filters.startDate && filters.endDate && {
-        createdAt: { gte: filters.startDate, lte: filters.endDate },
-      }),
+      ...(filters.startDate &&
+        filters.endDate && {
+          createdAt: { gte: filters.startDate, lte: filters.endDate },
+        }),
     };
 
     const tahfidzByStudent = await prisma.tahfidzRecord.groupBy({
@@ -188,22 +190,24 @@ class ReportingService {
       _avg: { score: true },
     });
 
-    const studentIds = tahfidzByStudent.map(t => t.studentId);
+    const studentIds = tahfidzByStudent.map((t) => t.studentId);
     const students = await prisma.student.findMany({
       where: { id: { in: studentIds } },
       include: { user: { select: { name: true } } },
     });
 
-    const studentData = tahfidzByStudent.map(t => {
-      const student = students.find(s => s.id === t.studentId);
-      return {
-        studentId: t.studentId,
-        name: student?.user.name || 'Unknown',
-        totalAyah: t._sum.totalAyah || 0,
-        recordCount: t._count,
-        averageScore: Number(t._avg.score?.toFixed(2)) || 0,
-      };
-    }).sort((a, b) => b.totalAyah - a.totalAyah);
+    const studentData = tahfidzByStudent
+      .map((t) => {
+        const student = students.find((s) => s.id === t.studentId);
+        return {
+          studentId: t.studentId,
+          name: student?.user.name || 'Unknown',
+          totalAyah: t._sum.totalAyah || 0,
+          recordCount: t._count,
+          averageScore: Number(t._avg.score?.toFixed(2)) || 0,
+        };
+      })
+      .sort((a, b) => b.totalAyah - a.totalAyah);
 
     return {
       students: studentData,
@@ -218,9 +222,10 @@ class ReportingService {
   private async generateFinancialSummaryReport(filters: ReportFilter) {
     const invoiceWhere = {
       ...(filters.unitId && { student: { unitId: filters.unitId } }),
-      ...(filters.startDate && filters.endDate && {
-        createdAt: { gte: filters.startDate, lte: filters.endDate },
-      }),
+      ...(filters.startDate &&
+        filters.endDate && {
+          createdAt: { gte: filters.startDate, lte: filters.endDate },
+        }),
     };
 
     const [invoiceStats, byStatus] = await Promise.all([
@@ -242,9 +247,10 @@ class ReportingService {
         totalInvoiced: Number(invoiceStats._sum.amount) || 0,
         totalPaid: Number(invoiceStats._sum.paidAmount) || 0,
         invoiceCount: invoiceStats._count,
-        outstandingBalance: (Number(invoiceStats._sum.amount) || 0) - (Number(invoiceStats._sum.paidAmount) || 0),
+        outstandingBalance:
+          (Number(invoiceStats._sum.amount) || 0) - (Number(invoiceStats._sum.paidAmount) || 0),
       },
-      byStatus: byStatus.map(s => ({
+      byStatus: byStatus.map((s) => ({
         status: s.status,
         count: s._count,
         amount: Number(s._sum.amount) || 0,
@@ -254,13 +260,14 @@ class ReportingService {
 
   private async generateInvoiceListReport(filters: ReportFilter) {
     const statusFilter = filters.status ? { status: filters.status as PaymentStatus } : {};
-    
+
     const where: Prisma.InvoiceWhereInput = {
       ...(filters.unitId && { student: { unitId: filters.unitId } }),
       ...statusFilter,
-      ...(filters.startDate && filters.endDate && {
-        createdAt: { gte: filters.startDate, lte: filters.endDate },
-      }),
+      ...(filters.startDate &&
+        filters.endDate && {
+          createdAt: { gte: filters.startDate, lte: filters.endDate },
+        }),
     };
 
     const invoices = await prisma.invoice.findMany({
@@ -273,7 +280,7 @@ class ReportingService {
     });
 
     return {
-      records: invoices.map(i => ({
+      records: invoices.map((i) => ({
         invoiceNumber: i.invoiceNumber,
         studentName: i.student.user.name,
         type: i.paymentType?.name || '-',
@@ -289,9 +296,10 @@ class ReportingService {
   private async generateViolationReport(filters: ReportFilter) {
     const where: Prisma.ViolationWhereInput = {
       ...(filters.unitId && { student: { unitId: filters.unitId } }),
-      ...(filters.startDate && filters.endDate && {
-        occurredAt: { gte: filters.startDate, lte: filters.endDate },
-      }),
+      ...(filters.startDate &&
+        filters.endDate && {
+          occurredAt: { gte: filters.startDate, lte: filters.endDate },
+        }),
     };
 
     const violations = await prisma.violation.findMany({
@@ -309,7 +317,7 @@ class ReportingService {
     }
 
     return {
-      records: violations.map(v => ({
+      records: violations.map((v) => ({
         date: v.occurredAt,
         studentName: v.student.user.name,
         type: v.type,
@@ -329,9 +337,10 @@ class ReportingService {
   private async generateRewardReport(filters: ReportFilter) {
     const where: Prisma.RewardWhereInput = {
       ...(filters.unitId && { student: { unitId: filters.unitId } }),
-      ...(filters.startDate && filters.endDate && {
-        createdAt: { gte: filters.startDate, lte: filters.endDate },
-      }),
+      ...(filters.startDate &&
+        filters.endDate && {
+          createdAt: { gte: filters.startDate, lte: filters.endDate },
+        }),
     };
 
     const rewards = await prisma.reward.findMany({
@@ -349,7 +358,7 @@ class ReportingService {
     }
 
     return {
-      records: rewards.map(r => ({
+      records: rewards.map((r) => ({
         date: r.createdAt,
         studentName: r.student.user.name,
         category: r.category,
@@ -360,7 +369,10 @@ class ReportingService {
       summary: {
         total: rewards.length,
         totalPoints: rewards.reduce((sum, r) => sum + r.points, 0),
-        byCategory: Array.from(byCategory.entries()).map(([category, count]) => ({ category, count })),
+        byCategory: Array.from(byCategory.entries()).map(([category, count]) => ({
+          category,
+          count,
+        })),
       },
     };
   }
@@ -381,7 +393,7 @@ class ReportingService {
         total: teacherCount + staffCount,
       },
       leaves: {
-        byStatus: Object.fromEntries(leaveStats.map(l => [l.status, l._count])),
+        byStatus: Object.fromEntries(leaveStats.map((l) => [l.status, l._count])),
         total: leaveStats.reduce((sum, l) => sum + l._count, 0),
       },
     };
@@ -413,8 +425,8 @@ class ReportingService {
 
     const headers = Object.keys(records[0]);
     const headerRow = headers.map(escapeCSV).join(',');
-    const dataRows = records.map(record =>
-      headers.map(header => escapeCSV(record[header])).join(',')
+    const dataRows = records.map((record) =>
+      headers.map((header) => escapeCSV(record[header])).join(',')
     );
 
     return [headerRow, ...dataRows].join('\n');

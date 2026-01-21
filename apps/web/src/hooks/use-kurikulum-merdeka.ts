@@ -1,62 +1,132 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { ApiResponse, PaginatedResponse } from "@/lib/api";
 
 // ==================== CONSTANTS ====================
 
 export const LEARNING_PHASE_CODES = [
-  { value: 'FASE_A', label: 'Fase A (PAUD - Kelas 2 SD)', startGrade: 0, endGrade: 2 },
-  { value: 'FASE_B', label: 'Fase B (Kelas 3 - 4 SD)', startGrade: 3, endGrade: 4 },
-  { value: 'FASE_C', label: 'Fase C (Kelas 5 - 6 SD)', startGrade: 5, endGrade: 6 },
-  { value: 'FASE_D', label: 'Fase D (Kelas 7 - 9 SMP)', startGrade: 7, endGrade: 9 },
-  { value: 'FASE_E', label: 'Fase E (Kelas 10 SMA)', startGrade: 10, endGrade: 10 },
-  { value: 'FASE_F', label: 'Fase F (Kelas 11 - 12 SMA)', startGrade: 11, endGrade: 12 },
+  {
+    value: "FASE_A",
+    label: "Fase A (PAUD - Kelas 2 SD)",
+    startGrade: 0,
+    endGrade: 2,
+  },
+  {
+    value: "FASE_B",
+    label: "Fase B (Kelas 3 - 4 SD)",
+    startGrade: 3,
+    endGrade: 4,
+  },
+  {
+    value: "FASE_C",
+    label: "Fase C (Kelas 5 - 6 SD)",
+    startGrade: 5,
+    endGrade: 6,
+  },
+  {
+    value: "FASE_D",
+    label: "Fase D (Kelas 7 - 9 SMP)",
+    startGrade: 7,
+    endGrade: 9,
+  },
+  {
+    value: "FASE_E",
+    label: "Fase E (Kelas 10 SMA)",
+    startGrade: 10,
+    endGrade: 10,
+  },
+  {
+    value: "FASE_F",
+    label: "Fase F (Kelas 11 - 12 SMA)",
+    startGrade: 11,
+    endGrade: 12,
+  },
 ] as const;
 
 export const P5_DIMENSIONS = [
-  { value: 'BERIMAN', label: 'Beriman, Bertakwa kepada Tuhan YME, dan Berakhlak Mulia', color: 'bg-emerald-100 text-emerald-800' },
-  { value: 'BERKEBINEKAAN', label: 'Berkebinekaan Global', color: 'bg-blue-100 text-blue-800' },
-  { value: 'BERGOTONG_ROYONG', label: 'Bergotong Royong', color: 'bg-orange-100 text-orange-800' },
-  { value: 'MANDIRI', label: 'Mandiri', color: 'bg-purple-100 text-purple-800' },
-  { value: 'BERNALAR_KRITIS', label: 'Bernalar Kritis', color: 'bg-red-100 text-red-800' },
-  { value: 'KREATIF', label: 'Kreatif', color: 'bg-pink-100 text-pink-800' },
+  {
+    value: "BERIMAN",
+    label: "Beriman, Bertakwa kepada Tuhan YME, dan Berakhlak Mulia",
+    color: "bg-emerald-100 text-emerald-800",
+  },
+  {
+    value: "BERKEBINEKAAN",
+    label: "Berkebinekaan Global",
+    color: "bg-blue-100 text-blue-800",
+  },
+  {
+    value: "BERGOTONG_ROYONG",
+    label: "Bergotong Royong",
+    color: "bg-orange-100 text-orange-800",
+  },
+  {
+    value: "MANDIRI",
+    label: "Mandiri",
+    color: "bg-purple-100 text-purple-800",
+  },
+  {
+    value: "BERNALAR_KRITIS",
+    label: "Bernalar Kritis",
+    color: "bg-red-100 text-red-800",
+  },
+  { value: "KREATIF", label: "Kreatif", color: "bg-pink-100 text-pink-800" },
 ] as const;
 
 export const P5_GRADES = [
-  { value: 'BB', label: 'Belum Berkembang', color: 'bg-red-100 text-red-800' },
-  { value: 'MB', label: 'Mulai Berkembang', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'BSH', label: 'Berkembang Sesuai Harapan', color: 'bg-blue-100 text-blue-800' },
-  { value: 'SB', label: 'Sangat Berkembang', color: 'bg-green-100 text-green-800' },
+  { value: "BB", label: "Belum Berkembang", color: "bg-red-100 text-red-800" },
+  {
+    value: "MB",
+    label: "Mulai Berkembang",
+    color: "bg-yellow-100 text-yellow-800",
+  },
+  {
+    value: "BSH",
+    label: "Berkembang Sesuai Harapan",
+    color: "bg-blue-100 text-blue-800",
+  },
+  {
+    value: "SB",
+    label: "Sangat Berkembang",
+    color: "bg-green-100 text-green-800",
+  },
 ] as const;
 
 export const ASSESSMENT_CATEGORIES = [
-  { value: 'DIAGNOSTIK', label: 'Diagnostik', color: 'bg-purple-100 text-purple-800' },
-  { value: 'FORMATIF', label: 'Formatif', color: 'bg-blue-100 text-blue-800' },
-  { value: 'SUMATIF', label: 'Sumatif', color: 'bg-green-100 text-green-800' },
+  {
+    value: "DIAGNOSTIK",
+    label: "Diagnostik",
+    color: "bg-purple-100 text-purple-800",
+  },
+  { value: "FORMATIF", label: "Formatif", color: "bg-blue-100 text-blue-800" },
+  { value: "SUMATIF", label: "Sumatif", color: "bg-green-100 text-green-800" },
 ] as const;
 
 export const PROJECT_STATUSES = [
-  { value: 'DRAFT', label: 'Draft', color: 'bg-gray-100 text-gray-800' },
-  { value: 'ACTIVE', label: 'Aktif', color: 'bg-green-100 text-green-800' },
-  { value: 'COMPLETED', label: 'Selesai', color: 'bg-blue-100 text-blue-800' },
+  { value: "DRAFT", label: "Draft", color: "bg-gray-100 text-gray-800" },
+  { value: "ACTIVE", label: "Aktif", color: "bg-green-100 text-green-800" },
+  { value: "COMPLETED", label: "Selesai", color: "bg-blue-100 text-blue-800" },
 ] as const;
 
 // Legacy P5 themes (for backward compatibility)
 export const P5_THEMES = [
-  { value: 'GAYA_HIDUP_BERKELANJUTAN', label: 'Gaya Hidup Berkelanjutan' },
-  { value: 'KEARIFAN_LOKAL', label: 'Kearifan Lokal' },
-  { value: 'BHINNEKA_TUNGGAL_IKA', label: 'Bhinneka Tunggal Ika' },
-  { value: 'BANGUNLAH_JIWA_RAGANYA', label: 'Bangunlah Jiwa dan Raganya' },
-  { value: 'SUARA_DEMOKRASI', label: 'Suara Demokrasi' },
-  { value: 'BEREKAYASA_BERTEKNOLOGI', label: 'Berekayasa dan Berteknologi untuk Membangun NKRI' },
-  { value: 'KEWIRAUSAHAAN', label: 'Kewirausahaan' },
+  { value: "GAYA_HIDUP_BERKELANJUTAN", label: "Gaya Hidup Berkelanjutan" },
+  { value: "KEARIFAN_LOKAL", label: "Kearifan Lokal" },
+  { value: "BHINNEKA_TUNGGAL_IKA", label: "Bhinneka Tunggal Ika" },
+  { value: "BANGUNLAH_JIWA_RAGANYA", label: "Bangunlah Jiwa dan Raganya" },
+  { value: "SUARA_DEMOKRASI", label: "Suara Demokrasi" },
+  {
+    value: "BEREKAYASA_BERTEKNOLOGI",
+    label: "Berekayasa dan Berteknologi untuk Membangun NKRI",
+  },
+  { value: "KEWIRAUSAHAAN", label: "Kewirausahaan" },
 ] as const;
 
-export type LearningPhaseCode = typeof LEARNING_PHASE_CODES[number]['value'];
-export type P5DimensionCode = typeof P5_DIMENSIONS[number]['value'];
-export type P5Grade = typeof P5_GRADES[number]['value'];
-export type AssessmentCategory = typeof ASSESSMENT_CATEGORIES[number]['value'];
-export type ProjectStatus = typeof PROJECT_STATUSES[number]['value'];
-export type P5Theme = typeof P5_THEMES[number]['value'];
+export type LearningPhaseCode = (typeof LEARNING_PHASE_CODES)[number]["value"];
+export type P5DimensionCode = (typeof P5_DIMENSIONS)[number]["value"];
+export type P5Grade = (typeof P5_GRADES)[number]["value"];
+export type AssessmentCategory =
+  (typeof ASSESSMENT_CATEGORIES)[number]["value"];
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number]["value"];
+export type P5Theme = (typeof P5_THEMES)[number]["value"];
 
 // ==================== TYPES ====================
 
@@ -336,9 +406,12 @@ interface UseLearningPhasesParams {
 
 export function useLearningPhases(params?: UseLearningPhasesParams) {
   return useQuery({
-    queryKey: ['learning-phases', params],
+    queryKey: ["learning-phases", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<LearningPhase[]>>('/kurikulum-merdeka/phases', { params });
+      const response = await api.get<ApiResponse<LearningPhase[]>>(
+        "/kurikulum-merdeka/phases",
+        { params },
+      );
       return response.data.data;
     },
   });
@@ -346,9 +419,11 @@ export function useLearningPhases(params?: UseLearningPhasesParams) {
 
 export function useLearningPhase(id: string) {
   return useQuery({
-    queryKey: ['learning-phases', id],
+    queryKey: ["learning-phases", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<LearningPhase>>(`/kurikulum-merdeka/phases/${id}`);
+      const response = await api.get<ApiResponse<LearningPhase>>(
+        `/kurikulum-merdeka/phases/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -364,44 +439,62 @@ export interface CreateLearningPhaseData {
 
 export function useCreateLearningPhase() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateLearningPhaseData) => {
-      const response = await api.post<ApiResponse<LearningPhase>>('/kurikulum-merdeka/phases', data);
+      const response = await api.post<ApiResponse<LearningPhase>>(
+        "/kurikulum-merdeka/phases",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['learning-phases'] });
-      queryClient.invalidateQueries({ queryKey: ['kurikulum-merdeka-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["learning-phases"] });
+      queryClient.invalidateQueries({
+        queryKey: ["kurikulum-merdeka-summary"],
+      });
     },
   });
 }
 
 export function useUpdateLearningPhase() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<CreateLearningPhaseData, 'code'>> }) => {
-      const response = await api.put<ApiResponse<LearningPhase>>(`/kurikulum-merdeka/phases/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<Omit<CreateLearningPhaseData, "code">>;
+    }) => {
+      const response = await api.put<ApiResponse<LearningPhase>>(
+        `/kurikulum-merdeka/phases/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['learning-phases'] });
-      queryClient.invalidateQueries({ queryKey: ['learning-phases', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["learning-phases"] });
+      queryClient.invalidateQueries({
+        queryKey: ["learning-phases", variables.id],
+      });
     },
   });
 }
 
 export function useDeleteLearningPhase() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/kurikulum-merdeka/phases/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['learning-phases'] });
-      queryClient.invalidateQueries({ queryKey: ['kurikulum-merdeka-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["learning-phases"] });
+      queryClient.invalidateQueries({
+        queryKey: ["kurikulum-merdeka-summary"],
+      });
     },
   });
 }
@@ -419,9 +512,12 @@ interface UseLearningOutcomesParams {
 
 export function useLearningOutcomes(params?: UseLearningOutcomesParams) {
   return useQuery({
-    queryKey: ['learning-outcomes', params],
+    queryKey: ["learning-outcomes", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<LearningOutcome>>('/kurikulum-merdeka/learning-outcomes', { params });
+      const response = await api.get<PaginatedResponse<LearningOutcome>>(
+        "/kurikulum-merdeka/learning-outcomes",
+        { params },
+      );
       return response.data;
     },
   });
@@ -429,9 +525,11 @@ export function useLearningOutcomes(params?: UseLearningOutcomesParams) {
 
 export function useLearningOutcome(id: string) {
   return useQuery({
-    queryKey: ['learning-outcomes', id],
+    queryKey: ["learning-outcomes", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<LearningOutcome>>(`/kurikulum-merdeka/learning-outcomes/${id}`);
+      const response = await api.get<ApiResponse<LearningOutcome>>(
+        `/kurikulum-merdeka/learning-outcomes/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -449,44 +547,62 @@ export interface CreateLearningOutcomeData {
 
 export function useCreateLearningOutcome() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateLearningOutcomeData) => {
-      const response = await api.post<ApiResponse<LearningOutcome>>('/kurikulum-merdeka/learning-outcomes', data);
+      const response = await api.post<ApiResponse<LearningOutcome>>(
+        "/kurikulum-merdeka/learning-outcomes",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['learning-outcomes'] });
-      queryClient.invalidateQueries({ queryKey: ['kurikulum-merdeka-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["learning-outcomes"] });
+      queryClient.invalidateQueries({
+        queryKey: ["kurikulum-merdeka-summary"],
+      });
     },
   });
 }
 
 export function useUpdateLearningOutcome() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateLearningOutcomeData> }) => {
-      const response = await api.put<ApiResponse<LearningOutcome>>(`/kurikulum-merdeka/learning-outcomes/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateLearningOutcomeData>;
+    }) => {
+      const response = await api.put<ApiResponse<LearningOutcome>>(
+        `/kurikulum-merdeka/learning-outcomes/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['learning-outcomes'] });
-      queryClient.invalidateQueries({ queryKey: ['learning-outcomes', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["learning-outcomes"] });
+      queryClient.invalidateQueries({
+        queryKey: ["learning-outcomes", variables.id],
+      });
     },
   });
 }
 
 export function useDeleteLearningOutcome() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/kurikulum-merdeka/learning-outcomes/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['learning-outcomes'] });
-      queryClient.invalidateQueries({ queryKey: ['kurikulum-merdeka-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["learning-outcomes"] });
+      queryClient.invalidateQueries({
+        queryKey: ["kurikulum-merdeka-summary"],
+      });
     },
   });
 }
@@ -502,9 +618,12 @@ interface UseLearningObjectivesParams {
 
 export function useLearningObjectives(params?: UseLearningObjectivesParams) {
   return useQuery({
-    queryKey: ['learning-objectives', params],
+    queryKey: ["learning-objectives", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<LearningObjective>>('/kurikulum-merdeka/learning-objectives', { params });
+      const response = await api.get<PaginatedResponse<LearningObjective>>(
+        "/kurikulum-merdeka/learning-objectives",
+        { params },
+      );
       return response.data;
     },
   });
@@ -512,9 +631,11 @@ export function useLearningObjectives(params?: UseLearningObjectivesParams) {
 
 export function useLearningObjective(id: string) {
   return useQuery({
-    queryKey: ['learning-objectives', id],
+    queryKey: ["learning-objectives", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<LearningObjective>>(`/kurikulum-merdeka/learning-objectives/${id}`);
+      const response = await api.get<ApiResponse<LearningObjective>>(
+        `/kurikulum-merdeka/learning-objectives/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -532,44 +653,62 @@ export interface CreateLearningObjectiveData {
 
 export function useCreateLearningObjective() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateLearningObjectiveData) => {
-      const response = await api.post<ApiResponse<LearningObjective>>('/kurikulum-merdeka/learning-objectives', data);
+      const response = await api.post<ApiResponse<LearningObjective>>(
+        "/kurikulum-merdeka/learning-objectives",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['learning-objectives'] });
-      queryClient.invalidateQueries({ queryKey: ['kurikulum-merdeka-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["learning-objectives"] });
+      queryClient.invalidateQueries({
+        queryKey: ["kurikulum-merdeka-summary"],
+      });
     },
   });
 }
 
 export function useUpdateLearningObjective() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateLearningObjectiveData> }) => {
-      const response = await api.put<ApiResponse<LearningObjective>>(`/kurikulum-merdeka/learning-objectives/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateLearningObjectiveData>;
+    }) => {
+      const response = await api.put<ApiResponse<LearningObjective>>(
+        `/kurikulum-merdeka/learning-objectives/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['learning-objectives'] });
-      queryClient.invalidateQueries({ queryKey: ['learning-objectives', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["learning-objectives"] });
+      queryClient.invalidateQueries({
+        queryKey: ["learning-objectives", variables.id],
+      });
     },
   });
 }
 
 export function useDeleteLearningObjective() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/kurikulum-merdeka/learning-objectives/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['learning-objectives'] });
-      queryClient.invalidateQueries({ queryKey: ['kurikulum-merdeka-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["learning-objectives"] });
+      queryClient.invalidateQueries({
+        queryKey: ["kurikulum-merdeka-summary"],
+      });
     },
   });
 }
@@ -587,9 +726,12 @@ interface UseTeachingModulesParams {
 
 export function useTeachingModules(params?: UseTeachingModulesParams) {
   return useQuery({
-    queryKey: ['teaching-modules', params],
+    queryKey: ["teaching-modules", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<TeachingModule>>('/kurikulum-merdeka/teaching-modules', { params });
+      const response = await api.get<PaginatedResponse<TeachingModule>>(
+        "/kurikulum-merdeka/teaching-modules",
+        { params },
+      );
       return response.data;
     },
   });
@@ -597,9 +739,11 @@ export function useTeachingModules(params?: UseTeachingModulesParams) {
 
 export function useTeachingModule(id: string) {
   return useQuery({
-    queryKey: ['teaching-modules', id],
+    queryKey: ["teaching-modules", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<TeachingModule>>(`/kurikulum-merdeka/teaching-modules/${id}`);
+      const response = await api.get<ApiResponse<TeachingModule>>(
+        `/kurikulum-merdeka/teaching-modules/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -627,44 +771,62 @@ export interface CreateTeachingModuleData {
 
 export function useCreateTeachingModule() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateTeachingModuleData) => {
-      const response = await api.post<ApiResponse<TeachingModule>>('/kurikulum-merdeka/teaching-modules', data);
+      const response = await api.post<ApiResponse<TeachingModule>>(
+        "/kurikulum-merdeka/teaching-modules",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teaching-modules'] });
-      queryClient.invalidateQueries({ queryKey: ['kurikulum-merdeka-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["teaching-modules"] });
+      queryClient.invalidateQueries({
+        queryKey: ["kurikulum-merdeka-summary"],
+      });
     },
   });
 }
 
 export function useUpdateTeachingModule() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<CreateTeachingModuleData, 'teacherId'>> }) => {
-      const response = await api.put<ApiResponse<TeachingModule>>(`/kurikulum-merdeka/teaching-modules/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<Omit<CreateTeachingModuleData, "teacherId">>;
+    }) => {
+      const response = await api.put<ApiResponse<TeachingModule>>(
+        `/kurikulum-merdeka/teaching-modules/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['teaching-modules'] });
-      queryClient.invalidateQueries({ queryKey: ['teaching-modules', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["teaching-modules"] });
+      queryClient.invalidateQueries({
+        queryKey: ["teaching-modules", variables.id],
+      });
     },
   });
 }
 
 export function useDeleteTeachingModule() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/kurikulum-merdeka/teaching-modules/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teaching-modules'] });
-      queryClient.invalidateQueries({ queryKey: ['kurikulum-merdeka-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["teaching-modules"] });
+      queryClient.invalidateQueries({
+        queryKey: ["kurikulum-merdeka-summary"],
+      });
     },
   });
 }
@@ -673,9 +835,11 @@ export function useDeleteTeachingModule() {
 
 export function useP5Themes() {
   return useQuery({
-    queryKey: ['p5-themes'],
+    queryKey: ["p5-themes"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<P5ThemeData[]>>('/kurikulum-merdeka/p5-themes');
+      const response = await api.get<ApiResponse<P5ThemeData[]>>(
+        "/kurikulum-merdeka/p5-themes",
+      );
       return response.data.data;
     },
   });
@@ -683,9 +847,11 @@ export function useP5Themes() {
 
 export function useP5Theme(id: string) {
   return useQuery({
-    queryKey: ['p5-themes', id],
+    queryKey: ["p5-themes", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<P5ThemeData>>(`/kurikulum-merdeka/p5-themes/${id}`);
+      const response = await api.get<ApiResponse<P5ThemeData>>(
+        `/kurikulum-merdeka/p5-themes/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -701,29 +867,41 @@ export interface CreateP5ThemeData {
 
 export function useCreateP5Theme() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateP5ThemeData) => {
-      const response = await api.post<ApiResponse<P5ThemeData>>('/kurikulum-merdeka/p5-themes', data);
+      const response = await api.post<ApiResponse<P5ThemeData>>(
+        "/kurikulum-merdeka/p5-themes",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['p5-themes'] });
+      queryClient.invalidateQueries({ queryKey: ["p5-themes"] });
     },
   });
 }
 
 export function useUpdateP5Theme() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateP5ThemeData> }) => {
-      const response = await api.put<ApiResponse<P5ThemeData>>(`/kurikulum-merdeka/p5-themes/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateP5ThemeData>;
+    }) => {
+      const response = await api.put<ApiResponse<P5ThemeData>>(
+        `/kurikulum-merdeka/p5-themes/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['p5-themes'] });
-      queryClient.invalidateQueries({ queryKey: ['p5-themes', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["p5-themes"] });
+      queryClient.invalidateQueries({ queryKey: ["p5-themes", variables.id] });
     },
   });
 }
@@ -743,9 +921,12 @@ interface UseP5ProjectsParams {
 
 export function useP5Projects(params?: UseP5ProjectsParams) {
   return useQuery({
-    queryKey: ['p5-projects', params],
+    queryKey: ["p5-projects", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<P5Project>>('/kurikulum-merdeka/p5-projects', { params });
+      const response = await api.get<PaginatedResponse<P5Project>>(
+        "/kurikulum-merdeka/p5-projects",
+        { params },
+      );
       return response.data;
     },
   });
@@ -753,9 +934,11 @@ export function useP5Projects(params?: UseP5ProjectsParams) {
 
 export function useP5Project(id: string) {
   return useQuery({
-    queryKey: ['p5-projects', id],
+    queryKey: ["p5-projects", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<P5Project>>(`/kurikulum-merdeka/p5-projects/${id}`);
+      const response = await api.get<ApiResponse<P5Project>>(
+        `/kurikulum-merdeka/p5-projects/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -781,44 +964,62 @@ export interface CreateP5ProjectData {
 
 export function useCreateP5Project() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateP5ProjectData) => {
-      const response = await api.post<ApiResponse<P5Project>>('/kurikulum-merdeka/p5-projects', data);
+      const response = await api.post<ApiResponse<P5Project>>(
+        "/kurikulum-merdeka/p5-projects",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['p5-projects'] });
-      queryClient.invalidateQueries({ queryKey: ['kurikulum-merdeka-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["p5-projects"] });
+      queryClient.invalidateQueries({
+        queryKey: ["kurikulum-merdeka-summary"],
+      });
     },
   });
 }
 
 export function useUpdateP5Project() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<CreateP5ProjectData, 'unitId' | 'academicYearId'>> }) => {
-      const response = await api.put<ApiResponse<P5Project>>(`/kurikulum-merdeka/p5-projects/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<Omit<CreateP5ProjectData, "unitId" | "academicYearId">>;
+    }) => {
+      const response = await api.put<ApiResponse<P5Project>>(
+        `/kurikulum-merdeka/p5-projects/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['p5-projects'] });
-      queryClient.invalidateQueries({ queryKey: ['p5-projects', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["p5-projects"] });
+      queryClient.invalidateQueries({
+        queryKey: ["p5-projects", variables.id],
+      });
     },
   });
 }
 
 export function useDeleteP5Project() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/kurikulum-merdeka/p5-projects/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['p5-projects'] });
-      queryClient.invalidateQueries({ queryKey: ['kurikulum-merdeka-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["p5-projects"] });
+      queryClient.invalidateQueries({
+        queryKey: ["kurikulum-merdeka-summary"],
+      });
     },
   });
 }
@@ -835,9 +1036,12 @@ interface UseP5AssessmentsParams {
 
 export function useP5Assessments(params?: UseP5AssessmentsParams) {
   return useQuery({
-    queryKey: ['p5-assessments', params],
+    queryKey: ["p5-assessments", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<P5Assessment>>('/kurikulum-merdeka/p5-assessments', { params });
+      const response = await api.get<PaginatedResponse<P5Assessment>>(
+        "/kurikulum-merdeka/p5-assessments",
+        { params },
+      );
       return response.data;
     },
   });
@@ -845,9 +1049,11 @@ export function useP5Assessments(params?: UseP5AssessmentsParams) {
 
 export function useP5Assessment(id: string) {
   return useQuery({
-    queryKey: ['p5-assessments', id],
+    queryKey: ["p5-assessments", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<P5Assessment>>(`/kurikulum-merdeka/p5-assessments/${id}`);
+      const response = await api.get<ApiResponse<P5Assessment>>(
+        `/kurikulum-merdeka/p5-assessments/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -870,44 +1076,60 @@ export interface CreateP5AssessmentData {
 
 export function useCreateP5Assessment() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateP5AssessmentData) => {
-      const response = await api.post<ApiResponse<P5Assessment>>('/kurikulum-merdeka/p5-assessments', data);
+      const response = await api.post<ApiResponse<P5Assessment>>(
+        "/kurikulum-merdeka/p5-assessments",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['p5-assessments'] });
-      queryClient.invalidateQueries({ queryKey: ['p5-projects'] });
+      queryClient.invalidateQueries({ queryKey: ["p5-assessments"] });
+      queryClient.invalidateQueries({ queryKey: ["p5-projects"] });
     },
   });
 }
 
 export function useUpdateP5Assessment() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<CreateP5AssessmentData, 'projectId' | 'studentId' | 'assessedById'>> }) => {
-      const response = await api.put<ApiResponse<P5Assessment>>(`/kurikulum-merdeka/p5-assessments/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<
+        Omit<CreateP5AssessmentData, "projectId" | "studentId" | "assessedById">
+      >;
+    }) => {
+      const response = await api.put<ApiResponse<P5Assessment>>(
+        `/kurikulum-merdeka/p5-assessments/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['p5-assessments'] });
-      queryClient.invalidateQueries({ queryKey: ['p5-assessments', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["p5-assessments"] });
+      queryClient.invalidateQueries({
+        queryKey: ["p5-assessments", variables.id],
+      });
     },
   });
 }
 
 export function useDeleteP5Assessment() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/kurikulum-merdeka/p5-assessments/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['p5-assessments'] });
-      queryClient.invalidateQueries({ queryKey: ['p5-projects'] });
+      queryClient.invalidateQueries({ queryKey: ["p5-assessments"] });
+      queryClient.invalidateQueries({ queryKey: ["p5-projects"] });
     },
   });
 }
@@ -928,9 +1150,12 @@ interface UseMerdekaAssessmentsParams {
 
 export function useMerdekaAssessments(params?: UseMerdekaAssessmentsParams) {
   return useQuery({
-    queryKey: ['merdeka-assessments', params],
+    queryKey: ["merdeka-assessments", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<MerdekaAssessment>>('/kurikulum-merdeka/assessments', { params });
+      const response = await api.get<PaginatedResponse<MerdekaAssessment>>(
+        "/kurikulum-merdeka/assessments",
+        { params },
+      );
       return response.data;
     },
   });
@@ -938,9 +1163,11 @@ export function useMerdekaAssessments(params?: UseMerdekaAssessmentsParams) {
 
 export function useMerdekaAssessment(id: string) {
   return useQuery({
-    queryKey: ['merdeka-assessments', id],
+    queryKey: ["merdeka-assessments", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<MerdekaAssessment>>(`/kurikulum-merdeka/assessments/${id}`);
+      const response = await api.get<ApiResponse<MerdekaAssessment>>(
+        `/kurikulum-merdeka/assessments/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -968,44 +1195,67 @@ export interface CreateMerdekaAssessmentData {
 
 export function useCreateMerdekaAssessment() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateMerdekaAssessmentData) => {
-      const response = await api.post<ApiResponse<MerdekaAssessment>>('/kurikulum-merdeka/assessments', data);
+      const response = await api.post<ApiResponse<MerdekaAssessment>>(
+        "/kurikulum-merdeka/assessments",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['merdeka-assessments'] });
-      queryClient.invalidateQueries({ queryKey: ['kurikulum-merdeka-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["merdeka-assessments"] });
+      queryClient.invalidateQueries({
+        queryKey: ["kurikulum-merdeka-summary"],
+      });
     },
   });
 }
 
 export function useUpdateMerdekaAssessment() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<CreateMerdekaAssessmentData, 'unitId' | 'teacherId' | 'academicYearId'>> }) => {
-      const response = await api.put<ApiResponse<MerdekaAssessment>>(`/kurikulum-merdeka/assessments/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<
+        Omit<
+          CreateMerdekaAssessmentData,
+          "unitId" | "teacherId" | "academicYearId"
+        >
+      >;
+    }) => {
+      const response = await api.put<ApiResponse<MerdekaAssessment>>(
+        `/kurikulum-merdeka/assessments/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['merdeka-assessments'] });
-      queryClient.invalidateQueries({ queryKey: ['merdeka-assessments', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["merdeka-assessments"] });
+      queryClient.invalidateQueries({
+        queryKey: ["merdeka-assessments", variables.id],
+      });
     },
   });
 }
 
 export function useDeleteMerdekaAssessment() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/kurikulum-merdeka/assessments/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['merdeka-assessments'] });
-      queryClient.invalidateQueries({ queryKey: ['kurikulum-merdeka-summary'] });
+      queryClient.invalidateQueries({ queryKey: ["merdeka-assessments"] });
+      queryClient.invalidateQueries({
+        queryKey: ["kurikulum-merdeka-summary"],
+      });
     },
   });
 }
@@ -1021,9 +1271,11 @@ interface UseMerdekaResultsParams {
 
 export function useMerdekaResults(params?: UseMerdekaResultsParams) {
   return useQuery({
-    queryKey: ['merdeka-results', params],
+    queryKey: ["merdeka-results", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<MerdekaAssessmentResult>>('/kurikulum-merdeka/assessment-results', { params });
+      const response = await api.get<
+        PaginatedResponse<MerdekaAssessmentResult>
+      >("/kurikulum-merdeka/assessment-results", { params });
       return response.data;
     },
   });
@@ -1031,9 +1283,11 @@ export function useMerdekaResults(params?: UseMerdekaResultsParams) {
 
 export function useMerdekaResult(id: string) {
   return useQuery({
-    queryKey: ['merdeka-results', id],
+    queryKey: ["merdeka-results", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<MerdekaAssessmentResult>>(`/kurikulum-merdeka/assessment-results/${id}`);
+      const response = await api.get<ApiResponse<MerdekaAssessmentResult>>(
+        `/kurikulum-merdeka/assessment-results/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -1053,44 +1307,63 @@ export interface CreateMerdekaResultData {
 
 export function useCreateMerdekaResult() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateMerdekaResultData) => {
-      const response = await api.post<ApiResponse<MerdekaAssessmentResult>>('/kurikulum-merdeka/assessment-results', data);
+      const response = await api.post<ApiResponse<MerdekaAssessmentResult>>(
+        "/kurikulum-merdeka/assessment-results",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['merdeka-results'] });
-      queryClient.invalidateQueries({ queryKey: ['merdeka-assessments'] });
+      queryClient.invalidateQueries({ queryKey: ["merdeka-results"] });
+      queryClient.invalidateQueries({ queryKey: ["merdeka-assessments"] });
     },
   });
 }
 
 export function useUpdateMerdekaResult() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<CreateMerdekaResultData, 'assessmentId' | 'studentId' | 'gradedById'>> }) => {
-      const response = await api.put<ApiResponse<MerdekaAssessmentResult>>(`/kurikulum-merdeka/assessment-results/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<
+        Omit<
+          CreateMerdekaResultData,
+          "assessmentId" | "studentId" | "gradedById"
+        >
+      >;
+    }) => {
+      const response = await api.put<ApiResponse<MerdekaAssessmentResult>>(
+        `/kurikulum-merdeka/assessment-results/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['merdeka-results'] });
-      queryClient.invalidateQueries({ queryKey: ['merdeka-results', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["merdeka-results"] });
+      queryClient.invalidateQueries({
+        queryKey: ["merdeka-results", variables.id],
+      });
     },
   });
 }
 
 export function useDeleteMerdekaResult() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/kurikulum-merdeka/assessment-results/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['merdeka-results'] });
-      queryClient.invalidateQueries({ queryKey: ['merdeka-assessments'] });
+      queryClient.invalidateQueries({ queryKey: ["merdeka-results"] });
+      queryClient.invalidateQueries({ queryKey: ["merdeka-assessments"] });
     },
   });
 }
@@ -1099,11 +1372,14 @@ export function useDeleteMerdekaResult() {
 
 export function useKurikulumMerdekaSummary(unitId?: string) {
   return useQuery({
-    queryKey: ['kurikulum-merdeka-summary', unitId],
+    queryKey: ["kurikulum-merdeka-summary", unitId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<KurikulumMerdekaSummary>>('/kurikulum-merdeka/summary', {
-        params: unitId ? { unitId } : undefined,
-      });
+      const response = await api.get<ApiResponse<KurikulumMerdekaSummary>>(
+        "/kurikulum-merdeka/summary",
+        {
+          params: unitId ? { unitId } : undefined,
+        },
+      );
       return response.data.data;
     },
   });

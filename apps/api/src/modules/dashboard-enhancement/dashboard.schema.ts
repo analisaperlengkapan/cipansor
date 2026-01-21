@@ -19,13 +19,7 @@ export const MetricTypeEnum = z.enum([
   'SIMAAN_PASS_RATE',
 ]);
 
-export const PeriodTypeEnum = z.enum([
-  'DAILY',
-  'WEEKLY',
-  'MONTHLY',
-  'QUARTERLY',
-  'YEARLY',
-]);
+export const PeriodTypeEnum = z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY']);
 
 export const ReportTypeEnum = z.enum([
   'ACADEMIC',
@@ -50,8 +44,14 @@ export const metricsQuerySchema = z.object({
   academicYearId: z.string().uuid().optional(),
   metricType: MetricTypeEnum.optional(),
   periodType: PeriodTypeEnum.optional(),
-  dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  dateFrom: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  dateTo: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
@@ -59,16 +59,28 @@ export const metricsQuerySchema = z.object({
 export const unitComparisonQuerySchema = z.object({
   metricType: z.string(),
   academicYearId: z.string().uuid().optional(),
-  periodStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  periodStart: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  periodEnd: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
 });
 
 export const trendQuerySchema = z.object({
   metricType: z.string(),
   periodType: z.string(),
   unitId: z.string().uuid().optional(),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  endDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   limit: z.coerce.number().int().min(1).max(100).default(30),
 });
 

@@ -71,16 +71,16 @@ export const updateMuhadhorohSchema = z.object({
 // =====================================
 
 export const evaluateMuhadhorohSchema = z.object({
-  contentScore: z
-    .coerce.number()
+  contentScore: z.coerce
+    .number()
     .min(0, 'Score must be at least 0')
     .max(100, 'Score must be at most 100'),
-  deliveryScore: z
-    .coerce.number()
+  deliveryScore: z.coerce
+    .number()
     .min(0, 'Score must be at least 0')
     .max(100, 'Score must be at most 100'),
-  languageScore: z
-    .coerce.number()
+  languageScore: z.coerce
+    .number()
     .min(0, 'Score must be at least 0')
     .max(100, 'Score must be at most 100'),
   feedback: z.string().max(2000, 'Feedback too long').optional(),

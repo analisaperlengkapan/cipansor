@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -14,19 +14,25 @@ import {
   CheckCircle,
   Edit,
   Trash2,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { toast } from "sonner";
 import {
   useViolation,
   useDeleteViolation,
   VIOLATION_CATEGORIES,
-} from '@/hooks/use-violations';
+} from "@/hooks/use-violations";
 
 export default function ViolationDetailPage() {
   const params = useParams();
@@ -39,10 +45,10 @@ export default function ViolationDetailPage() {
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(violationId);
-      toast.success('Pelanggaran berhasil dihapus');
-      router.push('/violations');
+      toast.success("Pelanggaran berhasil dihapus");
+      router.push("/violations");
     } catch {
-      toast.error('Gagal menghapus pelanggaran');
+      toast.error("Gagal menghapus pelanggaran");
     }
   };
 
@@ -76,7 +82,7 @@ export default function ViolationDetailPage() {
   }
 
   const category = VIOLATION_CATEGORIES.find(
-    (c) => c.value === violation.violationType?.category
+    (c) => c.value === violation.violationType?.category,
   );
 
   return (
@@ -91,7 +97,9 @@ export default function ViolationDetailPage() {
           </Button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold tracking-tight">Detail Pelanggaran</h1>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Detail Pelanggaran
+              </h1>
               {category && (
                 <Badge variant="outline" className={category.color}>
                   {category.label}
@@ -138,7 +146,9 @@ export default function ViolationDetailPage() {
                 <AlertTriangle className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Jenis Pelanggaran</p>
+                <p className="text-sm text-muted-foreground">
+                  Jenis Pelanggaran
+                </p>
                 <p className="font-medium">{violation.violationType?.name}</p>
               </div>
             </div>
@@ -152,7 +162,9 @@ export default function ViolationDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Tanggal</p>
                 <p className="font-medium">
-                  {format(new Date(violation.date), 'EEEE, dd MMMM yyyy', { locale: localeId })}
+                  {format(new Date(violation.date), "EEEE, dd MMMM yyyy", {
+                    locale: localeId,
+                  })}
                 </p>
               </div>
             </div>
@@ -214,7 +226,9 @@ export default function ViolationDetailPage() {
                     <CheckCircle className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">Tindakan yang Diambil</p>
+                    <p className="text-sm text-muted-foreground">
+                      Tindakan yang Diambil
+                    </p>
                     <p className="mt-1">{violation.actionTaken}</p>
                   </div>
                 </div>
@@ -227,7 +241,9 @@ export default function ViolationDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle>Informasi Santri</CardTitle>
-            <CardDescription>Data santri yang melakukan pelanggaran</CardDescription>
+            <CardDescription>
+              Data santri yang melakukan pelanggaran
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
@@ -249,7 +265,9 @@ export default function ViolationDetailPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Kelas</p>
-                <p className="font-medium">{violation.student?.class?.name || '-'}</p>
+                <p className="font-medium">
+                  {violation.student?.class?.name || "-"}
+                </p>
               </div>
             </div>
 
@@ -257,14 +275,18 @@ export default function ViolationDetailPage() {
 
             <div>
               <p className="text-sm text-muted-foreground">Unit</p>
-              <p className="font-medium">{violation.student?.unit?.name || '-'}</p>
+              <p className="font-medium">
+                {violation.student?.unit?.name || "-"}
+              </p>
             </div>
 
             <Separator />
 
             <div className="flex justify-end">
               <Button variant="outline" asChild>
-                <Link href={`/students/${violation.studentId}`}>Lihat Profil Santri</Link>
+                <Link href={`/students/${violation.studentId}`}>
+                  Lihat Profil Santri
+                </Link>
               </Button>
             </div>
           </CardContent>
@@ -284,10 +306,14 @@ export default function ViolationDetailPage() {
                 <User className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
-                <p className="font-medium">{violation.reportedBy?.name || '-'}</p>
+                <p className="font-medium">
+                  {violation.reportedBy?.name || "-"}
+                </p>
                 <p className="text-sm text-muted-foreground">
-                  Dilaporkan pada{' '}
-                  {format(new Date(violation.createdAt), 'dd MMMM yyyy HH:mm', { locale: localeId })}
+                  Dilaporkan pada{" "}
+                  {format(new Date(violation.createdAt), "dd MMMM yyyy HH:mm", {
+                    locale: localeId,
+                  })}
                 </p>
               </div>
             </div>

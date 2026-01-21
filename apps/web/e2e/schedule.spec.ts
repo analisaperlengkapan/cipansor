@@ -1,33 +1,33 @@
-import { test, expect } from './fixtures/auth.fixture';
-import { LoginPage } from './page-objects';
+import { test, expect } from "./fixtures/auth.fixture";
+import { LoginPage } from "./page-objects";
 
 /**
  * Schedule Module E2E Tests
  * Tests class schedule and timetable management
  */
 
-test.describe('Schedule - Navigation', () => {
-  test('should navigate to schedule page', async ({ page }) => {
+test.describe("Schedule - Navigation", () => {
+  test("should navigate to schedule page", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/schedule');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/schedule");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     expect(page.url()).toMatch(/schedule/);
   });
 
-  test('should display schedule content', async ({ page }) => {
+  test("should display schedule content", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/schedule');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/schedule");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     // Page should load with content
     const content = await page.content();
     expect(content.length).toBeGreaterThan(1000);
@@ -35,55 +35,59 @@ test.describe('Schedule - Navigation', () => {
   });
 });
 
-test.describe('Schedule - Features', () => {
-  test('should have schedule viewing functionality', async ({ page }) => {
+test.describe("Schedule - Features", () => {
+  test("should have schedule viewing functionality", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/schedule');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/schedule");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     // Check for schedule elements (table, calendar, or cards)
-    const hasScheduleView = await page.locator('table, [class*="calendar"], [class*="schedule"]')
+    const hasScheduleView = await page
+      .locator('table, [class*="calendar"], [class*="schedule"]')
       .first()
-      .isVisible({ timeout: 5000 }).catch(() => false);
-    
-    expect(hasScheduleView || page.url().includes('schedule')).toBeTruthy();
+      .isVisible({ timeout: 5000 })
+      .catch(() => false);
+
+    expect(hasScheduleView || page.url().includes("schedule")).toBeTruthy();
   });
 
-  test('should allow filtering or navigation', async ({ page }) => {
+  test("should allow filtering or navigation", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/schedule');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/schedule");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     // Look for filter controls
-    const hasControls = await page.locator('select, button, input[type="search"]')
+    const hasControls = await page
+      .locator('select, button, input[type="search"]')
       .first()
-      .isVisible({ timeout: 5000 }).catch(() => false);
-    
-    expect(hasControls || page.url().includes('schedule')).toBeTruthy();
+      .isVisible({ timeout: 5000 })
+      .catch(() => false);
+
+    expect(hasControls || page.url().includes("schedule")).toBeTruthy();
   });
 });
 
-test.describe('Schedule - Performance', () => {
-  test('should load schedule page quickly', async ({ page }) => {
+test.describe("Schedule - Performance", () => {
+  test("should load schedule page quickly", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    
+
     const startTime = Date.now();
-    await page.goto('/schedule');
-    await page.waitForLoadState('domcontentloaded', { timeout: 15000 });
+    await page.goto("/schedule");
+    await page.waitForLoadState("domcontentloaded", { timeout: 15000 });
     const loadTime = Date.now() - startTime;
-    
+
     expect(loadTime).toBeLessThan(15000);
     expect(page.url()).toMatch(/schedule/);
   });

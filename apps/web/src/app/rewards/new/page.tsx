@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -16,31 +22,30 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
-import { useCreateReward, useRewardTypes, REWARD_CATEGORIES } from '@/hooks/use-rewards';
-import { useStudents } from '@/hooks/use-students';
+  useCreateReward,
+  useRewardTypes,
+  REWARD_CATEGORIES,
+} from "@/hooks/use-rewards";
+import { useStudents } from "@/hooks/use-students";
 
 const formSchema = z.object({
-  studentId: z.string().min(1, 'Santri wajib dipilih'),
-  rewardTypeId: z.string().min(1, 'Jenis penghargaan wajib dipilih'),
-  date: z.string().min(1, 'Tanggal wajib diisi'),
+  studentId: z.string().min(1, "Santri wajib dipilih"),
+  rewardTypeId: z.string().min(1, "Jenis penghargaan wajib dipilih"),
+  date: z.string().min(1, "Tanggal wajib diisi"),
   description: z.string().optional(),
 });
 
@@ -48,7 +53,7 @@ type FormData = z.infer<typeof formSchema>;
 
 export default function NewRewardPage() {
   const router = useRouter();
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<{
     id: string;
     name: string;
@@ -66,10 +71,10 @@ export default function NewRewardPage() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      studentId: '',
-      rewardTypeId: '',
-      date: new Date().toISOString().split('T')[0],
-      description: '',
+      studentId: "",
+      rewardTypeId: "",
+      date: new Date().toISOString().split("T")[0],
+      description: "",
     },
   });
 
@@ -79,21 +84,25 @@ export default function NewRewardPage() {
         ...data,
         description: data.description || undefined,
       });
-      toast.success('Penghargaan berhasil diberikan');
-      router.push('/rewards');
+      toast.success("Penghargaan berhasil diberikan");
+      router.push("/rewards");
     } catch {
-      toast.error('Gagal memberikan penghargaan');
+      toast.error("Gagal memberikan penghargaan");
     }
   };
 
-  const handleSelectStudent = (student: { id: string; name: string; nis: string }) => {
+  const handleSelectStudent = (student: {
+    id: string;
+    name: string;
+    nis: string;
+  }) => {
     setSelectedStudent(student);
-    form.setValue('studentId', student.id);
-    setSearch('');
+    form.setValue("studentId", student.id);
+    setSearch("");
   };
 
   const selectedType = rewardTypes?.find(
-    (t) => t.id === form.watch('rewardTypeId')
+    (t) => t.id === form.watch("rewardTypeId"),
   );
 
   return (
@@ -106,8 +115,12 @@ export default function NewRewardPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Berikan Penghargaan</h1>
-          <p className="text-muted-foreground">Berikan penghargaan kepada santri</p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Berikan Penghargaan
+          </h1>
+          <p className="text-muted-foreground">
+            Berikan penghargaan kepada santri
+          </p>
         </div>
       </div>
 
@@ -118,21 +131,25 @@ export default function NewRewardPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Pilih Santri</CardTitle>
-                <CardDescription>Cari dan pilih santri yang akan diberi penghargaan</CardDescription>
+                <CardDescription>
+                  Cari dan pilih santri yang akan diberi penghargaan
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {selectedStudent ? (
                   <div className="flex items-center justify-between rounded-lg border p-4">
                     <div>
                       <p className="font-medium">{selectedStudent.name}</p>
-                      <p className="text-sm text-muted-foreground">{selectedStudent.nis}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedStudent.nis}
+                      </p>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
                         setSelectedStudent(null);
-                        form.setValue('studentId', '');
+                        form.setValue("studentId", "");
                       }}
                     >
                       Ganti
@@ -176,7 +193,9 @@ export default function NewRewardPage() {
                                   }
                                 >
                                   <TableCell>{student.nis}</TableCell>
-                                  <TableCell className="font-medium">{student.name}</TableCell>
+                                  <TableCell className="font-medium">
+                                    {student.name}
+                                  </TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>
@@ -208,7 +227,10 @@ export default function NewRewardPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Jenis Penghargaan</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih jenis penghargaan" />
@@ -238,20 +260,31 @@ export default function NewRewardPage() {
                 {selectedType && (
                   <div className="rounded-lg border bg-muted/50 p-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Kategori:</span>
+                      <span className="text-sm text-muted-foreground">
+                        Kategori:
+                      </span>
                       <Badge
                         variant="outline"
                         className={
-                          REWARD_CATEGORIES.find((c) => c.value === selectedType.category)
-                            ?.color
+                          REWARD_CATEGORIES.find(
+                            (c) => c.value === selectedType.category,
+                          )?.color
                         }
                       >
-                        {REWARD_CATEGORIES.find((c) => c.value === selectedType.category)?.label}
+                        {
+                          REWARD_CATEGORIES.find(
+                            (c) => c.value === selectedType.category,
+                          )?.label
+                        }
                       </Badge>
                     </div>
                     <div className="mt-2 flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Poin:</span>
-                      <span className="font-semibold text-green-600">+{selectedType.points}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Poin:
+                      </span>
+                      <span className="font-semibold text-green-600">
+                        +{selectedType.points}
+                      </span>
                     </div>
                     {selectedType.description && (
                       <p className="mt-2 text-sm text-muted-foreground">
@@ -302,7 +335,7 @@ export default function NewRewardPage() {
               <Link href="/rewards">Batal</Link>
             </Button>
             <Button type="submit" disabled={createMutation.isPending}>
-              {createMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+              {createMutation.isPending ? "Menyimpan..." : "Simpan"}
             </Button>
           </div>
         </form>

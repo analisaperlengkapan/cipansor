@@ -57,12 +57,7 @@ const router: Router = Router();
  *       200:
  *         description: List of simaan exams
  */
-router.get(
-  '/',
-  authenticate,
-  validateQuery(listSimaanQuerySchema),
-  controller.listSimaan
-);
+router.get('/', authenticate, validateQuery(listSimaanQuerySchema), controller.listSimaan);
 
 /**
  * @openapi
@@ -244,11 +239,7 @@ router.post(
  *       200:
  *         description: Student simaan summary
  */
-router.get(
-  '/students/:studentId/summary',
-  authenticate,
-  controller.getStudentSummary
-);
+router.get('/students/:studentId/summary', authenticate, controller.getStudentSummary);
 
 /**
  * @openapi
@@ -294,10 +285,6 @@ router.get(
  *       200:
  *         description: List of upcoming exams
  */
-router.get(
-  '/upcoming',
-  authenticate,
-  controller.getUpcomingExams
-);
+router.get('/upcoming', authenticate, controller.getUpcomingExams);
 
 export default router;

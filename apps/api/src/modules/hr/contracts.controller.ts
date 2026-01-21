@@ -50,11 +50,11 @@ export const contractController = {
 
   findByUser: async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { userId } = req.params;
-        const result = await contractService.findByUser(userId);
-        sendResponse(res, result, 'User contracts retrieved successfully');
+      const { userId } = req.params;
+      const result = await contractService.findByUser(userId);
+      sendResponse(res, result, 'User contracts retrieved successfully');
     } catch (error) {
-        next(error);
+      next(error);
     }
   },
 
@@ -69,5 +69,5 @@ export const contractController = {
     } catch (error) {
       next(error);
     }
-  }
+  },
 };

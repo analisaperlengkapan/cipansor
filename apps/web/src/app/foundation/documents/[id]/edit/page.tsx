@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import { use, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft, Loader2, Upload, FileText } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { use, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft, Loader2, Upload, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -17,31 +23,33 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { toast } from "sonner";
 import {
   useFoundationDocument,
   useUpdateFoundationDocument,
   DOCUMENT_TYPE_LABELS,
-} from '@/hooks';
+} from "@/hooks";
 
-const documentTypes = Object.entries(DOCUMENT_TYPE_LABELS).map(([value, label]) => ({
-  value,
-  label,
-}));
+const documentTypes = Object.entries(DOCUMENT_TYPE_LABELS).map(
+  ([value, label]) => ({
+    value,
+    label,
+  }),
+);
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Nama dokumen wajib diisi'),
-  type: z.string().min(1, 'Jenis dokumen wajib dipilih'),
+  name: z.string().min(1, "Nama dokumen wajib diisi"),
+  type: z.string().min(1, "Jenis dokumen wajib dipilih"),
   description: z.string().optional(),
   documentNumber: z.string().optional(),
   issuedDate: z.string().optional(),
@@ -65,12 +73,12 @@ export default function EditDocumentPage({ params }: PageProps) {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      type: '',
-      description: '',
-      documentNumber: '',
-      issuedDate: '',
-      expiryDate: '',
+      name: "",
+      type: "",
+      description: "",
+      documentNumber: "",
+      issuedDate: "",
+      expiryDate: "",
     },
   });
 
@@ -79,14 +87,14 @@ export default function EditDocumentPage({ params }: PageProps) {
       form.reset({
         name: document.name,
         type: document.type,
-        description: document.description || '',
-        documentNumber: document.documentNumber || '',
+        description: document.description || "",
+        documentNumber: document.documentNumber || "",
         issuedDate: document.issuedDate
-          ? new Date(document.issuedDate).toISOString().split('T')[0]
-          : '',
+          ? new Date(document.issuedDate).toISOString().split("T")[0]
+          : "",
         expiryDate: document.expiryDate
-          ? new Date(document.expiryDate).toISOString().split('T')[0]
-          : '',
+          ? new Date(document.expiryDate).toISOString().split("T")[0]
+          : "",
       });
     }
   }, [document, form]);
@@ -94,19 +102,20 @@ export default function EditDocumentPage({ params }: PageProps) {
   const onSubmit = async (data: FormData) => {
     try {
       const formData = new FormData();
-      formData.append('name', data.name);
-      formData.append('type', data.type);
-      if (data.description) formData.append('description', data.description);
-      if (data.documentNumber) formData.append('documentNumber', data.documentNumber);
-      if (data.issuedDate) formData.append('issuedDate', data.issuedDate);
-      if (data.expiryDate) formData.append('expiryDate', data.expiryDate);
-      if (file) formData.append('file', file);
+      formData.append("name", data.name);
+      formData.append("type", data.type);
+      if (data.description) formData.append("description", data.description);
+      if (data.documentNumber)
+        formData.append("documentNumber", data.documentNumber);
+      if (data.issuedDate) formData.append("issuedDate", data.issuedDate);
+      if (data.expiryDate) formData.append("expiryDate", data.expiryDate);
+      if (file) formData.append("file", file);
 
       await updateDocument.mutateAsync({ id: documentId, data: formData });
-      toast.success('Dokumen berhasil diperbarui');
-      router.push('/foundation?tab=documents');
+      toast.success("Dokumen berhasil diperbarui");
+      router.push("/foundation?tab=documents");
     } catch {
-      toast.error('Gagal memperbarui dokumen');
+      toast.error("Gagal memperbarui dokumen");
     }
   };
 
@@ -159,7 +168,10 @@ export default function EditDocumentPage({ params }: PageProps) {
                     <FormItem>
                       <FormLabel>Nama Dokumen</FormLabel>
                       <FormControl>
-                        <Input placeholder="Akta Pendirian Yayasan" {...field} />
+                        <Input
+                          placeholder="Akta Pendirian Yayasan"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -172,7 +184,10 @@ export default function EditDocumentPage({ params }: PageProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Jenis Dokumen</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih jenis dokumen" />
@@ -273,7 +288,7 @@ export default function EditDocumentPage({ params }: PageProps) {
                       <FileText className="h-8 w-8 text-muted-foreground" />
                       <div className="flex-1">
                         <p className="text-sm font-medium">
-                          {document.fileUrl.split('/').pop()}
+                          {document.fileUrl.split("/").pop()}
                         </p>
                         <a
                           href={document.fileUrl}
@@ -290,7 +305,9 @@ export default function EditDocumentPage({ params }: PageProps) {
 
                 {/* Upload New File */}
                 <div className="space-y-2">
-                  <FormLabel>{file ? 'File Baru' : 'Ganti File (Opsional)'}</FormLabel>
+                  <FormLabel>
+                    {file ? "File Baru" : "Ganti File (Opsional)"}
+                  </FormLabel>
                   <div className="border-2 border-dashed rounded-lg p-6 text-center">
                     {file ? (
                       <div className="space-y-2">
@@ -324,7 +341,7 @@ export default function EditDocumentPage({ params }: PageProps) {
                             const selectedFile = e.target.files?.[0];
                             if (selectedFile) {
                               if (selectedFile.size > 10 * 1024 * 1024) {
-                                toast.error('Ukuran file maksimal 10MB');
+                                toast.error("Ukuran file maksimal 10MB");
                                 return;
                               }
                               setFile(selectedFile);
@@ -345,7 +362,9 @@ export default function EditDocumentPage({ params }: PageProps) {
               Batal
             </Button>
             <Button type="submit" disabled={updateDocument.isPending}>
-              {updateDocument.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {updateDocument.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Simpan Perubahan
             </Button>
           </div>

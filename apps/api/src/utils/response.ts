@@ -37,7 +37,11 @@ export const ApiResponse = {
   /**
    * Error response
    */
-  error(message: string, code: string = 'ERROR', details?: Array<{ field: string; message: string }>): ApiResponseData {
+  error(
+    message: string,
+    code: string = 'ERROR',
+    details?: Array<{ field: string; message: string }>
+  ): ApiResponseData {
     return {
       success: false,
       error: {
@@ -51,7 +55,13 @@ export const ApiResponse = {
   /**
    * Paginated response
    */
-  paginated<T>(data: T[], page: number, limit: number, total: number, message?: string): ApiResponseData<T[]> {
+  paginated<T>(
+    data: T[],
+    page: number,
+    limit: number,
+    total: number,
+    message?: string
+  ): ApiResponseData<T[]> {
     return {
       success: true,
       data,

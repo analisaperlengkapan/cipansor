@@ -36,11 +36,13 @@ vi.mock('@prisma/client', () => {
       medicalRecord = mockMedicalRecord;
       medication = mockMedication;
       medicationUsageLog = mockMedicationUsageLog;
-      $transaction = vi.fn((callback) => callback({
-        medicalRecord: mockMedicalRecord,
-        medication: mockMedication,
-        medicationUsageLog: mockMedicationUsageLog,
-      }));
+      $transaction = vi.fn((callback) =>
+        callback({
+          medicalRecord: mockMedicalRecord,
+          medication: mockMedication,
+          medicationUsageLog: mockMedicationUsageLog,
+        })
+      );
     },
     Prisma: {},
   };
@@ -53,11 +55,13 @@ vi.mock('../../../../../src/lib/prisma', () => {
       medicalRecord: mockMedicalRecord,
       medication: mockMedication,
       medicationUsageLog: mockMedicationUsageLog,
-      $transaction: vi.fn((callback) => callback({
-        medicalRecord: mockMedicalRecord,
-        medication: mockMedication,
-        medicationUsageLog: mockMedicationUsageLog,
-      })),
+      $transaction: vi.fn((callback) =>
+        callback({
+          medicalRecord: mockMedicalRecord,
+          medication: mockMedication,
+          medicationUsageLog: mockMedicationUsageLog,
+        })
+      ),
     },
   };
 });
@@ -103,10 +107,12 @@ describe('Health Service', () => {
       expect(record.status).toBe('HEALTHY'); // Check value from DB
       expect(record.notes).toBe('Regular checkup');
 
-      expect(mockMedicalRecord.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        skip: 0,
-        take: 10,
-      }));
+      expect(mockMedicalRecord.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skip: 0,
+          take: 10,
+        })
+      );
     });
   });
 
@@ -148,15 +154,17 @@ describe('Health Service', () => {
       expect(result.temperature).toBe(38.5);
 
       // Verify create arguments use proper columns
-      expect(mockMedicalRecord.create).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({
-          studentId: 'student-1',
-          complaint: 'Fever',
-          temperature: 38.5,
-          status: 'SICK',
-          notes: 'Patient looks pale',
-        }),
-      }));
+      expect(mockMedicalRecord.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            studentId: 'student-1',
+            complaint: 'Fever',
+            temperature: 38.5,
+            status: 'SICK',
+            notes: 'Patient looks pale',
+          }),
+        })
+      );
     });
   });
 
@@ -178,13 +186,15 @@ describe('Health Service', () => {
 
       const result = await service.updateMedicalRecord('1', updateInput);
 
-      expect(mockMedicalRecord.update).toHaveBeenCalledWith(expect.objectContaining({
-        where: { id: '1' },
-        data: expect.objectContaining({
-          notes: 'New notes',
-          temperature: 37.0,
+      expect(mockMedicalRecord.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: '1' },
+          data: expect.objectContaining({
+            notes: 'New notes',
+            temperature: 37.0,
+          }),
         })
-      }));
+      );
 
       expect(result.temperature).toBe(37.0);
     });

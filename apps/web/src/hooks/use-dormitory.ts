@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { ApiResponse, PaginatedResponse } from "@/lib/api";
 
 // Dormitory (Asrama) entity
 export interface Dormitory {
@@ -26,11 +26,11 @@ export interface Dormitory {
   updatedAt: string;
 }
 
-export type DormitoryType = 'MALE' | 'FEMALE';
+export type DormitoryType = "MALE" | "FEMALE";
 
 export const DORMITORY_TYPES: { value: DormitoryType; label: string }[] = [
-  { value: 'MALE', label: 'Putra' },
-  { value: 'FEMALE', label: 'Putri' },
+  { value: "MALE", label: "Putra" },
+  { value: "FEMALE", label: "Putri" },
 ];
 
 // Room entity
@@ -76,9 +76,12 @@ export interface DormitoryParams {
 
 export function useDormitories(params: DormitoryParams = {}) {
   return useQuery({
-    queryKey: ['dormitories', params],
+    queryKey: ["dormitories", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Dormitory>>('/dormitories', { params });
+      const response = await api.get<PaginatedResponse<Dormitory>>(
+        "/dormitories",
+        { params },
+      );
       return response.data;
     },
   });
@@ -86,9 +89,11 @@ export function useDormitories(params: DormitoryParams = {}) {
 
 export function useDormitory(id: string) {
   return useQuery({
-    queryKey: ['dormitories', id],
+    queryKey: ["dormitories", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Dormitory>>(`/dormitories/${id}`);
+      const response = await api.get<ApiResponse<Dormitory>>(
+        `/dormitories/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -112,11 +117,14 @@ export function useCreateDormitory() {
 
   return useMutation({
     mutationFn: async (data: CreateDormitoryData) => {
-      const response = await api.post<ApiResponse<Dormitory>>('/dormitories', data);
+      const response = await api.post<ApiResponse<Dormitory>>(
+        "/dormitories",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dormitories'] });
+      queryClient.invalidateQueries({ queryKey: ["dormitories"] });
     },
   });
 }
@@ -125,13 +133,24 @@ export function useUpdateDormitory() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateDormitoryData> }) => {
-      const response = await api.patch<ApiResponse<Dormitory>>(`/dormitories/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateDormitoryData>;
+    }) => {
+      const response = await api.patch<ApiResponse<Dormitory>>(
+        `/dormitories/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['dormitories'] });
-      queryClient.invalidateQueries({ queryKey: ['dormitories', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["dormitories"] });
+      queryClient.invalidateQueries({
+        queryKey: ["dormitories", variables.id],
+      });
     },
   });
 }
@@ -144,7 +163,7 @@ export function useDeleteDormitory() {
       await api.delete(`/dormitories/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dormitories'] });
+      queryClient.invalidateQueries({ queryKey: ["dormitories"] });
     },
   });
 }
@@ -160,9 +179,11 @@ export interface RoomParams {
 
 export function useRooms(params: RoomParams = {}) {
   return useQuery({
-    queryKey: ['rooms', params],
+    queryKey: ["rooms", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Room>>('/rooms', { params });
+      const response = await api.get<PaginatedResponse<Room>>("/rooms", {
+        params,
+      });
       return response.data;
     },
   });
@@ -170,7 +191,7 @@ export function useRooms(params: RoomParams = {}) {
 
 export function useRoom(id: string) {
   return useQuery({
-    queryKey: ['rooms', id],
+    queryKey: ["rooms", id],
     queryFn: async () => {
       const response = await api.get<ApiResponse<Room>>(`/rooms/${id}`);
       return response.data.data;
@@ -181,9 +202,11 @@ export function useRoom(id: string) {
 
 export function useDormitoryRooms(dormitoryId: string) {
   return useQuery({
-    queryKey: ['dormitories', dormitoryId, 'rooms'],
+    queryKey: ["dormitories", dormitoryId, "rooms"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Room[]>>(`/dormitories/${dormitoryId}/rooms`);
+      const response = await api.get<ApiResponse<Room[]>>(
+        `/dormitories/${dormitoryId}/rooms`,
+      );
       return response.data.data;
     },
     enabled: !!dormitoryId,
@@ -203,12 +226,14 @@ export function useCreateRoom() {
 
   return useMutation({
     mutationFn: async (data: CreateRoomData) => {
-      const response = await api.post<ApiResponse<Room>>('/rooms', data);
+      const response = await api.post<ApiResponse<Room>>("/rooms", data);
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      queryClient.invalidateQueries({ queryKey: ['dormitories', variables.dormitoryId, 'rooms'] });
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({
+        queryKey: ["dormitories", variables.dormitoryId, "rooms"],
+      });
     },
   });
 }
@@ -217,13 +242,19 @@ export function useUpdateRoom() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateRoomData> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateRoomData>;
+    }) => {
       const response = await api.patch<ApiResponse<Room>>(`/rooms/${id}`, data);
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      queryClient.invalidateQueries({ queryKey: ['rooms', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["rooms", variables.id] });
     },
   });
 }
@@ -236,7 +267,7 @@ export function useDeleteRoom() {
       await api.delete(`/rooms/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
     },
   });
 }
@@ -244,9 +275,11 @@ export function useDeleteRoom() {
 // Room Assignment hooks
 export function useRoomAssignments(roomId: string) {
   return useQuery({
-    queryKey: ['rooms', roomId, 'assignments'],
+    queryKey: ["rooms", roomId, "assignments"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<RoomAssignment[]>>(`/rooms/${roomId}/assignments`);
+      const response = await api.get<ApiResponse<RoomAssignment[]>>(
+        `/rooms/${roomId}/assignments`,
+      );
       return response.data.data;
     },
     enabled: !!roomId,
@@ -255,10 +288,10 @@ export function useRoomAssignments(roomId: string) {
 
 export function useStudentRoomAssignment(studentId: string) {
   return useQuery({
-    queryKey: ['students', studentId, 'room-assignment'],
+    queryKey: ["students", studentId, "room-assignment"],
     queryFn: async () => {
       const response = await api.get<ApiResponse<RoomAssignment | null>>(
-        `/students/${studentId}/room-assignment`
+        `/students/${studentId}/room-assignment`,
       );
       return response.data.data;
     },
@@ -278,14 +311,21 @@ export function useAssignRoom() {
 
   return useMutation({
     mutationFn: async (data: AssignRoomData) => {
-      const response = await api.post<ApiResponse<RoomAssignment>>('/room-assignments', data);
+      const response = await api.post<ApiResponse<RoomAssignment>>(
+        "/room-assignments",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['rooms', variables.roomId, 'assignments'] });
-      queryClient.invalidateQueries({ queryKey: ['students', variables.studentId, 'room-assignment'] });
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      queryClient.invalidateQueries({ queryKey: ['dormitories'] });
+      queryClient.invalidateQueries({
+        queryKey: ["rooms", variables.roomId, "assignments"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["students", variables.studentId, "room-assignment"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["dormitories"] });
     },
   });
 }
@@ -298,8 +338,8 @@ export function useUnassignRoom() {
       await api.delete(`/room-assignments/${assignmentId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      queryClient.invalidateQueries({ queryKey: ['dormitories'] });
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["dormitories"] });
     },
   });
 }

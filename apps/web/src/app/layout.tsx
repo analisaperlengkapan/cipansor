@@ -20,7 +20,13 @@ export const metadata: Metadata = {
   title: "Cipansor - Pesantren Management System",
   description: "Yayasan Pesantren Cipansor Management System",
   applicationName: "Cipansor",
-  keywords: ["pesantren", "management", "system", "education", "islamic school"],
+  keywords: [
+    "pesantren",
+    "management",
+    "system",
+    "education",
+    "islamic school",
+  ],
   authors: [{ name: "Cipansor Team" }],
   creator: "Cipansor Team",
   publisher: "Yayasan Pesantren Cipansor",
@@ -57,9 +63,7 @@ export default function RootLayout({
         <QueryProvider>
           <SkipLink />
           <OfflineBanner />
-          <main id="main-content">
-            {children}
-          </main>
+          <main id="main-content">{children}</main>
           <Toaster />
         </QueryProvider>
       </body>

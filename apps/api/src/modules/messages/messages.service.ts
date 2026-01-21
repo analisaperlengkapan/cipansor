@@ -159,9 +159,7 @@ export class MessagesService {
 
     // Determine recipient (the other party)
     const recipientId =
-      parentMessage.senderId === senderId
-        ? parentMessage.recipientId
-        : parentMessage.senderId;
+      parentMessage.senderId === senderId ? parentMessage.recipientId : parentMessage.senderId;
 
     const reply = await prisma.message.create({
       data: {

@@ -1,15 +1,20 @@
 export type ReportType =
-  | 'STUDENT_STATISTICS'
-  | 'ATTENDANCE_SUMMARY'
-  | 'FINANCE_REPORT'
-  | 'ACADEMIC_PERFORMANCE'
-  | 'TAHFIDZ_PROGRESS'
-  | 'HEALTH_SUMMARY'
-  | 'VIOLATION_SUMMARY'
-  | 'LIBRARY_STATISTICS'
-  | 'PSB_STATISTICS';
+  | "STUDENT_STATISTICS"
+  | "ATTENDANCE_SUMMARY"
+  | "FINANCE_REPORT"
+  | "ACADEMIC_PERFORMANCE"
+  | "TAHFIDZ_PROGRESS"
+  | "HEALTH_SUMMARY"
+  | "VIOLATION_SUMMARY"
+  | "LIBRARY_STATISTICS"
+  | "PSB_STATISTICS";
 
-export type TimeRange = 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY' | 'CUSTOM';
+export type TimeRange =
+  | "WEEKLY"
+  | "MONTHLY"
+  | "QUARTERLY"
+  | "YEARLY"
+  | "CUSTOM";
 
 export interface ReportFilter {
   reportType?: ReportType;
@@ -221,22 +226,22 @@ export interface DashboardSummary {
 }
 
 export interface AlertRule {
-    id: string;
-    name: string;
-    type: 'attendance' | 'payment' | 'academic' | 'behavior';
-    threshold: number;
-    operator: 'lt' | 'lte' | 'gt' | 'gte' | 'eq';
-    action: 'notify' | 'email' | 'whatsapp' | 'all';
-    recipients: 'parent' | 'teacher' | 'admin' | 'all';
-    enabled: boolean;
+  id: string;
+  name: string;
+  type: "attendance" | "payment" | "academic" | "behavior";
+  threshold: number;
+  operator: "lt" | "lte" | "gt" | "gte" | "eq";
+  action: "notify" | "email" | "whatsapp" | "all";
+  recipients: "parent" | "teacher" | "admin" | "all";
+  enabled: boolean;
 }
 
 export interface AlertTrigger {
-    ruleId: string;
-    studentId: string;
-    studentName: string;
-    value: number;
-    threshold: number;
-    message: string;
-    triggeredAt: string;
+  ruleId: string;
+  studentId: string;
+  studentName: string;
+  value: number;
+  threshold: number;
+  message: string;
+  triggeredAt: string;
 }

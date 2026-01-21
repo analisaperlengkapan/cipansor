@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
@@ -12,10 +12,7 @@ interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
 export function Skeleton({ className, ...props }: SkeletonProps) {
   return (
     <div
-      className={cn(
-        'animate-pulse rounded-md bg-muted',
-        className
-      )}
+      className={cn("animate-pulse rounded-md bg-muted", className)}
       {...props}
     />
   );
@@ -24,11 +21,11 @@ export function Skeleton({ className, ...props }: SkeletonProps) {
 /**
  * Table skeleton for data loading
  */
-export function TableSkeleton({ 
-  rows = 5, 
-  columns = 5 
-}: { 
-  rows?: number; 
+export function TableSkeleton({
+  rows = 5,
+  columns = 5,
+}: {
+  rows?: number;
   columns?: number;
 }) {
   return (
@@ -46,8 +43,8 @@ export function TableSkeleton({
         <div key={rowIndex} className="border-b last:border-0 p-4">
           <div className="flex gap-4">
             {Array.from({ length: columns }).map((_, colIndex) => (
-              <Skeleton 
-                key={colIndex} 
+              <Skeleton
+                key={colIndex}
                 className="h-4 flex-1"
                 // Using standard CSS width instead of random for stable rendering
                 style={{ width: `${60 + ((rowIndex + colIndex) % 5) * 10}%` }}
@@ -153,10 +150,7 @@ export function ListSkeleton({ items = 5 }: { items?: number }) {
   return (
     <div className="space-y-3">
       {Array.from({ length: items }).map((_, i) => (
-        <div 
-          key={i} 
-          className="flex items-center gap-4 rounded-lg border p-4"
-        >
+        <div key={i} className="flex items-center gap-4 rounded-lg border p-4">
           <Skeleton className="h-10 w-10 rounded-full" />
           <div className="flex-1 space-y-2">
             <Skeleton className="h-4 w-3/4" />
@@ -174,15 +168,12 @@ export function ListSkeleton({ items = 5 }: { items?: number }) {
  */
 export function ChartSkeleton({ height = 300 }: { height?: number }) {
   return (
-    <div 
-      className="rounded-lg border bg-card p-6"
-      style={{ height }}
-    >
+    <div className="rounded-lg border bg-card p-6" style={{ height }}>
       <Skeleton className="mb-4 h-5 w-32" />
       <div className="flex h-full items-end gap-2 pb-8">
         {Array.from({ length: 12 }).map((_, i) => (
-          <div 
-            key={i} 
+          <div
+            key={i}
             className="flex-1"
             style={{ height: `${20 + (i % 6) * 10}%` }}
           >

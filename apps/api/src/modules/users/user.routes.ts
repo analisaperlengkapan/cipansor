@@ -2,7 +2,12 @@ import { Router } from 'express';
 import { authenticate, isAdmin } from '@/middleware/auth';
 import { validate, validateQuery, validateParams } from '@/middleware/error';
 import * as controller from './user.controller';
-import { createUserSchema, updateUserSchema, listUsersQuerySchema, userIdParamSchema } from './user.schema';
+import {
+  createUserSchema,
+  updateUserSchema,
+  listUsersQuerySchema,
+  userIdParamSchema,
+} from './user.schema';
 
 const router = Router();
 
@@ -199,7 +204,12 @@ router.post('/', isAdmin, validate(createUserSchema), controller.create);
  *       400:
  *         $ref: '#/components/responses/ValidationError'
  */
-router.put('/:id', validateParams(userIdParamSchema), validate(updateUserSchema), controller.update);
+router.put(
+  '/:id',
+  validateParams(userIdParamSchema),
+  validate(updateUserSchema),
+  controller.update
+);
 
 /**
  * @swagger

@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { use } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { use } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   BookOpen,
   Pencil,
@@ -15,21 +15,16 @@ import {
   Smile,
   Heart,
   Star,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   useMuhasabahRecord,
   useDeleteMuhasabah,
@@ -37,8 +32,8 @@ import {
   SHOLAT_WAJIB,
   SHOLAT_SUNNAH,
   calculateSholatCompletion,
-} from '@/hooks/use-muhasabah';
-import { useState } from 'react';
+} from "@/hooks/use-muhasabah";
+import { useState } from "react";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -54,10 +49,11 @@ export default function MuhasabahDetailPage({ params }: Props) {
   const handleDelete = async () => {
     try {
       await deleteMuhasabah.mutateAsync(id);
-      toast.success('Data muhasabah berhasil dihapus');
-      router.push('/muhasabah');
+      toast.success("Data muhasabah berhasil dihapus");
+      router.push("/muhasabah");
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal menghapus data';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal menghapus data";
       toast.error(errorMessage);
     }
   };
@@ -81,7 +77,9 @@ export default function MuhasabahDetailPage({ params }: Props) {
       <MainLayout>
         <div className="text-center py-12">
           <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">Data muhasabah tidak ditemukan</p>
+          <p className="text-muted-foreground">
+            Data muhasabah tidak ditemukan
+          </p>
           <Button asChild className="mt-4">
             <Link href="/muhasabah">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -94,14 +92,16 @@ export default function MuhasabahDetailPage({ params }: Props) {
   }
 
   const moodConfig = getMoodConfig(muhasabah.mood);
-  const sholatWajibCount = SHOLAT_WAJIB.filter(s => muhasabah[s.key]).length;
-  const sholatSunnahCount = SHOLAT_SUNNAH.filter(s => muhasabah[s.key]).length;
+  const sholatWajibCount = SHOLAT_WAJIB.filter((s) => muhasabah[s.key]).length;
+  const sholatSunnahCount = SHOLAT_SUNNAH.filter(
+    (s) => muhasabah[s.key],
+  ).length;
   const sholatPercentage = calculateSholatCompletion(muhasabah);
 
   return (
     <MainLayout>
       <PageHeader
-        title={`Muhasabah ${format(new Date(muhasabah.date), 'EEEE, d MMMM yyyy', { locale: localeId })}`}
+        title={`Muhasabah ${format(new Date(muhasabah.date), "EEEE, d MMMM yyyy", { locale: localeId })}`}
         description="Detail catatan muhasabah harian"
         backHref="/muhasabah"
         backLabel="Kembali"
@@ -147,8 +147,8 @@ export default function MuhasabahDetailPage({ params }: Props) {
                       key={sholat.key}
                       className={`p-4 rounded-lg text-center ${
                         completed
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-                          : 'bg-muted text-muted-foreground'
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+                          : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {completed ? (
@@ -173,7 +173,9 @@ export default function MuhasabahDetailPage({ params }: Props) {
                   <Star className="h-5 w-5 text-yellow-500" />
                   Sholat Sunnah
                 </span>
-                <Badge variant="secondary">{sholatSunnahCount} dilaksanakan</Badge>
+                <Badge variant="secondary">
+                  {sholatSunnahCount} dilaksanakan
+                </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -183,8 +185,10 @@ export default function MuhasabahDetailPage({ params }: Props) {
                   return (
                     <Badge
                       key={sholat.key}
-                      variant={completed ? 'default' : 'outline'}
-                      className={completed ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
+                      variant={completed ? "default" : "outline"}
+                      className={
+                        completed ? "bg-yellow-500 hover:bg-yellow-600" : ""
+                      }
                     >
                       {sholat.label}
                     </Badge>
@@ -212,9 +216,14 @@ export default function MuhasabahDetailPage({ params }: Props) {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="font-medium">Tilawah Al-Qur&apos;an</span>
-                  <span className="text-muted-foreground">{muhasabah.tilawahPages || 0} halaman</span>
+                  <span className="text-muted-foreground">
+                    {muhasabah.tilawahPages || 0} halaman
+                  </span>
                 </div>
-                <Progress value={Math.min((muhasabah.tilawahPages || 0) * 5, 100)} className="h-2" />
+                <Progress
+                  value={Math.min((muhasabah.tilawahPages || 0) * 5, 100)}
+                  className="h-2"
+                />
               </div>
 
               {/* Dzikir Pagi */}
@@ -260,7 +269,9 @@ export default function MuhasabahDetailPage({ params }: Props) {
           </Card>
 
           {/* Reflection */}
-          {(muhasabah.gratitude || muhasabah.improvement || muhasabah.notes) && (
+          {(muhasabah.gratitude ||
+            muhasabah.improvement ||
+            muhasabah.notes) && (
             <Card>
               <CardHeader>
                 <CardTitle>Refleksi Diri</CardTitle>
@@ -279,7 +290,9 @@ export default function MuhasabahDetailPage({ params }: Props) {
                     <h4 className="font-medium text-sm text-muted-foreground mb-1">
                       Perbaikan yang Perlu Dilakukan
                     </h4>
-                    <p className="whitespace-pre-line">{muhasabah.improvement}</p>
+                    <p className="whitespace-pre-line">
+                      {muhasabah.improvement}
+                    </p>
                   </div>
                 )}
                 {muhasabah.notes && (
@@ -308,7 +321,9 @@ export default function MuhasabahDetailPage({ params }: Props) {
             <CardContent>
               <div className="text-center">
                 <span className="text-6xl">{moodConfig.emoji}</span>
-                <p className={`mt-2 font-medium ${moodConfig.color}`}>{moodConfig.label}</p>
+                <p className={`mt-2 font-medium ${moodConfig.color}`}>
+                  {moodConfig.label}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -337,7 +352,9 @@ export default function MuhasabahDetailPage({ params }: Props) {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Tilawah</span>
-                  <span className="font-medium">{muhasabah.tilawahPages || 0} hal</span>
+                  <span className="font-medium">
+                    {muhasabah.tilawahPages || 0} hal
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -352,20 +369,28 @@ export default function MuhasabahDetailPage({ params }: Props) {
               <div>
                 <p className="text-sm text-muted-foreground">Tanggal</p>
                 <p className="font-medium">
-                  {format(new Date(muhasabah.date), 'EEEE, d MMMM yyyy', { locale: localeId })}
+                  {format(new Date(muhasabah.date), "EEEE, d MMMM yyyy", {
+                    locale: localeId,
+                  })}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Dicatat</p>
                 <p className="font-medium">
-                  {format(new Date(muhasabah.createdAt), 'd MMM yyyy HH:mm', { locale: localeId })}
+                  {format(new Date(muhasabah.createdAt), "d MMM yyyy HH:mm", {
+                    locale: localeId,
+                  })}
                 </p>
               </div>
               {muhasabah.updatedAt !== muhasabah.createdAt && (
                 <div>
-                  <p className="text-sm text-muted-foreground">Terakhir diubah</p>
+                  <p className="text-sm text-muted-foreground">
+                    Terakhir diubah
+                  </p>
                   <p className="font-medium">
-                    {format(new Date(muhasabah.updatedAt), 'd MMM yyyy HH:mm', { locale: localeId })}
+                    {format(new Date(muhasabah.updatedAt), "d MMM yyyy HH:mm", {
+                      locale: localeId,
+                    })}
                   </p>
                 </div>
               )}

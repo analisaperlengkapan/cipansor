@@ -83,8 +83,8 @@ export const getDashboardStats = async (unitId?: string) => {
   const sources = await prisma.registrant.groupBy({
     by: ['source'],
     where: {
-       ...whereRegistrant,
-       source: { not: null }
+      ...whereRegistrant,
+      source: { not: null },
     },
     _count: {
       _all: true,
@@ -106,17 +106,17 @@ export const getDashboardStats = async (unitId?: string) => {
     take: 5,
     orderBy: {
       registrants: {
-        _count: 'desc'
-      }
-    }
+        _count: 'desc',
+      },
+    },
   });
 
   // 3. Conversion Rates (Registered vs Accepted) by Source
   // This is complex, simplified here
 
   return {
-    sources: sources.map(s => ({ source: s.source, count: s._count._all })),
-    topCampaigns: campaigns.map(c => ({
+    sources: sources.map((s) => ({ source: s.source, count: s._count._all })),
+    topCampaigns: campaigns.map((c) => ({
       name: c.name,
       code: c.code,
       registrants: c._count.registrants,
@@ -142,9 +142,9 @@ export const getRecentLeads = async (unitId?: string, limit: number = 5) => {
       status: true,
       source: true,
       campaign: {
-        select: { name: true, code: true }
-      }
-    }
+        select: { name: true, code: true },
+      },
+    },
   });
 };
 
@@ -157,7 +157,7 @@ export const getUpcomingFollowUps = async (unitId?: string, limit: number = 5) =
   return prisma.marketingInteraction.findMany({
     where: {
       nextActionDate: { gte: new Date() },
-      registrant: whereRegistrant
+      registrant: whereRegistrant,
     },
     orderBy: { nextActionDate: 'asc' },
     take: limit,
@@ -168,9 +168,9 @@ export const getUpcomingFollowUps = async (unitId?: string, limit: number = 5) =
           fullName: true,
           parentPhone: true,
           status: true,
-        }
-      }
-    }
+        },
+      },
+    },
   });
 };
 

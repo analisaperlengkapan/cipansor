@@ -1,22 +1,28 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Form,
   FormControl,
@@ -24,7 +30,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   useAlumniDetail,
   useUpdateAlumni,
@@ -32,42 +38,44 @@ import {
   EDUCATION_LEVEL_LABELS,
   EMPLOYMENT_STATUSES,
   EMPLOYMENT_STATUS_LABELS,
-} from '@/hooks';
-import { useUnits } from '@/hooks';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
-import Link from 'next/link';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
+} from "@/hooks";
+import { useUnits } from "@/hooks";
+import { ArrowLeft, Loader2, Save } from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
+import { format } from "date-fns";
 
 const alumniSchema = z.object({
-  fullName: z.string().min(1, 'Nama lengkap wajib diisi'),
-  gender: z.enum(['MALE', 'FEMALE'], { required_error: 'Jenis kelamin wajib dipilih' }),
-  birthPlace: z.string().min(1, 'Tempat lahir wajib diisi'),
-  birthDate: z.string().min(1, 'Tanggal lahir wajib diisi'),
-  phone: z.string().min(1, 'Nomor telepon wajib diisi'),
-  email: z.string().email('Email tidak valid'),
+  fullName: z.string().min(1, "Nama lengkap wajib diisi"),
+  gender: z.enum(["MALE", "FEMALE"], {
+    required_error: "Jenis kelamin wajib dipilih",
+  }),
+  birthPlace: z.string().min(1, "Tempat lahir wajib diisi"),
+  birthDate: z.string().min(1, "Tanggal lahir wajib diisi"),
+  phone: z.string().min(1, "Nomor telepon wajib diisi"),
+  email: z.string().email("Email tidak valid"),
   address: z.string().optional(),
   city: z.string().optional(),
   province: z.string().optional(),
-  
+
   graduationYear: z.number().min(1900).max(new Date().getFullYear()),
-  unitId: z.string().min(1, 'Unit asal wajib dipilih'),
-  
+  unitId: z.string().min(1, "Unit asal wajib dipilih"),
+
   currentEducation: z.string().optional(),
   educationInstitution: z.string().optional(),
   educationMajor: z.string().optional(),
   educationYear: z.string().optional(),
-  
+
   employmentStatus: z.string().optional(),
   companyName: z.string().optional(),
   position: z.string().optional(),
   industry: z.string().optional(),
   workCity: z.string().optional(),
-  
-  linkedinUrl: z.string().url().optional().or(z.literal('')),
+
+  linkedinUrl: z.string().url().optional().or(z.literal("")),
   instagramUrl: z.string().optional(),
   facebookUrl: z.string().optional(),
-  
+
   bio: z.string().optional(),
 });
 
@@ -90,30 +98,30 @@ export default function EditAlumniPage() {
   const form = useForm<AlumniFormData>({
     resolver: zodResolver(alumniSchema),
     defaultValues: {
-      fullName: '',
+      fullName: "",
       gender: undefined,
-      birthPlace: '',
-      birthDate: '',
-      phone: '',
-      email: '',
-      address: '',
-      city: '',
-      province: '',
+      birthPlace: "",
+      birthDate: "",
+      phone: "",
+      email: "",
+      address: "",
+      city: "",
+      province: "",
       graduationYear: currentYear,
-      unitId: '',
-      currentEducation: '',
-      educationInstitution: '',
-      educationMajor: '',
-      educationYear: '',
-      employmentStatus: '',
-      companyName: '',
-      position: '',
-      industry: '',
-      workCity: '',
-      linkedinUrl: '',
-      instagramUrl: '',
-      facebookUrl: '',
-      bio: '',
+      unitId: "",
+      currentEducation: "",
+      educationInstitution: "",
+      educationMajor: "",
+      educationYear: "",
+      employmentStatus: "",
+      companyName: "",
+      position: "",
+      industry: "",
+      workCity: "",
+      linkedinUrl: "",
+      instagramUrl: "",
+      facebookUrl: "",
+      bio: "",
     },
   });
 
@@ -123,27 +131,29 @@ export default function EditAlumniPage() {
         fullName: alumni.fullName,
         gender: alumni.gender,
         birthPlace: alumni.birthPlace,
-        birthDate: alumni.birthDate ? format(new Date(alumni.birthDate), 'yyyy-MM-dd') : '',
-        phone: alumni.phone || '',
-        email: alumni.email || '',
-        address: alumni.address || '',
-        city: alumni.city || '',
-        province: alumni.province || '',
+        birthDate: alumni.birthDate
+          ? format(new Date(alumni.birthDate), "yyyy-MM-dd")
+          : "",
+        phone: alumni.phone || "",
+        email: alumni.email || "",
+        address: alumni.address || "",
+        city: alumni.city || "",
+        province: alumni.province || "",
         graduationYear: alumni.graduationYear,
-        unitId: alumni.unitId || alumni.unit?.id || '',
-        currentEducation: alumni.currentEducation || '',
-        educationInstitution: alumni.educationInstitution || '',
-        educationMajor: alumni.educationMajor || '',
-        educationYear: alumni.educationYear ? String(alumni.educationYear) : '',
-        employmentStatus: alumni.employmentStatus || '',
-        companyName: alumni.companyName || alumni.currentCompany || '',
-        position: alumni.position || alumni.currentOccupation || '',
-        industry: alumni.industry || '',
-        workCity: alumni.workCity || alumni.currentCity || '',
-        linkedinUrl: alumni.linkedinUrl || '',
-        instagramUrl: alumni.instagramUrl || '',
-        facebookUrl: alumni.facebookUrl || '',
-        bio: alumni.bio || '',
+        unitId: alumni.unitId || alumni.unit?.id || "",
+        currentEducation: alumni.currentEducation || "",
+        educationInstitution: alumni.educationInstitution || "",
+        educationMajor: alumni.educationMajor || "",
+        educationYear: alumni.educationYear ? String(alumni.educationYear) : "",
+        employmentStatus: alumni.employmentStatus || "",
+        companyName: alumni.companyName || alumni.currentCompany || "",
+        position: alumni.position || alumni.currentOccupation || "",
+        industry: alumni.industry || "",
+        workCity: alumni.workCity || alumni.currentCity || "",
+        linkedinUrl: alumni.linkedinUrl || "",
+        instagramUrl: alumni.instagramUrl || "",
+        facebookUrl: alumni.facebookUrl || "",
+        bio: alumni.bio || "",
       });
     }
   }, [alumni, form]);
@@ -152,22 +162,24 @@ export default function EditAlumniPage() {
     try {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
-        if (value !== undefined && value !== '') {
+        if (value !== undefined && value !== "") {
           formData.append(key, String(value));
         }
       });
 
       await updateMutation.mutateAsync({ id, data: formData });
-      toast.success('Data alumni berhasil diperbarui');
+      toast.success("Data alumni berhasil diperbarui");
       router.push(`/alumni/${id}`);
     } catch {
-      toast.error('Gagal memperbarui data alumni');
+      toast.error("Gagal memperbarui data alumni");
     }
   };
 
   const nextStep = async () => {
     const fieldsToValidate = getFieldsForStep(step);
-    const isValid = await form.trigger(fieldsToValidate as (keyof AlumniFormData)[]);
+    const isValid = await form.trigger(
+      fieldsToValidate as (keyof AlumniFormData)[],
+    );
     if (isValid) {
       setStep(step + 1);
     }
@@ -180,7 +192,16 @@ export default function EditAlumniPage() {
   const getFieldsForStep = (stepNumber: number): string[] => {
     switch (stepNumber) {
       case 1:
-        return ['fullName', 'gender', 'birthPlace', 'birthDate', 'phone', 'email', 'graduationYear', 'unitId'];
+        return [
+          "fullName",
+          "gender",
+          "birthPlace",
+          "birthDate",
+          "phone",
+          "email",
+          "graduationYear",
+          "unitId",
+        ];
       case 2:
         return [];
       case 3:
@@ -237,7 +258,7 @@ export default function EditAlumniPage() {
             <div
               key={i}
               className={`h-2 flex-1 rounded-full ${
-                i + 1 <= step ? 'bg-primary' : 'bg-muted'
+                i + 1 <= step ? "bg-primary" : "bg-muted"
               }`}
             />
           ))}
@@ -250,9 +271,7 @@ export default function EditAlumniPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Data Pribadi</CardTitle>
-                  <CardDescription>
-                    Informasi dasar alumni
-                  </CardDescription>
+                  <CardDescription>Informasi dasar alumni</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
@@ -276,7 +295,10 @@ export default function EditAlumniPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Jenis Kelamin *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Pilih jenis kelamin" />
@@ -341,7 +363,11 @@ export default function EditAlumniPage() {
                         <FormItem>
                           <FormLabel>Email *</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="email@example.com" {...field} />
+                            <Input
+                              type="email"
+                              placeholder="email@example.com"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -383,7 +409,10 @@ export default function EditAlumniPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Unit Asal *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Pilih unit" />
@@ -468,7 +497,10 @@ export default function EditAlumniPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Status Pekerjaan</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Pilih status" />
@@ -507,7 +539,10 @@ export default function EditAlumniPage() {
                           <FormItem>
                             <FormLabel>Jabatan</FormLabel>
                             <FormControl>
-                              <Input placeholder="Software Engineer" {...field} />
+                              <Input
+                                placeholder="Software Engineer"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -522,7 +557,10 @@ export default function EditAlumniPage() {
                           <FormItem>
                             <FormLabel>Industri</FormLabel>
                             <FormControl>
-                              <Input placeholder="Teknologi, Pendidikan, dll" {...field} />
+                              <Input
+                                placeholder="Teknologi, Pendidikan, dll"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -554,7 +592,10 @@ export default function EditAlumniPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Jenjang</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Pilih jenjang" />
@@ -579,7 +620,11 @@ export default function EditAlumniPage() {
                           <FormItem>
                             <FormLabel>Tahun Masuk</FormLabel>
                             <FormControl>
-                              <Input type="number" placeholder="2020" {...field} />
+                              <Input
+                                type="number"
+                                placeholder="2020"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -593,7 +638,10 @@ export default function EditAlumniPage() {
                         <FormItem>
                           <FormLabel>Institusi</FormLabel>
                           <FormControl>
-                            <Input placeholder="Universitas Indonesia" {...field} />
+                            <Input
+                              placeholder="Universitas Indonesia"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -606,7 +654,10 @@ export default function EditAlumniPage() {
                         <FormItem>
                           <FormLabel>Jurusan</FormLabel>
                           <FormControl>
-                            <Input placeholder="Teknik Informatika" {...field} />
+                            <Input
+                              placeholder="Teknik Informatika"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

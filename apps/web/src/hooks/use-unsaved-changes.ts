@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import equal from 'fast-deep-equal';
+import { useState, useEffect, useCallback, useRef } from "react";
+import equal from "fast-deep-equal";
 
 interface UseUnsavedChangesOptions {
   /**
@@ -43,22 +43,22 @@ interface UseUnsavedChangesReturn {
 
 /**
  * Hook to track unsaved changes and warn before navigation
- * 
+ *
  * @example
  * ```tsx
  * function EditForm() {
  *   const [name, setName] = useState(initialName);
  *   const { hasChanges, setHasChanges, reset } = useUnsavedChanges();
- * 
+ *
  *   useEffect(() => {
  *     setHasChanges(name !== initialName);
  *   }, [name, initialName]);
- * 
+ *
  *   const handleSave = async () => {
  *     await save();
  *     reset();
  *   };
- * 
+ *
  *   return (
  *     <form>
  *       <input value={name} onChange={e => setName(e.target.value)} />
@@ -69,11 +69,11 @@ interface UseUnsavedChangesReturn {
  * ```
  */
 export function useUnsavedChanges(
-  options: UseUnsavedChangesOptions = {}
+  options: UseUnsavedChangesOptions = {},
 ): UseUnsavedChangesReturn {
   const {
     enabled = true,
-    message = 'Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?',
+    message = "Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?",
     onNavigationAttempt,
   } = options;
 
@@ -86,17 +86,17 @@ export function useUnsavedChanges(
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (allowNavigationRef.current) return;
-      
+
       e.preventDefault();
       // Modern browsers require returnValue to be set
       e.returnValue = message;
       return message;
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [enabled, hasChanges, message]);
 
@@ -109,20 +109,20 @@ export function useUnsavedChanges(
     // We can use popstate for back/forward navigation
     const handlePopState = (e: PopStateEvent) => {
       if (!hasChanges || allowNavigationRef.current) return;
-      
+
       onNavigationAttempt?.();
       const confirmed = window.confirm(message);
       if (!confirmed) {
         // Push the current state back
-        window.history.pushState(null, '', window.location.href);
+        window.history.pushState(null, "", window.location.href);
         e.preventDefault();
       }
     };
 
-    window.addEventListener('popstate', handlePopState);
+    window.addEventListener("popstate", handlePopState);
 
     return () => {
-      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener("popstate", handlePopState);
     };
   }, [enabled, hasChanges, message, onNavigationAttempt]);
 

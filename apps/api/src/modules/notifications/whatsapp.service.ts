@@ -425,8 +425,6 @@ class WhatsAppService {
 
     await Promise.all(workers);
 
-
-
     return { success, failed, results };
   }
 

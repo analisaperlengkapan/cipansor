@@ -1,20 +1,26 @@
-'use client';
+"use client";
 
-import { useParams, useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
+import { useParams, useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
 import {
   useDailyReport,
   useDailyReportPhotos,
   useAddParentNotes,
-} from '@/hooks/use-daily-report';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/hooks/use-daily-report";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +29,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   ArrowLeft,
   Pencil,
@@ -38,65 +44,72 @@ import {
   Utensils,
   MessageSquare,
   Send,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
-import { useState } from 'react';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 const ATTENDANCE_LABELS: Record<string, string> = {
-  PRESENT: 'Hadir',
-  ABSENT: 'Alpha',
-  LATE: 'Terlambat',
-  SICK: 'Sakit',
-  EXCUSED: 'Izin',
+  PRESENT: "Hadir",
+  ABSENT: "Alpha",
+  LATE: "Terlambat",
+  SICK: "Sakit",
+  EXCUSED: "Izin",
 };
 
 const ATTENDANCE_COLORS: Record<string, string> = {
-  PRESENT: 'bg-green-100 text-green-800',
-  ABSENT: 'bg-red-100 text-red-800',
-  LATE: 'bg-yellow-100 text-yellow-800',
-  SICK: 'bg-orange-100 text-orange-800',
-  EXCUSED: 'bg-blue-100 text-blue-800',
+  PRESENT: "bg-green-100 text-green-800",
+  ABSENT: "bg-red-100 text-red-800",
+  LATE: "bg-yellow-100 text-yellow-800",
+  SICK: "bg-orange-100 text-orange-800",
+  EXCUSED: "bg-blue-100 text-blue-800",
 };
 
-const MOOD_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
-  HAPPY: { label: 'Senang', emoji: '😊', color: 'text-green-600' },
-  NEUTRAL: { label: 'Biasa', emoji: '😐', color: 'text-gray-600' },
-  SAD: { label: 'Sedih', emoji: '😢', color: 'text-blue-600' },
-  EXCITED: { label: 'Antusias', emoji: '🤩', color: 'text-yellow-600' },
-  TIRED: { label: 'Lelah', emoji: '😴', color: 'text-purple-600' },
-  SICK: { label: 'Sakit', emoji: '🤒', color: 'text-red-600' },
+const MOOD_LABELS: Record<
+  string,
+  { label: string; emoji: string; color: string }
+> = {
+  HAPPY: { label: "Senang", emoji: "😊", color: "text-green-600" },
+  NEUTRAL: { label: "Biasa", emoji: "😐", color: "text-gray-600" },
+  SAD: { label: "Sedih", emoji: "😢", color: "text-blue-600" },
+  EXCITED: { label: "Antusias", emoji: "🤩", color: "text-yellow-600" },
+  TIRED: { label: "Lelah", emoji: "😴", color: "text-purple-600" },
+  SICK: { label: "Sakit", emoji: "🤒", color: "text-red-600" },
 };
 
 const HEALTH_LABELS: Record<string, { label: string; color: string }> = {
-  HEALTHY: { label: 'Sehat', color: 'bg-green-100 text-green-800' },
-  SICK: { label: 'Sakit', color: 'bg-red-100 text-red-800' },
-  RECOVERING: { label: 'Pemulihan', color: 'bg-yellow-100 text-yellow-800' },
-  NEED_ATTENTION: { label: 'Perlu Perhatian', color: 'bg-orange-100 text-orange-800' },
+  HEALTHY: { label: "Sehat", color: "bg-green-100 text-green-800" },
+  SICK: { label: "Sakit", color: "bg-red-100 text-red-800" },
+  RECOVERING: { label: "Pemulihan", color: "bg-yellow-100 text-yellow-800" },
+  NEED_ATTENTION: {
+    label: "Perlu Perhatian",
+    color: "bg-orange-100 text-orange-800",
+  },
 };
 
 const QUALITY_LABELS: Record<string, { label: string; color: string }> = {
-  GOOD: { label: 'Baik', color: 'text-green-600' },
-  FAIR: { label: 'Cukup', color: 'text-yellow-600' },
-  POOR: { label: 'Kurang', color: 'text-red-600' },
+  GOOD: { label: "Baik", color: "text-green-600" },
+  FAIR: { label: "Cukup", color: "text-yellow-600" },
+  POOR: { label: "Kurang", color: "text-red-600" },
 };
 
 export default function DailyReportDetailPage() {
   const params = useParams();
   const router = useRouter();
   const reportId = params.id as string;
-  const [parentNotes, setParentNotes] = useState('');
+  const [parentNotes, setParentNotes] = useState("");
   const [showParentDialog, setShowParentDialog] = useState(false);
 
   const { data: report, isLoading } = useDailyReport(reportId);
-  const { data: photos, isLoading: photosLoading } = useDailyReportPhotos(reportId);
+  const { data: photos, isLoading: photosLoading } =
+    useDailyReportPhotos(reportId);
   const addParentNotesMutation = useAddParentNotes();
 
   const handleAddParentNotes = async () => {
     // This feature is currently not supported in the backend
-    toast.error('Gagal menambahkan catatan: Fitur belum tersedia');
+    toast.error("Gagal menambahkan catatan: Fitur belum tersedia");
     setShowParentDialog(false);
   };
 
@@ -116,26 +129,38 @@ export default function DailyReportDetailPage() {
       <MainLayout>
         <div className="flex flex-col items-center justify-center py-16">
           <AlertCircle className="h-16 w-16 text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Laporan Tidak Ditemukan</h2>
+          <h2 className="text-xl font-semibold mb-2">
+            Laporan Tidak Ditemukan
+          </h2>
           <p className="text-muted-foreground mb-4">
             Laporan harian yang Anda cari tidak ada atau telah dihapus.
           </p>
-          <Button onClick={() => router.push('/paud/daily-reports')}>Kembali ke Daftar</Button>
+          <Button onClick={() => router.push("/paud/daily-reports")}>
+            Kembali ke Daftar
+          </Button>
         </div>
       </MainLayout>
     );
   }
 
   const moodInfo = report.mood ? MOOD_LABELS[report.mood] : null;
-  const sleepInfo = report.napDuration ? { label: report.napDuration + ' menit', color: 'text-blue-600' } : null;
-  const appetiteInfo = report.mealStatus ? { label: report.mealStatus, color: 'text-green-600' } : null;
+  const sleepInfo = report.napDuration
+    ? { label: report.napDuration + " menit", color: "text-blue-600" }
+    : null;
+  const appetiteInfo = report.mealStatus
+    ? { label: report.mealStatus, color: "text-green-600" }
+    : null;
 
   return (
     <MainLayout>
       <div className="space-y-6">
         <PageHeader
-          title={`Laporan Harian - ${report.student?.user?.name || '-'}`}
-          description={format(new Date(report.reportDate), 'EEEE, dd MMMM yyyy', { locale: idLocale })}
+          title={`Laporan Harian - ${report.student?.user?.name || "-"}`}
+          description={format(
+            new Date(report.reportDate),
+            "EEEE, dd MMMM yyyy",
+            { locale: idLocale },
+          )}
           actions={
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => router.back()}>
@@ -144,7 +169,9 @@ export default function DailyReportDetailPage() {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => router.push(`/paud/daily-reports/${reportId}/edit`)}
+                onClick={() =>
+                  router.push(`/paud/daily-reports/${reportId}/edit`)
+                }
               >
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
@@ -173,13 +200,19 @@ export default function DailyReportDetailPage() {
                       </div>
                     )}
                     <div>
-                      <h3 className="font-semibold text-lg">{report.student?.user?.name || '-'}</h3>
-                      <p className="text-muted-foreground">NIS: {report.student?.nis || '-'}</p>
-                      <p className="text-muted-foreground capitalize">{report.unitType.toLowerCase().replace('_', ' ')}</p>
+                      <h3 className="font-semibold text-lg">
+                        {report.student?.user?.name || "-"}
+                      </h3>
+                      <p className="text-muted-foreground">
+                        NIS: {report.student?.nis || "-"}
+                      </p>
+                      <p className="text-muted-foreground capitalize">
+                        {report.unitType.toLowerCase().replace("_", " ")}
+                      </p>
                     </div>
                   </div>
                   <Badge variant="outline" className="text-sm">
-                    {report.parentReadAt ? 'Dibaca' : 'Belum Dibaca'}
+                    {report.parentReadAt ? "Dibaca" : "Belum Dibaca"}
                   </Badge>
                 </div>
 
@@ -190,7 +223,10 @@ export default function DailyReportDetailPage() {
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-green-600" />
                         <span className="text-sm">
-                          Datang: <strong>{format(new Date(report.arrivalTime), 'HH:mm')}</strong>
+                          Datang:{" "}
+                          <strong>
+                            {format(new Date(report.arrivalTime), "HH:mm")}
+                          </strong>
                         </span>
                       </div>
                     )}
@@ -198,7 +234,10 @@ export default function DailyReportDetailPage() {
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-red-600" />
                         <span className="text-sm">
-                          Pulang: <strong>{format(new Date(report.departureTime), 'HH:mm')}</strong>
+                          Pulang:{" "}
+                          <strong>
+                            {format(new Date(report.departureTime), "HH:mm")}
+                          </strong>
                         </span>
                       </div>
                     )}
@@ -219,7 +258,12 @@ export default function DailyReportDetailPage() {
                 </CardHeader>
                 <CardContent>
                   {moodInfo ? (
-                    <div className={cn('text-2xl font-semibold flex items-center gap-2', moodInfo.color)}>
+                    <div
+                      className={cn(
+                        "text-2xl font-semibold flex items-center gap-2",
+                        moodInfo.color,
+                      )}
+                    >
                       <span className="text-3xl">{moodInfo.emoji}</span>
                       {moodInfo.label}
                     </div>
@@ -240,12 +284,18 @@ export default function DailyReportDetailPage() {
                 <CardContent>
                   <div className="space-y-2">
                     {report.temperature && (
-                      <div className="text-xl font-bold">{report.temperature}°C</div>
+                      <div className="text-xl font-bold">
+                        {report.temperature}°C
+                      </div>
                     )}
                     {report.healthStatus ? (
-                      <p className="text-sm text-muted-foreground">{report.healthStatus}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {report.healthStatus}
+                      </p>
                     ) : (
-                      <span className="text-muted-foreground text-sm">Tidak ada catatan</span>
+                      <span className="text-muted-foreground text-sm">
+                        Tidak ada catatan
+                      </span>
                     )}
                   </div>
                 </CardContent>
@@ -282,15 +332,15 @@ export default function DailyReportDetailPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Sarapan</span>
-                      <span>{report.hadBreakfast ? 'Ya' : 'Tidak'}</span>
+                      <span>{report.hadBreakfast ? "Ya" : "Tidak"}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Makan Siang</span>
-                      <span>{report.mealStatus || '-'}</span>
+                      <span>{report.mealStatus || "-"}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Snack</span>
-                      <span>{report.snackStatus || '-'}</span>
+                      <span>{report.snackStatus || "-"}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -305,11 +355,17 @@ export default function DailyReportDetailPage() {
               <CardContent className="space-y-6">
                 {/* Activities */}
                 <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Kegiatan Hari Ini</h4>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-2">
+                    Kegiatan Hari Ini
+                  </h4>
                   {report.activitiesSummary ? (
-                    <p className="whitespace-pre-wrap">{report.activitiesSummary}</p>
+                    <p className="whitespace-pre-wrap">
+                      {report.activitiesSummary}
+                    </p>
                   ) : (
-                    <p className="text-muted-foreground italic">Tidak ada catatan kegiatan</p>
+                    <p className="text-muted-foreground italic">
+                      Tidak ada catatan kegiatan
+                    </p>
                   )}
                 </div>
 
@@ -317,22 +373,34 @@ export default function DailyReportDetailPage() {
 
                 {/* Achievements */}
                 <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Pencapaian & Tahfidz</h4>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-2">
+                    Pencapaian & Tahfidz
+                  </h4>
                   <div className="space-y-4">
                     {report.achievements && (
                       <div>
-                        <p className="text-xs text-muted-foreground uppercase font-semibold">Belajar</p>
-                        <p className="whitespace-pre-wrap">{report.achievements}</p>
+                        <p className="text-xs text-muted-foreground uppercase font-semibold">
+                          Belajar
+                        </p>
+                        <p className="whitespace-pre-wrap">
+                          {report.achievements}
+                        </p>
                       </div>
                     )}
                     {report.tahfidzActivity && (
                       <div>
-                        <p className="text-xs text-muted-foreground uppercase font-semibold">Hafalan/Tahfidz</p>
-                        <p className="whitespace-pre-wrap">{report.tahfidzActivity}</p>
+                        <p className="text-xs text-muted-foreground uppercase font-semibold">
+                          Hafalan/Tahfidz
+                        </p>
+                        <p className="whitespace-pre-wrap">
+                          {report.tahfidzActivity}
+                        </p>
                       </div>
                     )}
                     {!report.achievements && !report.tahfidzActivity && (
-                      <p className="text-muted-foreground italic">Tidak ada catatan pencapaian</p>
+                      <p className="text-muted-foreground italic">
+                        Tidak ada catatan pencapaian
+                      </p>
                     )}
                   </div>
                 </div>
@@ -342,19 +410,31 @@ export default function DailyReportDetailPage() {
                 {/* Behavior & Home */}
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-2">Perilaku & Sosial</h4>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-2">
+                      Perilaku & Sosial
+                    </h4>
                     {report.behaviorNotes ? (
-                      <p className="whitespace-pre-wrap">{report.behaviorNotes}</p>
+                      <p className="whitespace-pre-wrap">
+                        {report.behaviorNotes}
+                      </p>
                     ) : (
-                      <p className="text-muted-foreground italic">Tidak ada catatan</p>
+                      <p className="text-muted-foreground italic">
+                        Tidak ada catatan
+                      </p>
                     )}
                   </div>
                   <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-2">Kegiatan di Rumah</h4>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-2">
+                      Kegiatan di Rumah
+                    </h4>
                     {report.homeActivity ? (
-                      <p className="whitespace-pre-wrap">{report.homeActivity}</p>
+                      <p className="whitespace-pre-wrap">
+                        {report.homeActivity}
+                      </p>
                     ) : (
-                      <p className="text-muted-foreground italic">Tidak ada saran kegiatan</p>
+                      <p className="text-muted-foreground italic">
+                        Tidak ada saran kegiatan
+                      </p>
                     )}
                   </div>
                 </div>
@@ -363,11 +443,15 @@ export default function DailyReportDetailPage() {
 
                 {/* Teacher Notes */}
                 <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Pesan Guru</h4>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-2">
+                    Pesan Guru
+                  </h4>
                   {report.teacherNotes ? (
                     <p className="whitespace-pre-wrap">{report.teacherNotes}</p>
                   ) : (
-                    <p className="text-muted-foreground italic">Tidak ada pesan untuk hari ini</p>
+                    <p className="text-muted-foreground italic">
+                      Tidak ada pesan untuk hari ini
+                    </p>
                   )}
                 </div>
               </CardContent>
@@ -397,7 +481,7 @@ export default function DailyReportDetailPage() {
                       <div key={photo.id} className="group relative">
                         <img
                           src={photo.photoUrl}
-                          alt={photo.caption || 'Kegiatan'}
+                          alt={photo.caption || "Kegiatan"}
                           className="aspect-square object-cover rounded-lg border"
                         />
                         {photo.caption && (
@@ -425,7 +509,10 @@ export default function DailyReportDetailPage() {
                     <MessageSquare className="h-4 w-4" />
                     Catatan Orang Tua
                   </CardTitle>
-                  <Dialog open={showParentDialog} onOpenChange={setShowParentDialog}>
+                  <Dialog
+                    open={showParentDialog}
+                    onOpenChange={setShowParentDialog}
+                  >
                     <DialogTrigger asChild>
                       <Button variant="ghost" size="sm">
                         <Send className="h-4 w-4" />
@@ -445,12 +532,18 @@ export default function DailyReportDetailPage() {
                         rows={4}
                       />
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowParentDialog(false)}>
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowParentDialog(false)}
+                        >
                           Batal
                         </Button>
                         <Button
                           onClick={handleAddParentNotes}
-                          disabled={!parentNotes.trim() || addParentNotesMutation.isPending}
+                          disabled={
+                            !parentNotes.trim() ||
+                            addParentNotesMutation.isPending
+                          }
                         >
                           Simpan
                         </Button>
@@ -461,7 +554,9 @@ export default function DailyReportDetailPage() {
               </CardHeader>
               <CardContent>
                 {report.teacherNotes ? (
-                  <p className="whitespace-pre-wrap text-sm">{report.teacherNotes}</p>
+                  <p className="whitespace-pre-wrap text-sm">
+                    {report.teacherNotes}
+                  </p>
                 ) : (
                   <p className="text-muted-foreground text-sm italic">
                     Belum ada catatan dari guru
@@ -476,18 +571,22 @@ export default function DailyReportDetailPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Dibuat oleh</span>
-                    <span>{report.createdBy?.name || '-'}</span>
+                    <span>{report.createdBy?.name || "-"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Dibuat</span>
                     <span>
-                      {format(new Date(report.createdAt), 'dd MMM yyyy HH:mm', { locale: idLocale })}
+                      {format(new Date(report.createdAt), "dd MMM yyyy HH:mm", {
+                        locale: idLocale,
+                      })}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Diperbarui</span>
                     <span>
-                      {format(new Date(report.updatedAt), 'dd MMM yyyy HH:mm', { locale: idLocale })}
+                      {format(new Date(report.updatedAt), "dd MMM yyyy HH:mm", {
+                        locale: idLocale,
+                      })}
                     </span>
                   </div>
                 </div>

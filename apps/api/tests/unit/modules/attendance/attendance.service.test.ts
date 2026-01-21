@@ -1,18 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock Prisma Client before importing service
 vi.mock('@prisma/client', () => {
-    return {
-        UserRole: {
-            TEACHER: 'TEACHER',
-            SUPER_ADMIN: 'SUPER_ADMIN',
-            ADMIN: 'ADMIN',
-            PARENT: 'PARENT',
-            STUDENT: 'STUDENT',
-        },
-        Prisma: {
-            AttendanceWhereInput: vi.fn(),
-        }
-    }
+  return {
+    UserRole: {
+      TEACHER: 'TEACHER',
+      SUPER_ADMIN: 'SUPER_ADMIN',
+      ADMIN: 'ADMIN',
+      PARENT: 'PARENT',
+      STUDENT: 'STUDENT',
+    },
+    Prisma: {
+      AttendanceWhereInput: vi.fn(),
+    },
+  };
 });
 
 import { AttendanceService } from '../../../../src/modules/attendance/attendance.service';
@@ -20,12 +20,12 @@ import { prisma } from '../../../../src/lib/prisma';
 import { AttendanceStatus } from '@cipansor/shared';
 
 const UserRole = {
-    TEACHER: 'TEACHER',
-    SUPER_ADMIN: 'SUPER_ADMIN',
-    ADMIN: 'ADMIN',
-    PARENT: 'PARENT',
-    STUDENT: 'STUDENT',
-}
+  TEACHER: 'TEACHER',
+  SUPER_ADMIN: 'SUPER_ADMIN',
+  ADMIN: 'ADMIN',
+  PARENT: 'PARENT',
+  STUDENT: 'STUDENT',
+};
 
 // Mock prisma
 vi.mock('../../../../src/lib/prisma', () => ({
@@ -42,11 +42,11 @@ vi.mock('../../../../src/lib/prisma', () => ({
       findUnique: vi.fn(),
     },
     student: {
-        findFirst: vi.fn()
+      findFirst: vi.fn(),
     },
     classEnrollment: {
-        findFirst: vi.fn()
-    }
+      findFirst: vi.fn(),
+    },
   },
 }));
 
@@ -125,88 +125,83 @@ describe('AttendanceService', () => {
     });
 
     it('should handle case-insensitive or mismatched enum keys gracefully', async () => {
-        const query = { startDate: '2023-10-01', endDate: '2023-10-31' };
+      const query = { startDate: '2023-10-01', endDate: '2023-10-31' };
 
-        // Mock groupBy result with 'PERMISSION' which maps to 'excused'
-        const mockGroupBy = [
-          { status: 'PERMISSION', _count: { _all: 3 } },
-        ];
-        (prisma.attendance.groupBy as any).mockResolvedValue(mockGroupBy);
-        (prisma.attendance.count as any).mockResolvedValue(3);
+      // Mock groupBy result with 'PERMISSION' which maps to 'excused'
+      const mockGroupBy = [{ status: 'PERMISSION', _count: { _all: 3 } }];
+      (prisma.attendance.groupBy as any).mockResolvedValue(mockGroupBy);
+      (prisma.attendance.count as any).mockResolvedValue(3);
 
-        const result = await service.getSummary(query, { role: UserRole.TEACHER, unitId: 'unit1' });
+      const result = await service.getSummary(query, { role: UserRole.TEACHER, unitId: 'unit1' });
 
-        expect(result.counts.excused).toBe(3);
-        expect(result.percentages.excused).toBe('100.0');
-      });
+      expect(result.counts.excused).toBe(3);
+      expect(result.percentages.excused).toBe('100.0');
+    });
 
-      it('should add permission count to existing excused count', async () => {
-        const query = { startDate: '2023-10-01', endDate: '2023-10-31' };
+    it('should add permission count to existing excused count', async () => {
+      const query = { startDate: '2023-10-01', endDate: '2023-10-31' };
 
-        // Mock groupBy result with both EXCUSED and PERMISSION
-        const mockGroupBy = [
-          { status: 'EXCUSED', _count: { _all: 2 } },
-          { status: 'PERMISSION', _count: { _all: 3 } },
-        ];
-        (prisma.attendance.groupBy as any).mockResolvedValue(mockGroupBy);
-        (prisma.attendance.count as any).mockResolvedValue(5);
+      // Mock groupBy result with both EXCUSED and PERMISSION
+      const mockGroupBy = [
+        { status: 'EXCUSED', _count: { _all: 2 } },
+        { status: 'PERMISSION', _count: { _all: 3 } },
+      ];
+      (prisma.attendance.groupBy as any).mockResolvedValue(mockGroupBy);
+      (prisma.attendance.count as any).mockResolvedValue(5);
 
-        const result = await service.getSummary(query, { role: UserRole.TEACHER, unitId: 'unit1' });
+      const result = await service.getSummary(query, { role: UserRole.TEACHER, unitId: 'unit1' });
 
-        expect(result.counts.excused).toBe(5); // 2 + 3
-      });
+      expect(result.counts.excused).toBe(5); // 2 + 3
+    });
   });
 
   describe('update', () => {
-      it('should update attendance successfully when ignoring self in duplicate check', async () => {
-          const id = 'att1';
-          const input = { status: AttendanceStatus.ABSENT };
-          const currentUser = { role: UserRole.TEACHER, unitId: 'unit1' };
+    it('should update attendance successfully when ignoring self in duplicate check', async () => {
+      const id = 'att1';
+      const input = { status: AttendanceStatus.ABSENT };
+      const currentUser = { role: UserRole.TEACHER, unitId: 'unit1' };
 
-          const existingRecord = {
-              id: 'att1',
-              studentId: 's1',
-              classId: 'c1',
-              date: new Date('2023-10-27T00:00:00Z'),
-              status: 'PRESENT',
-              student: { unitId: 'unit1' }
-          };
+      const existingRecord = {
+        id: 'att1',
+        studentId: 's1',
+        classId: 'c1',
+        date: new Date('2023-10-27T00:00:00Z'),
+        status: 'PRESENT',
+        student: { unitId: 'unit1' },
+      };
 
-          (prisma.attendance.findUnique as any).mockResolvedValue(existingRecord);
-          // Mock findMany returns nothing (no OTHER duplicates) OR returns self
-          // The service logic: findMany checks for matching student/class/date.
-          // It might return 'att1' itself.
-          (prisma.attendance.findMany as any).mockResolvedValue([
-              { id: 'att1', studentId: 's1' }
-          ]);
+      (prisma.attendance.findUnique as any).mockResolvedValue(existingRecord);
+      // Mock findMany returns nothing (no OTHER duplicates) OR returns self
+      // The service logic: findMany checks for matching student/class/date.
+      // It might return 'att1' itself.
+      (prisma.attendance.findMany as any).mockResolvedValue([{ id: 'att1', studentId: 's1' }]);
 
-          const updatedRecord = { ...existingRecord, status: 'ABSENT' };
-          (prisma.attendance.update as any).mockResolvedValue(updatedRecord);
+      const updatedRecord = { ...existingRecord, status: 'ABSENT' };
+      (prisma.attendance.update as any).mockResolvedValue(updatedRecord);
 
-          const result = await service.update(id, input, currentUser);
+      const result = await service.update(id, input, currentUser);
 
-          expect(result.status).toBe(AttendanceStatus.ABSENT);
-          expect(prisma.attendance.update).toHaveBeenCalled();
-      });
+      expect(result.status).toBe(AttendanceStatus.ABSENT);
+      expect(prisma.attendance.update).toHaveBeenCalled();
+    });
 
-      it('should throw forbidden error if updating attendance from another unit', async () => {
-        const id = 'att1';
-        const input = { status: AttendanceStatus.ABSENT };
-        const currentUser = { role: UserRole.TEACHER, unitId: 'unit2' }; // Different unit
+    it('should throw forbidden error if updating attendance from another unit', async () => {
+      const id = 'att1';
+      const input = { status: AttendanceStatus.ABSENT };
+      const currentUser = { role: UserRole.TEACHER, unitId: 'unit2' }; // Different unit
 
-        const existingRecord = {
-            id: 'att1',
-            studentId: 's1',
-            classId: 'c1',
-            date: new Date('2023-10-27T00:00:00Z'),
-            status: 'PRESENT',
-            student: { unitId: 'unit1' }
-        };
+      const existingRecord = {
+        id: 'att1',
+        studentId: 's1',
+        classId: 'c1',
+        date: new Date('2023-10-27T00:00:00Z'),
+        status: 'PRESENT',
+        student: { unitId: 'unit1' },
+      };
 
-        (prisma.attendance.findUnique as any).mockResolvedValue(existingRecord);
+      (prisma.attendance.findUnique as any).mockResolvedValue(existingRecord);
 
-        await expect(service.update(id, input, currentUser))
-            .rejects.toThrow('Access denied');
+      await expect(service.update(id, input, currentUser)).rejects.toThrow('Access denied');
     });
   });
 });

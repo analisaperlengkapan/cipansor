@@ -29,7 +29,9 @@ router.get(
     try {
       const query = listWalletsQuerySchema.parse(req.query);
       const result = await walletService.listWallets(query);
-      return res.json(ApiResponse.success(result.data, 'Daftar wallet berhasil diambil', result.meta));
+      return res.json(
+        ApiResponse.success(result.data, 'Daftar wallet berhasil diambil', result.meta)
+      );
     } catch (error) {
       next(error);
     }
@@ -63,7 +65,9 @@ router.get(
     try {
       const query = listTransactionsQuerySchema.parse(req.query);
       const result = await walletService.listTransactions(query);
-      return res.json(ApiResponse.success(result.data, 'Daftar transaksi berhasil diambil', result.meta));
+      return res.json(
+        ApiResponse.success(result.data, 'Daftar transaksi berhasil diambil', result.meta)
+      );
     } catch (error) {
       next(error);
     }
@@ -73,38 +77,34 @@ router.get(
 /**
  * GET /api/wallet/:studentId - Get wallet by student ID
  */
-router.get(
-  '/:studentId',
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { studentId } = req.params;
-      const wallet = await walletService.getWalletByStudent(studentId);
-      return res.json(ApiResponse.success(wallet, 'Wallet berhasil diambil'));
-    } catch (error) {
-      next(error);
-    }
+router.get('/:studentId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { studentId } = req.params;
+    const wallet = await walletService.getWalletByStudent(studentId);
+    return res.json(ApiResponse.success(wallet, 'Wallet berhasil diambil'));
+  } catch (error) {
+    next(error);
   }
-);
+});
 
 /**
  * GET /api/wallet/:studentId/transactions - Get transactions for a student
  */
-router.get(
-  '/:studentId/transactions',
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { studentId } = req.params;
-      const query = listTransactionsQuerySchema.parse({
-        ...req.query,
-        studentId,
-      });
-      const result = await walletService.listTransactions(query);
-      return res.json(ApiResponse.success(result.data, 'Transaksi wallet berhasil diambil', result.meta));
-    } catch (error) {
-      next(error);
-    }
+router.get('/:studentId/transactions', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { studentId } = req.params;
+    const query = listTransactionsQuerySchema.parse({
+      ...req.query,
+      studentId,
+    });
+    const result = await walletService.listTransactions(query);
+    return res.json(
+      ApiResponse.success(result.data, 'Transaksi wallet berhasil diambil', result.meta)
+    );
+  } catch (error) {
+    next(error);
   }
-);
+});
 
 /**
  * POST /api/wallet/topup - Top up wallet

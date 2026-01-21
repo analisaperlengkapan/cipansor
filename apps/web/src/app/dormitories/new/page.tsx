@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -16,30 +22,33 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
-import { useCreateDormitory, DORMITORY_TYPES } from '@/hooks/use-dormitory';
-import { useUnits } from '@/hooks/use-units';
-import { useTeachers } from '@/hooks/use-teachers';
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
+import { useCreateDormitory, DORMITORY_TYPES } from "@/hooks/use-dormitory";
+import { useUnits } from "@/hooks/use-units";
+import { useTeachers } from "@/hooks/use-teachers";
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Nama asrama wajib diisi'),
-  code: z.string().min(1, 'Kode asrama wajib diisi').max(10, 'Kode maksimal 10 karakter'),
-  type: z.enum(['MALE', 'FEMALE'], {
-    required_error: 'Tipe asrama wajib dipilih',
+  name: z.string().min(1, "Nama asrama wajib diisi"),
+  code: z
+    .string()
+    .min(1, "Kode asrama wajib diisi")
+    .max(10, "Kode maksimal 10 karakter"),
+  type: z.enum(["MALE", "FEMALE"], {
+    required_error: "Tipe asrama wajib dipilih",
   }),
-  capacity: z.coerce.number().min(1, 'Kapasitas minimal 1'),
-  unitId: z.string().min(1, 'Unit wajib dipilih'),
+  capacity: z.coerce.number().min(1, "Kapasitas minimal 1"),
+  unitId: z.string().min(1, "Unit wajib dipilih"),
   supervisorId: z.string().optional(),
   description: z.string().optional(),
   facilities: z.string().optional(),
@@ -59,14 +68,14 @@ export default function NewDormitoryPage() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      code: '',
-      type: 'MALE',
+      name: "",
+      code: "",
+      type: "MALE",
       capacity: 50,
-      unitId: '',
-      supervisorId: '',
-      description: '',
-      facilities: '',
+      unitId: "",
+      supervisorId: "",
+      description: "",
+      facilities: "",
       isActive: true,
     },
   });
@@ -79,10 +88,10 @@ export default function NewDormitoryPage() {
         description: data.description || undefined,
         facilities: data.facilities || undefined,
       });
-      toast.success('Asrama berhasil ditambahkan');
-      router.push('/dormitories');
+      toast.success("Asrama berhasil ditambahkan");
+      router.push("/dormitories");
     } catch {
-      toast.error('Gagal menambahkan asrama');
+      toast.error("Gagal menambahkan asrama");
     }
   };
 
@@ -132,7 +141,9 @@ export default function NewDormitoryPage() {
                       <FormControl>
                         <Input placeholder="ASR-001" {...field} />
                       </FormControl>
-                      <FormDescription>Kode unik untuk identifikasi asrama</FormDescription>
+                      <FormDescription>
+                        Kode unik untuk identifikasi asrama
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -144,7 +155,10 @@ export default function NewDormitoryPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipe Asrama</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih tipe" />
@@ -172,7 +186,9 @@ export default function NewDormitoryPage() {
                       <FormControl>
                         <Input type="number" min={1} {...field} />
                       </FormControl>
-                      <FormDescription>Jumlah maksimal penghuni</FormDescription>
+                      <FormDescription>
+                        Jumlah maksimal penghuni
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -227,7 +243,9 @@ export default function NewDormitoryPage() {
                           <SelectItem value="">Tidak ada</SelectItem>
                           {teachers.map((teacher: any) => (
                             <SelectItem key={teacher.id} value={teacher.id}>
-                              {teacher.user?.name || teacher.nip || 'Unknown Teacher'}
+                              {teacher.user?.name ||
+                                teacher.nip ||
+                                "Unknown Teacher"}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -282,11 +300,15 @@ export default function NewDormitoryPage() {
                     <div className="space-y-0.5">
                       <FormLabel className="text-base">Status Aktif</FormLabel>
                       <FormDescription>
-                        Asrama yang tidak aktif tidak dapat menerima penghuni baru
+                        Asrama yang tidak aktif tidak dapat menerima penghuni
+                        baru
                       </FormDescription>
                     </div>
                     <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
                     </FormControl>
                   </FormItem>
                 )}
@@ -297,7 +319,7 @@ export default function NewDormitoryPage() {
                   <Link href="/dormitories">Batal</Link>
                 </Button>
                 <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+                  {createMutation.isPending ? "Menyimpan..." : "Simpan"}
                 </Button>
               </div>
             </form>

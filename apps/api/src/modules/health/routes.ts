@@ -1,6 +1,6 @@
-import { Router } from "express";
-import * as controller from "./controller";
-import { authenticate } from "../../middleware/auth";
+import { Router } from 'express';
+import * as controller from './controller';
+import { authenticate } from '../../middleware/auth';
 
 const router = Router();
 
@@ -39,7 +39,7 @@ router.use(authenticate);
  *       200:
  *         description: List of medical records
  */
-router.get("/records", controller.getMedicalRecords);
+router.get('/records', controller.getMedicalRecords);
 
 /**
  * @swagger
@@ -59,7 +59,7 @@ router.get("/records", controller.getMedicalRecords);
  *       200:
  *         description: Medical record details
  */
-router.get("/records/:id", controller.getMedicalRecordById);
+router.get('/records/:id', controller.getMedicalRecordById);
 
 /**
  * @swagger
@@ -98,7 +98,7 @@ router.get("/records/:id", controller.getMedicalRecordById);
  *       201:
  *         description: Medical record created
  */
-router.post("/records", controller.createMedicalRecord);
+router.post('/records', controller.createMedicalRecord);
 
 /**
  * @swagger
@@ -118,7 +118,7 @@ router.post("/records", controller.createMedicalRecord);
  *       200:
  *         description: Medical record updated
  */
-router.put("/records/:id", controller.updateMedicalRecord);
+router.put('/records/:id', controller.updateMedicalRecord);
 
 /**
  * @swagger
@@ -138,7 +138,7 @@ router.put("/records/:id", controller.updateMedicalRecord);
  *       204:
  *         description: Medical record deleted
  */
-router.delete("/records/:id", controller.deleteMedicalRecord);
+router.delete('/records/:id', controller.deleteMedicalRecord);
 
 /**
  * @swagger
@@ -158,7 +158,7 @@ router.delete("/records/:id", controller.deleteMedicalRecord);
  *       200:
  *         description: Student's complete medical history
  */
-router.get("/students/:studentId/history", controller.getStudentMedicalHistory);
+router.get('/students/:studentId/history', controller.getStudentMedicalHistory);
 
 // ==================== MEDICATIONS ====================
 
@@ -183,7 +183,7 @@ router.get("/students/:studentId/history", controller.getStudentMedicalHistory);
  *       200:
  *         description: List of medications
  */
-router.get("/medications", controller.getMedications);
+router.get('/medications', controller.getMedications);
 
 /**
  * @swagger
@@ -203,7 +203,7 @@ router.get("/medications", controller.getMedications);
  *       200:
  *         description: Medication details
  */
-router.get("/medications/:id", controller.getMedicationById);
+router.get('/medications/:id', controller.getMedicationById);
 
 /**
  * @swagger
@@ -240,7 +240,7 @@ router.get("/medications/:id", controller.getMedicationById);
  *       201:
  *         description: Medication added
  */
-router.post("/medications", controller.createMedication);
+router.post('/medications', controller.createMedication);
 
 /**
  * @swagger
@@ -260,7 +260,7 @@ router.post("/medications", controller.createMedication);
  *       200:
  *         description: Medication updated
  */
-router.put("/medications/:id", controller.updateMedication);
+router.put('/medications/:id', controller.updateMedication);
 
 /**
  * @swagger
@@ -280,7 +280,7 @@ router.put("/medications/:id", controller.updateMedication);
  *       204:
  *         description: Medication deleted
  */
-router.delete("/medications/:id", controller.deleteMedication);
+router.delete('/medications/:id', controller.deleteMedication);
 
 /**
  * @swagger
@@ -314,7 +314,7 @@ router.delete("/medications/:id", controller.deleteMedication);
  *       200:
  *         description: Stock added
  */
-router.post("/medications/:id/stock", controller.addMedicationStock);
+router.post('/medications/:id/stock', controller.addMedicationStock);
 
 // ==================== MEDICATION USAGE ====================
 
@@ -339,7 +339,7 @@ router.post("/medications/:id/stock", controller.addMedicationStock);
  *       200:
  *         description: List of medication usage
  */
-router.get("/usage", controller.getMedicationUsageLogs);
+router.get('/usage', controller.getMedicationUsageLogs);
 
 /**
  * @swagger
@@ -372,7 +372,7 @@ router.get("/usage", controller.getMedicationUsageLogs);
  *       201:
  *         description: Usage logged
  */
-router.post("/usage", controller.createMedicationUsage);
+router.post('/usage', controller.createMedicationUsage);
 
 // ==================== STATISTICS ====================
 
@@ -394,7 +394,7 @@ router.post("/usage", controller.createMedicationUsage);
  *       200:
  *         description: Health statistics (visits, common conditions, etc.)
  */
-router.get("/stats/:unitId", controller.getHealthStats);
+router.get('/stats/:unitId', controller.getHealthStats);
 
 // ==================== GROWTH RECORDS ====================
 
@@ -436,7 +436,7 @@ router.get("/stats/:unitId", controller.getHealthStats);
  *       201:
  *         description: Growth record created
  */
-router.post("/growth", controller.createGrowthRecord);
+router.post('/growth', controller.createGrowthRecord);
 
 /**
  * @swagger
@@ -459,6 +459,6 @@ router.post("/growth", controller.createGrowthRecord);
  *       200:
  *         description: List of growth records
  */
-router.get("/growth", controller.getGrowthRecords);
+router.get('/growth', controller.getGrowthRecords);
 
 export default router;

@@ -59,15 +59,17 @@ describe('Library Service', () => {
       const result = await createBorrowing(input, 'admin-1');
 
       expect(prisma.book.findUnique).toHaveBeenCalledWith({ where: { id: 'book-1' } });
-      expect(prisma.borrowing.create).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({
-          studentId: 'student-1',
-          borrowerId: 'student-1', // Should auto-fill
-        }),
-        include: expect.objectContaining({
-          student: expect.any(Object),
-        }),
-      }));
+      expect(prisma.borrowing.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            studentId: 'student-1',
+            borrowerId: 'student-1', // Should auto-fill
+          }),
+          include: expect.objectContaining({
+            student: expect.any(Object),
+          }),
+        })
+      );
       expect(result).toEqual(mockCreatedBorrowing);
     });
 
@@ -100,13 +102,15 @@ describe('Library Service', () => {
 
       const result = await getBorrowings({ page: 1, limit: 10 });
 
-      expect(prisma.borrowing.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        include: expect.objectContaining({
-          student: expect.objectContaining({
-            select: expect.objectContaining({ name: true }),
+      expect(prisma.borrowing.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            student: expect.objectContaining({
+              select: expect.objectContaining({ name: true }),
+            }),
           }),
-        }),
-      }));
+        })
+      );
       expect(result.data).toEqual(mockBorrowings);
       expect(result.meta.total).toBe(1);
     });

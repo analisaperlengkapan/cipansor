@@ -1,13 +1,31 @@
-'use client';
+"use client";
 
-import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Download, Printer, User, BookOpen, Moon, Mic, MessageCircle, Book, Heart, Calendar } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useParams, useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  Download,
+  Printer,
+  User,
+  BookOpen,
+  Moon,
+  Mic,
+  MessageCircle,
+  Book,
+  Heart,
+  Calendar,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -15,10 +33,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LoadingSpinner } from '@/components/shared';
-import { useRaporDetail, RAPOR_STATUS, GRADE_COLORS, COMPONENT_LABELS } from '@/hooks/use-rapor-pesantren';
+} from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LoadingSpinner } from "@/components/shared";
+import {
+  useRaporDetail,
+  RAPOR_STATUS,
+  GRADE_COLORS,
+  COMPONENT_LABELS,
+} from "@/hooks/use-rapor-pesantren";
 
 export default function RaporDetailPage() {
   const params = useParams();
@@ -51,22 +74,24 @@ export default function RaporDetailPage() {
   }
 
   const getGradeColor = (grade: string) => {
-    const color = GRADE_COLORS[grade as keyof typeof GRADE_COLORS] || 'gray';
+    const color = GRADE_COLORS[grade as keyof typeof GRADE_COLORS] || "gray";
     const variants: Record<string, string> = {
-      green: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      blue: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      cyan: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200',
-      yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      red: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+      green:
+        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+      blue: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+      cyan: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
+      yellow:
+        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+      red: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
     };
     return variants[color] || variants.gray;
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
+    return new Date(date).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
     });
   };
 
@@ -112,9 +137,14 @@ export default function RaporDetailPage() {
               <div>
                 <h2 className="text-2xl font-bold">{rapor.student.name}</h2>
                 <div className="text-muted-foreground space-y-1">
-                  <p>NIS: {rapor.student.nis} {rapor.student.nisn && `| NISN: ${rapor.student.nisn}`}</p>
+                  <p>
+                    NIS: {rapor.student.nis}{" "}
+                    {rapor.student.nisn && `| NISN: ${rapor.student.nisn}`}
+                  </p>
                   <p>Kelas: {rapor.student.class.name}</p>
-                  {rapor.student.dormRoom && <p>Asrama: {rapor.student.dormRoom.name}</p>}
+                  {rapor.student.dormRoom && (
+                    <p>Asrama: {rapor.student.dormRoom.name}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -126,7 +156,9 @@ export default function RaporDetailPage() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
             <div className="text-center p-4 bg-muted rounded-lg">
-              <p className="text-3xl font-bold">{rapor.overallScore.toFixed(1)}</p>
+              <p className="text-3xl font-bold">
+                {rapor.overallScore.toFixed(1)}
+              </p>
               <p className="text-sm text-muted-foreground">Nilai Akhir</p>
             </div>
             <div className="text-center p-4 bg-muted rounded-lg">
@@ -134,7 +166,9 @@ export default function RaporDetailPage() {
               <p className="text-sm text-muted-foreground">Predikat</p>
             </div>
             <div className="text-center p-4 bg-muted rounded-lg">
-              <p className="text-3xl font-bold">{rapor.attendance.attendanceRate.toFixed(0)}%</p>
+              <p className="text-3xl font-bold">
+                {rapor.attendance.attendanceRate.toFixed(0)}%
+              </p>
               <p className="text-sm text-muted-foreground">Kehadiran</p>
             </div>
             <div className="text-center p-4 bg-muted rounded-lg">
@@ -153,14 +187,22 @@ export default function RaporDetailPage() {
         <CardContent>
           <div className="space-y-4">
             {Object.entries(COMPONENT_LABELS).map(([key, label]) => {
-              const component = rapor[key as keyof typeof COMPONENT_LABELS] as { score: number; grade: string };
+              const component = rapor[key as keyof typeof COMPONENT_LABELS] as {
+                score: number;
+                grade: string;
+              };
               return (
                 <div key={key} className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{label}</span>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold">{component.score.toFixed(1)}</span>
-                      <Badge variant="outline" className={getGradeColor(component.grade)}>
+                      <span className="font-bold">
+                        {component.score.toFixed(1)}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className={getGradeColor(component.grade)}
+                      >
                         {component.grade}
                       </Badge>
                     </div>
@@ -216,24 +258,34 @@ export default function RaporDetailPage() {
                   <p className="text-sm text-muted-foreground">Total Juz</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.tahfidz.totalSurah}</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.tahfidz.totalSurah}
+                  </p>
                   <p className="text-sm text-muted-foreground">Total Surah</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.tahfidz.setoranCount}</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.tahfidz.setoranCount}
+                  </p>
                   <p className="text-sm text-muted-foreground">Setoran</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.tahfidz.murajaahCount}</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.tahfidz.murajaahCount}
+                  </p>
                   <p className="text-sm text-muted-foreground">Murajaah</p>
                 </div>
               </div>
 
               <div>
                 <h4 className="font-medium mb-2">Progress Hafalan</h4>
-                <Progress value={rapor.tahfidz.progressPercentage} className="h-3" />
+                <Progress
+                  value={rapor.tahfidz.progressPercentage}
+                  className="h-3"
+                />
                 <p className="text-sm text-muted-foreground mt-1">
-                  {rapor.tahfidz.progressPercentage.toFixed(1)}% ({rapor.tahfidz.totalAyah} ayat)
+                  {rapor.tahfidz.progressPercentage.toFixed(1)}% (
+                  {rapor.tahfidz.totalAyah} ayat)
                 </p>
               </div>
 
@@ -280,20 +332,30 @@ export default function RaporDetailPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.ibadah.totalPoints}</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.ibadah.totalPoints}
+                  </p>
                   <p className="text-sm text-muted-foreground">Total Poin</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.ibadah.completionRate.toFixed(0)}%</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.ibadah.completionRate.toFixed(0)}%
+                  </p>
                   <p className="text-sm text-muted-foreground">Completion</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.ibadah.currentStreak}</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.ibadah.currentStreak}
+                  </p>
                   <p className="text-sm text-muted-foreground">Streak Aktif</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.ibadah.longestStreak}</p>
-                  <p className="text-sm text-muted-foreground">Streak Terpanjang</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.ibadah.longestStreak}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Streak Terpanjang
+                  </p>
                 </div>
               </div>
 
@@ -302,10 +364,15 @@ export default function RaporDetailPage() {
                   <h4 className="font-medium mb-2">Per Kategori</h4>
                   <div className="space-y-2">
                     {rapor.ibadah.categoryBreakdown.map((cat, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-2 bg-muted rounded">
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-2 bg-muted rounded"
+                      >
                         <span>{cat.category}</span>
                         <div className="flex items-center gap-4">
-                          <span className="text-sm">{cat.completionRate.toFixed(0)}%</span>
+                          <span className="text-sm">
+                            {cat.completionRate.toFixed(0)}%
+                          </span>
                           <Badge>{cat.points} poin</Badge>
                         </div>
                       </div>
@@ -327,19 +394,27 @@ export default function RaporDetailPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.muhadhoroh.totalSessions}</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.muhadhoroh.totalSessions}
+                  </p>
                   <p className="text-sm text-muted-foreground">Total Sesi</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.muhadhoroh.attendedSessions}</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.muhadhoroh.attendedSessions}
+                  </p>
                   <p className="text-sm text-muted-foreground">Dihadiri</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.muhadhoroh.performanceCount}</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.muhadhoroh.performanceCount}
+                  </p>
                   <p className="text-sm text-muted-foreground">Tampil</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.muhadhoroh.averageScore.toFixed(1)}</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.muhadhoroh.averageScore.toFixed(1)}
+                  </p>
                   <p className="text-sm text-muted-foreground">Rata-rata</p>
                 </div>
               </div>
@@ -357,14 +432,18 @@ export default function RaporDetailPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {rapor.muhadhoroh.performances.slice(0, 5).map((perf, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell>{formatDate(perf.date)}</TableCell>
-                          <TableCell>{perf.theme}</TableCell>
-                          <TableCell>{perf.score}</TableCell>
-                          <TableCell className="max-w-xs truncate">{perf.feedback || '-'}</TableCell>
-                        </TableRow>
-                      ))}
+                      {rapor.muhadhoroh.performances
+                        .slice(0, 5)
+                        .map((perf, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell>{formatDate(perf.date)}</TableCell>
+                            <TableCell>{perf.theme}</TableCell>
+                            <TableCell>{perf.score}</TableCell>
+                            <TableCell className="max-w-xs truncate">
+                              {perf.feedback || "-"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
                     </TableBody>
                   </Table>
                 </div>
@@ -383,19 +462,27 @@ export default function RaporDetailPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.muhadatsah.totalSessions}</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.muhadatsah.totalSessions}
+                  </p>
                   <p className="text-sm text-muted-foreground">Total Sesi</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.muhadatsah.practiceCount}</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.muhadatsah.practiceCount}
+                  </p>
                   <p className="text-sm text-muted-foreground">Latihan</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.muhadatsah.averageScore.toFixed(1)}</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.muhadatsah.averageScore.toFixed(1)}
+                  </p>
                   <p className="text-sm text-muted-foreground">Rata-rata</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.muhadatsah.languages.length}</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.muhadatsah.languages.length}
+                  </p>
                   <p className="text-sm text-muted-foreground">Bahasa</p>
                 </div>
               </div>
@@ -403,7 +490,9 @@ export default function RaporDetailPage() {
               {rapor.muhadatsah.languages.length > 0 && (
                 <div className="flex gap-2 flex-wrap">
                   {rapor.muhadatsah.languages.map((lang, idx) => (
-                    <Badge key={idx} variant="secondary">{lang}</Badge>
+                    <Badge key={idx} variant="secondary">
+                      {lang}
+                    </Badge>
                   ))}
                 </div>
               )}
@@ -421,14 +510,16 @@ export default function RaporDetailPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {rapor.muhadatsah.practices.slice(0, 5).map((practice, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell>{formatDate(practice.date)}</TableCell>
-                          <TableCell>{practice.language}</TableCell>
-                          <TableCell>{practice.topic}</TableCell>
-                          <TableCell>{practice.score}</TableCell>
-                        </TableRow>
-                      ))}
+                      {rapor.muhadatsah.practices
+                        .slice(0, 5)
+                        .map((practice, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell>{formatDate(practice.date)}</TableCell>
+                            <TableCell>{practice.language}</TableCell>
+                            <TableCell>{practice.topic}</TableCell>
+                            <TableCell>{practice.score}</TableCell>
+                          </TableRow>
+                        ))}
                     </TableBody>
                   </Table>
                 </div>
@@ -447,19 +538,27 @@ export default function RaporDetailPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.kitabProgress.totalKitab}</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.kitabProgress.totalKitab}
+                  </p>
                   <p className="text-sm text-muted-foreground">Total Kitab</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.kitabProgress.completedKitab}</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.kitabProgress.completedKitab}
+                  </p>
                   <p className="text-sm text-muted-foreground">Selesai</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.kitabProgress.inProgressKitab}</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.kitabProgress.inProgressKitab}
+                  </p>
                   <p className="text-sm text-muted-foreground">Berjalan</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-bold">{rapor.kitabProgress.progressPercentage.toFixed(0)}%</p>
+                  <p className="text-2xl font-bold">
+                    {rapor.kitabProgress.progressPercentage.toFixed(0)}%
+                  </p>
                   <p className="text-sm text-muted-foreground">Progress</p>
                 </div>
               </div>
@@ -484,7 +583,10 @@ export default function RaporDetailPage() {
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Progress
-                                value={(kitab.completedPages / kitab.totalPages) * 100}
+                                value={
+                                  (kitab.completedPages / kitab.totalPages) *
+                                  100
+                                }
                                 className="w-20 h-2"
                               />
                               <span className="text-sm">
@@ -493,9 +595,18 @@ export default function RaporDetailPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={kitab.status === 'COMPLETED' ? 'default' : 'secondary'}>
-                              {kitab.status === 'COMPLETED' ? 'Selesai' :
-                                kitab.status === 'IN_PROGRESS' ? 'Berjalan' : 'Belum Mulai'}
+                            <Badge
+                              variant={
+                                kitab.status === "COMPLETED"
+                                  ? "default"
+                                  : "secondary"
+                              }
+                            >
+                              {kitab.status === "COMPLETED"
+                                ? "Selesai"
+                                : kitab.status === "IN_PROGRESS"
+                                  ? "Berjalan"
+                                  : "Belum Mulai"}
                             </Badge>
                           </TableCell>
                         </TableRow>
@@ -518,11 +629,15 @@ export default function RaporDetailPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-3 bg-red-50 dark:bg-red-950 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-red-600">{rapor.akhlak.totalViolations}</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {rapor.akhlak.totalViolations}
+                  </p>
                   <p className="text-sm text-muted-foreground">Pelanggaran</p>
                 </div>
                 <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-green-600">{rapor.akhlak.totalRewards}</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {rapor.akhlak.totalRewards}
+                  </p>
                   <p className="text-sm text-muted-foreground">Penghargaan</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-center">
@@ -530,7 +645,9 @@ export default function RaporDetailPage() {
                   <p className="text-sm text-muted-foreground">Poin Bersih</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-center">
-                  <p className="text-lg font-bold">{rapor.akhlak.behaviorGrade}</p>
+                  <p className="text-lg font-bold">
+                    {rapor.akhlak.behaviorGrade}
+                  </p>
                   <p className="text-sm text-muted-foreground">Predikat</p>
                 </div>
               </div>
@@ -540,17 +657,28 @@ export default function RaporDetailPage() {
                 <div>
                   <h4 className="font-medium mb-2 text-red-600">Pelanggaran</h4>
                   {rapor.akhlak.violations.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Tidak ada pelanggaran</p>
+                    <p className="text-sm text-muted-foreground">
+                      Tidak ada pelanggaran
+                    </p>
                   ) : (
                     <div className="space-y-2">
                       {rapor.akhlak.violations.slice(0, 5).map((v, idx) => (
-                        <div key={idx} className="p-2 bg-red-50 dark:bg-red-950 rounded text-sm">
+                        <div
+                          key={idx}
+                          className="p-2 bg-red-50 dark:bg-red-950 rounded text-sm"
+                        >
                           <div className="flex justify-between">
                             <span className="font-medium">{v.category}</span>
-                            <span className="text-red-600">-{v.points} poin</span>
+                            <span className="text-red-600">
+                              -{v.points} poin
+                            </span>
                           </div>
-                          <p className="text-muted-foreground">{v.description}</p>
-                          <p className="text-xs text-muted-foreground">{formatDate(v.date)}</p>
+                          <p className="text-muted-foreground">
+                            {v.description}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDate(v.date)}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -559,19 +687,32 @@ export default function RaporDetailPage() {
 
                 {/* Rewards */}
                 <div>
-                  <h4 className="font-medium mb-2 text-green-600">Penghargaan</h4>
+                  <h4 className="font-medium mb-2 text-green-600">
+                    Penghargaan
+                  </h4>
                   {rapor.akhlak.rewards.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Belum ada penghargaan</p>
+                    <p className="text-sm text-muted-foreground">
+                      Belum ada penghargaan
+                    </p>
                   ) : (
                     <div className="space-y-2">
                       {rapor.akhlak.rewards.slice(0, 5).map((r, idx) => (
-                        <div key={idx} className="p-2 bg-green-50 dark:bg-green-950 rounded text-sm">
+                        <div
+                          key={idx}
+                          className="p-2 bg-green-50 dark:bg-green-950 rounded text-sm"
+                        >
                           <div className="flex justify-between">
                             <span className="font-medium">{r.category}</span>
-                            <span className="text-green-600">+{r.points} poin</span>
+                            <span className="text-green-600">
+                              +{r.points} poin
+                            </span>
                           </div>
-                          <p className="text-muted-foreground">{r.description}</p>
-                          <p className="text-xs text-muted-foreground">{formatDate(r.date)}</p>
+                          <p className="text-muted-foreground">
+                            {r.description}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDate(r.date)}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -594,23 +735,33 @@ export default function RaporDetailPage() {
         <CardContent>
           <div className="grid grid-cols-3 md:grid-cols-6 gap-4 text-center">
             <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
-              <p className="text-2xl font-bold text-green-600">{rapor.attendance.presentDays}</p>
+              <p className="text-2xl font-bold text-green-600">
+                {rapor.attendance.presentDays}
+              </p>
               <p className="text-sm text-muted-foreground">Hadir</p>
             </div>
             <div className="p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg">
-              <p className="text-2xl font-bold text-yellow-600">{rapor.attendance.lateDays}</p>
+              <p className="text-2xl font-bold text-yellow-600">
+                {rapor.attendance.lateDays}
+              </p>
               <p className="text-sm text-muted-foreground">Terlambat</p>
             </div>
             <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">{rapor.attendance.sickDays}</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {rapor.attendance.sickDays}
+              </p>
               <p className="text-sm text-muted-foreground">Sakit</p>
             </div>
             <div className="p-3 bg-purple-50 dark:bg-purple-950 rounded-lg">
-              <p className="text-2xl font-bold text-purple-600">{rapor.attendance.permitDays}</p>
+              <p className="text-2xl font-bold text-purple-600">
+                {rapor.attendance.permitDays}
+              </p>
               <p className="text-sm text-muted-foreground">Izin</p>
             </div>
             <div className="p-3 bg-red-50 dark:bg-red-950 rounded-lg">
-              <p className="text-2xl font-bold text-red-600">{rapor.attendance.absentDays}</p>
+              <p className="text-2xl font-bold text-red-600">
+                {rapor.attendance.absentDays}
+              </p>
               <p className="text-sm text-muted-foreground">Alfa</p>
             </div>
             <div className="p-3 bg-muted rounded-lg">
@@ -622,7 +773,10 @@ export default function RaporDetailPage() {
       </Card>
 
       {/* Notes Section */}
-      {(rapor.notes || rapor.headTeacherNotes || rapor.musyrifNotes || rapor.principalNotes) && (
+      {(rapor.notes ||
+        rapor.headTeacherNotes ||
+        rapor.musyrifNotes ||
+        rapor.principalNotes) && (
         <Card>
           <CardHeader>
             <CardTitle>Catatan</CardTitle>
@@ -630,25 +784,33 @@ export default function RaporDetailPage() {
           <CardContent className="space-y-4">
             {rapor.notes && (
               <div>
-                <h4 className="font-medium text-sm text-muted-foreground">Catatan Umum</h4>
+                <h4 className="font-medium text-sm text-muted-foreground">
+                  Catatan Umum
+                </h4>
                 <p>{rapor.notes}</p>
               </div>
             )}
             {rapor.headTeacherNotes && (
               <div>
-                <h4 className="font-medium text-sm text-muted-foreground">Catatan Wali Kelas</h4>
+                <h4 className="font-medium text-sm text-muted-foreground">
+                  Catatan Wali Kelas
+                </h4>
                 <p>{rapor.headTeacherNotes}</p>
               </div>
             )}
             {rapor.musyrifNotes && (
               <div>
-                <h4 className="font-medium text-sm text-muted-foreground">Catatan Musyrif</h4>
+                <h4 className="font-medium text-sm text-muted-foreground">
+                  Catatan Musyrif
+                </h4>
                 <p>{rapor.musyrifNotes}</p>
               </div>
             )}
             {rapor.principalNotes && (
               <div>
-                <h4 className="font-medium text-sm text-muted-foreground">Catatan Kepala Sekolah</h4>
+                <h4 className="font-medium text-sm text-muted-foreground">
+                  Catatan Kepala Sekolah
+                </h4>
                 <p>{rapor.principalNotes}</p>
               </div>
             )}
@@ -659,7 +821,9 @@ export default function RaporDetailPage() {
       {/* Footer Info */}
       <div className="text-center text-sm text-muted-foreground">
         <p>Digenerate pada: {formatDate(rapor.generatedAt)}</p>
-        {rapor.publishedAt && <p>Dipublikasi pada: {formatDate(rapor.publishedAt)}</p>}
+        {rapor.publishedAt && (
+          <p>Dipublikasi pada: {formatDate(rapor.publishedAt)}</p>
+        )}
       </div>
     </div>
   );

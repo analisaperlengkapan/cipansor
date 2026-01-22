@@ -1,0 +1,69 @@
+
+> cipansor-monorepo@1.0.0 build /app
+> turbo run build
+
+• turbo 2.7.2
+• Packages in scope: @cipansor/shared, api, web
+• Running build in 3 packages
+• Remote caching disabled
+@cipansor/shared:build: cache hit, replaying logs 26e79835fbe93fbd
+@cipansor/shared:build:
+@cipansor/shared:build: > @cipansor/shared@1.0.0 build /app/packages/shared
+@cipansor/shared:build: > tsc
+@cipansor/shared:build:
+api:build: cache miss, executing 915d11ba02d7d13a
+web:build: cache miss, executing 288807fab84ebc0d
+api:build:
+api:build: > api@1.0.0 build /app/apps/api
+api:build: > tsc -p tsconfig.build.json
+api:build:
+web:build:
+web:build: > web@0.1.0 build /app/apps/web
+web:build: > next build
+web:build:
+web:build: [@sentry/nextjs] WARNING: You are using the Sentry SDK with `next build --turbo`. The Sentry SDK doesn't yet fully support Turbopack. The SDK will not be loaded in the browser, and serverside instrumentation will be inaccurate or incomplete. If you are just trying out Sentry or attempting to configure the SDK, we recommend temporarily removing the `--turbo` flag while you are developing locally. Follow this issue for progress on Sentry + Turbopack: https://github.com/getsentry/sentry-javascript/issues/8105. (You can suppress this warning by setting SENTRY_SUPPRESS_TURBOPACK_WARNING=1 as environment variable)
+web:build:    ▲ Next.js 16.0.10 (Turbopack)
+web:build:    - Experiments (use with caution):
+web:build:      · clientTraceMetadata
+web:build:
+web:build:    Creating an optimized production build ...
+web:build: [@sentry/nextjs] WARNING: You are using the Sentry SDK with `next build --turbo`. The Sentry SDK doesn't yet fully support Turbopack. The SDK will not be loaded in the browser, and serverside instrumentation will be inaccurate or incomplete. If you are just trying out Sentry or attempting to configure the SDK, we recommend temporarily removing the `--turbo` flag while you are developing locally. Follow this issue for progress on Sentry + Turbopack: https://github.com/getsentry/sentry-javascript/issues/8105. (You can suppress this warning by setting SENTRY_SUPPRESS_TURBOPACK_WARNING=1 as environment variable)
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(357,2): error TS1109: Expression expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(357,9): error TS1005: ';' expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(358,2): error TS1109: Expression expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(358,15): error TS1005: ';' expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(358,17): error TS1435: Unknown keyword or identifier. Did you mean 'get'?
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(358,21): error TS1434: Unexpected keyword or identifier.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(358,32): error TS1434: Unexpected keyword or identifier.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(359,12): error TS1005: ';' expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(359,20): error TS1005: ',' expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(360,16): error TS1005: ';' expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(361,2): error TS1109: Expression expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(361,22): error TS1005: ';' expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(362,18): error TS1005: ';' expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(363,2): error TS1109: Expression expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(363,12): error TS1109: Expression expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(363,14): error TS1109: Expression expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(364,16): error TS1005: ';' expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(365,20): error TS1005: ';' expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(366,18): error TS1005: ';' expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(367,2): error TS1109: Expression expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(367,18): error TS1005: ';' expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(368,17): error TS1005: ';' expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(369,2): error TS1109: Expression expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(369,13): error TS1005: ';' expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(370,2): error TS1109: Expression expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(370,23): error TS1005: ';' expected.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(370,25): error TS1434: Unexpected keyword or identifier.
+api:build: src/modules/paud-assessment/paud-assessment.routes.ts(371,3): error TS1161: Unterminated regular expression literal.
+api:build:  ELIFECYCLE  Command failed with exit code 2.
+api:build: ERROR: command finished with error: command (/app/apps/api) /home/jules/.local/share/pnpm/.tools/pnpm/9.0.0/bin/pnpm run build exited (2)
+api#build: command (/app/apps/api) /home/jules/.local/share/pnpm/.tools/pnpm/9.0.0/bin/pnpm run build exited (2)
+
+ Tasks:    1 successful, 3 total
+Cached:    1 cached, 3 total
+  Time:    47.222s
+Failed:    api#build
+
+ ERROR  run failed: command  exited (2)
+ ELIFECYCLE  Command failed with exit code 2.

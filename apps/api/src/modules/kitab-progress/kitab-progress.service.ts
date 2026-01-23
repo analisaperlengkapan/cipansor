@@ -51,7 +51,7 @@ interface ListProgressQuery {
   limit: number;
 }
 
-interface UpdateProgressInput {
+export interface UpdateProgressInput {
   kitabId: string;
   studentId: string;
   teacherId: string;

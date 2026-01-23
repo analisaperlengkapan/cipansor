@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { kitabProgressService } from './kitab-progress.service';
+import { kitabProgressService, UpdateProgressInput } from './kitab-progress.service';
 
 export class KitabProgressController {
   // ==================
@@ -126,7 +126,7 @@ export class KitabProgressController {
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const results = { success: 0, failed: 0, errors: [] as string[] };
 
-      const promises = records.map(async (record: any) => {
+      const promises = records.map(async (record: UpdateProgressInput) => {
         try {
           await kitabProgressService.updateProgress(record, user);
           return { success: true };

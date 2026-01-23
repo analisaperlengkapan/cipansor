@@ -19,11 +19,14 @@ type MetricType =
   | 'CLASS_COUNT'
   | 'CUSTOM';
 
+const CHUNK_SIZE = 5;
+
 /**
  * Create daily metric snapshots for all units
  */
 export async function createDailySnapshots(): Promise<void> {
   const jobName = 'createDailySnapshots';
+  const startTime = Date.now();
   logger.info(`[${jobName}] Starting daily metric snapshot job`);
 
   try {
@@ -50,106 +53,116 @@ export async function createDailySnapshots(): Promise<void> {
     let successCount = 0;
     let errorCount = 0;
 
-    for (const unit of units) {
-      try {
-        // Get overview data for this unit
-        const overview = await dashboardService.getOverview({ unitId: unit.id });
+    // Process units in chunks to manage database load
+    for (let i = 0; i < units.length; i += CHUNK_SIZE) {
+      const chunk = units.slice(i, i + CHUNK_SIZE);
 
-        // Create snapshots for different metrics
-        const metricsToSnapshot: Array<{
-          type: MetricType;
-          value: number;
-          data: Record<string, unknown>;
-        }> = [
-          {
-            type: 'STUDENT_COUNT',
-            value: overview.students.total,
-            data: {
-              active: overview.students.active,
-              inactive: overview.students.inactive,
-            },
-          },
-          {
-            type: 'ATTENDANCE_RATE',
-            value: overview.attendance.rate,
-            data: {
-              total: overview.attendance.total,
-              present: overview.attendance.present,
-            },
-          },
-          {
-            type: 'TAHFIDZ_PROGRESS',
-            value: overview.tahfidz.avgScore,
-            data: {
-              totalRecords: overview.tahfidz.totalRecords,
-              totalAyah: overview.tahfidz.totalAyah,
-            },
-          },
-          {
-            type: 'MUROJAAH_PROGRESS',
-            value: overview.murojaah.avgQuality,
-            data: {
-              totalRecords: overview.murojaah.totalRecords,
-              totalPages: overview.murojaah.totalPages,
-            },
-          },
-          {
-            type: 'SIMAAN_RESULT',
-            value: overview.simaan.passRate,
-            data: {
-              totalExams: overview.simaan.totalExams,
-              passedExams: overview.simaan.passedExams,
-            },
-          },
-          {
-            type: 'TEACHER_COUNT',
-            value: overview.teachers.total,
-            data: {},
-          },
-          {
-            type: 'CLASS_COUNT',
-            value: overview.classes.total,
-            data: {},
-          },
-        ];
+      await Promise.all(
+        chunk.map(async (unit) => {
+          try {
+            // Get overview data for this unit
+            const overview = await dashboardService.getOverview({ unitId: unit.id });
 
-        // Create snapshots using upsert to avoid duplicates
-        for (const metric of metricsToSnapshot) {
-          await prisma.dashboardMetricSnapshot.upsert({
-            where: {
-              unitId_metricType_periodType_periodDate: {
-                unitId: unit.id,
-                metricType: metric.type,
-                periodDate: today,
-                periodType: 'DAILY',
+            // Create snapshots for different metrics
+            const metricsToSnapshot: Array<{
+              type: MetricType;
+              value: number;
+              data: Record<string, unknown>;
+            }> = [
+              {
+                type: 'STUDENT_COUNT',
+                value: overview.students.total,
+                data: {
+                  active: overview.students.active,
+                  inactive: overview.students.inactive,
+                },
               },
-            },
-            update: {
-              metricValue: metric.value,
-              metricData: metric.data as Prisma.JsonObject,
-            },
-            create: {
-              unitId: unit.id,
-              academicYearId: academicYear.id,
-              metricType: metric.type,
-              metricValue: metric.value,
-              metricData: metric.data as Prisma.JsonObject,
-              periodType: 'DAILY',
-              periodDate: today,
-            },
-          });
-        }
+              {
+                type: 'ATTENDANCE_RATE',
+                value: overview.attendance.rate,
+                data: {
+                  total: overview.attendance.total,
+                  present: overview.attendance.present,
+                },
+              },
+              {
+                type: 'TAHFIDZ_PROGRESS',
+                value: overview.tahfidz.avgScore,
+                data: {
+                  totalRecords: overview.tahfidz.totalRecords,
+                  totalAyah: overview.tahfidz.totalAyah,
+                },
+              },
+              {
+                type: 'MUROJAAH_PROGRESS',
+                value: overview.murojaah.avgQuality,
+                data: {
+                  totalRecords: overview.murojaah.totalRecords,
+                  totalPages: overview.murojaah.totalPages,
+                },
+              },
+              {
+                type: 'SIMAAN_RESULT',
+                value: overview.simaan.passRate,
+                data: {
+                  totalExams: overview.simaan.totalExams,
+                  passedExams: overview.simaan.passedExams,
+                },
+              },
+              {
+                type: 'TEACHER_COUNT',
+                value: overview.teachers.total,
+                data: {},
+              },
+              {
+                type: 'CLASS_COUNT',
+                value: overview.classes.total,
+                data: {},
+              },
+            ];
 
-        successCount++;
-        logger.debug(`[${jobName}] Created snapshots for unit: ${unit.name}`);
-      } catch (unitError) {
-        errorCount++;
-        logger.error(`[${jobName}] Error creating snapshots for unit ${unit.name}:`, unitError);
-      }
+            // Create snapshots using upsert to avoid duplicates
+            await Promise.all(
+              metricsToSnapshot.map((metric) =>
+                prisma.dashboardMetricSnapshot.upsert({
+                  where: {
+                    unitId_metricType_periodType_periodDate: {
+                      unitId: unit.id,
+                      metricType: metric.type,
+                      periodDate: today,
+                      periodType: 'DAILY',
+                    },
+                  },
+                  update: {
+                    metricValue: metric.value,
+                    metricData: metric.data as Prisma.JsonObject,
+                  },
+                  create: {
+                    unitId: unit.id,
+                    academicYearId: academicYear.id,
+                    metricType: metric.type,
+                    metricValue: metric.value,
+                    metricData: metric.data as Prisma.JsonObject,
+                    periodType: 'DAILY',
+                    periodDate: today,
+                  },
+                })
+              )
+            );
+
+            successCount++;
+            logger.debug(`[${jobName}] Created snapshots for unit: ${unit.name}`);
+          } catch (unitError) {
+            errorCount++;
+            logger.error(`[${jobName}] Error creating snapshots for unit ${unit.name}:`, unitError);
+          }
+        })
+      );
     }
 
+    const duration = Date.now() - startTime;
     logger.info(
-      `[${jobName}] Daily snapshot job completed: ${successCount} success, ${errorCount} errors`
+      `[${jobName}] Daily snapshot job completed in ${duration}ms: ${successCount} success, ${errorCount} errors`
     );
   } catch (error) {
     logger.error(`[${jobName}] Fatal error in daily snapshot job:`, error);

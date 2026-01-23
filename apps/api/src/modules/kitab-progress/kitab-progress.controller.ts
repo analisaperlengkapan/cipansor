@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { kitabProgressService } from './kitab-progress.service';
+import { kitabProgressService, UpdateProgressInput } from './kitab-progress.service';
 
 export class KitabProgressController {
   // ==================
@@ -126,17 +126,30 @@ export class KitabProgressController {
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const results = { success: 0, failed: 0, errors: [] as string[] };
 
-      for (const record of records) {
+      const promises = records.map(async (record: UpdateProgressInput) => {
         try {
           await kitabProgressService.updateProgress(record, user);
-          results.success++;
+          return { success: true };
         } catch (error) {
-          results.failed++;
-          results.errors.push(
-            `${record.studentId}: ${error instanceof Error ? error.message : 'Failed'}`
-          );
+          return {
+            success: false,
+            error: `${record.studentId}: ${error instanceof Error ? error.message : 'Failed'}`,
+          };
         }
-      }
+      });
+
+      const outcomes = await Promise.all(promises);
+
+      outcomes.forEach((outcome) => {
+        if (outcome.success) {
+          results.success++;
+        } else {
+          results.failed++;
+          if (outcome.error) {
+            results.errors.push(outcome.error);
+          }
+        }
+      });
 
       res.json({ data: results });
     } catch (error) {

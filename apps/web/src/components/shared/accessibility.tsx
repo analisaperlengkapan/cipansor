@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
 interface SkipLinkProps extends React.HTMLAttributes<HTMLAnchorElement> {
   /**
@@ -17,32 +17,32 @@ interface SkipLinkProps extends React.HTMLAttributes<HTMLAnchorElement> {
 /**
  * Skip Link component for accessibility
  * Allows keyboard users to skip navigation and go directly to main content
- * 
+ *
  * @example
  * ```tsx
  * // In layout.tsx
  * <SkipLink />
  * <header>...</header>
  * <main id="main-content">...</main>
- * 
+ *
  * // With custom target
  * <SkipLink targetId="content">Skip to content</SkipLink>
  * ```
  */
 export function SkipLink({
-  targetId = 'main-content',
-  children = 'Loncat ke konten utama',
+  targetId = "main-content",
+  children = "Loncat ke konten utama",
   className,
   ...props
 }: SkipLinkProps) {
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     const target = document.getElementById(targetId);
-    
+
     if (target) {
       // Make target focusable if it isn't
-      if (!target.hasAttribute('tabindex')) {
-        target.setAttribute('tabindex', '-1');
+      if (!target.hasAttribute("tabindex")) {
+        target.setAttribute("tabindex", "-1");
       }
       target.focus();
       target.scrollIntoView();
@@ -55,18 +55,18 @@ export function SkipLink({
       onClick={handleClick}
       className={cn(
         // Position
-        'fixed left-4 top-4 z-100',
+        "fixed left-4 top-4 z-100",
         // By default, visually hidden but keyboard-accessible
-        'sr-only focus:not-sr-only',
+        "sr-only focus:not-sr-only",
         // Styles when focused
-        'focus:absolute focus:z-50',
-        'focus:bg-primary focus:text-primary-foreground',
-        'focus:px-4 focus:py-2 focus:rounded-md',
-        'focus:shadow-lg focus:ring-2 focus:ring-ring focus:ring-offset-2',
-        'focus:outline-none',
+        "focus:absolute focus:z-50",
+        "focus:bg-primary focus:text-primary-foreground",
+        "focus:px-4 focus:py-2 focus:rounded-md",
+        "focus:shadow-lg focus:ring-2 focus:ring-ring focus:ring-offset-2",
+        "focus:outline-none",
         // Animation
-        'transition-all duration-150',
-        className
+        "transition-all duration-150",
+        className,
       )}
       {...props}
     >
@@ -97,7 +97,7 @@ interface FocusTrapProps {
 /**
  * Focus Trap component for modals and dialogs
  * Traps focus within the container for accessibility
- * 
+ *
  * @example
  * ```tsx
  * <FocusTrap active={isOpen} onEscape={close}>
@@ -131,8 +131,9 @@ export function FocusTrap({
 
     return () => {
       // Return focus when deactivated
-      const returnTo = returnFocusRef?.current ?? previousActiveElementRef.current;
-      if (returnTo && typeof returnTo.focus === 'function') {
+      const returnTo =
+        returnFocusRef?.current ?? previousActiveElementRef.current;
+      if (returnTo && typeof returnTo.focus === "function") {
         returnTo.focus();
       }
     };
@@ -143,14 +144,14 @@ export function FocusTrap({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Handle Escape
-      if (e.key === 'Escape' && onEscape) {
+      if (e.key === "Escape" && onEscape) {
         e.preventDefault();
         onEscape();
         return;
       }
 
       // Handle Tab
-      if (e.key === 'Tab') {
+      if (e.key === "Tab") {
         const container = containerRef.current;
         if (!container) return;
 
@@ -176,18 +177,14 @@ export function FocusTrap({
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [active, onEscape]);
 
-  return (
-    <div ref={containerRef}>
-      {children}
-    </div>
-  );
+  return <div ref={containerRef}>{children}</div>;
 }
 
 /**
@@ -195,17 +192,17 @@ export function FocusTrap({
  */
 function getFocusableElements(container: HTMLElement): HTMLElement[] {
   const selector = [
-    'button:not([disabled])',
-    'a[href]',
+    "button:not([disabled])",
+    "a[href]",
     'input:not([disabled]):not([type="hidden"])',
-    'select:not([disabled])',
-    'textarea:not([disabled])',
+    "select:not([disabled])",
+    "textarea:not([disabled])",
     '[tabindex]:not([tabindex="-1"])',
     '[contenteditable="true"]',
-  ].join(',');
+  ].join(",");
 
   return Array.from(container.querySelectorAll<HTMLElement>(selector)).filter(
-    el => !el.hasAttribute('disabled') && el.offsetParent !== null
+    (el) => !el.hasAttribute("disabled") && el.offsetParent !== null,
   );
 }
 
@@ -218,7 +215,7 @@ interface VisuallyHiddenProps extends React.HTMLAttributes<HTMLSpanElement> {
 
 /**
  * Visually Hidden component for screen reader text
- * 
+ *
  * @example
  * ```tsx
  * <button>
@@ -234,10 +231,7 @@ export function VisuallyHidden({
   ...props
 }: VisuallyHiddenProps) {
   return (
-    <span
-      className={cn(debug ? '' : 'sr-only', className)}
-      {...props}
-    >
+    <span className={cn(debug ? "" : "sr-only", className)} {...props}>
       {children}
     </span>
   );
@@ -247,7 +241,7 @@ interface LiveRegionProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
    * Politeness level for announcements
    */
-  politeness?: 'polite' | 'assertive';
+  politeness?: "polite" | "assertive";
   /**
    * Whether to announce only when content changes
    */
@@ -260,7 +254,7 @@ interface LiveRegionProps extends React.HTMLAttributes<HTMLDivElement> {
 
 /**
  * Live Region component for screen reader announcements
- * 
+ *
  * @example
  * ```tsx
  * <LiveRegion politeness="polite">
@@ -269,7 +263,7 @@ interface LiveRegionProps extends React.HTMLAttributes<HTMLDivElement> {
  * ```
  */
 export function LiveRegion({
-  politeness = 'polite',
+  politeness = "polite",
   atomic = true,
   children,
   className,
@@ -280,7 +274,7 @@ export function LiveRegion({
       role="status"
       aria-live={politeness}
       aria-atomic={atomic}
-      className={cn('sr-only', className)}
+      className={cn("sr-only", className)}
       {...props}
     >
       {children}

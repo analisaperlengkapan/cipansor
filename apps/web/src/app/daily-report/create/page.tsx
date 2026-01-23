@@ -1,56 +1,72 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, Loader2, Calendar as CalendarIcon, Upload } from 'lucide-react';
-import { format } from 'date-fns';
-import { id as dateLocale } from 'date-fns/locale';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  Save,
+  Loader2,
+  Calendar as CalendarIcon,
+  Upload,
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as dateLocale } from "date-fns/locale";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LoadingSpinner, PhotoGallery, type PhotoGalleryItem } from '@/components/shared';
-import { toast } from 'sonner';
-import { uploadApi } from '@/lib/api';
+} from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  LoadingSpinner,
+  PhotoGallery,
+  type PhotoGalleryItem,
+} from "@/components/shared";
+import { toast } from "sonner";
+import { uploadApi } from "@/lib/api";
 
-import { useUnits } from '@/hooks/use-units';
-import { useClasses } from '@/hooks/use-classes';
-import { useClassEnrollments } from '@/hooks/use-class-enrollments';
-import { useAcademicYears } from '@/hooks/use-academic-years';
-import { useCreateDailyReport } from '@/hooks/use-daily-report';
-import { cn } from '@/lib/utils';
-import type { DailyMood } from '@cipansor/shared';
+import { useUnits } from "@/hooks/use-units";
+import { useClasses } from "@/hooks/use-classes";
+import { useClassEnrollments } from "@/hooks/use-class-enrollments";
+import { useAcademicYears } from "@/hooks/use-academic-years";
+import { useCreateDailyReport } from "@/hooks/use-daily-report";
+import { cn } from "@/lib/utils";
+import type { DailyMood } from "@cipansor/shared";
 
 const MOOD_OPTIONS: { value: DailyMood; label: string; emoji: string }[] = [
-  { value: 'HAPPY', label: 'Senang', emoji: '😊' },
-  { value: 'EXCITED', label: 'Antusias', emoji: '🤩' },
-  { value: 'NEUTRAL', label: 'Biasa', emoji: '😐' },
-  { value: 'TIRED', label: 'Lelah', emoji: '😴' },
-  { value: 'SAD', label: 'Sedih', emoji: '😢' },
-  { value: 'SICK', label: 'Sakit', emoji: '🤒' },
+  { value: "HAPPY", label: "Senang", emoji: "😊" },
+  { value: "EXCITED", label: "Antusias", emoji: "🤩" },
+  { value: "NEUTRAL", label: "Biasa", emoji: "😐" },
+  { value: "TIRED", label: "Lelah", emoji: "😴" },
+  { value: "SAD", label: "Sedih", emoji: "😢" },
+  { value: "SICK", label: "Sakit", emoji: "🤒" },
 ];
 
 const MEAL_OPTIONS = [
-  { value: 'FULL', label: 'Habis' },
-  { value: 'HALF', label: 'Setengah' },
-  { value: 'QUARTER', label: 'Sedikit' },
-  { value: 'NONE', label: 'Tidak Mau' },
+  { value: "FULL", label: "Habis" },
+  { value: "HALF", label: "Setengah" },
+  { value: "QUARTER", label: "Sedikit" },
+  { value: "NONE", label: "Tidak Mau" },
 ];
 
 export default function CreateDailyReportPage() {
@@ -58,34 +74,34 @@ export default function CreateDailyReportPage() {
   const createReport = useCreateDailyReport();
 
   // Basic Info
-  const [unitId, setUnitId] = useState<string>('');
-  const [classId, setClassId] = useState<string>('');
-  const [studentId, setStudentId] = useState<string>('');
-  const [academicYearId, setAcademicYearId] = useState<string>('');
+  const [unitId, setUnitId] = useState<string>("");
+  const [classId, setClassId] = useState<string>("");
+  const [studentId, setStudentId] = useState<string>("");
+  const [academicYearId, setAcademicYearId] = useState<string>("");
   const [date, setDate] = useState<Date>(new Date());
 
   // Report Data
-  const [mood, setMood] = useState<DailyMood>('HAPPY');
-  const [arrivalTime, setArrivalTime] = useState('07:00');
-  const [temperature, setTemperature] = useState('');
-  const [healthNotes, setHealthNotes] = useState('');
+  const [mood, setMood] = useState<DailyMood>("HAPPY");
+  const [arrivalTime, setArrivalTime] = useState("07:00");
+  const [temperature, setTemperature] = useState("");
+  const [healthNotes, setHealthNotes] = useState("");
 
   // Meals
-  const [breakfast, setBreakfast] = useState('FULL');
-  const [lunch, setLunch] = useState('FULL');
-  const [snack, setSnack] = useState('FULL');
+  const [breakfast, setBreakfast] = useState("FULL");
+  const [lunch, setLunch] = useState("FULL");
+  const [snack, setSnack] = useState("FULL");
 
   // Activities
-  const [activities, setActivities] = useState('');
-  const [achievements, setAchievements] = useState('');
-  const [tahfidz, setTahfidz] = useState('');
-  const [napDuration, setNapDuration] = useState('0');
-  const [toiletNotes, setToiletNotes] = useState('');
+  const [activities, setActivities] = useState("");
+  const [achievements, setAchievements] = useState("");
+  const [tahfidz, setTahfidz] = useState("");
+  const [napDuration, setNapDuration] = useState("0");
+  const [toiletNotes, setToiletNotes] = useState("");
 
   // Notes
-  const [behaviorNotes, setBehaviorNotes] = useState('');
-  const [teacherNotes, setTeacherNotes] = useState('');
-  const [homework, setHomework] = useState('');
+  const [behaviorNotes, setBehaviorNotes] = useState("");
+  const [teacherNotes, setTeacherNotes] = useState("");
+  const [homework, setHomework] = useState("");
 
   // Photos
   const [photos, setPhotos] = useState<PhotoGalleryItem[]>([]);
@@ -103,7 +119,7 @@ export default function CreateDailyReportPage() {
 
   const handleSubmit = async () => {
     if (!unitId || !studentId || !academicYearId || !date) {
-      toast.error('Mohon lengkapi data dasar laporan');
+      toast.error("Mohon lengkapi data dasar laporan");
       return;
     }
 
@@ -112,7 +128,7 @@ export default function CreateDailyReportPage() {
         unitId,
         studentId,
         academicYearId,
-        reportDate: format(date, 'yyyy-MM-dd'),
+        reportDate: format(date, "yyyy-MM-dd"),
         morningMood: mood,
         temperature: temperature ? parseFloat(temperature) : undefined,
         healthNotes,
@@ -130,10 +146,10 @@ export default function CreateDailyReportPage() {
         photoUrls: photos.map((p) => p.url),
       });
 
-      toast.success('Laporan berhasil dibuat');
-      router.push('/daily-report');
+      toast.success("Laporan berhasil dibuat");
+      router.push("/daily-report");
     } catch (error) {
-      toast.error('Gagal membuat laporan');
+      toast.error("Gagal membuat laporan");
       console.error(error);
     }
   };
@@ -147,12 +163,12 @@ export default function CreateDailyReportPage() {
         id: `temp-${Date.now()}-${index}`,
         url: res.data.data.url,
         uploadedAt: new Date(),
-        category: 'Kegiatan', // Default category
+        category: "Kegiatan", // Default category
       }));
 
       setPhotos((prev) => [...prev, ...newPhotos]);
     } catch (error) {
-      console.error('Upload failed:', error);
+      console.error("Upload failed:", error);
       throw error; // Let PhotoGallery handle the error toast
     }
   };
@@ -168,7 +184,9 @@ export default function CreateDailyReportPage() {
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Buat Laporan Baru</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Buat Laporan Baru
+          </h1>
           <p className="text-muted-foreground">
             Laporan harian individual untuk siswa
           </p>
@@ -191,7 +209,9 @@ export default function CreateDailyReportPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {units.map((unit) => (
-                      <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
+                      <SelectItem key={unit.id} value={unit.id}>
+                        {unit.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -199,13 +219,18 @@ export default function CreateDailyReportPage() {
 
               <div className="space-y-2">
                 <Label>Tahun Ajaran</Label>
-                <Select value={academicYearId} onValueChange={setAcademicYearId}>
+                <Select
+                  value={academicYearId}
+                  onValueChange={setAcademicYearId}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih Tahun" />
                   </SelectTrigger>
                   <SelectContent>
                     {academicYears.map((year) => (
-                      <SelectItem key={year.id} value={year.id}>{year.name}</SelectItem>
+                      <SelectItem key={year.id} value={year.id}>
+                        {year.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -213,13 +238,19 @@ export default function CreateDailyReportPage() {
 
               <div className="space-y-2">
                 <Label>Kelas</Label>
-                <Select value={classId} onValueChange={setClassId} disabled={!unitId}>
+                <Select
+                  value={classId}
+                  onValueChange={setClassId}
+                  disabled={!unitId}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih Kelas" />
                   </SelectTrigger>
                   <SelectContent>
                     {classes.map((cls) => (
-                      <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                      <SelectItem key={cls.id} value={cls.id}>
+                        {cls.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -227,16 +258,26 @@ export default function CreateDailyReportPage() {
 
               <div className="space-y-2">
                 <Label>Siswa</Label>
-                <Select value={studentId} onValueChange={setStudentId} disabled={!classId}>
+                <Select
+                  value={studentId}
+                  onValueChange={setStudentId}
+                  disabled={!classId}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih Siswa" />
                   </SelectTrigger>
                   <SelectContent>
-                    {students.map((enrollment) => enrollment.student ? (
-                      <SelectItem key={enrollment.student.id} value={enrollment.student.id}>
-                        {enrollment.student.user?.name || enrollment.student.name}
-                      </SelectItem>
-                    ) : null)}
+                    {students.map((enrollment) =>
+                      enrollment.student ? (
+                        <SelectItem
+                          key={enrollment.student.id}
+                          value={enrollment.student.id}
+                        >
+                          {enrollment.student.user?.name ||
+                            enrollment.student.name}
+                        </SelectItem>
+                      ) : null,
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -249,11 +290,15 @@ export default function CreateDailyReportPage() {
                       variant={"outline"}
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
+                        !date && "text-muted-foreground",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? format(date, "PPP", { locale: dateLocale }) : <span>Pilih Tanggal</span>}
+                      {date ? (
+                        format(date, "PPP", { locale: dateLocale })
+                      ) : (
+                        <span>Pilih Tanggal</span>
+                      )}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -275,7 +320,11 @@ export default function CreateDailyReportPage() {
             onClick={handleSubmit}
             disabled={createReport.isPending}
           >
-            {createReport.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+            {createReport.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : (
+              <Save className="w-4 h-4 mr-2" />
+            )}
             Simpan Laporan
           </Button>
         </div>
@@ -303,7 +352,9 @@ export default function CreateDailyReportPage() {
                       {MOOD_OPTIONS.map((option) => (
                         <Button
                           key={option.value}
-                          variant={mood === option.value ? "default" : "outline"}
+                          variant={
+                            mood === option.value ? "default" : "outline"
+                          }
                           className="flex-1 min-w-[80px]"
                           onClick={() => setMood(option.value)}
                         >
@@ -358,7 +409,13 @@ export default function CreateDailyReportPage() {
                     photos={photos}
                     onUpload={handleUploadPhotos}
                     onDelete={handleDeletePhoto}
-                    categories={['Kegiatan', 'Hasil Karya', 'Makan', 'Tidur', 'Bermain']}
+                    categories={[
+                      "Kegiatan",
+                      "Hasil Karya",
+                      "Makan",
+                      "Tidur",
+                      "Bermain",
+                    ]}
                   />
                 </CardContent>
               </Card>
@@ -435,8 +492,10 @@ export default function CreateDailyReportPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {MEAL_OPTIONS.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        {MEAL_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -449,8 +508,10 @@ export default function CreateDailyReportPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {MEAL_OPTIONS.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        {MEAL_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -463,8 +524,10 @@ export default function CreateDailyReportPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {MEAL_OPTIONS.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        {MEAL_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

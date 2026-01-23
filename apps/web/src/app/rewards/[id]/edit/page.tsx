@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft, Search, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft, Search, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -16,36 +22,31 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import {
   useReward,
   useUpdateReward,
   useRewardTypes,
   REWARD_CATEGORIES,
-} from '@/hooks/use-rewards';
-import { useStudents } from '@/hooks/use-students';
+} from "@/hooks/use-rewards";
+import { useStudents } from "@/hooks/use-students";
 
 const formSchema = z.object({
-  studentId: z.string().min(1, 'Santri wajib dipilih'),
-  rewardTypeId: z.string().min(1, 'Jenis penghargaan wajib dipilih'),
-  date: z.string().min(1, 'Tanggal wajib diisi'),
+  studentId: z.string().min(1, "Santri wajib dipilih"),
+  rewardTypeId: z.string().min(1, "Jenis penghargaan wajib dipilih"),
+  date: z.string().min(1, "Tanggal wajib diisi"),
   description: z.string().optional(),
 });
 
@@ -55,7 +56,7 @@ export default function EditRewardPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<{
     id: string;
     name: string;
@@ -74,10 +75,10 @@ export default function EditRewardPage() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      studentId: '',
-      rewardTypeId: '',
-      date: '',
-      description: '',
+      studentId: "",
+      rewardTypeId: "",
+      date: "",
+      description: "",
     },
   });
 
@@ -86,8 +87,8 @@ export default function EditRewardPage() {
       form.reset({
         studentId: reward.studentId,
         rewardTypeId: reward.rewardTypeId,
-        date: reward.date.split('T')[0],
-        description: reward.description || '',
+        date: reward.date.split("T")[0],
+        description: reward.description || "",
       });
       if (reward.student) {
         setSelectedStudent({
@@ -108,21 +109,25 @@ export default function EditRewardPage() {
           description: data.description || undefined,
         },
       });
-      toast.success('Penghargaan berhasil diperbarui');
+      toast.success("Penghargaan berhasil diperbarui");
       router.push(`/rewards/${id}`);
     } catch {
-      toast.error('Gagal memperbarui penghargaan');
+      toast.error("Gagal memperbarui penghargaan");
     }
   };
 
-  const handleSelectStudent = (student: { id: string; name: string; nis: string }) => {
+  const handleSelectStudent = (student: {
+    id: string;
+    name: string;
+    nis: string;
+  }) => {
     setSelectedStudent(student);
-    form.setValue('studentId', student.id);
-    setSearch('');
+    form.setValue("studentId", student.id);
+    setSearch("");
   };
 
   const selectedType = rewardTypes?.find(
-    (t) => t.id === form.watch('rewardTypeId')
+    (t) => t.id === form.watch("rewardTypeId"),
   );
 
   if (isLoading) {
@@ -136,7 +141,9 @@ export default function EditRewardPage() {
   if (!reward) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">Data penghargaan tidak ditemukan</p>
+        <p className="text-muted-foreground">
+          Data penghargaan tidak ditemukan
+        </p>
         <Button variant="link" asChild>
           <Link href="/rewards">Kembali ke daftar</Link>
         </Button>
@@ -154,8 +161,12 @@ export default function EditRewardPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Edit Penghargaan</h1>
-          <p className="text-muted-foreground">Perbarui data penghargaan santri</p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Edit Penghargaan
+          </h1>
+          <p className="text-muted-foreground">
+            Perbarui data penghargaan santri
+          </p>
         </div>
       </div>
 
@@ -166,21 +177,25 @@ export default function EditRewardPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Pilih Santri</CardTitle>
-                <CardDescription>Santri yang diberi penghargaan</CardDescription>
+                <CardDescription>
+                  Santri yang diberi penghargaan
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {selectedStudent ? (
                   <div className="flex items-center justify-between rounded-lg border p-4">
                     <div>
                       <p className="font-medium">{selectedStudent.name}</p>
-                      <p className="text-sm text-muted-foreground">{selectedStudent.nis}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedStudent.nis}
+                      </p>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
                         setSelectedStudent(null);
-                        form.setValue('studentId', '');
+                        form.setValue("studentId", "");
                       }}
                     >
                       Ganti
@@ -224,7 +239,9 @@ export default function EditRewardPage() {
                                   }
                                 >
                                   <TableCell>{student.nis}</TableCell>
-                                  <TableCell className="font-medium">{student.name}</TableCell>
+                                  <TableCell className="font-medium">
+                                    {student.name}
+                                  </TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>
@@ -256,7 +273,10 @@ export default function EditRewardPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Jenis Penghargaan</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih jenis penghargaan" />
@@ -286,20 +306,31 @@ export default function EditRewardPage() {
                 {selectedType && (
                   <div className="rounded-lg border bg-muted/50 p-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Kategori:</span>
+                      <span className="text-sm text-muted-foreground">
+                        Kategori:
+                      </span>
                       <Badge
                         variant="outline"
                         className={
-                          REWARD_CATEGORIES.find((c) => c.value === selectedType.category)
-                            ?.color
+                          REWARD_CATEGORIES.find(
+                            (c) => c.value === selectedType.category,
+                          )?.color
                         }
                       >
-                        {REWARD_CATEGORIES.find((c) => c.value === selectedType.category)?.label}
+                        {
+                          REWARD_CATEGORIES.find(
+                            (c) => c.value === selectedType.category,
+                          )?.label
+                        }
                       </Badge>
                     </div>
                     <div className="mt-2 flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Poin:</span>
-                      <span className="font-semibold text-green-600">+{selectedType.points}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Poin:
+                      </span>
+                      <span className="font-semibold text-green-600">
+                        +{selectedType.points}
+                      </span>
                     </div>
                     {selectedType.description && (
                       <p className="mt-2 text-sm text-muted-foreground">
@@ -350,7 +381,7 @@ export default function EditRewardPage() {
               <Link href={`/rewards/${id}`}>Batal</Link>
             </Button>
             <Button type="submit" disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
+              {updateMutation.isPending ? "Menyimpan..." : "Simpan Perubahan"}
             </Button>
           </div>
         </form>

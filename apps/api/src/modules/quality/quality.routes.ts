@@ -8,23 +8,11 @@ import { UserRole } from '@prisma/client';
 const router = Router();
 
 // Public/Shared routes (protected by Auth)
-router.get(
-  '/standards',
-  authenticate,
-  qualityController.getAllStandards
-);
+router.get('/standards', authenticate, qualityController.getAllStandards);
 
-router.get(
-  '/standards/:id',
-  authenticate,
-  qualityController.getStandardDetails
-);
+router.get('/standards/:id', authenticate, qualityController.getStandardDetails);
 
-router.get(
-  '/dashboard/summary',
-  authenticate,
-  qualityController.getDashboardSummary
-);
+router.get('/dashboard/summary', authenticate, qualityController.getDashboardSummary);
 
 // Admin/Staff routes
 router.post(

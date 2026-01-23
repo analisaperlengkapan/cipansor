@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useState } from "react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   ClipboardList,
   Plus,
@@ -11,20 +11,20 @@ import {
   Calendar as CalendarIcon,
   Users,
   Filter,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Pagination } from '@/components/shared/pagination';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Pagination } from "@/components/shared/pagination";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -32,44 +32,50 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
+} from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { useAttendances, ATTENDANCE_STATUSES, AttendanceStatus } from '@/hooks/use-attendance';
-import { useClasses } from '@/hooks/use-classes';
-import { useUnits } from '@/hooks/use-units';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/popover";
+import {
+  useAttendances,
+  ATTENDANCE_STATUSES,
+  AttendanceStatus,
+} from "@/hooks/use-attendance";
+import { useClasses } from "@/hooks/use-classes";
+import { useUnits } from "@/hooks/use-units";
+import { cn } from "@/lib/utils";
 
 export default function AttendancePage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [classId, setClassId] = useState<string>('ALL');
-  const [status, setStatus] = useState<string>('ALL');
+  const [classId, setClassId] = useState<string>("ALL");
+  const [status, setStatus] = useState<string>("ALL");
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [unitId, setUnitId] = useState<string>('ALL');
+  const [unitId, setUnitId] = useState<string>("ALL");
 
   const { data: units } = useUnits();
-  const { data: classesData } = useClasses({ unitId: unitId === 'ALL' ? undefined : unitId });
+  const { data: classesData } = useClasses({
+    unitId: unitId === "ALL" ? undefined : unitId,
+  });
   const classes = classesData?.data || [];
 
   const { data: attendanceData, isLoading } = useAttendances({
     page,
     limit: pageSize,
-    classId: classId === 'ALL' ? undefined : classId,
-    status: status === 'ALL' ? undefined : (status as AttendanceStatus),
-    date: date ? format(date, 'yyyy-MM-dd') : undefined,
+    classId: classId === "ALL" ? undefined : classId,
+    status: status === "ALL" ? undefined : (status as AttendanceStatus),
+    date: date ? format(date, "yyyy-MM-dd") : undefined,
   });
 
   const attendances = attendanceData?.data || [];
@@ -87,11 +93,11 @@ export default function AttendancePage() {
   // Calculate summary stats
   const summary = {
     total: attendances.length,
-    present: attendances.filter((a) => a.status === 'PRESENT').length,
-    absent: attendances.filter((a) => a.status === 'ABSENT').length,
-    late: attendances.filter((a) => a.status === 'LATE').length,
-    sick: attendances.filter((a) => a.status === 'SICK').length,
-    excused: attendances.filter((a) => a.status === 'EXCUSED').length,
+    present: attendances.filter((a) => a.status === "PRESENT").length,
+    absent: attendances.filter((a) => a.status === "ABSENT").length,
+    late: attendances.filter((a) => a.status === "LATE").length,
+    sick: attendances.filter((a) => a.status === "SICK").length,
+    excused: attendances.filter((a) => a.status === "EXCUSED").length,
   };
 
   return (
@@ -100,9 +106,9 @@ export default function AttendancePage() {
         title="Kehadiran"
         description="Kelola data kehadiran siswa"
         action={{
-          label: 'Input Kehadiran',
+          label: "Input Kehadiran",
           icon: <Plus className="h-4 w-4" />,
-          href: '/attendance/record',
+          href: "/attendance/record",
         }}
       />
 
@@ -123,7 +129,9 @@ export default function AttendancePage() {
               <div className="h-3 w-3 rounded-full bg-green-500" />
               <span className="text-sm text-muted-foreground">Hadir</span>
             </div>
-            <p className="text-2xl font-bold text-green-600">{summary.present}</p>
+            <p className="text-2xl font-bold text-green-600">
+              {summary.present}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -159,7 +167,9 @@ export default function AttendancePage() {
               <div className="h-3 w-3 rounded-full bg-purple-500" />
               <span className="text-sm text-muted-foreground">Izin</span>
             </div>
-            <p className="text-2xl font-bold text-purple-600">{summary.excused}</p>
+            <p className="text-2xl font-bold text-purple-600">
+              {summary.excused}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -179,12 +189,14 @@ export default function AttendancePage() {
                 <Button
                   variant="outline"
                   className={cn(
-                    'w-[200px] justify-start text-left font-normal',
-                    !date && 'text-muted-foreground'
+                    "w-[200px] justify-start text-left font-normal",
+                    !date && "text-muted-foreground",
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, 'd MMMM yyyy', { locale: localeId }) : 'Pilih tanggal'}
+                  {date
+                    ? format(date, "d MMMM yyyy", { locale: localeId })
+                    : "Pilih tanggal"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -197,7 +209,13 @@ export default function AttendancePage() {
               </PopoverContent>
             </Popover>
 
-            <Select value={unitId} onValueChange={(v) => { setUnitId(v); setClassId('ALL'); }}>
+            <Select
+              value={unitId}
+              onValueChange={(v) => {
+                setUnitId(v);
+                setClassId("ALL");
+              }}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Semua Unit" />
               </SelectTrigger>
@@ -243,9 +261,9 @@ export default function AttendancePage() {
               variant="ghost"
               onClick={() => {
                 setDate(new Date());
-                setUnitId('');
-                setClassId('');
-                setStatus('');
+                setUnitId("");
+                setClassId("");
+                setStatus("");
               }}
             >
               Reset
@@ -283,25 +301,29 @@ export default function AttendancePage() {
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8">
                     <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-muted-foreground">Tidak ada data kehadiran</p>
+                    <p className="text-muted-foreground">
+                      Tidak ada data kehadiran
+                    </p>
                   </TableCell>
                 </TableRow>
               ) : (
                 attendances.map((attendance) => (
                   <TableRow key={attendance.id}>
                     <TableCell>
-                      {format(new Date(attendance.date), 'd MMM yyyy', { locale: localeId })}
+                      {format(new Date(attendance.date), "d MMM yyyy", {
+                        locale: localeId,
+                      })}
                     </TableCell>
                     <TableCell className="font-mono">
-                      {attendance.student?.nis || '-'}
+                      {attendance.student?.nis || "-"}
                     </TableCell>
-                    <TableCell>{attendance.student?.name || '-'}</TableCell>
-                    <TableCell>{attendance.class?.name || '-'}</TableCell>
+                    <TableCell>{attendance.student?.name || "-"}</TableCell>
+                    <TableCell>{attendance.class?.name || "-"}</TableCell>
                     <TableCell>{getStatusBadge(attendance.status)}</TableCell>
                     <TableCell className="max-w-[200px] truncate">
-                      {attendance.notes || '-'}
+                      {attendance.notes || "-"}
                     </TableCell>
-                    <TableCell>{attendance.recordedBy?.name || '-'}</TableCell>
+                    <TableCell>{attendance.recordedBy?.name || "-"}</TableCell>
                     <TableCell>
                       <Button variant="ghost" size="sm" asChild>
                         <Link href={`/attendance/${attendance.id}`}>

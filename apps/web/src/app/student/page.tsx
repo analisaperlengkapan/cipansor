@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useAuthStore } from '@/stores/auth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuthStore } from "@/stores/auth";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   BookOpen,
   Calendar,
@@ -20,56 +26,56 @@ import {
   AlertTriangle,
   User,
   GraduationCap,
-} from 'lucide-react';
-import Link from 'next/link';
+} from "lucide-react";
+import Link from "next/link";
 import {
   useStudentDashboard,
   getGradeDisplay,
   getStatusDisplay,
-} from '@/hooks/use-student-dashboard';
-import { formatDistanceToNow } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+} from "@/hooks/use-student-dashboard";
+import { formatDistanceToNow } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 
 export default function StudentDashboard() {
   const { user } = useAuthStore();
-  const { 
-    progress, 
-    recentHafalan, 
-    todaySchedule, 
+  const {
+    progress,
+    recentHafalan,
+    todaySchedule,
     stats,
-    isLoading, 
+    isLoading,
     isError,
-    refetch 
+    refetch,
   } = useStudentDashboard();
 
   const quickActions = [
     {
-      title: 'Hafalan Saya',
-      description: 'Lihat progress hafalan',
+      title: "Hafalan Saya",
+      description: "Lihat progress hafalan",
       icon: BookOpen,
-      href: '/tahfidz',
-      color: 'bg-green-500',
+      href: "/tahfidz",
+      color: "bg-green-500",
     },
     {
-      title: 'Jadwal',
-      description: 'Jadwal kegiatan',
+      title: "Jadwal",
+      description: "Jadwal kegiatan",
       icon: Calendar,
-      href: '/schedule',
-      color: 'bg-blue-500',
+      href: "/schedule",
+      color: "bg-blue-500",
     },
     {
-      title: 'Pengumuman',
-      description: 'Info terbaru',
+      title: "Pengumuman",
+      description: "Info terbaru",
       icon: Bell,
-      href: '/announcements',
-      color: 'bg-orange-500',
+      href: "/announcements",
+      color: "bg-orange-500",
     },
     {
-      title: 'Prestasi',
-      description: 'Penghargaan saya',
+      title: "Prestasi",
+      description: "Penghargaan saya",
       icon: Award,
-      href: '/student/achievements',
-      color: 'bg-purple-500',
+      href: "/student/achievements",
+      color: "bg-purple-500",
     },
   ];
 
@@ -83,7 +89,7 @@ export default function StudentDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Assalamu&apos;alaikum, {user?.name?.split(' ')[0] || 'Santri'}! 👋
+            Assalamu&apos;alaikum, {user?.name?.split(" ")[0] || "Santri"}! 👋
           </h1>
           <p className="text-muted-foreground">
             Dashboard Santri - Pantau progress belajar dan hafalanmu
@@ -95,7 +101,14 @@ export default function StudentDashboard() {
             Refresh
           </Button>
           <div className="text-right text-sm text-muted-foreground">
-            <p>{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p>
+              {new Date().toLocaleDateString("id-ID", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
           </div>
         </div>
       </div>
@@ -120,9 +133,9 @@ export default function StudentDashboard() {
         <CardContent>
           <div className="flex items-center gap-8">
             <div className="flex-1">
-              <Progress 
-                value={progress?.percentage || 0} 
-                className="h-4 bg-white/20" 
+              <Progress
+                value={progress?.percentage || 0}
+                className="h-4 bg-white/20"
               />
               <div className="flex justify-between mt-2 text-sm">
                 <span>{progress?.totalJuz || 0} Juz selesai</span>
@@ -130,14 +143,19 @@ export default function StudentDashboard() {
               </div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold">{progress?.percentage || 0}%</div>
+              <div className="text-4xl font-bold">
+                {progress?.percentage || 0}%
+              </div>
               <p className="text-sm opacity-80">Tercapai</p>
             </div>
           </div>
           <div className="flex gap-4 mt-4 text-sm">
             <div className="flex items-center gap-1">
               <BookOpen className="h-4 w-4" />
-              <span>{progress?.completedSurahs || 0}/{progress?.totalSurahs || 114} Surat</span>
+              <span>
+                {progress?.completedSurahs || 0}/{progress?.totalSurahs || 114}{" "}
+                Surat
+              </span>
             </div>
             <div className="flex items-center gap-1">
               <GraduationCap className="h-4 w-4" />
@@ -155,39 +173,51 @@ export default function StudentDashboard() {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalHafalan.juz || 0} Juz</div>
-            <p className="text-xs text-muted-foreground">{stats?.totalHafalan.pages || 0} halaman</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Setoran Bulan Ini</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.setoranThisMonth || 0}</div>
+            <div className="text-2xl font-bold">
+              {stats?.totalHafalan.juz || 0} Juz
+            </div>
             <p className="text-xs text-muted-foreground">
-              {stats?.setoranThisMonth && stats?.setoranLastMonth ? (
-                stats.setoranThisMonth > stats.setoranLastMonth
-                  ? `+${stats.setoranThisMonth - stats.setoranLastMonth} dari bulan lalu`
-                  : stats.setoranThisMonth < stats.setoranLastMonth
-                    ? `${stats.setoranThisMonth - stats.setoranLastMonth} dari bulan lalu`
-                    : 'sama dengan bulan lalu'
-              ) : (
-                'setoran bulan ini'
-              )}
+              {stats?.totalHafalan.pages || 0} halaman
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Nilai Rata-rata</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Setoran Bulan Ini
+            </CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats?.setoranThisMonth || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.setoranThisMonth && stats?.setoranLastMonth
+                ? stats.setoranThisMonth > stats.setoranLastMonth
+                  ? `+${stats.setoranThisMonth - stats.setoranLastMonth} dari bulan lalu`
+                  : stats.setoranThisMonth < stats.setoranLastMonth
+                    ? `${stats.setoranThisMonth - stats.setoranLastMonth} dari bulan lalu`
+                    : "sama dengan bulan lalu"
+                : "setoran bulan ini"}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Nilai Rata-rata
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.averageGrade || 'N/A'}</div>
+            <div className="text-2xl font-bold">
+              {stats?.averageGrade || "N/A"}
+            </div>
             <p className="text-xs text-muted-foreground">
-              {stats?.averageScore ? `Skor: ${stats.averageScore.toFixed(1)}` : 'belum ada data'}
+              {stats?.averageScore
+                ? `Skor: ${stats.averageScore.toFixed(1)}`
+                : "belum ada data"}
             </p>
           </CardContent>
         </Card>
@@ -199,7 +229,9 @@ export default function StudentDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{stats?.totalRewards || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {stats?.attendancePercentage ? `Kehadiran: ${stats.attendancePercentage}%` : 'tahun ini'}
+              {stats?.attendancePercentage
+                ? `Kehadiran: ${stats.attendancePercentage}%`
+                : "tahun ini"}
             </p>
           </CardContent>
         </Card>
@@ -245,7 +277,9 @@ export default function StudentDashboard() {
                       {item.time}
                     </div>
                     <div className="flex-1">
-                      <p className={`text-sm ${item.status === 'completed' ? 'text-muted-foreground line-through' : 'font-medium'}`}>
+                      <p
+                        className={`text-sm ${item.status === "completed" ? "text-muted-foreground line-through" : "font-medium"}`}
+                      >
                         {item.activity}
                       </p>
                       {item.teacher && (
@@ -257,17 +291,21 @@ export default function StudentDashboard() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-xs">
-                        {item.type === 'TAHFIDZ' ? 'Tahfidz' :
-                         item.type === 'RELIGIOUS' ? 'Diniyah' :
-                         item.type === 'ACADEMIC' ? 'Formal' : 'Ekstra'}
+                        {item.type === "TAHFIDZ"
+                          ? "Tahfidz"
+                          : item.type === "RELIGIOUS"
+                            ? "Diniyah"
+                            : item.type === "ACADEMIC"
+                              ? "Formal"
+                              : "Ekstra"}
                       </Badge>
-                      {item.status === 'completed' && (
+                      {item.status === "completed" && (
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
                       )}
-                      {item.status === 'ongoing' && (
+                      {item.status === "ongoing" && (
                         <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
                       )}
-                      {item.status === 'upcoming' && (
+                      {item.status === "upcoming" && (
                         <Clock className="h-4 w-4 text-muted-foreground" />
                       )}
                     </div>
@@ -297,17 +335,20 @@ export default function StudentDashboard() {
                 {recentHafalan.map((item) => {
                   const gradeInfo = getGradeDisplay(item.grade);
                   const statusInfo = getStatusDisplay(item.status);
-                  
+
                   return (
-                    <div key={item.id} className="flex items-center justify-between">
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between"
+                    >
                       <div>
                         <p className="text-sm font-medium">
                           {item.surahName}: {item.ayahStart}-{item.ayahEnd}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(item.createdAt), { 
-                            addSuffix: true, 
-                            locale: localeId 
+                          {formatDistanceToNow(new Date(item.createdAt), {
+                            addSuffix: true,
+                            locale: localeId,
                           })}
                           {item.teacherName && ` • ${item.teacherName}`}
                         </p>
@@ -317,7 +358,7 @@ export default function StudentDashboard() {
                           {statusInfo.label}
                         </Badge>
                         <Badge className={gradeInfo.color}>
-                          {gradeInfo.label.split(' ')[0]}
+                          {gradeInfo.label.split(" ")[0]}
                         </Badge>
                       </div>
                     </div>
@@ -345,7 +386,8 @@ export default function StudentDashboard() {
               خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ
             </p>
             <p className="text-sm text-muted-foreground italic">
-              &quot;Sebaik-baik kalian adalah orang yang belajar Al-Qur&apos;an dan mengajarkannya&quot;
+              &quot;Sebaik-baik kalian adalah orang yang belajar Al-Qur&apos;an
+              dan mengajarkannya&quot;
             </p>
             <p className="text-xs text-muted-foreground mt-1">- HR. Bukhari</p>
           </div>

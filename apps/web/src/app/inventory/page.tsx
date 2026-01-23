@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useState } from "react";
+import Link from "next/link";
 import {
   Plus,
   Search,
@@ -11,10 +11,10 @@ import {
   Trash2,
   Filter,
   BarChart3,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -22,18 +22,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Pagination } from '@/components/shared/pagination';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Pagination } from "@/components/shared/pagination";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { toast } from "sonner";
 import {
   useInventoryItems,
   useInventoryCategories,
@@ -41,19 +41,19 @@ import {
   useInventorySummary,
   AssetCondition,
   AssetStatus,
-} from '@/hooks/use-inventory';
+} from "@/hooks/use-inventory";
 
 function getConditionBadge(condition: AssetCondition) {
   const colorMap: Record<AssetCondition, string> = {
-    [AssetCondition.EXCELLENT]: 'bg-green-100 text-green-800',
-    [AssetCondition.GOOD]: 'bg-blue-100 text-blue-800',
-    [AssetCondition.FAIR]: 'bg-yellow-100 text-yellow-800',
-    [AssetCondition.POOR]: 'bg-orange-100 text-orange-800',
-    [AssetCondition.BROKEN]: 'bg-red-100 text-red-800',
+    [AssetCondition.EXCELLENT]: "bg-green-100 text-green-800",
+    [AssetCondition.GOOD]: "bg-blue-100 text-blue-800",
+    [AssetCondition.FAIR]: "bg-yellow-100 text-yellow-800",
+    [AssetCondition.POOR]: "bg-orange-100 text-orange-800",
+    [AssetCondition.BROKEN]: "bg-red-100 text-red-800",
   };
 
   return (
-    <Badge variant="outline" className={colorMap[condition] || 'bg-gray-100'}>
+    <Badge variant="outline" className={colorMap[condition] || "bg-gray-100"}>
       {condition}
     </Badge>
   );
@@ -61,14 +61,14 @@ function getConditionBadge(condition: AssetCondition) {
 
 function getStatusBadge(status: AssetStatus) {
   const colorMap: Record<AssetStatus, string> = {
-    [AssetStatus.ACTIVE]: 'bg-green-100 text-green-800',
-    [AssetStatus.MAINTENANCE]: 'bg-yellow-100 text-yellow-800',
-    [AssetStatus.DAMAGED]: 'bg-red-100 text-red-800',
-    [AssetStatus.DISPOSED]: 'bg-gray-100 text-gray-800',
+    [AssetStatus.ACTIVE]: "bg-green-100 text-green-800",
+    [AssetStatus.MAINTENANCE]: "bg-yellow-100 text-yellow-800",
+    [AssetStatus.DAMAGED]: "bg-red-100 text-red-800",
+    [AssetStatus.DISPOSED]: "bg-gray-100 text-gray-800",
   };
 
   return (
-    <Badge variant="outline" className={colorMap[status] || 'bg-gray-100'}>
+    <Badge variant="outline" className={colorMap[status] || "bg-gray-100"}>
       {status}
     </Badge>
   );
@@ -76,18 +76,21 @@ function getStatusBadge(status: AssetStatus) {
 
 export default function InventoryPage() {
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [categoryId, setCategoryId] = useState<string>('all');
-  const [conditionFilter, setConditionFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [search, setSearch] = useState("");
+  const [categoryId, setCategoryId] = useState<string>("all");
+  const [conditionFilter, setConditionFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const { data: inventoryData, isLoading } = useInventoryItems({
     page,
     limit: 10,
     search: search || undefined,
-    categoryId: categoryId !== 'all' ? categoryId : undefined,
-    condition: conditionFilter !== 'all' ? (conditionFilter as AssetCondition) : undefined,
-    status: statusFilter !== 'all' ? (statusFilter as AssetStatus) : undefined,
+    categoryId: categoryId !== "all" ? categoryId : undefined,
+    condition:
+      conditionFilter !== "all"
+        ? (conditionFilter as AssetCondition)
+        : undefined,
+    status: statusFilter !== "all" ? (statusFilter as AssetStatus) : undefined,
   });
 
   const { data: categories } = useInventoryCategories();
@@ -97,17 +100,17 @@ export default function InventoryPage() {
   const handleDelete = async (id: string) => {
     try {
       await deleteMutation.mutateAsync(id);
-      toast.success('Inventaris berhasil dihapus');
+      toast.success("Inventaris berhasil dihapus");
     } catch {
-      toast.error('Gagal menghapus inventaris');
+      toast.error("Gagal menghapus inventaris");
     }
   };
 
   const formatCurrency = (amount?: number) => {
-    if (!amount) return '-';
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
+    if (!amount) return "-";
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
       minimumFractionDigits: 0,
     }).format(amount);
   };
@@ -117,8 +120,12 @@ export default function InventoryPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Inventaris (Aset)</h1>
-          <p className="text-muted-foreground">Kelola data aset dan inventaris pesantren</p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Inventaris (Aset)
+          </h1>
+          <p className="text-muted-foreground">
+            Kelola data aset dan inventaris pesantren
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
@@ -144,7 +151,9 @@ export default function InventoryPage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summaryData?.totalItems || 0}</div>
+            <div className="text-2xl font-bold">
+              {summaryData?.totalItems || 0}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -154,25 +163,31 @@ export default function InventoryPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-               {summaryData?.byStatus?.find(s => s.status === AssetStatus.ACTIVE)?.count || 0}
+              {summaryData?.byStatus?.find(
+                (s) => s.status === AssetStatus.ACTIVE,
+              )?.count || 0}
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Perlu Maintenance</CardTitle>
-             <div className="h-4 w-4 rounded-full bg-yellow-500" />
+            <CardTitle className="text-sm font-medium">
+              Perlu Maintenance
+            </CardTitle>
+            <div className="h-4 w-4 rounded-full bg-yellow-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-                {summaryData?.recentMaintenances || 0}
+              {summaryData?.recentMaintenances || 0}
             </div>
-             <p className="text-xs text-muted-foreground">30 hari terakhir</p>
+            <p className="text-xs text-muted-foreground">30 hari terakhir</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Nilai Aset</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Nilai Aset
+            </CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -225,7 +240,7 @@ export default function InventoryPage() {
             </SelectContent>
           </Select>
 
-           <Select value={conditionFilter} onValueChange={setConditionFilter}>
+          <Select value={conditionFilter} onValueChange={setConditionFilter}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Kondisi" />
             </SelectTrigger>
@@ -251,7 +266,9 @@ export default function InventoryPage() {
           ) : inventoryData?.data.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <Package className="h-12 w-12 text-muted-foreground" />
-              <p className="mt-4 text-muted-foreground">Belum ada data inventaris</p>
+              <p className="mt-4 text-muted-foreground">
+                Belum ada data inventaris
+              </p>
               <Button asChild className="mt-4">
                 <Link href="/inventory/new">Tambah Aset Baru</Link>
               </Button>
@@ -272,13 +289,19 @@ export default function InventoryPage() {
               <TableBody>
                 {inventoryData?.data.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell className="font-mono text-sm">{item.code}</TableCell>
-                    <TableCell>
-                        <div className="font-medium">{item.name}</div>
-                        {item.brand && <div className="text-xs text-muted-foreground">{item.brand} {item.model}</div>}
+                    <TableCell className="font-mono text-sm">
+                      {item.code}
                     </TableCell>
-                    <TableCell>{item.category?.name || '-'}</TableCell>
-                    <TableCell>{item.location || '-'}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{item.name}</div>
+                      {item.brand && (
+                        <div className="text-xs text-muted-foreground">
+                          {item.brand} {item.model}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>{item.category?.name || "-"}</TableCell>
+                    <TableCell>{item.location || "-"}</TableCell>
                     <TableCell>{getConditionBadge(item.condition)}</TableCell>
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
                     <TableCell className="text-right">

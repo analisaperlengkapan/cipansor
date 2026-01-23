@@ -4,18 +4,9 @@ import { z } from 'zod';
 // ENUMS
 // ======================
 
-export const MealType = z.enum([
-  'BREAKFAST',
-  'LUNCH',
-  'DINNER',
-  'SNACK',
-]);
+export const MealType = z.enum(['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK']);
 
-export const AttendanceStatus = z.enum([
-  'PRESENT',
-  'ABSENT',
-  'EXCUSED',
-]);
+export const AttendanceStatus = z.enum(['PRESENT', 'ABSENT', 'EXCUSED']);
 
 // ======================
 // MEAL SCHEDULE SCHEMAS
@@ -25,7 +16,10 @@ export const listMealSchedulesQuerySchema = z.object({
   unitId: z.string().uuid().optional(),
   type: MealType.optional(),
   dayOfWeek: z.coerce.number().min(0).max(6).optional(),
-  isActive: z.enum(['true', 'false']).transform(v => v === 'true').optional(),
+  isActive: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
 });
@@ -108,12 +102,16 @@ export const recordAttendanceSchema = z.object({
 
 export const bulkRecordAttendanceSchema = z.object({
   mealMenuId: z.string().uuid(),
-  attendances: z.array(z.object({
-    studentId: z.string().uuid(),
-    status: AttendanceStatus.default('PRESENT'),
-    portion: z.number().positive().default(1),
-    notes: z.string().max(500).optional(),
-  })).min(1),
+  attendances: z
+    .array(
+      z.object({
+        studentId: z.string().uuid(),
+        status: AttendanceStatus.default('PRESENT'),
+        portion: z.number().positive().default(1),
+        notes: z.string().max(500).optional(),
+      })
+    )
+    .min(1),
 });
 
 export const updateAttendanceSchema = z.object({

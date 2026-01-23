@@ -15,7 +15,7 @@ import {
   ReportCard,
   CreateReportCardInput,
   UpdateReportCardInput,
-  ReportCardDetail
+  ReportCardDetail,
 } from '@cipansor/shared';
 import { Prisma } from '@prisma/client';
 import type { ExamQuery, GradeQuery, ReportCardQuery } from './schema';
@@ -25,7 +25,19 @@ import type { ExamQuery, GradeQuery, ReportCardQuery } from './schema';
 // =====================================
 
 export async function getExams(query: ExamQuery): Promise<SharedPaginatedResponse<Exam>> {
-  const { page, limit, unitId, academicYearId, subjectId, classId, teacherId, type, status, startDate, endDate } = query;
+  const {
+    page,
+    limit,
+    unitId,
+    academicYearId,
+    subjectId,
+    classId,
+    teacherId,
+    type,
+    status,
+    startDate,
+    endDate,
+  } = query;
   const skip = (page - 1) * limit;
 
   const where: Prisma.ExamWhereInput = {};
@@ -266,7 +278,7 @@ export async function updateGrade(id: string, data: UpdateGradeInput): Promise<G
   const updateData: Prisma.GradeUpdateInput = {};
 
   if (data.notes !== undefined) updateData.notes = data.notes;
-  
+
   // If scores change, we need to recalculate percentage and letter grade
   if (data.score !== undefined || data.maxScore !== undefined) {
     const existingGrade = await prisma.grade.findUnique({ where: { id } });
@@ -326,7 +338,10 @@ export async function bulkCreateGrades(data: BulkCreateGradesInput): Promise<num
   return result.count;
 }
 
-export async function getStudentGrades(studentId: string, academicYearId?: string): Promise<Grade[]> {
+export async function getStudentGrades(
+  studentId: string,
+  academicYearId?: string
+): Promise<Grade[]> {
   const where: Prisma.GradeWhereInput = { studentId };
   if (academicYearId) where.academicYearId = academicYearId;
 
@@ -335,7 +350,7 @@ export async function getStudentGrades(studentId: string, academicYearId?: strin
     include: {
       subject: { select: { id: true, name: true, code: true } },
       exam: { select: { id: true, title: true, type: true } },
-      gradedBy: { select: { id: true, name: true } }
+      gradedBy: { select: { id: true, name: true } },
     },
     orderBy: [{ subjectId: 'asc' }, { gradedAt: 'desc' }],
   });
@@ -354,7 +369,7 @@ export async function getExamGrades(examId: string): Promise<Grade[]> {
       },
       subject: { select: { id: true, name: true, code: true } },
       exam: { select: { id: true, title: true, type: true } },
-      gradedBy: { select: { id: true, name: true } }
+      gradedBy: { select: { id: true, name: true } },
     },
     orderBy: { score: 'desc' },
   });
@@ -366,7 +381,9 @@ export async function getExamGrades(examId: string): Promise<Grade[]> {
 // REPORT CARD SERVICES
 // =====================================
 
-export async function getReportCards(query: ReportCardQuery): Promise<SharedPaginatedResponse<ReportCard>> {
+export async function getReportCards(
+  query: ReportCardQuery
+): Promise<SharedPaginatedResponse<ReportCard>> {
   const { page, limit, studentId, classId, academicYearId, semester, isPublished } = query;
   const skip = (page - 1) * limit;
 
@@ -442,7 +459,10 @@ export async function createReportCard(data: CreateReportCardInput): Promise<Rep
   return mapToReportCard(reportCard);
 }
 
-export async function updateReportCard(id: string, data: UpdateReportCardInput): Promise<ReportCard> {
+export async function updateReportCard(
+  id: string,
+  data: UpdateReportCardInput
+): Promise<ReportCard> {
   const updateData: Prisma.ReportCardUpdateInput = {};
 
   if (data.teacherNotes !== undefined) updateData.teacherNotes = data.teacherNotes;
@@ -477,7 +497,12 @@ export async function deleteReportCard(id: string): Promise<ReportCard> {
   return mapToReportCard(reportCard);
 }
 
-export async function generateReportCard(studentId: string, classId: string, academicYearId: string, semester: number): Promise<ReportCard | null> {
+export async function generateReportCard(
+  studentId: string,
+  classId: string,
+  academicYearId: string,
+  semester: number
+): Promise<ReportCard | null> {
   // Optimization: Use Promise.all to fetch data concurrently
   // Optimization: Use database aggregation instead of in-memory loop for subject averages
 
@@ -486,13 +511,15 @@ export async function generateReportCard(studentId: string, classId: string, aca
     // 1. Calculate Averages per Subject using Raw SQL for performance
     // We need to group by subject and calculate averages for Daily, Midterm, Final
     // Then average those components
-    prisma.$queryRaw<Array<{
-      subject_id: string;
-      subject_name: string;
-      avg_daily: number | null;
-      avg_midterm: number | null;
-      avg_final: number | null;
-    }>>`
+    prisma.$queryRaw<
+      Array<{
+        subject_id: string;
+        subject_name: string;
+        avg_daily: number | null;
+        avg_midterm: number | null;
+        avg_final: number | null;
+      }>
+    >`
       SELECT
         s.id as subject_id,
         s.name as subject_name,
@@ -514,7 +541,7 @@ export async function generateReportCard(studentId: string, classId: string, aca
       by: ['status'],
       where: {
         studentId,
-        class: { academicYearId } // Filter by class associated with academic year? Or just academicYearId on attendance?
+        class: { academicYearId }, // Filter by class associated with academic year? Or just academicYearId on attendance?
       },
       _count: true,
     }),
@@ -530,20 +557,19 @@ export async function generateReportCard(studentId: string, classId: string, aca
     prisma.tahfidzRecord.aggregate({
       where: { studentId, activityType: 'ZIYADAH' },
       _sum: { totalAyah: true },
-    })
+    }),
   ]);
 
-  const details = subjectAggregates.map(sub => {
+  const details = subjectAggregates.map((sub) => {
     const daily = sub.avg_daily ? Number(sub.avg_daily) : null;
     const midterm = sub.avg_midterm ? Number(sub.avg_midterm) : null;
     const final = sub.avg_final ? Number(sub.avg_final) : null;
 
     // Calculate weighted average (simple average for now, but could be weighted)
     // Formula: Average of available components
-    const components = [daily, midterm, final].filter(c => c !== null) as number[];
-    const avgScore = components.length > 0
-      ? components.reduce((a, b) => a + b, 0) / components.length
-      : null;
+    const components = [daily, midterm, final].filter((c) => c !== null) as number[];
+    const avgScore =
+      components.length > 0 ? components.reduce((a, b) => a + b, 0) / components.length : null;
 
     return {
       subjectName: sub.subject_name,
@@ -556,7 +582,9 @@ export async function generateReportCard(studentId: string, classId: string, aca
   });
 
   const attendanceSummary = {
-    present: (attendance.find((a) => a.status === 'PRESENT')?._count || 0) + (attendance.find((a) => a.status === 'LATE')?._count || 0),
+    present:
+      (attendance.find((a) => a.status === 'PRESENT')?._count || 0) +
+      (attendance.find((a) => a.status === 'LATE')?._count || 0),
     absent: attendance.find((a) => a.status === 'ABSENT')?._count || 0,
     sick: attendance.find((a) => a.status === 'SICK')?._count || 0,
     excused: attendance.find((a) => a.status === 'EXCUSED')?._count || 0,
@@ -571,10 +599,11 @@ export async function generateReportCard(studentId: string, classId: string, aca
     : undefined; // Prisma JSON needs null/undefined handling carefully
 
   // 4. Calculate Overall Average
-  const validSubjects = details.filter(d => d.averageScore !== null);
-  const overallAverage = validSubjects.length > 0
-    ? validSubjects.reduce((sum, d) => sum + Number(d.averageScore), 0) / validSubjects.length
-    : null;
+  const validSubjects = details.filter((d) => d.averageScore !== null);
+  const overallAverage =
+    validSubjects.length > 0
+      ? validSubjects.reduce((sum, d) => sum + Number(d.averageScore), 0) / validSubjects.length
+      : null;
 
   // 5. Upsert Report Card
   // Transaction to ensure atomicity
@@ -599,21 +628,21 @@ export async function generateReportCard(studentId: string, classId: string, aca
         tahfidzSummary: tahfidzSummary ?? Prisma.JsonNull,
         // Create details inline
         details: {
-          create: details.map(d => ({
+          create: details.map((d) => ({
             subjectName: d.subjectName,
             dailyScore: d.dailyScore,
             midtermScore: d.midtermScore,
             finalScore: d.finalScore,
             averageScore: d.averageScore,
-            letterGrade: d.letterGrade
-          }))
-        }
+            letterGrade: d.letterGrade,
+          })),
+        },
       },
       update: {
         averageScore: overallAverage ? new Decimal(overallAverage) : null,
         attendance: attendanceSummary,
         tahfidzSummary: tahfidzSummary ?? Prisma.JsonNull,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       include: {
         student: { include: { user: { select: { id: true, name: true } } } },
@@ -631,15 +660,15 @@ export async function generateReportCard(studentId: string, classId: string, aca
 
     await tx.reportCardDetail.deleteMany({ where: { reportCardId: rc.id } });
     await tx.reportCardDetail.createMany({
-      data: details.map(d => ({
+      data: details.map((d) => ({
         reportCardId: rc.id,
         subjectName: d.subjectName,
         dailyScore: d.dailyScore,
         midtermScore: d.midtermScore,
         finalScore: d.finalScore,
         averageScore: d.averageScore,
-        letterGrade: d.letterGrade
-      }))
+        letterGrade: d.letterGrade,
+      })),
     });
 
     return rc;
@@ -649,17 +678,21 @@ export async function generateReportCard(studentId: string, classId: string, aca
   return getReportCardById(reportCard.id);
 }
 
-export async function generateClassReportCards(classId: string, academicYearId: string, semester: number): Promise<ReportCard[]> {
+export async function generateClassReportCards(
+  classId: string,
+  academicYearId: string,
+  semester: number
+): Promise<ReportCard[]> {
   // Get all active students in class
   const enrollments = await prisma.classEnrollment.findMany({
     where: { classId, status: 'active' },
-    select: { studentId: true }
+    select: { studentId: true },
   });
 
   // Generate for each student concurrently
   // Using Promise.all is efficient for typical class sizes (30-40)
   const results = await Promise.all(
-    enrollments.map(e => generateReportCard(e.studentId, classId, academicYearId, semester))
+    enrollments.map((e) => generateReportCard(e.studentId, classId, academicYearId, semester))
   );
 
   return results.filter((r): r is ReportCard => r !== null);
@@ -704,7 +737,7 @@ function mapToExam(data: any): Exam {
     teacher: data.teacher,
     academicYear: data.academicYear,
     grades: data.grades ? data.grades.map(mapToGrade) : undefined,
-    _count: data._count
+    _count: data._count,
   };
 }
 
@@ -728,12 +761,14 @@ function mapToGrade(data: any): Grade {
 
     student: data.student,
     subject: data.subject,
-    exam: data.exam ? {
-      id: data.exam.id,
-      title: data.exam.title,
-      type: data.exam.type as ExamType
-    } : undefined,
-    gradedBy: data.gradedBy
+    exam: data.exam
+      ? {
+          id: data.exam.id,
+          title: data.exam.title,
+          type: data.exam.type as ExamType,
+        }
+      : undefined,
+    gradedBy: data.gradedBy,
   };
 }
 
@@ -758,16 +793,18 @@ function mapToReportCard(data: any): ReportCard {
     student: data.student,
     class: data.class,
     academicYear: data.academicYear,
-    details: data.details ? data.details.map((d: any) => ({
-      id: d.id,
-      reportCardId: d.reportCardId,
-      subjectName: d.subjectName,
-      dailyScore: d.dailyScore ? Number(d.dailyScore) : null,
-      midtermScore: d.midtermScore ? Number(d.midtermScore) : null,
-      finalScore: d.finalScore ? Number(d.finalScore) : null,
-      averageScore: d.averageScore ? Number(d.averageScore) : null,
-      letterGrade: d.letterGrade,
-      comments: d.comments ?? undefined
-    })) : undefined
+    details: data.details
+      ? data.details.map((d: any) => ({
+          id: d.id,
+          reportCardId: d.reportCardId,
+          subjectName: d.subjectName,
+          dailyScore: d.dailyScore ? Number(d.dailyScore) : null,
+          midtermScore: d.midtermScore ? Number(d.midtermScore) : null,
+          finalScore: d.finalScore ? Number(d.finalScore) : null,
+          averageScore: d.averageScore ? Number(d.averageScore) : null,
+          letterGrade: d.letterGrade,
+          comments: d.comments ?? undefined,
+        }))
+      : undefined,
   };
 }

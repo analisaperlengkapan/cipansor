@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -16,25 +22,29 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
-import { useCreateViolationType, VIOLATION_CATEGORIES, ViolationCategory } from '@/hooks/use-violations';
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
+import {
+  useCreateViolationType,
+  VIOLATION_CATEGORIES,
+  ViolationCategory,
+} from "@/hooks/use-violations";
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Nama wajib diisi'),
+  name: z.string().min(1, "Nama wajib diisi"),
   description: z.string().optional(),
-  category: z.string().min(1, 'Kategori wajib dipilih'),
-  points: z.coerce.number().min(1, 'Poin minimal 1'),
+  category: z.string().min(1, "Kategori wajib dipilih"),
+  points: z.coerce.number().min(1, "Poin minimal 1"),
   isActive: z.boolean(),
 });
 
@@ -47,9 +57,9 @@ export default function NewViolationTypePage() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      description: '',
-      category: '',
+      name: "",
+      description: "",
+      category: "",
       points: 1,
       isActive: true,
     },
@@ -62,10 +72,10 @@ export default function NewViolationTypePage() {
         category: data.category as ViolationCategory,
         description: data.description || undefined,
       });
-      toast.success('Jenis pelanggaran berhasil dibuat');
-      router.push('/violations');
+      toast.success("Jenis pelanggaran berhasil dibuat");
+      router.push("/violations");
     } catch {
-      toast.error('Gagal membuat jenis pelanggaran');
+      toast.error("Gagal membuat jenis pelanggaran");
     }
   };
 
@@ -79,7 +89,9 @@ export default function NewViolationTypePage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tambah Jenis Pelanggaran</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Tambah Jenis Pelanggaran
+          </h1>
           <p className="text-muted-foreground">Buat jenis pelanggaran baru</p>
         </div>
       </div>
@@ -99,7 +111,10 @@ export default function NewViolationTypePage() {
                   <FormItem>
                     <FormLabel>Nama</FormLabel>
                     <FormControl>
-                      <Input placeholder="Contoh: Tidak sholat berjamaah" {...field} />
+                      <Input
+                        placeholder="Contoh: Tidak sholat berjamaah"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -131,7 +146,10 @@ export default function NewViolationTypePage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Kategori</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih kategori" />
@@ -162,9 +180,7 @@ export default function NewViolationTypePage() {
                       <FormControl>
                         <Input type="number" min={1} {...field} />
                       </FormControl>
-                      <FormDescription>
-                        Poin pelanggaran
-                      </FormDescription>
+                      <FormDescription>Poin pelanggaran</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -179,7 +195,8 @@ export default function NewViolationTypePage() {
                     <div className="space-y-0.5">
                       <FormLabel className="text-base">Status Aktif</FormLabel>
                       <FormDescription>
-                        Jenis pelanggaran yang aktif dapat digunakan untuk pencatatan
+                        Jenis pelanggaran yang aktif dapat digunakan untuk
+                        pencatatan
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -197,7 +214,7 @@ export default function NewViolationTypePage() {
                   <Link href="/violations">Batal</Link>
                 </Button>
                 <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+                  {createMutation.isPending ? "Menyimpan..." : "Simpan"}
                 </Button>
               </div>
             </form>

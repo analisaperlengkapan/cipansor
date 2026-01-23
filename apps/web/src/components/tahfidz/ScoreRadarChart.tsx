@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   RadarChart,
@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   Legend,
   Tooltip,
-} from 'recharts';
+} from "recharts";
 
 interface ScoreData {
   subject: string;
@@ -23,7 +23,7 @@ interface ScoreRadarChartProps {
   className?: string;
   showLegend?: boolean;
   color?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 }
 
 const sizeConfig = {
@@ -35,16 +35,18 @@ const sizeConfig = {
 export function ScoreRadarChart({
   data,
   title,
-  className = '',
+  className = "",
   showLegend = true,
-  color = '#10b981',
-  size = 'md',
+  color = "#10b981",
+  size = "md",
 }: ScoreRadarChartProps) {
   const config = sizeConfig[size];
 
   if (!data || data.length === 0) {
     return (
-      <div className={`flex items-center justify-center h-[${config.height}px] text-muted-foreground ${className}`}>
+      <div
+        className={`flex items-center justify-center h-[${config.height}px] text-muted-foreground ${className}`}
+      >
         Tidak ada data untuk ditampilkan
       </div>
     );
@@ -60,12 +62,12 @@ export function ScoreRadarChart({
           <PolarGrid strokeDasharray="3 3" />
           <PolarAngleAxis
             dataKey="subject"
-            tick={{ fill: '#666', fontSize: config.fontSize }}
+            tick={{ fill: "#666", fontSize: config.fontSize }}
           />
           <PolarRadiusAxis
             angle={30}
             domain={[0, 100]}
-            tick={{ fill: '#999', fontSize: config.fontSize - 2 }}
+            tick={{ fill: "#999", fontSize: config.fontSize - 2 }}
           />
           <Radar
             name="Skor"
@@ -77,12 +79,12 @@ export function ScoreRadarChart({
           />
           {showLegend && <Legend />}
           <Tooltip
-            formatter={(value: number) => [`${value}%`, 'Skor']}
+            formatter={(value: number) => [`${value}%`, "Skor"]}
             contentStyle={{
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              backgroundColor: "rgba(255, 255, 255, 0.95)",
+              border: "1px solid #e5e7eb",
+              borderRadius: "8px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
             }}
           />
         </RadarChart>
@@ -99,7 +101,7 @@ interface SimaanScoreRadarChartProps {
   tartil: number;
   kelancaran: number;
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 }
 
 export function SimaanScoreRadarChart({
@@ -108,15 +110,15 @@ export function SimaanScoreRadarChart({
   fashohah,
   tartil,
   kelancaran,
-  className = '',
-  size = 'md',
+  className = "",
+  size = "md",
 }: SimaanScoreRadarChartProps) {
   const data: ScoreData[] = [
-    { subject: 'Tajwid', score: tajwid, fullMark: 100 },
-    { subject: 'Makhroj', score: makhroj, fullMark: 100 },
-    { subject: 'Fashohah', score: fashohah, fullMark: 100 },
-    { subject: 'Tartil', score: tartil, fullMark: 100 },
-    { subject: 'Kelancaran', score: kelancaran, fullMark: 100 },
+    { subject: "Tajwid", score: tajwid, fullMark: 100 },
+    { subject: "Makhroj", score: makhroj, fullMark: 100 },
+    { subject: "Fashohah", score: fashohah, fullMark: 100 },
+    { subject: "Tartil", score: tartil, fullMark: 100 },
+    { subject: "Kelancaran", score: kelancaran, fullMark: 100 },
   ];
 
   return (
@@ -138,19 +140,21 @@ interface ComparisonRadarChartProps {
     color: string;
   }[];
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 }
 
 export function ComparisonRadarChart({
   datasets,
-  className = '',
-  size = 'md',
+  className = "",
+  size = "md",
 }: ComparisonRadarChartProps) {
   const config = sizeConfig[size];
 
   if (!datasets || datasets.length === 0) {
     return (
-      <div className={`flex items-center justify-center h-[${config.height}px] text-muted-foreground ${className}`}>
+      <div
+        className={`flex items-center justify-center h-[${config.height}px] text-muted-foreground ${className}`}
+      >
         Tidak ada data untuk ditampilkan
       </div>
     );
@@ -174,12 +178,12 @@ export function ComparisonRadarChart({
           <PolarGrid strokeDasharray="3 3" />
           <PolarAngleAxis
             dataKey="subject"
-            tick={{ fill: '#666', fontSize: config.fontSize }}
+            tick={{ fill: "#666", fontSize: config.fontSize }}
           />
           <PolarRadiusAxis
             angle={30}
             domain={[0, 100]}
-            tick={{ fill: '#999', fontSize: config.fontSize - 2 }}
+            tick={{ fill: "#999", fontSize: config.fontSize - 2 }}
           />
           {datasets.map((dataset) => (
             <Radar
@@ -196,10 +200,10 @@ export function ComparisonRadarChart({
           <Tooltip
             formatter={(value: number, name: string) => [`${value}%`, name]}
             contentStyle={{
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              backgroundColor: "rgba(255, 255, 255, 0.95)",
+              border: "1px solid #e5e7eb",
+              borderRadius: "8px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
             }}
           />
         </RadarChart>

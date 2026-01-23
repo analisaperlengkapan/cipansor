@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from "react";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -10,13 +10,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,35 +26,35 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   useDepartments,
   useCreateDepartment,
   useUpdateDepartment,
   useDeleteDepartment,
-  Department
-} from '@/hooks/use-departments';
-import { useEmployees } from '@/hooks';
-import { Plus, Search, Edit, Trash2, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
-import { useForm, Controller } from 'react-hook-form';
-import { Switch } from '@/components/ui/switch';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
+  Department,
+} from "@/hooks/use-departments";
+import { useEmployees } from "@/hooks";
+import { Plus, Search, Edit, Trash2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useForm, Controller } from "react-hook-form";
+import { Switch } from "@/components/ui/switch";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 const departmentSchema = z.object({
-  code: z.string().min(1, 'Kode harus diisi'),
-  name: z.string().min(1, 'Nama departemen harus diisi'),
+  code: z.string().min(1, "Kode harus diisi"),
+  name: z.string().min(1, "Nama departemen harus diisi"),
   description: z.string().optional(),
   managerId: z.string().nullable().optional(),
   isActive: z.boolean().default(true),
@@ -63,7 +63,7 @@ const departmentSchema = z.object({
 type DepartmentFormValues = z.infer<typeof departmentSchema>;
 
 export default function DepartmentsPage() {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [selectedDept, setSelectedDept] = useState<Department | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -82,10 +82,10 @@ export default function DepartmentsPage() {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      toast.success('Department deleted successfully');
+      toast.success("Department deleted successfully");
       setDeleteId(null);
     } catch (error) {
-      toast.error('Failed to delete department');
+      toast.error("Failed to delete department");
     }
   };
 
@@ -139,7 +139,10 @@ export default function DepartmentsPage() {
                 </TableRow>
               ) : departments?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell
+                    colSpan={7}
+                    className="text-center py-8 text-muted-foreground"
+                  >
                     Belum ada data departemen
                   </TableCell>
                 </TableRow>
@@ -148,24 +151,37 @@ export default function DepartmentsPage() {
                   <TableRow key={dept.id}>
                     <TableCell className="font-mono">{dept.code}</TableCell>
                     <TableCell className="font-medium">{dept.name}</TableCell>
-                    <TableCell>{dept.manager?.name || '-'}</TableCell>
-                    <TableCell>{dept.description || '-'}</TableCell>
+                    <TableCell>{dept.manager?.name || "-"}</TableCell>
+                    <TableCell>{dept.description || "-"}</TableCell>
                     <TableCell>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        dept.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {dept.isActive ? 'Aktif' : 'Non-Aktif'}
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          dept.isActive
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {dept.isActive ? "Aktif" : "Non-Aktif"}
                       </span>
                     </TableCell>
                     <TableCell>
-                      {((dept._count as any)?.staff || 0) + ((dept._count as any)?.teachers || 0)}
+                      {((dept._count as any)?.staff || 0) +
+                        ((dept._count as any)?.teachers || 0)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(dept)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleOpenDialog(dept)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(dept.id)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteId(dept.id)}
+                        >
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
                       </div>
@@ -185,29 +201,36 @@ export default function DepartmentsPage() {
             try {
               if (selectedDept) {
                 await updateMutation.mutateAsync({ id: selectedDept.id, data });
-                toast.success('Department updated successfully');
+                toast.success("Department updated successfully");
               } else {
                 await createMutation.mutateAsync(data);
-                toast.success('Department created successfully');
+                toast.success("Department created successfully");
               }
               setIsDialogOpen(false);
             } catch (error) {
-              toast.error('Operation failed');
+              toast.error("Operation failed");
             }
           }}
         />
 
-        <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialog
+          open={!!deleteId}
+          onOpenChange={(open) => !open && setDeleteId(null)}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Hapus Departemen?</AlertDialogTitle>
               <AlertDialogDescription>
-                Tindakan ini tidak dapat dibatalkan. Departemen akan dihapus secara permanen.
+                Tindakan ini tidak dapat dibatalkan. Departemen akan dihapus
+                secara permanen.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Batal</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-red-600 hover:bg-red-700"
+              >
                 Hapus
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -222,25 +245,31 @@ function DepartmentDialog({
   open,
   onOpenChange,
   department,
-  onSubmit
+  onSubmit,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   department: Department | null;
   onSubmit: (data: DepartmentFormValues) => Promise<void>;
 }) {
-  const { register, control, handleSubmit, reset, formState: { isSubmitting, errors } } = useForm<DepartmentFormValues>({
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting, errors },
+  } = useForm<DepartmentFormValues>({
     resolver: zodResolver(departmentSchema),
     defaultValues: {
-      code: '',
-      name: '',
-      description: '',
+      code: "",
+      name: "",
+      description: "",
       managerId: null,
       isActive: true,
-    }
+    },
   });
 
-  const { data: employeesData } = useEmployees({ status: 'ACTIVE' });
+  const { data: employeesData } = useEmployees({ status: "ACTIVE" });
   const employees = employeesData?.data || [];
 
   useEffect(() => {
@@ -249,17 +278,17 @@ function DepartmentDialog({
         reset({
           code: department.code,
           name: department.name,
-          description: department.description || '',
+          description: department.description || "",
           managerId: department.managerId || null,
-          isActive: department.isActive
+          isActive: department.isActive,
         });
       } else {
         reset({
-          code: '',
-          name: '',
-          description: '',
+          code: "",
+          name: "",
+          description: "",
           managerId: null,
-          isActive: true
+          isActive: true,
         });
       }
     }
@@ -269,26 +298,32 @@ function DepartmentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{department ? 'Edit Departemen' : 'Tambah Departemen'}</DialogTitle>
+          <DialogTitle>
+            {department ? "Edit Departemen" : "Tambah Departemen"}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="code">Kode Departemen</Label>
             <Input
               id="code"
-              {...register('code')}
+              {...register("code")}
               placeholder="e.g. IT, HR, FIN"
             />
-            {errors.code && <p className="text-sm text-red-500">{errors.code.message}</p>}
+            {errors.code && (
+              <p className="text-sm text-red-500">{errors.code.message}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="name">Nama Departemen</Label>
             <Input
               id="name"
-              {...register('name')}
+              {...register("name")}
               placeholder="e.g. Information Technology"
             />
-            {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
+            {errors.name && (
+              <p className="text-sm text-red-500">{errors.name.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -298,8 +333,10 @@ function DepartmentDialog({
               name="managerId"
               render={({ field }) => (
                 <Select
-                  value={field.value || 'none'}
-                  onValueChange={(val) => field.onChange(val === 'none' ? null : val)}
+                  value={field.value || "none"}
+                  onValueChange={(val) =>
+                    field.onChange(val === "none" ? null : val)
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih Kepala Departemen" />
@@ -307,7 +344,10 @@ function DepartmentDialog({
                   <SelectContent>
                     <SelectItem value="none">-- Tidak Ada --</SelectItem>
                     {employees.map((emp) => (
-                      <SelectItem key={emp.userId || emp.id} value={emp.userId || emp.id}>
+                      <SelectItem
+                        key={emp.userId || emp.id}
+                        value={emp.userId || emp.id}
+                      >
                         {emp.fullName}
                       </SelectItem>
                     ))}
@@ -319,7 +359,7 @@ function DepartmentDialog({
 
           <div className="space-y-2">
             <Label htmlFor="description">Deskripsi</Label>
-            <Textarea id="description" {...register('description')} />
+            <Textarea id="description" {...register("description")} />
           </div>
           <div className="flex items-center space-x-2">
             <Controller
@@ -336,11 +376,17 @@ function DepartmentDialog({
             <Label htmlFor="isActive">Aktif</Label>
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Batal
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isSubmitting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
               Simpan
             </Button>
           </div>

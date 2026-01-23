@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from "express";
-import * as financeService from "./service";
+import { Request, Response, NextFunction } from 'express';
+import * as financeService from './service';
 import {
   createPaymentTypeSchema,
   updatePaymentTypeSchema,
@@ -9,8 +9,8 @@ import {
   queryInvoiceSchema,
   createPaymentSchema,
   queryPaymentSchema,
-} from "./schema";
-import { Errors } from "../../middleware/error";
+} from './schema';
+import { Errors } from '../../middleware/error';
 
 // =====================================
 // PAYMENT TYPE CONTROLLERS
@@ -22,7 +22,7 @@ export async function createPaymentType(req: Request, res: Response, next: NextF
     const paymentType = await financeService.createPaymentType(data);
     res.status(201).json({
       success: true,
-      message: "Payment type created successfully",
+      message: 'Payment type created successfully',
       data: paymentType,
     });
   } catch (error) {
@@ -48,7 +48,7 @@ export async function getPaymentTypeById(req: Request, res: Response, next: Next
     const { id } = req.params;
     const paymentType = await financeService.getPaymentTypeById(id);
     if (!paymentType) {
-      throw Errors.notFound("Payment type");
+      throw Errors.notFound('Payment type');
     }
     res.json({
       success: true,
@@ -66,7 +66,7 @@ export async function updatePaymentType(req: Request, res: Response, next: NextF
     const paymentType = await financeService.updatePaymentType(id, data);
     res.json({
       success: true,
-      message: "Payment type updated successfully",
+      message: 'Payment type updated successfully',
       data: paymentType,
     });
   } catch (error) {
@@ -80,7 +80,7 @@ export async function deletePaymentType(req: Request, res: Response, next: NextF
     await financeService.deletePaymentType(id);
     res.json({
       success: true,
-      message: "Payment type deactivated successfully",
+      message: 'Payment type deactivated successfully',
     });
   } catch (error) {
     next(error);
@@ -97,7 +97,7 @@ export async function createInvoice(req: Request, res: Response, next: NextFunct
     const invoice = await financeService.createInvoice(data);
     res.status(201).json({
       success: true,
-      message: "Invoice created successfully",
+      message: 'Invoice created successfully',
       data: invoice,
     });
   } catch (error) {
@@ -123,7 +123,7 @@ export async function getInvoiceById(req: Request, res: Response, next: NextFunc
     const { id } = req.params;
     const invoice = await financeService.getInvoiceById(id);
     if (!invoice) {
-      throw Errors.notFound("Invoice");
+      throw Errors.notFound('Invoice');
     }
     res.json({
       success: true,
@@ -141,7 +141,7 @@ export async function updateInvoice(req: Request, res: Response, next: NextFunct
     const invoice = await financeService.updateInvoice(id, data);
     res.json({
       success: true,
-      message: "Invoice updated successfully",
+      message: 'Invoice updated successfully',
       data: invoice,
     });
   } catch (error) {
@@ -155,7 +155,7 @@ export async function deleteInvoice(req: Request, res: Response, next: NextFunct
     await financeService.deleteInvoice(id);
     res.json({
       success: true,
-      message: "Invoice cancelled successfully",
+      message: 'Invoice cancelled successfully',
     });
   } catch (error) {
     next(error);
@@ -173,7 +173,7 @@ export async function createPayment(req: Request, res: Response, next: NextFunct
     const payment = await financeService.createPayment(data, userId);
     res.status(201).json({
       success: true,
-      message: "Payment recorded successfully",
+      message: 'Payment recorded successfully',
       data: payment,
     });
   } catch (error) {
@@ -199,7 +199,7 @@ export async function getPaymentById(req: Request, res: Response, next: NextFunc
     const { id } = req.params;
     const payment = await financeService.getPaymentById(id);
     if (!payment) {
-      throw Errors.notFound("Payment");
+      throw Errors.notFound('Payment');
     }
     res.json({
       success: true,
@@ -248,16 +248,16 @@ export async function getUnitFinanceStats(req: Request, res: Response, next: Nex
 export async function getSppMatrix(req: Request, res: Response, next: NextFunction) {
   try {
     const { unitId, classId, year, paymentTypeId } = req.query;
-    
+
     const yearNum = year ? parseInt(year as string) : new Date().getFullYear();
-    
+
     const result = await financeService.getSppMatrix({
       unitId: unitId as string | undefined,
       classId: classId as string | undefined,
       year: yearNum,
       paymentTypeId: paymentTypeId as string | undefined,
     });
-    
+
     res.json({
       success: true,
       data: result,
@@ -270,7 +270,7 @@ export async function getSppMatrix(req: Request, res: Response, next: NextFuncti
 export async function generateBulkSppInvoices(req: Request, res: Response, next: NextFunction) {
   try {
     const { unitId, classId, paymentTypeId, year, month, dueDay } = req.body;
-    
+
     const result = await financeService.generateBulkSppInvoices({
       unitId,
       classId,
@@ -279,7 +279,7 @@ export async function generateBulkSppInvoices(req: Request, res: Response, next:
       month: parseInt(month),
       dueDay: dueDay ? parseInt(dueDay) : undefined,
     });
-    
+
     res.status(201).json({
       success: true,
       message: `Berhasil membuat ${result.created} tagihan, ${result.skipped} sudah ada`,

@@ -1,12 +1,12 @@
-import { Request, Response, NextFunction } from "express";
-import * as permitService from "./service";
+import { Request, Response, NextFunction } from 'express';
+import * as permitService from './service';
 import {
   createPermitSchema,
   updatePermitStatusSchema,
   markReturnedSchema,
   queryPermitSchema,
-} from "./schema";
-import { Errors } from "../../middleware/error";
+} from './schema';
+import { Errors } from '../../middleware/error';
 
 export async function createPermit(req: Request, res: Response, next: NextFunction) {
   try {
@@ -14,7 +14,7 @@ export async function createPermit(req: Request, res: Response, next: NextFuncti
     const permit = await permitService.createPermit(data);
     res.status(201).json({
       success: true,
-      message: "Permit request created successfully",
+      message: 'Permit request created successfully',
       data: permit,
     });
   } catch (error) {
@@ -40,7 +40,7 @@ export async function getPermitById(req: Request, res: Response, next: NextFunct
     const { id } = req.params;
     const permit = await permitService.getPermitById(id);
     if (!permit) {
-      throw Errors.notFound("Permit");
+      throw Errors.notFound('Permit');
     }
     res.json({
       success: true,
@@ -56,7 +56,7 @@ export async function updatePermitStatus(req: Request, res: Response, next: Next
     const { id } = req.params;
     const data = updatePermitStatusSchema.parse(req.body);
     const userId = req.user?.sub;
-    
+
     if (!userId) {
       throw Errors.unauthorized();
     }
@@ -79,7 +79,7 @@ export async function markReturned(req: Request, res: Response, next: NextFuncti
     const permit = await permitService.markReturned(id, data.returnedAt);
     res.json({
       success: true,
-      message: "Student marked as returned",
+      message: 'Student marked as returned',
       data: permit,
     });
   } catch (error) {
@@ -93,7 +93,7 @@ export async function markDeparted(req: Request, res: Response, next: NextFuncti
     const permit = await permitService.markDeparted(id);
     res.json({
       success: true,
-      message: "Student marked as departed",
+      message: 'Student marked as departed',
       data: permit,
     });
   } catch (error) {
@@ -106,7 +106,7 @@ export async function getPermitByCode(req: Request, res: Response, next: NextFun
     const { code } = req.params;
     const permit = await permitService.getPermitByCode(code);
     if (!permit) {
-      throw Errors.notFound("Permit not found");
+      throw Errors.notFound('Permit not found');
     }
     res.json({
       success: true,

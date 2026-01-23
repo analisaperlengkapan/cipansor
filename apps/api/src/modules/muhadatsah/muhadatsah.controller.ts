@@ -85,7 +85,7 @@ export class MuhadatsahController {
 
   async getUpcoming(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = req.query.unitId as string || req.user!.unitId || '';
+      const unitId = (req.query.unitId as string) || req.user!.unitId || '';
       const limit = parseInt(req.query.limit as string) || 10;
       const result = await muhadatsahService.getUpcoming(unitId, limit);
       res.json({ success: true, data: result });
@@ -107,7 +107,7 @@ export class MuhadatsahController {
 
   async getStatistics(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = req.query.unitId as string || req.user!.unitId || '';
+      const unitId = (req.query.unitId as string) || req.user!.unitId || '';
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
       const result = await muhadatsahService.getStatistics(unitId, startDate, endDate);
@@ -119,7 +119,7 @@ export class MuhadatsahController {
 
   async getTopPerformers(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = req.query.unitId as string || req.user!.unitId || '';
+      const unitId = (req.query.unitId as string) || req.user!.unitId || '';
       const language = req.query.language as string;
       const limit = parseInt(req.query.limit as string) || 10;
       const result = await muhadatsahService.getTopPerformers(unitId, language, limit);
@@ -131,8 +131,8 @@ export class MuhadatsahController {
 
   async matchPartners(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = req.query.unitId as string || req.user!.unitId || '';
-      const language = req.query.language as string || 'Arabic';
+      const unitId = (req.query.unitId as string) || req.user!.unitId || '';
+      const language = (req.query.language as string) || 'Arabic';
       const result = await muhadatsahService.matchPartners(unitId, language);
       res.json({ success: true, data: result });
     } catch (error) {

@@ -1,5 +1,14 @@
 import { Router } from 'express';
-import { halaqohController, enrollmentController, sanadController, progressController, targetController, dashboardController, murojaahController, simaanController } from './takhosus.controller';
+import {
+  halaqohController,
+  enrollmentController,
+  sanadController,
+  progressController,
+  targetController,
+  dashboardController,
+  murojaahController,
+  simaanController,
+} from './takhosus.controller';
 import { authenticate, authorize } from '@/middleware/auth';
 import { UserRole } from '@prisma/client';
 import { validate } from '@/middleware/validate';
@@ -44,7 +53,11 @@ router.get(
 
 router.get('/halaqoh', halaqohController.list);
 router.get('/halaqoh/:id', halaqohController.getById);
-router.get('/halaqoh/:id/progress', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), halaqohController.getProgress);
+router.get(
+  '/halaqoh/:id/progress',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  halaqohController.getProgress
+);
 
 router.post(
   '/halaqoh',

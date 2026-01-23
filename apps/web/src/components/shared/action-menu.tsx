@@ -3,25 +3,32 @@
  * Standardized dropdown menu for row actions
  */
 
-'use client';
+"use client";
 
-import { MoreHorizontal, Eye, Pencil, Trash2, Copy, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import {
+  MoreHorizontal,
+  Eye,
+  Pencil,
+  Trash2,
+  Copy,
+  ExternalLink,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import Link from 'next/link';
+} from "@/components/ui/dropdown-menu";
+import Link from "next/link";
 
 export interface ActionMenuItem {
   label: string;
   icon?: React.ReactNode;
   href?: string;
   onClick?: () => void;
-  variant?: 'default' | 'destructive';
+  variant?: "default" | "destructive";
   disabled?: boolean;
   external?: boolean;
 }
@@ -32,8 +39,10 @@ interface ActionMenuProps {
 }
 
 export function ActionMenu({ items, trigger }: ActionMenuProps) {
-  const defaultItems = items.filter((item) => item.variant !== 'destructive');
-  const destructiveItems = items.filter((item) => item.variant === 'destructive');
+  const defaultItems = items.filter((item) => item.variant !== "destructive");
+  const destructiveItems = items.filter(
+    (item) => item.variant === "destructive",
+  );
 
   return (
     <DropdownMenu>
@@ -74,8 +83,8 @@ function MenuItem({ item }: { item: ActionMenuItem }) {
       <DropdownMenuItem asChild disabled={item.disabled}>
         <Link
           href={item.href}
-          target={item.external ? '_blank' : undefined}
-          rel={item.external ? 'noopener noreferrer' : undefined}
+          target={item.external ? "_blank" : undefined}
+          rel={item.external ? "noopener noreferrer" : undefined}
           className="flex items-center gap-2"
         >
           {content}
@@ -88,7 +97,11 @@ function MenuItem({ item }: { item: ActionMenuItem }) {
     <DropdownMenuItem
       onClick={item.onClick}
       disabled={item.disabled}
-      className={item.variant === 'destructive' ? 'text-destructive focus:text-destructive' : ''}
+      className={
+        item.variant === "destructive"
+          ? "text-destructive focus:text-destructive"
+          : ""
+      }
     >
       <span className="flex items-center gap-2">{content}</span>
     </DropdownMenuItem>
@@ -98,23 +111,23 @@ function MenuItem({ item }: { item: ActionMenuItem }) {
 // Pre-configured common action items
 export const commonActions = {
   view: (href: string): ActionMenuItem => ({
-    label: 'Lihat Detail',
+    label: "Lihat Detail",
     icon: <Eye className="h-4 w-4" />,
     href,
   }),
   edit: (href: string): ActionMenuItem => ({
-    label: 'Edit',
+    label: "Edit",
     icon: <Pencil className="h-4 w-4" />,
     href,
   }),
   delete: (onClick: () => void): ActionMenuItem => ({
-    label: 'Hapus',
+    label: "Hapus",
     icon: <Trash2 className="h-4 w-4" />,
     onClick,
-    variant: 'destructive',
+    variant: "destructive",
   }),
   copy: (onClick: () => void): ActionMenuItem => ({
-    label: 'Salin',
+    label: "Salin",
     icon: <Copy className="h-4 w-4" />,
     onClick,
   }),

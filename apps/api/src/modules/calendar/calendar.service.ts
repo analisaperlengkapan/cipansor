@@ -68,7 +68,19 @@ export class CalendarService {
    * List calendar events
    */
   async findAll(query: ListEventsQuery, currentUser: AuthenticatedUser) {
-    const { page, limit, unitId, classId, eventType, startDate, endDate, month, year, search, isPublic } = query;
+    const {
+      page,
+      limit,
+      unitId,
+      classId,
+      eventType,
+      startDate,
+      endDate,
+      month,
+      year,
+      search,
+      isPublic,
+    } = query;
     const skip = (page - 1) * limit;
 
     const where: Prisma.CalendarEventWhereInput = {
@@ -77,10 +89,7 @@ export class CalendarService {
 
     // Filter by unit
     if (currentUser.role !== UserRole.SUPER_ADMIN) {
-      where.OR = [
-        { unitId: currentUser.unitId },
-        { unitId: null, isPublic: true },
-      ];
+      where.OR = [{ unitId: currentUser.unitId }, { unitId: null, isPublic: true }];
     } else if (unitId) {
       where.unitId = unitId;
     }
@@ -179,7 +188,11 @@ export class CalendarService {
    */
   async create(input: CreateEventInput, currentUser: AuthenticatedUser) {
     // Validate unit access
-    if (input.unitId && currentUser.role !== UserRole.SUPER_ADMIN && input.unitId !== currentUser.unitId) {
+    if (
+      input.unitId &&
+      currentUser.role !== UserRole.SUPER_ADMIN &&
+      input.unitId !== currentUser.unitId
+    ) {
       throw Errors.forbidden('Cannot create event for another unit');
     }
 
@@ -288,10 +301,7 @@ export class CalendarService {
     const where: Prisma.CalendarEventWhereInput = {
       deletedAt: null,
       startDate: { gte: now },
-      OR: [
-        { unitId: unitId },
-        { unitId: null, isPublic: true },
-      ],
+      OR: [{ unitId: unitId }, { unitId: null, isPublic: true }],
     };
 
     const events = await prisma.calendarEvent.findMany({
@@ -319,10 +329,7 @@ export class CalendarService {
     const where: Prisma.CalendarEventWhereInput = {
       deletedAt: null,
       startDate: { gte: today, lt: tomorrow },
-      OR: [
-        { unitId: unitId },
-        { unitId: null, isPublic: true },
-      ],
+      OR: [{ unitId: unitId }, { unitId: null, isPublic: true }],
     };
 
     const events = await prisma.calendarEvent.findMany({
@@ -345,10 +352,7 @@ export class CalendarService {
       where: {
         deletedAt: null,
         eventType: EventType.HOLIDAY,
-        OR: [
-          { unitId: unitId },
-          { unitId: null },
-        ],
+        OR: [{ unitId: unitId }, { unitId: null }],
         startDate: { gte: new Date(startDate), lte: new Date(endDate) },
       },
       orderBy: { startDate: 'asc' },

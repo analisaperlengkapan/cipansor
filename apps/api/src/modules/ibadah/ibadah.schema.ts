@@ -5,39 +5,33 @@ import { z } from 'zod';
 // ======================
 
 export const IbadahCategory = z.enum([
-  'SHOLAT_WAJIB',    // Sholat 5 waktu
-  'SHOLAT_SUNNAH',   // Tahajud, Dhuha, Rawatib
-  'TILAWAH',         // Membaca Al-Qur'an
-  'DZIKIR',          // Dzikir pagi/petang
-  'PUASA',           // Puasa sunnah
-  'SEDEKAH',         // Sedekah/infaq
-  'SHOLAT_JAMAAH',   // Sholat berjamaah di masjid
-  'QIYAMULLAIL',     // Sholat malam
-  'OTHER',           // Lainnya
+  'SHOLAT_WAJIB', // Sholat 5 waktu
+  'SHOLAT_SUNNAH', // Tahajud, Dhuha, Rawatib
+  'TILAWAH', // Membaca Al-Qur'an
+  'DZIKIR', // Dzikir pagi/petang
+  'PUASA', // Puasa sunnah
+  'SEDEKAH', // Sedekah/infaq
+  'SHOLAT_JAMAAH', // Sholat berjamaah di masjid
+  'QIYAMULLAIL', // Sholat malam
+  'OTHER', // Lainnya
 ]);
 
 export const TargetType = z.enum([
-  'DAILY',           // Target harian
-  'WEEKLY',          // Target mingguan
-  'MONTHLY',         // Target bulanan
+  'DAILY', // Target harian
+  'WEEKLY', // Target mingguan
+  'MONTHLY', // Target bulanan
 ]);
 
 export const TargetUnit = z.enum([
-  'TIMES',           // Berapa kali (sholat)
-  'MINUTES',         // Berapa menit (dzikir)
-  'PAGES',           // Berapa halaman (tilawah)
-  'JUZ',             // Berapa juz (tilawah)
-  'AYAT',            // Berapa ayat
-  'AMOUNT',          // Jumlah nominal (sedekah)
+  'TIMES', // Berapa kali (sholat)
+  'MINUTES', // Berapa menit (dzikir)
+  'PAGES', // Berapa halaman (tilawah)
+  'JUZ', // Berapa juz (tilawah)
+  'AYAT', // Berapa ayat
+  'AMOUNT', // Jumlah nominal (sedekah)
 ]);
 
-export const PeriodType = z.enum([
-  'DAILY',
-  'WEEKLY',
-  'MONTHLY',
-  'SEMESTER',
-  'YEARLY',
-]);
+export const PeriodType = z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'SEMESTER', 'YEARLY']);
 
 // ======================
 // TARGET SCHEMAS
@@ -47,8 +41,14 @@ export const listTargetsQuerySchema = z.object({
   unitId: z.string().uuid().optional(),
   category: IbadahCategory.optional(),
   targetType: TargetType.optional(),
-  isActive: z.enum(['true', 'false']).transform(v => v === 'true').optional(),
-  isOptional: z.enum(['true', 'false']).transform(v => v === 'true').optional(),
+  isActive: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
+  isOptional: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
   search: z.string().optional(),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(50),
@@ -82,8 +82,14 @@ export const listRecordsQuerySchema = z.object({
   date: z.string().optional(), // YYYY-MM-DD
   startDate: z.string().optional(),
   endDate: z.string().optional(),
-  isCompleted: z.enum(['true', 'false']).transform(v => v === 'true').optional(),
-  isVerified: z.enum(['true', 'false']).transform(v => v === 'true').optional(),
+  isCompleted: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
+  isVerified: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(50),
 });
@@ -98,18 +104,22 @@ export const createRecordSchema = z.object({
   notes: z.string().max(500).optional(),
 });
 
-export const updateRecordSchema = createRecordSchema.partial().omit({ targetId: true, studentId: true, date: true });
+export const updateRecordSchema = createRecordSchema
+  .partial()
+  .omit({ targetId: true, studentId: true, date: true });
 
 export const bulkCreateRecordsSchema = z.object({
   studentId: z.string().uuid(),
   date: z.coerce.date(),
-  records: z.array(z.object({
-    targetId: z.string().uuid(),
-    isCompleted: z.boolean().default(false),
-    actualCount: z.number().int().min(0).optional(),
-    actualMinutes: z.number().int().min(0).optional(),
-    notes: z.string().max(500).optional(),
-  })),
+  records: z.array(
+    z.object({
+      targetId: z.string().uuid(),
+      isCompleted: z.boolean().default(false),
+      actualCount: z.number().int().min(0).optional(),
+      actualMinutes: z.number().int().min(0).optional(),
+      notes: z.string().max(500).optional(),
+    })
+  ),
 });
 
 export const verifyRecordSchema = z.object({
@@ -181,11 +191,11 @@ export const classIbadahStatsQuerySchema = z.object({
 // ======================
 
 export const IslamicEventType = z.enum([
-  'HARI_BESAR',      // Idul Fitri, Idul Adha, Maulid, Isra Miraj, dll
-  'PUASA_SUNNAH',    // Senin-Kamis, Ayyamul Bidh, Asyura, dll
-  'KAJIAN_RUTIN',    // Kajian mingguan/bulanan
-  'RAMADAN',         // Kegiatan khusus Ramadan
-  'DZULHIJJAH',      // Kegiatan khusus Dzulhijjah
+  'HARI_BESAR', // Idul Fitri, Idul Adha, Maulid, Isra Miraj, dll
+  'PUASA_SUNNAH', // Senin-Kamis, Ayyamul Bidh, Asyura, dll
+  'KAJIAN_RUTIN', // Kajian mingguan/bulanan
+  'RAMADAN', // Kegiatan khusus Ramadan
+  'DZULHIJJAH', // Kegiatan khusus Dzulhijjah
   'OTHER',
 ]);
 
@@ -194,7 +204,10 @@ export const listIslamicEventsQuerySchema = z.object({
   type: IslamicEventType.optional(),
   hijriMonth: z.coerce.number().min(1).max(12).optional(),
   gregorianYear: z.coerce.number().optional(),
-  isHoliday: z.enum(['true', 'false']).transform(v => v === 'true').optional(),
+  isHoliday: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(50),
 });
@@ -221,17 +234,20 @@ export const updateIslamicEventSchema = createIslamicEventSchema.partial();
 // HIJRI DATE CONVERSION
 // ======================
 
-export const convertDateSchema = z.object({
-  gregorianDate: z.coerce.date().optional(),
-  hijriDate: z.object({
-    year: z.number().int(),
-    month: z.number().int().min(1).max(12),
-    day: z.number().int().min(1).max(30),
-  }).optional(),
-}).refine(
-  (data) => data.gregorianDate || data.hijriDate,
-  { message: 'Either gregorianDate or hijriDate must be provided' }
-);
+export const convertDateSchema = z
+  .object({
+    gregorianDate: z.coerce.date().optional(),
+    hijriDate: z
+      .object({
+        year: z.number().int(),
+        month: z.number().int().min(1).max(12),
+        day: z.number().int().min(1).max(30),
+      })
+      .optional(),
+  })
+  .refine((data) => data.gregorianDate || data.hijriDate, {
+    message: 'Either gregorianDate or hijriDate must be provided',
+  });
 
 // ======================
 // TYPE EXPORTS

@@ -10,12 +10,14 @@ export const listSimaan = async (req: Request, res: Response, next: NextFunction
   try {
     const query = req.query as any;
     const result = await simaanService.findAll(query);
-    res.json(ApiResponse.paginated(
-      result.records,
-      result.pagination.page,
-      result.pagination.limit,
-      result.pagination.total
-    ));
+    res.json(
+      ApiResponse.paginated(
+        result.records,
+        result.pagination.page,
+        result.pagination.limit,
+        result.pagination.total
+      )
+    );
   } catch (error) {
     next(error);
   }

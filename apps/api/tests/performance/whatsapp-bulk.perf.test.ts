@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import WhatsAppService from '../../src/modules/notifications/whatsapp.service';
 
@@ -22,7 +21,7 @@ describe('WhatsAppService Performance', () => {
         success: true,
         provider: 'SIMULATOR',
         timestamp: new Date(),
-        messageId: 'mock-id'
+        messageId: 'mock-id',
       };
     });
   });

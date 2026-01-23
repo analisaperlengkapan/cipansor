@@ -1,24 +1,40 @@
-'use client';
+"use client";
 
-import { useState, useRef } from 'react';
-import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useStudents, Student } from '@/hooks/use-students';
-import { useStudentTahfidzProgress, useTahfidzRecords, SURAH_LIST } from '@/hooks/use-tahfidz';
-import { useReportCards, useStudentGrades } from '@/hooks/use-assessment';
-import { ReportCard } from '@cipansor/shared';
-import { useUnits } from '@/hooks/use-units';
-import { useClasses } from '@/hooks/use-classes';
-import { useAcademicYears } from '@/hooks/use-academic-years';
-import { 
-  FileText, 
+import { useState, useRef } from "react";
+import { MainLayout } from "@/components/layout/main-layout";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useStudents, Student } from "@/hooks/use-students";
+import {
+  useStudentTahfidzProgress,
+  useTahfidzRecords,
+  SURAH_LIST,
+} from "@/hooks/use-tahfidz";
+import { useReportCards, useStudentGrades } from "@/hooks/use-assessment";
+import { ReportCard } from "@cipansor/shared";
+import { useUnits } from "@/hooks/use-units";
+import { useClasses } from "@/hooks/use-classes";
+import { useAcademicYears } from "@/hooks/use-academic-years";
+import {
+  FileText,
   Printer,
   Search,
   User,
@@ -29,40 +45,42 @@ import {
   Award,
   CheckCircle2,
   Clock,
-  Building2
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+  Building2,
+} from "lucide-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 export default function StudentTranscriptPage() {
-  const [selectedUnitId, setSelectedUnitId] = useState<string>('');
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUnitId, setSelectedUnitId] = useState<string>("");
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const { data: units = [] } = useUnits();
-  const { data: classesData } = useClasses({ 
+  const { data: classesData } = useClasses({
     unitId: selectedUnitId || undefined,
   });
   const classes = classesData?.data || [];
   const { data: academicYearsData } = useAcademicYears();
   const academicYears = academicYearsData?.data || [];
-  const activeYear = academicYears.find(y => y.isActive);
+  const activeYear = academicYears.find((y) => y.isActive);
 
   const { data: studentsData, isLoading: studentsLoading } = useStudents({
     unitId: selectedUnitId || undefined,
     classId: selectedClassId || undefined,
     search: searchQuery || undefined,
-    status: 'ACTIVE',
+    status: "ACTIVE",
     limit: 50,
   });
 
   const students = studentsData?.data || [];
 
   // Fetch student data
-  const { data: tahfidzProgress } = useStudentTahfidzProgress(selectedStudent?.id || '');
+  const { data: tahfidzProgress } = useStudentTahfidzProgress(
+    selectedStudent?.id || "",
+  );
   const { data: tahfidzRecords } = useTahfidzRecords({
     studentId: selectedStudent?.id,
     limit: 100,
@@ -74,7 +92,7 @@ export default function StudentTranscriptPage() {
 
   // Filter report cards for selected student
   const studentReportCards = reportCards.filter(
-    (rc: ReportCard) => rc.studentId === selectedStudent?.id
+    (rc: ReportCard) => rc.studentId === selectedStudent?.id,
   );
 
   const handleSelectStudent = (student: Student) => {
@@ -82,22 +100,27 @@ export default function StudentTranscriptPage() {
   };
 
   const getStudentInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase();
   };
 
   const handlePrint = () => {
     if (!selectedStudent) {
-      toast.error('Pilih siswa terlebih dahulu');
+      toast.error("Pilih siswa terlebih dahulu");
       return;
     }
 
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (!printWindow) {
-      toast.error('Popup diblokir. Izinkan popup untuk mencetak.');
+      toast.error("Popup diblokir. Izinkan popup untuk mencetak.");
       return;
     }
 
-    const printContent = printRef.current?.innerHTML || '';
+    const printContent = printRef.current?.innerHTML || "";
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -158,48 +181,63 @@ export default function StudentTranscriptPage() {
       printWindow.close();
     }, 500);
 
-    toast.success('Transkrip siap dicetak');
+    toast.success("Transkrip siap dicetak");
   };
 
   const getGradeLetter = (score: number): string => {
-    if (score >= 90) return 'A';
-    if (score >= 80) return 'B';
-    if (score >= 70) return 'C';
-    if (score >= 60) return 'D';
-    return 'E';
+    if (score >= 90) return "A";
+    if (score >= 80) return "B";
+    if (score >= 70) return "C";
+    if (score >= 60) return "D";
+    return "E";
   };
 
   const getGradeDescription = (score: number): string => {
-    if (score >= 90) return 'Sangat Baik';
-    if (score >= 80) return 'Baik';
-    if (score >= 70) return 'Cukup';
-    if (score >= 60) return 'Kurang';
-    return 'Sangat Kurang';
+    if (score >= 90) return "Sangat Baik";
+    if (score >= 80) return "Baik";
+    if (score >= 70) return "Cukup";
+    if (score >= 60) return "Kurang";
+    return "Sangat Kurang";
   };
 
   const renderTranscriptPreview = () => {
     if (!selectedStudent) return null;
 
     return (
-      <div ref={printRef} className="bg-white p-8 text-black" style={{ width: '210mm', minHeight: '297mm' }}>
+      <div
+        ref={printRef}
+        className="bg-white p-8 text-black"
+        style={{ width: "210mm", minHeight: "297mm" }}
+      >
         {/* Header */}
         <div className="text-center border-b-2 border-black pb-4 mb-6">
-          <h1 className="text-xl font-bold tracking-wide mb-1">TRANSKRIP AKADEMIK</h1>
-          <h2 className="text-lg font-semibold">YAYASAN PENDIDIKAN ISLAM CIPANSOR</h2>
+          <h1 className="text-xl font-bold tracking-wide mb-1">
+            TRANSKRIP AKADEMIK
+          </h1>
+          <h2 className="text-lg font-semibold">
+            YAYASAN PENDIDIKAN ISLAM CIPANSOR
+          </h2>
           <p className="text-sm">{selectedStudent.unit?.name}</p>
         </div>
 
         {/* Student Info */}
         <div className="mb-6">
-          <h3 className="font-bold text-sm mb-2 uppercase border-b pb-1">Data Siswa</h3>
+          <h3 className="font-bold text-sm mb-2 uppercase border-b pb-1">
+            Data Siswa
+          </h3>
           <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm">
             <div className="flex">
               <span className="w-32">Nama Lengkap</span>
-              <span>: <strong>{selectedStudent.name}</strong></span>
+              <span>
+                : <strong>{selectedStudent.name}</strong>
+              </span>
             </div>
             <div className="flex">
               <span className="w-32">Jenis Kelamin</span>
-              <span>: {selectedStudent.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}</span>
+              <span>
+                :{" "}
+                {selectedStudent.gender === "MALE" ? "Laki-laki" : "Perempuan"}
+              </span>
             </div>
             <div className="flex">
               <span className="w-32">NIS</span>
@@ -207,26 +245,38 @@ export default function StudentTranscriptPage() {
             </div>
             <div className="flex">
               <span className="w-32">Tempat, Tgl Lahir</span>
-              <span>: {selectedStudent.birthPlace || '-'}, {format(new Date(selectedStudent.birthDate), 'd MMMM yyyy', { locale: idLocale })}</span>
+              <span>
+                : {selectedStudent.birthPlace || "-"},{" "}
+                {format(new Date(selectedStudent.birthDate), "d MMMM yyyy", {
+                  locale: idLocale,
+                })}
+              </span>
             </div>
             <div className="flex">
               <span className="w-32">Kelas</span>
-              <span>: {selectedStudent.currentClass?.name || '-'}</span>
+              <span>: {selectedStudent.currentClass?.name || "-"}</span>
             </div>
             <div className="flex">
               <span className="w-32">Nama Orang Tua</span>
-              <span>: {selectedStudent.parentName || '-'}</span>
+              <span>: {selectedStudent.parentName || "-"}</span>
             </div>
             <div className="flex">
               <span className="w-32">Status</span>
-              <span>: <span className="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded">Aktif</span></span>
+              <span>
+                :{" "}
+                <span className="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded">
+                  Aktif
+                </span>
+              </span>
             </div>
           </div>
         </div>
 
         {/* Academic Records */}
         <div className="mb-6">
-          <h3 className="font-bold text-sm mb-2 uppercase border-b pb-1">A. Rekam Nilai Akademik</h3>
+          <h3 className="font-bold text-sm mb-2 uppercase border-b pb-1">
+            A. Rekam Nilai Akademik
+          </h3>
           {studentReportCards.length > 0 ? (
             studentReportCards.map((rc: ReportCard, idx: number) => (
               <div key={rc.id} className="mb-4">
@@ -249,22 +299,41 @@ export default function StudentTranscriptPage() {
                       <tr key={subj.subjectId || sIdx}>
                         <td className="text-center">{sIdx + 1}</td>
                         <td>{subj.subject?.name || subj.subjectName}</td>
-                        <td className="text-center">{(subj.knowledgeScore ?? 0).toFixed(0)}</td>
-                        <td className="text-center">{(subj.skillScore ?? 0).toFixed(0)}</td>
-                        <td className="text-center font-semibold">{subj.finalScore.toFixed(0)}</td>
-                        <td className="text-center font-bold">{getGradeLetter(subj.finalScore)}</td>
+                        <td className="text-center">
+                          {(subj.knowledgeScore ?? 0).toFixed(0)}
+                        </td>
+                        <td className="text-center">
+                          {(subj.skillScore ?? 0).toFixed(0)}
+                        </td>
+                        <td className="text-center font-semibold">
+                          {subj.finalScore.toFixed(0)}
+                        </td>
+                        <td className="text-center font-bold">
+                          {getGradeLetter(subj.finalScore)}
+                        </td>
                       </tr>
                     ))}
-                    <tr className="font-bold" style={{ backgroundColor: '#f3f4f6' }}>
-                      <td colSpan={4} className="text-right">Rata-rata</td>
-                        <td className="text-center">{(rc.averageScore || 0).toFixed(1)}</td>
-                        <td className="text-center">{getGradeLetter(rc.averageScore || 0)}</td>
+                    <tr
+                      className="font-bold"
+                      style={{ backgroundColor: "#f3f4f6" }}
+                    >
+                      <td colSpan={4} className="text-right">
+                        Rata-rata
+                      </td>
+                      <td className="text-center">
+                        {(rc.averageScore || 0).toFixed(1)}
+                      </td>
+                      <td className="text-center">
+                        {getGradeLetter(rc.averageScore || 0)}
+                      </td>
                     </tr>
                     {rc.rank && (
                       <tr>
-                        <td colSpan={4} className="text-right">Peringkat</td>
+                        <td colSpan={4} className="text-right">
+                          Peringkat
+                        </td>
                         <td colSpan={2} className="text-center font-semibold">
-                            {rc.rank} dari {rc.details?.length || 0} siswa
+                          {rc.rank} dari {rc.details?.length || 0} siswa
                         </td>
                       </tr>
                     )}
@@ -273,52 +342,72 @@ export default function StudentTranscriptPage() {
               </div>
             ))
           ) : (
-            <p className="text-sm text-gray-500 italic">Belum ada data rapor akademik.</p>
+            <p className="text-sm text-gray-500 italic">
+              Belum ada data rapor akademik.
+            </p>
           )}
         </div>
 
         {/* Tahfidz Progress */}
         <div className="mb-6">
-          <h3 className="font-bold text-sm mb-2 uppercase border-b pb-1">B. Progress Tahfidz Al-Quran</h3>
+          <h3 className="font-bold text-sm mb-2 uppercase border-b pb-1">
+            B. Progress Tahfidz Al-Quran
+          </h3>
           {tahfidzProgress ? (
             <div>
               <div className="grid grid-cols-3 gap-4 mb-3 text-sm">
                 <div className="p-3 bg-green-50 rounded border">
                   <p className="text-xs text-gray-600">Total Surah</p>
-                  <p className="text-xl font-bold text-green-700">{tahfidzProgress.summary?.surahCoveredCount || 0}</p>
+                  <p className="text-xl font-bold text-green-700">
+                    {tahfidzProgress.summary?.surahCoveredCount || 0}
+                  </p>
                 </div>
                 <div className="p-3 bg-blue-50 rounded border">
                   <p className="text-xs text-gray-600">Total Ayat</p>
-                  <p className="text-xl font-bold text-blue-700">{tahfidzProgress.summary?.totalAyahMemorized || 0}</p>
+                  <p className="text-xl font-bold text-blue-700">
+                    {tahfidzProgress.summary?.totalAyahMemorized || 0}
+                  </p>
                 </div>
                 <div className="p-3 bg-amber-50 rounded border">
                   <p className="text-xs text-gray-600">Juz Selesai</p>
-                  <p className="text-xl font-bold text-amber-700">{tahfidzProgress.summary?.juzCoveredCount || 0}</p>
+                  <p className="text-xl font-bold text-amber-700">
+                    {tahfidzProgress.summary?.juzCoveredCount || 0}
+                  </p>
                 </div>
               </div>
-              
-              {tahfidzProgress.surahCovered && tahfidzProgress.surahCovered.length > 0 && (
-                <div className="mb-3">
-                  <p className="text-xs font-semibold mb-1">Surah yang dihafal:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {tahfidzProgress.surahCovered.map((s) => (
-                      <span key={s.surahNumber} className="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded">
-                        {s.surahName}
-                      </span>
-                    ))}
+
+              {tahfidzProgress.surahCovered &&
+                tahfidzProgress.surahCovered.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-semibold mb-1">
+                      Surah yang dihafal:
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {tahfidzProgress.surahCovered.map((s) => (
+                        <span
+                          key={s.surahNumber}
+                          className="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded"
+                        >
+                          {s.surahName}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           ) : (
-            <p className="text-sm text-gray-500 italic">Belum ada data tahfidz.</p>
+            <p className="text-sm text-gray-500 italic">
+              Belum ada data tahfidz.
+            </p>
           )}
         </div>
 
         {/* Recent Tahfidz Records */}
         {tahfidzRecords?.data && tahfidzRecords.data.length > 0 && (
           <div className="mb-6">
-            <h3 className="font-bold text-sm mb-2 uppercase border-b pb-1">C. Riwayat Setoran Terakhir</h3>
+            <h3 className="font-bold text-sm mb-2 uppercase border-b pb-1">
+              C. Riwayat Setoran Terakhir
+            </h3>
             <table className="text-xs">
               <thead>
                 <tr>
@@ -334,13 +423,21 @@ export default function StudentTranscriptPage() {
                 {tahfidzRecords.data.slice(0, 10).map((record, idx) => (
                   <tr key={record.id}>
                     <td className="text-center">{idx + 1}</td>
-                    <td>{format(new Date(record.recordedAt), 'd MMM yyyy', { locale: idLocale })}</td>
+                    <td>
+                      {format(new Date(record.recordedAt), "d MMM yyyy", {
+                        locale: idLocale,
+                      })}
+                    </td>
                     <td>{record.surahName}</td>
-                    <td className="text-center">{record.ayahStart} - {record.ayahEnd}</td>
+                    <td className="text-center">
+                      {record.ayahStart} - {record.ayahEnd}
+                    </td>
                     <td className="text-center">{record.activityType}</td>
                     <td className="text-center">
                       <span className="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-800">
-                        {record.score !== undefined ? record.score : (record.grade || '-')}
+                        {record.score !== undefined
+                          ? record.score
+                          : record.grade || "-"}
                       </span>
                     </td>
                   </tr>
@@ -354,12 +451,17 @@ export default function StudentTranscriptPage() {
         <div className="mt-8 pt-4 border-t">
           <div className="flex justify-between items-start">
             <div className="text-xs text-gray-600">
-              <p>Dicetak: {format(new Date(), 'd MMMM yyyy, HH:mm', { locale: idLocale })}</p>
+              <p>
+                Dicetak:{" "}
+                {format(new Date(), "d MMMM yyyy, HH:mm", { locale: idLocale })}
+              </p>
               <p>Dokumen ini digenerate otomatis oleh sistem CIPANSOR.</p>
             </div>
             <div className="text-center">
               <p className="text-sm mb-12">Kepala Madrasah</p>
-              <p className="text-sm font-semibold">(.............................)</p>
+              <p className="text-sm font-semibold">
+                (.............................)
+              </p>
             </div>
           </div>
         </div>
@@ -382,8 +484,8 @@ export default function StudentTranscriptPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="default" 
+            <Button
+              variant="default"
               onClick={handlePrint}
               disabled={!selectedStudent}
             >
@@ -404,12 +506,12 @@ export default function StudentTranscriptPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Select 
+                <Select
                   value={selectedUnitId || "ALL"}
                   onValueChange={(value) => {
-                    const val = value === 'ALL' ? '' : value;
+                    const val = value === "ALL" ? "" : value;
                     setSelectedUnitId(val);
-                    setSelectedClassId('');
+                    setSelectedClassId("");
                     setSelectedStudent(null);
                   }}
                 >
@@ -426,10 +528,10 @@ export default function StudentTranscriptPage() {
                   </SelectContent>
                 </Select>
 
-                <Select 
+                <Select
                   value={selectedClassId || "ALL"}
                   onValueChange={(value) => {
-                    const val = value === 'ALL' ? '' : value;
+                    const val = value === "ALL" ? "" : value;
                     setSelectedClassId(val);
                     setSelectedStudent(null);
                   }}
@@ -464,7 +566,7 @@ export default function StudentTranscriptPage() {
               <CardContent className="pt-4">
                 {studentsLoading ? (
                   <div className="space-y-2">
-                    {[1, 2, 3, 4, 5].map(i => (
+                    {[1, 2, 3, 4, 5].map((i) => (
                       <Skeleton key={i} className="h-16" />
                     ))}
                   </div>
@@ -475,8 +577,13 @@ export default function StudentTranscriptPage() {
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                    {students.map(student => {
-                      const initials = student.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                    {students.map((student) => {
+                      const initials = student.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .substring(0, 2)
+                        .toUpperCase();
                       const isSelected = selectedStudent?.id === student.id;
 
                       return (
@@ -484,7 +591,7 @@ export default function StudentTranscriptPage() {
                           key={student.id}
                           className={`
                             flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors
-                            ${isSelected ? 'bg-primary/10 border-primary' : 'hover:bg-muted'}
+                            ${isSelected ? "bg-primary/10 border-primary" : "hover:bg-muted"}
                           `}
                           onClick={() => handleSelectStudent(student)}
                         >
@@ -494,12 +601,17 @@ export default function StudentTranscriptPage() {
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{student.name}</p>
+                            <p className="font-medium truncate">
+                              {student.name}
+                            </p>
                             <p className="text-sm text-muted-foreground">
-                              {student.nis} • {student.currentClass?.name || '-'}
+                              {student.nis} •{" "}
+                              {student.currentClass?.name || "-"}
                             </p>
                           </div>
-                          {isSelected && <CheckCircle2 className="h-5 w-5 text-primary" />}
+                          {isSelected && (
+                            <CheckCircle2 className="h-5 w-5 text-primary" />
+                          )}
                         </div>
                       );
                     })}
@@ -519,9 +631,11 @@ export default function StudentTranscriptPage() {
                 </CardTitle>
                 <CardDescription>
                   {selectedStudent ? (
-                    <span>Transkrip untuk <strong>{selectedStudent.name}</strong></span>
+                    <span>
+                      Transkrip untuk <strong>{selectedStudent.name}</strong>
+                    </span>
                   ) : (
-                    'Pilih siswa untuk melihat transkrip'
+                    "Pilih siswa untuk melihat transkrip"
                   )}
                 </CardDescription>
               </CardHeader>
@@ -552,8 +666,12 @@ export default function StudentTranscriptPage() {
                                 <GraduationCap className="h-5 w-5 text-blue-600" />
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Total Rapor</p>
-                                <p className="text-xl font-bold">{studentReportCards.length}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Total Rapor
+                                </p>
+                                <p className="text-xl font-bold">
+                                  {studentReportCards.length}
+                                </p>
                               </div>
                             </div>
                           </CardContent>
@@ -565,11 +683,19 @@ export default function StudentTranscriptPage() {
                                 <TrendingUp className="h-5 w-5 text-green-600" />
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Rata-rata</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Rata-rata
+                                </p>
                                 <p className="text-xl font-bold">
                                   {studentReportCards.length > 0
-                    ? (studentReportCards.reduce((sum: number, rc: ReportCard) => sum + (rc.averageScore || 0), 0) / studentReportCards.length).toFixed(1)
-                                    : '-'}
+                                    ? (
+                                        studentReportCards.reduce(
+                                          (sum: number, rc: ReportCard) =>
+                                            sum + (rc.averageScore || 0),
+                                          0,
+                                        ) / studentReportCards.length
+                                      ).toFixed(1)
+                                    : "-"}
                                 </p>
                               </div>
                             </div>
@@ -582,11 +708,17 @@ export default function StudentTranscriptPage() {
                                 <Award className="h-5 w-5 text-amber-600" />
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Best Rank</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Best Rank
+                                </p>
                                 <p className="text-xl font-bold">
                                   {studentReportCards.length > 0
-                                    ? Math.min(...studentReportCards.filter((rc: ReportCard) => rc.rank).map((rc: ReportCard) => rc.rank!))
-                                    : '-'}
+                                    ? Math.min(
+                                        ...studentReportCards
+                                          .filter((rc: ReportCard) => rc.rank)
+                                          .map((rc: ReportCard) => rc.rank!),
+                                      )
+                                    : "-"}
                                 </p>
                               </div>
                             </div>
@@ -599,8 +731,12 @@ export default function StudentTranscriptPage() {
                                 <Calendar className="h-5 w-5 text-purple-600" />
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Tahun Aktif</p>
-                                <p className="text-xl font-bold">{activeYear?.name || '-'}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Tahun Aktif
+                                </p>
+                                <p className="text-xl font-bold">
+                                  {activeYear?.name || "-"}
+                                </p>
                               </div>
                             </div>
                           </CardContent>
@@ -615,35 +751,54 @@ export default function StudentTranscriptPage() {
                               <CardHeader className="pb-2">
                                 <div className="flex items-center justify-between">
                                   <CardTitle className="text-base">
-                                    Semester {rc.semester} - {rc.academicYear?.name}
+                                    Semester {rc.semester} -{" "}
+                                    {rc.academicYear?.name}
                                   </CardTitle>
                                   <div className="flex items-center gap-2">
                                     {rc.rank && (
-                                      <Badge variant="outline">Rank #{rc.rank}</Badge>
+                                      <Badge variant="outline">
+                                        Rank #{rc.rank}
+                                      </Badge>
                                     )}
-                                    <Badge className={
-                                      (rc.averageScore || 0) >= 80 ? 'bg-green-100 text-green-800' :
-                                      (rc.averageScore || 0) >= 70 ? 'bg-blue-100 text-blue-800' :
-                                      'bg-amber-100 text-amber-800'
-                                    }>
-                                      {(rc.averageScore || 0).toFixed(1)} ({getGradeLetter(rc.averageScore || 0)})
+                                    <Badge
+                                      className={
+                                        (rc.averageScore || 0) >= 80
+                                          ? "bg-green-100 text-green-800"
+                                          : (rc.averageScore || 0) >= 70
+                                            ? "bg-blue-100 text-blue-800"
+                                            : "bg-amber-100 text-amber-800"
+                                      }
+                                    >
+                                      {(rc.averageScore || 0).toFixed(1)} (
+                                      {getGradeLetter(rc.averageScore || 0)})
                                     </Badge>
                                   </div>
                                 </div>
                               </CardHeader>
                               <CardContent>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                                  {rc.subjects?.slice(0, 8).map((subj: any, idx: number) => (
-                                    <div key={idx} className="p-2 bg-muted rounded-lg text-sm">
-                                      <p className="truncate font-medium">{subj.subject?.name || subj.subjectName}</p>
-                                      <p className="text-muted-foreground">
-                                        {subj.finalScore.toFixed(0)} ({getGradeLetter(subj.finalScore)})
-                                      </p>
-                                    </div>
-                                  ))}
+                                  {rc.subjects
+                                    ?.slice(0, 8)
+                                    .map((subj: any, idx: number) => (
+                                      <div
+                                        key={idx}
+                                        className="p-2 bg-muted rounded-lg text-sm"
+                                      >
+                                        <p className="truncate font-medium">
+                                          {subj.subject?.name ||
+                                            subj.subjectName}
+                                        </p>
+                                        <p className="text-muted-foreground">
+                                          {subj.finalScore.toFixed(0)} (
+                                          {getGradeLetter(subj.finalScore)})
+                                        </p>
+                                      </div>
+                                    ))}
                                   {rc.subjects && rc.subjects.length > 8 && (
                                     <div className="p-2 bg-muted rounded-lg text-sm flex items-center justify-center">
-                                      <p className="text-muted-foreground">+{rc.subjects.length - 8} lainnya</p>
+                                      <p className="text-muted-foreground">
+                                        +{rc.subjects.length - 8} lainnya
+                                      </p>
                                     </div>
                                   )}
                                 </div>
@@ -667,42 +822,63 @@ export default function StudentTranscriptPage() {
                             <Card>
                               <CardContent className="pt-4 text-center">
                                 <BookOpen className="h-8 w-8 mx-auto mb-2 text-emerald-600" />
-                                <p className="text-2xl font-bold text-emerald-600">{tahfidzProgress.summary?.surahCoveredCount || 0}</p>
-                                <p className="text-sm text-muted-foreground">Total Surah</p>
+                                <p className="text-2xl font-bold text-emerald-600">
+                                  {tahfidzProgress.summary?.surahCoveredCount ||
+                                    0}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  Total Surah
+                                </p>
                               </CardContent>
                             </Card>
                             <Card>
                               <CardContent className="pt-4 text-center">
                                 <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                                <p className="text-2xl font-bold text-blue-600">{tahfidzProgress.summary?.juzCoveredCount || 0}</p>
-                                <p className="text-sm text-muted-foreground">Juz Selesai</p>
+                                <p className="text-2xl font-bold text-blue-600">
+                                  {tahfidzProgress.summary?.juzCoveredCount ||
+                                    0}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  Juz Selesai
+                                </p>
                               </CardContent>
                             </Card>
                             <Card>
                               <CardContent className="pt-4 text-center">
                                 <Clock className="h-8 w-8 mx-auto mb-2 text-amber-600" />
-                                <p className="text-2xl font-bold text-amber-600">{tahfidzProgress.summary?.totalAyahMemorized || 0}</p>
-                                <p className="text-sm text-muted-foreground">Total Ayat</p>
+                                <p className="text-2xl font-bold text-amber-600">
+                                  {tahfidzProgress.summary
+                                    ?.totalAyahMemorized || 0}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  Total Ayat
+                                </p>
                               </CardContent>
                             </Card>
                           </div>
 
-                          {tahfidzProgress.surahCovered && tahfidzProgress.surahCovered.length > 0 && (
-                            <Card>
-                              <CardHeader className="pb-2">
-                                <CardTitle className="text-base">Surah yang Dihafal</CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                <div className="flex flex-wrap gap-2">
-                                  {tahfidzProgress.surahCovered.map((s) => (
-                                    <Badge key={s.surahNumber} className="bg-emerald-100 text-emerald-800">
-                                      {s.surahName}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </CardContent>
-                            </Card>
-                          )}
+                          {tahfidzProgress.surahCovered &&
+                            tahfidzProgress.surahCovered.length > 0 && (
+                              <Card>
+                                <CardHeader className="pb-2">
+                                  <CardTitle className="text-base">
+                                    Surah yang Dihafal
+                                  </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                  <div className="flex flex-wrap gap-2">
+                                    {tahfidzProgress.surahCovered.map((s) => (
+                                      <Badge
+                                        key={s.surahNumber}
+                                        className="bg-emerald-100 text-emerald-800"
+                                      >
+                                        {s.surahName}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )}
                         </>
                       ) : (
                         <div className="text-center py-12 text-muted-foreground">
@@ -712,42 +888,64 @@ export default function StudentTranscriptPage() {
                       )}
 
                       {/* Recent Records */}
-                      {tahfidzRecords?.data && tahfidzRecords.data.length > 0 && (
-                        <Card>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-base">Riwayat Setoran Terakhir</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-2">
-                              {tahfidzRecords.data.slice(0, 10).map((record) => (
-                                <div key={record.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                                  <div>
-                                    <p className="font-medium">{record.surahName}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      Ayat {record.ayahStart} - {record.ayahEnd} • {record.activityType}
-                                    </p>
-                                  </div>
-                                  <div className="text-right">
-                                    <Badge variant="secondary">
-                                      {record.score !== undefined ? record.score : (record.grade || '-')}
-                                    </Badge>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      {format(new Date(record.recordedAt), 'd MMM yyyy', { locale: idLocale })}
-                                    </p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
+                      {tahfidzRecords?.data &&
+                        tahfidzRecords.data.length > 0 && (
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-base">
+                                Riwayat Setoran Terakhir
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-2">
+                                {tahfidzRecords.data
+                                  .slice(0, 10)
+                                  .map((record) => (
+                                    <div
+                                      key={record.id}
+                                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                                    >
+                                      <div>
+                                        <p className="font-medium">
+                                          {record.surahName}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                          Ayat {record.ayahStart} -{" "}
+                                          {record.ayahEnd} •{" "}
+                                          {record.activityType}
+                                        </p>
+                                      </div>
+                                      <div className="text-right">
+                                        <Badge variant="secondary">
+                                          {record.score !== undefined
+                                            ? record.score
+                                            : record.grade || "-"}
+                                        </Badge>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          {format(
+                                            new Date(record.recordedAt),
+                                            "d MMM yyyy",
+                                            { locale: idLocale },
+                                          )}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  ))}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
                     </TabsContent>
                   </Tabs>
                 ) : (
                   <div className="text-center py-16 text-muted-foreground">
                     <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg">Pilih siswa untuk melihat transkrip</p>
-                    <p className="text-sm">Gunakan filter di sebelah kiri untuk mencari siswa</p>
+                    <p className="text-lg">
+                      Pilih siswa untuk melihat transkrip
+                    </p>
+                    <p className="text-sm">
+                      Gunakan filter di sebelah kiri untuk mencari siswa
+                    </p>
                   </div>
                 )}
               </CardContent>

@@ -16,7 +16,7 @@ import {
   CreateExamInput,
   CreateGradeInput,
   BulkCreateGradesInput,
-  CreateReportCardInput
+  CreateReportCardInput,
 } from '@cipansor/shared';
 
 // =====================================
@@ -160,7 +160,10 @@ export async function getStudentGrades(req: Request, res: Response, next: NextFu
   try {
     const { studentId } = req.params;
     const { academicYearId } = req.query;
-    const grades = await assessmentService.getStudentGrades(studentId, academicYearId as string | undefined);
+    const grades = await assessmentService.getStudentGrades(
+      studentId,
+      academicYearId as string | undefined
+    );
     res.json({ success: true, data: grades });
   } catch (error) {
     next(error);

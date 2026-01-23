@@ -29,12 +29,14 @@
 - **Estimated Total:** ~120 jam (~15 hari kerja)
 
 **Recent Progress:**
+
 - ✅ Completed enum validation tests (28 tests passing)
 - ✅ Created database migration test suite (requires test DB setup)
 - ✅ Completed PAUD Assessment service unit tests (16 tests passing)
 - ✅ Completed PAUD Report service unit tests (22 tests passing)
 
 **Next Steps:**
+
 - Complete service unit tests for remaining modules (Daily Report, Tahfidz, Dashboard)
 - Configure test environment for integration tests
 - Implement E2E tests
@@ -45,6 +47,7 @@
 ## 1. Setup & Infrastructure
 
 ### 1.1 Project Setup
+
 **Requirements:** [Req 1.4, 1.5]
 **Database:** [DB 1.1]
 **Backend:** [BE 1.1]
@@ -63,6 +66,7 @@
 ## 2. Database Implementation
 
 ### 2.1 New Enums
+
 **Requirements:** [Req 4.1, 7.1]
 **Database:** [DB 2.1-2.8]
 
@@ -77,6 +81,7 @@
 **Dependencies:** 1.1
 
 ### 2.2 PAUD Models
+
 **Requirements:** [Req 4.1, 4.2]
 **Database:** [DB 3.1-3.5]
 
@@ -93,11 +98,13 @@
 **Priority:** High | **Est:** 5h (3.5h dev + 1.5h test)
 **Dependencies:** 2.1
 **Acceptance Criteria:**
+
 - All models created with proper relations
 - Migration runs without error
 - Rollback works correctly
 
 ### 2.3 Daily Report Models
+
 **Requirements:** [Req 4.3, 5.3]
 **Database:** [DB 4.1-4.3]
 
@@ -114,6 +121,7 @@
 **Dependencies:** 2.1
 
 ### 2.4 Tahfidz Enhancement Models
+
 **Requirements:** [Req 7.1, 7.2]
 **Database:** [DB 5.1-5.5]
 
@@ -131,6 +139,7 @@
 **Dependencies:** 2.1
 
 ### 2.5 Dashboard & Health Models
+
 **Requirements:** [Req 9.1, 4.5]
 **Database:** [DB 6.1, 6.2, 7.2, 7.3]
 
@@ -147,6 +156,7 @@
 **Dependencies:** 2.1
 
 ### 2.6 Seed Data
+
 **Requirements:** [Req 4.1.1]
 **Database:** [DB 9.3]
 
@@ -164,6 +174,7 @@
 ## 3. PAUD Module
 
 ### 3.1 PAUD Assessment Backend
+
 **Requirements:** [Req 4.1]
 **Database:** [DB 3.1-3.3]
 **Backend:** [BE 2.1]
@@ -183,6 +194,7 @@
 **Priority:** High | **Est:** 12h (8h dev + 4h test)
 **Dependencies:** 2.2
 **Acceptance Criteria:**
+
 - All endpoints working as per spec
 - Validation rules enforced
 - Progress calculation accurate
@@ -190,6 +202,7 @@
 - All integration tests pass
 
 ### 3.2 PAUD Report Backend
+
 **Requirements:** [Req 4.2]
 **Database:** [DB 3.4, 3.5]
 **Backend:** [BE 2.2]
@@ -211,6 +224,7 @@
 **Dependencies:** 3.1
 
 ### 3.3 PAUD Assessment Frontend
+
 **Requirements:** [Req 4.1]
 **Backend:** [BE 2.1]
 **Frontend:** [FE 2.1-2.4]
@@ -231,6 +245,7 @@
 **Dependencies:** 3.1
 
 ### 3.4 PAUD Report Frontend
+
 **Requirements:** [Req 4.2]
 **Backend:** [BE 2.2]
 **Frontend:** [FE 2.5-2.7]
@@ -254,6 +269,7 @@
 ## 4. Daily Report Module
 
 ### 4.1 Daily Report Backend
+
 **Requirements:** [Req 4.3, 5.3]
 **Database:** [DB 4.1-4.3]
 **Backend:** [BE 3.1]
@@ -274,12 +290,14 @@
 **Priority:** High | **Est:** 12h (8h dev + 4h test)
 **Dependencies:** 2.3
 **Acceptance Criteria:**
+
 - CRUD operations working
 - Bulk check-in saves multiple records
 - WhatsApp notification sent correctly
 - Duplicate prevention working
 
 ### 4.2 Daily Report Frontend
+
 **Requirements:** [Req 4.3, 5.3]
 **Backend:** [BE 3.1]
 **Frontend:** [FE 3.1-3.5]
@@ -306,6 +324,7 @@
 ## 5. Tahfidz Enhancement Module
 
 ### 5.1 Murojaah Backend
+
 **Requirements:** [Req 7.1.2]
 **Database:** [DB 5.1, 5.2]
 **Backend:** [BE 4.1]
@@ -326,6 +345,7 @@
 **Dependencies:** 2.4
 
 ### 5.2 Simaan Backend
+
 **Requirements:** [Req 7.1.3]
 **Database:** [DB 5.3, 5.4]
 **Backend:** [BE 4.2]
@@ -346,6 +366,7 @@
 **Dependencies:** 2.4
 
 ### 5.3 Sanad Certificate Backend
+
 **Requirements:** [Req 7.2.3]
 **Database:** [DB 5.5]
 **Backend:** [BE 4.3]
@@ -364,6 +385,7 @@
 **Dependencies:** 5.2
 
 ### 5.4 Murojaah Frontend
+
 **Requirements:** [Req 7.1.2]
 **Backend:** [BE 4.1]
 **Frontend:** [FE 4.1-4.4]
@@ -385,6 +407,7 @@
 **Dependencies:** 5.1
 
 ### 5.5 Simaan Frontend
+
 **Requirements:** [Req 7.1.3]
 **Backend:** [BE 4.2]
 **Frontend:** [FE 4.5-4.7]
@@ -405,6 +428,7 @@
 **Dependencies:** 5.2
 
 ### 5.6 Certificate & Verification Frontend
+
 **Requirements:** [Req 7.2.3]
 **Backend:** [BE 4.3]
 **Frontend:** [FE 4.8, 4.9]
@@ -426,6 +450,7 @@
 ## 6. Dashboard Module
 
 ### 6.1 Dashboard Backend
+
 **Requirements:** [Req 9.1]
 **Database:** [DB 6.1, 6.2]
 **Backend:** [BE 5.1]
@@ -447,6 +472,7 @@
 **Dependencies:** 2.5
 
 ### 6.2 Dashboard Frontend
+
 **Requirements:** [Req 9.1]
 **Backend:** [BE 5.1]
 **Frontend:** [FE 5.1-5.3]
@@ -472,6 +498,7 @@
 ## 7. Integration & Testing
 
 ### 7.1 API Integration Tests
+
 **Requirements:** [Req 12.3]
 **Backend:** [BE 1.4]
 
@@ -485,6 +512,7 @@
 **Dependencies:** 3.1, 4.1, 5.1, 5.2, 6.1
 
 ### 7.2 E2E Tests
+
 **Requirements:** [Req 12.3]
 **Frontend:** [FE 6.1]
 
@@ -499,6 +527,7 @@
 **Dependencies:** 3.3, 3.4, 4.2, 5.4, 5.5, 6.2
 
 ### 7.3 Performance Testing
+
 **Requirements:** [Req 11.1]
 
 - [ ] 7.3.1 Setup load testing tool (k6/Artillery)
@@ -515,6 +544,7 @@
 ## 8. Documentation & Deployment
 
 ### 8.1 API Documentation
+
 **Requirements:** [Req 12.3]
 **Backend:** [BE 1.1]
 
@@ -527,6 +557,7 @@
 **Dependencies:** 7.1
 
 ### 8.2 User Documentation
+
 **Requirements:** [Req 12.3]
 
 - [ ] 8.2.1 Write PAUD module user guide
@@ -539,6 +570,7 @@
 **Dependencies:** 7.2
 
 ### 8.3 Deployment
+
 **Requirements:** [Req 11.4]
 
 - [ ] 8.3.1 Review and update deployment scripts
@@ -590,18 +622,21 @@
 ## Appendix B: Priority & Timeline
 
 ### Sprint 1 (Week 1-2): Foundation
+
 - 1.1 Setup
 - 2.1-2.6 All Database tasks
 - 3.1 PAUD Assessment Backend
 - 3.2 PAUD Report Backend
 
 ### Sprint 2 (Week 3-4): PAUD & Daily Report
+
 - 3.3 PAUD Assessment Frontend
 - 3.4 PAUD Report Frontend
 - 4.1 Daily Report Backend
 - 4.2 Daily Report Frontend
 
 ### Sprint 3 (Week 5-6): Tahfidz Enhancement
+
 - 5.1 Murojaah Backend
 - 5.2 Simaan Backend
 - 5.3 Certificate Backend
@@ -610,6 +645,7 @@
 - 5.6 Certificate Frontend
 
 ### Sprint 4 (Week 7): Dashboard & Finalization
+
 - 6.1 Dashboard Backend
 - 6.2 Dashboard Frontend
 - 7.1-7.3 Testing
@@ -619,19 +655,19 @@
 
 ## Appendix C: Estimation Summary
 
-| Phase | Tasks | Hours | Days |
-|-------|-------|-------|------|
-| Setup & Infrastructure | 4 | 2 | 0.25 |
-| Database | 6 groups | 24 | 3 |
-| PAUD Module | 4 groups | 48 | 6 |
-| Daily Report | 2 groups | 26 | 3.25 |
-| Tahfidz Enhancement | 6 groups | 56 | 7 |
-| Dashboard | 2 groups | 20 | 2.5 |
-| Testing | 3 groups | 22 | 2.75 |
-| Documentation | 3 groups | 16 | 2 |
-| **Total** | **78 sub-tasks** | **~214h** | **~27 days** |
+| Phase                  | Tasks            | Hours     | Days         |
+| ---------------------- | ---------------- | --------- | ------------ |
+| Setup & Infrastructure | 4                | 2         | 0.25         |
+| Database               | 6 groups         | 24        | 3            |
+| PAUD Module            | 4 groups         | 48        | 6            |
+| Daily Report           | 2 groups         | 26        | 3.25         |
+| Tahfidz Enhancement    | 6 groups         | 56        | 7            |
+| Dashboard              | 2 groups         | 20        | 2.5          |
+| Testing                | 3 groups         | 22        | 2.75         |
+| Documentation          | 3 groups         | 16        | 2            |
+| **Total**              | **78 sub-tasks** | **~214h** | **~27 days** |
 
-*Note: 8 jam/hari kerja, buffer 20% sudah termasuk*
+_Note: 8 jam/hari kerja, buffer 20% sudah termasuk_
 
 ---
 

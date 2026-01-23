@@ -1,17 +1,23 @@
-'use client';
+"use client";
 
-import { use, useMemo } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, BookOpen, GraduationCap } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
+import { use, useMemo } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Save, BookOpen, GraduationCap } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import {
   Form,
   FormControl,
@@ -20,66 +26,77 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { toast } from "sonner";
 import {
   useCurriculum,
   useSubjects,
   useAddSubjectToCurriculum,
   SUBJECT_TYPE_LABELS,
   SubjectType,
-} from '@/hooks/use-curriculum';
+} from "@/hooks/use-curriculum";
 
 function getTypeBadgeColor(type: SubjectType) {
   const colors: Record<SubjectType, string> = {
-    REQUIRED: 'bg-blue-100 text-blue-800',
-    ELECTIVE: 'bg-green-100 text-green-800',
-    EXTRACURRICULAR: 'bg-purple-100 text-purple-800',
+    REQUIRED: "bg-blue-100 text-blue-800",
+    ELECTIVE: "bg-green-100 text-green-800",
+    EXTRACURRICULAR: "bg-purple-100 text-purple-800",
   };
   return colors[type];
 }
 
 const addSubjectSchema = z.object({
-  subjectId: z.string().min(1, 'Mata pelajaran wajib dipilih'),
-  semester: z.coerce.number().min(1, 'Semester minimal 1').max(2, 'Semester maksimal 2'),
-  sequence: z.coerce.number().min(1, 'Urutan minimal 1'),
+  subjectId: z.string().min(1, "Mata pelajaran wajib dipilih"),
+  semester: z.coerce
+    .number()
+    .min(1, "Semester minimal 1")
+    .max(2, "Semester maksimal 2"),
+  sequence: z.coerce.number().min(1, "Urutan minimal 1"),
   isRequired: z.boolean(),
 });
 
 type AddSubjectFormData = z.infer<typeof addSubjectSchema>;
 
-export default function AddSubjectToCurriculumPage({ params }: { params: Promise<{ id: string }> }) {
+export default function AddSubjectToCurriculumPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const router = useRouter();
   const { data: curriculum, isLoading: loadingCurriculum } = useCurriculum(id);
-  const { data: subjects, isLoading: loadingSubjects } = useSubjects({ isActive: true });
+  const { data: subjects, isLoading: loadingSubjects } = useSubjects({
+    isActive: true,
+  });
   const addSubjectMutation = useAddSubjectToCurriculum();
 
   // Filter out subjects already in the curriculum
   const availableSubjects = useMemo(() => {
     if (!subjects || !curriculum?.subjects) return subjects || [];
-    const existingSubjectIds = new Set(curriculum.subjects.map((cs) => cs.subjectId));
+    const existingSubjectIds = new Set(
+      curriculum.subjects.map((cs) => cs.subjectId),
+    );
     return subjects.filter((s) => !existingSubjectIds.has(s.id));
   }, [subjects, curriculum]);
 
   const form = useForm<AddSubjectFormData>({
     resolver: zodResolver(addSubjectSchema),
     defaultValues: {
-      subjectId: '',
+      subjectId: "",
       semester: 1,
       sequence: (curriculum?.subjects?.length || 0) + 1,
       isRequired: true,
     },
   });
 
-  const selectedSubjectId = form.watch('subjectId');
+  const selectedSubjectId = form.watch("subjectId");
   const selectedSubject = useMemo(() => {
     return subjects?.find((s) => s.id === selectedSubjectId);
   }, [subjects, selectedSubjectId]);
@@ -93,10 +110,10 @@ export default function AddSubjectToCurriculumPage({ params }: { params: Promise
         sequence: data.sequence,
         isRequired: data.isRequired,
       });
-      toast.success('Mata pelajaran berhasil ditambahkan ke kurikulum');
+      toast.success("Mata pelajaran berhasil ditambahkan ke kurikulum");
       router.push(`/curriculum/curriculums/${id}`);
     } catch {
-      toast.error('Gagal menambahkan mata pelajaran');
+      toast.error("Gagal menambahkan mata pelajaran");
     }
   };
 
@@ -130,7 +147,9 @@ export default function AddSubjectToCurriculumPage({ params }: { params: Promise
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tambah Mata Pelajaran</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Tambah Mata Pelajaran
+          </h1>
           <p className="text-muted-foreground">ke {curriculum.name}</p>
         </div>
       </div>
@@ -153,7 +172,10 @@ export default function AddSubjectToCurriculumPage({ params }: { params: Promise
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Mata Pelajaran *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih mata pelajaran" />
@@ -169,7 +191,9 @@ export default function AddSubjectToCurriculumPage({ params }: { params: Promise
                               <SelectItem key={subject.id} value={subject.id}>
                                 <div className="flex items-center gap-2">
                                   <span>{subject.name}</span>
-                                  <span className="text-muted-foreground">({subject.code})</span>
+                                  <span className="text-muted-foreground">
+                                    ({subject.code})
+                                  </span>
                                 </div>
                               </SelectItem>
                             ))
@@ -189,13 +213,21 @@ export default function AddSubjectToCurriculumPage({ params }: { params: Promise
                       </div>
                       <div className="flex-1">
                         <p className="font-semibold">{selectedSubject.name}</p>
-                        <p className="text-sm text-muted-foreground">{selectedSubject.code}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedSubject.code}
+                        </p>
                         <div className="flex flex-wrap gap-2 mt-2">
-                          <Badge className={getTypeBadgeColor(selectedSubject.type)}>
+                          <Badge
+                            className={getTypeBadgeColor(selectedSubject.type)}
+                          >
                             {SUBJECT_TYPE_LABELS[selectedSubject.type]}
                           </Badge>
-                          <Badge variant="outline">{selectedSubject.credits} SKS</Badge>
-                          <Badge variant="outline">{selectedSubject.hoursPerWeek} jam/minggu</Badge>
+                          <Badge variant="outline">
+                            {selectedSubject.credits} SKS
+                          </Badge>
+                          <Badge variant="outline">
+                            {selectedSubject.hoursPerWeek} jam/minggu
+                          </Badge>
                         </div>
                         {selectedSubject.description && (
                           <p className="text-sm text-muted-foreground mt-2">
@@ -228,7 +260,9 @@ export default function AddSubjectToCurriculumPage({ params }: { params: Promise
                             <SelectItem value="2">Semester 2</SelectItem>
                           </SelectContent>
                         </Select>
-                        <FormDescription>Semester mata pelajaran diajarkan</FormDescription>
+                        <FormDescription>
+                          Semester mata pelajaran diajarkan
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -243,7 +277,9 @@ export default function AddSubjectToCurriculumPage({ params }: { params: Promise
                         <FormControl>
                           <Input type="number" min={1} {...field} />
                         </FormControl>
-                        <FormDescription>Urutan tampilan dalam kurikulum</FormDescription>
+                        <FormDescription>
+                          Urutan tampilan dalam kurikulum
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -265,7 +301,9 @@ export default function AddSubjectToCurriculumPage({ params }: { params: Promise
                     render={({ field }) => (
                       <FormItem className="flex items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel className="text-base">Mata Pelajaran Wajib</FormLabel>
+                          <FormLabel className="text-base">
+                            Mata Pelajaran Wajib
+                          </FormLabel>
                           <FormDescription>
                             Wajib diambil oleh semua siswa
                           </FormDescription>
@@ -289,11 +327,13 @@ export default function AddSubjectToCurriculumPage({ params }: { params: Promise
                 <CardContent className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Nama</span>
-                    <span className="font-medium truncate max-w-[120px]">{curriculum.name}</span>
+                    <span className="font-medium truncate max-w-[120px]">
+                      {curriculum.name}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Unit</span>
-                    <span>{curriculum.unit?.name || '-'}</span>
+                    <span>{curriculum.unit?.name || "-"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Tingkat</span>

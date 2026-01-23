@@ -1,10 +1,10 @@
-import { Router } from "express";
-import { UserRole } from "@prisma/client";
-import * as controller from "./controller";
-import * as accreditationController from "./accreditation.controller";
-import { authenticate, authorize } from "../../middleware/auth";
-import { validateQuery } from "../../middleware/error";
-import { queryFoundationSchema, queryBoardMemberSchema, queryDocumentSchema } from "./schema";
+import { Router } from 'express';
+import { UserRole } from '@prisma/client';
+import * as controller from './controller';
+import * as accreditationController from './accreditation.controller';
+import { authenticate, authorize } from '../../middleware/auth';
+import { validateQuery } from '../../middleware/error';
+import { queryFoundationSchema, queryBoardMemberSchema, queryDocumentSchema } from './schema';
 
 const router = Router();
 
@@ -37,7 +37,12 @@ router.use(authenticate);
  *       200:
  *         description: List of foundations
  */
-router.get("/", authorize(UserRole.SUPER_ADMIN), validateQuery(queryFoundationSchema), controller.getFoundations);
+router.get(
+  '/',
+  authorize(UserRole.SUPER_ADMIN),
+  validateQuery(queryFoundationSchema),
+  controller.getFoundations
+);
 
 /**
  * @swagger
@@ -76,7 +81,7 @@ router.get("/", authorize(UserRole.SUPER_ADMIN), validateQuery(queryFoundationSc
  *       201:
  *         description: Foundation created
  */
-router.post("/", authorize(UserRole.SUPER_ADMIN), controller.createFoundation);
+router.post('/', authorize(UserRole.SUPER_ADMIN), controller.createFoundation);
 
 /**
  * @swagger
@@ -96,7 +101,7 @@ router.post("/", authorize(UserRole.SUPER_ADMIN), controller.createFoundation);
  *       200:
  *         description: Foundation details
  */
-router.get("/:id", authorize(UserRole.SUPER_ADMIN), controller.getFoundationById);
+router.get('/:id', authorize(UserRole.SUPER_ADMIN), controller.getFoundationById);
 
 /**
  * @swagger
@@ -116,7 +121,7 @@ router.get("/:id", authorize(UserRole.SUPER_ADMIN), controller.getFoundationById
  *       200:
  *         description: Foundation statistics (units, students, staff)
  */
-router.get("/:id/stats", authorize(UserRole.SUPER_ADMIN), controller.getFoundationStats);
+router.get('/:id/stats', authorize(UserRole.SUPER_ADMIN), controller.getFoundationStats);
 
 // ==================== EXECUTIVE DASHBOARD ANALYTICS ====================
 
@@ -132,7 +137,7 @@ router.get("/:id/stats", authorize(UserRole.SUPER_ADMIN), controller.getFoundati
  *       200:
  *         description: Executive summary with totals and growth
  */
-router.get("/stats/executive", authorize(UserRole.SUPER_ADMIN), controller.getExecutiveSummary);
+router.get('/stats/executive', authorize(UserRole.SUPER_ADMIN), controller.getExecutiveSummary);
 
 /**
  * @swagger
@@ -146,7 +151,7 @@ router.get("/stats/executive", authorize(UserRole.SUPER_ADMIN), controller.getEx
  *       200:
  *         description: Financial data with month comparison and unit breakdown
  */
-router.get("/stats/financial", authorize(UserRole.SUPER_ADMIN), controller.getFinancialOverview);
+router.get('/stats/financial', authorize(UserRole.SUPER_ADMIN), controller.getFinancialOverview);
 
 /**
  * @swagger
@@ -160,7 +165,7 @@ router.get("/stats/financial", authorize(UserRole.SUPER_ADMIN), controller.getFi
  *       200:
  *         description: Unit comparison with student/teacher ratios
  */
-router.get("/stats/units", authorize(UserRole.SUPER_ADMIN), controller.getUnitComparison);
+router.get('/stats/units', authorize(UserRole.SUPER_ADMIN), controller.getUnitComparison);
 
 /**
  * @swagger
@@ -180,7 +185,7 @@ router.get("/stats/units", authorize(UserRole.SUPER_ADMIN), controller.getUnitCo
  *       200:
  *         description: Foundation updated
  */
-router.put("/:id", authorize(UserRole.SUPER_ADMIN), controller.updateFoundation);
+router.put('/:id', authorize(UserRole.SUPER_ADMIN), controller.updateFoundation);
 
 /**
  * @swagger
@@ -200,7 +205,7 @@ router.put("/:id", authorize(UserRole.SUPER_ADMIN), controller.updateFoundation)
  *       204:
  *         description: Foundation deleted
  */
-router.delete("/:id", authorize(UserRole.SUPER_ADMIN), controller.deleteFoundation);
+router.delete('/:id', authorize(UserRole.SUPER_ADMIN), controller.deleteFoundation);
 
 // ==================== BOARD MEMBERS ====================
 
@@ -233,7 +238,12 @@ router.delete("/:id", authorize(UserRole.SUPER_ADMIN), controller.deleteFoundati
  *       200:
  *         description: List of board members
  */
-router.get("/board-members/list", authorize(UserRole.SUPER_ADMIN), validateQuery(queryBoardMemberSchema), controller.getBoardMembers);
+router.get(
+  '/board-members/list',
+  authorize(UserRole.SUPER_ADMIN),
+  validateQuery(queryBoardMemberSchema),
+  controller.getBoardMembers
+);
 
 /**
  * @swagger
@@ -275,7 +285,7 @@ router.get("/board-members/list", authorize(UserRole.SUPER_ADMIN), validateQuery
  *       201:
  *         description: Board member added
  */
-router.post("/board-members", authorize(UserRole.SUPER_ADMIN), controller.createBoardMember);
+router.post('/board-members', authorize(UserRole.SUPER_ADMIN), controller.createBoardMember);
 
 /**
  * @swagger
@@ -295,7 +305,7 @@ router.post("/board-members", authorize(UserRole.SUPER_ADMIN), controller.create
  *       200:
  *         description: Board member details
  */
-router.get("/board-members/:id", authorize(UserRole.SUPER_ADMIN), controller.getBoardMemberById);
+router.get('/board-members/:id', authorize(UserRole.SUPER_ADMIN), controller.getBoardMemberById);
 
 /**
  * @swagger
@@ -315,7 +325,7 @@ router.get("/board-members/:id", authorize(UserRole.SUPER_ADMIN), controller.get
  *       200:
  *         description: Board member updated
  */
-router.put("/board-members/:id", authorize(UserRole.SUPER_ADMIN), controller.updateBoardMember);
+router.put('/board-members/:id', authorize(UserRole.SUPER_ADMIN), controller.updateBoardMember);
 
 /**
  * @swagger
@@ -344,7 +354,11 @@ router.put("/board-members/:id", authorize(UserRole.SUPER_ADMIN), controller.upd
  *       200:
  *         description: Board member term ended
  */
-router.patch("/board-members/:id/end-term", authorize(UserRole.SUPER_ADMIN), controller.endBoardMemberTerm);
+router.patch(
+  '/board-members/:id/end-term',
+  authorize(UserRole.SUPER_ADMIN),
+  controller.endBoardMemberTerm
+);
 
 /**
  * @swagger
@@ -364,7 +378,7 @@ router.patch("/board-members/:id/end-term", authorize(UserRole.SUPER_ADMIN), con
  *       204:
  *         description: Board member deleted
  */
-router.delete("/board-members/:id", authorize(UserRole.SUPER_ADMIN), controller.deleteBoardMember);
+router.delete('/board-members/:id', authorize(UserRole.SUPER_ADMIN), controller.deleteBoardMember);
 
 // ==================== DOCUMENTS ====================
 
@@ -397,7 +411,12 @@ router.delete("/board-members/:id", authorize(UserRole.SUPER_ADMIN), controller.
  *       200:
  *         description: List of foundation documents
  */
-router.get("/documents/list", authorize(UserRole.SUPER_ADMIN), validateQuery(queryDocumentSchema), controller.getDocuments);
+router.get(
+  '/documents/list',
+  authorize(UserRole.SUPER_ADMIN),
+  validateQuery(queryDocumentSchema),
+  controller.getDocuments
+);
 
 /**
  * @swagger
@@ -440,7 +459,7 @@ router.get("/documents/list", authorize(UserRole.SUPER_ADMIN), validateQuery(que
  *       201:
  *         description: Document added
  */
-router.post("/documents", authorize(UserRole.SUPER_ADMIN), controller.createDocument);
+router.post('/documents', authorize(UserRole.SUPER_ADMIN), controller.createDocument);
 
 /**
  * @swagger
@@ -460,7 +479,7 @@ router.post("/documents", authorize(UserRole.SUPER_ADMIN), controller.createDocu
  *       200:
  *         description: Document details
  */
-router.get("/documents/:id", authorize(UserRole.SUPER_ADMIN), controller.getDocumentById);
+router.get('/documents/:id', authorize(UserRole.SUPER_ADMIN), controller.getDocumentById);
 
 /**
  * @swagger
@@ -480,7 +499,7 @@ router.get("/documents/:id", authorize(UserRole.SUPER_ADMIN), controller.getDocu
  *       200:
  *         description: Document updated
  */
-router.put("/documents/:id", authorize(UserRole.SUPER_ADMIN), controller.updateDocument);
+router.put('/documents/:id', authorize(UserRole.SUPER_ADMIN), controller.updateDocument);
 
 /**
  * @swagger
@@ -500,7 +519,7 @@ router.put("/documents/:id", authorize(UserRole.SUPER_ADMIN), controller.updateD
  *       204:
  *         description: Document deleted
  */
-router.delete("/documents/:id", authorize(UserRole.SUPER_ADMIN), controller.deleteDocument);
+router.delete('/documents/:id', authorize(UserRole.SUPER_ADMIN), controller.deleteDocument);
 
 // ==================== ACCREDITATION ====================
 
@@ -516,7 +535,7 @@ router.delete("/documents/:id", authorize(UserRole.SUPER_ADMIN), controller.dele
  *       200:
  *         description: List of 8 SNP standards with indicators
  */
-router.get("/accreditation/standards", accreditationController.getStandards);
+router.get('/accreditation/standards', accreditationController.getStandards);
 
 /**
  * @swagger
@@ -536,7 +555,7 @@ router.get("/accreditation/standards", accreditationController.getStandards);
  *       200:
  *         description: Unit accreditation status
  */
-router.get("/accreditation/units/:unitId/status", accreditationController.getUnitStatus);
+router.get('/accreditation/units/:unitId/status', accreditationController.getUnitStatus);
 
 /**
  * @swagger
@@ -556,7 +575,7 @@ router.get("/accreditation/units/:unitId/status", accreditationController.getUni
  *       200:
  *         description: Accreditation dashboard with readiness analysis
  */
-router.get("/accreditation/units/:unitId/dashboard", accreditationController.getDashboard);
+router.get('/accreditation/units/:unitId/dashboard', accreditationController.getDashboard);
 
 /**
  * @swagger
@@ -585,7 +604,7 @@ router.get("/accreditation/units/:unitId/dashboard", accreditationController.get
  *       200:
  *         description: Simulated accreditation result
  */
-router.post("/accreditation/units/:unitId/simulate", accreditationController.simulateScore);
+router.post('/accreditation/units/:unitId/simulate', accreditationController.simulateScore);
 
 /**
  * @swagger
@@ -632,6 +651,10 @@ router.post("/accreditation/units/:unitId/simulate", accreditationController.sim
  *       201:
  *         description: Assessment submitted
  */
-router.post("/accreditation/assessment", authorize(UserRole.SUPER_ADMIN), accreditationController.submitAssessment);
+router.post(
+  '/accreditation/assessment',
+  authorize(UserRole.SUPER_ADMIN),
+  accreditationController.submitAssessment
+);
 
 export default router;

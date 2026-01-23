@@ -1,35 +1,41 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/auth';
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { ArrowLeft, Save, Loader2, Smile, Meh, Frown } from 'lucide-react';
-import { toast } from 'sonner';
-import { useClasses } from '@/hooks/use-classes';
-import { useStudents } from '@/hooks/use-students';
-import { useBulkCreateDailyReport } from '@/hooks/use-daily-report';
-import { format } from 'date-fns';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/stores/auth";
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, Save, Loader2, Smile, Meh, Frown } from "lucide-react";
+import { toast } from "sonner";
+import { useClasses } from "@/hooks/use-classes";
+import { useStudents } from "@/hooks/use-students";
+import { useBulkCreateDailyReport } from "@/hooks/use-daily-report";
+import { format } from "date-fns";
 
 const MOODS = [
-  { value: 'HAPPY', label: 'Senang', icon: Smile, color: 'text-green-500' },
-  { value: 'NEUTRAL', label: 'Biasa', icon: Meh, color: 'text-gray-500' },
-  { value: 'SAD', label: 'Sedih', icon: Frown, color: 'text-yellow-500' },
-  { value: 'SICK', label: 'Sakit', icon: Frown, color: 'text-red-500' },
+  { value: "HAPPY", label: "Senang", icon: Smile, color: "text-green-500" },
+  { value: "NEUTRAL", label: "Biasa", icon: Meh, color: "text-gray-500" },
+  { value: "SAD", label: "Sedih", icon: Frown, color: "text-yellow-500" },
+  { value: "SICK", label: "Sakit", icon: Frown, color: "text-red-500" },
 ];
 
 const MEALS = [
-  { value: 'HABIS', label: 'Habis' },
-  { value: 'SETENGAH', label: 'Setengah' },
-  { value: 'SEDIKIT', label: 'Sedikit' },
-  { value: 'TIDAK_MAU', label: 'Tidak Mau' },
+  { value: "HABIS", label: "Habis" },
+  { value: "SETENGAH", label: "Setengah" },
+  { value: "SEDIKIT", label: "Sedikit" },
+  { value: "TIDAK_MAU", label: "Tidak Mau" },
 ];
 
 interface StudentReportDraft {
@@ -47,15 +53,17 @@ interface StudentReportDraft {
 export default function BulkCreateDailyReportPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
-  const [reports, setReports] = useState<Record<string, StudentReportDraft>>({});
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
+  const [reports, setReports] = useState<Record<string, StudentReportDraft>>(
+    {},
+  );
 
   const { data: classes } = useClasses({ unitId: user?.unitId });
   const { data: students, isLoading: isLoadingStudents } = useStudents({
     classId: selectedClassId || undefined,
     unitId: user?.unitId,
     limit: 100,
-    status: 'active',
+    status: "active",
   });
 
   const bulkMutation = useBulkCreateDailyReport();
@@ -68,20 +76,24 @@ export default function BulkCreateDailyReportPage() {
         initialReports[student.id] = {
           studentId: student.id,
           isPresent: true, // Default present
-          morningMood: 'HAPPY',
-          healthNotes: '',
-          lunchConsumption: 'HABIS',
-          surahPractice: '',
+          morningMood: "HAPPY",
+          healthNotes: "",
+          lunchConsumption: "HABIS",
+          surahPractice: "",
           sholatDhuha: true, // Optimistic default
           sholatDzuhur: true,
-          activitiesSummary: '',
+          activitiesSummary: "",
         };
       });
       setReports(initialReports);
     }
   }, [students]);
 
-  const updateReport = (studentId: string, field: keyof StudentReportDraft, value: any) => {
+  const updateReport = (
+    studentId: string,
+    field: keyof StudentReportDraft,
+    value: any,
+  ) => {
     setReports((prev) => ({
       ...prev,
       [studentId]: {
@@ -93,22 +105,22 @@ export default function BulkCreateDailyReportPage() {
 
   const handleSubmit = async () => {
     if (!selectedClassId) {
-      toast.error('Pilih kelas terlebih dahulu');
+      toast.error("Pilih kelas terlebih dahulu");
       return;
     }
 
     const presentStudents = Object.values(reports).filter((r) => r.isPresent);
 
     if (presentStudents.length === 0) {
-      toast.error('Tidak ada siswa yang hadir untuk dilaporkan');
+      toast.error("Tidak ada siswa yang hadir untuk dilaporkan");
       return;
     }
 
     try {
       await bulkMutation.mutateAsync({
-        unitId: user?.unitId || '',
-        academicYearId: user?.academicYearId || '', // Assuming this exists in store
-        reportDate: format(new Date(), 'yyyy-MM-dd'),
+        unitId: user?.unitId || "",
+        academicYearId: user?.academicYearId || "", // Assuming this exists in store
+        reportDate: format(new Date(), "yyyy-MM-dd"),
         reports: presentStudents.map((r) => ({
           studentId: r.studentId,
           morningMood: r.morningMood,
@@ -124,11 +136,13 @@ export default function BulkCreateDailyReportPage() {
         })),
       });
 
-      toast.success(`Berhasil membuat ${presentStudents.length} laporan harian`);
-      router.push('/tk');
+      toast.success(
+        `Berhasil membuat ${presentStudents.length} laporan harian`,
+      );
+      router.push("/tk");
     } catch (error) {
       console.error(error);
-      toast.error('Gagal membuat laporan massal');
+      toast.error("Gagal membuat laporan massal");
     }
   };
 
@@ -168,7 +182,9 @@ export default function BulkCreateDailyReportPage() {
 
         {selectedClassId && students?.data && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Daftar Siswa ({students.data.length})</h3>
+            <h3 className="text-lg font-semibold">
+              Daftar Siswa ({students.data.length})
+            </h3>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {students.data.map((student) => {
@@ -176,13 +192,20 @@ export default function BulkCreateDailyReportPage() {
                 if (!report) return null;
 
                 return (
-                  <Card key={student.id} className={`${!report.isPresent ? 'opacity-60 bg-muted' : ''}`}>
+                  <Card
+                    key={student.id}
+                    className={`${!report.isPresent ? "opacity-60 bg-muted" : ""}`}
+                  >
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-center">
-                        <CardTitle className="text-base">{student.name}</CardTitle>
+                        <CardTitle className="text-base">
+                          {student.name}
+                        </CardTitle>
                         <Checkbox
                           checked={report.isPresent}
-                          onCheckedChange={(checked) => updateReport(student.id, 'isPresent', !!checked)}
+                          onCheckedChange={(checked) =>
+                            updateReport(student.id, "isPresent", !!checked)
+                          }
                         />
                       </div>
                     </CardHeader>
@@ -195,13 +218,20 @@ export default function BulkCreateDailyReportPage() {
                           <div className="flex gap-2">
                             {MOODS.map((mood) => {
                               const Icon = mood.icon;
-                              const isSelected = report.morningMood === mood.value;
+                              const isSelected =
+                                report.morningMood === mood.value;
                               return (
                                 <button
                                   key={mood.value}
                                   type="button"
-                                  onClick={() => updateReport(student.id, 'morningMood', mood.value)}
-                                  className={`p-2 rounded-full border transition-all ${isSelected ? `bg-accent border-primary ${mood.color}` : 'border-transparent hover:bg-muted'}`}
+                                  onClick={() =>
+                                    updateReport(
+                                      student.id,
+                                      "morningMood",
+                                      mood.value,
+                                    )
+                                  }
+                                  className={`p-2 rounded-full border transition-all ${isSelected ? `bg-accent border-primary ${mood.color}` : "border-transparent hover:bg-muted"}`}
                                   title={mood.label}
                                 >
                                   <Icon className="h-6 w-6" />
@@ -217,7 +247,13 @@ export default function BulkCreateDailyReportPage() {
                           <Input
                             placeholder="Sehat..."
                             value={report.healthNotes}
-                            onChange={(e) => updateReport(student.id, 'healthNotes', e.target.value)}
+                            onChange={(e) =>
+                              updateReport(
+                                student.id,
+                                "healthNotes",
+                                e.target.value,
+                              )
+                            }
                             className="h-8"
                           />
                         </div>
@@ -227,14 +263,18 @@ export default function BulkCreateDailyReportPage() {
                           <Label>Makan Siang</Label>
                           <Select
                             value={report.lunchConsumption}
-                            onValueChange={(val) => updateReport(student.id, 'lunchConsumption', val)}
+                            onValueChange={(val) =>
+                              updateReport(student.id, "lunchConsumption", val)
+                            }
                           >
                             <SelectTrigger className="h-8">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               {MEALS.map((m) => (
-                                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                                <SelectItem key={m.value} value={m.value}>
+                                  {m.label}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -248,17 +288,25 @@ export default function BulkCreateDailyReportPage() {
                               <Checkbox
                                 id={`dhuha-${student.id}`}
                                 checked={report.sholatDhuha}
-                                onCheckedChange={(c) => updateReport(student.id, 'sholatDhuha', !!c)}
+                                onCheckedChange={(c) =>
+                                  updateReport(student.id, "sholatDhuha", !!c)
+                                }
                               />
-                              <label htmlFor={`dhuha-${student.id}`}>Dhuha</label>
+                              <label htmlFor={`dhuha-${student.id}`}>
+                                Dhuha
+                              </label>
                             </div>
                             <div className="flex items-center gap-2">
                               <Checkbox
                                 id={`dzuhur-${student.id}`}
                                 checked={report.sholatDzuhur}
-                                onCheckedChange={(c) => updateReport(student.id, 'sholatDzuhur', !!c)}
+                                onCheckedChange={(c) =>
+                                  updateReport(student.id, "sholatDzuhur", !!c)
+                                }
                               />
-                              <label htmlFor={`dzuhur-${student.id}`}>Dzuhur</label>
+                              <label htmlFor={`dzuhur-${student.id}`}>
+                                Dzuhur
+                              </label>
                             </div>
                           </div>
                         </div>
@@ -269,7 +317,13 @@ export default function BulkCreateDailyReportPage() {
                           <Input
                             placeholder="Surah..."
                             value={report.surahPractice}
-                            onChange={(e) => updateReport(student.id, 'surahPractice', e.target.value)}
+                            onChange={(e) =>
+                              updateReport(
+                                student.id,
+                                "surahPractice",
+                                e.target.value,
+                              )
+                            }
                             className="h-8"
                           />
                         </div>
@@ -285,13 +339,19 @@ export default function BulkCreateDailyReportPage() {
         {/* Floating Action Button for Save */}
         {selectedClassId && (
           <div className="fixed bottom-6 right-6">
-            <Button size="lg" className="shadow-xl" onClick={handleSubmit} disabled={bulkMutation.isPending}>
+            <Button
+              size="lg"
+              className="shadow-xl"
+              onClick={handleSubmit}
+              disabled={bulkMutation.isPending}
+            >
               {bulkMutation.isPending ? (
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               ) : (
                 <Save className="mr-2 h-5 w-5" />
               )}
-              Simpan Laporan ({Object.values(reports).filter(r => r.isPresent).length})
+              Simpan Laporan (
+              {Object.values(reports).filter((r) => r.isPresent).length})
             </Button>
           </div>
         )}

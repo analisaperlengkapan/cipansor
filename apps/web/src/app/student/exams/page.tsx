@@ -1,16 +1,22 @@
-'use client';
+"use client";
 
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useExams, ExamStatus } from '@/hooks/use-assessment';
-import { useAuthStore } from '@/stores/auth';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { Loader2, PlayCircle, Clock, Calendar } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useExams, ExamStatus } from "@/hooks/use-assessment";
+import { useAuthStore } from "@/stores/auth";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { Loader2, PlayCircle, Clock, Calendar } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function StudentExamsPage() {
   const { user } = useAuthStore();
@@ -24,7 +30,8 @@ export default function StudentExamsPage() {
     // classId: user?.student?.classId // If available
   });
 
-  const activeExams = exams?.filter(exam => exam.status === 'SCHEDULED') || [];
+  const activeExams =
+    exams?.filter((exam) => exam.status === "SCHEDULED") || [];
 
   return (
     <MainLayout>
@@ -51,14 +58,20 @@ export default function StudentExamsPage() {
                   </div>
                   <CardTitle className="mt-2">{exam.title}</CardTitle>
                   <CardDescription className="line-clamp-2">
-                    {exam.description || 'Tidak ada deskripsi'}
+                    {exam.description || "Tidak ada deskripsi"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col gap-4">
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      <span>{format(new Date(exam.scheduledAt), 'EEEE, d MMMM yyyy', { locale: id })}</span>
+                      <span>
+                        {format(
+                          new Date(exam.scheduledAt),
+                          "EEEE, d MMMM yyyy",
+                          { locale: id },
+                        )}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4" />
@@ -79,7 +92,9 @@ export default function StudentExamsPage() {
             ))
           ) : (
             <div className="col-span-full text-center py-12 bg-muted/20 rounded-lg border border-dashed">
-              <p className="text-muted-foreground">Tidak ada ujian yang dijadwalkan saat ini</p>
+              <p className="text-muted-foreground">
+                Tidak ada ujian yang dijadwalkan saat ini
+              </p>
             </div>
           )}
         </div>

@@ -123,7 +123,11 @@ router.post('/generate', authorize('SUPER_ADMIN', 'UNIT_ADMIN'), controller.gene
  *       200:
  *         description: Student list report
  */
-router.get('/students', authorize('SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER'), controller.getStudentReport);
+router.get(
+  '/students',
+  authorize('SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER'),
+  controller.getStudentReport
+);
 
 /**
  * @swagger
@@ -161,7 +165,11 @@ router.get('/students', authorize('SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER'), contr
  *       200:
  *         description: Attendance summary report
  */
-router.get('/attendance', authorize('SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER'), controller.getAttendanceReport);
+router.get(
+  '/attendance',
+  authorize('SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER'),
+  controller.getAttendanceReport
+);
 
 /**
  * @swagger
@@ -228,6 +236,10 @@ router.get('/finance', authorize('SUPER_ADMIN', 'UNIT_ADMIN'), controller.getFin
  *       200:
  *         description: Tahfidz progress report
  */
-router.get('/tahfidz', authorize('SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER'), controller.getTahfidzReport);
+router.get(
+  '/tahfidz',
+  authorize('SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER'),
+  controller.getTahfidzReport
+);
 
 export default router;

@@ -1,15 +1,21 @@
-'use client';
+"use client";
 
-import { use } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { use } from "react";
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,16 +26,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { toast } from 'sonner';
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import {
   useCertificate,
   useDeleteCertificate,
   useGenerateCertificatePDF,
-} from '@/hooks/use-certificate';
-import { useCreateSanad } from '@/hooks/use-takhosus';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+} from "@/hooks/use-certificate";
+import { useCreateSanad } from "@/hooks/use-takhosus";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 import {
   ArrowLeft,
   Award,
@@ -47,18 +53,18 @@ import {
   Copy,
   Loader2,
   CheckCircle,
-} from 'lucide-react';
-import Image from 'next/image';
+} from "lucide-react";
+import Image from "next/image";
 
 const certificateTypeLabels: Record<string, string> = {
-  IJAZAH: 'Ijazah',
-  STTB: 'STTB',
-  TAHFIDZ: 'Sertifikat Tahfidz',
-  SANAD: 'Sanad Hafidz',
-  ACHIEVEMENT: 'Piagam Prestasi',
-  GRADUATION: 'Sertifikat Kelulusan',
-  PARTICIPATION: 'Sertifikat Partisipasi',
-  OTHER: 'Sertifikat',
+  IJAZAH: "Ijazah",
+  STTB: "STTB",
+  TAHFIDZ: "Sertifikat Tahfidz",
+  SANAD: "Sanad Hafidz",
+  ACHIEVEMENT: "Piagam Prestasi",
+  GRADUATION: "Sertifikat Kelulusan",
+  PARTICIPATION: "Sertifikat Partisipasi",
+  OTHER: "Sertifikat",
 };
 
 export default function CertificateDetailPage({
@@ -69,36 +75,40 @@ export default function CertificateDetailPage({
   const resolvedParams = use(params);
   const router = useRouter();
 
-  const { data: certificate, isLoading, error } = useCertificate(resolvedParams.id);
+  const {
+    data: certificate,
+    isLoading,
+    error,
+  } = useCertificate(resolvedParams.id);
   const deleteMutation = useDeleteCertificate();
   const generatePDFMutation = useGenerateCertificatePDF();
 
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(resolvedParams.id);
-      toast.success('Sertifikat berhasil dihapus');
-      router.push('/certificates');
+      toast.success("Sertifikat berhasil dihapus");
+      router.push("/certificates");
     } catch {
-      toast.error('Gagal menghapus sertifikat');
+      toast.error("Gagal menghapus sertifikat");
     }
   };
 
   const handleGeneratePDF = async () => {
     try {
       const result = await generatePDFMutation.mutateAsync(resolvedParams.id);
-      toast.success('PDF sertifikat berhasil dibuat');
+      toast.success("PDF sertifikat berhasil dibuat");
       if (result.pdfUrl) {
-        window.open(result.pdfUrl, '_blank');
+        window.open(result.pdfUrl, "_blank");
       }
     } catch {
-      toast.error('Gagal membuat PDF sertifikat');
+      toast.error("Gagal membuat PDF sertifikat");
     }
   };
 
   const handleCopyLink = () => {
     if (certificate?.verificationUrl) {
       navigator.clipboard.writeText(certificate.verificationUrl);
-      toast.success('Link verifikasi disalin ke clipboard');
+      toast.success("Link verifikasi disalin ke clipboard");
     }
   };
 
@@ -123,7 +133,7 @@ export default function CertificateDetailPage({
           <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
           <h2 className="mt-4 text-lg font-semibold">Data Tidak Ditemukan</h2>
           <p className="text-muted-foreground">Sertifikat tidak ditemukan</p>
-          <Button className="mt-4" onClick={() => router.push('/certificates')}>
+          <Button className="mt-4" onClick={() => router.push("/certificates")}>
             Kembali ke Daftar
           </Button>
         </div>
@@ -137,7 +147,11 @@ export default function CertificateDetailPage({
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.push('/certificates')}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/certificates")}
+            >
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <PageHeader
@@ -147,7 +161,12 @@ export default function CertificateDetailPage({
             />
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => router.push(`/certificates/${resolvedParams.id}/edit`)}>
+            <Button
+              variant="outline"
+              onClick={() =>
+                router.push(`/certificates/${resolvedParams.id}/edit`)
+              }
+            >
               <Edit className="mr-2 h-4 w-4" />
               Edit
             </Button>
@@ -162,7 +181,8 @@ export default function CertificateDetailPage({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Hapus Sertifikat?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Tindakan ini tidak dapat dibatalkan. Sertifikat akan dihapus permanen.
+                    Tindakan ini tidak dapat dibatalkan. Sertifikat akan dihapus
+                    permanen.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -189,11 +209,14 @@ export default function CertificateDetailPage({
                   <div>
                     <CardTitle>{certificate.title}</CardTitle>
                     <CardDescription>
-                      {certificateTypeLabels[certificate.certificateType] || certificate.certificateType}
+                      {certificateTypeLabels[certificate.certificateType] ||
+                        certificate.certificateType}
                     </CardDescription>
                   </div>
-                  <Badge variant={certificate.isPublic ? 'default' : 'secondary'}>
-                    {certificate.isPublic ? 'Publik' : 'Privat'}
+                  <Badge
+                    variant={certificate.isPublic ? "default" : "secondary"}
+                  >
+                    {certificate.isPublic ? "Publik" : "Privat"}
                   </Badge>
                 </div>
               </CardHeader>
@@ -203,14 +226,22 @@ export default function CertificateDetailPage({
                   <Avatar className="h-16 w-16">
                     <AvatarImage src={certificate.student?.photoUrl} />
                     <AvatarFallback className="text-lg">
-                      {certificate.student?.name?.substring(0, 2).toUpperCase() || 'ST'}
+                      {certificate.student?.name
+                        ?.substring(0, 2)
+                        .toUpperCase() || "ST"}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="text-lg font-semibold">{certificate.student?.name || certificate.student?.user?.name || 'N/A'}</h3>
-                    <p className="text-sm text-muted-foreground">{certificate.student?.nis || '-'}</p>
+                    <h3 className="text-lg font-semibold">
+                      {certificate.student?.name ||
+                        certificate.student?.user?.name ||
+                        "N/A"}
+                    </h3>
                     <p className="text-sm text-muted-foreground">
-                      {certificate.student?.class?.name || '-'}
+                      {certificate.student?.nis || "-"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {certificate.student?.class?.name || "-"}
                     </p>
                   </div>
                 </div>
@@ -222,17 +253,27 @@ export default function CertificateDetailPage({
                   <div className="flex items-start gap-3">
                     <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Nomor Sertifikat</p>
-                      <p className="font-mono font-medium">{certificate.certificateNumber}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Nomor Sertifikat
+                      </p>
+                      <p className="font-mono font-medium">
+                        {certificate.certificateNumber}
+                      </p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-3">
                     <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Tanggal Terbit</p>
+                      <p className="text-sm text-muted-foreground">
+                        Tanggal Terbit
+                      </p>
                       <p className="font-medium">
-                        {format(new Date(certificate.issueDate), 'dd MMMM yyyy', { locale: idLocale })}
+                        {format(
+                          new Date(certificate.issueDate),
+                          "dd MMMM yyyy",
+                          { locale: idLocale },
+                        )}
                       </p>
                     </div>
                   </div>
@@ -241,7 +282,9 @@ export default function CertificateDetailPage({
                     <div className="flex items-start gap-3">
                       <Award className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Predikat/Nilai</p>
+                        <p className="text-sm text-muted-foreground">
+                          Predikat/Nilai
+                        </p>
                         <Badge variant="secondary">{certificate.grade}</Badge>
                       </div>
                     </div>
@@ -251,8 +294,12 @@ export default function CertificateDetailPage({
                     <div className="flex items-start gap-3">
                       <Award className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Peringkat</p>
-                        <p className="font-medium">Peringkat {certificate.rank}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Peringkat
+                        </p>
+                        <p className="font-medium">
+                          Peringkat {certificate.rank}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -276,7 +323,9 @@ export default function CertificateDetailPage({
                     )}
                     <div>
                       <p className="font-medium">{certificate.signatoryName}</p>
-                      <p className="text-sm text-muted-foreground">{certificate.signatoryTitle}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {certificate.signatoryTitle}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -286,7 +335,9 @@ export default function CertificateDetailPage({
                     <Separator />
                     <div>
                       <h4 className="font-medium mb-2">Keterangan</h4>
-                      <p className="text-muted-foreground">{certificate.description}</p>
+                      <p className="text-muted-foreground">
+                        {certificate.description}
+                      </p>
                     </div>
                   </>
                 )}
@@ -334,7 +385,9 @@ export default function CertificateDetailPage({
                   </div>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-muted-foreground mb-2">Kode Verifikasi</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Kode Verifikasi
+                  </p>
                   <p className="font-mono text-sm">{certificate.qrCode}</p>
                 </div>
               </CardContent>
@@ -348,7 +401,11 @@ export default function CertificateDetailPage({
               <CardContent className="space-y-3">
                 {certificate.pdfUrl ? (
                   <Button className="w-full" asChild>
-                    <a href={certificate.pdfUrl} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={certificate.pdfUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <Download className="mr-2 h-4 w-4" />
                       Download PDF
                     </a>
@@ -379,7 +436,11 @@ export default function CertificateDetailPage({
                   </a>
                 </Button>
 
-                <Button variant="outline" className="w-full" onClick={handleCopyLink}>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleCopyLink}
+                >
                   <Copy className="mr-2 h-4 w-4" />
                   Salin Link
                 </Button>
@@ -409,17 +470,23 @@ export default function CertificateDetailPage({
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Total Download</span>
-                  <span className="font-medium">{certificate.downloadCount}x</span>
+                  <span className="font-medium">
+                    {certificate.downloadCount}x
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Dibuat pada</span>
                   <span className="font-medium">
-                    {format(new Date(certificate.createdAt), 'dd MMM yyyy', { locale: idLocale })}
+                    {format(new Date(certificate.createdAt), "dd MMM yyyy", {
+                      locale: idLocale,
+                    })}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Dibuat oleh</span>
-                  <span className="font-medium">{certificate.createdBy?.name || '-'}</span>
+                  <span className="font-medium">
+                    {certificate.createdBy?.name || "-"}
+                  </span>
                 </div>
               </CardContent>
             </Card>

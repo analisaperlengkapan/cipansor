@@ -15,7 +15,15 @@ export const ExtracurricularCategory = z.enum([
 
 export const ExtracurricularStatus = z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED']);
 export const EnrollmentStatus = z.enum(['ACTIVE', 'GRADUATED', 'WITHDRAWN', 'DISMISSED']);
-export const DayOfWeek = z.enum(['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']);
+export const DayOfWeek = z.enum([
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+  'SATURDAY',
+  'SUNDAY',
+]);
 export const AttendanceStatus = z.enum(['PRESENT', 'ABSENT', 'LATE', 'SICK', 'EXCUSED']);
 
 // List query
@@ -90,11 +98,15 @@ export type UpdateEnrollmentInput = z.infer<typeof updateEnrollmentSchema>;
 export const recordAttendanceSchema = z.object({
   extracurricularId: z.string().uuid(),
   date: z.string().datetime().or(z.date()),
-  attendances: z.array(z.object({
-    studentId: z.string().uuid(),
-    status: AttendanceStatus,
-    notes: z.string().optional(),
-  })).min(1),
+  attendances: z
+    .array(
+      z.object({
+        studentId: z.string().uuid(),
+        status: AttendanceStatus,
+        notes: z.string().optional(),
+      })
+    )
+    .min(1),
 });
 
 export type RecordAttendanceInput = z.infer<typeof recordAttendanceSchema>;

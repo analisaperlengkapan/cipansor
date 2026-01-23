@@ -1,16 +1,22 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Save } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Form,
   FormControl,
@@ -19,26 +25,29 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
-import { useCreateCurriculum } from '@/hooks/use-curriculum';
-import { useUnits } from '@/hooks/use-units';
-import { useAcademicYears } from '@/hooks/use-academic-years';
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { useCreateCurriculum } from "@/hooks/use-curriculum";
+import { useUnits } from "@/hooks/use-units";
+import { useAcademicYears } from "@/hooks/use-academic-years";
 
 const curriculumSchema = z.object({
-  code: z.string().min(1, 'Kode kurikulum wajib diisi'),
-  name: z.string().min(1, 'Nama kurikulum wajib diisi'),
+  code: z.string().min(1, "Kode kurikulum wajib diisi"),
+  name: z.string().min(1, "Nama kurikulum wajib diisi"),
   description: z.string().optional(),
-  unitId: z.string().min(1, 'Unit wajib dipilih'),
-  academicYearId: z.string().min(1, 'Tahun ajaran wajib dipilih'),
-  gradeLevel: z.coerce.number().min(1, 'Tingkat kelas wajib diisi').max(12, 'Maksimal kelas 12'),
+  unitId: z.string().min(1, "Unit wajib dipilih"),
+  academicYearId: z.string().min(1, "Tahun ajaran wajib dipilih"),
+  gradeLevel: z.coerce
+    .number()
+    .min(1, "Tingkat kelas wajib diisi")
+    .max(12, "Maksimal kelas 12"),
   isActive: z.boolean(),
 });
 
@@ -56,11 +65,11 @@ export default function NewCurriculumPage() {
   const form = useForm<CurriculumFormData>({
     resolver: zodResolver(curriculumSchema),
     defaultValues: {
-      code: '',
-      name: '',
-      description: '',
-      unitId: '',
-      academicYearId: activeAcademicYear?.id || '',
+      code: "",
+      name: "",
+      description: "",
+      unitId: "",
+      academicYearId: activeAcademicYear?.id || "",
       gradeLevel: 1,
       isActive: true,
     },
@@ -77,10 +86,10 @@ export default function NewCurriculumPage() {
         gradeLevel: data.gradeLevel,
         isActive: data.isActive,
       });
-      toast.success('Kurikulum berhasil dibuat');
+      toast.success("Kurikulum berhasil dibuat");
       router.push(`/curriculum/curriculums/${result.id}`);
     } catch {
-      toast.error('Gagal membuat kurikulum');
+      toast.error("Gagal membuat kurikulum");
     }
   };
 
@@ -95,7 +104,9 @@ export default function NewCurriculumPage() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Buat Kurikulum</h1>
-          <p className="text-muted-foreground">Buat kurikulum baru untuk unit pendidikan</p>
+          <p className="text-muted-foreground">
+            Buat kurikulum baru untuk unit pendidikan
+          </p>
         </div>
       </div>
 
@@ -132,7 +143,10 @@ export default function NewCurriculumPage() {
                       <FormItem>
                         <FormLabel>Nama *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Kurikulum Merdeka SD Kelas 1" {...field} />
+                          <Input
+                            placeholder="Kurikulum Merdeka SD Kelas 1"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -165,7 +179,10 @@ export default function NewCurriculumPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Unit *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih unit" />
@@ -200,11 +217,16 @@ export default function NewCurriculumPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {Array.from({ length: 12 }, (_, i) => i + 1).map((level) => (
-                              <SelectItem key={level} value={level.toString()}>
-                                Kelas {level}
-                              </SelectItem>
-                            ))}
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                              (level) => (
+                                <SelectItem
+                                  key={level}
+                                  value={level.toString()}
+                                >
+                                  Kelas {level}
+                                </SelectItem>
+                              ),
+                            )}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -228,7 +250,10 @@ export default function NewCurriculumPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tahun Ajaran *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih tahun ajaran" />
@@ -237,7 +262,7 @@ export default function NewCurriculumPage() {
                           <SelectContent>
                             {academicYears.map((ay) => (
                               <SelectItem key={ay.id} value={ay.id}>
-                                {ay.name} {ay.isActive && '(Aktif)'}
+                                {ay.name} {ay.isActive && "(Aktif)"}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -284,15 +309,19 @@ export default function NewCurriculumPage() {
                 <CardContent className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Kode</span>
-                    <span className="font-mono">{form.watch('code') || '-'}</span>
+                    <span className="font-mono">
+                      {form.watch("code") || "-"}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Nama</span>
-                    <span className="truncate max-w-[120px]">{form.watch('name') || '-'}</span>
+                    <span className="truncate max-w-[120px]">
+                      {form.watch("name") || "-"}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Tingkat</span>
-                    <span>Kelas {form.watch('gradeLevel') || '-'}</span>
+                    <span>Kelas {form.watch("gradeLevel") || "-"}</span>
                   </div>
                 </CardContent>
               </Card>

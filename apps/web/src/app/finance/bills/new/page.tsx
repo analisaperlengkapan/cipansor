@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft, Search, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft, Search, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -17,17 +23,17 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -35,18 +41,26 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { toast } from 'sonner';
-import { useCreateBill, useCreateBulkBills, BILL_TYPES, BillType } from '@/hooks/use-finance';
-import { useAcademicYears, useActiveAcademicYear } from '@/hooks/use-academic-years';
-import { useStudents } from '@/hooks/use-students';
-import { useClasses } from '@/hooks/use-classes';
+} from "@/components/ui/table";
+import { toast } from "sonner";
+import {
+  useCreateBill,
+  useCreateBulkBills,
+  BILL_TYPES,
+  BillType,
+} from "@/hooks/use-finance";
+import {
+  useAcademicYears,
+  useActiveAcademicYear,
+} from "@/hooks/use-academic-years";
+import { useStudents } from "@/hooks/use-students";
+import { useClasses } from "@/hooks/use-classes";
 
 const formSchema = z.object({
-  billType: z.string().min(1, 'Jenis tagihan wajib dipilih'),
-  amount: z.coerce.number().min(1, 'Jumlah minimal Rp 1'),
-  dueDate: z.string().min(1, 'Tanggal jatuh tempo wajib diisi'),
-  academicYearId: z.string().min(1, 'Tahun ajaran wajib dipilih'),
+  billType: z.string().min(1, "Jenis tagihan wajib dipilih"),
+  amount: z.coerce.number().min(1, "Jumlah minimal Rp 1"),
+  dueDate: z.string().min(1, "Tanggal jatuh tempo wajib diisi"),
+  academicYearId: z.string().min(1, "Tahun ajaran wajib dipilih"),
   description: z.string().optional(),
 });
 
@@ -54,8 +68,8 @@ type FormData = z.infer<typeof formSchema>;
 
 export default function NewBillPage() {
   const router = useRouter();
-  const [search, setSearch] = useState('');
-  const [classId, setClassId] = useState<string>('');
+  const [search, setSearch] = useState("");
+  const [classId, setClassId] = useState<string>("");
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [isBulk, setIsBulk] = useState(false);
 
@@ -74,24 +88,24 @@ export default function NewBillPage() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      billType: '',
+      billType: "",
       amount: 0,
-      dueDate: '',
-      academicYearId: activeYear?.id || '',
-      description: '',
+      dueDate: "",
+      academicYearId: activeYear?.id || "",
+      description: "",
     },
   });
 
   // Update academicYearId when activeYear loads
-  if (activeYear?.id && !form.getValues('academicYearId')) {
-    form.setValue('academicYearId', activeYear.id);
+  if (activeYear?.id && !form.getValues("academicYearId")) {
+    form.setValue("academicYearId", activeYear.id);
   }
 
   const toggleStudent = (studentId: string) => {
     setSelectedStudents((prev) =>
       prev.includes(studentId)
         ? prev.filter((id) => id !== studentId)
-        : [...prev, studentId]
+        : [...prev, studentId],
     );
   };
 
@@ -107,7 +121,7 @@ export default function NewBillPage() {
 
   const onSubmit = async (data: FormData) => {
     if (selectedStudents.length === 0) {
-      toast.error('Pilih minimal 1 santri');
+      toast.error("Pilih minimal 1 santri");
       return;
     }
 
@@ -121,7 +135,9 @@ export default function NewBillPage() {
           dueDate: data.dueDate,
           description: data.description,
         });
-        toast.success('Tagihan berhasil dibuat dan notifikasi dikirim ke santri');
+        toast.success(
+          "Tagihan berhasil dibuat dan notifikasi dikirim ke santri",
+        );
       } else {
         await createBulkBillsMutation.mutateAsync({
           studentIds: selectedStudents,
@@ -133,13 +149,14 @@ export default function NewBillPage() {
         });
         toast.success(`${selectedStudents.length} tagihan berhasil dibuat`);
       }
-      router.push('/finance');
+      router.push("/finance");
     } catch {
-      toast.error('Gagal membuat tagihan');
+      toast.error("Gagal membuat tagihan");
     }
   };
 
-  const isPending = createBillMutation.isPending || createBulkBillsMutation.isPending;
+  const isPending =
+    createBillMutation.isPending || createBulkBillsMutation.isPending;
 
   return (
     <div className="space-y-6">
@@ -152,7 +169,9 @@ export default function NewBillPage() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Buat Tagihan</h1>
-          <p className="text-muted-foreground">Buat tagihan baru untuk santri</p>
+          <p className="text-muted-foreground">
+            Buat tagihan baru untuk santri
+          </p>
         </div>
       </div>
 
@@ -172,7 +191,10 @@ export default function NewBillPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Jenis Tagihan</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih jenis tagihan" />
@@ -228,7 +250,10 @@ export default function NewBillPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tahun Ajaran</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih tahun ajaran" />
@@ -237,7 +262,7 @@ export default function NewBillPage() {
                         <SelectContent>
                           {academicYears?.data.map((year) => (
                             <SelectItem key={year.id} value={year.id}>
-                              {year.name} {year.isActive && '(Aktif)'}
+                              {year.name} {year.isActive && "(Aktif)"}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -363,7 +388,7 @@ export default function NewBillPage() {
                           {student.name}
                         </TableCell>
                         <TableCell>
-                          {student.currentClass?.name || '-'}
+                          {student.currentClass?.name || "-"}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -385,10 +410,10 @@ export default function NewBillPage() {
           disabled={isPending || selectedStudents.length === 0}
         >
           {isPending
-            ? 'Menyimpan...'
+            ? "Menyimpan..."
             : selectedStudents.length > 1
               ? `Buat ${selectedStudents.length} Tagihan`
-              : 'Buat Tagihan'}
+              : "Buat Tagihan"}
         </Button>
       </div>
     </div>

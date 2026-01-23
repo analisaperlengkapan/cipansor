@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { ApiResponse, PaginatedResponse } from "@/lib/api";
 
 // Bill types (tagihan)
 export interface Bill {
@@ -30,32 +30,53 @@ export interface Bill {
 }
 
 export type BillType =
-  | 'SPP'
-  | 'REGISTRATION'
-  | 'BUILDING'
-  | 'UNIFORM'
-  | 'BOOK'
-  | 'ACTIVITY'
-  | 'OTHER';
+  | "SPP"
+  | "REGISTRATION"
+  | "BUILDING"
+  | "UNIFORM"
+  | "BOOK"
+  | "ACTIVITY"
+  | "OTHER";
 
 export const BILL_TYPES: { value: BillType; label: string }[] = [
-  { value: 'SPP', label: 'SPP Bulanan' },
-  { value: 'REGISTRATION', label: 'Biaya Pendaftaran' },
-  { value: 'BUILDING', label: 'Biaya Gedung' },
-  { value: 'UNIFORM', label: 'Seragam' },
-  { value: 'BOOK', label: 'Buku' },
-  { value: 'ACTIVITY', label: 'Kegiatan' },
-  { value: 'OTHER', label: 'Lainnya' },
+  { value: "SPP", label: "SPP Bulanan" },
+  { value: "REGISTRATION", label: "Biaya Pendaftaran" },
+  { value: "BUILDING", label: "Biaya Gedung" },
+  { value: "UNIFORM", label: "Seragam" },
+  { value: "BOOK", label: "Buku" },
+  { value: "ACTIVITY", label: "Kegiatan" },
+  { value: "OTHER", label: "Lainnya" },
 ];
 
-export type BillStatus = 'PENDING' | 'PARTIAL' | 'PAID' | 'OVERDUE' | 'CANCELLED';
+export type BillStatus =
+  | "PENDING"
+  | "PARTIAL"
+  | "PAID"
+  | "OVERDUE"
+  | "CANCELLED";
 
-export const BILL_STATUSES: { value: BillStatus; label: string; color: string }[] = [
-  { value: 'PENDING', label: 'Menunggu', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'PARTIAL', label: 'Dibayar Sebagian', color: 'bg-blue-100 text-blue-800' },
-  { value: 'PAID', label: 'Lunas', color: 'bg-green-100 text-green-800' },
-  { value: 'OVERDUE', label: 'Jatuh Tempo', color: 'bg-red-100 text-red-800' },
-  { value: 'CANCELLED', label: 'Dibatalkan', color: 'bg-gray-100 text-gray-800' },
+export const BILL_STATUSES: {
+  value: BillStatus;
+  label: string;
+  color: string;
+}[] = [
+  {
+    value: "PENDING",
+    label: "Menunggu",
+    color: "bg-yellow-100 text-yellow-800",
+  },
+  {
+    value: "PARTIAL",
+    label: "Dibayar Sebagian",
+    color: "bg-blue-100 text-blue-800",
+  },
+  { value: "PAID", label: "Lunas", color: "bg-green-100 text-green-800" },
+  { value: "OVERDUE", label: "Jatuh Tempo", color: "bg-red-100 text-red-800" },
+  {
+    value: "CANCELLED",
+    label: "Dibatalkan",
+    color: "bg-gray-100 text-gray-800",
+  },
 ];
 
 // Payment types (pembayaran)
@@ -75,18 +96,18 @@ export interface Payment {
 }
 
 export type PaymentMethod =
-  | 'CASH'
-  | 'TRANSFER'
-  | 'QRIS'
-  | 'VIRTUAL_ACCOUNT'
-  | 'DEBIT_CARD';
+  | "CASH"
+  | "TRANSFER"
+  | "QRIS"
+  | "VIRTUAL_ACCOUNT"
+  | "DEBIT_CARD";
 
 export const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
-  { value: 'CASH', label: 'Tunai' },
-  { value: 'TRANSFER', label: 'Transfer Bank' },
-  { value: 'QRIS', label: 'QRIS' },
-  { value: 'VIRTUAL_ACCOUNT', label: 'Virtual Account' },
-  { value: 'DEBIT_CARD', label: 'Kartu Debit' },
+  { value: "CASH", label: "Tunai" },
+  { value: "TRANSFER", label: "Transfer Bank" },
+  { value: "QRIS", label: "QRIS" },
+  { value: "VIRTUAL_ACCOUNT", label: "Virtual Account" },
+  { value: "DEBIT_CARD", label: "Kartu Debit" },
 ];
 
 // Bill hooks
@@ -101,9 +122,11 @@ export interface BillParams {
 
 export function useBills(params: BillParams = {}) {
   return useQuery({
-    queryKey: ['bills', params],
+    queryKey: ["bills", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Bill>>('/bills', { params });
+      const response = await api.get<PaginatedResponse<Bill>>("/bills", {
+        params,
+      });
       return response.data;
     },
   });
@@ -111,7 +134,7 @@ export function useBills(params: BillParams = {}) {
 
 export function useBill(id: string) {
   return useQuery({
-    queryKey: ['bills', id],
+    queryKey: ["bills", id],
     queryFn: async () => {
       const response = await api.get<ApiResponse<Bill>>(`/bills/${id}`);
       return response.data.data;
@@ -122,9 +145,11 @@ export function useBill(id: string) {
 
 export function useStudentBills(studentId: string) {
   return useQuery({
-    queryKey: ['students', studentId, 'bills'],
+    queryKey: ["students", studentId, "bills"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Bill[]>>(`/students/${studentId}/bills`);
+      const response = await api.get<ApiResponse<Bill[]>>(
+        `/students/${studentId}/bills`,
+      );
       return response.data.data;
     },
     enabled: !!studentId,
@@ -145,12 +170,14 @@ export function useCreateBill() {
 
   return useMutation({
     mutationFn: async (data: CreateBillData) => {
-      const response = await api.post<ApiResponse<Bill>>('/bills', data);
+      const response = await api.post<ApiResponse<Bill>>("/bills", data);
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['bills'] });
-      queryClient.invalidateQueries({ queryKey: ['students', variables.studentId, 'bills'] });
+      queryClient.invalidateQueries({ queryKey: ["bills"] });
+      queryClient.invalidateQueries({
+        queryKey: ["students", variables.studentId, "bills"],
+      });
     },
   });
 }
@@ -167,11 +194,11 @@ export function useCreateBulkBills() {
       dueDate: string;
       description?: string;
     }) => {
-      const response = await api.post<ApiResponse<Bill[]>>('/bills/bulk', data);
+      const response = await api.post<ApiResponse<Bill[]>>("/bills/bulk", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bills'] });
+      queryClient.invalidateQueries({ queryKey: ["bills"] });
     },
   });
 }
@@ -180,13 +207,19 @@ export function useUpdateBill() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateBillData> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateBillData>;
+    }) => {
       const response = await api.patch<ApiResponse<Bill>>(`/bills/${id}`, data);
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['bills'] });
-      queryClient.invalidateQueries({ queryKey: ['bills', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["bills"] });
+      queryClient.invalidateQueries({ queryKey: ["bills", variables.id] });
     },
   });
 }
@@ -199,7 +232,7 @@ export function useDeleteBill() {
       await api.delete(`/bills/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bills'] });
+      queryClient.invalidateQueries({ queryKey: ["bills"] });
     },
   });
 }
@@ -216,9 +249,11 @@ export interface PaymentParams {
 
 export function usePayments(params: PaymentParams = {}) {
   return useQuery({
-    queryKey: ['payments', params],
+    queryKey: ["payments", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Payment>>('/payments', { params });
+      const response = await api.get<PaginatedResponse<Payment>>("/payments", {
+        params,
+      });
       return response.data;
     },
   });
@@ -226,7 +261,7 @@ export function usePayments(params: PaymentParams = {}) {
 
 export function usePayment(id: string) {
   return useQuery({
-    queryKey: ['payments', id],
+    queryKey: ["payments", id],
     queryFn: async () => {
       const response = await api.get<ApiResponse<Payment>>(`/payments/${id}`);
       return response.data.data;
@@ -237,9 +272,11 @@ export function usePayment(id: string) {
 
 export function useBillPayments(billId: string) {
   return useQuery({
-    queryKey: ['bills', billId, 'payments'],
+    queryKey: ["bills", billId, "payments"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Payment[]>>(`/bills/${billId}/payments`);
+      const response = await api.get<ApiResponse<Payment[]>>(
+        `/bills/${billId}/payments`,
+      );
       return response.data.data;
     },
     enabled: !!billId,
@@ -259,13 +296,15 @@ export function useCreatePayment() {
 
   return useMutation({
     mutationFn: async (data: CreatePaymentData) => {
-      const response = await api.post<ApiResponse<Payment>>('/payments', data);
+      const response = await api.post<ApiResponse<Payment>>("/payments", data);
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['payments'] });
-      queryClient.invalidateQueries({ queryKey: ['bills', variables.billId, 'payments'] });
-      queryClient.invalidateQueries({ queryKey: ['bills'] });
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+      queryClient.invalidateQueries({
+        queryKey: ["bills", variables.billId, "payments"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["bills"] });
     },
   });
 }
@@ -278,8 +317,8 @@ export function useDeletePayment() {
       await api.delete(`/payments/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payments'] });
-      queryClient.invalidateQueries({ queryKey: ['bills'] });
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+      queryClient.invalidateQueries({ queryKey: ["bills"] });
     },
   });
 }
@@ -301,10 +340,13 @@ export interface FinancialSummary {
 
 export function useFinancialSummary(academicYearId?: string) {
   return useQuery({
-    queryKey: ['financial-summary', academicYearId],
+    queryKey: ["financial-summary", academicYearId],
     queryFn: async () => {
       const params = academicYearId ? { academicYearId } : {};
-      const response = await api.get<ApiResponse<FinancialSummary>>('/finance/summary', { params });
+      const response = await api.get<ApiResponse<FinancialSummary>>(
+        "/finance/summary",
+        { params },
+      );
       return response.data.data;
     },
   });
@@ -312,14 +354,16 @@ export function useFinancialSummary(academicYearId?: string) {
 
 export function useStudentFinancialSummary(studentId: string) {
   return useQuery({
-    queryKey: ['students', studentId, 'financial-summary'],
+    queryKey: ["students", studentId, "financial-summary"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<{
-        totalBilled: number;
-        totalPaid: number;
-        totalOutstanding: number;
-        bills: Bill[];
-      }>>(`/students/${studentId}/financial-summary`);
+      const response = await api.get<
+        ApiResponse<{
+          totalBilled: number;
+          totalPaid: number;
+          totalOutstanding: number;
+          bills: Bill[];
+        }>
+      >(`/students/${studentId}/financial-summary`);
       return response.data.data;
     },
     enabled: !!studentId,
@@ -332,7 +376,7 @@ export function useStudentFinancialSummary(studentId: string) {
 
 export interface SppMatrixMonth {
   invoiceId?: string;
-  status: 'PAID' | 'PARTIAL' | 'PENDING' | 'OVERDUE' | 'NOT_BILLED';
+  status: "PAID" | "PARTIAL" | "PENDING" | "OVERDUE" | "NOT_BILLED";
   amount: number;
   paidAmount: number;
   dueDate?: string;
@@ -379,9 +423,12 @@ export interface SppMatrixParams {
 
 export function useSppMatrix(params: SppMatrixParams = {}) {
   return useQuery({
-    queryKey: ['spp-matrix', params],
+    queryKey: ["spp-matrix", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<SppMatrixData>>('/finance/spp-matrix', { params });
+      const response = await api.get<ApiResponse<SppMatrixData>>(
+        "/finance/spp-matrix",
+        { params },
+      );
       return response.data.data;
     },
   });
@@ -401,16 +448,18 @@ export function useGenerateSppInvoices() {
 
   return useMutation({
     mutationFn: async (data: GenerateSppInvoicesData) => {
-      const response = await api.post<ApiResponse<{
-        created: number;
-        skipped: number;
-        total: number;
-      }>>('/finance/spp-matrix/generate', data);
+      const response = await api.post<
+        ApiResponse<{
+          created: number;
+          skipped: number;
+          total: number;
+        }>
+      >("/finance/spp-matrix/generate", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['spp-matrix'] });
-      queryClient.invalidateQueries({ queryKey: ['bills'] });
+      queryClient.invalidateQueries({ queryKey: ["spp-matrix"] });
+      queryClient.invalidateQueries({ queryKey: ["bills"] });
     },
   });
 }

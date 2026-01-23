@@ -26,11 +26,13 @@
 **Refs:** [Req 1.1], [Req 1.4], [Req 2.1], [Req 2.2]
 
 ### 1.1 Database Type
+
 - **Database:** PostgreSQL (existing)
 - **ORM:** Prisma 5.x (existing)
 - **Strategy:** Enhancement - adding new models and fields to existing schema
 
 ### 1.2 Design Principles
+
 1. **Non-Breaking Changes** - All changes backward compatible
 2. **Normalization** - 3NF where appropriate
 3. **Soft Delete** - Using `deletedAt` for all main entities
@@ -40,13 +42,13 @@
 
 ### 1.3 Schema Enhancement Summary
 
-| Category | New Models | Enhanced Models | New Enums |
-|----------|------------|-----------------|-----------|
-| PAUD Assessment | 3 | 0 | 3 |
-| Daily Report | 2 | 0 | 2 |
-| Tahfidz Enhancement | 3 | 2 | 2 |
-| Dashboard | 2 | 0 | 1 |
-| **Total** | **10** | **2** | **8** |
+| Category            | New Models | Enhanced Models | New Enums |
+| ------------------- | ---------- | --------------- | --------- |
+| PAUD Assessment     | 3          | 0               | 3         |
+| Daily Report        | 2          | 0               | 2         |
+| Tahfidz Enhancement | 3          | 2               | 2         |
+| Dashboard           | 2          | 0               | 1         |
+| **Total**           | **10**     | **2**           | **8**     |
 
 ---
 
@@ -55,6 +57,7 @@
 **Refs:** [Req 4.1], [Req 4.3], [Req 7.1.2]
 
 ### 2.1 PAUD Development Aspect
+
 ```prisma
 /// 6 Aspek Perkembangan Anak (Permendikbud 137/2014)
 enum PAUDAspect {
@@ -68,6 +71,7 @@ enum PAUDAspect {
 ```
 
 ### 2.2 PAUD Achievement Level
+
 ```prisma
 /// Capaian Perkembangan PAUD
 enum PAUDAchievementLevel {
@@ -79,6 +83,7 @@ enum PAUDAchievementLevel {
 ```
 
 ### 2.3 Daily Report Mood
+
 ```prisma
 /// Mood indicator for daily report
 enum DailyMood {
@@ -92,6 +97,7 @@ enum DailyMood {
 ```
 
 ### 2.4 Meal Consumption Status
+
 ```prisma
 /// Status konsumsi makan/snack
 enum MealConsumption {
@@ -103,17 +109,19 @@ enum MealConsumption {
 ```
 
 ### 2.5 Murojaah Type
+
 ```prisma
 /// Jenis murojaah hafalan
 enum MurojaahType {
   YAUMIYAH    // Harian - 1-3 juz terakhir
-  USBUIYAH    // Mingguan - 5 juz terakhir  
+  USBUIYAH    // Mingguan - 5 juz terakhir
   SYAHRIYAH   // Bulanan - Seluruh hafalan
   TASMI       // Random testing
 }
 ```
 
 ### 2.6 Tahfidz Mistake Type
+
 ```prisma
 /// Jenis kesalahan dalam hafalan
 enum TahfidzMistakeType {
@@ -126,6 +134,7 @@ enum TahfidzMistakeType {
 ```
 
 ### 2.7 Simaan Type
+
 ```prisma
 /// Jenis simaan/ujian hafalan
 enum SimaanType {
@@ -138,6 +147,7 @@ enum SimaanType {
 ```
 
 ### 2.8 Report Period Type
+
 ```prisma
 /// Periode laporan PAUD
 enum PAUDReportPeriod {
@@ -155,6 +165,7 @@ enum PAUDReportPeriod {
 **Refs:** [Req 4.1], [Req 4.2], [Req 4.4]
 
 ### 3.1 PAUDDevelopmentIndicator
+
 **Refs:** [Req 4.1.1]
 
 Model untuk menyimpan indikator perkembangan per aspek.
@@ -184,6 +195,7 @@ model PAUDDevelopmentIndicator {
 ```
 
 ### 3.2 PAUDDevelopmentAssessment
+
 **Refs:** [Req 4.1.1], [Req 4.1.2], [Req 4.1.3]
 
 Model utama untuk mencatat perkembangan anak per aspek.
@@ -223,6 +235,7 @@ model PAUDDevelopmentAssessment {
 ```
 
 ### 3.3 PAUDAssessmentEvidence
+
 **Refs:** [Req 4.1.1] - evidence_urls[], [Req 4.4]
 
 Model untuk menyimpan bukti/dokumentasi assessment.
@@ -247,6 +260,7 @@ model PAUDAssessmentEvidence {
 ```
 
 ### 3.4 PAUDNarrativeReport (Raport Narasi)
+
 **Refs:** [Req 4.2]
 
 Model untuk raport narasi PAUD per semester.
@@ -258,7 +272,7 @@ model PAUDNarrativeReport {
   studentId             String    @map("student_id")
   academicYearId        String    @map("academic_year_id")
   semesterId            String    @map("semester_id")
-  
+
   // Narrative per aspect
   narrativeNAM          String?   @map("narrative_nam") @db.Text
   narrativeFM           String?   @map("narrative_fm") @db.Text
@@ -266,25 +280,25 @@ model PAUDNarrativeReport {
   narrativeBHS          String?   @map("narrative_bhs") @db.Text
   narrativeSE           String?   @map("narrative_se") @db.Text
   narrativeSNI          String?   @map("narrative_sni") @db.Text
-  
+
   // Summary
   overallStrengths      String?   @map("overall_strengths") @db.Text
   areasForDevelopment   String?   @map("areas_for_development") @db.Text
   parentRecommendations String?   @map("parent_recommendations") @db.Text
   teacherSignature      String?   @map("teacher_signature")
   principalSignature    String?   @map("principal_signature")
-  
+
   // Status
   status                String    @default("DRAFT") // DRAFT, FINALIZED, PRINTED
   finalizedAt           DateTime? @map("finalized_at")
   printedAt             DateTime? @map("printed_at")
-  
+
   // Attendance summary
   totalDays             Int       @default(0) @map("total_days")
   presentDays           Int       @default(0) @map("present_days")
   sickDays              Int       @default(0) @map("sick_days")
   excusedDays           Int       @default(0) @map("excused_days")
-  
+
   createdById           String    @map("created_by_id")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
@@ -303,6 +317,7 @@ model PAUDNarrativeReport {
 ```
 
 ### 3.5 PAUDReportPhoto
+
 **Refs:** [Req 4.2.1] - Foto dokumentasi kegiatan semester
 
 ```prisma
@@ -330,6 +345,7 @@ model PAUDReportPhoto {
 **Refs:** [Req 4.3], [Req 5.3]
 
 ### 4.1 DailyStudentReport
+
 **Refs:** [Req 4.3.1], [Req 4.3.2], [Req 5.3]
 
 Model untuk laporan harian ke orang tua (PAUD/TK & SD IT).
@@ -341,40 +357,40 @@ model DailyStudentReport {
   studentId       String          @map("student_id")
   reportDate      DateTime        @map("report_date") @db.Date
   unitType        UnitType        @map("unit_type") // PAUD, TK, SD_IT
-  
+
   // Check-in (Guru input saat datang)
   arrivalTime     DateTime?       @map("arrival_time")
   mood            DailyMood?
   healthStatus    String?         @map("health_status") // Sehat, Demam, Flu, dll
   temperature     Float?          // Suhu badan (opsional)
   hadBreakfast    Boolean?        @map("had_breakfast")
-  
+
   // Activities (PAUD specific)
   mealStatus      MealConsumption? @map("meal_status")
   snackStatus     MealConsumption? @map("snack_status")
   napDuration     Int?            @map("nap_duration") // dalam menit
   toiletNotes     String?         @map("toilet_notes") @db.Text
-  
-  // Activities (SD IT specific)  
+
+  // Activities (SD IT specific)
   sholatDhuha     Boolean?        @map("sholat_dhuha")
   tahfidzActivity String?         @map("tahfidz_activity") // Surah/ayat yang disetorkan
-  
+
   // General activity log
   activitiesSummary String?       @map("activities_summary") @db.Text
   achievements    String?         @db.Text
   behaviorNotes   String?         @map("behavior_notes") @db.Text
   teacherNotes    String?         @map("teacher_notes") @db.Text
   homeActivity    String?         @map("home_activity") @db.Text // Aktivitas di rumah
-  
+
   // Departure
   departureTime   DateTime?       @map("departure_time")
   pickedUpBy      String?         @map("picked_up_by")
-  
+
   // Notification
   notifiedAt      DateTime?       @map("notified_at")
   notifiedVia     String?         @map("notified_via") // whatsapp, push, email
   parentReadAt    DateTime?       @map("parent_read_at")
-  
+
   createdById     String          @map("created_by_id")
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
@@ -393,6 +409,7 @@ model DailyStudentReport {
 ```
 
 ### 4.2 DailyReportPhoto
+
 **Refs:** [Req 4.3.2] - photos[]
 
 ```prisma
@@ -413,6 +430,7 @@ model DailyReportPhoto {
 ```
 
 ### 4.3 DailyHomework
+
 **Refs:** [Req 5.3.2] - homework[]
 
 ```prisma
@@ -440,6 +458,7 @@ model DailyHomework {
 **Refs:** [Req 7.1], [Req 7.2]
 
 ### 5.1 MurojaahRecord (Detail Tracking)
+
 **Refs:** [Req 7.1.2]
 
 Model untuk tracking murojaah dengan detail lebih lengkap.
@@ -452,7 +471,7 @@ model MurojaahRecord {
   enrollmentId    String?         @map("enrollment_id") // TakhosusEnrollment
   halaqohId       String?         @map("halaqoh_id")
   recordedById    String          @map("recorded_by_id")
-  
+
   // Murojaah Info
   murojaahType    MurojaahType    @map("murojaah_type")
   murojaahDate    DateTime        @map("murojaah_date") @db.Date
@@ -460,17 +479,17 @@ model MurojaahRecord {
   juzEnd          Int             @map("juz_end")
   pagesReviewed   Int             @map("pages_reviewed")
   durationMinutes Int             @map("duration_minutes")
-  
+
   // Quality Assessment
   qualityScore    Int             @map("quality_score") // 1-100
   mistakeCount    Int             @default(0) @map("mistake_count")
   fluencyLevel    Int             @default(0) @map("fluency_level") // 1-5
   tajwidScore     Int?            @map("tajwid_score") // 1-100
-  
+
   // Notes
   notes           String?         @db.Text
   improvementAreas String?        @map("improvement_areas") @db.Text
-  
+
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
 
@@ -488,6 +507,7 @@ model MurojaahRecord {
 ```
 
 ### 5.2 MurojaahMistake
+
 **Refs:** [Req 7.1.2] - mistake_types[]
 
 ```prisma
@@ -511,6 +531,7 @@ model MurojaahMistake {
 ```
 
 ### 5.3 SimaanExam (Ujian Komprehensif)
+
 **Refs:** [Req 7.1.3]
 
 ```prisma
@@ -519,31 +540,31 @@ model SimaanExam {
   id              String      @id @default(uuid())
   studentId       String      @map("student_id")
   enrollmentId    String?     @map("enrollment_id")
-  
+
   // Exam Info
   simaanType      SimaanType  @map("simaan_type")
   examDate        DateTime    @map("exam_date")
   sessionNumber   Int         @default(1) @map("session_number") // Untuk multi-sesi
   totalSessions   Int         @default(1) @map("total_sessions")
-  
+
   // Content
   juzStart        Int         @map("juz_start")
   juzEnd          Int         @map("juz_end")
-  
+
   // Scoring
   overallScore    Float?      @map("overall_score") // 0-100
   tajwidScore     Float?      @map("tajwid_score")
   fashohaScore    Float?      @map("fashoha_score") // Kelancaran
   tartilScore     Float?      @map("tartil_score")
-  
+
   // Grading
   grade           String?     // Mumtaz, Jayyid Jiddan, Jayyid, Maqbul, Rasib
   passed          Boolean     @default(false)
-  
+
   // Examiners (Panel Penguji)
   notes           String?     @db.Text
   recommendations String?     @db.Text
-  
+
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @updatedAt @map("updated_at")
 
@@ -560,6 +581,7 @@ model SimaanExam {
 ```
 
 ### 5.4 SimaanExaminer
+
 **Refs:** [Req 7.1.3] - Panel penguji
 
 ```prisma
@@ -581,6 +603,7 @@ model SimaanExaminer {
 ```
 
 ### 5.5 Enhanced SanadRecord Fields
+
 **Refs:** [Req 7.2]
 
 Tambahan field untuk existing SanadRecord model:
@@ -589,7 +612,7 @@ Tambahan field untuk existing SanadRecord model:
 // Add to existing SanadRecord model:
 model SanadRecord {
   // ... existing fields ...
-  
+
   // NEW: Enhanced Sanad Fields
   riwayat             String?   // HAFS, WARSH, QALUN, etc.
   teacherSanadNumber  String?   @map("teacher_sanad_number")
@@ -599,7 +622,7 @@ model SanadRecord {
   verificationCode    String?   @unique @map("verification_code") // QR verification
   publicVerificationUrl String? @map("public_verification_url")
   issuedAt            DateTime? @map("issued_at")
-  
+
   // Ijazah Type
   ijazahType          String?   @map("ijazah_type") // TAHFIDZ, SANAD, QIRAAT
 }
@@ -612,6 +635,7 @@ model SanadRecord {
 **Refs:** [Req 9.1]
 
 ### 6.1 DashboardMetricSnapshot
+
 **Refs:** [Req 9.1.1]
 
 Model untuk menyimpan snapshot metrik dashboard (untuk performa).
@@ -637,6 +661,7 @@ model DashboardMetricSnapshot {
 ```
 
 ### 6.2 UnitComparisonReport
+
 **Refs:** [Req 9.1.2]
 
 ```prisma
@@ -664,6 +689,7 @@ model UnitComparisonReport {
 **Refs:** [Req 3.2], [Req 4.5]
 
 ### 7.1 Student Model Enhancement
+
 **Refs:** [Req 4.5.1], [Req 4.5.2]
 
 Tambahan field untuk existing Student model:
@@ -672,14 +698,14 @@ Tambahan field untuk existing Student model:
 // Add to existing Student model:
 model Student {
   // ... existing fields ...
-  
+
   // NEW: Growth Tracking Fields (PAUD)
   birthWeight         Float?    @map("birth_weight") // Berat lahir (kg)
   birthHeight         Float?    @map("birth_height") // Panjang lahir (cm)
   birthHeadCircumference Float? @map("birth_head_circumference") // Lingkar kepala lahir
-  
+
   // NEW: Immunization tracking via relation
-  
+
   // NEW Relations
   paudAssessments     PAUDDevelopmentAssessment[]
   paudReports         PAUDNarrativeReport[]
@@ -690,6 +716,7 @@ model Student {
 ```
 
 ### 7.2 GrowthRecord Model (New)
+
 **Refs:** [Req 4.5.1]
 
 ```prisma
@@ -698,22 +725,22 @@ model GrowthRecord {
   id                String    @id @default(uuid())
   studentId         String    @map("student_id")
   recordDate        DateTime  @map("record_date") @db.Date
-  
+
   // Measurements
   weight            Float?    // Berat badan (kg)
   height            Float?    // Tinggi badan (cm)
   headCircumference Float?    @map("head_circumference") // Lingkar kepala (cm)
-  
+
   // Calculated Fields (stored for historical)
   ageMonths         Int       @map("age_months") // Usia saat pengukuran
   weightZScore      Float?    @map("weight_z_score") // Z-Score BB/U
   heightZScore      Float?    @map("height_z_score") // Z-Score TB/U
   bmiZScore         Float?    @map("bmi_z_score") // Z-Score BMI
-  
+
   // Status
   nutritionStatus   String?   @map("nutrition_status") // Normal, Kurus, Gemuk, Stunting
   notes             String?   @db.Text
-  
+
   recordedById      String    @map("recorded_by_id")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
@@ -728,6 +755,7 @@ model GrowthRecord {
 ```
 
 ### 7.3 ImmunizationRecord Model (New)
+
 **Refs:** [Req 4.5.2]
 
 ```prisma
@@ -744,7 +772,7 @@ model ImmunizationRecord {
   batchNumber     String?   @map("batch_number")
   notes           String?   @db.Text
   status          String    @default("PENDING") // PENDING, COMPLETED, SKIPPED
-  
+
   recordedById    String?   @map("recorded_by_id")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
@@ -767,22 +795,22 @@ model ImmunizationRecord {
 
 ### 8.1 New Relations to Existing Models
 
-| From Model | To Model | Relation Type | Field |
-|------------|----------|---------------|-------|
-| Student | PAUDDevelopmentAssessment | 1:N | paudAssessments |
-| Student | PAUDNarrativeReport | 1:N | paudReports |
-| Student | DailyStudentReport | 1:N | dailyReports |
-| Student | MurojaahRecord | 1:N | murojaahRecords |
-| Student | SimaanExam | 1:N | simaanExams |
-| Student | GrowthRecord | 1:N | growthRecords |
-| Student | ImmunizationRecord | 1:N | immunizationRecords |
-| AcademicYear | PAUDDevelopmentAssessment | 1:N | paudAssessments |
-| AcademicYear | PAUDNarrativeReport | 1:N | paudNarrativeReports |
-| Semester | PAUDDevelopmentAssessment | 1:N | paudAssessments |
-| Semester | PAUDNarrativeReport | 1:N | paudNarrativeReports |
-| TakhosusEnrollment | MurojaahRecord | 1:N | murojaahRecords |
-| TakhosusEnrollment | SimaanExam | 1:N | simaanExams |
-| Halaqoh | MurojaahRecord | 1:N | murojaahRecords |
+| From Model         | To Model                  | Relation Type | Field                |
+| ------------------ | ------------------------- | ------------- | -------------------- |
+| Student            | PAUDDevelopmentAssessment | 1:N           | paudAssessments      |
+| Student            | PAUDNarrativeReport       | 1:N           | paudReports          |
+| Student            | DailyStudentReport        | 1:N           | dailyReports         |
+| Student            | MurojaahRecord            | 1:N           | murojaahRecords      |
+| Student            | SimaanExam                | 1:N           | simaanExams          |
+| Student            | GrowthRecord              | 1:N           | growthRecords        |
+| Student            | ImmunizationRecord        | 1:N           | immunizationRecords  |
+| AcademicYear       | PAUDDevelopmentAssessment | 1:N           | paudAssessments      |
+| AcademicYear       | PAUDNarrativeReport       | 1:N           | paudNarrativeReports |
+| Semester           | PAUDDevelopmentAssessment | 1:N           | paudAssessments      |
+| Semester           | PAUDNarrativeReport       | 1:N           | paudNarrativeReports |
+| TakhosusEnrollment | MurojaahRecord            | 1:N           | murojaahRecords      |
+| TakhosusEnrollment | SimaanExam                | 1:N           | simaanExams          |
+| Halaqoh            | MurojaahRecord            | 1:N           | murojaahRecords      |
 
 ### 8.2 ERD Summary (Text)
 
@@ -814,44 +842,45 @@ model ImmunizationRecord {
 
 ### 9.1 Migration Order
 
-| Order | Migration Name | Description | Estimated Time |
-|-------|---------------|-------------|----------------|
-| 1 | add_paud_enums | Add new enums | 1 min |
-| 2 | add_paud_indicators | PAUDDevelopmentIndicator table | 2 min |
-| 3 | add_paud_assessment | PAUDDevelopmentAssessment + Evidence | 3 min |
-| 4 | add_paud_reports | PAUDNarrativeReport + Photos | 3 min |
-| 5 | add_daily_reports | DailyStudentReport + related | 3 min |
-| 6 | add_murojaah | MurojaahRecord + Mistake | 3 min |
-| 7 | add_simaan | SimaanExam + Examiner | 3 min |
-| 8 | add_growth_health | GrowthRecord + ImmunizationRecord | 3 min |
-| 9 | add_dashboard_metrics | Dashboard snapshot tables | 2 min |
-| 10 | enhance_sanad | Add fields to SanadRecord | 2 min |
-| 11 | enhance_student | Add fields to Student | 2 min |
+| Order | Migration Name        | Description                          | Estimated Time |
+| ----- | --------------------- | ------------------------------------ | -------------- |
+| 1     | add_paud_enums        | Add new enums                        | 1 min          |
+| 2     | add_paud_indicators   | PAUDDevelopmentIndicator table       | 2 min          |
+| 3     | add_paud_assessment   | PAUDDevelopmentAssessment + Evidence | 3 min          |
+| 4     | add_paud_reports      | PAUDNarrativeReport + Photos         | 3 min          |
+| 5     | add_daily_reports     | DailyStudentReport + related         | 3 min          |
+| 6     | add_murojaah          | MurojaahRecord + Mistake             | 3 min          |
+| 7     | add_simaan            | SimaanExam + Examiner                | 3 min          |
+| 8     | add_growth_health     | GrowthRecord + ImmunizationRecord    | 3 min          |
+| 9     | add_dashboard_metrics | Dashboard snapshot tables            | 2 min          |
+| 10    | enhance_sanad         | Add fields to SanadRecord            | 2 min          |
+| 11    | enhance_student       | Add fields to Student                | 2 min          |
 
 ### 9.2 Rollback Strategy
 
 Setiap migration memiliki rollback:
+
 - New tables: DROP TABLE
 - New columns: ALTER TABLE DROP COLUMN
 - New enums: DROP TYPE (PostgreSQL)
 
 ### 9.3 Seed Data Required
 
-| Table | Seed Data |
-|-------|-----------|
-| PAUDDevelopmentIndicator | 6 aspek × ~10 indikator = ~60 records |
-| ImmunizationRecord (reference) | Standard vaccination schedule |
+| Table                          | Seed Data                             |
+| ------------------------------ | ------------------------------------- |
+| PAUDDevelopmentIndicator       | 6 aspek × ~10 indikator = ~60 records |
+| ImmunizationRecord (reference) | Standard vaccination schedule         |
 
 ### 9.4 Data Validation Rules
 
-| Field | Validation |
-|-------|------------|
-| PAUDAchievementLevel | Must be BB, MB, BSH, or BSB |
-| GrowthRecord.weight | 0 < weight < 200 (kg) |
-| GrowthRecord.height | 0 < height < 250 (cm) |
-| MurojaahRecord.qualityScore | 1-100 |
-| SimaanExam.overallScore | 0-100 |
-| SimaanExam.grade | Mumtaz, Jayyid Jiddan, Jayyid, Maqbul, Rasib |
+| Field                       | Validation                                   |
+| --------------------------- | -------------------------------------------- |
+| PAUDAchievementLevel        | Must be BB, MB, BSH, or BSB                  |
+| GrowthRecord.weight         | 0 < weight < 200 (kg)                        |
+| GrowthRecord.height         | 0 < height < 250 (cm)                        |
+| MurojaahRecord.qualityScore | 1-100                                        |
+| SimaanExam.overallScore     | 0-100                                        |
+| SimaanExam.grade            | Mumtaz, Jayyid Jiddan, Jayyid, Maqbul, Rasib |
 
 ---
 

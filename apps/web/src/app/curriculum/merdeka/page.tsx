@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   BookOpen,
   Layers,
@@ -14,30 +14,30 @@ import {
   Pencil,
   Calendar,
   Users,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { ColumnDef } from '@tanstack/react-table';
+} from "lucide-react";
+import { toast } from "sonner";
+import { ColumnDef } from "@tanstack/react-table";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { DataTable } from '@/components/shared/data-table';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { DataTable } from "@/components/shared/data-table";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -46,14 +46,14 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 
-import { useUnits } from '@/hooks/use-units';
-import { useAcademicYears } from '@/hooks/use-academic-years';
+import { useUnits } from "@/hooks/use-units";
+import { useAcademicYears } from "@/hooks/use-academic-years";
 import {
   useLearningPhases,
   useLearningOutcomes,
@@ -75,71 +75,72 @@ import {
   P5DimensionCode,
   ProjectStatus,
   PROJECT_STATUSES,
-} from '@/hooks/use-kurikulum-merdeka';
-import { useSubjects } from '@/hooks/use-curriculum';
-import { useEmployees } from '@/hooks/use-hr';
+} from "@/hooks/use-kurikulum-merdeka";
+import { useSubjects } from "@/hooks/use-curriculum";
+import { useEmployees } from "@/hooks/use-hr";
 
 export default function KurikulumMerdekaPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('phases');
-  const [searchQuery, setSearchQuery] = useState('');
-  
+  const [activeTab, setActiveTab] = useState("phases");
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Filter states
-  const [selectedPhase, setSelectedPhase] = useState<string>('');
-  const [selectedUnit, setSelectedUnit] = useState<string>('');
-  const [selectedTheme, setSelectedTheme] = useState<string>('');
-  
+  const [selectedPhase, setSelectedPhase] = useState<string>("");
+  const [selectedUnit, setSelectedUnit] = useState<string>("");
+  const [selectedTheme, setSelectedTheme] = useState<string>("");
+
   // Dialog states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  
+
   // Form states
   const [phaseForm, setPhaseForm] = useState({
-    code: '' as LearningPhaseCode | '',
-    name: '',
-    description: '',
-    gradeRange: '',
+    code: "" as LearningPhaseCode | "",
+    name: "",
+    description: "",
+    gradeRange: "",
   });
-  
+
   const [outcomeForm, setOutcomeForm] = useState({
-    phaseId: '',
-    subjectId: '',
-    code: '',
-    description: '',
+    phaseId: "",
+    subjectId: "",
+    code: "",
+    description: "",
   });
-  
+
   const [projectForm, setProjectForm] = useState({
-    academicYearId: '',
-    unitId: '',
-    themeId: '',
-    title: '',
-    description: '',
+    academicYearId: "",
+    unitId: "",
+    themeId: "",
+    title: "",
+    description: "",
     dimensions: [] as P5DimensionCode[],
-    startDate: '',
-    endDate: '',
-    supervisorId: '',
+    startDate: "",
+    endDate: "",
+    supervisorId: "",
   });
-  
+
   // Data hooks
   const { data: units } = useUnits();
   const { data: academicYears } = useAcademicYears();
   const { data: subjects } = useSubjects();
-  const { data: employeesData } = useEmployees({ status: 'ACTIVE' });
+  const { data: employeesData } = useEmployees({ status: "ACTIVE" });
   const { data: phases, isLoading: loadingPhases } = useLearningPhases();
   const { data: p5Themes } = useP5Themes();
-  const { data: outcomesData, isLoading: loadingOutcomes } = useLearningOutcomes({
-    phaseId: selectedPhase || undefined,
-    search: searchQuery || undefined,
-  });
+  const { data: outcomesData, isLoading: loadingOutcomes } =
+    useLearningOutcomes({
+      phaseId: selectedPhase || undefined,
+      search: searchQuery || undefined,
+    });
   const { data: projectsData, isLoading: loadingProjects } = useP5Projects({
     unitId: selectedUnit || undefined,
     themeId: selectedTheme || undefined,
   });
-  
+
   // Extract arrays from paginated responses
   const outcomes = outcomesData?.data || [];
   const projects = projectsData?.data || [];
-  
+
   // Mutations
   const createPhase = useCreateLearningPhase();
   const createOutcome = useCreateLearningOutcome();
@@ -147,44 +148,44 @@ export default function KurikulumMerdekaPage() {
   const deletePhase = useDeleteLearningPhase();
   const deleteOutcome = useDeleteLearningOutcome();
   const deleteProject = useDeleteP5Project();
-  
+
   // Phase columns
   const phaseColumns: ColumnDef<LearningPhase>[] = [
     {
-      accessorKey: 'code',
-      header: 'Kode',
+      accessorKey: "code",
+      header: "Kode",
       cell: ({ row }) => (
-        <Badge variant="outline">{row.getValue('code')}</Badge>
+        <Badge variant="outline">{row.getValue("code")}</Badge>
       ),
     },
     {
-      accessorKey: 'name',
-      header: 'Nama Fase',
+      accessorKey: "name",
+      header: "Nama Fase",
       cell: ({ row }) => (
-        <div className="font-medium">{row.getValue('name')}</div>
+        <div className="font-medium">{row.getValue("name")}</div>
       ),
     },
     {
-      id: 'grades',
-      header: 'Jenjang Kelas',
+      id: "grades",
+      header: "Jenjang Kelas",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.original.gradeRange || '-'}
+          {row.original.gradeRange || "-"}
         </span>
       ),
     },
     {
-      accessorKey: 'description',
-      header: 'Deskripsi',
+      accessorKey: "description",
+      header: "Deskripsi",
       cell: ({ row }) => (
         <span className="text-muted-foreground line-clamp-1">
-          {row.getValue('description') || '-'}
+          {row.getValue("description") || "-"}
         </span>
       ),
     },
     {
-      id: 'outcomes',
-      header: 'Capaian Pembelajaran',
+      id: "outcomes",
+      header: "Capaian Pembelajaran",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
           {row.original._count?.learningOutcomes || 0} CP
@@ -192,8 +193,8 @@ export default function KurikulumMerdekaPage() {
       ),
     },
     {
-      id: 'actions',
-      header: '',
+      id: "actions",
+      header: "",
       cell: ({ row }) => (
         <div className="flex gap-1">
           <Button
@@ -201,7 +202,7 @@ export default function KurikulumMerdekaPage() {
             size="sm"
             onClick={() => {
               setSelectedPhase(row.original.id);
-              setActiveTab('outcomes');
+              setActiveTab("outcomes");
             }}
           >
             <Eye className="h-4 w-4" />
@@ -218,51 +219,51 @@ export default function KurikulumMerdekaPage() {
       ),
     },
   ];
-  
+
   // Outcome columns
   const outcomeColumns: ColumnDef<LearningOutcome>[] = [
     {
-      accessorKey: 'code',
-      header: 'Kode',
+      accessorKey: "code",
+      header: "Kode",
       cell: ({ row }) => (
-        <Badge variant="outline">{row.getValue('code')}</Badge>
+        <Badge variant="outline">{row.getValue("code")}</Badge>
       ),
     },
     {
-      id: 'subject',
-      header: 'Mata Pelajaran',
+      id: "subject",
+      header: "Mata Pelajaran",
       cell: ({ row }) => (
-        <div className="font-medium">{row.original.subject?.name || '-'}</div>
+        <div className="font-medium">{row.original.subject?.name || "-"}</div>
       ),
     },
     {
-      accessorKey: 'description',
-      header: 'Deskripsi CP',
+      accessorKey: "description",
+      header: "Deskripsi CP",
       cell: ({ row }) => (
         <span className="text-muted-foreground line-clamp-2">
-          {row.getValue('description')}
+          {row.getValue("description")}
         </span>
       ),
     },
     {
-      id: 'phase',
-      header: 'Fase',
+      id: "phase",
+      header: "Fase",
       cell: ({ row }) => (
-        <Badge variant="outline">{row.original.phase?.name || '-'}</Badge>
+        <Badge variant="outline">{row.original.phase?.name || "-"}</Badge>
       ),
     },
     {
-      accessorKey: 'isActive',
-      header: 'Status',
+      accessorKey: "isActive",
+      header: "Status",
       cell: ({ row }) => (
-        <Badge variant={row.getValue('isActive') ? 'default' : 'secondary'}>
-          {row.getValue('isActive') ? 'Aktif' : 'Nonaktif'}
+        <Badge variant={row.getValue("isActive") ? "default" : "secondary"}>
+          {row.getValue("isActive") ? "Aktif" : "Nonaktif"}
         </Badge>
       ),
     },
     {
-      id: 'actions',
-      header: '',
+      id: "actions",
+      header: "",
       cell: ({ row }) => (
         <Button
           variant="ghost"
@@ -275,53 +276,57 @@ export default function KurikulumMerdekaPage() {
       ),
     },
   ];
-  
+
   // Project columns
   const projectColumns: ColumnDef<P5Project>[] = [
     {
-      accessorKey: 'title',
-      header: 'Judul Proyek',
+      accessorKey: "title",
+      header: "Judul Proyek",
       cell: ({ row }) => (
-        <div className="font-medium">{row.getValue('title')}</div>
+        <div className="font-medium">{row.getValue("title")}</div>
       ),
     },
     {
-      id: 'theme',
-      header: 'Tema',
+      id: "theme",
+      header: "Tema",
       cell: ({ row }) => {
-        const themeName = row.original.theme?.name || '-';
+        const themeName = row.original.theme?.name || "-";
         return <Badge variant="secondary">{themeName}</Badge>;
       },
     },
     {
-      id: 'unit',
-      header: 'Unit',
+      id: "unit",
+      header: "Unit",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.original.unit?.name || '-'}
+          {row.original.unit?.name || "-"}
         </span>
       ),
     },
     {
-      id: 'period',
-      header: 'Periode',
+      id: "period",
+      header: "Periode",
       cell: ({ row }) => {
-        const start = row.original.startDate ? new Date(row.original.startDate).toLocaleDateString('id-ID') : '';
-        const end = row.original.endDate ? new Date(row.original.endDate).toLocaleDateString('id-ID') : '';
+        const start = row.original.startDate
+          ? new Date(row.original.startDate).toLocaleDateString("id-ID")
+          : "";
+        const end = row.original.endDate
+          ? new Date(row.original.endDate).toLocaleDateString("id-ID")
+          : "";
         return (
           <span className="text-muted-foreground">
-            {start && end ? `${start} - ${end}` : '-'}
+            {start && end ? `${start} - ${end}` : "-"}
           </span>
         );
       },
     },
     {
-      id: 'dimensions',
-      header: 'Dimensi',
+      id: "dimensions",
+      header: "Dimensi",
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-1">
           {row.original.dimensions?.slice(0, 2).map((dim) => {
-            const dimData = P5_DIMENSIONS.find(d => d.value === dim);
+            const dimData = P5_DIMENSIONS.find((d) => d.value === dim);
             return (
               <Badge key={dim} variant="outline" className="text-xs">
                 {dimData?.value || dim}
@@ -337,8 +342,8 @@ export default function KurikulumMerdekaPage() {
       ),
     },
     {
-      id: 'assessments',
-      header: 'Penilaian',
+      id: "assessments",
+      header: "Penilaian",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
           {row.original._count?.assessments || 0} siswa
@@ -346,27 +351,29 @@ export default function KurikulumMerdekaPage() {
       ),
     },
     {
-      accessorKey: 'status',
-      header: 'Status',
+      accessorKey: "status",
+      header: "Status",
       cell: ({ row }) => {
-        const status = row.getValue('status') as ProjectStatus;
-        const statusData = PROJECT_STATUSES.find(s => s.value === status);
+        const status = row.getValue("status") as ProjectStatus;
+        const statusData = PROJECT_STATUSES.find((s) => s.value === status);
         return (
-          <Badge className={statusData?.color || ''}>
+          <Badge className={statusData?.color || ""}>
             {statusData?.label || status}
           </Badge>
         );
       },
     },
     {
-      id: 'actions',
-      header: '',
+      id: "actions",
+      header: "",
       cell: ({ row }) => (
         <div className="flex gap-1">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push(`/curriculum/merdeka/p5/${row.original.id}`)}
+            onClick={() =>
+              router.push(`/curriculum/merdeka/p5/${row.original.id}`)
+            }
           >
             <Eye className="h-4 w-4" />
           </Button>
@@ -382,26 +389,30 @@ export default function KurikulumMerdekaPage() {
       ),
     },
   ];
-  
+
   const handleAdd = async () => {
     try {
-      if (activeTab === 'phases') {
+      if (activeTab === "phases") {
         if (!phaseForm.code) {
-          toast.error('Pilih kode fase');
+          toast.error("Pilih kode fase");
           return;
         }
-        const phaseData = LEARNING_PHASE_CODES.find(p => p.value === phaseForm.code);
+        const phaseData = LEARNING_PHASE_CODES.find(
+          (p) => p.value === phaseForm.code,
+        );
         await createPhase.mutateAsync({
           code: phaseForm.code as LearningPhaseCode,
-          name: phaseForm.name || phaseData?.label || '',
+          name: phaseForm.name || phaseData?.label || "",
           description: phaseForm.description || undefined,
-          gradeRange: phaseForm.gradeRange || `Kelas ${phaseData?.startGrade} - ${phaseData?.endGrade}`,
+          gradeRange:
+            phaseForm.gradeRange ||
+            `Kelas ${phaseData?.startGrade} - ${phaseData?.endGrade}`,
         });
-        toast.success('Fase berhasil ditambahkan');
-        setPhaseForm({ code: '', name: '', description: '', gradeRange: '' });
-      } else if (activeTab === 'outcomes') {
+        toast.success("Fase berhasil ditambahkan");
+        setPhaseForm({ code: "", name: "", description: "", gradeRange: "" });
+      } else if (activeTab === "outcomes") {
         if (!outcomeForm.phaseId || !outcomeForm.subjectId) {
-          toast.error('Pilih fase dan mata pelajaran');
+          toast.error("Pilih fase dan mata pelajaran");
           return;
         }
         await createOutcome.mutateAsync({
@@ -410,19 +421,29 @@ export default function KurikulumMerdekaPage() {
           code: outcomeForm.code,
           description: outcomeForm.description,
         });
-        toast.success('Capaian Pembelajaran berhasil ditambahkan');
-        setOutcomeForm({ phaseId: '', subjectId: '', code: '', description: '' });
-      } else if (activeTab === 'p5') {
-        if (!projectForm.academicYearId || !projectForm.unitId || !projectForm.themeId || !projectForm.supervisorId) {
-          toast.error('Lengkapi semua field yang diperlukan');
+        toast.success("Capaian Pembelajaran berhasil ditambahkan");
+        setOutcomeForm({
+          phaseId: "",
+          subjectId: "",
+          code: "",
+          description: "",
+        });
+      } else if (activeTab === "p5") {
+        if (
+          !projectForm.academicYearId ||
+          !projectForm.unitId ||
+          !projectForm.themeId ||
+          !projectForm.supervisorId
+        ) {
+          toast.error("Lengkapi semua field yang diperlukan");
           return;
         }
         if (!projectForm.startDate || !projectForm.endDate) {
-          toast.error('Tentukan tanggal mulai dan selesai');
+          toast.error("Tentukan tanggal mulai dan selesai");
           return;
         }
         if (projectForm.dimensions.length === 0) {
-          toast.error('Pilih minimal satu dimensi P5');
+          toast.error("Pilih minimal satu dimensi P5");
           return;
         }
         await createProject.mutateAsync({
@@ -436,74 +457,90 @@ export default function KurikulumMerdekaPage() {
           endDate: projectForm.endDate,
           supervisorId: projectForm.supervisorId,
         });
-        toast.success('Proyek P5 berhasil ditambahkan');
-        setProjectForm({ academicYearId: '', unitId: '', themeId: '', title: '', description: '', dimensions: [], startDate: '', endDate: '', supervisorId: '' });
+        toast.success("Proyek P5 berhasil ditambahkan");
+        setProjectForm({
+          academicYearId: "",
+          unitId: "",
+          themeId: "",
+          title: "",
+          description: "",
+          dimensions: [],
+          startDate: "",
+          endDate: "",
+          supervisorId: "",
+        });
       }
       setIsAddDialogOpen(false);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal menambahkan data';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal menambahkan data";
       toast.error(errorMessage);
     }
   };
-  
+
   const handleDelete = async () => {
     if (!deleteId) return;
-    
+
     try {
-      if (activeTab === 'phases') {
+      if (activeTab === "phases") {
         await deletePhase.mutateAsync(deleteId);
-        toast.success('Fase berhasil dihapus');
-      } else if (activeTab === 'outcomes') {
+        toast.success("Fase berhasil dihapus");
+      } else if (activeTab === "outcomes") {
         await deleteOutcome.mutateAsync(deleteId);
-        toast.success('Capaian Pembelajaran berhasil dihapus');
-      } else if (activeTab === 'p5') {
+        toast.success("Capaian Pembelajaran berhasil dihapus");
+      } else if (activeTab === "p5") {
         await deleteProject.mutateAsync(deleteId);
-        toast.success('Proyek P5 berhasil dihapus');
+        toast.success("Proyek P5 berhasil dihapus");
       }
       setDeleteId(null);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal menghapus data';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal menghapus data";
       toast.error(errorMessage);
     }
   };
-  
+
   const getTabLabel = () => {
     switch (activeTab) {
-      case 'phases': return 'Fase';
-      case 'outcomes': return 'Capaian Pembelajaran';
-      case 'p5': return 'Proyek P5';
-      default: return '';
+      case "phases":
+        return "Fase";
+      case "outcomes":
+        return "Capaian Pembelajaran";
+      case "p5":
+        return "Proyek P5";
+      default:
+        return "";
     }
   };
-  
+
   const stats = [
     {
-      title: 'Fase Pembelajaran',
+      title: "Fase Pembelajaran",
       value: phases?.length || 0,
       icon: Layers,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      color: "text-blue-600",
+      bgColor: "bg-blue-100",
     },
     {
-      title: 'Capaian Pembelajaran',
+      title: "Capaian Pembelajaran",
       value: outcomesData?.meta?.total || outcomes.length,
       icon: Target,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
+      color: "text-green-600",
+      bgColor: "bg-green-100",
     },
     {
-      title: 'Proyek P5',
+      title: "Proyek P5",
       value: projectsData?.meta?.total || projects.length,
       icon: Leaf,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100',
+      color: "text-orange-600",
+      bgColor: "bg-orange-100",
     },
     {
-      title: 'Proyek Aktif',
-      value: projects.filter(p => p.status === 'ACTIVE').length,
+      title: "Proyek Aktif",
+      value: projects.filter((p) => p.status === "ACTIVE").length,
       icon: BookOpen,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      color: "text-purple-600",
+      bgColor: "bg-purple-100",
     },
   ];
 
@@ -513,9 +550,9 @@ export default function KurikulumMerdekaPage() {
         title="Kurikulum Merdeka"
         description="Kelola Capaian Pembelajaran (CP) dan Projek Penguatan Profil Pelajar Pancasila (P5)"
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Kurikulum', href: '/curriculum' },
-          { label: 'Kurikulum Merdeka' },
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Kurikulum", href: "/curriculum" },
+          { label: "Kurikulum Merdeka" },
         ]}
       />
 
@@ -572,19 +609,21 @@ export default function KurikulumMerdekaPage() {
                       Masukkan data {getTabLabel().toLowerCase()} baru
                     </DialogDescription>
                   </DialogHeader>
-                  
-                  {activeTab === 'phases' && (
+
+                  {activeTab === "phases" && (
                     <div className="grid gap-4 py-4">
                       <div className="grid gap-2">
                         <Label>Kode Fase *</Label>
-                        <Select 
-                          value={phaseForm.code} 
+                        <Select
+                          value={phaseForm.code}
                           onValueChange={(val: LearningPhaseCode) => {
-                            const phaseData = LEARNING_PHASE_CODES.find(p => p.value === val);
-                            setPhaseForm({ 
-                              ...phaseForm, 
+                            const phaseData = LEARNING_PHASE_CODES.find(
+                              (p) => p.value === val,
+                            );
+                            setPhaseForm({
+                              ...phaseForm,
                               code: val,
-                              name: phaseData?.label || '',
+                              name: phaseData?.label || "",
                               gradeRange: `Kelas ${phaseData?.startGrade} - ${phaseData?.endGrade}`,
                             });
                           }}
@@ -607,7 +646,9 @@ export default function KurikulumMerdekaPage() {
                           id="phase-name"
                           placeholder="Fase A (PAUD - Kelas 2 SD)"
                           value={phaseForm.name}
-                          onChange={(e) => setPhaseForm({ ...phaseForm, name: e.target.value })}
+                          onChange={(e) =>
+                            setPhaseForm({ ...phaseForm, name: e.target.value })
+                          }
                         />
                       </div>
                       <div className="grid gap-2">
@@ -616,7 +657,12 @@ export default function KurikulumMerdekaPage() {
                           id="phase-range"
                           placeholder="Kelas 1 - 2"
                           value={phaseForm.gradeRange}
-                          onChange={(e) => setPhaseForm({ ...phaseForm, gradeRange: e.target.value })}
+                          onChange={(e) =>
+                            setPhaseForm({
+                              ...phaseForm,
+                              gradeRange: e.target.value,
+                            })
+                          }
                         />
                       </div>
                       <div className="grid gap-2">
@@ -625,17 +671,27 @@ export default function KurikulumMerdekaPage() {
                           id="phase-desc"
                           placeholder="Deskripsi fase pembelajaran"
                           value={phaseForm.description}
-                          onChange={(e) => setPhaseForm({ ...phaseForm, description: e.target.value })}
+                          onChange={(e) =>
+                            setPhaseForm({
+                              ...phaseForm,
+                              description: e.target.value,
+                            })
+                          }
                         />
                       </div>
                     </div>
                   )}
-                  
-                  {activeTab === 'outcomes' && (
+
+                  {activeTab === "outcomes" && (
                     <div className="grid gap-4 py-4">
                       <div className="grid gap-2">
                         <Label>Fase *</Label>
-                        <Select value={outcomeForm.phaseId} onValueChange={(val) => setOutcomeForm({ ...outcomeForm, phaseId: val })}>
+                        <Select
+                          value={outcomeForm.phaseId}
+                          onValueChange={(val) =>
+                            setOutcomeForm({ ...outcomeForm, phaseId: val })
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih fase" />
                           </SelectTrigger>
@@ -650,7 +706,12 @@ export default function KurikulumMerdekaPage() {
                       </div>
                       <div className="grid gap-2">
                         <Label>Mata Pelajaran *</Label>
-                        <Select value={outcomeForm.subjectId} onValueChange={(val) => setOutcomeForm({ ...outcomeForm, subjectId: val })}>
+                        <Select
+                          value={outcomeForm.subjectId}
+                          onValueChange={(val) =>
+                            setOutcomeForm({ ...outcomeForm, subjectId: val })
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih mata pelajaran" />
                           </SelectTrigger>
@@ -669,7 +730,12 @@ export default function KurikulumMerdekaPage() {
                           id="outcome-code"
                           placeholder="IND.A.1"
                           value={outcomeForm.code}
-                          onChange={(e) => setOutcomeForm({ ...outcomeForm, code: e.target.value })}
+                          onChange={(e) =>
+                            setOutcomeForm({
+                              ...outcomeForm,
+                              code: e.target.value,
+                            })
+                          }
                         />
                       </div>
                       <div className="grid gap-2">
@@ -678,17 +744,30 @@ export default function KurikulumMerdekaPage() {
                           id="outcome-desc"
                           placeholder="Deskripsi capaian pembelajaran"
                           value={outcomeForm.description}
-                          onChange={(e) => setOutcomeForm({ ...outcomeForm, description: e.target.value })}
+                          onChange={(e) =>
+                            setOutcomeForm({
+                              ...outcomeForm,
+                              description: e.target.value,
+                            })
+                          }
                         />
                       </div>
                     </div>
                   )}
-                  
-                  {activeTab === 'p5' && (
+
+                  {activeTab === "p5" && (
                     <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
                       <div className="grid gap-2">
                         <Label>Tahun Ajaran *</Label>
-                        <Select value={projectForm.academicYearId} onValueChange={(val) => setProjectForm({ ...projectForm, academicYearId: val })}>
+                        <Select
+                          value={projectForm.academicYearId}
+                          onValueChange={(val) =>
+                            setProjectForm({
+                              ...projectForm,
+                              academicYearId: val,
+                            })
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih tahun ajaran" />
                           </SelectTrigger>
@@ -703,7 +782,12 @@ export default function KurikulumMerdekaPage() {
                       </div>
                       <div className="grid gap-2">
                         <Label>Unit *</Label>
-                        <Select value={projectForm.unitId} onValueChange={(val) => setProjectForm({ ...projectForm, unitId: val })}>
+                        <Select
+                          value={projectForm.unitId}
+                          onValueChange={(val) =>
+                            setProjectForm({ ...projectForm, unitId: val })
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih unit" />
                           </SelectTrigger>
@@ -718,7 +802,12 @@ export default function KurikulumMerdekaPage() {
                       </div>
                       <div className="grid gap-2">
                         <Label>Tema P5 *</Label>
-                        <Select value={projectForm.themeId} onValueChange={(val) => setProjectForm({ ...projectForm, themeId: val })}>
+                        <Select
+                          value={projectForm.themeId}
+                          onValueChange={(val) =>
+                            setProjectForm({ ...projectForm, themeId: val })
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih tema" />
                           </SelectTrigger>
@@ -733,7 +822,15 @@ export default function KurikulumMerdekaPage() {
                       </div>
                       <div className="grid gap-2">
                         <Label>Pembimbing/Supervisor *</Label>
-                        <Select value={projectForm.supervisorId} onValueChange={(val) => setProjectForm({ ...projectForm, supervisorId: val })}>
+                        <Select
+                          value={projectForm.supervisorId}
+                          onValueChange={(val) =>
+                            setProjectForm({
+                              ...projectForm,
+                              supervisorId: val,
+                            })
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih pembimbing" />
                           </SelectTrigger>
@@ -752,7 +849,12 @@ export default function KurikulumMerdekaPage() {
                           id="project-title"
                           placeholder="Judul proyek P5"
                           value={projectForm.title}
-                          onChange={(e) => setProjectForm({ ...projectForm, title: e.target.value })}
+                          onChange={(e) =>
+                            setProjectForm({
+                              ...projectForm,
+                              title: e.target.value,
+                            })
+                          }
                         />
                       </div>
                       <div className="grid gap-2">
@@ -761,22 +863,43 @@ export default function KurikulumMerdekaPage() {
                           id="project-desc"
                           placeholder="Deskripsi proyek"
                           value={projectForm.description}
-                          onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
+                          onChange={(e) =>
+                            setProjectForm({
+                              ...projectForm,
+                              description: e.target.value,
+                            })
+                          }
                         />
                       </div>
                       <div className="grid gap-2">
                         <Label>Dimensi P5 *</Label>
                         <div className="grid grid-cols-2 gap-2">
                           {P5_DIMENSIONS.map((dim) => (
-                            <label key={dim.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                            <label
+                              key={dim.value}
+                              className="flex items-center gap-2 text-sm cursor-pointer"
+                            >
                               <input
                                 type="checkbox"
-                                checked={projectForm.dimensions.includes(dim.value)}
+                                checked={projectForm.dimensions.includes(
+                                  dim.value,
+                                )}
                                 onChange={(e) => {
                                   if (e.target.checked) {
-                                    setProjectForm({ ...projectForm, dimensions: [...projectForm.dimensions, dim.value] });
+                                    setProjectForm({
+                                      ...projectForm,
+                                      dimensions: [
+                                        ...projectForm.dimensions,
+                                        dim.value,
+                                      ],
+                                    });
                                   } else {
-                                    setProjectForm({ ...projectForm, dimensions: projectForm.dimensions.filter(d => d !== dim.value) });
+                                    setProjectForm({
+                                      ...projectForm,
+                                      dimensions: projectForm.dimensions.filter(
+                                        (d) => d !== dim.value,
+                                      ),
+                                    });
                                   }
                                 }}
                                 className="rounded"
@@ -793,7 +916,12 @@ export default function KurikulumMerdekaPage() {
                             id="project-start"
                             type="date"
                             value={projectForm.startDate}
-                            onChange={(e) => setProjectForm({ ...projectForm, startDate: e.target.value })}
+                            onChange={(e) =>
+                              setProjectForm({
+                                ...projectForm,
+                                startDate: e.target.value,
+                              })
+                            }
                           />
                         </div>
                         <div className="grid gap-2">
@@ -802,22 +930,38 @@ export default function KurikulumMerdekaPage() {
                             id="project-end"
                             type="date"
                             value={projectForm.endDate}
-                            onChange={(e) => setProjectForm({ ...projectForm, endDate: e.target.value })}
+                            onChange={(e) =>
+                              setProjectForm({
+                                ...projectForm,
+                                endDate: e.target.value,
+                              })
+                            }
                           />
                         </div>
                       </div>
                     </div>
                   )}
-                  
+
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsAddDialogOpen(false)}
+                    >
                       Batal
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleAdd}
-                      disabled={createPhase.isPending || createOutcome.isPending || createProject.isPending}
+                      disabled={
+                        createPhase.isPending ||
+                        createOutcome.isPending ||
+                        createProject.isPending
+                      }
                     >
-                      {(createPhase.isPending || createOutcome.isPending || createProject.isPending) ? 'Menyimpan...' : 'Simpan'}
+                      {createPhase.isPending ||
+                      createOutcome.isPending ||
+                      createProject.isPending
+                        ? "Menyimpan..."
+                        : "Simpan"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -841,9 +985,9 @@ export default function KurikulumMerdekaPage() {
                 Proyek P5
               </TabsTrigger>
             </TabsList>
-            
+
             {/* Filter Bar */}
-            {activeTab === 'outcomes' && (
+            {activeTab === "outcomes" && (
               <div className="mb-4 flex gap-2">
                 <Select value={selectedPhase} onValueChange={setSelectedPhase}>
                   <SelectTrigger className="w-[200px]">
@@ -859,14 +1003,17 @@ export default function KurikulumMerdekaPage() {
                   </SelectContent>
                 </Select>
                 {selectedPhase && (
-                  <Button variant="outline" onClick={() => setSelectedPhase('')}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedPhase("")}
+                  >
                     Reset Filter
                   </Button>
                 )}
               </div>
             )}
-            
-            {activeTab === 'p5' && (
+
+            {activeTab === "p5" && (
               <div className="mb-4 flex gap-2">
                 <Select value={selectedUnit} onValueChange={setSelectedUnit}>
                   <SelectTrigger className="w-[180px]">
@@ -895,16 +1042,19 @@ export default function KurikulumMerdekaPage() {
                   </SelectContent>
                 </Select>
                 {(selectedUnit || selectedTheme) && (
-                  <Button variant="outline" onClick={() => {
-                    setSelectedUnit('');
-                    setSelectedTheme('');
-                  }}>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedUnit("");
+                      setSelectedTheme("");
+                    }}
+                  >
                     Reset Filter
                   </Button>
                 )}
               </div>
             )}
-            
+
             <TabsContent value="phases">
               <DataTable
                 columns={phaseColumns}
@@ -912,7 +1062,7 @@ export default function KurikulumMerdekaPage() {
                 isLoading={loadingPhases}
               />
             </TabsContent>
-            
+
             <TabsContent value="outcomes">
               <DataTable
                 columns={outcomeColumns}
@@ -920,103 +1070,139 @@ export default function KurikulumMerdekaPage() {
                 isLoading={loadingOutcomes}
               />
             </TabsContent>
-            
+
             <TabsContent value="p5">
               {loadingProjects ? (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-[200px] rounded-xl bg-muted animate-pulse" />
+                    <div
+                      key={i}
+                      className="h-[200px] rounded-xl bg-muted animate-pulse"
+                    />
                   ))}
                 </div>
               ) : projects.length > 0 ? (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {projects.map((project) => {
-                    const statusData = PROJECT_STATUSES.find(s => s.value === project.status);
-                    const themeName = project.theme?.name || '-';
-                    const startDate = project.startDate ? new Date(project.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '-';
-                    const endDate = project.endDate ? new Date(project.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
-                    
+                    const statusData = PROJECT_STATUSES.find(
+                      (s) => s.value === project.status,
+                    );
+                    const themeName = project.theme?.name || "-";
+                    const startDate = project.startDate
+                      ? new Date(project.startDate).toLocaleDateString(
+                          "id-ID",
+                          { day: "numeric", month: "short" },
+                        )
+                      : "-";
+                    const endDate = project.endDate
+                      ? new Date(project.endDate).toLocaleDateString("id-ID", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "-";
+
                     return (
-                      <div 
-                        key={project.id} 
+                      <div
+                        key={project.id}
                         className="group relative flex flex-col justify-between rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/50"
                       >
-                         <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => router.push(`/curriculum/merdeka/p5/${project.id}`)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive"
-                              onClick={() => setDeleteId(project.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                         </div>
+                        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() =>
+                              router.push(
+                                `/curriculum/merdeka/p5/${project.id}`,
+                              )
+                            }
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive"
+                            onClick={() => setDeleteId(project.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
 
-                         <div className="space-y-4">
-                            <div>
-                               <div className="mb-2 flex items-center justify-between">
-                                  <Badge variant="outline" className="line-clamp-1 max-w-[70%]">
-                                     {project.unit?.name}
-                                  </Badge>
-                                  <Badge className={statusData?.color}>
-                                     {statusData?.label}
-                                  </Badge>
-                               </div>
-                               <h3 className="font-semibold text-lg leading-tight group-hover:text-primary transition-colors">
-                                  {project.title}
-                               </h3>
-                               <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                                  {project.description}
-                               </p>
+                        <div className="space-y-4">
+                          <div>
+                            <div className="mb-2 flex items-center justify-between">
+                              <Badge
+                                variant="outline"
+                                className="line-clamp-1 max-w-[70%]"
+                              >
+                                {project.unit?.name}
+                              </Badge>
+                              <Badge className={statusData?.color}>
+                                {statusData?.label}
+                              </Badge>
                             </div>
+                            <h3 className="font-semibold text-lg leading-tight group-hover:text-primary transition-colors">
+                              {project.title}
+                            </h3>
+                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                              {project.description}
+                            </p>
+                          </div>
 
-                            <div className="space-y-2">
-                               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                  Tema
-                               </div>
-                               <div className="flex items-center gap-2 text-sm font-medium">
-                                  <Leaf className="h-4 w-4 text-green-600" />
-                                  <span className="line-clamp-1">{themeName}</span>
-                               </div>
+                          <div className="space-y-2">
+                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                              Tema
                             </div>
+                            <div className="flex items-center gap-2 text-sm font-medium">
+                              <Leaf className="h-4 w-4 text-green-600" />
+                              <span className="line-clamp-1">{themeName}</span>
+                            </div>
+                          </div>
 
-                            <div className="space-y-2">
-                               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                  Dimensi ({project.dimensions?.length || 0})
-                               </div>
-                               <div className="flex flex-wrap gap-1.5">
-                                  {project.dimensions?.slice(0, 3).map((dim) => (
-                                     <Badge key={dim} variant="secondary" className="text-[10px] px-1.5 h-5">
-                                        {P5_DIMENSIONS.find(d => d.value === dim)?.label || dim}
-                                     </Badge>
-                                  ))}
-                                  {(project.dimensions?.length || 0) > 3 && (
-                                     <Badge variant="secondary" className="text-[10px] px-1.5 h-5">
-                                        +{(project.dimensions?.length || 0) - 3}
-                                     </Badge>
-                                  )}
-                               </div>
+                          <div className="space-y-2">
+                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                              Dimensi ({project.dimensions?.length || 0})
                             </div>
-                         </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {project.dimensions?.slice(0, 3).map((dim) => (
+                                <Badge
+                                  key={dim}
+                                  variant="secondary"
+                                  className="text-[10px] px-1.5 h-5"
+                                >
+                                  {P5_DIMENSIONS.find((d) => d.value === dim)
+                                    ?.label || dim}
+                                </Badge>
+                              ))}
+                              {(project.dimensions?.length || 0) > 3 && (
+                                <Badge
+                                  variant="secondary"
+                                  className="text-[10px] px-1.5 h-5"
+                                >
+                                  +{(project.dimensions?.length || 0) - 3}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
 
-                         <div className="mt-6 pt-4 border-t flex items-center justify-between text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1.5">
-                               <Calendar className="h-3.5 w-3.5" />
-                               <span>{startDate} - {endDate}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5" title="Jumlah Siswa">
-                               <Users className="h-3.5 w-3.5" />
-                               <span>{project._count?.assessments || 0}</span>
-                            </div>
-                         </div>
+                        <div className="mt-6 pt-4 border-t flex items-center justify-between text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>
+                              {startDate} - {endDate}
+                            </span>
+                          </div>
+                          <div
+                            className="flex items-center gap-1.5"
+                            title="Jumlah Siswa"
+                          >
+                            <Users className="h-3.5 w-3.5" />
+                            <span>{project._count?.assessments || 0}</span>
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
@@ -1024,16 +1210,19 @@ export default function KurikulumMerdekaPage() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="rounded-full bg-muted/50 p-4 mb-4">
-                     <Leaf className="h-8 w-8 text-muted-foreground" />
+                    <Leaf className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <h3 className="font-semibold text-lg">Belum ada Proyek P5</h3>
                   <p className="text-muted-foreground max-w-sm mt-1 mb-6">
-                    Mulai buat proyek penguatan profil pelajar pancasila untuk unit ini.
+                    Mulai buat proyek penguatan profil pelajar pancasila untuk
+                    unit ini.
                   </p>
-                  <Button onClick={() => {
-                    setActiveTab('p5');
-                    setIsAddDialogOpen(true);
-                  }}>
+                  <Button
+                    onClick={() => {
+                      setActiveTab("p5");
+                      setIsAddDialogOpen(true);
+                    }}
+                  >
                     <Plus className="mr-2 h-4 w-4" />
                     Buat Proyek Baru
                   </Button>
@@ -1050,7 +1239,11 @@ export default function KurikulumMerdekaPage() {
         title={`Hapus ${getTabLabel()}`}
         description={`Apakah Anda yakin ingin menghapus ${getTabLabel().toLowerCase()} ini?`}
         onConfirm={handleDelete}
-        isLoading={deletePhase.isPending || deleteOutcome.isPending || deleteProject.isPending}
+        isLoading={
+          deletePhase.isPending ||
+          deleteOutcome.isPending ||
+          deleteProject.isPending
+        }
       />
     </MainLayout>
   );

@@ -66,7 +66,7 @@ export class ParentService {
       },
     });
 
-    return children.map((sp: typeof children[0]) => ({
+    return children.map((sp: (typeof children)[0]) => ({
       id: sp.student.id,
       name: sp.student.user.name,
       nis: sp.student.nis,
@@ -220,7 +220,13 @@ export class ParentService {
       _count: { id: true },
     });
 
-    type SummaryMap = { present: number; absent: number; late: number; sick: number; excused: number };
+    type SummaryMap = {
+      present: number;
+      absent: number;
+      late: number;
+      sick: number;
+      excused: number;
+    };
     const summaryMap = summary.reduce<SummaryMap>(
       (acc, item) => ({
         ...acc,
@@ -359,7 +365,7 @@ export class ParentService {
     });
 
     type SubjectGrades = {
-      subject: typeof grades[0]['subject'];
+      subject: (typeof grades)[0]['subject'];
       grades: typeof grades;
       averageScore: number;
     };
@@ -383,8 +389,7 @@ export class ParentService {
       const scores = subjectGrades.grades.map((g) =>
         Number(g.percentage || (Number(g.score) / Number(g.maxScore)) * 100)
       );
-      subjectGrades.averageScore =
-        scores.reduce((a, b) => a + b, 0) / scores.length;
+      subjectGrades.averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
     });
 
     return {
@@ -464,9 +469,7 @@ export class ParentService {
     summary.pendingCount = invoices.filter(
       (inv) => inv.status === 'PENDING' || inv.status === 'PARTIAL'
     ).length;
-    summary.overdueCount = invoices.filter(
-      (inv) => inv.status === 'OVERDUE'
-    ).length;
+    summary.overdueCount = invoices.filter((inv) => inv.status === 'OVERDUE').length;
 
     return {
       invoices,
@@ -656,16 +659,10 @@ export class ParentService {
           },
           { targetRoles: { has: 'PARENT' } },
           {
-            OR: [
-              { publishedAt: { lte: now } },
-              { publishedAt: null },
-            ],
+            OR: [{ publishedAt: { lte: now } }, { publishedAt: null }],
           },
           {
-            OR: [
-              { expiresAt: { gte: now } },
-              { expiresAt: null },
-            ],
+            OR: [{ expiresAt: { gte: now } }, { expiresAt: null }],
           },
         ],
       },
@@ -816,19 +813,14 @@ export class ParentService {
     // Map data back to children
     const summary = children.map((child) => {
       // Filter recent attendance for this child, take 7
-      const recentAttendance = allAttendances
-        .filter((a) => a.studentId === child.id)
-        .slice(0, 7);
+      const recentAttendance = allAttendances.filter((a) => a.studentId === child.id).slice(0, 7);
 
       const pendingInvoiceCount =
         pendingInvoices.find((p) => p.studentId === child.id)?._count.id || 0;
 
-      const activePermitCount =
-        activePermits.find((p) => p.studentId === child.id)?._count.id || 0;
+      const activePermitCount = activePermits.find((p) => p.studentId === child.id)?._count.id || 0;
 
-      const lastTahfidz = lastTahfidzRecords.find(
-        (t) => t.studentId === child.id
-      );
+      const lastTahfidz = lastTahfidzRecords.find((t) => t.studentId === child.id);
 
       return {
         child,

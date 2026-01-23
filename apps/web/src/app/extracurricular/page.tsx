@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useState } from "react";
+import Link from "next/link";
 import {
   Plus,
   Search,
@@ -15,34 +15,34 @@ import {
   Eye,
   Clock,
   MapPin,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,10 +52,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
-import { toast } from 'sonner';
+} from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 
 import {
   useExtracurriculars,
@@ -65,17 +65,19 @@ import {
   formatSchedule,
   type ExtracurricularCategory,
   type ExtracurricularStatus,
-} from '@/hooks/use-extracurricular';
-import { useUnits } from '@/hooks/use-units';
-import { useDebounce } from '@/hooks/use-debounce';
+} from "@/hooks/use-extracurricular";
+import { useUnits } from "@/hooks/use-units";
+import { useDebounce } from "@/hooks/use-debounce";
 
 export default function ExtracurricularPage() {
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState<ExtracurricularCategory | 'ALL'>('ALL');
-  const [status, setStatus] = useState<ExtracurricularStatus | 'ALL'>('ALL');
-  const [unitId, setUnitId] = useState<string>('ALL');
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState<ExtracurricularCategory | "ALL">(
+    "ALL",
+  );
+  const [status, setStatus] = useState<ExtracurricularStatus | "ALL">("ALL");
+  const [unitId, setUnitId] = useState<string>("ALL");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const debouncedSearch = useDebounce(search, 300);
 
@@ -84,9 +86,9 @@ export default function ExtracurricularPage() {
 
   const { data, isLoading, error } = useExtracurriculars({
     search: debouncedSearch || undefined,
-    category: category !== 'ALL' ? category : undefined,
-    status: status !== 'ALL' ? status : undefined,
-    unitId: unitId !== 'ALL' ? unitId : undefined,
+    category: category !== "ALL" ? category : undefined,
+    status: status !== "ALL" ? status : undefined,
+    unitId: unitId !== "ALL" ? unitId : undefined,
   });
 
   const deleteMutation = useDeleteExtracurricular();
@@ -98,18 +100,21 @@ export default function ExtracurricularPage() {
 
     try {
       await deleteMutation.mutateAsync(deleteId);
-      toast.success('Ekstrakurikuler berhasil dihapus');
+      toast.success("Ekstrakurikuler berhasil dihapus");
       setDeleteId(null);
     } catch {
-      toast.error('Gagal menghapus ekstrakurikuler');
+      toast.error("Gagal menghapus ekstrakurikuler");
     }
   };
 
   // Stats calculation
   const stats = {
     total: extracurriculars.length,
-    active: extracurriculars.filter((e) => e.status === 'ACTIVE').length,
-    totalMembers: extracurriculars.reduce((acc, e) => acc + e.currentMembers, 0),
+    active: extracurriculars.filter((e) => e.status === "ACTIVE").length,
+    totalMembers: extracurriculars.reduce(
+      (acc, e) => acc + e.currentMembers,
+      0,
+    ),
     byCategory: EXTRACURRICULAR_CATEGORIES.map((cat) => ({
       ...cat,
       count: extracurriculars.filter((e) => e.category === cat.value).length,
@@ -122,9 +127,9 @@ export default function ExtracurricularPage() {
         title="Ekstrakurikuler"
         description="Kelola kegiatan ekstrakurikuler dan keanggotaan siswa"
         action={{
-          label: 'Tambah Ekskul',
+          label: "Tambah Ekskul",
           icon: <Plus className="h-4 w-4" />,
-          href: '/extracurricular/new',
+          href: "/extracurricular/new",
         }}
       />
 
@@ -173,11 +178,18 @@ export default function ExtracurricularPage() {
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground mb-2">Per Kategori</p>
             <div className="flex flex-wrap gap-1">
-              {stats.byCategory.filter((c) => c.count > 0).slice(0, 4).map((cat) => (
-                <Badge key={cat.value} variant="secondary" className="text-xs">
-                  {cat.icon} {cat.count}
-                </Badge>
-              ))}
+              {stats.byCategory
+                .filter((c) => c.count > 0)
+                .slice(0, 4)
+                .map((cat) => (
+                  <Badge
+                    key={cat.value}
+                    variant="secondary"
+                    className="text-xs"
+                  >
+                    {cat.icon} {cat.count}
+                  </Badge>
+                ))}
             </div>
           </CardContent>
         </Card>
@@ -196,7 +208,10 @@ export default function ExtracurricularPage() {
                 className="pl-10"
               />
             </div>
-            <Select value={category} onValueChange={(v) => setCategory(v as typeof category)}>
+            <Select
+              value={category}
+              onValueChange={(v) => setCategory(v as typeof category)}
+            >
               <SelectTrigger className="w-full md:w-40">
                 <SelectValue placeholder="Kategori" />
               </SelectTrigger>
@@ -209,7 +224,10 @@ export default function ExtracurricularPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
+            <Select
+              value={status}
+              onValueChange={(v) => setStatus(v as typeof status)}
+            >
               <SelectTrigger className="w-full md:w-36">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -235,16 +253,16 @@ export default function ExtracurricularPage() {
             </Select>
             <div className="flex gap-2">
               <Button
-                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                variant={viewMode === "grid" ? "default" : "outline"}
                 size="icon"
-                onClick={() => setViewMode('grid')}
+                onClick={() => setViewMode("grid")}
               >
                 <Filter className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === 'list' ? 'default' : 'outline'}
+                variant={viewMode === "list" ? "default" : "outline"}
                 size="icon"
-                onClick={() => setViewMode('list')}
+                onClick={() => setViewMode("list")}
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
@@ -271,8 +289,14 @@ export default function ExtracurricularPage() {
       ) : error ? (
         <Card>
           <CardContent className="p-6 text-center">
-            <p className="text-muted-foreground">Gagal memuat data ekstrakurikuler</p>
-            <Button variant="outline" className="mt-2" onClick={() => window.location.reload()}>
+            <p className="text-muted-foreground">
+              Gagal memuat data ekstrakurikuler
+            </p>
+            <Button
+              variant="outline"
+              className="mt-2"
+              onClick={() => window.location.reload()}
+            >
               Coba Lagi
             </Button>
           </CardContent>
@@ -281,7 +305,9 @@ export default function ExtracurricularPage() {
         <Card>
           <CardContent className="p-12 text-center">
             <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">Belum Ada Ekstrakurikuler</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              Belum Ada Ekstrakurikuler
+            </h3>
             <p className="text-muted-foreground mb-4">
               Tambahkan kegiatan ekstrakurikuler pertama untuk memulai
             </p>
@@ -293,7 +319,7 @@ export default function ExtracurricularPage() {
             </Button>
           </CardContent>
         </Card>
-      ) : viewMode === 'grid' ? (
+      ) : viewMode === "grid" ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {extracurriculars.map((ekskul) => {
             const catConfig = getCategoryConfig(ekskul.category);
@@ -302,7 +328,10 @@ export default function ExtracurricularPage() {
               : 0;
 
             return (
-              <Card key={ekskul.id} className="hover:shadow-lg transition-shadow">
+              <Card
+                key={ekskul.id}
+                className="hover:shadow-lg transition-shadow"
+              >
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
@@ -347,9 +376,19 @@ export default function ExtracurricularPage() {
                   <div className="space-y-3">
                     {/* Category & Status */}
                     <div className="flex items-center gap-2">
-                      <Badge className={catConfig?.color}>{catConfig?.label}</Badge>
-                      <Badge variant={ekskul.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                        {ekskul.status === 'ACTIVE' ? 'Aktif' : ekskul.status === 'INACTIVE' ? 'Tidak Aktif' : 'Arsip'}
+                      <Badge className={catConfig?.color}>
+                        {catConfig?.label}
+                      </Badge>
+                      <Badge
+                        variant={
+                          ekskul.status === "ACTIVE" ? "default" : "secondary"
+                        }
+                      >
+                        {ekskul.status === "ACTIVE"
+                          ? "Aktif"
+                          : ekskul.status === "INACTIVE"
+                            ? "Tidak Aktif"
+                            : "Arsip"}
                       </Badge>
                     </div>
 
@@ -380,7 +419,8 @@ export default function ExtracurricularPage() {
                     {/* Coach */}
                     {ekskul.coachName && (
                       <p className="text-sm">
-                        <span className="text-muted-foreground">Pembina:</span> {ekskul.coachName}
+                        <span className="text-muted-foreground">Pembina:</span>{" "}
+                        {ekskul.coachName}
                       </p>
                     )}
 
@@ -436,12 +476,17 @@ export default function ExtracurricularPage() {
                         <Badge className={catConfig?.color} variant="secondary">
                           {catConfig?.label}
                         </Badge>
-                        <Badge variant={ekskul.status === 'ACTIVE' ? 'default' : 'outline'}>
-                          {ekskul.status === 'ACTIVE' ? 'Aktif' : 'Tidak Aktif'}
+                        <Badge
+                          variant={
+                            ekskul.status === "ACTIVE" ? "default" : "outline"
+                          }
+                        >
+                          {ekskul.status === "ACTIVE" ? "Aktif" : "Tidak Aktif"}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {ekskul.currentMembers} anggota • {ekskul.coachName || 'Belum ada pembina'}
+                        {ekskul.currentMembers} anggota •{" "}
+                        {ekskul.coachName || "Belum ada pembina"}
                       </p>
                     </div>
                   </div>
@@ -488,7 +533,7 @@ export default function ExtracurricularPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus Ekstrakurikuler?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Semua data terkait termasuk 
+              Tindakan ini tidak dapat dibatalkan. Semua data terkait termasuk
               pendaftaran anggota dan prestasi akan ikut terhapus.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -498,7 +543,7 @@ export default function ExtracurricularPage() {
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground"
             >
-              {deleteMutation.isPending ? 'Menghapus...' : 'Hapus'}
+              {deleteMutation.isPending ? "Menghapus..." : "Hapus"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

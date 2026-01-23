@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -15,40 +21,54 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   useAssessment,
   useUpdateAssessment,
   ASSESSMENT_TYPES,
   ASSESSMENT_TYPE_LABELS,
-} from '@/hooks';
-import { useClasses, useSubjects, useAcademicYears } from '@/hooks';
-import { ArrowLeft, Save, Loader2, AlertCircle } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
+} from "@/hooks";
+import { useClasses, useSubjects, useAcademicYears } from "@/hooks";
+import { ArrowLeft, Save, Loader2, AlertCircle } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
 
 const assessmentSchema = z.object({
-  title: z.string().min(1, 'Nama penilaian wajib diisi'),
-  type: z.enum(['DAILY_TEST', 'MIDTERM', 'FINAL', 'PRACTICAL', 'PROJECT', 'QUIZ', 'TAHFIDZ_TEST'], {
-    required_error: 'Tipe penilaian wajib dipilih',
-  }),
-  classId: z.string().min(1, 'Kelas wajib dipilih'),
-  subjectId: z.string().min(1, 'Mata pelajaran wajib dipilih'),
-  academicYearId: z.string().min(1, 'Tahun ajaran wajib dipilih'),
-  semester: z.coerce.number().min(1).max(2, 'Semester harus 1 atau 2'),
+  title: z.string().min(1, "Nama penilaian wajib diisi"),
+  type: z.enum(
+    [
+      "DAILY_TEST",
+      "MIDTERM",
+      "FINAL",
+      "PRACTICAL",
+      "PROJECT",
+      "QUIZ",
+      "TAHFIDZ_TEST",
+    ],
+    {
+      required_error: "Tipe penilaian wajib dipilih",
+    },
+  ),
+  classId: z.string().min(1, "Kelas wajib dipilih"),
+  subjectId: z.string().min(1, "Mata pelajaran wajib dipilih"),
+  academicYearId: z.string().min(1, "Tahun ajaran wajib dipilih"),
+  semester: z.coerce.number().min(1).max(2, "Semester harus 1 atau 2"),
   scheduledAt: z.string({
-    required_error: 'Tanggal wajib diisi',
+    required_error: "Tanggal wajib diisi",
   }),
-  maxScore: z.coerce.number().min(1, 'Nilai maksimal minimal 1').max(100, 'Nilai maksimal tidak boleh lebih dari 100'),
+  maxScore: z.coerce
+    .number()
+    .min(1, "Nilai maksimal minimal 1")
+    .max(100, "Nilai maksimal tidak boleh lebih dari 100"),
   passingScore: z.coerce.number().min(0).max(100).optional(),
   weight: z.coerce.number().min(0.1).max(10).optional(),
   description: z.string().optional(),
@@ -71,17 +91,17 @@ export default function EditAssessmentPage() {
   const form = useForm<AssessmentFormData>({
     resolver: zodResolver(assessmentSchema),
     defaultValues: {
-      title: '',
+      title: "",
       type: undefined,
-      classId: '',
-      subjectId: '',
-      academicYearId: '',
+      classId: "",
+      subjectId: "",
+      academicYearId: "",
       semester: 1,
-      scheduledAt: '',
+      scheduledAt: "",
       maxScore: 100,
       passingScore: 70,
       weight: 1,
-      description: '',
+      description: "",
     },
   });
 
@@ -94,11 +114,13 @@ export default function EditAssessmentPage() {
         subjectId: assessment.subjectId,
         academicYearId: assessment.academicYearId,
         semester: assessment.semester,
-        scheduledAt: new Date(assessment.scheduledAt).toISOString().split('T')[0],
+        scheduledAt: new Date(assessment.scheduledAt)
+          .toISOString()
+          .split("T")[0],
         maxScore: assessment.maxScore,
         passingScore: assessment.passingScore ?? 70,
         weight: assessment.weight ?? 1,
-        description: assessment.description ?? '',
+        description: assessment.description ?? "",
       });
     }
   }, [assessment, form]);
@@ -112,10 +134,10 @@ export default function EditAssessmentPage() {
           scheduledAt: new Date(data.scheduledAt).toISOString(),
         },
       });
-      toast.success('Penilaian berhasil diperbarui');
+      toast.success("Penilaian berhasil diperbarui");
       router.push(`/assessment/${assessmentId}`);
     } catch (error) {
-      toast.error('Gagal memperbarui penilaian');
+      toast.error("Gagal memperbarui penilaian");
     }
   };
 
@@ -135,7 +157,7 @@ export default function EditAssessmentPage() {
         <div className="flex flex-col items-center justify-center h-64 space-y-4">
           <AlertCircle className="h-12 w-12 text-muted-foreground" />
           <p className="text-muted-foreground">Penilaian tidak ditemukan</p>
-          <Button onClick={() => router.push('/assessment')}>
+          <Button onClick={() => router.push("/assessment")}>
             Kembali ke Daftar
           </Button>
         </div>
@@ -152,18 +174,21 @@ export default function EditAssessmentPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Edit Penilaian</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Edit Penilaian
+            </h1>
             <p className="text-muted-foreground">
               Perbarui data penilaian {assessment.title}
             </p>
           </div>
         </div>
 
-        {assessment.status !== 'DRAFT' && (
+        {assessment.status !== "DRAFT" && (
           <div className="flex items-center gap-2 p-4 bg-yellow-50 border border-green-200 rounded-lg">
             <AlertCircle className="h-5 w-5 text-yellow-600" />
             <span className="text-yellow-800">
-              Penilaian sudah dipublikasikan. Beberapa perubahan mungkin tidak akan berpengaruh pada nilai yang sudah diterima.
+              Penilaian sudah dipublikasikan. Beberapa perubahan mungkin tidak
+              akan berpengaruh pada nilai yang sudah diterima.
             </span>
           </div>
         )}
@@ -185,7 +210,10 @@ export default function EditAssessmentPage() {
                       <FormItem>
                         <FormLabel>Nama Penilaian</FormLabel>
                         <FormControl>
-                          <Input placeholder="Contoh: UTS Matematika" {...field} />
+                          <Input
+                            placeholder="Contoh: UTS Matematika"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -198,7 +226,10 @@ export default function EditAssessmentPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tipe Penilaian</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih tipe penilaian" />
@@ -255,7 +286,9 @@ export default function EditAssessmentPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Kelas & Mata Pelajaran</CardTitle>
-                  <CardDescription>Pilih kelas dan mata pelajaran</CardDescription>
+                  <CardDescription>
+                    Pilih kelas dan mata pelajaran
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
@@ -264,7 +297,10 @@ export default function EditAssessmentPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tahun Ajaran</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih tahun ajaran" />
@@ -273,7 +309,7 @@ export default function EditAssessmentPage() {
                           <SelectContent>
                             {academicYears?.data?.map((year) => (
                               <SelectItem key={year.id} value={year.id}>
-                                {year.name} {year.isActive && '(Aktif)'}
+                                {year.name} {year.isActive && "(Aktif)"}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -289,15 +325,22 @@ export default function EditAssessmentPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Semester</FormLabel>
-                        <Select onValueChange={(v) => field.onChange(parseInt(v))} value={field.value?.toString()}>
+                        <Select
+                          onValueChange={(v) => field.onChange(parseInt(v))}
+                          value={field.value?.toString()}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih semester" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="1">Semester 1 (Ganjil)</SelectItem>
-                            <SelectItem value="2">Semester 2 (Genap)</SelectItem>
+                            <SelectItem value="1">
+                              Semester 1 (Ganjil)
+                            </SelectItem>
+                            <SelectItem value="2">
+                              Semester 2 (Genap)
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -311,7 +354,10 @@ export default function EditAssessmentPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Kelas</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih kelas" />
@@ -336,7 +382,10 @@ export default function EditAssessmentPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Mata Pelajaran</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih mata pelajaran" />
@@ -385,11 +434,15 @@ export default function EditAssessmentPage() {
                       name="passingScore"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>KKM (Kriteria Ketuntasan Minimal)</FormLabel>
+                          <FormLabel>
+                            KKM (Kriteria Ketuntasan Minimal)
+                          </FormLabel>
                           <FormControl>
                             <Input type="number" min={0} max={100} {...field} />
                           </FormControl>
-                          <FormDescription>Nilai minimal untuk lulus</FormDescription>
+                          <FormDescription>
+                            Nilai minimal untuk lulus
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -402,9 +455,17 @@ export default function EditAssessmentPage() {
                         <FormItem>
                           <FormLabel>Bobot</FormLabel>
                           <FormControl>
-                            <Input type="number" min={0.1} max={10} step={0.1} {...field} />
+                            <Input
+                              type="number"
+                              min={0.1}
+                              max={10}
+                              step={0.1}
+                              {...field}
+                            />
                           </FormControl>
-                          <FormDescription>Bobot nilai untuk rapor</FormDescription>
+                          <FormDescription>
+                            Bobot nilai untuk rapor
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -416,7 +477,11 @@ export default function EditAssessmentPage() {
 
             {/* Submit Buttons */}
             <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => router.back()}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+              >
                 Batal
               </Button>
               <Button type="submit" disabled={updateAssessment.isPending}>

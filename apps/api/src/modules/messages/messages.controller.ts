@@ -26,7 +26,7 @@ export class MessagesController {
       // Default query params
       const limit = Number(req.query.limit) || 20;
       const page = Number(req.query.page) || 1;
-      const type = req.query.type as 'inbox' | 'sent' | 'all' || 'inbox';
+      const type = (req.query.type as 'inbox' | 'sent' | 'all') || 'inbox';
       const category = req.query.category as any;
 
       const result = await this.service.getUserMessages(userId, {

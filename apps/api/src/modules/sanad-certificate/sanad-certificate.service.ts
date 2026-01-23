@@ -48,7 +48,8 @@ export async function findAllSanadRecords(
   query: ListSanadQuery,
   context: { role: string; unitId?: string | null; userId: string }
 ) {
-  const { page, limit, studentId, teacherId, halaqohId, juz, grade, hasCertificate, search } = query;
+  const { page, limit, studentId, teacherId, halaqohId, juz, grade, hasCertificate, search } =
+    query;
   const skip = (page - 1) * limit;
 
   const where: Prisma.SanadRecordWhereInput = {
@@ -152,10 +153,7 @@ export async function findSanadById(id: string) {
 // CREATE SANAD RECORD
 // ============================================
 
-export async function createSanadRecord(
-  input: CreateSanadInput,
-  _context: { userId: string }
-) {
+export async function createSanadRecord(input: CreateSanadInput, _context: { userId: string }) {
   // Validate enrollment exists
   const enrollment = await prisma.takhosusEnrollment.findUnique({
     where: { id: input.enrollmentId },
@@ -390,7 +388,9 @@ export async function generateCertificate(
 // GENERATE CERTIFICATE HTML
 // ============================================
 
-export function generateCertificateHtml(certificateData: Awaited<ReturnType<typeof generateCertificate>>): string {
+export function generateCertificateHtml(
+  certificateData: Awaited<ReturnType<typeof generateCertificate>>
+): string {
   const certDate = new Date(certificateData.certifiedAt).toLocaleDateString('id-ID', {
     day: 'numeric',
     month: 'long',
@@ -605,12 +605,16 @@ export function generateCertificateHtml(certificateData: Awaited<ReturnType<type
         </div>
       </div>
 
-      ${certificateData.includeQRCode ? `
+      ${
+        certificateData.includeQRCode
+          ? `
       <div class="qr-code">
         [QR Code]<br>
         Verifikasi
       </div>
-      ` : ''}
+      `
+          : ''
+      }
 
       <div class="footer">
         <p>No. Sertifikat: <span class="cert-number">${certificateData.certificateNumber}</span></p>

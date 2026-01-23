@@ -2,7 +2,10 @@ import { Request, Response } from 'express';
 import { ApiResponse } from '@cipansor/shared';
 
 export const uploadController = {
-  uploadFile: async (req: Request, res: Response<ApiResponse<{ url: string; filename: string; mimetype: string; size: number }>>) => {
+  uploadFile: async (
+    req: Request,
+    res: Response<ApiResponse<{ url: string; filename: string; mimetype: string; size: number }>>
+  ) => {
     try {
       if (!req.file) {
         return res.status(400).json({

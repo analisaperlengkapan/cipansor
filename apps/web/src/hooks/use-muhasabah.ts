@@ -1,11 +1,16 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { ApiResponse, PaginatedResponse } from "@/lib/api";
 
 // =====================================
 // Types
 // =====================================
 
-export type MuhasabahMood = 'EXCELLENT' | 'GOOD' | 'NEUTRAL' | 'LOW' | 'STRUGGLING';
+export type MuhasabahMood =
+  | "EXCELLENT"
+  | "GOOD"
+  | "NEUTRAL"
+  | "LOW"
+  | "STRUGGLING";
 
 export interface DailyMuhasabah {
   id: string;
@@ -63,25 +68,55 @@ export interface MuhasabahSummary {
 // Constants
 // =====================================
 
-export const MUHASABAH_MOODS: { value: MuhasabahMood; label: string; emoji: string; color: string }[] = [
-  { value: 'EXCELLENT', label: 'Sangat Baik', emoji: '😊', color: 'bg-green-100 text-green-800' },
-  { value: 'GOOD', label: 'Baik', emoji: '🙂', color: 'bg-blue-100 text-blue-800' },
-  { value: 'NEUTRAL', label: 'Biasa', emoji: '😐', color: 'bg-gray-100 text-gray-800' },
-  { value: 'LOW', label: 'Kurang', emoji: '😔', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'STRUGGLING', label: 'Berat', emoji: '😢', color: 'bg-red-100 text-red-800' },
+export const MUHASABAH_MOODS: {
+  value: MuhasabahMood;
+  label: string;
+  emoji: string;
+  color: string;
+}[] = [
+  {
+    value: "EXCELLENT",
+    label: "Sangat Baik",
+    emoji: "😊",
+    color: "bg-green-100 text-green-800",
+  },
+  {
+    value: "GOOD",
+    label: "Baik",
+    emoji: "🙂",
+    color: "bg-blue-100 text-blue-800",
+  },
+  {
+    value: "NEUTRAL",
+    label: "Biasa",
+    emoji: "😐",
+    color: "bg-gray-100 text-gray-800",
+  },
+  {
+    value: "LOW",
+    label: "Kurang",
+    emoji: "😔",
+    color: "bg-yellow-100 text-yellow-800",
+  },
+  {
+    value: "STRUGGLING",
+    label: "Berat",
+    emoji: "😢",
+    color: "bg-red-100 text-red-800",
+  },
 ];
 
 export const SHOLAT_WAJIB = [
-  { key: 'sholatSubuh', label: 'Subuh', time: '04:30' },
-  { key: 'sholatDzuhur', label: 'Dzuhur', time: '12:00' },
-  { key: 'sholatAshar', label: 'Ashar', time: '15:30' },
-  { key: 'sholatMaghrib', label: 'Maghrib', time: '18:00' },
-  { key: 'sholatIsya', label: 'Isya', time: '19:30' },
+  { key: "sholatSubuh", label: "Subuh", time: "04:30" },
+  { key: "sholatDzuhur", label: "Dzuhur", time: "12:00" },
+  { key: "sholatAshar", label: "Ashar", time: "15:30" },
+  { key: "sholatMaghrib", label: "Maghrib", time: "18:00" },
+  { key: "sholatIsya", label: "Isya", time: "19:30" },
 ] as const;
 
 export const SHOLAT_SUNNAH = [
-  { key: 'sholatTahajud', label: 'Tahajud', time: '03:00' },
-  { key: 'sholatDhuha', label: 'Dhuha', time: '08:00' },
+  { key: "sholatTahajud", label: "Tahajud", time: "03:00" },
+  { key: "sholatDhuha", label: "Dhuha", time: "08:00" },
 ] as const;
 
 // =====================================
@@ -98,9 +133,12 @@ export interface MuhasabahParams {
 
 export function useMuhasabahRecords(params: MuhasabahParams = {}) {
   return useQuery({
-    queryKey: ['muhasabah', params],
+    queryKey: ["muhasabah", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<DailyMuhasabah>>('/muhasabah', { params });
+      const response = await api.get<PaginatedResponse<DailyMuhasabah>>(
+        "/muhasabah",
+        { params },
+      );
       return response.data;
     },
   });
@@ -108,9 +146,11 @@ export function useMuhasabahRecords(params: MuhasabahParams = {}) {
 
 export function useMuhasabahRecord(id: string) {
   return useQuery({
-    queryKey: ['muhasabah', id],
+    queryKey: ["muhasabah", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<DailyMuhasabah>>(`/muhasabah/${id}`);
+      const response = await api.get<ApiResponse<DailyMuhasabah>>(
+        `/muhasabah/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -119,9 +159,11 @@ export function useMuhasabahRecord(id: string) {
 
 export function useMuhasabahByDate(date: string) {
   return useQuery({
-    queryKey: ['muhasabah', 'date', date],
+    queryKey: ["muhasabah", "date", date],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<DailyMuhasabah>>(`/muhasabah/date/${date}`);
+      const response = await api.get<ApiResponse<DailyMuhasabah>>(
+        `/muhasabah/date/${date}`,
+      );
       return response.data.data;
     },
     enabled: !!date,
@@ -130,9 +172,10 @@ export function useMuhasabahByDate(date: string) {
 
 export function useMyMuhasabahToday() {
   return useQuery({
-    queryKey: ['muhasabah', 'today'],
+    queryKey: ["muhasabah", "today"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<DailyMuhasabah>>('/muhasabah/today');
+      const response =
+        await api.get<ApiResponse<DailyMuhasabah>>("/muhasabah/today");
       return response.data.data;
     },
   });
@@ -140,9 +183,10 @@ export function useMyMuhasabahToday() {
 
 export function useMyMuhasabahStats() {
   return useQuery({
-    queryKey: ['muhasabah', 'stats'],
+    queryKey: ["muhasabah", "stats"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<MuhasabahStats>>('/muhasabah/stats');
+      const response =
+        await api.get<ApiResponse<MuhasabahStats>>("/muhasabah/stats");
       return response.data.data;
     },
   });
@@ -150,11 +194,14 @@ export function useMyMuhasabahStats() {
 
 export function useMuhasabahSummary(studentId?: string) {
   return useQuery({
-    queryKey: ['muhasabah', 'summary', studentId],
+    queryKey: ["muhasabah", "summary", studentId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<MuhasabahSummary>>('/muhasabah/summary', {
-        params: { studentId },
-      });
+      const response = await api.get<ApiResponse<MuhasabahSummary>>(
+        "/muhasabah/summary",
+        {
+          params: { studentId },
+        },
+      );
       return response.data.data;
     },
   });
@@ -189,11 +236,14 @@ export function useCreateMuhasabah() {
 
   return useMutation({
     mutationFn: async (data: CreateMuhasabahData) => {
-      const response = await api.post<ApiResponse<DailyMuhasabah>>('/muhasabah', data);
+      const response = await api.post<ApiResponse<DailyMuhasabah>>(
+        "/muhasabah",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['muhasabah'] });
+      queryClient.invalidateQueries({ queryKey: ["muhasabah"] });
     },
   });
 }
@@ -202,13 +252,22 @@ export function useUpdateMuhasabah() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateMuhasabahData> }) => {
-      const response = await api.put<ApiResponse<DailyMuhasabah>>(`/muhasabah/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateMuhasabahData>;
+    }) => {
+      const response = await api.put<ApiResponse<DailyMuhasabah>>(
+        `/muhasabah/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['muhasabah'] });
-      queryClient.invalidateQueries({ queryKey: ['muhasabah', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["muhasabah"] });
+      queryClient.invalidateQueries({ queryKey: ["muhasabah", variables.id] });
     },
   });
 }
@@ -221,7 +280,7 @@ export function useDeleteMuhasabah() {
       await api.delete(`/muhasabah/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['muhasabah'] });
+      queryClient.invalidateQueries({ queryKey: ["muhasabah"] });
     },
   });
 }

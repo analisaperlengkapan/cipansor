@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse } from '@/lib/api';
-import { AttendanceStatus } from '@cipansor/shared';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { ApiResponse } from "@/lib/api";
+import { AttendanceStatus } from "@cipansor/shared";
 
 // ======================
 // TYPES
@@ -40,7 +40,7 @@ export interface HomeroomStudent {
   id: string;
   nis: string;
   name: string;
-  gender: 'MALE' | 'FEMALE';
+  gender: "MALE" | "FEMALE";
   birthDate?: string;
   address?: string;
   phone?: string;
@@ -49,7 +49,7 @@ export interface HomeroomStudent {
   parentPhone: string;
   parentEmail?: string;
   photo?: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'GRADUATED' | 'TRANSFERRED' | 'DROPPED_OUT';
+  status: "ACTIVE" | "INACTIVE" | "GRADUATED" | "TRANSFERRED" | "DROPPED_OUT";
   attendanceSummary?: HomeroomAttendanceSummary;
   academicSummary?: AcademicSummary;
   behaviorNotes?: BehaviorNote[];
@@ -77,14 +77,14 @@ export interface AcademicSummary {
   }[];
 }
 
-export type BehaviorNoteType = 
-  | 'POSITIVE' 
-  | 'NEGATIVE' 
-  | 'NEUTRAL' 
-  | 'ACHIEVEMENT' 
-  | 'VIOLATION' 
-  | 'COUNSELING_NEEDED' 
-  | 'PARENT_CONTACTED';
+export type BehaviorNoteType =
+  | "POSITIVE"
+  | "NEGATIVE"
+  | "NEUTRAL"
+  | "ACHIEVEMENT"
+  | "VIOLATION"
+  | "COUNSELING_NEEDED"
+  | "PARENT_CONTACTED";
 
 export interface BehaviorNote {
   id: string;
@@ -114,8 +114,8 @@ export interface ParentMessage {
   };
   subject: string;
   message: string;
-  type: 'INFO' | 'WARNING' | 'URGENT' | 'ACHIEVEMENT' | 'INVITATION';
-  status: 'DRAFT' | 'SENT' | 'READ' | 'REPLIED';
+  type: "INFO" | "WARNING" | "URGENT" | "ACHIEVEMENT" | "INVITATION";
+  status: "DRAFT" | "SENT" | "READ" | "REPLIED";
   sentAt?: string;
   readAt?: string;
   reply?: string;
@@ -142,7 +142,7 @@ export interface UpcomingBirthday {
 
 export interface RecentAchievement {
   id: string;
-  type: 'REWARD' | 'TAHFIDZ';
+  type: "REWARD" | "TAHFIDZ";
   student: {
     id: string;
     user: { name: string };
@@ -180,7 +180,13 @@ export interface HomeroomDashboardData {
     id: string;
     name: string;
     unit: { id: string; name: string };
-    academicYear: { id: string; name: string; isActive: boolean; year?: string; semester?: number };
+    academicYear: {
+      id: string;
+      name: string;
+      isActive: boolean;
+      year?: string;
+      semester?: number;
+    };
     homeroomTeacher: {
       user: { name: string; email: string };
     };
@@ -201,9 +207,11 @@ export interface HomeroomDashboardData {
 // Get homeroom class (Single)
 export function useHomeroomClass(classId?: string) {
   return useQuery<HomeroomClass>({
-    queryKey: ['homeroom', 'class', classId],
+    queryKey: ["homeroom", "class", classId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<HomeroomClass>>(`/homeroom/classes/${classId}`);
+      const response = await api.get<ApiResponse<HomeroomClass>>(
+        `/homeroom/classes/${classId}`,
+      );
       return response.data.data;
     },
     enabled: !!classId,
@@ -213,9 +221,11 @@ export function useHomeroomClass(classId?: string) {
 // Get all my homeroom classes (List)
 export function useHomeroomClasses() {
   return useQuery({
-    queryKey: ['homeroom', 'my-classes'],
+    queryKey: ["homeroom", "my-classes"],
     queryFn: async () => {
-      const { data } = await api.get<ApiResponse<HomeroomClass[]>>('/homeroom/my-classes');
+      const { data } = await api.get<ApiResponse<HomeroomClass[]>>(
+        "/homeroom/my-classes",
+      );
       return data.data;
     },
   });
@@ -224,10 +234,12 @@ export function useHomeroomClasses() {
 // Get Dashboard Data
 export function useHomeroomDashboard(classId: string | undefined) {
   return useQuery({
-    queryKey: ['homeroom', 'dashboard', classId],
+    queryKey: ["homeroom", "dashboard", classId],
     queryFn: async () => {
-      if (!classId) throw new Error('Class ID is required');
-      const { data } = await api.get<ApiResponse<HomeroomDashboardData>>(`/homeroom/${classId}/dashboard`);
+      if (!classId) throw new Error("Class ID is required");
+      const { data } = await api.get<ApiResponse<HomeroomDashboardData>>(
+        `/homeroom/${classId}/dashboard`,
+      );
       return data.data;
     },
     enabled: !!classId,
@@ -237,9 +249,10 @@ export function useHomeroomDashboard(classId: string | undefined) {
 // Get my homeroom class (Legacy/Single Default)
 export function useMyHomeroomClass() {
   return useQuery<HomeroomClass>({
-    queryKey: ['homeroom', 'my-class'],
+    queryKey: ["homeroom", "my-class"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<HomeroomClass>>('/homeroom/my-class');
+      const response =
+        await api.get<ApiResponse<HomeroomClass>>("/homeroom/my-class");
       return response.data.data;
     },
   });
@@ -248,9 +261,11 @@ export function useMyHomeroomClass() {
 // Get student detail for homeroom
 export function useHomeroomStudent(studentId?: string) {
   return useQuery<HomeroomStudent>({
-    queryKey: ['homeroom', 'student', studentId],
+    queryKey: ["homeroom", "student", studentId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<HomeroomStudent>>(`/homeroom/student/${studentId}`);
+      const response = await api.get<ApiResponse<HomeroomStudent>>(
+        `/homeroom/student/${studentId}`,
+      );
       return response.data.data;
     },
     enabled: !!studentId,
@@ -262,7 +277,7 @@ export interface StudentDetailData {
   id: string;
   nis: string;
   name: string;
-  gender: 'MALE' | 'FEMALE';
+  gender: "MALE" | "FEMALE";
   birthDate?: string;
   birthPlace?: string;
   address?: string;
@@ -336,9 +351,11 @@ export interface StudentNotesData {
 // Get student full detail from homeroom
 export function useHomeroomStudentDetail(studentId?: string) {
   return useQuery<StudentDetailData>({
-    queryKey: ['homeroom', 'student-detail', studentId],
+    queryKey: ["homeroom", "student-detail", studentId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<StudentDetailData>>(`/homeroom/student/${studentId}`);
+      const response = await api.get<ApiResponse<StudentDetailData>>(
+        `/homeroom/student/${studentId}`,
+      );
       return response.data.data;
     },
     enabled: !!studentId,
@@ -348,9 +365,11 @@ export function useHomeroomStudentDetail(studentId?: string) {
 // Get student notes (violations & rewards)
 export function useHomeroomStudentNotes(studentId?: string) {
   return useQuery<StudentNotesData>({
-    queryKey: ['homeroom', 'student-notes', studentId],
+    queryKey: ["homeroom", "student-notes", studentId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<StudentNotesData>>(`/homeroom/student/${studentId}/notes`);
+      const response = await api.get<ApiResponse<StudentNotesData>>(
+        `/homeroom/student/${studentId}/notes`,
+      );
       return response.data.data;
     },
     enabled: !!studentId,
@@ -360,21 +379,27 @@ export function useHomeroomStudentNotes(studentId?: string) {
 // Create student note via homeroom
 export function useCreateHomeroomNote() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: {
       studentId: string;
-      type: 'POSITIVE' | 'NEGATIVE';
+      type: "POSITIVE" | "NEGATIVE";
       title: string;
       description?: string;
       category?: string;
     }) => {
-      const response = await api.post<ApiResponse<{ type: string; data: unknown }>>('/homeroom/notes', data);
+      const response = await api.post<
+        ApiResponse<{ type: string; data: unknown }>
+      >("/homeroom/notes", data);
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['homeroom', 'student-notes', variables.studentId] });
-      queryClient.invalidateQueries({ queryKey: ['homeroom', 'student-detail', variables.studentId] });
+      queryClient.invalidateQueries({
+        queryKey: ["homeroom", "student-notes", variables.studentId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["homeroom", "student-detail", variables.studentId],
+      });
     },
   });
 }
@@ -382,9 +407,11 @@ export function useCreateHomeroomNote() {
 // Get behavior notes for student
 export function useStudentBehaviorNotes(studentId?: string) {
   return useQuery<BehaviorNote[]>({
-    queryKey: ['homeroom', 'behavior-notes', studentId],
+    queryKey: ["homeroom", "behavior-notes", studentId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<BehaviorNote[]>>(`/homeroom/students/${studentId}/behavior-notes`);
+      const response = await api.get<ApiResponse<BehaviorNote[]>>(
+        `/homeroom/students/${studentId}/behavior-notes`,
+      );
       return response.data.data;
     },
     enabled: !!studentId,
@@ -394,15 +421,25 @@ export function useStudentBehaviorNotes(studentId?: string) {
 // Create behavior note
 export function useCreateBehaviorNote() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async (data: Omit<BehaviorNote, 'id' | 'createdBy' | 'createdAt' | 'resolved' | 'resolvedDate'>) => {
-      const response = await api.post<ApiResponse<BehaviorNote>>('/homeroom/behavior-notes', data);
+    mutationFn: async (
+      data: Omit<
+        BehaviorNote,
+        "id" | "createdBy" | "createdAt" | "resolved" | "resolvedDate"
+      >,
+    ) => {
+      const response = await api.post<ApiResponse<BehaviorNote>>(
+        "/homeroom/behavior-notes",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['homeroom', 'behavior-notes', variables.studentId] });
-      queryClient.invalidateQueries({ queryKey: ['homeroom', 'class'] });
+      queryClient.invalidateQueries({
+        queryKey: ["homeroom", "behavior-notes", variables.studentId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["homeroom", "class"] });
     },
   });
 }
@@ -410,15 +447,26 @@ export function useCreateBehaviorNote() {
 // Update behavior note
 export function useUpdateBehaviorNote() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ noteId, data }: { noteId: string; data: Partial<BehaviorNote> }) => {
-      const response = await api.put<ApiResponse<BehaviorNote>>(`/homeroom/behavior-notes/${noteId}`, data);
+    mutationFn: async ({
+      noteId,
+      data,
+    }: {
+      noteId: string;
+      data: Partial<BehaviorNote>;
+    }) => {
+      const response = await api.put<ApiResponse<BehaviorNote>>(
+        `/homeroom/behavior-notes/${noteId}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['homeroom', 'behavior-notes'] });
-      queryClient.invalidateQueries({ queryKey: ['homeroom', 'class'] });
+      queryClient.invalidateQueries({
+        queryKey: ["homeroom", "behavior-notes"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["homeroom", "class"] });
     },
   });
 }
@@ -426,15 +474,19 @@ export function useUpdateBehaviorNote() {
 // Resolve behavior note
 export function useResolveBehaviorNote() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (noteId: string) => {
-      const response = await api.post<ApiResponse<BehaviorNote>>(`/homeroom/behavior-notes/${noteId}/resolve`);
+      const response = await api.post<ApiResponse<BehaviorNote>>(
+        `/homeroom/behavior-notes/${noteId}/resolve`,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['homeroom', 'behavior-notes'] });
-      queryClient.invalidateQueries({ queryKey: ['homeroom', 'class'] });
+      queryClient.invalidateQueries({
+        queryKey: ["homeroom", "behavior-notes"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["homeroom", "class"] });
     },
   });
 }
@@ -442,9 +494,11 @@ export function useResolveBehaviorNote() {
 // Get parent messages
 export function useParentMessages(classId?: string) {
   return useQuery<ParentMessage[]>({
-    queryKey: ['homeroom', 'messages', classId],
+    queryKey: ["homeroom", "messages", classId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<ParentMessage[]>>(`/homeroom/classes/${classId}/messages`);
+      const response = await api.get<ApiResponse<ParentMessage[]>>(
+        `/homeroom/classes/${classId}/messages`,
+      );
       return response.data.data;
     },
     enabled: !!classId,
@@ -454,19 +508,22 @@ export function useParentMessages(classId?: string) {
 // Send parent message
 export function useSendParentMessage() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: {
       studentIds: string[];
       subject: string;
       message: string;
-      type: ParentMessage['type'];
+      type: ParentMessage["type"];
     }) => {
-      const response = await api.post<ApiResponse<ParentMessage>>('/homeroom/messages', data);
+      const response = await api.post<ApiResponse<ParentMessage>>(
+        "/homeroom/messages",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['homeroom', 'messages'] });
+      queryClient.invalidateQueries({ queryKey: ["homeroom", "messages"] });
     },
   });
 }
@@ -474,21 +531,29 @@ export function useSendParentMessage() {
 // Submit quick attendance
 export function useSubmitQuickAttendance() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ classId, data }: { 
+    mutationFn: async ({
+      classId,
+      data,
+    }: {
       classId: string;
       data: {
         date: string;
         attendances: QuickAttendance[];
       };
     }) => {
-      const response = await api.post<ApiResponse<unknown>>(`/homeroom/classes/${classId}/quick-attendance`, data);
+      const response = await api.post<ApiResponse<unknown>>(
+        `/homeroom/classes/${classId}/quick-attendance`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['homeroom', 'attendance', variables.classId] });
-      queryClient.invalidateQueries({ queryKey: ['homeroom', 'class'] });
+      queryClient.invalidateQueries({
+        queryKey: ["homeroom", "attendance", variables.classId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["homeroom", "class"] });
     },
   });
 }
@@ -506,19 +571,21 @@ export function useHomeroomClassAttendance(classId?: string, date?: string) {
       late: number;
     };
   }>({
-    queryKey: ['homeroom', 'attendance', classId, date],
+    queryKey: ["homeroom", "attendance", classId, date],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<{
-        date: string;
-        attendances: (QuickAttendance & { student: HomeroomStudent })[];
-        summary: {
-          present: number;
-          absent: number;
-          sick: number;
-          excused: number;
-          late: number;
-        };
-      }>>(`/homeroom/classes/${classId}/attendance?date=${date}`);
+      const response = await api.get<
+        ApiResponse<{
+          date: string;
+          attendances: (QuickAttendance & { student: HomeroomStudent })[];
+          summary: {
+            present: number;
+            absent: number;
+            sick: number;
+            excused: number;
+            late: number;
+          };
+        }>
+      >(`/homeroom/classes/${classId}/attendance?date=${date}`);
       return response.data.data;
     },
     enabled: !!classId && !!date,
@@ -541,22 +608,24 @@ export function useClassSummary(classId?: string) {
     recentAchievements: BehaviorNote[];
     recentViolations: BehaviorNote[];
   }>({
-    queryKey: ['homeroom', 'summary', classId],
+    queryKey: ["homeroom", "summary", classId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<{
-        totalStudents: number;
-        maleCount: number;
-        femaleCount: number;
-        averageAttendance: number;
-        averageAcademicScore: number;
-        pendingBehaviorNotes: number;
-        upcomingBirthdays: {
-          student: HomeroomStudent;
-          daysUntil: number;
-        }[];
-        recentAchievements: BehaviorNote[];
-        recentViolations: BehaviorNote[];
-      }>>(`/homeroom/classes/${classId}/summary`);
+      const response = await api.get<
+        ApiResponse<{
+          totalStudents: number;
+          maleCount: number;
+          femaleCount: number;
+          averageAttendance: number;
+          averageAcademicScore: number;
+          pendingBehaviorNotes: number;
+          upcomingBirthdays: {
+            student: HomeroomStudent;
+            daysUntil: number;
+          }[];
+          recentAchievements: BehaviorNote[];
+          recentViolations: BehaviorNote[];
+        }>
+      >(`/homeroom/classes/${classId}/summary`);
       return response.data.data;
     },
     enabled: !!classId,
@@ -566,10 +635,18 @@ export function useClassSummary(classId?: string) {
 // Export attendance report
 export function useExportAttendanceReport() {
   return useMutation({
-    mutationFn: async ({ classId, month, year }: { classId: string; month: number; year: number }) => {
+    mutationFn: async ({
+      classId,
+      month,
+      year,
+    }: {
+      classId: string;
+      month: number;
+      year: number;
+    }) => {
       const response = await api.get(
         `/homeroom/classes/${classId}/attendance/export?month=${month}&year=${year}`,
-        { responseType: 'blob' }
+        { responseType: "blob" },
       );
       return response.data;
     },
@@ -579,11 +656,17 @@ export function useExportAttendanceReport() {
 // Export progress report
 export function useExportProgressReport() {
   return useMutation({
-    mutationFn: async ({ classId, studentId }: { classId: string; studentId?: string }) => {
+    mutationFn: async ({
+      classId,
+      studentId,
+    }: {
+      classId: string;
+      studentId?: string;
+    }) => {
       const url = studentId
         ? `/homeroom/classes/${classId}/progress/export?studentId=${studentId}`
         : `/homeroom/classes/${classId}/progress/export`;
-      const response = await api.get(url, { responseType: 'blob' });
+      const response = await api.get(url, { responseType: "blob" });
       return response.data;
     },
   });

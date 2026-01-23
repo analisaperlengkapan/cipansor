@@ -53,18 +53,21 @@ export class P5ProjectService {
   /**
    * Update an existing P5 Project
    */
-  static async updateProject(id: string, data: Partial<{
-    title: string;
-    description: string;
-    dimensions: any[];
-    objectives: any[];
-    activities: any[];
-    schedule: any[];
-    startDate: Date;
-    endDate: Date;
-    status: string;
-    supervisorId: string;
-  }>) {
+  static async updateProject(
+    id: string,
+    data: Partial<{
+      title: string;
+      description: string;
+      dimensions: any[];
+      objectives: any[];
+      activities: any[];
+      schedule: any[];
+      startDate: Date;
+      endDate: Date;
+      status: string;
+      supervisorId: string;
+    }>
+  ) {
     const project = await prisma.p5Project.findUnique({
       where: { id },
     });
@@ -195,19 +198,21 @@ export class P5ProjectService {
   /**
    * Bulk Upsert Assessments for a class
    */
-  static async bulkUpsertAssessments(assessments: {
-    projectId: string;
-    studentId: string;
-    assessorId: string;
-    beriman?: string;
-    berkebinekaan?: string;
-    bergotongroyong?: string;
-    mandiri?: string;
-    bernalarkritis?: string;
-    kreatif?: string;
-    overallGrade?: string;
-    notes?: string;
-  }[]) {
+  static async bulkUpsertAssessments(
+    assessments: {
+      projectId: string;
+      studentId: string;
+      assessorId: string;
+      beriman?: string;
+      berkebinekaan?: string;
+      bergotongroyong?: string;
+      mandiri?: string;
+      bernalarkritis?: string;
+      kreatif?: string;
+      overallGrade?: string;
+      notes?: string;
+    }[]
+  ) {
     // Since Prisma doesn't support bulk upsert with different values efficiently in one query,
     // we'll use a transaction of upserts.
     return prisma.$transaction(
@@ -263,14 +268,28 @@ export class P5ProjectService {
     });
 
     // Format for Report Card
-    return assessments.map(assessment => {
+    return assessments.map((assessment) => {
       const dimensions = [];
-      if (assessment.beriman) dimensions.push({ code: 'BER', name: 'Beriman, Bertakwa...', capaian: assessment.beriman });
-      if (assessment.berkebinekaan) dimensions.push({ code: 'BKB', name: 'Berkebinekaan Global', capaian: assessment.berkebinekaan });
-      if (assessment.bergotongroyong) dimensions.push({ code: 'GR', name: 'Gotong Royong', capaian: assessment.bergotongroyong });
-      if (assessment.mandiri) dimensions.push({ code: 'MAN', name: 'Mandiri', capaian: assessment.mandiri });
-      if (assessment.bernalarkritis) dimensions.push({ code: 'BK', name: 'Bernalar Kritis', capaian: assessment.bernalarkritis });
-      if (assessment.kreatif) dimensions.push({ code: 'KR', name: 'Kreatif', capaian: assessment.kreatif });
+      if (assessment.beriman)
+        dimensions.push({ code: 'BER', name: 'Beriman, Bertakwa...', capaian: assessment.beriman });
+      if (assessment.berkebinekaan)
+        dimensions.push({
+          code: 'BKB',
+          name: 'Berkebinekaan Global',
+          capaian: assessment.berkebinekaan,
+        });
+      if (assessment.bergotongroyong)
+        dimensions.push({ code: 'GR', name: 'Gotong Royong', capaian: assessment.bergotongroyong });
+      if (assessment.mandiri)
+        dimensions.push({ code: 'MAN', name: 'Mandiri', capaian: assessment.mandiri });
+      if (assessment.bernalarkritis)
+        dimensions.push({
+          code: 'BK',
+          name: 'Bernalar Kritis',
+          capaian: assessment.bernalarkritis,
+        });
+      if (assessment.kreatif)
+        dimensions.push({ code: 'KR', name: 'Kreatif', capaian: assessment.kreatif });
 
       return {
         id: assessment.id,

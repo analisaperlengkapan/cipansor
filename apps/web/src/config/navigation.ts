@@ -50,15 +50,15 @@ import {
   Activity,
   ShoppingBag,
   type LucideIcon,
-} from 'lucide-react';
+} from "lucide-react";
 
 export interface NavItem {
   title: string;
   href: string;
   icon: LucideIcon;
-  roles?: string[];     // Legacy role support
+  roles?: string[]; // Legacy role support
   roleCodes?: string[]; // New RoleCode-based permissions
-  realms?: string[];    // Realm-based filtering
+  realms?: string[]; // Realm-based filtering
   children?: NavItem[];
 }
 
@@ -69,152 +69,162 @@ export interface NavGroup {
 
 // Role codes by category for navigation permissions
 const ADMIN_ROLES = [
-  'SUPER_ADMIN',
-  'YAYASAN_ADMIN', 'YAYASAN_KETUA',
-  'TKQ_ADMIN', 'TKQ_KEPALA_SEKOLAH',
-  'SDIT_ADMIN', 'SDIT_KEPALA_SEKOLAH',
-  'SMPIT_ADMIN', 'SMPIT_KEPALA_SEKOLAH',
-  'SMAQ_ADMIN', 'SMAQ_KEPALA_SEKOLAH',
+  "SUPER_ADMIN",
+  "YAYASAN_ADMIN",
+  "YAYASAN_KETUA",
+  "TKQ_ADMIN",
+  "TKQ_KEPALA_SEKOLAH",
+  "SDIT_ADMIN",
+  "SDIT_KEPALA_SEKOLAH",
+  "SMPIT_ADMIN",
+  "SMPIT_KEPALA_SEKOLAH",
+  "SMAQ_ADMIN",
+  "SMAQ_KEPALA_SEKOLAH",
 ];
 
-const TEACHER_ROLES = [
-  'TKQ_GURU', 'SDIT_GURU', 'SMPIT_GURU', 'SMAQ_GURU',
-];
+const TEACHER_ROLES = ["TKQ_GURU", "SDIT_GURU", "SMPIT_GURU", "SMAQ_GURU"];
 
 const STAFF_ROLES = [
-  'TKQ_TATA_USAHA', 'SDIT_TATA_USAHA', 'SMPIT_TATA_USAHA', 'SMAQ_TATA_USAHA',
+  "TKQ_TATA_USAHA",
+  "SDIT_TATA_USAHA",
+  "SMPIT_TATA_USAHA",
+  "SMAQ_TATA_USAHA",
 ];
 
-const STUDENT_ROLES = [
-  'TKQ_SISWA', 'SDIT_SISWA', 'SMPIT_SISWA', 'SMAQ_SISWA',
-];
+const STUDENT_ROLES = ["TKQ_SISWA", "SDIT_SISWA", "SMPIT_SISWA", "SMAQ_SISWA"];
 
 const PARENT_ROLES = [
-  'TKQ_ORANG_TUA', 'SDIT_ORANG_TUA', 'SMPIT_ORANG_TUA', 'SMAQ_ORANG_TUA',
+  "TKQ_ORANG_TUA",
+  "SDIT_ORANG_TUA",
+  "SMPIT_ORANG_TUA",
+  "SMAQ_ORANG_TUA",
 ];
 
 const YAYASAN_ROLES = [
-  'YAYASAN_ADMIN', 'YAYASAN_PEMBINA', 'YAYASAN_KETUA', 
-  'YAYASAN_SEKRETARIS', 'YAYASAN_BENDAHARA', 'YAYASAN_ANGGOTA', 'YAYASAN_PENGAWAS',
+  "YAYASAN_ADMIN",
+  "YAYASAN_PEMBINA",
+  "YAYASAN_KETUA",
+  "YAYASAN_SEKRETARIS",
+  "YAYASAN_BENDAHARA",
+  "YAYASAN_ANGGOTA",
+  "YAYASAN_PENGAWAS",
 ];
 
-const PESANTREN_ROLES = [
-  'MUSYRIF', 'MUHAFIDZ', 'MURABBI', 'WALI_KAMAR',
-];
+const PESANTREN_ROLES = ["MUSYRIF", "MUHAFIDZ", "MURABBI", "WALI_KAMAR"];
 
 // Teacher-specific navigation
 const teacherNavigation: NavGroup[] = [
   {
-    title: 'Overview',
+    title: "Overview",
     items: [
       {
-        title: 'Dashboard',
-        href: '/teacher',
+        title: "Dashboard",
+        href: "/teacher",
         icon: LayoutDashboard,
       },
     ],
   },
   {
-    title: 'Mengajar',
+    title: "Mengajar",
     items: [
       {
-        title: 'Tahfidz',
-        href: '/tahfidz',
+        title: "Tahfidz",
+        href: "/tahfidz",
         icon: BookMarked,
       },
       {
-        title: 'Kelas Saya',
-        href: '/classes',
+        title: "Kelas Saya",
+        href: "/classes",
         icon: BookOpen,
       },
       {
-        title: 'Siswa',
-        href: '/students',
+        title: "Siswa",
+        href: "/students",
         icon: GraduationCap,
       },
       {
-        title: 'Absensi',
-        href: '/attendance',
+        title: "Absensi",
+        href: "/attendance",
         icon: ClipboardCheck,
       },
       {
-        title: 'Mutabaah Yaumiyah',
-        href: '/daily-report',
+        title: "Mutabaah Yaumiyah",
+        href: "/daily-report",
         icon: Activity,
       },
       {
-        title: 'Portfolio Siswa',
-        href: '/portfolio',
+        title: "Portfolio Siswa",
+        href: "/portfolio",
         icon: FolderOpen,
       },
     ],
   },
   {
-    title: 'Wali Kelas',
+    title: "Wali Kelas",
     items: [
       {
-        title: 'Dashboard Wali Kelas',
-        href: '/homeroom',
+        title: "Dashboard Wali Kelas",
+        href: "/homeroom",
         icon: Home,
       },
       {
-        title: 'Absensi Harian',
-        href: '/homeroom/attendance',
+        title: "Absensi Harian",
+        href: "/homeroom/attendance",
         icon: ClipboardCheck,
       },
       {
-        title: 'Catatan Perilaku',
-        href: '/homeroom/behavior',
+        title: "Catatan Perilaku",
+        href: "/homeroom/behavior",
         icon: ClipboardList,
       },
       {
-        title: 'Pesan Orang Tua',
-        href: '/homeroom/messages',
+        title: "Pesan Orang Tua",
+        href: "/homeroom/messages",
         icon: Send,
       },
     ],
   },
   {
-    title: 'Pesantren',
+    title: "Pesantren",
     items: [
       {
-        title: 'Jurnal Ibadah',
-        href: '/ibadah',
+        title: "Jurnal Ibadah",
+        href: "/ibadah",
         icon: Sparkles,
       },
       {
-        title: 'Muhadhoroh',
-        href: '/muhadhoroh',
+        title: "Muhadhoroh",
+        href: "/muhadhoroh",
         icon: MessageSquare,
       },
       {
-        title: 'Muhadatsah',
-        href: '/muhadatsah',
+        title: "Muhadatsah",
+        href: "/muhadatsah",
         icon: Languages,
       },
       {
-        title: 'Kitab Kuning',
-        href: '/kitab-progress',
+        title: "Kitab Kuning",
+        href: "/kitab-progress",
         icon: BookOpen,
       },
     ],
   },
   {
-    title: 'PKG',
+    title: "PKG",
     items: [
       {
-        title: 'Penilaian Kinerja',
-        href: '/pkg',
+        title: "Penilaian Kinerja",
+        href: "/pkg",
         icon: ClipboardPenLine,
       },
     ],
   },
   {
-    title: 'Informasi',
+    title: "Informasi",
     items: [
       {
-        title: 'Pengumuman',
-        href: '/announcements',
+        title: "Pengumuman",
+        href: "/announcements",
         icon: Bell,
       },
     ],
@@ -224,56 +234,56 @@ const teacherNavigation: NavGroup[] = [
 // Staff-specific navigation
 const staffNavigation: NavGroup[] = [
   {
-    title: 'Overview',
+    title: "Overview",
     items: [
       {
-        title: 'Dashboard',
-        href: '/staff',
+        title: "Dashboard",
+        href: "/staff",
         icon: LayoutDashboard,
       },
     ],
   },
   {
-    title: 'Layanan Siswa',
+    title: "Layanan Siswa",
     items: [
       {
-        title: 'Data Siswa',
-        href: '/students',
+        title: "Data Siswa",
+        href: "/students",
         icon: GraduationCap,
       },
       {
-        title: 'Kesehatan',
-        href: '/health',
+        title: "Kesehatan",
+        href: "/health",
         icon: Heart,
       },
       {
-        title: 'Perizinan',
-        href: '/permits',
+        title: "Perizinan",
+        href: "/permits",
         icon: FileText,
       },
       {
-        title: 'Pelanggaran',
-        href: '/violations',
+        title: "Pelanggaran",
+        href: "/violations",
         icon: AlertTriangle,
       },
       {
-        title: 'Penghargaan',
-        href: '/rewards',
+        title: "Penghargaan",
+        href: "/rewards",
         icon: Award,
       },
     ],
   },
   {
-    title: 'Administrasi',
+    title: "Administrasi",
     items: [
       {
-        title: 'Keuangan',
-        href: '/finance',
+        title: "Keuangan",
+        href: "/finance",
         icon: Wallet,
       },
       {
-        title: 'Pengumuman',
-        href: '/announcements',
+        title: "Pengumuman",
+        href: "/announcements",
         icon: Bell,
       },
     ],
@@ -283,86 +293,86 @@ const staffNavigation: NavGroup[] = [
 // Student-specific navigation
 const studentNavigation: NavGroup[] = [
   {
-    title: 'Overview',
+    title: "Overview",
     items: [
       {
-        title: 'Dashboard',
-        href: '/student',
+        title: "Dashboard",
+        href: "/student",
         icon: LayoutDashboard,
       },
     ],
   },
   {
-    title: 'Hafalan',
+    title: "Hafalan",
     items: [
       {
-        title: 'Hafalan Saya',
-        href: '/tahfidz',
+        title: "Hafalan Saya",
+        href: "/tahfidz",
         icon: BookMarked,
       },
       {
-        title: 'Target',
-        href: '/student/target',
+        title: "Target",
+        href: "/student/target",
         icon: Target,
       },
     ],
   },
   {
-    title: 'Akademik',
+    title: "Akademik",
     items: [
       {
-        title: 'Ujian Online',
-        href: '/student/exams',
+        title: "Ujian Online",
+        href: "/student/exams",
         icon: BookCheck,
       },
       {
-        title: 'Portfolio Saya',
-        href: '/portfolio',
+        title: "Portfolio Saya",
+        href: "/portfolio",
         icon: FolderOpen,
       },
     ],
   },
   {
-    title: 'Pesantren',
+    title: "Pesantren",
     items: [
       {
-        title: 'Jurnal Ibadah',
-        href: '/ibadah',
+        title: "Jurnal Ibadah",
+        href: "/ibadah",
         icon: Sparkles,
       },
       {
-        title: 'Muhadhoroh',
-        href: '/muhadhoroh',
+        title: "Muhadhoroh",
+        href: "/muhadhoroh",
         icon: MessageSquare,
       },
       {
-        title: 'Muhadatsah',
-        href: '/muhadatsah',
+        title: "Muhadatsah",
+        href: "/muhadatsah",
         icon: Languages,
       },
       {
-        title: 'Kitab Kuning',
-        href: '/kitab-progress',
+        title: "Kitab Kuning",
+        href: "/kitab-progress",
         icon: BookOpen,
       },
       {
-        title: 'Muhasabah Harian',
-        href: '/muhasabah',
+        title: "Muhasabah Harian",
+        href: "/muhasabah",
         icon: Sparkles,
       },
     ],
   },
   {
-    title: 'Kegiatan',
+    title: "Kegiatan",
     items: [
       {
-        title: 'Jadwal',
-        href: '/schedule',
+        title: "Jadwal",
+        href: "/schedule",
         icon: Calendar,
       },
       {
-        title: 'Pengumuman',
-        href: '/announcements',
+        title: "Pengumuman",
+        href: "/announcements",
         icon: Bell,
       },
     ],
@@ -372,81 +382,81 @@ const studentNavigation: NavGroup[] = [
 // Parent-specific navigation
 const parentNavigation: NavGroup[] = [
   {
-    title: 'Overview',
+    title: "Overview",
     items: [
       {
-        title: 'Dashboard',
-        href: '/parent',
+        title: "Dashboard",
+        href: "/parent",
         icon: LayoutDashboard,
       },
     ],
   },
   {
-    title: 'Anak Saya',
+    title: "Anak Saya",
     items: [
       {
-        title: 'Data Anak',
-        href: '/parent/children',
+        title: "Data Anak",
+        href: "/parent/children",
         icon: Baby,
       },
       {
-        title: 'Raport',
-        href: '/parent/report-cards',
+        title: "Raport",
+        href: "/parent/report-cards",
         icon: FileSpreadsheet,
       },
       {
-        title: 'Portfolio Anak',
-        href: '/parent/portfolio',
+        title: "Portfolio Anak",
+        href: "/parent/portfolio",
         icon: FolderOpen,
       },
       {
-        title: 'Kesehatan',
-        href: '/parent/health',
+        title: "Kesehatan",
+        href: "/parent/health",
         icon: Heart,
       },
       {
-        title: 'Perizinan',
-        href: '/parent/permits',
+        title: "Perizinan",
+        href: "/parent/permits",
         icon: FileText,
       },
       {
-        title: 'Laporan Harian',
-        href: '/parent/daily-report',
+        title: "Laporan Harian",
+        href: "/parent/daily-report",
         icon: Activity,
       },
     ],
   },
   {
-    title: 'Kesiswaan',
+    title: "Kesiswaan",
     items: [
       {
-        title: 'Pelanggaran',
-        href: '/parent/violations',
+        title: "Pelanggaran",
+        href: "/parent/violations",
         icon: AlertTriangle,
       },
       {
-        title: 'Penghargaan',
-        href: '/parent/rewards',
+        title: "Penghargaan",
+        href: "/parent/rewards",
         icon: Award,
       },
     ],
   },
   {
-    title: 'Keuangan',
+    title: "Keuangan",
     items: [
       {
-        title: 'Tagihan & Pembayaran',
-        href: '/parent/finance',
+        title: "Tagihan & Pembayaran",
+        href: "/parent/finance",
         icon: Receipt,
       },
     ],
   },
   {
-    title: 'Informasi',
+    title: "Informasi",
     items: [
       {
-        title: 'Pengumuman',
-        href: '/parent/announcements',
+        title: "Pengumuman",
+        href: "/parent/announcements",
         icon: Megaphone,
       },
     ],
@@ -456,101 +466,101 @@ const parentNavigation: NavGroup[] = [
 // Yayasan-specific navigation (for Yayasan admins and board members)
 const yayasanNavigation: NavGroup[] = [
   {
-    title: 'Overview',
+    title: "Overview",
     items: [
       {
-        title: 'Dashboard',
-        href: '/dashboard',
+        title: "Dashboard",
+        href: "/dashboard",
         icon: LayoutDashboard,
       },
       {
-        title: 'Analytics',
-        href: '/analytics',
+        title: "Analytics",
+        href: "/analytics",
         icon: BarChart3,
       },
       {
-        title: 'Reports',
-        href: '/reports',
+        title: "Reports",
+        href: "/reports",
         icon: FileSpreadsheet,
       },
     ],
   },
   {
-    title: 'Yayasan',
+    title: "Yayasan",
     items: [
       {
-        title: 'Foundation',
-        href: '/foundation',
+        title: "Foundation",
+        href: "/foundation",
         icon: Building2,
       },
       {
-        title: 'Units',
-        href: '/units',
+        title: "Units",
+        href: "/units",
         icon: School,
       },
       {
-        title: 'Board Members',
-        href: '/foundation/board',
+        title: "Board Members",
+        href: "/foundation/board",
         icon: Users,
       },
       {
-        title: 'Penjaminan Mutu',
-        href: '/quality',
+        title: "Penjaminan Mutu",
+        href: "/quality",
         icon: Award,
       },
     ],
   },
   {
-    title: 'Keuangan',
+    title: "Keuangan",
     items: [
       {
-        title: 'Laporan Keuangan',
-        href: '/finance',
+        title: "Laporan Keuangan",
+        href: "/finance",
         icon: Wallet,
       },
       {
-        title: 'BOS/BOP',
-        href: '/finance/bos',
+        title: "BOS/BOP",
+        href: "/finance/bos",
         icon: Wallet,
       },
       {
-        title: 'Procurement',
-        href: '/procurement',
+        title: "Procurement",
+        href: "/procurement",
         icon: ShoppingBag,
       },
       {
-        title: 'Donasi Alumni',
-        href: '/alumni/donations',
+        title: "Donasi Alumni",
+        href: "/alumni/donations",
         icon: Receipt,
       },
       {
-        title: 'Donation/ZIS',
-        href: '/donation',
+        title: "Donation/ZIS",
+        href: "/donation",
         icon: HeartHandshake,
       },
       {
-        title: 'Public Portal',
-        href: '/donation/public',
+        title: "Public Portal",
+        href: "/donation/public",
         icon: HeartHandshake,
       },
     ],
   },
   {
-    title: 'Alumni',
+    title: "Alumni",
     items: [
       {
-        title: 'Data Alumni',
-        href: '/alumni',
+        title: "Data Alumni",
+        href: "/alumni",
         icon: GraduationCap,
       },
     ],
   },
   {
-    title: 'Pengumuman',
+    title: "Pengumuman",
     items: [
       {
-        title: 'Pengumuman',
-        href: '/announcements',
+        title: "Pengumuman",
+        href: "/announcements",
         icon: Megaphone,
       },
     ],
@@ -560,427 +570,439 @@ const yayasanNavigation: NavGroup[] = [
 // Admin navigation - for Super Admin and Unit Admins
 const adminNavigation: NavGroup[] = [
   {
-    title: 'Overview',
+    title: "Overview",
     items: [
       {
-        title: 'Dashboard',
-        href: '/dashboard',
+        title: "Dashboard",
+        href: "/dashboard",
         icon: LayoutDashboard,
       },
       {
-        title: 'Analytics',
-        href: '/analytics',
+        title: "Analytics",
+        href: "/analytics",
         icon: BarChart3,
       },
       {
-        title: 'Reports',
-        href: '/reports',
+        title: "Reports",
+        href: "/reports",
         icon: FileSpreadsheet,
       },
       {
-        title: 'EMIS Kemenag',
-        href: '/emis',
+        title: "EMIS Kemenag",
+        href: "/emis",
         icon: FileSpreadsheet,
-        roleCodes: ['SUPER_ADMIN', 'YAYASAN_ADMIN', 'TKQ_ADMIN', 'SDIT_ADMIN', 'SMPIT_ADMIN', 'SMAQ_ADMIN'],
+        roleCodes: [
+          "SUPER_ADMIN",
+          "YAYASAN_ADMIN",
+          "TKQ_ADMIN",
+          "SDIT_ADMIN",
+          "SMPIT_ADMIN",
+          "SMAQ_ADMIN",
+        ],
       },
     ],
   },
   {
-    title: 'Marketing',
+    title: "Marketing",
     items: [
       {
-        title: 'Dashboard',
-        href: '/marketing',
+        title: "Dashboard",
+        href: "/marketing",
         icon: BarChart3,
       },
       {
-        title: 'Campaigns',
-        href: '/marketing/campaigns',
+        title: "Campaigns",
+        href: "/marketing/campaigns",
         icon: Megaphone,
       },
       {
-        title: 'Leads',
-        href: '/marketing/leads',
+        title: "Leads",
+        href: "/marketing/leads",
         icon: Users,
       },
     ],
   },
   {
-    title: 'Management',
+    title: "Management",
     items: [
       {
-        title: 'Foundation',
-        href: '/foundation',
+        title: "Foundation",
+        href: "/foundation",
         icon: Building2,
-        roleCodes: ['SUPER_ADMIN'],
+        roleCodes: ["SUPER_ADMIN"],
       },
       {
-        title: 'Units',
-        href: '/units',
+        title: "Units",
+        href: "/units",
         icon: School,
-        roleCodes: ['SUPER_ADMIN'],
+        roleCodes: ["SUPER_ADMIN"],
       },
       {
-        title: 'Users & Roles',
-        href: '/users',
+        title: "Users & Roles",
+        href: "/users",
         icon: UserCog,
       },
       {
-        title: 'Role Permissions',
-        href: '/roles',
+        title: "Role Permissions",
+        href: "/roles",
         icon: Shield,
-        roleCodes: ['SUPER_ADMIN'],
+        roleCodes: ["SUPER_ADMIN"],
       },
     ],
   },
   {
-    title: 'Academic',
+    title: "Academic",
     items: [
       {
-        title: 'Students',
-        href: '/students',
+        title: "Students",
+        href: "/students",
         icon: GraduationCap,
       },
       {
-        title: 'Student ID Card',
-        href: '/students/id-card',
+        title: "Student ID Card",
+        href: "/students/id-card",
         icon: IdCard,
       },
       {
-        title: 'Certificates',
-        href: '/students/certificates',
+        title: "Certificates",
+        href: "/students/certificates",
         icon: Award,
       },
       {
-        title: 'Transcript',
-        href: '/students/transcript',
+        title: "Transcript",
+        href: "/students/transcript",
         icon: ScrollText,
       },
       {
-        title: 'Portfolio Siswa',
-        href: '/portfolio',
+        title: "Portfolio Siswa",
+        href: "/portfolio",
         icon: FolderOpen,
       },
       {
-        title: 'Classes',
-        href: '/classes',
+        title: "Classes",
+        href: "/classes",
         icon: BookOpen,
       },
       {
-        title: 'Academic Years',
-        href: '/academic-years',
+        title: "Academic Years",
+        href: "/academic-years",
         icon: Calendar,
       },
       {
-        title: 'Curriculum',
-        href: '/curriculum',
+        title: "Curriculum",
+        href: "/curriculum",
         icon: BookMarked,
       },
       {
-        title: 'Timetable',
-        href: '/curriculum/schedules/timetable',
+        title: "Timetable",
+        href: "/curriculum/schedules/timetable",
         icon: CalendarDays,
       },
       {
-        title: 'Assessment',
-        href: '/assessment',
+        title: "Assessment",
+        href: "/assessment",
         icon: ClipboardCheck,
       },
       {
-        title: 'Question Banks (CBT)',
-        href: '/cbt/banks',
+        title: "Question Banks (CBT)",
+        href: "/cbt/banks",
         icon: BookCheck,
       },
       {
-        title: 'Raport Merdeka',
-        href: '/assessment/raport-merdeka',
+        title: "Raport Merdeka",
+        href: "/assessment/raport-merdeka",
         icon: FileSpreadsheet,
       },
       {
-        title: 'Mutabaah Yaumiyah',
-        href: '/daily-report',
+        title: "Mutabaah Yaumiyah",
+        href: "/daily-report",
         icon: Activity,
-        roleCodes: ['TKQ_ADMIN', 'SDIT_ADMIN', 'TKQ_KEPALA_SEKOLAH', 'SDIT_KEPALA_SEKOLAH'],
+        roleCodes: [
+          "TKQ_ADMIN",
+          "SDIT_ADMIN",
+          "TKQ_KEPALA_SEKOLAH",
+          "SDIT_KEPALA_SEKOLAH",
+        ],
       },
       {
-        title: 'Attendance',
-        href: '/attendance',
+        title: "Attendance",
+        href: "/attendance",
         icon: ClipboardCheck,
       },
       {
-        title: 'Attendance Calendar',
-        href: '/attendance/calendar',
+        title: "Attendance Calendar",
+        href: "/attendance/calendar",
         icon: CalendarDays,
       },
       {
-        title: 'Academic Calendar',
-        href: '/calendar',
+        title: "Academic Calendar",
+        href: "/calendar",
         icon: CalendarDays,
       },
       {
-        title: 'Tahfidz',
-        href: '/tahfidz',
+        title: "Tahfidz",
+        href: "/tahfidz",
         icon: BookMarked,
       },
       {
-        title: 'Peta Al-Quran',
-        href: '/tahfidz/quran-map',
+        title: "Peta Al-Quran",
+        href: "/tahfidz/quran-map",
         icon: BookCheck,
       },
     ],
   },
   {
-    title: 'Kesiswaan',
+    title: "Kesiswaan",
     items: [
       {
-        title: 'Ekstrakurikuler',
-        href: '/extracurricular',
+        title: "Ekstrakurikuler",
+        href: "/extracurricular",
         icon: Drama,
       },
       {
-        title: 'Bimbingan Konseling',
-        href: '/counseling',
+        title: "Bimbingan Konseling",
+        href: "/counseling",
         icon: HeartHandshake,
       },
       {
-        title: 'Piket Santri',
-        href: '/duty-roster',
+        title: "Piket Santri",
+        href: "/duty-roster",
         icon: ClipboardList,
       },
     ],
   },
   {
-    title: 'Pesantren',
+    title: "Pesantren",
     items: [
       {
-        title: 'Jurnal Ibadah',
-        href: '/ibadah',
+        title: "Jurnal Ibadah",
+        href: "/ibadah",
         icon: Sparkles,
       },
       {
-        title: 'Muhadhoroh',
-        href: '/muhadhoroh',
+        title: "Muhadhoroh",
+        href: "/muhadhoroh",
         icon: MessageSquare,
       },
       {
-        title: 'Muhadatsah',
-        href: '/muhadatsah',
+        title: "Muhadatsah",
+        href: "/muhadatsah",
         icon: Languages,
       },
       {
-        title: 'Kitab Kuning',
-        href: '/kitab-progress',
+        title: "Kitab Kuning",
+        href: "/kitab-progress",
         icon: BookOpen,
       },
       {
-        title: 'Takhosus',
-        href: '/takhosus',
+        title: "Takhosus",
+        href: "/takhosus",
         icon: BookMarked,
       },
       {
-        title: 'Muhasabah',
-        href: '/muhasabah',
+        title: "Muhasabah",
+        href: "/muhasabah",
         icon: Sparkles,
       },
     ],
   },
   {
-    title: 'Boarding',
+    title: "Boarding",
     items: [
       {
-        title: 'Dormitories',
-        href: '/dormitories',
+        title: "Dormitories",
+        href: "/dormitories",
         icon: Home,
       },
       {
-        title: 'Permits',
-        href: '/permits',
+        title: "Permits",
+        href: "/permits",
         icon: FileText,
       },
       {
-        title: 'Violations',
-        href: '/violations',
+        title: "Violations",
+        href: "/violations",
         icon: AlertTriangle,
       },
       {
-        title: 'Rewards',
-        href: '/rewards',
+        title: "Rewards",
+        href: "/rewards",
         icon: Award,
       },
     ],
   },
   {
-    title: 'Administration',
+    title: "Administration",
     items: [
       {
-        title: 'Finance',
-        href: '/finance',
+        title: "Finance",
+        href: "/finance",
         icon: Wallet,
       },
       {
-        title: 'BOS/BOP',
-        href: '/finance/bos',
+        title: "BOS/BOP",
+        href: "/finance/bos",
         icon: Wallet,
       },
       {
-        title: 'Procurement',
-        href: '/procurement',
+        title: "Procurement",
+        href: "/procurement",
         icon: ShoppingBag,
       },
       {
-        title: 'Accounting',
-        href: '/finance/accounting',
+        title: "Accounting",
+        href: "/finance/accounting",
         icon: Receipt,
       },
       {
-        title: 'Scholarships',
-        href: '/finance/scholarships',
+        title: "Scholarships",
+        href: "/finance/scholarships",
         icon: Award,
       },
       {
-        title: 'Donation/ZIS',
-        href: '/donation',
+        title: "Donation/ZIS",
+        href: "/donation",
         icon: HeartHandshake,
       },
       {
-        title: 'Admissions (PSB)',
-        href: '/psb',
+        title: "Admissions (PSB)",
+        href: "/psb",
         icon: UserPlus,
       },
       {
-        title: 'HR',
-        href: '/hr',
+        title: "HR",
+        href: "/hr",
         icon: Clock,
       },
       {
-        title: 'Staff Attendance',
-        href: '/hr/attendance',
+        title: "Staff Attendance",
+        href: "/hr/attendance",
         icon: ClipboardCheck,
       },
       {
-        title: 'PKG Guru',
-        href: '/pkg',
+        title: "PKG Guru",
+        href: "/pkg",
         icon: ClipboardPenLine,
       },
       {
-        title: 'Penjaminan Mutu',
-        href: '/quality',
+        title: "Penjaminan Mutu",
+        href: "/quality",
         icon: Award,
       },
     ],
   },
   {
-    title: 'Operations',
+    title: "Operations",
     items: [
       {
-        title: 'Facilities',
-        href: '/facilities',
+        title: "Facilities",
+        href: "/facilities",
         icon: Building2,
       },
       {
-        title: 'E-Office (Persuratan)',
-        href: '/e-office',
+        title: "E-Office (Persuratan)",
+        href: "/e-office",
         icon: Mail,
       },
       {
-        title: 'Inventory (Asset)',
-        href: '/inventory',
+        title: "Inventory (Asset)",
+        href: "/inventory",
         icon: Package,
       },
       {
-        title: 'Library',
-        href: '/library',
+        title: "Library",
+        href: "/library",
         icon: Library,
       },
       {
-        title: 'Health (UKS)',
-        href: '/health',
+        title: "Health (UKS)",
+        href: "/health",
         icon: Heart,
       },
       {
-        title: 'Meals',
-        href: '/meals',
+        title: "Meals",
+        href: "/meals",
         icon: UtensilsCrossed,
       },
       {
-        title: 'Canteen/Koperasi',
-        href: '/canteen',
+        title: "Canteen/Koperasi",
+        href: "/canteen",
         icon: ShoppingCart,
       },
       {
-        title: 'Laundry',
-        href: '/laundry',
+        title: "Laundry",
+        href: "/laundry",
         icon: WashingMachine,
       },
       {
-        title: 'Reception',
-        href: '/reception',
+        title: "Reception",
+        href: "/reception",
         icon: IdCard,
       },
       {
-        title: 'Dompet Santri',
-        href: '/finance/wallet',
+        title: "Dompet Santri",
+        href: "/finance/wallet",
         icon: CreditCard,
       },
       {
-        title: 'Notifications',
-        href: '/notifications',
+        title: "Notifications",
+        href: "/notifications",
         icon: Bell,
       },
       {
-        title: 'Quick Send',
-        href: '/notifications/quick-send',
+        title: "Quick Send",
+        href: "/notifications/quick-send",
         icon: Send,
       },
     ],
   },
   {
-    title: 'Reference Data',
+    title: "Reference Data",
     items: [
       {
-        title: 'Wilayah',
-        href: '/wilayah',
+        title: "Wilayah",
+        href: "/wilayah",
         icon: Building2,
-        roleCodes: ['SUPER_ADMIN', 'YAYASAN_ADMIN'],
+        roleCodes: ["SUPER_ADMIN", "YAYASAN_ADMIN"],
       },
       {
-        title: 'Kurikulum Merdeka',
-        href: '/kurikulum-merdeka',
+        title: "Kurikulum Merdeka",
+        href: "/kurikulum-merdeka",
         icon: BookMarked,
       },
     ],
   },
   {
-    title: 'Compliance',
+    title: "Compliance",
     items: [
       {
-        title: 'Student Compliance',
-        href: '/compliance/students',
+        title: "Student Compliance",
+        href: "/compliance/students",
         icon: Shield,
       },
       {
-        title: 'Teacher Compliance',
-        href: '/compliance/teachers',
+        title: "Teacher Compliance",
+        href: "/compliance/teachers",
         icon: Shield,
       },
     ],
   },
   {
-    title: 'Alumni',
+    title: "Alumni",
     items: [
       {
-        title: 'Alumni',
-        href: '/alumni',
+        title: "Alumni",
+        href: "/alumni",
         icon: GraduationCap,
       },
     ],
   },
   {
-    title: 'Settings',
+    title: "Settings",
     items: [
       {
-        title: 'Settings',
-        href: '/settings',
+        title: "Settings",
+        href: "/settings",
         icon: Settings,
       },
     ],
@@ -990,141 +1012,141 @@ const adminNavigation: NavGroup[] = [
 // Kepala Sekolah navigation - extended admin with focus on school operations
 const kepalaSekolahNavigation: NavGroup[] = [
   {
-    title: 'Overview',
+    title: "Overview",
     items: [
       {
-        title: 'Dashboard',
-        href: '/dashboard',
+        title: "Dashboard",
+        href: "/dashboard",
         icon: LayoutDashboard,
       },
       {
-        title: 'Analytics',
-        href: '/analytics',
+        title: "Analytics",
+        href: "/analytics",
         icon: BarChart3,
       },
       {
-        title: 'Reports',
-        href: '/reports',
+        title: "Reports",
+        href: "/reports",
         icon: FileSpreadsheet,
       },
     ],
   },
   {
-    title: 'Management',
+    title: "Management",
     items: [
       {
-        title: 'Users & Staff',
-        href: '/users',
+        title: "Users & Staff",
+        href: "/users",
         icon: UserCog,
       },
       {
-        title: 'Teachers',
-        href: '/hr/teachers',
+        title: "Teachers",
+        href: "/hr/teachers",
         icon: Users,
       },
       {
-        title: 'PKG Guru',
-        href: '/pkg',
+        title: "PKG Guru",
+        href: "/pkg",
         icon: ClipboardPenLine,
       },
     ],
   },
   {
-    title: 'Academic',
+    title: "Academic",
     items: [
       {
-        title: 'Students',
-        href: '/students',
+        title: "Students",
+        href: "/students",
         icon: GraduationCap,
       },
       {
-        title: 'Portfolio Siswa',
-        href: '/portfolio',
+        title: "Portfolio Siswa",
+        href: "/portfolio",
         icon: FolderOpen,
       },
       {
-        title: 'Classes',
-        href: '/classes',
+        title: "Classes",
+        href: "/classes",
         icon: BookOpen,
       },
       {
-        title: 'Curriculum',
-        href: '/curriculum',
+        title: "Curriculum",
+        href: "/curriculum",
         icon: BookMarked,
       },
       {
-        title: 'Assessment',
-        href: '/assessment',
+        title: "Assessment",
+        href: "/assessment",
         icon: ClipboardCheck,
       },
       {
-        title: 'Tahfidz',
-        href: '/tahfidz',
+        title: "Tahfidz",
+        href: "/tahfidz",
         icon: BookMarked,
       },
     ],
   },
   {
-    title: 'Kesiswaan',
+    title: "Kesiswaan",
     items: [
       {
-        title: 'Attendance',
-        href: '/attendance',
+        title: "Attendance",
+        href: "/attendance",
         icon: ClipboardCheck,
       },
       {
-        title: 'Permits',
-        href: '/permits',
+        title: "Permits",
+        href: "/permits",
         icon: FileText,
       },
       {
-        title: 'Violations',
-        href: '/violations',
+        title: "Violations",
+        href: "/violations",
         icon: AlertTriangle,
       },
       {
-        title: 'Rewards',
-        href: '/rewards',
+        title: "Rewards",
+        href: "/rewards",
         icon: Award,
       },
     ],
   },
   {
-    title: 'Administration',
+    title: "Administration",
     items: [
       {
-        title: 'Admissions (PSB)',
-        href: '/psb',
+        title: "Admissions (PSB)",
+        href: "/psb",
         icon: UserPlus,
       },
       {
-        title: 'HR',
-        href: '/hr',
+        title: "HR",
+        href: "/hr",
         icon: Clock,
       },
     ],
   },
   {
-    title: 'Operations',
+    title: "Operations",
     items: [
       {
-        title: 'Notifications',
-        href: '/notifications',
+        title: "Notifications",
+        href: "/notifications",
         icon: Bell,
       },
       {
-        title: 'Announcements',
-        href: '/announcements',
+        title: "Announcements",
+        href: "/announcements",
         icon: Megaphone,
       },
     ],
   },
   {
-    title: 'Settings',
+    title: "Settings",
     items: [
       {
-        title: 'Settings',
-        href: '/settings',
+        title: "Settings",
+        href: "/settings",
         icon: Settings,
       },
     ],
@@ -1159,8 +1181,8 @@ function isYayasanRole(roleCode: string): boolean {
 }
 
 function isPrincipalRole(roleCode: string): boolean {
-  if (!roleCode || typeof roleCode !== 'string') return false;
-  return roleCode.includes('KEPALA_SEKOLAH');
+  if (!roleCode || typeof roleCode !== "string") return false;
+  return roleCode.includes("KEPALA_SEKOLAH");
 }
 
 export interface ActiveRole {
@@ -1178,73 +1200,75 @@ export function getNavigationForRoleCode(roleCode: string): NavGroup[] {
   if (!roleCode) return [];
 
   // Super Admin gets full admin navigation
-  if (roleCode === 'SUPER_ADMIN') {
+  if (roleCode === "SUPER_ADMIN") {
     return adminNavigation;
   }
-  
+
   // Yayasan roles
   if (isYayasanRole(roleCode)) {
     return yayasanNavigation;
   }
-  
+
   // Kepala Sekolah gets kepala sekolah navigation
   if (isPrincipalRole(roleCode)) {
     return kepalaSekolahNavigation;
   }
-  
+
   // Admin roles get admin navigation
   if (isAdminRole(roleCode)) {
-    return adminNavigation.map((group) => ({
-      ...group,
-      items: group.items.filter(
-        (item) => !item.roleCodes || item.roleCodes.includes(roleCode)
-      ),
-    })).filter((group) => group.items.length > 0);
+    return adminNavigation
+      .map((group) => ({
+        ...group,
+        items: group.items.filter(
+          (item) => !item.roleCodes || item.roleCodes.includes(roleCode),
+        ),
+      }))
+      .filter((group) => group.items.length > 0);
   }
-  
+
   // Teacher roles
   if (isTeacherRole(roleCode)) {
     return teacherNavigation;
   }
-  
+
   // Staff roles
   if (isStaffRole(roleCode)) {
     return staffNavigation;
   }
-  
+
   // Student roles
   if (isStudentRole(roleCode)) {
     return studentNavigation;
   }
-  
+
   // Parent roles
   if (isParentRole(roleCode)) {
     return parentNavigation;
   }
-  
+
   // Default to basic navigation
   return [
     {
-      title: 'Overview',
+      title: "Overview",
       items: [
         {
-          title: 'Dashboard',
-          href: '/dashboard',
+          title: "Dashboard",
+          href: "/dashboard",
           icon: LayoutDashboard,
         },
         {
-          title: 'Notifications',
-          href: '/notifications',
+          title: "Notifications",
+          href: "/notifications",
           icon: Bell,
         },
       ],
     },
     {
-      title: 'Settings',
+      title: "Settings",
       items: [
         {
-          title: 'Settings',
-          href: '/settings',
+          title: "Settings",
+          href: "/settings",
           icon: Settings,
         },
       ],
@@ -1259,14 +1283,14 @@ export function getNavigationForRoleCode(roleCode: string): NavGroup[] {
 export function getNavigationForRole(role: string): NavGroup[] {
   // Map legacy roles to new role codes
   const legacyToRoleCode: Record<string, string> = {
-    'SUPER_ADMIN': 'SUPER_ADMIN',
-    'UNIT_ADMIN': 'SMPIT_ADMIN', // Default to SMPIT_ADMIN for legacy
-    'TEACHER': 'SMPIT_GURU',
-    'STAFF': 'SMPIT_TATA_USAHA',
-    'STUDENT': 'SMPIT_SISWA',
-    'PARENT': 'SMPIT_ORANG_TUA',
+    SUPER_ADMIN: "SUPER_ADMIN",
+    UNIT_ADMIN: "SMPIT_ADMIN", // Default to SMPIT_ADMIN for legacy
+    TEACHER: "SMPIT_GURU",
+    STAFF: "SMPIT_TATA_USAHA",
+    STUDENT: "SMPIT_SISWA",
+    PARENT: "SMPIT_ORANG_TUA",
   };
-  
+
   const roleCode = legacyToRoleCode[role] || role;
   return getNavigationForRoleCode(roleCode);
 }

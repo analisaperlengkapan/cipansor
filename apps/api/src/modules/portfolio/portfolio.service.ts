@@ -1,6 +1,6 @@
 /**
  * Portfolio Service - Digital Student Portfolio
- * 
+ *
  * Mengelola portofolio digital siswa yang mencakup:
  * - Karya akademik
  * - Proyek P5
@@ -24,11 +24,23 @@ export const PORTFOLIO_TYPES = [
 
 export const PORTFOLIO_CATEGORIES = {
   ACADEMIC: ['Tugas', 'Proyek', 'Penelitian', 'Presentasi', 'Laporan'],
-  P5_PROJECT: ['Gaya Hidup Berkelanjutan', 'Kearifan Lokal', 'Bhinneka Tunggal Ika', 'Bangunlah Jiwa dan Raganya', 'Suara Demokrasi', 'Berekayasa dan Berteknologi'],
+  P5_PROJECT: [
+    'Gaya Hidup Berkelanjutan',
+    'Kearifan Lokal',
+    'Bhinneka Tunggal Ika',
+    'Bangunlah Jiwa dan Raganya',
+    'Suara Demokrasi',
+    'Berekayasa dan Berteknologi',
+  ],
   EXTRACURRICULAR: ['Olahraga', 'Seni', 'Pramuka', 'PMR', 'Robotik', 'Jurnalistik', 'Bahasa'],
-  ACHIEVEMENT: ['Lomba Akademik', 'Lomba Non-Akademik', 'Penghargaan Sekolah', 'Penghargaan Eksternal'],
+  ACHIEVEMENT: [
+    'Lomba Akademik',
+    'Lomba Non-Akademik',
+    'Penghargaan Sekolah',
+    'Penghargaan Eksternal',
+  ],
   ARTWORK: ['Lukisan', 'Gambar', 'Fotografi', 'Desain Grafis', 'Kerajinan', 'Musik'],
-  TAHFIDZ: ['Hafalan Juz', 'Setoran Harian', 'Muroja\'ah'],
+  TAHFIDZ: ['Hafalan Juz', 'Setoran Harian', "Muroja'ah"],
   OTHER: ['Lainnya'],
 };
 

@@ -1,4 +1,4 @@
-import { DayOfWeek } from './enums';
+import { DayOfWeek } from "./enums";
 
 export interface Schedule {
   id: string;

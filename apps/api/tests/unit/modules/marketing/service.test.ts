@@ -62,8 +62,8 @@ describe('MarketingService', () => {
           name: 'Camp A',
           code: 'A',
           budget: 1000,
-          _count: { registrants: 20 }
-        }
+          _count: { registrants: 20 },
+        },
       ] as any);
 
       const result = await service.getDashboardStats();

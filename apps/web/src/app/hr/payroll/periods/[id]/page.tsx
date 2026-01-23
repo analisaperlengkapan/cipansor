@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { use, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { use, useState } from "react";
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -14,14 +20,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -29,7 +35,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   usePayrollPeriod,
   usePayrollPeriodSummary,
@@ -41,7 +47,7 @@ import {
   type PayrollPeriodStatus,
   PAYROLL_STATUS_LABELS,
   PAYROLL_PERIOD_STATUS_LABELS,
-} from '@/hooks';
+} from "@/hooks";
 import {
   ArrowLeft,
   Search,
@@ -58,34 +64,47 @@ import {
   AlertCircle,
   Calculator,
   FileText,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import Link from 'next/link';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import Link from "next/link";
+import { toast } from "sonner";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 const months = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  "Januari",
+  "Februari",
+  "Maret",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
+  "September",
+  "Oktober",
+  "November",
+  "Desember",
 ];
 
 export default function PayrollPeriodDetailPage({ params }: PageProps) {
   const { id: periodId } = use(params);
   const router = useRouter();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<PayrollStatus | 'ALL'>('ALL');
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<PayrollStatus | "ALL">(
+    "ALL",
+  );
   const [isCloseOpen, setIsCloseOpen] = useState(false);
   const [selectedPayrolls, setSelectedPayrolls] = useState<string[]>([]);
 
   const { data: period, isLoading: periodLoading } = usePayrollPeriod(periodId);
-  const { data: summary, isLoading: summaryLoading } = usePayrollPeriodSummary(periodId);
+  const { data: summary, isLoading: summaryLoading } =
+    usePayrollPeriodSummary(periodId);
   const { data: payrollsData, isLoading: payrollsLoading } = usePayrolls({
     periodId,
-    status: statusFilter !== 'ALL' ? statusFilter : undefined,
+    status: statusFilter !== "ALL" ? statusFilter : undefined,
   });
   const closePeriod = useClosePayrollPeriod();
   const processPayroll = useProcessPayroll();
@@ -94,31 +113,33 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
   const payrolls = payrollsData?.data || [];
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
       minimumFractionDigits: 0,
     }).format(amount);
   };
 
   const getStatusBadge = (status: PayrollStatus) => {
     const colors: Record<PayrollStatus, string> = {
-      DRAFT: 'bg-gray-100 text-gray-800',
-      CALCULATED: 'bg-blue-100 text-blue-800',
-      APPROVED: 'bg-indigo-100 text-indigo-800',
-      PENDING: 'bg-yellow-100 text-yellow-800',
-      PROCESSED: 'bg-blue-100 text-blue-800',
-      PAID: 'bg-green-100 text-green-800',
-      CANCELLED: 'bg-red-100 text-red-800',
+      DRAFT: "bg-gray-100 text-gray-800",
+      CALCULATED: "bg-blue-100 text-blue-800",
+      APPROVED: "bg-indigo-100 text-indigo-800",
+      PENDING: "bg-yellow-100 text-yellow-800",
+      PROCESSED: "bg-blue-100 text-blue-800",
+      PAID: "bg-green-100 text-green-800",
+      CANCELLED: "bg-red-100 text-red-800",
     };
-    return <Badge className={colors[status]}>{PAYROLL_STATUS_LABELS[status]}</Badge>;
+    return (
+      <Badge className={colors[status]}>{PAYROLL_STATUS_LABELS[status]}</Badge>
+    );
   };
 
   const getPeriodStatusBadge = (status: PayrollPeriodStatus) => {
     const colors: Record<PayrollPeriodStatus, string> = {
-      OPEN: 'bg-green-100 text-green-800',
-      PROCESSING: 'bg-yellow-100 text-yellow-800',
-      CLOSED: 'bg-gray-100 text-gray-800',
+      OPEN: "bg-green-100 text-green-800",
+      PROCESSING: "bg-yellow-100 text-yellow-800",
+      CLOSED: "bg-gray-100 text-gray-800",
     };
     const icons: Record<PayrollPeriodStatus, React.ReactNode> = {
       OPEN: <Clock className="h-3 w-3 mr-1" />,
@@ -136,16 +157,16 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
   const handleClosePeriod = async () => {
     try {
       await closePeriod.mutateAsync(periodId);
-      toast.success('Periode berhasil ditutup');
+      toast.success("Periode berhasil ditutup");
       setIsCloseOpen(false);
     } catch (error) {
-      toast.error('Gagal menutup periode');
+      toast.error("Gagal menutup periode");
     }
   };
 
   const handleProcessSelected = async () => {
     if (selectedPayrolls.length === 0) {
-      toast.info('Pilih payroll yang ingin diproses');
+      toast.info("Pilih payroll yang ingin diproses");
       return;
     }
     try {
@@ -153,13 +174,13 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
       toast.success(`${selectedPayrolls.length} payroll berhasil diproses`);
       setSelectedPayrolls([]);
     } catch (error) {
-      toast.error('Gagal memproses payroll');
+      toast.error("Gagal memproses payroll");
     }
   };
 
   const handlePaySelected = async () => {
     if (selectedPayrolls.length === 0) {
-      toast.info('Pilih payroll yang ingin dibayar');
+      toast.info("Pilih payroll yang ingin dibayar");
       return;
     }
     try {
@@ -167,41 +188,45 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
       toast.success(`${selectedPayrolls.length} payroll berhasil dibayar`);
       setSelectedPayrolls([]);
     } catch (error) {
-      toast.error('Gagal membayar payroll');
+      toast.error("Gagal membayar payroll");
     }
   };
 
   const handleProcessAll = async () => {
-    const draftPayrolls = payrolls.filter((p) => p.status === 'DRAFT').map((p) => p.id);
+    const draftPayrolls = payrolls
+      .filter((p) => p.status === "DRAFT")
+      .map((p) => p.id);
     if (draftPayrolls.length === 0) {
-      toast.info('Tidak ada payroll draft');
+      toast.info("Tidak ada payroll draft");
       return;
     }
     try {
       await processPayroll.mutateAsync(draftPayrolls);
       toast.success(`${draftPayrolls.length} payroll berhasil diproses`);
     } catch (error) {
-      toast.error('Gagal memproses payroll');
+      toast.error("Gagal memproses payroll");
     }
   };
 
   const handlePayAll = async () => {
-    const approvedPayrolls = payrolls.filter((p) => p.status === 'APPROVED' || p.status === 'CALCULATED').map((p) => p.id);
+    const approvedPayrolls = payrolls
+      .filter((p) => p.status === "APPROVED" || p.status === "CALCULATED")
+      .map((p) => p.id);
     if (approvedPayrolls.length === 0) {
-      toast.info('Tidak ada payroll yang siap dibayar');
+      toast.info("Tidak ada payroll yang siap dibayar");
       return;
     }
     try {
       await payPayroll.mutateAsync(approvedPayrolls);
       toast.success(`${approvedPayrolls.length} payroll berhasil dibayar`);
     } catch (error) {
-      toast.error('Gagal membayar payroll');
+      toast.error("Gagal membayar payroll");
     }
   };
 
   const toggleSelectPayroll = (id: string) => {
     setSelectedPayrolls((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
     );
   };
 
@@ -216,8 +241,9 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
   const filteredPayrolls = payrolls.filter((payroll) => {
     if (search) {
       const searchLower = search.toLowerCase();
-      const staffName = payroll.staff?.fullName || payroll.employee?.fullName || '';
-      const staffNip = payroll.staff?.nip || payroll.employee?.nip || '';
+      const staffName =
+        payroll.staff?.fullName || payroll.employee?.fullName || "";
+      const staffNip = payroll.staff?.nip || payroll.employee?.nip || "";
       return (
         staffName.toLowerCase().includes(searchLower) ||
         staffNip.toLowerCase().includes(searchLower)
@@ -226,10 +252,12 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
     return true;
   });
 
-  const draftCount = payrolls.filter((p) => p.status === 'DRAFT').length;
-  const calculatedCount = payrolls.filter((p) => p.status === 'CALCULATED').length;
-  const approvedCount = payrolls.filter((p) => p.status === 'APPROVED').length;
-  const paidCount = payrolls.filter((p) => p.status === 'PAID').length;
+  const draftCount = payrolls.filter((p) => p.status === "DRAFT").length;
+  const calculatedCount = payrolls.filter(
+    (p) => p.status === "CALCULATED",
+  ).length;
+  const approvedCount = payrolls.filter((p) => p.status === "APPROVED").length;
+  const paidCount = payrolls.filter((p) => p.status === "PAID").length;
 
   if (periodLoading) {
     return (
@@ -246,7 +274,10 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
       <MainLayout>
         <div className="text-center py-12">
           <h2 className="text-lg font-medium">Periode tidak ditemukan</h2>
-          <Button className="mt-4" onClick={() => router.push('/hr/payroll/periods')}>
+          <Button
+            className="mt-4"
+            onClick={() => router.push("/hr/payroll/periods")}
+          >
             Kembali
           </Button>
         </div>
@@ -262,22 +293,30 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.push('/hr/payroll/periods')}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/hr/payroll/periods")}
+            >
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold tracking-tight">{period.name}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">
+                  {period.name}
+                </h1>
                 {getPeriodStatusBadge(period.status)}
               </div>
               <p className="text-muted-foreground">
-                {format(new Date(period.startDate), 'd MMMM', { locale: id })} -{' '}
-                {format(new Date(period.endDate), 'd MMMM yyyy', { locale: id })}
+                {format(new Date(period.startDate), "d MMMM", { locale: id })} -{" "}
+                {format(new Date(period.endDate), "d MMMM yyyy", {
+                  locale: id,
+                })}
               </p>
             </div>
           </div>
           <div className="flex gap-2">
-            {period.status === 'OPEN' && (
+            {period.status === "OPEN" && (
               <>
                 {draftCount > 0 && (
                   <Button
@@ -308,10 +347,7 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
                     Bayar Semua ({calculatedCount + approvedCount})
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  onClick={() => setIsCloseOpen(true)}
-                >
+                <Button variant="outline" onClick={() => setIsCloseOpen(true)}>
                   <Lock className="mr-2 h-4 w-4" />
                   Tutup Periode
                 </Button>
@@ -324,11 +360,15 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Karyawan</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Karyawan
+              </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{summary?.totalStaff ?? payrolls.length}</div>
+              <div className="text-2xl font-bold">
+                {summary?.totalStaff ?? payrolls.length}
+              </div>
             </CardContent>
           </Card>
           <Card>
@@ -408,7 +448,9 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
               </div>
               <Select
                 value={statusFilter}
-                onValueChange={(v) => setStatusFilter(v as PayrollStatus | 'ALL')}
+                onValueChange={(v) =>
+                  setStatusFilter(v as PayrollStatus | "ALL")
+                }
               >
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Semua Status" />
@@ -483,9 +525,16 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
                 </TableRow>
               ) : filteredPayrolls.length ? (
                 filteredPayrolls.map((payroll) => {
-                  const staffName = payroll.staff?.fullName || payroll.employee?.fullName || '-';
-                  const staffNip = payroll.staff?.nip || payroll.employee?.nip || '-';
-                  const staffPosition = payroll.staff?.position || payroll.employee?.position || '-';
+                  const staffName =
+                    payroll.staff?.fullName ||
+                    payroll.employee?.fullName ||
+                    "-";
+                  const staffNip =
+                    payroll.staff?.nip || payroll.employee?.nip || "-";
+                  const staffPosition =
+                    payroll.staff?.position ||
+                    payroll.employee?.position ||
+                    "-";
 
                   return (
                     <TableRow key={payroll.id}>
@@ -497,15 +546,21 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
                           className="rounded"
                         />
                       </TableCell>
-                      <TableCell className="font-mono text-sm">{staffNip}</TableCell>
+                      <TableCell className="font-mono text-sm">
+                        {staffNip}
+                      </TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium">{staffName}</p>
-                          <p className="text-sm text-muted-foreground">{staffPosition}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {staffPosition}
+                          </p>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        {formatCurrency(payroll.baseSalary || payroll.basicSalary || 0)}
+                        {formatCurrency(
+                          payroll.baseSalary || payroll.basicSalary || 0,
+                        )}
                       </TableCell>
                       <TableCell className="text-right text-green-600">
                         +{formatCurrency(payroll.totalAllowances || 0)}
@@ -534,7 +589,10 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell
+                    colSpan={9}
+                    className="text-center py-8 text-muted-foreground"
+                  >
                     Belum ada payroll untuk periode ini
                   </TableCell>
                 </TableRow>
@@ -549,7 +607,8 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
             <DialogHeader>
               <DialogTitle>Tutup Periode Penggajian</DialogTitle>
               <DialogDescription>
-                Apakah Anda yakin ingin menutup periode &quot;{period.name}&quot;?
+                Apakah Anda yakin ingin menutup periode &quot;{period.name}
+                &quot;?
               </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
@@ -560,7 +619,9 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
                 </div>
                 <div className="flex justify-between">
                   <span>Sudah Dibayar</span>
-                  <span className="font-medium text-green-600">{paidCount}</span>
+                  <span className="font-medium text-green-600">
+                    {paidCount}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Belum Dibayar</span>
@@ -573,7 +634,8 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-sm text-yellow-800 flex items-center gap-2">
                     <AlertCircle className="h-4 w-4" />
-                    Masih ada {payrolls.length - paidCount} payroll yang belum dibayar
+                    Masih ada {payrolls.length - paidCount} payroll yang belum
+                    dibayar
                   </p>
                 </div>
               )}
@@ -582,7 +644,10 @@ export default function PayrollPeriodDetailPage({ params }: PageProps) {
               <Button variant="outline" onClick={() => setIsCloseOpen(false)}>
                 Batal
               </Button>
-              <Button onClick={handleClosePeriod} disabled={closePeriod.isPending}>
+              <Button
+                onClick={handleClosePeriod}
+                disabled={closePeriod.isPending}
+              >
                 {closePeriod.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}

@@ -1,11 +1,17 @@
-'use client';
+"use client";
 
-import { useParams, useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useParams, useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -13,7 +19,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,23 +30,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   useEmployee,
   useDeleteEmployee,
@@ -56,7 +62,7 @@ import {
   LEAVE_TYPE_LABELS,
   type EmployeeStatus,
   type LeaveStatus,
-} from '@/hooks';
+} from "@/hooks";
 import {
   ArrowLeft,
   Edit,
@@ -75,22 +81,22 @@ import {
   ClipboardList,
   Scale,
   Plus,
-  Pencil
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import Link from 'next/link';
-import { toast } from 'sonner';
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { DocumentsTab } from './components/documents-tab';
-import { HistoryTab } from './components/history-tab';
+  Pencil,
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import Link from "next/link";
+import { toast } from "sonner";
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { DocumentsTab } from "./components/documents-tab";
+import { HistoryTab } from "./components/history-tab";
 
 export default function EmployeeDetailPage() {
   const params = useParams();
   const router = useRouter();
   const employeeId = params.id as string;
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState("info");
   const [isContractDialogOpen, setIsContractDialogOpen] = useState(false);
   const [balanceToEdit, setBalanceToEdit] = useState<any>(null);
 
@@ -99,8 +105,11 @@ export default function EmployeeDetailPage() {
   const { data: leaveRequestsData } = useLeaveRequests({ employeeId });
 
   // New hooks
-  const { data: contracts } = useUserContracts(employee?.userId || '');
-  const { data: leaveBalances } = useLeaveBalances(employee?.userId || '', activeAcademicYear?.id);
+  const { data: contracts } = useUserContracts(employee?.userId || "");
+  const { data: leaveBalances } = useLeaveBalances(
+    employee?.userId || "",
+    activeAcademicYear?.id,
+  );
   const createContract = useCreateContract();
   const updateLeaveBalance = useUpdateLeaveBalance();
 
@@ -124,9 +133,7 @@ export default function EmployeeDetailPage() {
         <div className="flex flex-col items-center justify-center h-64 space-y-4">
           <AlertCircle className="h-12 w-12 text-muted-foreground" />
           <p className="text-muted-foreground">Karyawan tidak ditemukan</p>
-          <Button onClick={() => router.push('/hr')}>
-            Kembali ke Daftar
-          </Button>
+          <Button onClick={() => router.push("/hr")}>Kembali ke Daftar</Button>
         </div>
       </MainLayout>
     );
@@ -135,16 +142,16 @@ export default function EmployeeDetailPage() {
   const handleDelete = async () => {
     try {
       await deleteEmployee.mutateAsync(employeeId);
-      toast.success('Karyawan berhasil dihapus');
-      router.push('/hr');
+      toast.success("Karyawan berhasil dihapus");
+      router.push("/hr");
     } catch (error) {
-      toast.error('Gagal menghapus karyawan');
+      toast.error("Gagal menghapus karyawan");
     }
   };
 
   const handleCreateContract = async (data: any) => {
     if (!employee.userId) {
-      toast.error('User ID not found for this employee');
+      toast.error("User ID not found for this employee");
       return;
     }
     try {
@@ -152,10 +159,10 @@ export default function EmployeeDetailPage() {
         ...data,
         userId: employee.userId,
       });
-      toast.success('Kontrak berhasil dibuat');
+      toast.success("Kontrak berhasil dibuat");
       setIsContractDialogOpen(false);
     } catch (error) {
-      toast.error('Gagal membuat kontrak');
+      toast.error("Gagal membuat kontrak");
     }
   };
 
@@ -167,32 +174,36 @@ export default function EmployeeDetailPage() {
         totalDays: parseInt(data.totalDays),
         userId: employee.userId,
       });
-      toast.success('Saldo cuti berhasil diperbarui');
+      toast.success("Saldo cuti berhasil diperbarui");
       setBalanceToEdit(null);
     } catch (error) {
-      toast.error('Gagal memperbarui saldo cuti');
+      toast.error("Gagal memperbarui saldo cuti");
     }
   };
 
   const getStatusBadge = (status: EmployeeStatus) => {
     const colors: Record<EmployeeStatus, string> = {
-      ACTIVE: 'bg-green-100 text-green-800',
-      INACTIVE: 'bg-gray-100 text-gray-800',
-      ON_LEAVE: 'bg-yellow-100 text-yellow-800',
-      RESIGNED: 'bg-red-100 text-red-800',
-      RETIRED: 'bg-blue-100 text-blue-800',
+      ACTIVE: "bg-green-100 text-green-800",
+      INACTIVE: "bg-gray-100 text-gray-800",
+      ON_LEAVE: "bg-yellow-100 text-yellow-800",
+      RESIGNED: "bg-red-100 text-red-800",
+      RETIRED: "bg-blue-100 text-blue-800",
     };
-    return <Badge className={colors[status]}>{EMPLOYEE_STATUS_LABELS[status]}</Badge>;
+    return (
+      <Badge className={colors[status]}>{EMPLOYEE_STATUS_LABELS[status]}</Badge>
+    );
   };
 
   const getLeaveStatusBadge = (status: LeaveStatus) => {
     const colors: Record<LeaveStatus, string> = {
-      PENDING: 'bg-yellow-100 text-yellow-800',
-      APPROVED: 'bg-green-100 text-green-800',
-      REJECTED: 'bg-red-100 text-red-800',
-      CANCELLED: 'bg-gray-100 text-gray-800',
+      PENDING: "bg-yellow-100 text-yellow-800",
+      APPROVED: "bg-green-100 text-green-800",
+      REJECTED: "bg-red-100 text-red-800",
+      CANCELLED: "bg-gray-100 text-gray-800",
     };
-    return <Badge className={colors[status]}>{LEAVE_STATUS_LABELS[status]}</Badge>;
+    return (
+      <Badge className={colors[status]}>{LEAVE_STATUS_LABELS[status]}</Badge>
+    );
   };
 
   return (
@@ -206,7 +217,9 @@ export default function EmployeeDetailPage() {
             </Button>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-3xl font-bold tracking-tight">{employee.fullName}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">
+                  {employee.fullName}
+                </h1>
                 {getStatusBadge(employee.status)}
               </div>
               <p className="text-muted-foreground">
@@ -232,13 +245,15 @@ export default function EmployeeDetailPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Hapus Karyawan?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Tindakan ini tidak dapat dibatalkan. Semua data karyawan termasuk riwayat cuti
-                    akan dihapus permanen.
+                    Tindakan ini tidak dapat dibatalkan. Semua data karyawan
+                    termasuk riwayat cuti akan dihapus permanen.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Batal</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete}>Hapus</AlertDialogAction>
+                  <AlertDialogAction onClick={handleDelete}>
+                    Hapus
+                  </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -258,32 +273,44 @@ export default function EmployeeDetailPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Tipe Karyawan</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Tipe Karyawan
+              </CardTitle>
               <Briefcase className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-xl font-bold">{EMPLOYEE_TYPE_LABELS[employee.employeeType]}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Tanggal Bergabung</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
               <p className="text-xl font-bold">
-                {format(new Date(employee.joinDate), 'd MMM yyyy', { locale: idLocale })}
+                {EMPLOYEE_TYPE_LABELS[employee.employeeType]}
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Sisa Cuti Tahunan</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Tanggal Bergabung
+              </CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-xl font-bold">
+                {format(new Date(employee.joinDate), "d MMM yyyy", {
+                  locale: idLocale,
+                })}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">
+                Sisa Cuti Tahunan
+              </CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <p className="text-xl font-bold">
-                {leaveBalances?.find(b => b.leaveType === 'ANNUAL')?.remainingDays ?? 12} hari
+                {leaveBalances?.find((b) => b.leaveType === "ANNUAL")
+                  ?.remainingDays ?? 12}{" "}
+                hari
               </p>
             </CardContent>
           </Card>
@@ -340,31 +367,39 @@ export default function EmployeeDetailPage() {
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Jenis Kelamin</dt>
-                      <dd>{employee.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}</dd>
+                      <dd>
+                        {employee.gender === "MALE" ? "Laki-laki" : "Perempuan"}
+                      </dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Tempat Lahir</dt>
-                      <dd>{employee.birthPlace ?? '-'}</dd>
+                      <dd>{employee.birthPlace ?? "-"}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Tanggal Lahir</dt>
                       <dd>
                         {employee.birthDate
-                          ? format(new Date(employee.birthDate), 'd MMMM yyyy', { locale: idLocale })
-                          : '-'}
+                          ? format(
+                              new Date(employee.birthDate),
+                              "d MMMM yyyy",
+                              { locale: idLocale },
+                            )
+                          : "-"}
                       </dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Agama</dt>
-                      <dd>{employee.religion ?? 'Islam'}</dd>
+                      <dd>{employee.religion ?? "Islam"}</dd>
                     </div>
                     <div className="flex justify-between">
-                      <dt className="text-muted-foreground">Status Pernikahan</dt>
-                      <dd>{employee.maritalStatus ?? '-'}</dd>
+                      <dt className="text-muted-foreground">
+                        Status Pernikahan
+                      </dt>
+                      <dd>{employee.maritalStatus ?? "-"}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">NIK</dt>
-                      <dd className="font-mono">{employee.nik ?? '-'}</dd>
+                      <dd className="font-mono">{employee.nik ?? "-"}</dd>
                     </div>
                   </dl>
                 </CardContent>
@@ -382,15 +417,15 @@ export default function EmployeeDetailPage() {
                   <dl className="space-y-4">
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-muted-foreground" />
-                      <dd>{employee.email ?? '-'}</dd>
+                      <dd>{employee.email ?? "-"}</dd>
                     </div>
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-muted-foreground" />
-                      <dd>{employee.phone ?? '-'}</dd>
+                      <dd>{employee.phone ?? "-"}</dd>
                     </div>
                     <div className="flex items-start gap-2">
                       <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
-                      <dd>{employee.address ?? '-'}</dd>
+                      <dd>{employee.address ?? "-"}</dd>
                     </div>
                   </dl>
                 </CardContent>
@@ -408,11 +443,13 @@ export default function EmployeeDetailPage() {
                   <dl className="space-y-4">
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Unit</dt>
-                      <dd className="font-medium">{employee.unit?.name ?? '-'}</dd>
+                      <dd className="font-medium">
+                        {employee.unit?.name ?? "-"}
+                      </dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Departemen</dt>
-                      <dd>{employee.department?.name ?? '-'}</dd>
+                      <dd>{employee.department?.name ?? "-"}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Jabatan</dt>
@@ -421,20 +458,32 @@ export default function EmployeeDetailPage() {
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Tipe</dt>
                       <dd>
-                        <Badge variant="outline">{EMPLOYEE_TYPE_LABELS[employee.employeeType]}</Badge>
+                        <Badge variant="outline">
+                          {EMPLOYEE_TYPE_LABELS[employee.employeeType]}
+                        </Badge>
                       </dd>
                     </div>
                     <div className="flex justify-between">
-                      <dt className="text-muted-foreground">Tanggal Bergabung</dt>
+                      <dt className="text-muted-foreground">
+                        Tanggal Bergabung
+                      </dt>
                       <dd>
-                        {format(new Date(employee.joinDate), 'd MMMM yyyy', { locale: idLocale })}
+                        {format(new Date(employee.joinDate), "d MMMM yyyy", {
+                          locale: idLocale,
+                        })}
                       </dd>
                     </div>
                     {employee.resignDate && (
                       <div className="flex justify-between">
-                        <dt className="text-muted-foreground">Tanggal Resign</dt>
+                        <dt className="text-muted-foreground">
+                          Tanggal Resign
+                        </dt>
                         <dd className="text-red-600">
-                          {format(new Date(employee.resignDate), 'd MMMM yyyy', { locale: idLocale })}
+                          {format(
+                            new Date(employee.resignDate),
+                            "d MMMM yyyy",
+                            { locale: idLocale },
+                          )}
                         </dd>
                       </div>
                     )}
@@ -454,27 +503,37 @@ export default function EmployeeDetailPage() {
                   <dl className="space-y-4">
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Nama Bank</dt>
-                      <dd>{employee.bankName ?? '-'}</dd>
+                      <dd>{employee.bankName ?? "-"}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">No. Rekening</dt>
-                      <dd className="font-mono">{employee.bankAccountNumber ?? '-'}</dd>
+                      <dd className="font-mono">
+                        {employee.bankAccountNumber ?? "-"}
+                      </dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Atas Nama</dt>
-                      <dd>{employee.bankAccountName ?? '-'}</dd>
+                      <dd>{employee.bankAccountName ?? "-"}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">NPWP</dt>
-                      <dd className="font-mono">{employee.npwp ?? '-'}</dd>
+                      <dd className="font-mono">{employee.npwp ?? "-"}</dd>
                     </div>
                     <div className="flex justify-between">
-                      <dt className="text-muted-foreground">No. BPJS Kesehatan</dt>
-                      <dd className="font-mono">{employee.bpjsKesehatan ?? '-'}</dd>
+                      <dt className="text-muted-foreground">
+                        No. BPJS Kesehatan
+                      </dt>
+                      <dd className="font-mono">
+                        {employee.bpjsKesehatan ?? "-"}
+                      </dd>
                     </div>
                     <div className="flex justify-between">
-                      <dt className="text-muted-foreground">No. BPJS Ketenagakerjaan</dt>
-                      <dd className="font-mono">{employee.bpjsKetenagakerjaan ?? '-'}</dd>
+                      <dt className="text-muted-foreground">
+                        No. BPJS Ketenagakerjaan
+                      </dt>
+                      <dd className="font-mono">
+                        {employee.bpjsKetenagakerjaan ?? "-"}
+                      </dd>
                     </div>
                   </dl>
                 </CardContent>
@@ -487,25 +546,31 @@ export default function EmployeeDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Riwayat Pendidikan</CardTitle>
-                <CardDescription>Informasi pendidikan terakhir karyawan</CardDescription>
+                <CardDescription>
+                  Informasi pendidikan terakhir karyawan
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <dl className="space-y-4">
                   <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Pendidikan Terakhir</dt>
-                    <dd className="font-medium">{employee.lastEducation ?? '-'}</dd>
+                    <dt className="text-muted-foreground">
+                      Pendidikan Terakhir
+                    </dt>
+                    <dd className="font-medium">
+                      {employee.lastEducation ?? "-"}
+                    </dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-muted-foreground">Institusi</dt>
-                    <dd>{employee.educationInstitution ?? '-'}</dd>
+                    <dd>{employee.educationInstitution ?? "-"}</dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-muted-foreground">Jurusan</dt>
-                    <dd>{employee.educationMajor ?? '-'}</dd>
+                    <dd>{employee.educationMajor ?? "-"}</dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-muted-foreground">Tahun Lulus</dt>
-                    <dd>{employee.graduationYear ?? '-'}</dd>
+                    <dd>{employee.graduationYear ?? "-"}</dd>
                   </div>
                 </dl>
               </CardContent>
@@ -537,16 +602,30 @@ export default function EmployeeDetailPage() {
                   {contracts?.length ? (
                     contracts.map((contract) => (
                       <TableRow key={contract.id}>
-                        <TableCell className="font-mono">{contract.contractNumber}</TableCell>
+                        <TableCell className="font-mono">
+                          {contract.contractNumber}
+                        </TableCell>
                         <TableCell>{contract.type}</TableCell>
-                        <TableCell>{format(new Date(contract.startDate), 'd MMM yyyy', { locale: idLocale })}</TableCell>
                         <TableCell>
-                          {contract.endDate
-                            ? format(new Date(contract.endDate), 'd MMM yyyy', { locale: idLocale })
-                            : 'Permanen'}
+                          {format(new Date(contract.startDate), "d MMM yyyy", {
+                            locale: idLocale,
+                          })}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={contract.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                          {contract.endDate
+                            ? format(new Date(contract.endDate), "d MMM yyyy", {
+                                locale: idLocale,
+                              })
+                            : "Permanen"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              contract.status === "ACTIVE"
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
                             {contract.status}
                           </Badge>
                         </TableCell>
@@ -563,7 +642,10 @@ export default function EmployeeDetailPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={6}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         Belum ada riwayat kontrak
                       </TableCell>
                     </TableRow>
@@ -578,7 +660,9 @@ export default function EmployeeDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Saldo & Kuota Cuti</CardTitle>
-                <CardDescription>Sisa hak cuti untuk tahun berjalan</CardDescription>
+                <CardDescription>
+                  Sisa hak cuti untuk tahun berjalan
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -595,9 +679,17 @@ export default function EmployeeDetailPage() {
                     {leaveBalances?.length ? (
                       leaveBalances.map((balance) => (
                         <TableRow key={balance.id}>
-                          <TableCell>{LEAVE_TYPE_LABELS[balance.leaveType as LeaveType] || balance.leaveType}</TableCell>
-                          <TableCell className="text-center">{balance.totalDays}</TableCell>
-                          <TableCell className="text-center">{balance.usedDays}</TableCell>
+                          <TableCell>
+                            {LEAVE_TYPE_LABELS[
+                              balance.leaveType as LeaveType
+                            ] || balance.leaveType}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {balance.totalDays}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {balance.usedDays}
+                          </TableCell>
                           <TableCell className="text-center font-bold text-green-600">
                             {balance.remainingDays}
                           </TableCell>
@@ -614,7 +706,10 @@ export default function EmployeeDetailPage() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        <TableCell
+                          colSpan={5}
+                          className="text-center py-8 text-muted-foreground"
+                        >
                           Belum ada data saldo cuti
                         </TableCell>
                       </TableRow>
@@ -630,7 +725,9 @@ export default function EmployeeDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Riwayat Pengajuan Cuti</CardTitle>
-                <CardDescription>Daftar pengajuan cuti yang pernah dibuat</CardDescription>
+                <CardDescription>
+                  Daftar pengajuan cuti yang pernah dibuat
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -648,21 +745,34 @@ export default function EmployeeDetailPage() {
                     {leaveRequests.length ? (
                       leaveRequests.map((leave) => (
                         <TableRow key={leave.id}>
-                          <TableCell>{LEAVE_TYPE_LABELS[leave.leaveType]}</TableCell>
                           <TableCell>
-                            {format(new Date(leave.startDate), 'd MMM yyyy', { locale: idLocale })}
+                            {LEAVE_TYPE_LABELS[leave.leaveType]}
                           </TableCell>
                           <TableCell>
-                            {format(new Date(leave.endDate), 'd MMM yyyy', { locale: idLocale })}
+                            {format(new Date(leave.startDate), "d MMM yyyy", {
+                              locale: idLocale,
+                            })}
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(leave.endDate), "d MMM yyyy", {
+                              locale: idLocale,
+                            })}
                           </TableCell>
                           <TableCell>{leave.totalDays} hari</TableCell>
-                          <TableCell className="max-w-[200px] truncate">{leave.reason}</TableCell>
-                          <TableCell>{getLeaveStatusBadge(leave.status)}</TableCell>
+                          <TableCell className="max-w-[200px] truncate">
+                            {leave.reason}
+                          </TableCell>
+                          <TableCell>
+                            {getLeaveStatusBadge(leave.status)}
+                          </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        <TableCell
+                          colSpan={6}
+                          className="text-center py-8 text-muted-foreground"
+                        >
                           Belum ada riwayat cuti
                         </TableCell>
                       </TableRow>
@@ -701,8 +811,21 @@ export default function EmployeeDetailPage() {
   );
 }
 
-function ContractDialog({ open, onOpenChange, onSubmit }: { open: boolean, onOpenChange: (open: boolean) => void, onSubmit: (data: any) => Promise<void> }) {
-  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm();
+function ContractDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: any) => Promise<void>;
+}) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting },
+  } = useForm();
 
   useEffect(() => {
     if (open) reset();
@@ -717,16 +840,28 @@ function ContractDialog({ open, onOpenChange, onSubmit }: { open: boolean, onOpe
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="contractNumber">Nomor Kontrak</Label>
-            <Input id="contractNumber" {...register('contractNumber', { required: true })} placeholder="e.g. KONTRAK/2024/001" />
+            <Input
+              id="contractNumber"
+              {...register("contractNumber", { required: true })}
+              placeholder="e.g. KONTRAK/2024/001"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="type">Tipe Kontrak</Label>
-            <Select onValueChange={(v) => register('type').onChange({ target: { value: v, name: 'type' } })}>
+            <Select
+              onValueChange={(v) =>
+                register("type").onChange({
+                  target: { value: v, name: "type" },
+                })
+              }
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Pilih tipe kontrak" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="PKWT">PKWT (Kontrak Waktu Tertentu)</SelectItem>
+                <SelectItem value="PKWT">
+                  PKWT (Kontrak Waktu Tertentu)
+                </SelectItem>
                 <SelectItem value="PKWTT">PKWTT (Tetap)</SelectItem>
                 <SelectItem value="PART_TIME">Part Time</SelectItem>
                 <SelectItem value="PROBATION">Probation</SelectItem>
@@ -736,23 +871,33 @@ function ContractDialog({ open, onOpenChange, onSubmit }: { open: boolean, onOpe
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startDate">Tanggal Mulai</Label>
-              <Input id="startDate" type="date" {...register('startDate', { required: true })} />
+              <Input
+                id="startDate"
+                type="date"
+                {...register("startDate", { required: true })}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="endDate">Tanggal Selesai</Label>
-              <Input id="endDate" type="date" {...register('endDate')} />
+              <Input id="endDate" type="date" {...register("endDate")} />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="notes">Catatan</Label>
-            <Textarea id="notes" {...register('notes')} />
+            <Textarea id="notes" {...register("notes")} />
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Batal
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isSubmitting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
               Simpan
             </Button>
           </div>
@@ -762,12 +907,28 @@ function ContractDialog({ open, onOpenChange, onSubmit }: { open: boolean, onOpe
   );
 }
 
-function EditBalanceDialog({ open, onOpenChange, balance, onSubmit }: { open: boolean, onOpenChange: (open: boolean) => void, balance: any, onSubmit: (data: any) => Promise<void> }) {
-  const { register, handleSubmit, reset, setValue, formState: { isSubmitting } } = useForm();
+function EditBalanceDialog({
+  open,
+  onOpenChange,
+  balance,
+  onSubmit,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  balance: any;
+  onSubmit: (data: any) => Promise<void>;
+}) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { isSubmitting },
+  } = useForm();
 
   useEffect(() => {
     if (open && balance) {
-      setValue('totalDays', balance.totalDays);
+      setValue("totalDays", balance.totalDays);
     }
   }, [open, balance, setValue]);
 
@@ -780,18 +941,33 @@ function EditBalanceDialog({ open, onOpenChange, balance, onSubmit }: { open: bo
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label>Jenis Cuti</Label>
-            <div className="font-medium">{balance ? (LEAVE_TYPE_LABELS[balance.leaveType as LeaveType] || balance.leaveType) : '-'}</div>
+            <div className="font-medium">
+              {balance
+                ? LEAVE_TYPE_LABELS[balance.leaveType as LeaveType] ||
+                  balance.leaveType
+                : "-"}
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="totalDays">Total Jatah Cuti (Hari)</Label>
-            <Input id="totalDays" type="number" {...register('totalDays', { required: true })} />
+            <Input
+              id="totalDays"
+              type="number"
+              {...register("totalDays", { required: true })}
+            />
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Batal
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isSubmitting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
               Simpan
             </Button>
           </div>

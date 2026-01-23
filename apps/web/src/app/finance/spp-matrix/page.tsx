@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useState } from "react";
+import Link from "next/link";
 import {
   CalendarDays,
   CheckCircle2,
@@ -16,16 +16,22 @@ import {
   DollarSign,
   Users,
   TrendingUp,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -33,7 +39,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -42,60 +48,66 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
+} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import {
   useSppMatrix,
   useGenerateSppInvoices,
   SppMatrixMonth,
-} from '@/hooks/use-finance';
-import { useUnits } from '@/hooks/use-units';
-import { useClasses } from '@/hooks/use-classes';
+} from "@/hooks/use-finance";
+import { useUnits } from "@/hooks/use-units";
+import { useClasses } from "@/hooks/use-classes";
 
 function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
 }
 
 const MONTHS_LABEL: { [key: string]: string } = {
-  Jan: 'Januari',
-  Feb: 'Februari',
-  Mar: 'Maret',
-  Apr: 'April',
-  May: 'Mei',
-  Jun: 'Juni',
-  Jul: 'Juli',
-  Aug: 'Agustus',
-  Sep: 'September',
-  Oct: 'Oktober',
-  Nov: 'November',
-  Dec: 'Desember',
+  Jan: "Januari",
+  Feb: "Februari",
+  Mar: "Maret",
+  Apr: "April",
+  May: "Mei",
+  Jun: "Juni",
+  Jul: "Juli",
+  Aug: "Agustus",
+  Sep: "September",
+  Oct: "Oktober",
+  Nov: "November",
+  Dec: "Desember",
 };
 
-function StatusCell({ month, onClick }: { month: SppMatrixMonth; onClick?: () => void }) {
+function StatusCell({
+  month,
+  onClick,
+}: {
+  month: SppMatrixMonth;
+  onClick?: () => void;
+}) {
   const getStatusIcon = () => {
     switch (month.status) {
-      case 'PAID':
+      case "PAID":
         return <CheckCircle2 className="h-5 w-5 text-green-600" />;
-      case 'PARTIAL':
+      case "PARTIAL":
         return <Clock className="h-5 w-5 text-blue-600" />;
-      case 'PENDING':
+      case "PENDING":
         return <MinusCircle className="h-5 w-5 text-yellow-600" />;
-      case 'OVERDUE':
+      case "OVERDUE":
         return <AlertTriangle className="h-5 w-5 text-red-600" />;
-      case 'NOT_BILLED':
+      case "NOT_BILLED":
         return <XCircle className="h-5 w-5 text-gray-300" />;
       default:
         return <MinusCircle className="h-5 w-5 text-gray-400" />;
@@ -104,23 +116,35 @@ function StatusCell({ month, onClick }: { month: SppMatrixMonth; onClick?: () =>
 
   const getStatusLabel = () => {
     switch (month.status) {
-      case 'PAID': return 'Lunas';
-      case 'PARTIAL': return `Cicilan ${formatCurrency(month.paidAmount)}`;
-      case 'PENDING': return 'Belum Bayar';
-      case 'OVERDUE': return 'Jatuh Tempo';
-      case 'NOT_BILLED': return 'Belum Ditagih';
-      default: return '-';
+      case "PAID":
+        return "Lunas";
+      case "PARTIAL":
+        return `Cicilan ${formatCurrency(month.paidAmount)}`;
+      case "PENDING":
+        return "Belum Bayar";
+      case "OVERDUE":
+        return "Jatuh Tempo";
+      case "NOT_BILLED":
+        return "Belum Ditagih";
+      default:
+        return "-";
     }
   };
 
   const getBgColor = () => {
     switch (month.status) {
-      case 'PAID': return 'bg-green-50 hover:bg-green-100';
-      case 'PARTIAL': return 'bg-blue-50 hover:bg-blue-100';
-      case 'PENDING': return 'bg-yellow-50 hover:bg-yellow-100';
-      case 'OVERDUE': return 'bg-red-50 hover:bg-red-100';
-      case 'NOT_BILLED': return 'bg-gray-50';
-      default: return 'bg-white';
+      case "PAID":
+        return "bg-green-50 hover:bg-green-100";
+      case "PARTIAL":
+        return "bg-blue-50 hover:bg-blue-100";
+      case "PENDING":
+        return "bg-yellow-50 hover:bg-yellow-100";
+      case "OVERDUE":
+        return "bg-red-50 hover:bg-red-100";
+      case "NOT_BILLED":
+        return "bg-gray-50";
+      default:
+        return "bg-white";
     }
   };
 
@@ -130,10 +154,12 @@ function StatusCell({ month, onClick }: { month: SppMatrixMonth; onClick?: () =>
         <TooltipTrigger asChild>
           <button
             className={`w-full h-10 flex items-center justify-center transition-colors ${getBgColor()} ${
-              month.status !== 'NOT_BILLED' && month.status !== 'PAID' ? 'cursor-pointer' : 'cursor-default'
+              month.status !== "NOT_BILLED" && month.status !== "PAID"
+                ? "cursor-pointer"
+                : "cursor-default"
             }`}
             onClick={onClick}
-            disabled={month.status === 'NOT_BILLED'}
+            disabled={month.status === "NOT_BILLED"}
           >
             {getStatusIcon()}
           </button>
@@ -143,7 +169,8 @@ function StatusCell({ month, onClick }: { month: SppMatrixMonth; onClick?: () =>
             <p className="font-medium">{getStatusLabel()}</p>
             {month.amount > 0 && (
               <p className="text-muted-foreground">
-                {formatCurrency(month.paidAmount)} / {formatCurrency(month.amount)}
+                {formatCurrency(month.paidAmount)} /{" "}
+                {formatCurrency(month.amount)}
               </p>
             )}
           </div>
@@ -156,9 +183,11 @@ function StatusCell({ month, onClick }: { month: SppMatrixMonth; onClick?: () =>
 export default function SppMatrixPage() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
-  const [selectedUnitId, setSelectedUnitId] = useState<string>('');
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
-  const [generateMonth, setGenerateMonth] = useState<number>(new Date().getMonth());
+  const [selectedUnitId, setSelectedUnitId] = useState<string>("");
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
+  const [generateMonth, setGenerateMonth] = useState<number>(
+    new Date().getMonth(),
+  );
   const [isGenerateOpen, setIsGenerateOpen] = useState(false);
 
   const { data: units } = useUnits();
@@ -167,7 +196,11 @@ export default function SppMatrixPage() {
     limit: 100,
   });
 
-  const { data: matrixData, isLoading, refetch } = useSppMatrix({
+  const {
+    data: matrixData,
+    isLoading,
+    refetch,
+  } = useSppMatrix({
     year: selectedYear,
     unitId: selectedUnitId || undefined,
     classId: selectedClassId || undefined,
@@ -177,7 +210,7 @@ export default function SppMatrixPage() {
 
   const handleGenerateInvoices = async () => {
     if (!matrixData?.paymentTypeId) {
-      toast.error('Jenis pembayaran SPP tidak ditemukan');
+      toast.error("Jenis pembayaran SPP tidak ditemukan");
       return;
     }
 
@@ -190,12 +223,14 @@ export default function SppMatrixPage() {
         classId: selectedClassId || undefined,
       });
 
-      toast.success(`${result.created} tagihan dibuat, ${result.skipped} sudah ada`);
+      toast.success(
+        `${result.created} tagihan dibuat, ${result.skipped} sudah ada`,
+      );
 
       setIsGenerateOpen(false);
       refetch();
     } catch {
-      toast.error('Gagal membuat tagihan');
+      toast.error("Gagal membuat tagihan");
     }
   };
 
@@ -206,7 +241,9 @@ export default function SppMatrixPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Matrix Pembayaran SPP</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Matrix Pembayaran SPP
+          </h1>
           <p className="text-muted-foreground">
             Tampilan pembayaran SPP per santri per bulan (Syahriah)
           </p>
@@ -241,11 +278,13 @@ export default function SppMatrixPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(MONTHS_LABEL).map(([key, label], index) => (
-                        <SelectItem key={key} value={index.toString()}>
-                          {label} {selectedYear}
-                        </SelectItem>
-                      ))}
+                      {Object.entries(MONTHS_LABEL).map(
+                        ([key, label], index) => (
+                          <SelectItem key={key} value={index.toString()}>
+                            {label} {selectedYear}
+                          </SelectItem>
+                        ),
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -265,7 +304,9 @@ export default function SppMatrixPage() {
                   onClick={handleGenerateInvoices}
                   disabled={generateMutation.isPending}
                 >
-                  {generateMutation.isPending ? 'Membuat...' : 'Generate Tagihan'}
+                  {generateMutation.isPending
+                    ? "Membuat..."
+                    : "Generate Tagihan"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -278,31 +319,41 @@ export default function SppMatrixPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Santri</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Santri
+              </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{matrixData.summary.totalStudents}</div>
+              <div className="text-2xl font-bold">
+                {matrixData.summary.totalStudents}
+              </div>
               <p className="text-xs text-muted-foreground">santri terdaftar</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Tagihan</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Tagihan
+              </CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {formatCurrency(matrixData.summary.totalBilled)}
               </div>
-              <p className="text-xs text-muted-foreground">tahun {selectedYear}</p>
+              <p className="text-xs text-muted-foreground">
+                tahun {selectedYear}
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Sudah Dibayar</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Sudah Dibayar
+              </CardTitle>
               <CheckCircle2 className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
@@ -312,7 +363,8 @@ export default function SppMatrixPage() {
               <p className="text-xs text-muted-foreground">
                 {matrixData.summary.totalBilled > 0
                   ? `${Math.round((matrixData.summary.totalPaid / matrixData.summary.totalBilled) * 100)}%`
-                  : '0%'} terkumpul
+                  : "0%"}{" "}
+                terkumpul
               </p>
             </CardContent>
           </Card>
@@ -348,11 +400,15 @@ export default function SppMatrixPage() {
             </div>
             <div className="flex items-center gap-2">
               <MinusCircle className="h-4 w-4 text-yellow-600" />
-              <span>Belum Bayar ({matrixData?.summary?.pendingCount || 0})</span>
+              <span>
+                Belum Bayar ({matrixData?.summary?.pendingCount || 0})
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-red-600" />
-              <span>Jatuh Tempo ({matrixData?.summary?.overdueCount || 0})</span>
+              <span>
+                Jatuh Tempo ({matrixData?.summary?.overdueCount || 0})
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <XCircle className="h-4 w-4 text-gray-300" />
@@ -410,7 +466,10 @@ export default function SppMatrixPage() {
 
             <div className="space-y-2">
               <Label>Kelas</Label>
-              <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+              <Select
+                value={selectedClassId}
+                onValueChange={setSelectedClassId}
+              >
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Semua Kelas" />
                 </SelectTrigger>
@@ -457,22 +516,37 @@ export default function SppMatrixPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="sticky left-0 bg-background z-10 min-w-[50px]">No</TableHead>
-                    <TableHead className="sticky left-[50px] bg-background z-10 min-w-[200px]">Santri</TableHead>
-                    <TableHead className="sticky left-[250px] bg-background z-10 min-w-[100px]">Kelas</TableHead>
+                    <TableHead className="sticky left-0 bg-background z-10 min-w-[50px]">
+                      No
+                    </TableHead>
+                    <TableHead className="sticky left-[50px] bg-background z-10 min-w-[200px]">
+                      Santri
+                    </TableHead>
+                    <TableHead className="sticky left-[250px] bg-background z-10 min-w-[100px]">
+                      Kelas
+                    </TableHead>
                     {matrixData.months.map((month) => (
-                      <TableHead key={month} className="text-center min-w-[60px]">
+                      <TableHead
+                        key={month}
+                        className="text-center min-w-[60px]"
+                      >
                         {month}
                       </TableHead>
                     ))}
-                    <TableHead className="text-right min-w-[120px]">Total</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Dibayar</TableHead>
+                    <TableHead className="text-right min-w-[120px]">
+                      Total
+                    </TableHead>
+                    <TableHead className="text-right min-w-[120px]">
+                      Dibayar
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {matrixData.students.map((student, index) => (
                     <TableRow key={student.studentId}>
-                      <TableCell className="sticky left-0 bg-background">{index + 1}</TableCell>
+                      <TableCell className="sticky left-0 bg-background">
+                        {index + 1}
+                      </TableCell>
                       <TableCell className="sticky left-[50px] bg-background">
                         <div>
                           <Link
@@ -481,7 +555,9 @@ export default function SppMatrixPage() {
                           >
                             {student.studentName}
                           </Link>
-                          <p className="text-xs text-muted-foreground">{student.nis}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {student.nis}
+                          </p>
                         </div>
                       </TableCell>
                       <TableCell className="sticky left-[250px] bg-background">
@@ -503,7 +579,13 @@ export default function SppMatrixPage() {
                         {formatCurrency(student.totalAmount)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <span className={student.totalPaid >= student.totalAmount ? 'text-green-600' : 'text-yellow-600'}>
+                        <span
+                          className={
+                            student.totalPaid >= student.totalAmount
+                              ? "text-green-600"
+                              : "text-yellow-600"
+                          }
+                        >
                           {formatCurrency(student.totalPaid)}
                         </span>
                       </TableCell>

@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { CreateClassInput, UpdateClassInput, ClassEnrollmentInput, EnrollmentStatus } from '@cipansor/shared';
+import {
+  CreateClassInput,
+  UpdateClassInput,
+  ClassEnrollmentInput,
+  EnrollmentStatus,
+} from '@cipansor/shared';
 
 // Query params
 export const listClassesQuerySchema = z.object({
@@ -22,12 +27,14 @@ export const createClassSchema = z.object({
 });
 
 // Update class
-export const updateClassSchema: z.ZodType<UpdateClassInput> = z.object({
-  name: z.string().min(1).optional(),
-  level: z.string().min(1).optional(),
-  capacity: z.number().int().min(1).max(100).optional(),
-  homeroomTeacherId: z.string().uuid().optional().nullable(),
-}).partial();
+export const updateClassSchema: z.ZodType<UpdateClassInput> = z
+  .object({
+    name: z.string().min(1).optional(),
+    level: z.string().min(1).optional(),
+    capacity: z.number().int().min(1).max(100).optional(),
+    homeroomTeacherId: z.string().uuid().optional().nullable(),
+  })
+  .partial();
 // Actually, UpdateClassInput extends Partial<CreateClassInput>, so we should allow partial here.
 // The .partial() call makes everything optional, which matches UpdateClassInput.
 

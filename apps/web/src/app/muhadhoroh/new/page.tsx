@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
   Mic2,
@@ -17,29 +17,29 @@ import {
   FileText,
   Save,
   Search,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Command,
   CommandEmpty,
@@ -47,30 +47,33 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command';
+} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
-import { useStudents } from '@/hooks/use-students';
-import { useUnits } from '@/hooks/use-units';
-import { useCreateMuhadhoroh } from '@/hooks/use-muhadhoroh';
+import { useStudents } from "@/hooks/use-students";
+import { useUnits } from "@/hooks/use-units";
+import { useCreateMuhadhoroh } from "@/hooks/use-muhadhoroh";
 
 // Form Schema
 const muhadhorohSchema = z.object({
-  studentId: z.string().min(1, 'Santri harus dipilih'),
-  unitId: z.string().min(1, 'Unit harus dipilih'),
+  studentId: z.string().min(1, "Santri harus dipilih"),
+  unitId: z.string().min(1, "Unit harus dipilih"),
   scheduledAt: z.date({
-    required_error: 'Tanggal dan waktu harus diisi',
+    required_error: "Tanggal dan waktu harus diisi",
   }),
-  topic: z.string().min(3, 'Topik minimal 3 karakter').max(200, 'Topik maksimal 200 karakter'),
-  language: z.enum(['Indonesian', 'Arabic', 'English'], {
-    required_error: 'Bahasa harus dipilih',
+  topic: z
+    .string()
+    .min(3, "Topik minimal 3 karakter")
+    .max(200, "Topik maksimal 200 karakter"),
+  language: z.enum(["Indonesian", "Arabic", "English"], {
+    required_error: "Bahasa harus dipilih",
   }),
 });
 
@@ -78,42 +81,42 @@ type MuhadhorohFormData = z.infer<typeof muhadhorohSchema>;
 
 // Language options
 const LANGUAGE_OPTIONS = [
-  { value: 'Indonesian', label: 'Bahasa Indonesia', flag: '🇮🇩' },
-  { value: 'Arabic', label: 'Bahasa Arab', flag: '🕌' },
-  { value: 'English', label: 'Bahasa Inggris', flag: '🇬🇧' },
+  { value: "Indonesian", label: "Bahasa Indonesia", flag: "🇮🇩" },
+  { value: "Arabic", label: "Bahasa Arab", flag: "🕌" },
+  { value: "English", label: "Bahasa Inggris", flag: "🇬🇧" },
 ];
 
 // Sample topics for suggestions
 const TOPIC_SUGGESTIONS = {
   Indonesian: [
-    'Pentingnya Menuntut Ilmu',
-    'Menjaga Kebersihan Lingkungan',
-    'Berbakti Kepada Orang Tua',
-    'Menjadi Pemuda yang Bertanggung Jawab',
-    'Indahnya Persaudaraan dalam Islam',
+    "Pentingnya Menuntut Ilmu",
+    "Menjaga Kebersihan Lingkungan",
+    "Berbakti Kepada Orang Tua",
+    "Menjadi Pemuda yang Bertanggung Jawab",
+    "Indahnya Persaudaraan dalam Islam",
   ],
   Arabic: [
-    'أهمية طلب العلم',
-    'فضل الصبر في الإسلام',
-    'حسن الخلق',
-    'بر الوالدين',
-    'فضائل الأخوة في الإسلام',
+    "أهمية طلب العلم",
+    "فضل الصبر في الإسلام",
+    "حسن الخلق",
+    "بر الوالدين",
+    "فضائل الأخوة في الإسلام",
   ],
   English: [
-    'The Importance of Seeking Knowledge',
-    'The Value of Honesty',
-    'Respecting Our Parents',
-    'Building Strong Character',
-    'The Beauty of Brotherhood in Islam',
+    "The Importance of Seeking Knowledge",
+    "The Value of Honesty",
+    "Respecting Our Parents",
+    "Building Strong Character",
+    "The Beauty of Brotherhood in Islam",
   ],
 };
 
 export default function NewMuhadhorohPage() {
   const router = useRouter();
-  const [studentSearch, setStudentSearch] = useState('');
+  const [studentSearch, setStudentSearch] = useState("");
   const [studentOpen, setStudentOpen] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
-  const [selectedTime, setSelectedTime] = useState('08:00');
+  const [selectedTime, setSelectedTime] = useState("08:00");
 
   // Form
   const {
@@ -125,14 +128,14 @@ export default function NewMuhadhorohPage() {
   } = useForm<MuhadhorohFormData>({
     resolver: zodResolver(muhadhorohSchema),
     defaultValues: {
-      language: 'Indonesian',
+      language: "Indonesian",
     },
   });
 
-  const selectedUnitId = watch('unitId');
-  const selectedLanguage = watch('language');
-  const selectedDate = watch('scheduledAt');
-  const selectedStudentId = watch('studentId');
+  const selectedUnitId = watch("unitId");
+  const selectedLanguage = watch("language");
+  const selectedDate = watch("scheduledAt");
+  const selectedStudentId = watch("studentId");
 
   // Data fetching
   const { data: unitsData } = useUnits();
@@ -142,20 +145,20 @@ export default function NewMuhadhorohPage() {
     unitId: selectedUnitId,
     search: studentSearch,
     limit: 50,
-    status: 'ACTIVE',
+    status: "ACTIVE",
   });
   const students = studentsData?.data || [];
 
   const createMuhadhoroh = useCreateMuhadhoroh();
 
   // Get selected student info
-  const selectedStudent = students.find(s => s.id === selectedStudentId);
+  const selectedStudent = students.find((s) => s.id === selectedStudentId);
 
   // Handle form submit
   const onSubmit = async (data: MuhadhorohFormData) => {
     try {
       // Combine date and time
-      const [hours, minutes] = selectedTime.split(':').map(Number);
+      const [hours, minutes] = selectedTime.split(":").map(Number);
       const scheduledAt = new Date(data.scheduledAt);
       scheduledAt.setHours(hours, minutes, 0, 0);
 
@@ -167,10 +170,10 @@ export default function NewMuhadhorohPage() {
         language: data.language,
       });
 
-      toast.success('Jadwal muhadhoroh berhasil dibuat');
-      router.push('/muhadhoroh');
+      toast.success("Jadwal muhadhoroh berhasil dibuat");
+      router.push("/muhadhoroh");
     } catch (error) {
-      toast.error('Gagal membuat jadwal muhadhoroh');
+      toast.error("Gagal membuat jadwal muhadhoroh");
     }
   };
 
@@ -212,8 +215,8 @@ export default function NewMuhadhorohPage() {
                   <Select
                     value={selectedUnitId}
                     onValueChange={(value) => {
-                      setValue('unitId', value);
-                      setValue('studentId', ''); // Reset student when unit changes
+                      setValue("unitId", value);
+                      setValue("studentId", ""); // Reset student when unit changes
                     }}
                   >
                     <SelectTrigger>
@@ -228,7 +231,9 @@ export default function NewMuhadhorohPage() {
                     </SelectContent>
                   </Select>
                   {errors.unitId && (
-                    <p className="text-sm text-destructive">{errors.unitId.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.unitId.message}
+                    </p>
                   )}
                 </div>
 
@@ -253,7 +258,9 @@ export default function NewMuhadhorohPage() {
                           </span>
                         ) : (
                           <span className="text-muted-foreground">
-                            {selectedUnitId ? 'Pilih santri...' : 'Pilih unit terlebih dahulu'}
+                            {selectedUnitId
+                              ? "Pilih santri..."
+                              : "Pilih unit terlebih dahulu"}
                           </span>
                         )}
                         <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -268,7 +275,9 @@ export default function NewMuhadhorohPage() {
                         />
                         <CommandList>
                           <CommandEmpty>
-                            {studentsLoading ? 'Memuat...' : 'Santri tidak ditemukan'}
+                            {studentsLoading
+                              ? "Memuat..."
+                              : "Santri tidak ditemukan"}
                           </CommandEmpty>
                           <CommandGroup>
                             {students.map((student) => (
@@ -276,19 +285,23 @@ export default function NewMuhadhorohPage() {
                                 key={student.id}
                                 value={`${student.name} ${student.nis}`}
                                 onSelect={() => {
-                                  setValue('studentId', student.id);
+                                  setValue("studentId", student.id);
                                   setStudentOpen(false);
                                 }}
                               >
                                 <div className="flex items-center justify-between w-full">
                                   <div>
-                                    <p className="font-medium">{student.name}</p>
+                                    <p className="font-medium">
+                                      {student.name}
+                                    </p>
                                     <p className="text-sm text-muted-foreground">
-                                      {student.nis} • {student.currentClass?.name || 'Belum ada kelas'}
+                                      {student.nis} •{" "}
+                                      {student.currentClass?.name ||
+                                        "Belum ada kelas"}
                                     </p>
                                   </div>
                                   <Badge variant="outline" className="ml-2">
-                                    {student.gender === 'MALE' ? 'L' : 'P'}
+                                    {student.gender === "MALE" ? "L" : "P"}
                                   </Badge>
                                 </div>
                               </CommandItem>
@@ -299,7 +312,9 @@ export default function NewMuhadhorohPage() {
                     </PopoverContent>
                   </Popover>
                   {errors.studentId && (
-                    <p className="text-sm text-destructive">{errors.studentId.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.studentId.message}
+                    </p>
                   )}
                 </div>
               </CardContent>
@@ -329,9 +344,13 @@ export default function NewMuhadhorohPage() {
                         >
                           <Calendar className="mr-2 h-4 w-4" />
                           {selectedDate ? (
-                            format(selectedDate, 'EEEE, dd MMMM yyyy', { locale: localeId })
+                            format(selectedDate, "EEEE, dd MMMM yyyy", {
+                              locale: localeId,
+                            })
                           ) : (
-                            <span className="text-muted-foreground">Pilih tanggal</span>
+                            <span className="text-muted-foreground">
+                              Pilih tanggal
+                            </span>
                           )}
                         </Button>
                       </PopoverTrigger>
@@ -341,30 +360,39 @@ export default function NewMuhadhorohPage() {
                           selected={selectedDate}
                           onSelect={(date) => {
                             if (date) {
-                              setValue('scheduledAt', date);
+                              setValue("scheduledAt", date);
                               setDateOpen(false);
                             }
                           }}
-                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                          disabled={(date) =>
+                            date < new Date(new Date().setHours(0, 0, 0, 0))
+                          }
                           initialFocus
                         />
                       </PopoverContent>
                     </Popover>
                     {errors.scheduledAt && (
-                      <p className="text-sm text-destructive">{errors.scheduledAt.message}</p>
+                      <p className="text-sm text-destructive">
+                        {errors.scheduledAt.message}
+                      </p>
                     )}
                   </div>
 
                   {/* Time */}
                   <div className="space-y-2">
                     <Label htmlFor="time">Waktu *</Label>
-                    <Select value={selectedTime} onValueChange={setSelectedTime}>
+                    <Select
+                      value={selectedTime}
+                      onValueChange={setSelectedTime}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih waktu" />
                       </SelectTrigger>
                       <SelectContent>
                         {/* Morning slots */}
-                        <SelectItem value="05:00">05:00 - Ba'da Subuh</SelectItem>
+                        <SelectItem value="05:00">
+                          05:00 - Ba'da Subuh
+                        </SelectItem>
                         <SelectItem value="06:00">06:00</SelectItem>
                         <SelectItem value="07:00">07:00</SelectItem>
                         <SelectItem value="08:00">08:00</SelectItem>
@@ -372,13 +400,21 @@ export default function NewMuhadhorohPage() {
                         <SelectItem value="10:00">10:00</SelectItem>
                         <SelectItem value="11:00">11:00</SelectItem>
                         {/* Afternoon slots */}
-                        <SelectItem value="13:00">13:00 - Ba'da Dzuhur</SelectItem>
+                        <SelectItem value="13:00">
+                          13:00 - Ba'da Dzuhur
+                        </SelectItem>
                         <SelectItem value="14:00">14:00</SelectItem>
                         <SelectItem value="15:00">15:00</SelectItem>
-                        <SelectItem value="16:00">16:00 - Ba'da Ashar</SelectItem>
+                        <SelectItem value="16:00">
+                          16:00 - Ba'da Ashar
+                        </SelectItem>
                         {/* Evening slots */}
-                        <SelectItem value="18:30">18:30 - Ba'da Maghrib</SelectItem>
-                        <SelectItem value="19:30">19:30 - Ba'da Isya</SelectItem>
+                        <SelectItem value="18:30">
+                          18:30 - Ba'da Maghrib
+                        </SelectItem>
+                        <SelectItem value="19:30">
+                          19:30 - Ba'da Isya
+                        </SelectItem>
                         <SelectItem value="20:00">20:00</SelectItem>
                         <SelectItem value="21:00">21:00</SelectItem>
                       </SelectContent>
@@ -408,9 +444,18 @@ export default function NewMuhadhorohPage() {
                       <Button
                         key={lang.value}
                         type="button"
-                        variant={selectedLanguage === lang.value ? 'default' : 'outline'}
+                        variant={
+                          selectedLanguage === lang.value
+                            ? "default"
+                            : "outline"
+                        }
                         className="h-auto py-3 flex flex-col gap-1"
-                        onClick={() => setValue('language', lang.value as 'Indonesian' | 'Arabic' | 'English')}
+                        onClick={() =>
+                          setValue(
+                            "language",
+                            lang.value as "Indonesian" | "Arabic" | "English",
+                          )
+                        }
                       >
                         <span className="text-xl">{lang.flag}</span>
                         <span className="text-xs">{lang.label}</span>
@@ -418,7 +463,9 @@ export default function NewMuhadhorohPage() {
                     ))}
                   </div>
                   {errors.language && (
-                    <p className="text-sm text-destructive">{errors.language.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.language.message}
+                    </p>
                   )}
                 </div>
 
@@ -428,25 +475,31 @@ export default function NewMuhadhorohPage() {
                   <Textarea
                     id="topic"
                     placeholder="Masukkan topik pidato..."
-                    {...register('topic')}
+                    {...register("topic")}
                     className="min-h-20"
                   />
                   {errors.topic && (
-                    <p className="text-sm text-destructive">{errors.topic.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.topic.message}
+                    </p>
                   )}
                 </div>
 
                 {/* Topic Suggestions */}
                 {selectedLanguage && (
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground text-xs">Saran Topik:</Label>
+                    <Label className="text-muted-foreground text-xs">
+                      Saran Topik:
+                    </Label>
                     <div className="flex flex-wrap gap-2">
-                      {TOPIC_SUGGESTIONS[selectedLanguage as keyof typeof TOPIC_SUGGESTIONS].map((topic) => (
+                      {TOPIC_SUGGESTIONS[
+                        selectedLanguage as keyof typeof TOPIC_SUGGESTIONS
+                      ].map((topic) => (
                         <Badge
                           key={topic}
                           variant="outline"
                           className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-                          onClick={() => setValue('topic', topic)}
+                          onClick={() => setValue("topic", topic)}
                         >
                           {topic}
                         </Badge>
@@ -471,12 +524,11 @@ export default function NewMuhadhorohPage() {
                 {/* Student Info */}
                 <div>
                   <p className="text-sm text-muted-foreground">Santri</p>
-                  <p className="font-medium">
-                    {selectedStudent?.name || '-'}
-                  </p>
+                  <p className="font-medium">{selectedStudent?.name || "-"}</p>
                   {selectedStudent && (
                     <p className="text-sm text-muted-foreground">
-                      {selectedStudent.nis} • {selectedStudent.currentClass?.name || '-'}
+                      {selectedStudent.nis} •{" "}
+                      {selectedStudent.currentClass?.name || "-"}
                     </p>
                   )}
                 </div>
@@ -488,10 +540,14 @@ export default function NewMuhadhorohPage() {
                   <p className="text-sm text-muted-foreground">Jadwal</p>
                   <p className="font-medium">
                     {selectedDate
-                      ? format(selectedDate, 'EEEE, dd MMMM yyyy', { locale: localeId })
-                      : '-'}
+                      ? format(selectedDate, "EEEE, dd MMMM yyyy", {
+                          locale: localeId,
+                        })
+                      : "-"}
                   </p>
-                  <p className="text-sm text-muted-foreground">Pukul {selectedTime}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Pukul {selectedTime}
+                  </p>
                 </div>
 
                 <Separator />
@@ -500,7 +556,8 @@ export default function NewMuhadhorohPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Bahasa</p>
                   <p className="font-medium">
-                    {LANGUAGE_OPTIONS.find(l => l.value === selectedLanguage)?.label || '-'}
+                    {LANGUAGE_OPTIONS.find((l) => l.value === selectedLanguage)
+                      ?.label || "-"}
                   </p>
                 </div>
 
@@ -510,7 +567,7 @@ export default function NewMuhadhorohPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Topik</p>
                   <p className="font-medium line-clamp-3">
-                    {watch('topic') || '-'}
+                    {watch("topic") || "-"}
                   </p>
                 </div>
 
@@ -523,7 +580,7 @@ export default function NewMuhadhorohPage() {
                     className="w-full"
                     disabled={isSubmitting || createMuhadhoroh.isPending}
                   >
-                    {(isSubmitting || createMuhadhoroh.isPending) ? (
+                    {isSubmitting || createMuhadhoroh.isPending ? (
                       <>
                         <span className="animate-spin mr-2">⏳</span>
                         Menyimpan...

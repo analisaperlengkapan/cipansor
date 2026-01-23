@@ -1,40 +1,45 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ColumnDef } from '@tanstack/react-table';
-import { MainLayout } from '@/components/layout';
-import { PageHeader, DataTable, SearchInput, ConfirmDialog } from '@/components/shared';
-import { useClasses, useDeleteClass } from '@/hooks/use-classes';
-import { Class } from '@cipansor/shared';
-import { useUnits } from '@/hooks/use-units';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ColumnDef } from "@tanstack/react-table";
+import { MainLayout } from "@/components/layout";
+import {
+  PageHeader,
+  DataTable,
+  SearchInput,
+  ConfirmDialog,
+} from "@/components/shared";
+import { useClasses, useDeleteClass } from "@/hooks/use-classes";
+import { Class } from "@cipansor/shared";
+import { useUnits } from "@/hooks/use-units";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { MoreHorizontal, Eye, Pencil, Trash2, Users } from 'lucide-react';
-import { toast } from 'sonner';
-import { useAuthStore } from '@/stores/auth';
+} from "@/components/ui/select";
+import { MoreHorizontal, Eye, Pencil, Trash2, Users } from "lucide-react";
+import { toast } from "sonner";
+import { useAuthStore } from "@/stores/auth";
 
 export default function ClassesPage() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [search, setSearch] = useState('');
-  const [gradeFilter, setGradeFilter] = useState<string>('ALL');
-  const [unitFilter, setUnitFilter] = useState<string>('ALL');
+  const [search, setSearch] = useState("");
+  const [gradeFilter, setGradeFilter] = useState<string>("ALL");
+  const [unitFilter, setUnitFilter] = useState<string>("ALL");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: units } = useUnits();
@@ -42,8 +47,13 @@ export default function ClassesPage() {
     page,
     limit: pageSize,
     search: search || undefined,
-    grade: gradeFilter !== 'ALL' ? Number(gradeFilter) : undefined,
-    unitId: unitFilter !== 'ALL' ? unitFilter : (user?.role !== 'SUPER_ADMIN' ? user?.unitId : undefined),
+    grade: gradeFilter !== "ALL" ? Number(gradeFilter) : undefined,
+    unitId:
+      unitFilter !== "ALL"
+        ? unitFilter
+        : user?.role !== "SUPER_ADMIN"
+          ? user?.unitId
+          : undefined,
   });
 
   const deleteMutation = useDeleteClass();
@@ -52,39 +62,46 @@ export default function ClassesPage() {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      toast.success('Class deleted successfully');
+      toast.success("Class deleted successfully");
       setDeleteId(null);
     } catch {
-      toast.error('Failed to delete class');
+      toast.error("Failed to delete class");
     }
   };
 
   const columns: ColumnDef<Class>[] = [
     {
-      accessorKey: 'name',
-      header: 'Class Name',
+      accessorKey: "name",
+      header: "Class Name",
       cell: ({ row }) => (
         <div>
           <p className="font-medium">{row.original.name}</p>
-          <p className="text-xs text-muted-foreground">Grade {row.original.grade}</p>
+          <p className="text-xs text-muted-foreground">
+            Grade {row.original.grade}
+          </p>
         </div>
       ),
     },
     {
-      accessorKey: 'grade',
-      header: 'Grade',
+      accessorKey: "grade",
+      header: "Grade",
       cell: ({ row }) => (
         <Badge variant="outline">Grade {row.original.grade}</Badge>
       ),
     },
     {
-      accessorKey: 'academicYear',
-      header: 'Academic Year',
+      accessorKey: "academicYear",
+      header: "Academic Year",
       cell: ({ row }) => (
         <div>
-          <span className="text-sm">{row.original.academicYear?.name || '-'}</span>
+          <span className="text-sm">
+            {row.original.academicYear?.name || "-"}
+          </span>
           {row.original.academicYear?.isActive && (
-            <Badge className="ml-2 bg-green-100 text-green-800" variant="outline">
+            <Badge
+              className="ml-2 bg-green-100 text-green-800"
+              variant="outline"
+            >
               Active
             </Badge>
           )}
@@ -92,22 +109,24 @@ export default function ClassesPage() {
       ),
     },
     {
-      accessorKey: 'unit',
-      header: 'Unit',
+      accessorKey: "unit",
+      header: "Unit",
       cell: ({ row }) => (
-        <span className="text-sm">{row.original.unit?.name || '-'}</span>
+        <span className="text-sm">{row.original.unit?.name || "-"}</span>
       ),
     },
     {
-      accessorKey: 'homeroomTeacher',
-      header: 'Homeroom Teacher',
+      accessorKey: "homeroomTeacher",
+      header: "Homeroom Teacher",
       cell: ({ row }) => (
-        <span className="text-sm">{row.original.homeroomTeacher?.user.name || '-'}</span>
+        <span className="text-sm">
+          {row.original.homeroomTeacher?.user.name || "-"}
+        </span>
       ),
     },
     {
-      accessorKey: 'studentCount',
-      header: 'Students',
+      accessorKey: "studentCount",
+      header: "Students",
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <Users className="h-4 w-4 text-muted-foreground" />
@@ -116,7 +135,7 @@ export default function ClassesPage() {
       ),
     },
     {
-      id: 'actions',
+      id: "actions",
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -125,11 +144,15 @@ export default function ClassesPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => router.push(`/classes/${row.original.id}`)}>
+            <DropdownMenuItem
+              onClick={() => router.push(`/classes/${row.original.id}`)}
+            >
               <Eye className="mr-2 h-4 w-4" />
               View
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push(`/classes/${row.original.id}/edit`)}>
+            <DropdownMenuItem
+              onClick={() => router.push(`/classes/${row.original.id}/edit`)}
+            >
               <Pencil className="mr-2 h-4 w-4" />
               Edit
             </DropdownMenuItem>
@@ -147,14 +170,14 @@ export default function ClassesPage() {
   ];
 
   return (
-    <MainLayout allowedRoles={['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']}>
+    <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN", "TEACHER"]}>
       <div className="space-y-6">
         <PageHeader
           title="Classes"
           description="Manage classes and enrollments"
           action={
-            ['SUPER_ADMIN', 'UNIT_ADMIN'].includes(user?.role || '')
-              ? { label: 'Add Class', href: '/classes/new' }
+            ["SUPER_ADMIN", "UNIT_ADMIN"].includes(user?.role || "")
+              ? { label: "Add Class", href: "/classes/new" }
               : undefined
           }
         />
@@ -181,7 +204,7 @@ export default function ClassesPage() {
               ))}
             </SelectContent>
           </Select>
-          {user?.role === 'SUPER_ADMIN' && (
+          {user?.role === "SUPER_ADMIN" && (
             <Select value={unitFilter} onValueChange={setUnitFilter}>
               <SelectTrigger className="w-full md:w-48">
                 <SelectValue placeholder="All Units" />

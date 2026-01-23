@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useState } from "react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   Heart,
   Plus,
@@ -16,21 +16,21 @@ import {
   DollarSign,
   Clock,
   CheckCircle2,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Pagination } from '@/components/shared/pagination';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { Button } from '@/components/ui/button';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Pagination } from "@/components/shared/pagination";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -38,16 +38,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import {
   useCampaigns,
   useDeleteCampaign,
@@ -62,34 +57,42 @@ import {
   DonationStatus,
   formatCurrency,
   calculateProgress,
-} from '@/hooks/use-donation';
+} from "@/hooks/use-donation";
 
 export default function DonationPage() {
-  const [activeTab, setActiveTab] = useState('campaigns');
-  
+  const [activeTab, setActiveTab] = useState("campaigns");
+
   // Campaign state
   const [campaignPage, setCampaignPage] = useState(1);
   const [campaignPageSize, setCampaignPageSize] = useState(10);
-  const [campaignStatusFilter, setCampaignStatusFilter] = useState<string>('ALL');
+  const [campaignStatusFilter, setCampaignStatusFilter] =
+    useState<string>("ALL");
   const [deleteCampaignId, setDeleteCampaignId] = useState<string | null>(null);
-  
+
   // Donation state
   const [donationPage, setDonationPage] = useState(1);
   const [donationPageSize, setDonationPageSize] = useState(10);
-  const [donationStatusFilter, setDonationStatusFilter] = useState<string>('ALL');
+  const [donationStatusFilter, setDonationStatusFilter] =
+    useState<string>("ALL");
   const [deleteDonationId, setDeleteDonationId] = useState<string | null>(null);
 
   // Data fetching
   const { data: campaignsData, isLoading: campaignsLoading } = useCampaigns({
     page: campaignPage,
     limit: campaignPageSize,
-    status: campaignStatusFilter !== 'ALL' ? (campaignStatusFilter as CampaignStatus) : undefined,
+    status:
+      campaignStatusFilter !== "ALL"
+        ? (campaignStatusFilter as CampaignStatus)
+        : undefined,
   });
 
   const { data: donationsData, isLoading: donationsLoading } = useDonations({
     page: donationPage,
     limit: donationPageSize,
-    status: donationStatusFilter !== 'ALL' ? (donationStatusFilter as DonationStatus) : undefined,
+    status:
+      donationStatusFilter !== "ALL"
+        ? (donationStatusFilter as DonationStatus)
+        : undefined,
   });
 
   const { data: stats } = useDonationStats();
@@ -100,7 +103,7 @@ export default function DonationPage() {
 
   const campaigns = campaignsData?.data || [];
   const campaignPagination = campaignsData?.meta;
-  
+
   const donations = donationsData?.data || [];
   const donationPagination = donationsData?.meta;
 
@@ -108,10 +111,11 @@ export default function DonationPage() {
     if (!deleteCampaignId) return;
     try {
       await deleteCampaign.mutateAsync(deleteCampaignId);
-      toast.success('Campaign berhasil dihapus');
+      toast.success("Campaign berhasil dihapus");
       setDeleteCampaignId(null);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal menghapus campaign';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal menghapus campaign";
       toast.error(errorMessage);
     }
   };
@@ -120,10 +124,11 @@ export default function DonationPage() {
     if (!deleteDonationId) return;
     try {
       await deleteDonation.mutateAsync(deleteDonationId);
-      toast.success('Donasi berhasil dihapus');
+      toast.success("Donasi berhasil dihapus");
       setDeleteDonationId(null);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal menghapus donasi';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal menghapus donasi";
       toast.error(errorMessage);
     }
   };
@@ -131,9 +136,12 @@ export default function DonationPage() {
   const handleVerifyDonation = async (id: string, status: DonationStatus) => {
     try {
       await verifyDonation.mutateAsync({ id, status });
-      toast.success(status === 'VERIFIED' ? 'Donasi terverifikasi' : 'Donasi dibatalkan');
+      toast.success(
+        status === "VERIFIED" ? "Donasi terverifikasi" : "Donasi dibatalkan",
+      );
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal memverifikasi donasi';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal memverifikasi donasi";
       toast.error(errorMessage);
     }
   };
@@ -173,7 +181,9 @@ export default function DonationPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Heart className="h-4 w-4 text-red-500" />
-              <span className="text-sm text-muted-foreground">Total Donasi</span>
+              <span className="text-sm text-muted-foreground">
+                Total Donasi
+              </span>
             </div>
             <p className="text-2xl font-bold">{stats?.totalDonations || 0}</p>
           </CardContent>
@@ -182,7 +192,9 @@ export default function DonationPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-green-500" />
-              <span className="text-sm text-muted-foreground">Total Terkumpul</span>
+              <span className="text-sm text-muted-foreground">
+                Total Terkumpul
+              </span>
             </div>
             <p className="text-2xl font-bold text-green-600">
               {formatCurrency(stats?.totalAmount || 0)}
@@ -193,18 +205,26 @@ export default function DonationPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-blue-500" />
-              <span className="text-sm text-muted-foreground">Campaign Aktif</span>
+              <span className="text-sm text-muted-foreground">
+                Campaign Aktif
+              </span>
             </div>
-            <p className="text-2xl font-bold text-blue-600">{stats?.activeCampaigns || 0}</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {stats?.activeCampaigns || 0}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm text-muted-foreground">Menunggu Verifikasi</span>
+              <span className="text-sm text-muted-foreground">
+                Menunggu Verifikasi
+              </span>
             </div>
-            <p className="text-2xl font-bold text-yellow-600">{stats?.pendingVerification || 0}</p>
+            <p className="text-2xl font-bold text-yellow-600">
+              {stats?.pendingVerification || 0}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -223,7 +243,7 @@ export default function DonationPage() {
           </TabsList>
 
           <div className="flex gap-2">
-            {activeTab === 'campaigns' && (
+            {activeTab === "campaigns" && (
               <Button asChild>
                 <Link href="/donation/campaigns/new">
                   <Plus className="h-4 w-4 mr-2" />
@@ -231,7 +251,7 @@ export default function DonationPage() {
                 </Link>
               </Button>
             )}
-            {activeTab === 'donations' && (
+            {activeTab === "donations" && (
               <Button asChild>
                 <Link href="/donation/new">
                   <Plus className="h-4 w-4 mr-2" />
@@ -253,7 +273,10 @@ export default function DonationPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-4">
-                <Select value={campaignStatusFilter} onValueChange={setCampaignStatusFilter}>
+                <Select
+                  value={campaignStatusFilter}
+                  onValueChange={setCampaignStatusFilter}
+                >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Semua Status" />
                   </SelectTrigger>
@@ -266,7 +289,10 @@ export default function DonationPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button variant="ghost" onClick={() => setCampaignStatusFilter('ALL')}>
+                <Button
+                  variant="ghost"
+                  onClick={() => setCampaignStatusFilter("ALL")}
+                >
                   Reset
                 </Button>
               </div>
@@ -300,30 +326,39 @@ export default function DonationPage() {
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8">
                         <Heart className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-muted-foreground">Tidak ada campaign</p>
+                        <p className="text-muted-foreground">
+                          Tidak ada campaign
+                        </p>
                       </TableCell>
                     </TableRow>
                   ) : (
                     campaigns.map((campaign) => {
-                      const progress = calculateProgress(campaign.collectedAmount, campaign.targetAmount);
+                      const progress = calculateProgress(
+                        campaign.collectedAmount,
+                        campaign.targetAmount,
+                      );
                       return (
                         <TableRow key={campaign.id}>
                           <TableCell>
                             <div>
                               <p className="font-medium">{campaign.title}</p>
                               <p className="text-sm text-muted-foreground">
-                                {campaign.unit?.name || 'Yayasan'}
+                                {campaign.unit?.name || "Yayasan"}
                               </p>
                             </div>
                           </TableCell>
-                          <TableCell>{formatCurrency(campaign.targetAmount)}</TableCell>
+                          <TableCell>
+                            {formatCurrency(campaign.targetAmount)}
+                          </TableCell>
                           <TableCell className="text-green-600 font-medium">
                             {formatCurrency(campaign.collectedAmount)}
                           </TableCell>
                           <TableCell>
                             <div className="space-y-1 w-24">
                               <Progress value={progress} className="h-2" />
-                              <p className="text-xs text-muted-foreground">{progress}%</p>
+                              <p className="text-xs text-muted-foreground">
+                                {progress}%
+                              </p>
                             </div>
                           </TableCell>
                           <TableCell>
@@ -332,16 +367,22 @@ export default function DonationPage() {
                               {campaign.donorCount}
                             </Badge>
                           </TableCell>
-                          <TableCell>{getCampaignStatusBadge(campaign.status)}</TableCell>
+                          <TableCell>
+                            {getCampaignStatusBadge(campaign.status)}
+                          </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1">
                               <Button variant="ghost" size="sm" asChild>
-                                <Link href={`/donation/campaigns/${campaign.id}`}>
+                                <Link
+                                  href={`/donation/campaigns/${campaign.id}`}
+                                >
                                   <Eye className="h-4 w-4" />
                                 </Link>
                               </Button>
                               <Button variant="ghost" size="sm" asChild>
-                                <Link href={`/donation/campaigns/${campaign.id}/edit`}>
+                                <Link
+                                  href={`/donation/campaigns/${campaign.id}/edit`}
+                                >
                                   <Pencil className="h-4 w-4" />
                                 </Link>
                               </Button>
@@ -392,7 +433,10 @@ export default function DonationPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-4">
-                <Select value={donationStatusFilter} onValueChange={setDonationStatusFilter}>
+                <Select
+                  value={donationStatusFilter}
+                  onValueChange={setDonationStatusFilter}
+                >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Semua Status" />
                   </SelectTrigger>
@@ -405,7 +449,10 @@ export default function DonationPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button variant="ghost" onClick={() => setDonationStatusFilter('ALL')}>
+                <Button
+                  variant="ghost"
+                  onClick={() => setDonationStatusFilter("ALL")}
+                >
                   Reset
                 </Button>
               </div>
@@ -439,41 +486,58 @@ export default function DonationPage() {
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8">
                         <Heart className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-muted-foreground">Tidak ada donasi</p>
+                        <p className="text-muted-foreground">
+                          Tidak ada donasi
+                        </p>
                       </TableCell>
                     </TableRow>
                   ) : (
                     donations.map((donation) => (
                       <TableRow key={donation.id}>
                         <TableCell>
-                          {format(new Date(donation.createdAt), 'd MMM yyyy', { locale: localeId })}
+                          {format(new Date(donation.createdAt), "d MMM yyyy", {
+                            locale: localeId,
+                          })}
                         </TableCell>
                         <TableCell>
                           <div>
                             <p className="font-medium">
-                              {donation.isAnonymous ? 'Hamba Allah' : donation.donorName}
+                              {donation.isAnonymous
+                                ? "Hamba Allah"
+                                : donation.donorName}
                             </p>
                             {!donation.isAnonymous && donation.donorPhone && (
-                              <p className="text-sm text-muted-foreground">{donation.donorPhone}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {donation.donorPhone}
+                              </p>
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{getDonationTypeLabel(donation.type)}</Badge>
+                          <Badge variant="outline">
+                            {getDonationTypeLabel(donation.type)}
+                          </Badge>
                         </TableCell>
-                        <TableCell>{donation.campaign?.title || '-'}</TableCell>
+                        <TableCell>{donation.campaign?.title || "-"}</TableCell>
                         <TableCell className="font-medium text-green-600">
                           {formatCurrency(donation.amount)}
                         </TableCell>
-                        <TableCell>{getDonationStatusBadge(donation.status)}</TableCell>
+                        <TableCell>
+                          {getDonationStatusBadge(donation.status)}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            {donation.status === 'PENDING' && (
+                            {donation.status === "PENDING" && (
                               <>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleVerifyDonation(donation.id, 'VERIFIED')}
+                                  onClick={() =>
+                                    handleVerifyDonation(
+                                      donation.id,
+                                      "VERIFIED",
+                                    )
+                                  }
                                   className="text-green-600 hover:text-green-700"
                                 >
                                   <CheckCircle2 className="h-4 w-4" />

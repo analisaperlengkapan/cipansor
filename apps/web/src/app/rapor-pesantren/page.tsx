@@ -1,18 +1,28 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { BookOpen, FileText, Users, Download, Settings, Eye, Trash2, RefreshCw, FileSpreadsheet } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  BookOpen,
+  FileText,
+  Users,
+  Download,
+  Settings,
+  Eye,
+  Trash2,
+  RefreshCw,
+  FileSpreadsheet,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -20,22 +30,27 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { Pagination, ConfirmDialog, PageHeader, LoadingSpinner } from '@/components/shared';
-import { toast } from 'sonner';
-import { useUnits } from '@/hooks/use-units';
-import { useClasses } from '@/hooks/use-classes';
-import { useAcademicYears } from '@/hooks/use-academic-years';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import {
+  Pagination,
+  ConfirmDialog,
+  PageHeader,
+  LoadingSpinner,
+} from "@/components/shared";
+import { toast } from "sonner";
+import { useUnits } from "@/hooks/use-units";
+import { useClasses } from "@/hooks/use-classes";
+import { useAcademicYears } from "@/hooks/use-academic-years";
 import {
   useRaporList,
   useGenerateBatchRapor,
   useDeleteRapor,
   RaporListItem,
   RAPOR_STATUS,
-} from '@/hooks/use-rapor-pesantren';
+} from "@/hooks/use-rapor-pesantren";
 
 const PAGE_SIZE = 10;
 
@@ -43,11 +58,11 @@ export default function RaporPesantrenPage() {
   const router = useRouter();
 
   // Filters
-  const [unitId, setUnitId] = useState<string>('ALL');
-  const [classId, setClassId] = useState<string>('ALL');
-  const [academicYearId, setAcademicYearId] = useState<string>('ALL');
-  const [semester, setSemester] = useState<string>('ALL');
-  const [status, setStatus] = useState<string>('ALL');
+  const [unitId, setUnitId] = useState<string>("ALL");
+  const [classId, setClassId] = useState<string>("ALL");
+  const [academicYearId, setAcademicYearId] = useState<string>("ALL");
+  const [semester, setSemester] = useState<string>("ALL");
+  const [status, setStatus] = useState<string>("ALL");
   const [page, setPage] = useState(1);
 
   // Delete dialog
@@ -55,15 +70,21 @@ export default function RaporPesantrenPage() {
 
   // Queries
   const { data: unitsData } = useUnits();
-  const { data: classesData } = useClasses({ unitId: unitId !== 'ALL' ? unitId : undefined });
+  const { data: classesData } = useClasses({
+    unitId: unitId !== "ALL" ? unitId : undefined,
+  });
   const { data: academicYearsData } = useAcademicYears();
 
-  const { data: raporData, isLoading, refetch } = useRaporList({
-    unitId: unitId !== 'ALL' ? unitId : undefined,
-    classId: classId !== 'ALL' ? classId : undefined,
-    academicYearId: academicYearId !== 'ALL' ? academicYearId : undefined,
-    semester: semester !== 'ALL' ? parseInt(semester) : undefined,
-    status: status !== 'ALL' ? status : undefined,
+  const {
+    data: raporData,
+    isLoading,
+    refetch,
+  } = useRaporList({
+    unitId: unitId !== "ALL" ? unitId : undefined,
+    classId: classId !== "ALL" ? classId : undefined,
+    academicYearId: academicYearId !== "ALL" ? academicYearId : undefined,
+    semester: semester !== "ALL" ? parseInt(semester) : undefined,
+    status: status !== "ALL" ? status : undefined,
     page,
     limit: PAGE_SIZE,
   });
@@ -81,7 +102,7 @@ export default function RaporPesantrenPage() {
 
   const handleGenerateBatch = async () => {
     if (!unitId || !academicYearId || !semester) {
-      toast.error('Pilih unit, tahun ajaran, dan semester terlebih dahulu');
+      toast.error("Pilih unit, tahun ajaran, dan semester terlebih dahulu");
       return;
     }
 
@@ -93,9 +114,11 @@ export default function RaporPesantrenPage() {
         semester: parseInt(semester),
       });
 
-      toast.success(`Rapor berhasil digenerate: ${result.success}/${result.total}`);
+      toast.success(
+        `Rapor berhasil digenerate: ${result.success}/${result.total}`,
+      );
     } catch {
-      toast.error('Gagal generate rapor');
+      toast.error("Gagal generate rapor");
     }
   };
 
@@ -104,10 +127,10 @@ export default function RaporPesantrenPage() {
 
     try {
       await deleteRapor.mutateAsync(deleteId);
-      toast.success('Rapor berhasil dihapus');
+      toast.success("Rapor berhasil dihapus");
       setDeleteId(null);
     } catch {
-      toast.error('Gagal menghapus rapor');
+      toast.error("Gagal menghapus rapor");
     }
   };
 
@@ -115,21 +138,24 @@ export default function RaporPesantrenPage() {
     const statusInfo = RAPOR_STATUS[status as keyof typeof RAPOR_STATUS];
     if (!statusInfo) return <Badge variant="outline">{status}</Badge>;
 
-    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-      gray: 'secondary',
-      blue: 'default',
-      green: 'default',
+    const variants: Record<
+      string,
+      "default" | "secondary" | "destructive" | "outline"
+    > = {
+      gray: "secondary",
+      blue: "default",
+      green: "default",
     };
 
     return (
-      <Badge variant={variants[statusInfo.color] || 'outline'}>
+      <Badge variant={variants[statusInfo.color] || "outline"}>
         {statusInfo.label}
       </Badge>
     );
   };
 
   const formatScore = (score: number | null) => {
-    if (score === null) return '-';
+    if (score === null) return "-";
     return score.toFixed(1);
   };
 
@@ -159,7 +185,7 @@ export default function RaporPesantrenPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {rapors.filter(r => r.status === 'DRAFT').length}
+              {rapors.filter((r) => r.status === "DRAFT").length}
             </div>
           </CardContent>
         </Card>
@@ -171,7 +197,7 @@ export default function RaporPesantrenPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {rapors.filter(r => r.status === 'FINAL').length}
+              {rapors.filter((r) => r.status === "FINAL").length}
             </div>
           </CardContent>
         </Card>
@@ -183,7 +209,7 @@ export default function RaporPesantrenPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {rapors.filter(r => r.status === 'PUBLISHED').length}
+              {rapors.filter((r) => r.status === "PUBLISHED").length}
             </div>
           </CardContent>
         </Card>
@@ -199,7 +225,10 @@ export default function RaporPesantrenPage() {
             <RefreshCw className="w-4 h-4 mr-2" />
             Generate Batch
           </TabsTrigger>
-          <TabsTrigger value="leger" onClick={() => router.push('/rapor-pesantren/leger')}>
+          <TabsTrigger
+            value="leger"
+            onClick={() => router.push("/rapor-pesantren/leger")}
+          >
             <FileSpreadsheet className="w-4 h-4 mr-2" />
             Leger Nilai
           </TabsTrigger>
@@ -245,7 +274,10 @@ export default function RaporPesantrenPage() {
                   </SelectContent>
                 </Select>
 
-                <Select value={academicYearId} onValueChange={setAcademicYearId}>
+                <Select
+                  value={academicYearId}
+                  onValueChange={setAcademicYearId}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Tahun Ajaran" />
                   </SelectTrigger>
@@ -311,9 +343,13 @@ export default function RaporPesantrenPage() {
                     <TableBody>
                       {rapors.map((rapor) => (
                         <TableRow key={rapor.id}>
-                          <TableCell className="font-mono">{rapor.studentNis}</TableCell>
-                          <TableCell className="font-medium">{rapor.studentName}</TableCell>
-                          <TableCell>{rapor.className || '-'}</TableCell>
+                          <TableCell className="font-mono">
+                            {rapor.studentNis}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {rapor.studentName}
+                          </TableCell>
+                          <TableCell>{rapor.className || "-"}</TableCell>
                           <TableCell>{rapor.academicYearName}</TableCell>
                           <TableCell>Semester {rapor.semester}</TableCell>
                           <TableCell className="font-semibold">
@@ -321,7 +357,7 @@ export default function RaporPesantrenPage() {
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">
-                              {rapor.overallGrade || '-'}
+                              {rapor.overallGrade || "-"}
                             </Badge>
                           </TableCell>
                           <TableCell>{getStatusBadge(rapor.status)}</TableCell>
@@ -330,7 +366,9 @@ export default function RaporPesantrenPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => router.push(`/rapor-pesantren/${rapor.id}`)}
+                                onClick={() =>
+                                  router.push(`/rapor-pesantren/${rapor.id}`)
+                                }
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
@@ -387,13 +425,15 @@ export default function RaporPesantrenPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Kelas (opsional)</label>
+                  <label className="text-sm font-medium">
+                    Kelas (opsional)
+                  </label>
                   <Select value={classId} onValueChange={setClassId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Semua Kelas" />
                     </SelectTrigger>
                     <SelectContent>
-                    <SelectItem value="ALL">Semua Kelas</SelectItem>
+                      <SelectItem value="ALL">Semua Kelas</SelectItem>
                       {classes.map((cls) => (
                         <SelectItem key={cls.id} value={cls.id}>
                           {cls.name}
@@ -405,7 +445,10 @@ export default function RaporPesantrenPage() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Tahun Ajaran *</label>
-                  <Select value={academicYearId} onValueChange={setAcademicYearId}>
+                  <Select
+                    value={academicYearId}
+                    onValueChange={setAcademicYearId}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih Tahun Ajaran" />
                     </SelectTrigger>
@@ -434,7 +477,9 @@ export default function RaporPesantrenPage() {
               </div>
 
               <div className="bg-muted p-4 rounded-lg">
-                <h4 className="font-medium mb-2">Komponen yang akan dihitung:</h4>
+                <h4 className="font-medium mb-2">
+                  Komponen yang akan dihitung:
+                </h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   <li>• Tahfidz Al-Quran (hafalan, murajaah, tasmi)</li>
                   <li>• Ibadah Harian (sholat, dzikir, tilawah)</li>
@@ -448,7 +493,12 @@ export default function RaporPesantrenPage() {
 
               <Button
                 onClick={handleGenerateBatch}
-                disabled={generateBatch.isPending || !unitId || !academicYearId || !semester}
+                disabled={
+                  generateBatch.isPending ||
+                  !unitId ||
+                  !academicYearId ||
+                  !semester
+                }
                 className="w-full"
               >
                 {generateBatch.isPending ? (
@@ -474,7 +524,8 @@ export default function RaporPesantrenPage() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-4">
-                Konfigurasi bobot penilaian dapat diatur per unit. Pilih unit terlebih dahulu untuk mengatur bobot.
+                Konfigurasi bobot penilaian dapat diatur per unit. Pilih unit
+                terlebih dahulu untuk mengatur bobot.
               </p>
 
               <div className="space-y-4">
@@ -496,42 +547,54 @@ export default function RaporPesantrenPage() {
                     <div className="p-4 border rounded-lg">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-medium">Tahfidz</span>
-                        <span className="text-sm text-muted-foreground">25%</span>
+                        <span className="text-sm text-muted-foreground">
+                          25%
+                        </span>
                       </div>
                       <Progress value={25} className="h-2" />
                     </div>
                     <div className="p-4 border rounded-lg">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-medium">Ibadah</span>
-                        <span className="text-sm text-muted-foreground">20%</span>
+                        <span className="text-sm text-muted-foreground">
+                          20%
+                        </span>
                       </div>
                       <Progress value={20} className="h-2" />
                     </div>
                     <div className="p-4 border rounded-lg">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-medium">Muhadhoroh</span>
-                        <span className="text-sm text-muted-foreground">15%</span>
+                        <span className="text-sm text-muted-foreground">
+                          15%
+                        </span>
                       </div>
                       <Progress value={15} className="h-2" />
                     </div>
                     <div className="p-4 border rounded-lg">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-medium">Muhadatsah</span>
-                        <span className="text-sm text-muted-foreground">15%</span>
+                        <span className="text-sm text-muted-foreground">
+                          15%
+                        </span>
                       </div>
                       <Progress value={15} className="h-2" />
                     </div>
                     <div className="p-4 border rounded-lg">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-medium">Kitab</span>
-                        <span className="text-sm text-muted-foreground">15%</span>
+                        <span className="text-sm text-muted-foreground">
+                          15%
+                        </span>
                       </div>
                       <Progress value={15} className="h-2" />
                     </div>
                     <div className="p-4 border rounded-lg">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-medium">Akhlak</span>
-                        <span className="text-sm text-muted-foreground">10%</span>
+                        <span className="text-sm text-muted-foreground">
+                          10%
+                        </span>
                       </div>
                       <Progress value={10} className="h-2" />
                     </div>

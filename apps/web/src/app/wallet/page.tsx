@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo } from "react";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -15,10 +15,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -26,17 +26,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Wallet,
   Plus,
@@ -56,9 +56,9 @@ import {
   Banknote,
   QrCode,
   Download,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import Link from 'next/link';
+} from "lucide-react";
+import { toast } from "sonner";
+import Link from "next/link";
 import {
   useWallets,
   useWalletSummary,
@@ -81,15 +81,15 @@ import {
   TransactionType,
   ReferenceType,
   PaymentMethod,
-} from '@/hooks/use-wallet';
-import { useUnits } from '@/hooks';
-import { useQuery } from '@tanstack/react-query';
-import api from '@/lib/api';
+} from "@/hooks/use-wallet";
+import { useUnits } from "@/hooks";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 // Simple student search
 const searchStudents = async (search: string) => {
   if (!search || search.length < 2) return [];
-  const res = await api.get('/students', { params: { search, limit: 10 } });
+  const res = await api.get("/students", { params: { search, limit: 10 } });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return res.data.data.map((s: any) => ({
     id: s.id,
@@ -102,7 +102,17 @@ const searchStudents = async (search: string) => {
 
 // Student picker component extracted to avoid re-creation in render
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const StudentPicker = ({ onSelect, search, setSearch, results }: { onSelect: (student: any) => void, search: string, setSearch: (v: string) => void, results: any[] | undefined }) => (
+const StudentPicker = ({
+  onSelect,
+  search,
+  setSearch,
+  results,
+}: {
+  onSelect: (student: any) => void;
+  search: string;
+  setSearch: (v: string) => void;
+  results: any[] | undefined;
+}) => (
   <div className="space-y-2">
     <Label>Cari Santri</Label>
     <Input
@@ -145,48 +155,58 @@ const StudentPicker = ({ onSelect, search, setSearch, results }: { onSelect: (st
 );
 
 export default function WalletPage() {
-  const [activeTab, setActiveTab] = useState('wallets');
-  const [search, setSearch] = useState('');
-  const [selectedUnitId, setSelectedUnitId] = useState<string>('ALL');
+  const [activeTab, setActiveTab] = useState("wallets");
+  const [search, setSearch] = useState("");
+  const [selectedUnitId, setSelectedUnitId] = useState<string>("ALL");
   const [page, setPage] = useState(1);
   const [transactionPage, setTransactionPage] = useState(1);
-  const [transactionType, setTransactionType] = useState<string>('ALL');
-  
+  const [transactionType, setTransactionType] = useState<string>("ALL");
+
   // Dialogs
   const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
   const [deductDialogOpen, setDeductDialogOpen] = useState(false);
   const [refundDialogOpen, setRefundDialogOpen] = useState(false);
   const [bulkTopUpDialogOpen, setBulkTopUpDialogOpen] = useState(false);
-  
+
   // Forms
-  const [selectedStudentId, setSelectedStudentId] = useState('');
-  const [studentSearch, setStudentSearch] = useState('');
+  const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [studentSearch, setStudentSearch] = useState("");
   const [amount, setAmount] = useState<number>(0);
-  const [description, setDescription] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
-  const [referenceType, setReferenceType] = useState<ReferenceType>('OTHER');
+  const [description, setDescription] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
+  const [referenceType, setReferenceType] = useState<ReferenceType>("OTHER");
   const [bulkAmount, setBulkAmount] = useState<number>(0);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
   // Queries
   const { data: units } = useUnits();
-  const { data: walletsData, isLoading: walletsLoading, refetch: refetchWallets } = useWallets({
+  const {
+    data: walletsData,
+    isLoading: walletsLoading,
+    refetch: refetchWallets,
+  } = useWallets({
     page,
     limit: 20,
     search: search || undefined,
-    unitId: selectedUnitId !== 'ALL' ? selectedUnitId : undefined,
-  });
-  
-  const { data: summary } = useWalletSummary(selectedUnitId !== 'ALL' ? selectedUnitId : undefined);
-  
-  const { data: transactionsData, isLoading: transactionsLoading } = useWalletTransactions({
-    page: transactionPage,
-    limit: 20,
-    type: transactionType !== 'ALL' ? (transactionType as TransactionType) : undefined,
+    unitId: selectedUnitId !== "ALL" ? selectedUnitId : undefined,
   });
 
+  const { data: summary } = useWalletSummary(
+    selectedUnitId !== "ALL" ? selectedUnitId : undefined,
+  );
+
+  const { data: transactionsData, isLoading: transactionsLoading } =
+    useWalletTransactions({
+      page: transactionPage,
+      limit: 20,
+      type:
+        transactionType !== "ALL"
+          ? (transactionType as TransactionType)
+          : undefined,
+    });
+
   const { data: searchResults } = useQuery({
-    queryKey: ['student-search-wallet', studentSearch],
+    queryKey: ["student-search-wallet", studentSearch],
     queryFn: () => searchStudents(studentSearch),
     enabled: studentSearch.length >= 2,
   });
@@ -199,28 +219,28 @@ export default function WalletPage() {
 
   // Reset form
   const resetForm = () => {
-    setSelectedStudentId('');
-    setStudentSearch('');
+    setSelectedStudentId("");
+    setStudentSearch("");
     setAmount(0);
-    setDescription('');
-    setPaymentMethod('CASH');
-    setReferenceType('OTHER');
+    setDescription("");
+    setPaymentMethod("CASH");
+    setReferenceType("OTHER");
   };
 
   // Handle Top Up
   const handleTopUp = async () => {
     if (!selectedStudentId || amount <= 0) {
-      toast.error('Pilih santri dan masukkan nominal');
+      toast.error("Pilih santri dan masukkan nominal");
       return;
     }
-    
+
     await topUpMutation.mutateAsync({
       studentId: selectedStudentId,
       amount,
       description: description || undefined,
       paymentMethod,
     });
-    
+
     setTopUpDialogOpen(false);
     resetForm();
     refetchWallets();
@@ -229,17 +249,17 @@ export default function WalletPage() {
   // Handle Deduct
   const handleDeduct = async () => {
     if (!selectedStudentId || amount <= 0) {
-      toast.error('Pilih santri dan masukkan nominal');
+      toast.error("Pilih santri dan masukkan nominal");
       return;
     }
-    
+
     await deductMutation.mutateAsync({
       studentId: selectedStudentId,
       amount,
       description: description || undefined,
       referenceType,
     });
-    
+
     setDeductDialogOpen(false);
     resetForm();
     refetchWallets();
@@ -248,17 +268,17 @@ export default function WalletPage() {
   // Handle Refund
   const handleRefund = async () => {
     if (!selectedStudentId || amount <= 0 || !description) {
-      toast.error('Lengkapi semua field yang diperlukan');
+      toast.error("Lengkapi semua field yang diperlukan");
       return;
     }
-    
+
     await refundMutation.mutateAsync({
       studentId: selectedStudentId,
       amount,
       description,
       referenceType,
     });
-    
+
     setRefundDialogOpen(false);
     resetForm();
     refetchWallets();
@@ -267,75 +287,81 @@ export default function WalletPage() {
   // Handle Bulk Top Up
   const handleBulkTopUp = async () => {
     if (selectedStudentIds.length === 0 || bulkAmount <= 0) {
-      toast.error('Pilih santri dan masukkan nominal');
+      toast.error("Pilih santri dan masukkan nominal");
       return;
     }
-    
+
     await bulkTopUpMutation.mutateAsync({
       studentIds: selectedStudentIds,
       amount: bulkAmount,
       description: description || undefined,
     });
-    
+
     setBulkTopUpDialogOpen(false);
     setSelectedStudentIds([]);
     setBulkAmount(0);
-    setDescription('');
+    setDescription("");
     refetchWallets();
   };
 
   // Stats cards
-  const statsCards = useMemo(() => [
-    {
-      title: 'Total Wallet',
-      value: summary?.totalWallets || 0,
-      icon: Users,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
-    },
-    {
-      title: 'Total Saldo',
-      value: formatCurrency(summary?.totalBalance || 0),
-      icon: DollarSign,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
-    },
-    {
-      title: 'Rata-rata Saldo',
-      value: formatCurrency(summary?.averageBalance || 0),
-      icon: TrendingUp,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
-    },
-    {
-      title: 'Saldo Rendah',
-      value: summary?.walletsWithLowBalance || 0,
-      icon: AlertTriangle,
-      color: 'text-red-600',
-      bgColor: 'bg-red-100',
-      subtitle: '< Rp 10.000',
-    },
-  ], [summary]);
+  const statsCards = useMemo(
+    () => [
+      {
+        title: "Total Wallet",
+        value: summary?.totalWallets || 0,
+        icon: Users,
+        color: "text-blue-600",
+        bgColor: "bg-blue-100",
+      },
+      {
+        title: "Total Saldo",
+        value: formatCurrency(summary?.totalBalance || 0),
+        icon: DollarSign,
+        color: "text-green-600",
+        bgColor: "bg-green-100",
+      },
+      {
+        title: "Rata-rata Saldo",
+        value: formatCurrency(summary?.averageBalance || 0),
+        icon: TrendingUp,
+        color: "text-purple-600",
+        bgColor: "bg-purple-100",
+      },
+      {
+        title: "Saldo Rendah",
+        value: summary?.walletsWithLowBalance || 0,
+        icon: AlertTriangle,
+        color: "text-red-600",
+        bgColor: "bg-red-100",
+        subtitle: "< Rp 10.000",
+      },
+    ],
+    [summary],
+  );
 
-  const todayStats = useMemo(() => [
-    {
-      title: 'Transaksi Hari Ini',
-      value: summary?.todayTransactions || 0,
-      icon: History,
-    },
-    {
-      title: 'Top Up Hari Ini',
-      value: summary?.todayTopUps || 0,
-      icon: ArrowUpRight,
-      color: 'text-green-600',
-    },
-    {
-      title: 'Pembelian Hari Ini',
-      value: summary?.todayPurchases || 0,
-      icon: ArrowDownRight,
-      color: 'text-red-600',
-    },
-  ], [summary]);
+  const todayStats = useMemo(
+    () => [
+      {
+        title: "Transaksi Hari Ini",
+        value: summary?.todayTransactions || 0,
+        icon: History,
+      },
+      {
+        title: "Top Up Hari Ini",
+        value: summary?.todayTopUps || 0,
+        icon: ArrowUpRight,
+        color: "text-green-600",
+      },
+      {
+        title: "Pembelian Hari Ini",
+        value: summary?.todayPurchases || 0,
+        icon: ArrowDownRight,
+        color: "text-red-600",
+      },
+    ],
+    [summary],
+  );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleStudentSelect = (student: any) => {
@@ -381,7 +407,9 @@ export default function WalletPage() {
                   <p className="text-sm text-muted-foreground">{stat.title}</p>
                   <p className="text-2xl font-bold">{stat.value}</p>
                   {stat.subtitle && (
-                    <p className="text-xs text-muted-foreground">{stat.subtitle}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {stat.subtitle}
+                    </p>
                   )}
                 </div>
                 <div className={`p-3 rounded-full ${stat.bgColor}`}>
@@ -398,7 +426,9 @@ export default function WalletPage() {
         {todayStats.map((stat, index) => (
           <Card key={index}>
             <CardContent className="p-4 flex items-center gap-4">
-              <stat.icon className={`h-8 w-8 ${stat.color || 'text-muted-foreground'}`} />
+              <stat.icon
+                className={`h-8 w-8 ${stat.color || "text-muted-foreground"}`}
+              />
               <div>
                 <p className="text-sm text-muted-foreground">{stat.title}</p>
                 <p className="text-xl font-bold">{stat.value}</p>
@@ -500,34 +530,38 @@ export default function WalletPage() {
                     {walletsData?.data?.map((wallet: WalletType) => (
                       <TableRow key={wallet.id}>
                         <TableCell className="font-medium">
-                          {wallet.student?.name || '-'}
+                          {wallet.student?.name || "-"}
                         </TableCell>
                         <TableCell className="font-mono text-sm">
-                          {wallet.student?.nis || '-'}
+                          {wallet.student?.nis || "-"}
                         </TableCell>
                         <TableCell>
-                          {wallet.student?.class?.name || '-'}
+                          {wallet.student?.class?.name || "-"}
                         </TableCell>
                         <TableCell>
-                          {wallet.student?.unit?.name || '-'}
+                          {wallet.student?.unit?.name || "-"}
                         </TableCell>
                         <TableCell className="text-right font-bold">
-                          <span className={wallet.balance < 10000 ? 'text-red-600' : 'text-green-600'}>
+                          <span
+                            className={
+                              wallet.balance < 10000
+                                ? "text-red-600"
+                                : "text-green-600"
+                            }
+                          >
                             {formatCurrency(wallet.balance)}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={wallet.isActive ? 'default' : 'secondary'}>
-                            {wallet.isActive ? 'Aktif' : 'Nonaktif'}
+                          <Badge
+                            variant={wallet.isActive ? "default" : "secondary"}
+                          >
+                            {wallet.isActive ? "Aktif" : "Nonaktif"}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              asChild
-                            >
+                            <Button variant="ghost" size="icon" asChild>
                               <Link href={`/wallet/${wallet.studentId}`}>
                                 <Eye className="h-4 w-4" />
                               </Link>
@@ -538,7 +572,7 @@ export default function WalletPage() {
                               className="text-green-600"
                               onClick={() => {
                                 setSelectedStudentId(wallet.studentId);
-                                setStudentSearch(wallet.student?.name || '');
+                                setStudentSearch(wallet.student?.name || "");
                                 setTopUpDialogOpen(true);
                               }}
                             >
@@ -550,7 +584,7 @@ export default function WalletPage() {
                               className="text-red-600"
                               onClick={() => {
                                 setSelectedStudentId(wallet.studentId);
-                                setStudentSearch(wallet.student?.name || '');
+                                setStudentSearch(wallet.student?.name || "");
                                 setDeductDialogOpen(true);
                               }}
                             >
@@ -563,7 +597,7 @@ export default function WalletPage() {
                   </TableBody>
                 </Table>
               )}
-              
+
               {/* Pagination */}
               {walletsData?.meta && walletsData.meta.totalPages > 1 && (
                 <div className="flex justify-center gap-2 mt-4">
@@ -645,7 +679,9 @@ export default function WalletPage() {
                       <TableHead>Tipe</TableHead>
                       <TableHead>Referensi</TableHead>
                       <TableHead className="text-right">Nominal</TableHead>
-                      <TableHead className="text-right">Saldo Setelah</TableHead>
+                      <TableHead className="text-right">
+                        Saldo Setelah
+                      </TableHead>
                       <TableHead>Keterangan</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -653,16 +689,16 @@ export default function WalletPage() {
                     {transactionsData?.data?.map((tx: WalletTransaction) => (
                       <TableRow key={tx.id}>
                         <TableCell className="text-sm">
-                          {new Date(tx.createdAt).toLocaleString('id-ID', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
+                          {new Date(tx.createdAt).toLocaleString("id-ID", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
                           })}
                         </TableCell>
                         <TableCell className="font-medium">
-                          {tx.wallet?.student?.name || '-'}
+                          {tx.wallet?.student?.name || "-"}
                         </TableCell>
                         <TableCell>
                           <Badge className={getTransactionTypeColor(tx.type)}>
@@ -670,15 +706,21 @@ export default function WalletPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm">
-                          {tx.referenceType ? getReferenceTypeLabel(tx.referenceType) : '-'}
+                          {tx.referenceType
+                            ? getReferenceTypeLabel(tx.referenceType)
+                            : "-"}
                         </TableCell>
                         <TableCell className="text-right font-bold">
-                          <span className={
-                            tx.type === 'TOPUP' || tx.type === 'REFUND'
-                              ? 'text-green-600'
-                              : 'text-red-600'
-                          }>
-                            {tx.type === 'TOPUP' || tx.type === 'REFUND' ? '+' : '-'}
+                          <span
+                            className={
+                              tx.type === "TOPUP" || tx.type === "REFUND"
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }
+                          >
+                            {tx.type === "TOPUP" || tx.type === "REFUND"
+                              ? "+"
+                              : "-"}
                             {formatCurrency(tx.amount)}
                           </span>
                         </TableCell>
@@ -686,7 +728,7 @@ export default function WalletPage() {
                           {formatCurrency(tx.balanceAfter)}
                         </TableCell>
                         <TableCell className="max-w-xs truncate text-sm text-muted-foreground">
-                          {tx.description || '-'}
+                          {tx.description || "-"}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -695,46 +737,51 @@ export default function WalletPage() {
               )}
 
               {/* Pagination */}
-              {transactionsData?.meta && transactionsData.meta.totalPages > 1 && (
-                <div className="flex justify-center gap-2 mt-4">
-                  <Button
-                    variant="outline"
-                    disabled={transactionPage <= 1}
-                    onClick={() => setTransactionPage(transactionPage - 1)}
-                  >
-                    Sebelumnya
-                  </Button>
-                  <span className="flex items-center px-4">
-                    Halaman {transactionPage} dari {transactionsData.meta.totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    disabled={transactionPage >= transactionsData.meta.totalPages}
-                    onClick={() => setTransactionPage(transactionPage + 1)}
-                  >
-                    Selanjutnya
-                  </Button>
-                </div>
-              )}
+              {transactionsData?.meta &&
+                transactionsData.meta.totalPages > 1 && (
+                  <div className="flex justify-center gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      disabled={transactionPage <= 1}
+                      onClick={() => setTransactionPage(transactionPage - 1)}
+                    >
+                      Sebelumnya
+                    </Button>
+                    <span className="flex items-center px-4">
+                      Halaman {transactionPage} dari{" "}
+                      {transactionsData.meta.totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      disabled={
+                        transactionPage >= transactionsData.meta.totalPages
+                      }
+                      onClick={() => setTransactionPage(transactionPage + 1)}
+                    >
+                      Selanjutnya
+                    </Button>
+                  </div>
+                )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
       {/* Top Up Dialog */}
-      <Dialog open={topUpDialogOpen} onOpenChange={(open) => {
-        setTopUpDialogOpen(open);
-        if (!open) resetForm();
-      }}>
+      <Dialog
+        open={topUpDialogOpen}
+        onOpenChange={(open) => {
+          setTopUpDialogOpen(open);
+          if (!open) resetForm();
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ArrowUpRight className="h-5 w-5 text-green-600" />
               Top Up Saldo
             </DialogTitle>
-            <DialogDescription>
-              Tambah saldo ke wallet santri
-            </DialogDescription>
+            <DialogDescription>Tambah saldo ke wallet santri</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <StudentPicker
@@ -743,13 +790,13 @@ export default function WalletPage() {
               setSearch={setStudentSearch}
               results={searchResults}
             />
-            
+
             <div className="space-y-2">
               <Label>Nominal Top Up</Label>
               <Input
                 type="number"
                 placeholder="Masukkan nominal..."
-                value={amount || ''}
+                value={amount || ""}
                 onChange={(e) => setAmount(Number(e.target.value))}
               />
               <div className="flex gap-2 flex-wrap">
@@ -774,13 +821,19 @@ export default function WalletPage() {
                   <Button
                     key={method.value}
                     type="button"
-                    variant={paymentMethod === method.value ? 'default' : 'outline'}
+                    variant={
+                      paymentMethod === method.value ? "default" : "outline"
+                    }
                     className="flex items-center gap-2"
                     onClick={() => setPaymentMethod(method.value)}
                   >
-                    {method.value === 'CASH' && <Banknote className="h-4 w-4" />}
-                    {method.value === 'BANK_TRANSFER' && <CreditCard className="h-4 w-4" />}
-                    {method.value === 'QRIS' && <QrCode className="h-4 w-4" />}
+                    {method.value === "CASH" && (
+                      <Banknote className="h-4 w-4" />
+                    )}
+                    {method.value === "BANK_TRANSFER" && (
+                      <CreditCard className="h-4 w-4" />
+                    )}
+                    {method.value === "QRIS" && <QrCode className="h-4 w-4" />}
                     {method.label}
                   </Button>
                 ))}
@@ -802,7 +855,9 @@ export default function WalletPage() {
             </Button>
             <Button
               onClick={handleTopUp}
-              disabled={topUpMutation.isPending || !selectedStudentId || amount <= 0}
+              disabled={
+                topUpMutation.isPending || !selectedStudentId || amount <= 0
+              }
               className="bg-green-600 hover:bg-green-700"
             >
               {topUpMutation.isPending && (
@@ -815,10 +870,13 @@ export default function WalletPage() {
       </Dialog>
 
       {/* Deduct Dialog */}
-      <Dialog open={deductDialogOpen} onOpenChange={(open) => {
-        setDeductDialogOpen(open);
-        if (!open) resetForm();
-      }}>
+      <Dialog
+        open={deductDialogOpen}
+        onOpenChange={(open) => {
+          setDeductDialogOpen(open);
+          if (!open) resetForm();
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -836,20 +894,23 @@ export default function WalletPage() {
               setSearch={setStudentSearch}
               results={searchResults}
             />
-            
+
             <div className="space-y-2">
               <Label>Nominal</Label>
               <Input
                 type="number"
                 placeholder="Masukkan nominal..."
-                value={amount || ''}
+                value={amount || ""}
                 onChange={(e) => setAmount(Number(e.target.value))}
               />
             </div>
 
             <div className="space-y-2">
               <Label>Tipe Referensi</Label>
-              <Select value={referenceType} onValueChange={(val) => setReferenceType(val as ReferenceType)}>
+              <Select
+                value={referenceType}
+                onValueChange={(val) => setReferenceType(val as ReferenceType)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -873,12 +934,17 @@ export default function WalletPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeductDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setDeductDialogOpen(false)}
+            >
               Batal
             </Button>
             <Button
               onClick={handleDeduct}
-              disabled={deductMutation.isPending || !selectedStudentId || amount <= 0}
+              disabled={
+                deductMutation.isPending || !selectedStudentId || amount <= 0
+              }
               variant="destructive"
             >
               {deductMutation.isPending && (
@@ -891,10 +957,13 @@ export default function WalletPage() {
       </Dialog>
 
       {/* Refund Dialog */}
-      <Dialog open={refundDialogOpen} onOpenChange={(open) => {
-        setRefundDialogOpen(open);
-        if (!open) resetForm();
-      }}>
+      <Dialog
+        open={refundDialogOpen}
+        onOpenChange={(open) => {
+          setRefundDialogOpen(open);
+          if (!open) resetForm();
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -912,20 +981,23 @@ export default function WalletPage() {
               setSearch={setStudentSearch}
               results={searchResults}
             />
-            
+
             <div className="space-y-2">
               <Label>Nominal Refund</Label>
               <Input
                 type="number"
                 placeholder="Masukkan nominal..."
-                value={amount || ''}
+                value={amount || ""}
                 onChange={(e) => setAmount(Number(e.target.value))}
               />
             </div>
 
             <div className="space-y-2">
               <Label>Tipe Referensi</Label>
-              <Select value={referenceType} onValueChange={(val) => setReferenceType(val as ReferenceType)}>
+              <Select
+                value={referenceType}
+                onValueChange={(val) => setReferenceType(val as ReferenceType)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -950,12 +1022,20 @@ export default function WalletPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRefundDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setRefundDialogOpen(false)}
+            >
               Batal
             </Button>
             <Button
               onClick={handleRefund}
-              disabled={refundMutation.isPending || !selectedStudentId || amount <= 0 || !description}
+              disabled={
+                refundMutation.isPending ||
+                !selectedStudentId ||
+                amount <= 0 ||
+                !description
+              }
             >
               {refundMutation.isPending && (
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -967,14 +1047,17 @@ export default function WalletPage() {
       </Dialog>
 
       {/* Bulk Top Up Dialog */}
-      <Dialog open={bulkTopUpDialogOpen} onOpenChange={(open) => {
-        setBulkTopUpDialogOpen(open);
-        if (!open) {
-          setSelectedStudentIds([]);
-          setBulkAmount(0);
-          setDescription('');
-        }
-      }}>
+      <Dialog
+        open={bulkTopUpDialogOpen}
+        onOpenChange={(open) => {
+          setBulkTopUpDialogOpen(open);
+          if (!open) {
+            setSelectedStudentIds([]);
+            setBulkAmount(0);
+            setDescription("");
+          }
+        }}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -989,19 +1072,20 @@ export default function WalletPage() {
             <div className="space-y-2">
               <Label>Pilih Santri dari Daftar</Label>
               <p className="text-sm text-muted-foreground">
-                Centang wallet yang ingin di-top up dari tab Daftar Wallet, lalu kembali ke sini.
+                Centang wallet yang ingin di-top up dari tab Daftar Wallet, lalu
+                kembali ke sini.
               </p>
               <Badge variant="outline" className="text-lg px-4 py-2">
                 {selectedStudentIds.length} santri dipilih
               </Badge>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Nominal Top Up per Santri</Label>
               <Input
                 type="number"
                 placeholder="Masukkan nominal..."
-                value={bulkAmount || ''}
+                value={bulkAmount || ""}
                 onChange={(e) => setBulkAmount(Number(e.target.value))}
               />
               <div className="flex gap-2 flex-wrap">
@@ -1032,7 +1116,8 @@ export default function WalletPage() {
               <div className="p-4 bg-muted rounded-lg">
                 <p className="text-sm font-medium">Ringkasan:</p>
                 <p className="text-sm">
-                  {selectedStudentIds.length} santri × {formatCurrency(bulkAmount)} = {' '}
+                  {selectedStudentIds.length} santri ×{" "}
+                  {formatCurrency(bulkAmount)} ={" "}
                   <span className="font-bold text-green-600">
                     {formatCurrency(selectedStudentIds.length * bulkAmount)}
                   </span>
@@ -1041,12 +1126,19 @@ export default function WalletPage() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setBulkTopUpDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setBulkTopUpDialogOpen(false)}
+            >
               Batal
             </Button>
             <Button
               onClick={handleBulkTopUp}
-              disabled={bulkTopUpMutation.isPending || selectedStudentIds.length === 0 || bulkAmount <= 0}
+              disabled={
+                bulkTopUpMutation.isPending ||
+                selectedStudentIds.length === 0 ||
+                bulkAmount <= 0
+              }
               className="bg-green-600 hover:bg-green-700"
             >
               {bulkTopUpMutation.isPending && (

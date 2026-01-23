@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useEffect } from "react";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Form,
   FormControl,
@@ -12,32 +12,36 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
-import { QuestionType, Question } from '@/hooks/use-cbt';
-import { Plus, Trash2, X } from 'lucide-react';
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { QuestionType, Question } from "@/hooks/use-cbt";
+import { Plus, Trash2, X } from "lucide-react";
 
 const questionSchema = z.object({
   type: z.nativeEnum(QuestionType),
-  content: z.string().min(1, 'Pertanyaan wajib diisi'),
+  content: z.string().min(1, "Pertanyaan wajib diisi"),
   points: z.coerce.number().min(1),
   explanation: z.string().optional(),
   // For MC
-  options: z.array(z.object({
-    id: z.string(),
-    text: z.string().min(1, 'Opsi wajib diisi'),
-  })).optional(),
+  options: z
+    .array(
+      z.object({
+        id: z.string(),
+        text: z.string().min(1, "Opsi wajib diisi"),
+      }),
+    )
+    .optional(),
   answerKey: z.any().optional(), // Store ID of correct option or boolean or text
 });
 
@@ -50,19 +54,24 @@ interface QuestionFormProps {
   isLoading?: boolean;
 }
 
-export function QuestionForm({ initialData, onSubmit, onCancel, isLoading }: QuestionFormProps) {
+export function QuestionForm({
+  initialData,
+  onSubmit,
+  onCancel,
+  isLoading,
+}: QuestionFormProps) {
   const form = useForm<QuestionFormData>({
     resolver: zodResolver(questionSchema),
     defaultValues: {
       type: initialData?.type || QuestionType.MULTIPLE_CHOICE,
-      content: initialData?.content || '',
+      content: initialData?.content || "",
       points: initialData?.points || 5,
-      explanation: initialData?.explanation || '',
+      explanation: initialData?.explanation || "",
       options: initialData?.options || [
-        { id: 'opt-1', text: '' },
-        { id: 'opt-2', text: '' },
-        { id: 'opt-3', text: '' },
-        { id: 'opt-4', text: '' },
+        { id: "opt-1", text: "" },
+        { id: "opt-2", text: "" },
+        { id: "opt-3", text: "" },
+        { id: "opt-4", text: "" },
       ],
       answerKey: initialData?.answerKey || null,
     },
@@ -70,14 +79,14 @@ export function QuestionForm({ initialData, onSubmit, onCancel, isLoading }: Que
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: 'options',
+    name: "options",
   });
 
-  const watchType = form.watch('type');
+  const watchType = form.watch("type");
 
   // Generate ID for new options
   const addOption = () => {
-    append({ id: `opt-${Date.now()}`, text: '' });
+    append({ id: `opt-${Date.now()}`, text: "" });
   };
 
   const handleSubmit = (data: QuestionFormData) => {
@@ -109,9 +118,15 @@ export function QuestionForm({ initialData, onSubmit, onCancel, isLoading }: Que
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value={QuestionType.MULTIPLE_CHOICE}>Pilihan Ganda</SelectItem>
-                  <SelectItem value={QuestionType.ESSAY}>Esai / Uraian</SelectItem>
-                  <SelectItem value={QuestionType.TRUE_FALSE}>Benar / Salah</SelectItem>
+                  <SelectItem value={QuestionType.MULTIPLE_CHOICE}>
+                    Pilihan Ganda
+                  </SelectItem>
+                  <SelectItem value={QuestionType.ESSAY}>
+                    Esai / Uraian
+                  </SelectItem>
+                  <SelectItem value={QuestionType.TRUE_FALSE}>
+                    Benar / Salah
+                  </SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -198,7 +213,9 @@ export function QuestionForm({ initialData, onSubmit, onCancel, isLoading }: Que
               <Plus className="mr-2 h-4 w-4" />
               Tambah Opsi
             </Button>
-            <FormMessage>{form.formState.errors.answerKey?.message}</FormMessage>
+            <FormMessage>
+              {form.formState.errors.answerKey?.message}
+            </FormMessage>
           </div>
         )}
 
@@ -220,17 +237,13 @@ export function QuestionForm({ initialData, onSubmit, onCancel, isLoading }: Que
                       <FormControl>
                         <RadioGroupItem value="true" />
                       </FormControl>
-                      <FormLabel className="font-normal">
-                        Benar
-                      </FormLabel>
+                      <FormLabel className="font-normal">Benar</FormLabel>
                     </FormItem>
                     <FormItem className="flex items-center space-x-3 space-y-0">
                       <FormControl>
                         <RadioGroupItem value="false" />
                       </FormControl>
-                      <FormLabel className="font-normal">
-                        Salah
-                      </FormLabel>
+                      <FormLabel className="font-normal">Salah</FormLabel>
                     </FormItem>
                   </RadioGroup>
                 </FormControl>

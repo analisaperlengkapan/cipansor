@@ -1,9 +1,9 @@
-import { Router } from "express";
-import { UserRole } from "@prisma/client";
-import * as controller from "./controller";
-import { authenticate, authorize } from "../../middleware/auth";
-import { validateQuery } from "../../middleware/error";
-import { queryViolationSchema } from "./schema";
+import { Router } from 'express';
+import { UserRole } from '@prisma/client';
+import * as controller from './controller';
+import { authenticate, authorize } from '../../middleware/auth';
+import { validateQuery } from '../../middleware/error';
+import { queryViolationSchema } from './schema';
 
 const router = Router();
 
@@ -43,7 +43,12 @@ router.use(authenticate);
  *       200:
  *         description: List of violations
  */
-router.get("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), validateQuery(queryViolationSchema), controller.getViolations);
+router.get(
+  '/',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  validateQuery(queryViolationSchema),
+  controller.getViolations
+);
 
 /**
  * @swagger
@@ -57,7 +62,11 @@ router.get("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TE
  *       200:
  *         description: List of violation categories with point deductions
  */
-router.get("/categories", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getViolationCategories);
+router.get(
+  '/categories',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  controller.getViolationCategories
+);
 
 /**
  * @swagger
@@ -92,7 +101,11 @@ router.get("/categories", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, U
  *       201:
  *         description: Violation recorded
  */
-router.post("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.createViolation);
+router.post(
+  '/',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  controller.createViolation
+);
 
 /**
  * @swagger
@@ -112,7 +125,11 @@ router.post("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.T
  *       200:
  *         description: Student's violation summary (total, by severity, points deducted)
  */
-router.get("/student/:studentId/summary", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.PARENT), controller.getStudentViolationSummary);
+router.get(
+  '/student/:studentId/summary',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.PARENT),
+  controller.getStudentViolationSummary
+);
 
 /**
  * @swagger
@@ -134,7 +151,11 @@ router.get("/student/:studentId/summary", authorize(UserRole.SUPER_ADMIN, UserRo
  *       404:
  *         description: Violation not found
  */
-router.get("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getViolationById);
+router.get(
+  '/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  controller.getViolationById
+);
 
 /**
  * @swagger
@@ -154,7 +175,11 @@ router.get("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole
  *       200:
  *         description: Violation updated
  */
-router.put("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.updateViolation);
+router.put(
+  '/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.updateViolation
+);
 
 /**
  * @swagger
@@ -174,6 +199,10 @@ router.put("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), control
  *       204:
  *         description: Violation deleted
  */
-router.delete("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteViolation);
+router.delete(
+  '/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.deleteViolation
+);
 
 export default router;

@@ -9,19 +9,25 @@ export const SNP_STANDARDS = [
   {
     code: 'SKL',
     name: 'Standar Kompetensi Lulusan',
-    description: 'Kriteria kualifikasi kemampuan lulusan yang mencakup sikap, pengetahuan, dan keterampilan',
+    description:
+      'Kriteria kualifikasi kemampuan lulusan yang mencakup sikap, pengetahuan, dan keterampilan',
     weight: 12.5,
     indicators: [
       { code: 'SKL.1', name: 'Lulusan memiliki kompetensi pada dimensi sikap', maxScore: 25 },
       { code: 'SKL.2', name: 'Lulusan memiliki kompetensi pada dimensi pengetahuan', maxScore: 25 },
-      { code: 'SKL.3', name: 'Lulusan memiliki kompetensi pada dimensi keterampilan', maxScore: 25 },
+      {
+        code: 'SKL.3',
+        name: 'Lulusan memiliki kompetensi pada dimensi keterampilan',
+        maxScore: 25,
+      },
       { code: 'SKL.4', name: 'Lulusan memiliki karakter religius dan nasionalis', maxScore: 25 },
     ],
   },
   {
     code: 'SI',
     name: 'Standar Isi',
-    description: 'Kriteria ruang lingkup materi dan tingkat kompetensi untuk mencapai kompetensi lulusan',
+    description:
+      'Kriteria ruang lingkup materi dan tingkat kompetensi untuk mencapai kompetensi lulusan',
     weight: 12.5,
     indicators: [
       { code: 'SI.1', name: 'Kurikulum sesuai ketentuan yang berlaku', maxScore: 25 },
@@ -33,7 +39,8 @@ export const SNP_STANDARDS = [
   {
     code: 'SPR',
     name: 'Standar Proses',
-    description: 'Kriteria mengenai pelaksanaan pembelajaran untuk mencapai standar kompetensi lulusan',
+    description:
+      'Kriteria mengenai pelaksanaan pembelajaran untuk mencapai standar kompetensi lulusan',
     weight: 12.5,
     indicators: [
       { code: 'SPR.1', name: 'Pembelajaran dilaksanakan secara interaktif', maxScore: 20 },
@@ -46,19 +53,33 @@ export const SNP_STANDARDS = [
   {
     code: 'SPE',
     name: 'Standar Penilaian Pendidikan',
-    description: 'Kriteria mengenai mekanisme, prosedur, dan instrumen penilaian hasil belajar peserta didik',
+    description:
+      'Kriteria mengenai mekanisme, prosedur, dan instrumen penilaian hasil belajar peserta didik',
     weight: 12.5,
     indicators: [
-      { code: 'SPE.1', name: 'Penilaian mencakup aspek sikap, pengetahuan, keterampilan', maxScore: 25 },
-      { code: 'SPE.2', name: 'Teknik penilaian sesuai dengan kompetensi yang dinilai', maxScore: 25 },
-      { code: 'SPE.3', name: 'Penilaian dilakukan secara terencana dan berkesinambungan', maxScore: 25 },
+      {
+        code: 'SPE.1',
+        name: 'Penilaian mencakup aspek sikap, pengetahuan, keterampilan',
+        maxScore: 25,
+      },
+      {
+        code: 'SPE.2',
+        name: 'Teknik penilaian sesuai dengan kompetensi yang dinilai',
+        maxScore: 25,
+      },
+      {
+        code: 'SPE.3',
+        name: 'Penilaian dilakukan secara terencana dan berkesinambungan',
+        maxScore: 25,
+      },
       { code: 'SPE.4', name: 'Hasil penilaian dianalisis dan ditindaklanjuti', maxScore: 25 },
     ],
   },
   {
     code: 'SPTK',
     name: 'Standar Pendidik dan Tenaga Kependidikan',
-    description: 'Kriteria pendidikan prajabatan dan kelayakan maupun mental, serta pendidikan dalam jabatan',
+    description:
+      'Kriteria pendidikan prajabatan dan kelayakan maupun mental, serta pendidikan dalam jabatan',
     weight: 12.5,
     indicators: [
       { code: 'SPTK.1', name: 'Guru memenuhi kualifikasi akademik', maxScore: 20 },
@@ -71,7 +92,8 @@ export const SNP_STANDARDS = [
   {
     code: 'SSP',
     name: 'Standar Sarana dan Prasarana',
-    description: 'Kriteria mengenai ruang belajar, tempat berolahraga, tempat beribadah, perpustakaan, laboratorium, dll',
+    description:
+      'Kriteria mengenai ruang belajar, tempat berolahraga, tempat beribadah, perpustakaan, laboratorium, dll',
     weight: 12.5,
     indicators: [
       { code: 'SSP.1', name: 'Lahan sekolah memenuhi ketentuan', maxScore: 20 },
@@ -167,15 +189,15 @@ function calculateGrade(score: number): { grade: string; description: string } {
 
 function generateRecommendations(standardScores: AccreditationResult['standardScores']): string[] {
   const recommendations: string[] = [];
-  
+
   for (const std of standardScores) {
     const percentage = (std.rawScore / 100) * 100;
-    
+
     if (percentage < 70) {
       recommendations.push(
         `Perbaikan mendesak diperlukan pada ${std.standardName}. Skor saat ini ${percentage.toFixed(1)}% masih di bawah standar minimal.`
       );
-      
+
       // Add specific indicator recommendations
       for (const ind of std.indicators) {
         if (ind.percentage < 60) {
@@ -190,11 +212,13 @@ function generateRecommendations(standardScores: AccreditationResult['standardSc
       );
     }
   }
-  
+
   if (recommendations.length === 0) {
-    recommendations.push('Pertahankan kinerja yang sudah baik dan terus tingkatkan mutu pendidikan.');
+    recommendations.push(
+      'Pertahankan kinerja yang sudah baik dan terus tingkatkan mutu pendidikan.'
+    );
   }
-  
+
   return recommendations;
 }
 
@@ -202,40 +226,40 @@ function generateRecommendations(standardScores: AccreditationResult['standardSc
 // SERVICE FUNCTIONS
 // =====================================
 
-export async function createAccreditationAssessment(input: AccreditationInput): Promise<AccreditationResult> {
+export async function createAccreditationAssessment(
+  input: AccreditationInput
+): Promise<AccreditationResult> {
   const { unitId, academicYearId, assessorId, assessmentDate, assessments } = input;
-  
+
   // Get unit info
   const unit = await prisma.unit.findUnique({
     where: { id: unitId },
   });
-  
+
   if (!unit) {
     throw new Error('Unit tidak ditemukan');
   }
-  
+
   // Get assessor info
   const assessor = await prisma.user.findUnique({
     where: { id: assessorId },
   });
-  
+
   if (!assessor) {
     throw new Error('Assessor tidak ditemukan');
   }
-  
+
   // Calculate scores per standard
   const standardScores: AccreditationResult['standardScores'] = [];
-  
+
   for (const standard of SNP_STANDARDS) {
-    const standardAssessments = assessments.filter(
-      (a) => a.standardCode === standard.code
-    );
-    
+    const standardAssessments = assessments.filter((a) => a.standardCode === standard.code);
+
     const indicators = standard.indicators.map((ind) => {
       const assessment = standardAssessments.find((a) => a.indicatorCode === ind.code);
       const score = assessment?.score ?? 0;
       const percentage = (score / ind.maxScore) * 100;
-      
+
       return {
         code: ind.code,
         name: ind.name,
@@ -246,12 +270,12 @@ export async function createAccreditationAssessment(input: AccreditationInput): 
         notes: assessment?.notes,
       };
     });
-    
+
     const totalMaxScore = standard.indicators.reduce((sum, ind) => sum + ind.maxScore, 0);
     const rawScore = indicators.reduce((sum, ind) => sum + ind.score, 0);
     const rawPercentage = (rawScore / totalMaxScore) * 100;
     const weightedScore = (rawPercentage * standard.weight) / 100;
-    
+
     standardScores.push({
       standardCode: standard.code,
       standardName: standard.name,
@@ -261,17 +285,17 @@ export async function createAccreditationAssessment(input: AccreditationInput): 
       indicators,
     });
   }
-  
+
   // Calculate total score
   const totalScore = standardScores.reduce((sum, std) => sum + std.weightedScore, 0);
   const { grade, description } = calculateGrade(totalScore);
-  
+
   // Generate recommendations
   const recommendations = generateRecommendations(standardScores);
-  
+
   // Store assessment in database (using a generic JSON field or create dedicated table)
   // For now, we'll return the result directly
-  
+
   const result: AccreditationResult = {
     id: `ACC-${unitId}-${academicYearId}`,
     unitId,
@@ -284,7 +308,7 @@ export async function createAccreditationAssessment(input: AccreditationInput): 
     assessedAt: assessmentDate,
     assessedBy: assessor.name,
   };
-  
+
   // Update unit accreditation
   await prisma.unit.update({
     where: { id: unitId },
@@ -292,7 +316,7 @@ export async function createAccreditationAssessment(input: AccreditationInput): 
       accreditation: grade,
     },
   });
-  
+
   return result;
 }
 
@@ -310,17 +334,17 @@ export async function getUnitAccreditationStatus(unitId: string) {
       npsn: true,
     },
   });
-  
+
   if (!unit) {
     throw new Error('Unit tidak ditemukan');
   }
-  
+
   // Get teacher statistics for PTK standard
   const teacherStats = await prisma.teacher.aggregate({
     where: { unitId },
     _count: true,
   });
-  
+
   // Count teachers with NUPTK as proxy for certification
   const certifiedTeachers = await prisma.teacher.count({
     where: {
@@ -328,13 +352,13 @@ export async function getUnitAccreditationStatus(unitId: string) {
       nuptk: { not: null },
     },
   });
-  
+
   // Get student statistics
   const studentStats = await prisma.student.aggregate({
     where: { unitId, status: 'active' },
     _count: true,
   });
-  
+
   // Get dormitory room stats
   const dormitories = await prisma.dormitory.findMany({
     where: { unitId },
@@ -342,14 +366,14 @@ export async function getUnitAccreditationStatus(unitId: string) {
       _count: { select: { rooms: true } },
     },
   });
-  
+
   const totalRooms = dormitories.reduce((sum, d) => sum + d._count.rooms, 0);
-  
+
   // Get class count
   const classStats = await prisma.class.count({
     where: { unitId },
   });
-  
+
   // Get financial stats
   const currentYear = new Date().getFullYear();
   const financialStats = await prisma.invoice.aggregate({
@@ -362,7 +386,7 @@ export async function getUnitAccreditationStatus(unitId: string) {
     },
     _sum: { amount: true },
   });
-  
+
   return {
     unit: {
       id: unit.id,
@@ -374,9 +398,8 @@ export async function getUnitAccreditationStatus(unitId: string) {
       teachers: {
         total: teacherStats._count,
         certified: certifiedTeachers,
-        certificationRate: teacherStats._count > 0 
-          ? Math.round((certifiedTeachers / teacherStats._count) * 100) 
-          : 0,
+        certificationRate:
+          teacherStats._count > 0 ? Math.round((certifiedTeachers / teacherStats._count) * 100) : 0,
       },
       students: {
         total: studentStats._count,
@@ -401,11 +424,11 @@ export async function getUnitAccreditationStatus(unitId: string) {
 
 export async function getAccreditationDashboard(unitId: string) {
   const status = await getUnitAccreditationStatus(unitId);
-  
+
   // Calculate readiness score per standard based on available data
   const readinessScores = SNP_STANDARDS.map((std) => {
     let autoScore = 0;
-    
+
     switch (std.code) {
       case 'SPTK': // Standar Pendidik dan Tenaga Kependidikan
         autoScore = Math.min(status.statistics.teachers.certificationRate, 100);
@@ -416,7 +439,7 @@ export async function getAccreditationDashboard(unitId: string) {
       default:
         autoScore = 60; // Default placeholder
     }
-    
+
     return {
       standardCode: std.code,
       standardName: std.name,
@@ -424,21 +447,19 @@ export async function getAccreditationDashboard(unitId: string) {
       needsManualAssessment: autoScore < 70,
     };
   });
-  
-  const overallReadiness = 
+
+  const overallReadiness =
     readinessScores.reduce((sum, r) => sum + r.autoScore, 0) / readinessScores.length;
-  
+
   return {
     ...status,
     readinessScores,
     overallReadiness: Math.round(overallReadiness),
     recommendedActions: [
-      status.statistics.teachers.certificationRate < 80 
-        ? 'Tingkatkan jumlah guru bersertifikasi' 
+      status.statistics.teachers.certificationRate < 80
+        ? 'Tingkatkan jumlah guru bersertifikasi'
         : null,
-      status.statistics.teachers.total < 10 
-        ? 'Tambah jumlah tenaga pendidik' 
-        : null,
+      status.statistics.teachers.total < 10 ? 'Tambah jumlah tenaga pendidik' : null,
     ].filter(Boolean),
   };
 }
@@ -460,7 +481,7 @@ export async function simulateAccreditationScore(
   const breakdown = SNP_STANDARDS.map((std) => {
     const score = manualScores[std.code] ?? 70; // Default 70 if not provided
     const weightedScore = (score * std.weight) / 100;
-    
+
     return {
       standardCode: std.code,
       standardName: std.name,
@@ -468,10 +489,10 @@ export async function simulateAccreditationScore(
       weightedScore,
     };
   });
-  
+
   const totalScore = breakdown.reduce((sum, b) => sum + b.weightedScore, 0);
   const { grade, description } = calculateGrade(totalScore);
-  
+
   return {
     totalScore: Math.round(totalScore * 100) / 100,
     grade,

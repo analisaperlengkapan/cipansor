@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useState } from "react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   Plus,
   Search,
@@ -16,10 +16,16 @@ import {
   Trophy,
   Medal,
   Crown,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -27,19 +33,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Pagination } from '@/components/shared/pagination';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Pagination } from "@/components/shared/pagination";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { toast } from "sonner";
 import {
   useRewards,
   useRewardTypes,
@@ -48,7 +54,7 @@ import {
   useRewardSummary,
   REWARD_CATEGORIES,
   RewardCategory,
-} from '@/hooks/use-rewards';
+} from "@/hooks/use-rewards";
 
 function getCategoryBadge(category: RewardCategory) {
   const cat = REWARD_CATEGORIES.find((c) => c.value === category);
@@ -60,45 +66,48 @@ function getCategoryBadge(category: RewardCategory) {
 }
 
 export default function RewardsPage() {
-  const [activeTab, setActiveTab] = useState<'rewards' | 'types' | 'leaderboard'>('rewards');
+  const [activeTab, setActiveTab] = useState<
+    "rewards" | "types" | "leaderboard"
+  >("rewards");
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   const { data: rewardsData, isLoading: rewardsLoading } = useRewards({
     page,
     limit: 10,
-    category: categoryFilter !== 'all' ? (categoryFilter as RewardCategory) : undefined,
+    category:
+      categoryFilter !== "all" ? (categoryFilter as RewardCategory) : undefined,
   });
 
   const { data: rewardTypes, isLoading: typesLoading } = useRewardTypes();
   const { data: summaryData } = useRewardSummary();
-  
+
   const deleteRewardMutation = useDeleteReward();
   const deleteTypeMutation = useDeleteRewardType();
 
   const handleDeleteReward = async (id: string) => {
     try {
       await deleteRewardMutation.mutateAsync(id);
-      toast.success('Penghargaan berhasil dihapus');
+      toast.success("Penghargaan berhasil dihapus");
     } catch {
-      toast.error('Gagal menghapus penghargaan');
+      toast.error("Gagal menghapus penghargaan");
     }
   };
 
   const handleDeleteType = async (id: string) => {
     try {
       await deleteTypeMutation.mutateAsync(id);
-      toast.success('Jenis penghargaan berhasil dihapus');
+      toast.success("Jenis penghargaan berhasil dihapus");
     } catch {
-      toast.error('Gagal menghapus jenis penghargaan');
+      toast.error("Gagal menghapus jenis penghargaan");
     }
   };
 
   const filteredTypes = rewardTypes?.filter(
     (type) =>
       type.name.toLowerCase().includes(search.toLowerCase()) ||
-      (type.description?.toLowerCase().includes(search.toLowerCase()) ?? false)
+      (type.description?.toLowerCase().includes(search.toLowerCase()) ?? false),
   );
 
   return (
@@ -107,7 +116,9 @@ export default function RewardsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Penghargaan</h1>
-          <p className="text-muted-foreground">Kelola data penghargaan santri</p>
+          <p className="text-muted-foreground">
+            Kelola data penghargaan santri
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
@@ -133,15 +144,21 @@ export default function RewardsPage() {
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summaryData?.totalRewards || 0}</div>
+            <div className="text-2xl font-bold">
+              {summaryData?.totalRewards || 0}
+            </div>
           </CardContent>
         </Card>
         {REWARD_CATEGORIES.map((cat) => {
-          const count = summaryData?.byCategory?.find((c) => c.category === cat.value)?.count || 0;
+          const count =
+            summaryData?.byCategory?.find((c) => c.category === cat.value)
+              ?.count || 0;
           return (
             <Card key={cat.value}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{cat.label}</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  {cat.label}
+                </CardTitle>
                 <Star className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -153,7 +170,12 @@ export default function RewardsPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'rewards' | 'types' | 'leaderboard')}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) =>
+          setActiveTab(v as "rewards" | "types" | "leaderboard")
+        }
+      >
         <TabsList>
           <TabsTrigger value="rewards">Data Penghargaan</TabsTrigger>
           <TabsTrigger value="leaderboard" className="flex items-center gap-2">
@@ -195,7 +217,9 @@ export default function RewardsPage() {
               ) : rewardsData?.data.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <Award className="h-12 w-12 text-muted-foreground" />
-                  <p className="mt-4 text-muted-foreground">Belum ada data penghargaan</p>
+                  <p className="mt-4 text-muted-foreground">
+                    Belum ada data penghargaan
+                  </p>
                   <Button asChild className="mt-4">
                     <Link href="/rewards/new">Berikan Penghargaan Baru</Link>
                   </Button>
@@ -216,11 +240,15 @@ export default function RewardsPage() {
                     {rewardsData?.data.map((reward) => (
                       <TableRow key={reward.id}>
                         <TableCell>
-                          {format(new Date(reward.date), 'dd MMM yyyy', { locale: localeId })}
+                          {format(new Date(reward.date), "dd MMM yyyy", {
+                            locale: localeId,
+                          })}
                         </TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{reward.student?.name}</p>
+                            <p className="font-medium">
+                              {reward.student?.name}
+                            </p>
                             <p className="text-sm text-muted-foreground">
                               {reward.student?.nis}
                             </p>
@@ -286,7 +314,8 @@ export default function RewardsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {summaryData?.topStudents && summaryData.topStudents.length > 0 ? (
+              {summaryData?.topStudents &&
+              summaryData.topStudents.length > 0 ? (
                 <div className="space-y-4">
                   {/* Top 3 Podium */}
                   <div className="grid grid-cols-3 gap-4 mb-8">
@@ -298,9 +327,15 @@ export default function RewardsPage() {
                             <Medal className="h-10 w-10 text-gray-400" />
                           </div>
                           <div className="bg-gray-100 rounded-lg p-4 mt-4">
-                            <p className="font-medium truncate">{summaryData.topStudents[1].name}</p>
-                            <p className="text-lg font-bold text-gray-600">{summaryData.topStudents[1].points} poin</p>
-                            <Badge variant="secondary">{summaryData.topStudents[1].count} penghargaan</Badge>
+                            <p className="font-medium truncate">
+                              {summaryData.topStudents[1].name}
+                            </p>
+                            <p className="text-lg font-bold text-gray-600">
+                              {summaryData.topStudents[1].points} poin
+                            </p>
+                            <Badge variant="secondary">
+                              {summaryData.topStudents[1].count} penghargaan
+                            </Badge>
                           </div>
                         </div>
                       )}
@@ -316,9 +351,15 @@ export default function RewardsPage() {
                             </div>
                           </div>
                           <div className="bg-yellow-50 rounded-lg p-4 mt-4 border border-yellow-200">
-                            <p className="font-medium truncate">{summaryData.topStudents[0].name}</p>
-                            <p className="text-xl font-bold text-yellow-600">{summaryData.topStudents[0].points} poin</p>
-                            <Badge className="bg-yellow-500">{summaryData.topStudents[0].count} penghargaan</Badge>
+                            <p className="font-medium truncate">
+                              {summaryData.topStudents[0].name}
+                            </p>
+                            <p className="text-xl font-bold text-yellow-600">
+                              {summaryData.topStudents[0].points} poin
+                            </p>
+                            <Badge className="bg-yellow-500">
+                              {summaryData.topStudents[0].count} penghargaan
+                            </Badge>
                           </div>
                         </div>
                       )}
@@ -331,9 +372,15 @@ export default function RewardsPage() {
                             <Medal className="h-10 w-10 text-orange-400" />
                           </div>
                           <div className="bg-orange-50 rounded-lg p-4 mt-4">
-                            <p className="font-medium truncate">{summaryData.topStudents[2].name}</p>
-                            <p className="text-lg font-bold text-orange-600">{summaryData.topStudents[2].points} poin</p>
-                            <Badge variant="secondary">{summaryData.topStudents[2].count} penghargaan</Badge>
+                            <p className="font-medium truncate">
+                              {summaryData.topStudents[2].name}
+                            </p>
+                            <p className="text-lg font-bold text-orange-600">
+                              {summaryData.topStudents[2].points} poin
+                            </p>
+                            <Badge variant="secondary">
+                              {summaryData.topStudents[2].count} penghargaan
+                            </Badge>
                           </div>
                         </div>
                       )}
@@ -347,23 +394,33 @@ export default function RewardsPage() {
                         <TableRow>
                           <TableHead className="w-16">Rank</TableHead>
                           <TableHead>Nama Santri</TableHead>
-                          <TableHead className="text-center">Jumlah Penghargaan</TableHead>
-                          <TableHead className="text-right">Total Poin</TableHead>
+                          <TableHead className="text-center">
+                            Jumlah Penghargaan
+                          </TableHead>
+                          <TableHead className="text-right">
+                            Total Poin
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {summaryData.topStudents.slice(3).map((student, idx) => (
-                          <TableRow key={student.studentId}>
-                            <TableCell className="font-bold text-muted-foreground">
-                              #{idx + 4}
-                            </TableCell>
-                            <TableCell className="font-medium">{student.name}</TableCell>
-                            <TableCell className="text-center">{student.count}</TableCell>
-                            <TableCell className="text-right text-green-600 font-bold">
-                              {student.points} poin
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {summaryData.topStudents
+                          .slice(3)
+                          .map((student, idx) => (
+                            <TableRow key={student.studentId}>
+                              <TableCell className="font-bold text-muted-foreground">
+                                #{idx + 4}
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {student.name}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {student.count}
+                              </TableCell>
+                              <TableCell className="text-right text-green-600 font-bold">
+                                {student.points} poin
+                              </TableCell>
+                            </TableRow>
+                          ))}
                       </TableBody>
                     </Table>
                   )}
@@ -371,7 +428,9 @@ export default function RewardsPage() {
               ) : (
                 <div className="text-center py-12">
                   <Trophy className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Belum ada data leaderboard</p>
+                  <p className="text-muted-foreground">
+                    Belum ada data leaderboard
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -401,9 +460,13 @@ export default function RewardsPage() {
               ) : filteredTypes?.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <Settings className="h-12 w-12 text-muted-foreground" />
-                  <p className="mt-4 text-muted-foreground">Belum ada jenis penghargaan</p>
+                  <p className="mt-4 text-muted-foreground">
+                    Belum ada jenis penghargaan
+                  </p>
                   <Button asChild className="mt-4">
-                    <Link href="/rewards/types/new">Tambah Jenis Penghargaan</Link>
+                    <Link href="/rewards/types/new">
+                      Tambah Jenis Penghargaan
+                    </Link>
                   </Button>
                 </div>
               ) : (
@@ -421,15 +484,21 @@ export default function RewardsPage() {
                   <TableBody>
                     {filteredTypes?.map((type) => (
                       <TableRow key={type.id}>
-                        <TableCell className="font-medium">{type.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {type.name}
+                        </TableCell>
                         <TableCell className="max-w-[200px] truncate">
-                          {type.description || '-'}
+                          {type.description || "-"}
                         </TableCell>
                         <TableCell>{getCategoryBadge(type.category)}</TableCell>
-                        <TableCell className="text-green-600">+{type.points}</TableCell>
+                        <TableCell className="text-green-600">
+                          +{type.points}
+                        </TableCell>
                         <TableCell>
-                          <Badge variant={type.isActive ? 'default' : 'secondary'}>
-                            {type.isActive ? 'Aktif' : 'Nonaktif'}
+                          <Badge
+                            variant={type.isActive ? "default" : "secondary"}
+                          >
+                            {type.isActive ? "Aktif" : "Nonaktif"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">

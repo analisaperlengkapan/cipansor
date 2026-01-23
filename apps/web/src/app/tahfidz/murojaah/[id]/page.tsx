@@ -1,20 +1,26 @@
-'use client';
+"use client";
 
-import { useParams, useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
+import { useParams, useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
 import {
   useMurojaah,
   useMurojaahMistakes,
   useReviewMurojaah,
   useDeleteMurojaahMistake,
   MurojaahMistake,
-} from '@/hooks/use-murojaah';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
+} from "@/hooks/use-murojaah";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -22,7 +28,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   ArrowLeft,
   Pencil,
@@ -37,42 +43,42 @@ import {
   Trash2,
   RefreshCw,
   Award,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'Menunggu Review',
-  REVIEWED: 'Sudah Direview',
-  PASSED: 'Lulus',
-  NEED_IMPROVEMENT: 'Perlu Perbaikan',
+  PENDING: "Menunggu Review",
+  REVIEWED: "Sudah Direview",
+  PASSED: "Lulus",
+  NEED_IMPROVEMENT: "Perlu Perbaikan",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-800',
-  REVIEWED: 'bg-blue-100 text-blue-800',
-  PASSED: 'bg-green-100 text-green-800',
-  NEED_IMPROVEMENT: 'bg-orange-100 text-orange-800',
+  PENDING: "bg-yellow-100 text-yellow-800",
+  REVIEWED: "bg-blue-100 text-blue-800",
+  PASSED: "bg-green-100 text-green-800",
+  NEED_IMPROVEMENT: "bg-orange-100 text-orange-800",
 };
 
 const MISTAKE_TYPE_LABELS: Record<string, string> = {
-  TAJWID: 'Tajwid',
-  MAKHROJ: 'Makhroj',
-  HARAKAT: 'Harakat',
-  WAQF: 'Waqf',
-  LAFAZ: 'Lafaz',
-  OTHER: 'Lainnya',
+  TAJWID: "Tajwid",
+  MAKHROJ: "Makhroj",
+  HARAKAT: "Harakat",
+  WAQF: "Waqf",
+  LAFAZ: "Lafaz",
+  OTHER: "Lainnya",
 };
 
 const MISTAKE_TYPE_COLORS: Record<string, string> = {
-  TAJWID: 'bg-purple-100 text-purple-800',
-  MAKHROJ: 'bg-blue-100 text-blue-800',
-  HARAKAT: 'bg-red-100 text-red-800',
-  WAQF: 'bg-yellow-100 text-yellow-800',
-  LAFAZ: 'bg-orange-100 text-orange-800',
-  OTHER: 'bg-gray-100 text-gray-800',
+  TAJWID: "bg-purple-100 text-purple-800",
+  MAKHROJ: "bg-blue-100 text-blue-800",
+  HARAKAT: "bg-red-100 text-red-800",
+  WAQF: "bg-yellow-100 text-yellow-800",
+  LAFAZ: "bg-orange-100 text-orange-800",
+  OTHER: "bg-gray-100 text-gray-800",
 };
 
 export default function MurojaahDetailPage() {
@@ -90,20 +96,25 @@ export default function MurojaahDetailPage() {
       await reviewMutation.mutateAsync({
         id: murojaahId,
         status,
-        grade: status === 'PASSED' ? 85 : status === 'NEED_IMPROVEMENT' ? 60 : undefined,
+        grade:
+          status === "PASSED"
+            ? 85
+            : status === "NEED_IMPROVEMENT"
+              ? 60
+              : undefined,
       });
-      toast.success('Status berhasil diperbarui');
+      toast.success("Status berhasil diperbarui");
     } catch {
-      toast.error('Gagal memperbarui status');
+      toast.error("Gagal memperbarui status");
     }
   };
 
   const handleDeleteMistake = async (mistakeId: string) => {
     try {
       await deleteMistakeMutation.mutateAsync({ murojaahId, mistakeId });
-      toast.success('Catatan kesalahan berhasil dihapus');
+      toast.success("Catatan kesalahan berhasil dihapus");
     } catch {
-      toast.error('Gagal menghapus catatan kesalahan');
+      toast.error("Gagal menghapus catatan kesalahan");
     }
   };
 
@@ -127,7 +138,9 @@ export default function MurojaahDetailPage() {
           <p className="text-muted-foreground mb-4">
             Record murojaah yang Anda cari tidak ada atau telah dihapus.
           </p>
-          <Button onClick={() => router.push('/tahfidz/murojaah')}>Kembali ke Daftar</Button>
+          <Button onClick={() => router.push("/tahfidz/murojaah")}>
+            Kembali ke Daftar
+          </Button>
         </div>
       </MainLayout>
     );
@@ -150,7 +163,9 @@ export default function MurojaahDetailPage() {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => router.push(`/tahfidz/murojaah/${murojaahId}/edit`)}
+                onClick={() =>
+                  router.push(`/tahfidz/murojaah/${murojaahId}/edit`)
+                }
               >
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
@@ -161,7 +176,9 @@ export default function MurojaahDetailPage() {
 
         {/* Status & Quick Actions */}
         <div className="flex flex-wrap items-center gap-4">
-          <Badge className={cn('text-sm py-1 px-3', STATUS_COLORS[murojaah.status])}>
+          <Badge
+            className={cn("text-sm py-1 px-3", STATUS_COLORS[murojaah.status])}
+          >
             {STATUS_LABELS[murojaah.status]}
           </Badge>
           {murojaah.grade && (
@@ -171,13 +188,13 @@ export default function MurojaahDetailPage() {
             </Badge>
           )}
 
-          {murojaah.status === 'PENDING' && (
+          {murojaah.status === "PENDING" && (
             <div className="flex gap-2 ml-auto">
               <Button
                 size="sm"
                 variant="outline"
                 className="text-green-600 border-green-600"
-                onClick={() => handleQuickReview('PASSED')}
+                onClick={() => handleQuickReview("PASSED")}
                 disabled={reviewMutation.isPending}
               >
                 <CheckCircle className="mr-2 h-4 w-4" />
@@ -187,7 +204,7 @@ export default function MurojaahDetailPage() {
                 size="sm"
                 variant="outline"
                 className="text-orange-600 border-orange-600"
-                onClick={() => handleQuickReview('NEED_IMPROVEMENT')}
+                onClick={() => handleQuickReview("NEED_IMPROVEMENT")}
                 disabled={reviewMutation.isPending}
               >
                 <AlertTriangle className="mr-2 h-4 w-4" />
@@ -196,7 +213,9 @@ export default function MurojaahDetailPage() {
               <Button
                 size="sm"
                 variant="default"
-                onClick={() => router.push(`/tahfidz/murojaah/${murojaahId}/review`)}
+                onClick={() =>
+                  router.push(`/tahfidz/murojaah/${murojaahId}/review`)
+                }
               >
                 Review Lengkap
               </Button>
@@ -226,8 +245,12 @@ export default function MurojaahDetailPage() {
                     )}
                     <div>
                       <p className="text-sm text-muted-foreground">Santri</p>
-                      <p className="font-semibold">{murojaah.student?.user?.name || '-'}</p>
-                      <p className="text-sm text-muted-foreground">{murojaah.student?.nis}</p>
+                      <p className="font-semibold">
+                        {murojaah.student?.user?.name || "-"}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {murojaah.student?.nis}
+                      </p>
                     </div>
                   </div>
 
@@ -238,7 +261,9 @@ export default function MurojaahDetailPage() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Musyrif</p>
-                      <p className="font-semibold">{murojaah.teacher?.user?.name || '-'}</p>
+                      <p className="font-semibold">
+                        {murojaah.teacher?.user?.name || "-"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -258,19 +283,27 @@ export default function MurojaahDetailPage() {
                   <div className="space-y-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Surah</p>
-                      <p className="text-xl font-bold text-primary">{murojaah.surahName}</p>
+                      <p className="text-xl font-bold text-primary">
+                        {murojaah.surahName}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Rentang Ayat</p>
+                      <p className="text-sm text-muted-foreground">
+                        Rentang Ayat
+                      </p>
                       <p className="font-medium">
                         Ayat {murojaah.startAyat} - {murojaah.endAyat}
-                        <span className="text-muted-foreground ml-2">({totalAyat} ayat)</span>
+                        <span className="text-muted-foreground ml-2">
+                          ({totalAyat} ayat)
+                        </span>
                       </p>
                     </div>
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">Jumlah Pengulangan</p>
+                      <p className="text-sm text-muted-foreground">
+                        Jumlah Pengulangan
+                      </p>
                       <p className="text-2xl font-bold flex items-center gap-2">
                         <RefreshCw className="h-5 w-5" />
                         {murojaah.repetitions}x
@@ -280,7 +313,9 @@ export default function MurojaahDetailPage() {
                       <p className="text-sm text-muted-foreground">Tanggal</p>
                       <p className="font-medium flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        {format(new Date(murojaah.date), 'EEEE, dd MMMM yyyy', { locale: idLocale })}
+                        {format(new Date(murojaah.date), "EEEE, dd MMMM yyyy", {
+                          locale: idLocale,
+                        })}
                       </p>
                     </div>
                   </div>
@@ -290,7 +325,9 @@ export default function MurojaahDetailPage() {
                   <>
                     <Separator className="my-6" />
                     <div>
-                      <p className="text-sm text-muted-foreground mb-2">Catatan</p>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Catatan
+                      </p>
                       <p className="whitespace-pre-wrap">{murojaah.notes}</p>
                     </div>
                   </>
@@ -314,7 +351,9 @@ export default function MurojaahDetailPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => router.push(`/tahfidz/murojaah/${murojaahId}/mistakes`)}
+                    onClick={() =>
+                      router.push(`/tahfidz/murojaah/${murojaahId}/mistakes`)
+                    }
                   >
                     Tambah Kesalahan
                   </Button>
@@ -334,14 +373,21 @@ export default function MurojaahDetailPage() {
                     <TableBody>
                       {mistakesList.map((mistake: MurojaahMistake) => (
                         <TableRow key={mistake.id}>
-                          <TableCell className="font-medium">{mistake.ayatNumber}</TableCell>
+                          <TableCell className="font-medium">
+                            {mistake.ayatNumber}
+                          </TableCell>
                           <TableCell>
-                            <Badge className={cn('font-normal', MISTAKE_TYPE_COLORS[mistake.mistakeType])}>
+                            <Badge
+                              className={cn(
+                                "font-normal",
+                                MISTAKE_TYPE_COLORS[mistake.mistakeType],
+                              )}
+                            >
                               {MISTAKE_TYPE_LABELS[mistake.mistakeType]}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-muted-foreground">
-                            {mistake.description || '-'}
+                            {mistake.description || "-"}
                           </TableCell>
                           <TableCell>
                             <Button
@@ -379,22 +425,22 @@ export default function MurojaahDetailPage() {
                   <>
                     <div
                       className={cn(
-                        'text-5xl font-bold',
+                        "text-5xl font-bold",
                         murojaah.grade >= 80
-                          ? 'text-green-600'
+                          ? "text-green-600"
                           : murojaah.grade >= 60
-                          ? 'text-yellow-600'
-                          : 'text-red-600'
+                            ? "text-yellow-600"
+                            : "text-red-600",
                       )}
                     >
                       {murojaah.grade}
                     </div>
                     <p className="text-muted-foreground mt-2">
                       {murojaah.grade >= 80
-                        ? 'Sangat Baik'
+                        ? "Sangat Baik"
                         : murojaah.grade >= 60
-                        ? 'Cukup Baik'
-                        : 'Perlu Perbaikan'}
+                          ? "Cukup Baik"
+                          : "Perlu Perbaikan"}
                     </p>
                   </>
                 ) : (
@@ -415,12 +461,15 @@ export default function MurojaahDetailPage() {
                 <div className="space-y-3">
                   {Object.entries(MISTAKE_TYPE_LABELS).map(([type, label]) => {
                     const count = mistakesList.filter(
-                      (m: MurojaahMistake) => m.mistakeType === type
+                      (m: MurojaahMistake) => m.mistakeType === type,
                     ).length;
                     return (
-                      <div key={type} className="flex items-center justify-between">
+                      <div
+                        key={type}
+                        className="flex items-center justify-between"
+                      >
                         <span className="text-sm">{label}</span>
-                        <Badge variant={count > 0 ? 'default' : 'outline'}>
+                        <Badge variant={count > 0 ? "default" : "outline"}>
                           {count}
                         </Badge>
                       </div>
@@ -438,26 +487,38 @@ export default function MurojaahDetailPage() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Direview</span>
                       <span>
-                        {format(new Date(murojaah.reviewedAt), 'dd MMM yyyy HH:mm', {
-                          locale: idLocale,
-                        })}
+                        {format(
+                          new Date(murojaah.reviewedAt),
+                          "dd MMM yyyy HH:mm",
+                          {
+                            locale: idLocale,
+                          },
+                        )}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Dibuat</span>
                     <span>
-                      {format(new Date(murojaah.createdAt), 'dd MMM yyyy HH:mm', {
-                        locale: idLocale,
-                      })}
+                      {format(
+                        new Date(murojaah.createdAt),
+                        "dd MMM yyyy HH:mm",
+                        {
+                          locale: idLocale,
+                        },
+                      )}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Diperbarui</span>
                     <span>
-                      {format(new Date(murojaah.updatedAt), 'dd MMM yyyy HH:mm', {
-                        locale: idLocale,
-                      })}
+                      {format(
+                        new Date(murojaah.updatedAt),
+                        "dd MMM yyyy HH:mm",
+                        {
+                          locale: idLocale,
+                        },
+                      )}
                     </span>
                   </div>
                 </div>

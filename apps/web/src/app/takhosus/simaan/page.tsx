@@ -1,60 +1,70 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 import {
   useSimaanExams,
   SIMAAN_TYPES,
   SIMAAN_GRADES,
-  SimaanExam
-} from '@/hooks/use-simaan';
-import { useDebounce } from '@/hooks/use-debounce';
-import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+  SimaanExam,
+} from "@/hooks/use-simaan";
+import { useDebounce } from "@/hooks/use-debounce";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Pagination } from '@/components/shared/pagination';
-import { EmptyState } from '@/components/shared/empty-state';
-import { SkeletonTable } from '@/components/shared/skeleton-table';
-import { Search } from 'lucide-react';
-import { Plus, Eye, Award } from 'lucide-react';
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Pagination } from "@/components/shared/pagination";
+import { EmptyState } from "@/components/shared/empty-state";
+import { SkeletonTable } from "@/components/shared/skeleton-table";
+import { Search } from "lucide-react";
+import { Plus, Eye, Award } from "lucide-react";
 
 export default function SimaanListPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
 
   const { data, isLoading } = useSimaanExams({
     page,
     limit: 10,
-    search: debouncedSearch
+    search: debouncedSearch,
   });
 
   const getSimaanTypeLabel = (type: string) => {
-    return SIMAAN_TYPES.find(t => t.value === type)?.label || type;
+    return SIMAAN_TYPES.find((t) => t.value === type)?.label || type;
   };
 
   const getGradeLabel = (grade: string | undefined) => {
-    if (!grade) return '-';
-    const gradeObj = SIMAAN_GRADES.find(g => g.value === grade);
-    return gradeObj ? gradeObj.label.split('(')[0].trim() : grade;
+    if (!grade) return "-";
+    const gradeObj = SIMAAN_GRADES.find((g) => g.value === grade);
+    return gradeObj ? gradeObj.label.split("(")[0].trim() : grade;
   };
 
   const getStatusBadge = (passed: boolean, grade?: string) => {
-    if (!grade) return <Badge variant="outline" className="bg-gray-100 text-gray-700">Terjadwal</Badge>;
-    if (passed) return <Badge className="bg-green-100 text-green-700 hover:bg-green-200">Lulus</Badge>;
+    if (!grade)
+      return (
+        <Badge variant="outline" className="bg-gray-100 text-gray-700">
+          Terjadwal
+        </Badge>
+      );
+    if (passed)
+      return (
+        <Badge className="bg-green-100 text-green-700 hover:bg-green-200">
+          Lulus
+        </Badge>
+      );
     return <Badge variant="destructive">Tidak Lulus</Badge>;
   };
 
@@ -64,7 +74,7 @@ export default function SimaanListPage() {
         title="Jadwal & Hasil Simaan"
         description="Kelola jadwal ujian simaan dan input penilaian."
         actions={
-          <Button onClick={() => router.push('/takhosus/simaan/create')}>
+          <Button onClick={() => router.push("/takhosus/simaan/create")}>
             <Plus className="mr-2 h-4 w-4" />
             Buat Jadwal
           </Button>
@@ -92,7 +102,7 @@ export default function SimaanListPage() {
               title="Belum ada data simaan"
               description="Buat jadwal simaan baru untuk memulai."
               action={
-                <Button onClick={() => router.push('/takhosus/simaan/create')}>
+                <Button onClick={() => router.push("/takhosus/simaan/create")}>
                   Buat Jadwal
                 </Button>
               }
@@ -115,12 +125,16 @@ export default function SimaanListPage() {
                   {data.exams.map((exam: SimaanExam) => (
                     <TableRow key={exam.id}>
                       <TableCell>
-                        {format(new Date(exam.examDate), 'dd MMMM yyyy', { locale: id })}
+                        {format(new Date(exam.examDate), "dd MMMM yyyy", {
+                          locale: id,
+                        })}
                       </TableCell>
                       <TableCell className="font-medium">
-                        {exam.student?.user?.name || '-'}
+                        {exam.student?.user?.name || "-"}
                       </TableCell>
-                      <TableCell>{getSimaanTypeLabel(exam.simaanType)}</TableCell>
+                      <TableCell>
+                        {getSimaanTypeLabel(exam.simaanType)}
+                      </TableCell>
                       <TableCell>
                         Juz {exam.juzStart} - {exam.juzEnd}
                       </TableCell>
@@ -134,16 +148,20 @@ export default function SimaanListPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => router.push(`/takhosus/simaan/${exam.id}/grade`)}
+                              onClick={() =>
+                                router.push(`/takhosus/simaan/${exam.id}/grade`)
+                              }
                             >
                               <Award className="mr-2 h-3 w-3" />
                               Nilai
                             </Button>
                           ) : (
-                             <Button
+                            <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => router.push(`/takhosus/simaan/${exam.id}/grade`)}
+                              onClick={() =>
+                                router.push(`/takhosus/simaan/${exam.id}/grade`)
+                              }
                             >
                               <Eye className="mr-2 h-3 w-3" />
                               Detail

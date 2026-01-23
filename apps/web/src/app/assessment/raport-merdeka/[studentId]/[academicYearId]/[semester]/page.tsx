@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api';
-import { Loader2 } from 'lucide-react';
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { Loader2 } from "lucide-react";
 
 interface RaportMerdekaPageProps {
   params: {
@@ -13,15 +13,24 @@ interface RaportMerdekaPageProps {
   };
 }
 
-export default function RaportMerdekaPrintPage({ params }: RaportMerdekaPageProps) {
+export default function RaportMerdekaPrintPage({
+  params,
+}: RaportMerdekaPageProps) {
   const { studentId, academicYearId, semester } = params;
 
-  const { data: raport, isLoading, error } = useQuery({
-    queryKey: ['raport-merdeka', studentId, academicYearId, semester],
+  const {
+    data: raport,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["raport-merdeka", studentId, academicYearId, semester],
     queryFn: async () => {
-      const res = await api.get(`/assessment/raport-merdeka/students/${studentId}`, {
-        params: { academicYearId, semester },
-      });
+      const res = await api.get(
+        `/assessment/raport-merdeka/students/${studentId}`,
+        {
+          params: { academicYearId, semester },
+        },
+      );
       return res.data.data;
     },
   });
@@ -72,7 +81,7 @@ export default function RaportMerdekaPrintPage({ params }: RaportMerdekaPageProp
           }
         }
         .print-page {
-          font-family: 'Times New Roman', serif;
+          font-family: "Times New Roman", serif;
           font-size: 11pt;
           line-height: 1.4;
         }
@@ -94,9 +103,14 @@ export default function RaportMerdekaPrintPage({ params }: RaportMerdekaPageProp
           </div>
           <div>
             <h1 className="text-lg font-bold uppercase">{raport.siswa.unit}</h1>
-            <h2 className="text-xl font-bold">LAPORAN HASIL BELAJAR PESERTA DIDIK</h2>
+            <h2 className="text-xl font-bold">
+              LAPORAN HASIL BELAJAR PESERTA DIDIK
+            </h2>
             <p className="text-sm">KURIKULUM MERDEKA</p>
-            <p className="text-sm">Tahun Pelajaran {raport.tahunAjaran.tahun} Semester {raport.tahunAjaran.semesterLabel}</p>
+            <p className="text-sm">
+              Tahun Pelajaran {raport.tahunAjaran.tahun} Semester{" "}
+              {raport.tahunAjaran.semesterLabel}
+            </p>
           </div>
           <div className="w-20 h-20 border border-gray-400 flex items-center justify-center text-xs text-gray-400">
             LOGO
@@ -110,15 +124,22 @@ export default function RaportMerdekaPrintPage({ params }: RaportMerdekaPageProp
           <tbody>
             <tr>
               <td className="w-1/4">Nama Peserta Didik</td>
-              <td className="w-1/4">: <strong>{raport.siswa.nama}</strong></td>
+              <td className="w-1/4">
+                : <strong>{raport.siswa.nama}</strong>
+              </td>
               <td className="w-1/4">Kelas</td>
-              <td className="w-1/4">: <strong>{raport.siswa.kelas}</strong></td>
+              <td className="w-1/4">
+                : <strong>{raport.siswa.kelas}</strong>
+              </td>
             </tr>
             <tr>
               <td>NIS</td>
               <td>: {raport.siswa.nis}</td>
               <td>Semester</td>
-              <td>: {raport.tahunAjaran.semester} ({raport.tahunAjaran.semesterLabel})</td>
+              <td>
+                : {raport.tahunAjaran.semester} (
+                {raport.tahunAjaran.semesterLabel})
+              </td>
             </tr>
             <tr>
               <td>NISN</td>
@@ -132,8 +153,10 @@ export default function RaportMerdekaPrintPage({ params }: RaportMerdekaPageProp
 
       {/* A. Intrakurikuler - Kelompok Umum */}
       <div className="mb-6">
-        <h3 className="font-bold text-sm mb-2">A. CAPAIAN KOMPETENSI MATA PELAJARAN</h3>
-        
+        <h3 className="font-bold text-sm mb-2">
+          A. CAPAIAN KOMPETENSI MATA PELAJARAN
+        </h3>
+
         <h4 className="font-semibold text-sm mb-2">Kelompok Umum</h4>
         <table className="w-full border-collapse mb-4">
           <thead>
@@ -142,26 +165,36 @@ export default function RaportMerdekaPrintPage({ params }: RaportMerdekaPageProp
               <th className="border-cell header-cell">Mata Pelajaran</th>
               <th className="border-cell header-cell w-16">Nilai</th>
               <th className="border-cell header-cell w-20">Predikat</th>
-              <th className="border-cell header-cell">Deskripsi Capaian Kompetensi</th>
+              <th className="border-cell header-cell">
+                Deskripsi Capaian Kompetensi
+              </th>
             </tr>
           </thead>
           <tbody>
-            {raport.intrakurikuler.kelompokUmum.map((subject: any, index: number) => (
-              <tr key={subject.subjectCode}>
-                <td className="border-cell text-center">{index + 1}</td>
-                <td className="border-cell">{subject.subjectName}</td>
-                <td className="border-cell text-center font-semibold">{subject.nilaiAkhir}</td>
-                <td className="border-cell text-center">{subject.predikat}</td>
-                <td className="border-cell text-xs">{subject.deskripsi}</td>
-              </tr>
-            ))}
+            {raport.intrakurikuler.kelompokUmum.map(
+              (subject: any, index: number) => (
+                <tr key={subject.subjectCode}>
+                  <td className="border-cell text-center">{index + 1}</td>
+                  <td className="border-cell">{subject.subjectName}</td>
+                  <td className="border-cell text-center font-semibold">
+                    {subject.nilaiAkhir}
+                  </td>
+                  <td className="border-cell text-center">
+                    {subject.predikat}
+                  </td>
+                  <td className="border-cell text-xs">{subject.deskripsi}</td>
+                </tr>
+              ),
+            )}
           </tbody>
         </table>
 
         {/* Kelompok Pesantren */}
         {raport.intrakurikuler.kelompokPesantren.length > 0 && (
           <>
-            <h4 className="font-semibold text-sm mb-2">Kelompok Pesantren / Muatan Lokal</h4>
+            <h4 className="font-semibold text-sm mb-2">
+              Kelompok Pesantren / Muatan Lokal
+            </h4>
             <table className="w-full border-collapse">
               <thead>
                 <tr>
@@ -169,19 +202,29 @@ export default function RaportMerdekaPrintPage({ params }: RaportMerdekaPageProp
                   <th className="border-cell header-cell">Mata Pelajaran</th>
                   <th className="border-cell header-cell w-16">Nilai</th>
                   <th className="border-cell header-cell w-20">Predikat</th>
-                  <th className="border-cell header-cell">Deskripsi Capaian Kompetensi</th>
+                  <th className="border-cell header-cell">
+                    Deskripsi Capaian Kompetensi
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {raport.intrakurikuler.kelompokPesantren.map((subject: any, index: number) => (
-                  <tr key={subject.subjectCode}>
-                    <td className="border-cell text-center">{index + 1}</td>
-                    <td className="border-cell">{subject.subjectName}</td>
-                    <td className="border-cell text-center font-semibold">{subject.nilaiAkhir}</td>
-                    <td className="border-cell text-center">{subject.predikat}</td>
-                    <td className="border-cell text-xs">{subject.deskripsi}</td>
-                  </tr>
-                ))}
+                {raport.intrakurikuler.kelompokPesantren.map(
+                  (subject: any, index: number) => (
+                    <tr key={subject.subjectCode}>
+                      <td className="border-cell text-center">{index + 1}</td>
+                      <td className="border-cell">{subject.subjectName}</td>
+                      <td className="border-cell text-center font-semibold">
+                        {subject.nilaiAkhir}
+                      </td>
+                      <td className="border-cell text-center">
+                        {subject.predikat}
+                      </td>
+                      <td className="border-cell text-xs">
+                        {subject.deskripsi}
+                      </td>
+                    </tr>
+                  ),
+                )}
               </tbody>
             </table>
           </>
@@ -190,8 +233,10 @@ export default function RaportMerdekaPrintPage({ params }: RaportMerdekaPageProp
 
       {/* B. Projek P5 */}
       <div className="mb-6 page-break">
-        <h3 className="font-bold text-sm mb-2">B. PROJEK PENGUATAN PROFIL PELAJAR PANCASILA (P5)</h3>
-        
+        <h3 className="font-bold text-sm mb-2">
+          B. PROJEK PENGUATAN PROFIL PELAJAR PANCASILA (P5)
+        </h3>
+
         <table className="w-full border-collapse mb-2">
           <tbody>
             <tr>
@@ -220,7 +265,9 @@ export default function RaportMerdekaPrintPage({ params }: RaportMerdekaPageProp
               <tr key={dim.dimensiCode}>
                 <td className="border-cell text-center">{index + 1}</td>
                 <td className="border-cell font-semibold">{dim.dimensiName}</td>
-                <td className="border-cell text-center text-xs">{dim.capaian}</td>
+                <td className="border-cell text-center text-xs">
+                  {dim.capaian}
+                </td>
                 <td className="border-cell text-xs">{dim.deskripsi}</td>
               </tr>
             ))}
@@ -228,7 +275,9 @@ export default function RaportMerdekaPrintPage({ params }: RaportMerdekaPageProp
         </table>
 
         <div className="mt-2">
-          <p className="text-xs"><strong>Catatan Proses:</strong> {raport.projekP5.catatanProses}</p>
+          <p className="text-xs">
+            <strong>Catatan Proses:</strong> {raport.projekP5.catatanProses}
+          </p>
         </div>
       </div>
 
@@ -239,7 +288,9 @@ export default function RaportMerdekaPrintPage({ params }: RaportMerdekaPageProp
           <thead>
             <tr>
               <th className="border-cell header-cell w-8">No</th>
-              <th className="border-cell header-cell">Kegiatan Ekstrakurikuler</th>
+              <th className="border-cell header-cell">
+                Kegiatan Ekstrakurikuler
+              </th>
               <th className="border-cell header-cell w-24">Predikat</th>
               <th className="border-cell header-cell">Keterangan</th>
             </tr>
@@ -257,7 +308,9 @@ export default function RaportMerdekaPrintPage({ params }: RaportMerdekaPageProp
             ) : (
               <tr>
                 <td className="border-cell text-center">-</td>
-                <td className="border-cell" colSpan={3}>Tidak mengikuti kegiatan ekstrakurikuler</td>
+                <td className="border-cell" colSpan={3}>
+                  Tidak mengikuti kegiatan ekstrakurikuler
+                </td>
               </tr>
             )}
           </tbody>
@@ -271,31 +324,47 @@ export default function RaportMerdekaPrintPage({ params }: RaportMerdekaPageProp
           <tbody>
             <tr>
               <td className="border-cell header-cell w-1/3">Total Juz</td>
-              <td className="border-cell text-center font-semibold">{raport.tahfidz.totalJuz}</td>
+              <td className="border-cell text-center font-semibold">
+                {raport.tahfidz.totalJuz}
+              </td>
             </tr>
             <tr>
               <td className="border-cell header-cell">Total Surah</td>
-              <td className="border-cell text-center font-semibold">{raport.tahfidz.totalSurah}</td>
+              <td className="border-cell text-center font-semibold">
+                {raport.tahfidz.totalSurah}
+              </td>
             </tr>
             <tr>
-              <td className="border-cell header-cell">Total Ayat (Semester Ini)</td>
-              <td className="border-cell text-center font-semibold">{raport.tahfidz.totalAyat}</td>
+              <td className="border-cell header-cell">
+                Total Ayat (Semester Ini)
+              </td>
+              <td className="border-cell text-center font-semibold">
+                {raport.tahfidz.totalAyat}
+              </td>
             </tr>
             <tr>
               <td className="border-cell header-cell">Surah Terakhir</td>
-              <td className="border-cell text-center">{raport.tahfidz.surahTerakhir}</td>
+              <td className="border-cell text-center">
+                {raport.tahfidz.surahTerakhir}
+              </td>
             </tr>
             <tr>
               <td className="border-cell header-cell">Target Capaian</td>
-              <td className="border-cell text-center">{raport.tahfidz.targetCapaian}</td>
+              <td className="border-cell text-center">
+                {raport.tahfidz.targetCapaian}
+              </td>
             </tr>
             <tr>
               <td className="border-cell header-cell">Status</td>
-              <td className="border-cell text-center font-semibold">{raport.tahfidz.statusCapaian}</td>
+              <td className="border-cell text-center font-semibold">
+                {raport.tahfidz.statusCapaian}
+              </td>
             </tr>
           </tbody>
         </table>
-        <p className="text-xs mt-1"><strong>Catatan:</strong> {raport.tahfidz.catatan}</p>
+        <p className="text-xs mt-1">
+          <strong>Catatan:</strong> {raport.tahfidz.catatan}
+        </p>
       </div>
 
       {/* E. Kehadiran */}
@@ -313,11 +382,21 @@ export default function RaportMerdekaPrintPage({ params }: RaportMerdekaPageProp
           </thead>
           <tbody>
             <tr>
-              <td className="border-cell text-center">{raport.kehadiran.sakit} hari</td>
-              <td className="border-cell text-center">{raport.kehadiran.izin} hari</td>
-              <td className="border-cell text-center">{raport.kehadiran.alpa} hari</td>
-              <td className="border-cell text-center">{raport.kehadiran.total} hari</td>
-              <td className="border-cell text-center font-semibold">{raport.kehadiran.persentaseKehadiran}%</td>
+              <td className="border-cell text-center">
+                {raport.kehadiran.sakit} hari
+              </td>
+              <td className="border-cell text-center">
+                {raport.kehadiran.izin} hari
+              </td>
+              <td className="border-cell text-center">
+                {raport.kehadiran.alpa} hari
+              </td>
+              <td className="border-cell text-center">
+                {raport.kehadiran.total} hari
+              </td>
+              <td className="border-cell text-center font-semibold">
+                {raport.kehadiran.persentaseKehadiran}%
+              </td>
             </tr>
           </tbody>
         </table>
@@ -327,7 +406,7 @@ export default function RaportMerdekaPrintPage({ params }: RaportMerdekaPageProp
       <div className="mb-6">
         <h3 className="font-bold text-sm mb-2">F. CATATAN WALI KELAS</h3>
         <div className="border border-black p-3 min-h-16">
-          <p>{raport.catatanWaliKelas || '-'}</p>
+          <p>{raport.catatanWaliKelas || "-"}</p>
         </div>
       </div>
 

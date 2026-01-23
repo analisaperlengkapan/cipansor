@@ -1,13 +1,13 @@
 export enum AssignmentType {
-  INDIVIDUAL = 'INDIVIDUAL',
-  GROUP = 'GROUP'
+  INDIVIDUAL = "INDIVIDUAL",
+  GROUP = "GROUP",
 }
 
 export enum SubmissionStatus {
-  SUBMITTED = 'SUBMITTED',
-  LATE = 'LATE',
-  GRADED = 'GRADED',
-  RETURNED = 'RETURNED'
+  SUBMITTED = "SUBMITTED",
+  LATE = "LATE",
+  GRADED = "GRADED",
+  RETURNED = "RETURNED",
 }
 
 export type AssignmentAttachment = {
@@ -15,7 +15,7 @@ export type AssignmentAttachment = {
   name: string;
   type?: string;
   size?: number;
-}
+};
 
 export type Assignment = {
   id: string;
@@ -37,7 +37,7 @@ export type Assignment = {
   class?: { name: string };
   teacher?: { user: { name: string } };
   _count?: { submissions: number };
-}
+};
 
 export type AssignmentSubmission = {
   id: string;
@@ -53,7 +53,7 @@ export type AssignmentSubmission = {
   updatedAt: Date | string;
 
   student?: { name: string; photoUrl?: string };
-}
+};
 
 export interface CreateAssignmentRequest {
   unitId: string;

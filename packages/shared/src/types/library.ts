@@ -1,4 +1,4 @@
-import { BookStatus, BorrowingStatus } from './enums';
+import { BookStatus, BorrowingStatus } from "./enums";
 
 export interface BookCategory {
   id: string;
@@ -80,7 +80,7 @@ export interface CreateBorrowingInput {
   bookId: string;
   studentId?: string;
   borrowerId?: string;
-  borrowerType: 'STUDENT' | 'STAFF' | 'TEACHER';
+  borrowerType: "STUDENT" | "STAFF" | "TEACHER";
   dueDate: Date | string;
   notes?: string;
 }

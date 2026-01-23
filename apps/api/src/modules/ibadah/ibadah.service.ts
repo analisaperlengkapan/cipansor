@@ -105,7 +105,19 @@ export async function deleteTarget(id: string) {
 // ======================
 
 export async function listRecords(query: ListRecordsQuery) {
-  const { unitId, studentId, targetId, category, date, startDate, endDate, isCompleted, isVerified, page, limit } = query;
+  const {
+    unitId,
+    studentId,
+    targetId,
+    category,
+    date,
+    startDate,
+    endDate,
+    isCompleted,
+    isVerified,
+    page,
+    limit,
+  } = query;
 
   const where: any = {};
   if (studentId) where.studentId = studentId;
@@ -139,7 +151,16 @@ export async function listRecords(query: ListRecordsQuery) {
     prisma.dailyIbadahRecord.findMany({
       where,
       include: {
-        target: { select: { id: true, name: true, category: true, points: true, bonusPoints: true, targetUnit: true } },
+        target: {
+          select: {
+            id: true,
+            name: true,
+            category: true,
+            points: true,
+            bonusPoints: true,
+            targetUnit: true,
+          },
+        },
         student: { select: { id: true, nis: true, user: { select: { name: true } } } },
         verifier: { select: { id: true, name: true } },
       },
@@ -234,14 +255,14 @@ export async function bulkCreateRecords(data: BulkCreateRecordsInput) {
   const { studentId, date, records } = data;
 
   // Get all target points
-  const targetIds = records.map(r => r.targetId);
+  const targetIds = records.map((r) => r.targetId);
   const targets = await prisma.dailyIbadahTarget.findMany({
     where: { id: { in: targetIds } },
   });
-  const targetMap = new Map(targets.map(t => [t.id, t]));
+  const targetMap = new Map(targets.map((t) => [t.id, t]));
 
   // Create records with points calculation
-  const recordsToCreate = records.map(record => {
+  const recordsToCreate = records.map((record) => {
     const target = targetMap.get(record.targetId);
     const pointsEarned = record.isCompleted && target ? target.points : 0;
 
@@ -294,7 +315,13 @@ export async function verifyRecords(verifierId: string, data: VerifyRecordInput)
 // ======================
 
 // Predefined target names for quick check-in
-const SHOLAT_WAJIB_TARGETS = ['Sholat Subuh', 'Sholat Dzuhur', 'Sholat Ashar', 'Sholat Maghrib', 'Sholat Isya'];
+const SHOLAT_WAJIB_TARGETS = [
+  'Sholat Subuh',
+  'Sholat Dzuhur',
+  'Sholat Ashar',
+  'Sholat Maghrib',
+  'Sholat Isya',
+];
 const SHOLAT_SUNNAH_TARGETS = ['Sholat Tahajud', 'Sholat Dhuha', 'Sholat Rawatib'];
 const OTHER_TARGETS = ['Tilawah Harian', 'Dzikir Pagi', 'Dzikir Petang', 'Puasa Sunnah', 'Sedekah'];
 
@@ -381,7 +408,7 @@ export async function dailyCheckIn(data: DailyCheckInInput) {
 
   // Upsert all records
   const results = await Promise.all(
-    recordsToCreate.map(record =>
+    recordsToCreate.map((record) =>
       prisma.dailyIbadahRecord.upsert({
         where: {
           targetId_studentId_date: {
@@ -407,7 +434,7 @@ export async function dailyCheckIn(data: DailyCheckInInput) {
 
   // Calculate total points
   const totalPoints = results.reduce((sum, r) => sum + r.pointsEarned, 0);
-  const completedCount = results.filter(r => r.isCompleted).length;
+  const completedCount = results.filter((r) => r.isCompleted).length;
 
   return {
     records: results,
@@ -501,7 +528,7 @@ export async function getLeaderboard(query: LeaderboardQuery) {
   });
 
   // Get student details
-  const studentIds = leaderboard.map(l => l.studentId);
+  const studentIds = leaderboard.map((l) => l.studentId);
   const students = await prisma.student.findMany({
     where: { id: { in: studentIds } },
     include: {
@@ -513,7 +540,7 @@ export async function getLeaderboard(query: LeaderboardQuery) {
       },
     },
   });
-  const studentMap = new Map(students.map(s => [s.id, s]));
+  const studentMap = new Map(students.map((s) => [s.id, s]));
 
   // Count completed targets per student for this period
   const targetCounts = await prisma.dailyIbadahTarget.count({
@@ -529,17 +556,19 @@ export async function getLeaderboard(query: LeaderboardQuery) {
     },
     _count: { id: true },
   });
-  const recordCountMap = new Map(recordCounts.map(r => [r.studentId, r._count.id]));
+  const recordCountMap = new Map(recordCounts.map((r) => [r.studentId, r._count.id]));
 
   // Calculate days in period
-  const daysInPeriod = Math.ceil((dateEnd.getTime() - dateStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const daysInPeriod =
+    Math.ceil((dateEnd.getTime() - dateStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
   const maxPossibleRecords = targetCounts * daysInPeriod;
 
   // Format results
   const results = leaderboard.map((entry, index) => {
     const student = studentMap.get(entry.studentId);
     const completedRecords = recordCountMap.get(entry.studentId) || 0;
-    const completionRate = maxPossibleRecords > 0 ? (completedRecords / maxPossibleRecords) * 100 : 0;
+    const completionRate =
+      maxPossibleRecords > 0 ? (completedRecords / maxPossibleRecords) * 100 : 0;
 
     return {
       rank: index + 1,
@@ -595,11 +624,9 @@ export async function getStudentIbadahStats(query: StudentIbadahStatsQuery) {
   }
 
   // Calculate streaks
-  const completedDates = [...new Set(
-    records
-      .filter(r => r.isCompleted)
-      .map(r => r.date.toISOString().split('T')[0])
-  )].sort();
+  const completedDates = [
+    ...new Set(records.filter((r) => r.isCompleted).map((r) => r.date.toISOString().split('T')[0])),
+  ].sort();
 
   let currentStreak = 0;
   let maxStreak = 0;
@@ -609,7 +636,8 @@ export async function getStudentIbadahStats(query: StudentIbadahStatsQuery) {
     if (!lastDate) {
       currentStreak = 1;
     } else {
-      const diff = (new Date(dateStr).getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24);
+      const diff =
+        (new Date(dateStr).getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24);
       if (diff === 1) {
         currentStreak++;
       } else {
@@ -622,7 +650,7 @@ export async function getStudentIbadahStats(query: StudentIbadahStatsQuery) {
 
   // Summary
   const totalRecords = records.length;
-  const completedRecords = records.filter(r => r.isCompleted).length;
+  const completedRecords = records.filter((r) => r.isCompleted).length;
   const totalPoints = records.reduce((sum, r) => sum + r.pointsEarned, 0);
   const completionRate = totalRecords > 0 ? (completedRecords / totalRecords) * 100 : 0;
 
@@ -638,7 +666,8 @@ export async function getStudentIbadahStats(query: StudentIbadahStatsQuery) {
     byCategory: Object.entries(byCategory).map(([category, stats]) => ({
       category,
       ...stats,
-      completionRate: stats.total > 0 ? Math.round((stats.completed / stats.total) * 10000) / 100 : 0,
+      completionRate:
+        stats.total > 0 ? Math.round((stats.completed / stats.total) * 10000) / 100 : 0,
     })),
     startDate,
     endDate,
@@ -710,7 +739,7 @@ export async function getUnitIbadahStats(query: UnitIbadahStatsQuery) {
   });
 
   const totalRecords = records.length;
-  const completedRecords = records.filter(r => r.isCompleted).length;
+  const completedRecords = records.filter((r) => r.isCompleted).length;
 
   return {
     unitId,
@@ -721,18 +750,21 @@ export async function getUnitIbadahStats(query: UnitIbadahStatsQuery) {
       totalRecords,
       completedRecords,
       totalPoints: records.reduce((sum, r) => sum + r.pointsEarned, 0),
-      completionRate: totalRecords > 0 ? Math.round((completedRecords / totalRecords) * 10000) / 100 : 0,
+      completionRate:
+        totalRecords > 0 ? Math.round((completedRecords / totalRecords) * 10000) / 100 : 0,
     },
     byCategory: Object.entries(byCategory).map(([category, stats]) => ({
       category,
       ...stats,
-      completionRate: stats.total > 0 ? Math.round((stats.completed / stats.total) * 10000) / 100 : 0,
+      completionRate:
+        stats.total > 0 ? Math.round((stats.completed / stats.total) * 10000) / 100 : 0,
     })),
     timeline: Object.entries(groupedData)
       .map(([date, stats]) => ({
         date,
         ...stats,
-        completionRate: stats.total > 0 ? Math.round((stats.completed / stats.total) * 10000) / 100 : 0,
+        completionRate:
+          stats.total > 0 ? Math.round((stats.completed / stats.total) * 10000) / 100 : 0,
       }))
       .sort((a, b) => a.date.localeCompare(b.date)),
   };
@@ -746,7 +778,7 @@ export async function getClassIbadahStats(query: ClassIbadahStatsQuery) {
     where: { classId, status: 'ACTIVE' },
     select: { studentId: true },
   });
-  const studentIds = enrollments.map(e => e.studentId);
+  const studentIds = enrollments.map((e) => e.studentId);
 
   if (studentIds.length === 0) {
     return {
@@ -776,7 +808,10 @@ export async function getClassIbadahStats(query: ClassIbadahStatsQuery) {
   });
 
   // Group by student
-  const byStudent: Record<string, { name: string; completed: number; total: number; points: number }> = {};
+  const byStudent: Record<
+    string,
+    { name: string; completed: number; total: number; points: number }
+  > = {};
   for (const record of records) {
     const sid = record.studentId;
     if (!byStudent[sid]) {
@@ -795,7 +830,7 @@ export async function getClassIbadahStats(query: ClassIbadahStatsQuery) {
   }
 
   const totalRecords = records.length;
-  const completedRecords = records.filter(r => r.isCompleted).length;
+  const completedRecords = records.filter((r) => r.isCompleted).length;
 
   return {
     classId,
@@ -806,13 +841,15 @@ export async function getClassIbadahStats(query: ClassIbadahStatsQuery) {
       totalRecords,
       completedRecords,
       totalPoints: records.reduce((sum, r) => sum + r.pointsEarned, 0),
-      completionRate: totalRecords > 0 ? Math.round((completedRecords / totalRecords) * 10000) / 100 : 0,
+      completionRate:
+        totalRecords > 0 ? Math.round((completedRecords / totalRecords) * 10000) / 100 : 0,
     },
     studentStats: Object.entries(byStudent)
       .map(([studentId, stats]) => ({
         studentId,
         ...stats,
-        completionRate: stats.total > 0 ? Math.round((stats.completed / stats.total) * 10000) / 100 : 0,
+        completionRate:
+          stats.total > 0 ? Math.round((stats.completed / stats.total) * 10000) / 100 : 0,
       }))
       .sort((a, b) => b.points - a.points),
   };
@@ -902,29 +939,147 @@ export async function deleteIslamicEvent(id: string) {
 export async function seedDefaultTargets(unitId: string) {
   const defaultTargets = [
     // Sholat Wajib
-    { name: 'Sholat Subuh', category: 'SHOLAT_JAMAAH', points: 25, targetType: 'DAILY', targetCount: 1, targetUnit: 'TIMES', sortOrder: 1 },
-    { name: 'Sholat Dzuhur', category: 'SHOLAT_JAMAAH', points: 25, targetType: 'DAILY', targetCount: 1, targetUnit: 'TIMES', sortOrder: 2 },
-    { name: 'Sholat Ashar', category: 'SHOLAT_JAMAAH', points: 25, targetType: 'DAILY', targetCount: 1, targetUnit: 'TIMES', sortOrder: 3 },
-    { name: 'Sholat Maghrib', category: 'SHOLAT_JAMAAH', points: 25, targetType: 'DAILY', targetCount: 1, targetUnit: 'TIMES', sortOrder: 4 },
-    { name: 'Sholat Isya', category: 'SHOLAT_JAMAAH', points: 25, targetType: 'DAILY', targetCount: 1, targetUnit: 'TIMES', sortOrder: 5 },
+    {
+      name: 'Sholat Subuh',
+      category: 'SHOLAT_JAMAAH',
+      points: 25,
+      targetType: 'DAILY',
+      targetCount: 1,
+      targetUnit: 'TIMES',
+      sortOrder: 1,
+    },
+    {
+      name: 'Sholat Dzuhur',
+      category: 'SHOLAT_JAMAAH',
+      points: 25,
+      targetType: 'DAILY',
+      targetCount: 1,
+      targetUnit: 'TIMES',
+      sortOrder: 2,
+    },
+    {
+      name: 'Sholat Ashar',
+      category: 'SHOLAT_JAMAAH',
+      points: 25,
+      targetType: 'DAILY',
+      targetCount: 1,
+      targetUnit: 'TIMES',
+      sortOrder: 3,
+    },
+    {
+      name: 'Sholat Maghrib',
+      category: 'SHOLAT_JAMAAH',
+      points: 25,
+      targetType: 'DAILY',
+      targetCount: 1,
+      targetUnit: 'TIMES',
+      sortOrder: 4,
+    },
+    {
+      name: 'Sholat Isya',
+      category: 'SHOLAT_JAMAAH',
+      points: 25,
+      targetType: 'DAILY',
+      targetCount: 1,
+      targetUnit: 'TIMES',
+      sortOrder: 5,
+    },
     // Sholat Sunnah
-    { name: 'Sholat Tahajud', category: 'QIYAMULLAIL', points: 30, targetType: 'DAILY', targetCount: 1, targetUnit: 'TIMES', sortOrder: 6, isOptional: true },
-    { name: 'Sholat Dhuha', category: 'SHOLAT_SUNNAH', points: 15, targetType: 'DAILY', targetCount: 1, targetUnit: 'TIMES', sortOrder: 7, isOptional: true },
-    { name: 'Sholat Rawatib', category: 'SHOLAT_SUNNAH', points: 10, targetType: 'DAILY', targetCount: 12, targetUnit: 'TIMES', sortOrder: 8, isOptional: true },
+    {
+      name: 'Sholat Tahajud',
+      category: 'QIYAMULLAIL',
+      points: 30,
+      targetType: 'DAILY',
+      targetCount: 1,
+      targetUnit: 'TIMES',
+      sortOrder: 6,
+      isOptional: true,
+    },
+    {
+      name: 'Sholat Dhuha',
+      category: 'SHOLAT_SUNNAH',
+      points: 15,
+      targetType: 'DAILY',
+      targetCount: 1,
+      targetUnit: 'TIMES',
+      sortOrder: 7,
+      isOptional: true,
+    },
+    {
+      name: 'Sholat Rawatib',
+      category: 'SHOLAT_SUNNAH',
+      points: 10,
+      targetType: 'DAILY',
+      targetCount: 12,
+      targetUnit: 'TIMES',
+      sortOrder: 8,
+      isOptional: true,
+    },
     // Tilawah
-    { name: 'Tilawah Harian', category: 'TILAWAH', points: 20, targetType: 'DAILY', targetCount: 1, targetUnit: 'JUZ', sortOrder: 9 },
+    {
+      name: 'Tilawah Harian',
+      category: 'TILAWAH',
+      points: 20,
+      targetType: 'DAILY',
+      targetCount: 1,
+      targetUnit: 'JUZ',
+      sortOrder: 9,
+    },
     // Dzikir
-    { name: 'Dzikir Pagi', category: 'DZIKIR', points: 10, targetType: 'DAILY', targetCount: 1, targetUnit: 'TIMES', sortOrder: 10 },
-    { name: 'Dzikir Petang', category: 'DZIKIR', points: 10, targetType: 'DAILY', targetCount: 1, targetUnit: 'TIMES', sortOrder: 11 },
+    {
+      name: 'Dzikir Pagi',
+      category: 'DZIKIR',
+      points: 10,
+      targetType: 'DAILY',
+      targetCount: 1,
+      targetUnit: 'TIMES',
+      sortOrder: 10,
+    },
+    {
+      name: 'Dzikir Petang',
+      category: 'DZIKIR',
+      points: 10,
+      targetType: 'DAILY',
+      targetCount: 1,
+      targetUnit: 'TIMES',
+      sortOrder: 11,
+    },
     // Puasa
-    { name: 'Puasa Senin', category: 'PUASA', points: 50, targetType: 'WEEKLY', targetCount: 1, targetUnit: 'TIMES', sortOrder: 12, isOptional: true },
-    { name: 'Puasa Kamis', category: 'PUASA', points: 50, targetType: 'WEEKLY', targetCount: 1, targetUnit: 'TIMES', sortOrder: 13, isOptional: true },
+    {
+      name: 'Puasa Senin',
+      category: 'PUASA',
+      points: 50,
+      targetType: 'WEEKLY',
+      targetCount: 1,
+      targetUnit: 'TIMES',
+      sortOrder: 12,
+      isOptional: true,
+    },
+    {
+      name: 'Puasa Kamis',
+      category: 'PUASA',
+      points: 50,
+      targetType: 'WEEKLY',
+      targetCount: 1,
+      targetUnit: 'TIMES',
+      sortOrder: 13,
+      isOptional: true,
+    },
     // Sedekah
-    { name: 'Sedekah Harian', category: 'SEDEKAH', points: 15, targetType: 'DAILY', targetCount: 1, targetUnit: 'AMOUNT', sortOrder: 14, isOptional: true },
+    {
+      name: 'Sedekah Harian',
+      category: 'SEDEKAH',
+      points: 15,
+      targetType: 'DAILY',
+      targetCount: 1,
+      targetUnit: 'AMOUNT',
+      sortOrder: 14,
+      isOptional: true,
+    },
   ];
 
   const created = await Promise.all(
-    defaultTargets.map(target =>
+    defaultTargets.map((target) =>
       prisma.dailyIbadahTarget.upsert({
         where: {
           id: `${unitId}-${target.name.toLowerCase().replace(/\s+/g, '-')}`,

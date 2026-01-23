@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   MapPin,
   Plus,
@@ -10,27 +10,27 @@ import {
   Building2,
   Map,
   Home,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { DataTable } from '@/components/shared/data-table';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { DataTable } from "@/components/shared/data-table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -39,12 +39,12 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
-import { ColumnDef } from '@tanstack/react-table';
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { ColumnDef } from "@tanstack/react-table";
 
 import {
   useProvinces,
@@ -59,62 +59,68 @@ import {
   Regency,
   District,
   Village,
-} from '@/hooks/use-wilayah';
+} from "@/hooks/use-wilayah";
 
 export default function WilayahPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('provinces');
-  const [searchQuery, setSearchQuery] = useState('');
-  
+  const [activeTab, setActiveTab] = useState("provinces");
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Filter states
-  const [selectedProvince, setSelectedProvince] = useState<string>('');
-  const [selectedRegency, setSelectedRegency] = useState<string>('');
-  const [selectedDistrict, setSelectedDistrict] = useState<string>('');
-  
+  const [selectedProvince, setSelectedProvince] = useState<string>("");
+  const [selectedRegency, setSelectedRegency] = useState<string>("");
+  const [selectedDistrict, setSelectedDistrict] = useState<string>("");
+
   // Dialog states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newItemData, setNewItemData] = useState({ code: '', name: '', postalCode: '' });
-  
+  const [newItemData, setNewItemData] = useState({
+    code: "",
+    name: "",
+    postalCode: "",
+  });
+
   // Data hooks
-  const { data: provinces, isLoading: loadingProvinces } = useProvinces({ search: searchQuery });
-  const { data: regencies, isLoading: loadingRegencies } = useRegencies({ 
-    provinceId: selectedProvince || undefined, 
-    search: searchQuery 
+  const { data: provinces, isLoading: loadingProvinces } = useProvinces({
+    search: searchQuery,
   });
-  const { data: districts, isLoading: loadingDistricts } = useDistricts({ 
-    regencyId: selectedRegency || undefined, 
-    search: searchQuery 
+  const { data: regencies, isLoading: loadingRegencies } = useRegencies({
+    provinceId: selectedProvince || undefined,
+    search: searchQuery,
   });
-  const { data: villages, isLoading: loadingVillages } = useVillages({ 
-    districtId: selectedDistrict || undefined, 
-    search: searchQuery 
+  const { data: districts, isLoading: loadingDistricts } = useDistricts({
+    regencyId: selectedRegency || undefined,
+    search: searchQuery,
   });
-  
+  const { data: villages, isLoading: loadingVillages } = useVillages({
+    districtId: selectedDistrict || undefined,
+    search: searchQuery,
+  });
+
   // Mutations
   const createProvince = useCreateProvince();
   const createRegency = useCreateRegency();
   const createDistrict = useCreateDistrict();
   const createVillage = useCreateVillage();
-  
+
   // Province columns
   const provinceColumns: ColumnDef<Province>[] = [
     {
-      accessorKey: 'code',
-      header: 'Kode',
+      accessorKey: "code",
+      header: "Kode",
       cell: ({ row }) => (
-        <Badge variant="outline">{row.getValue('code')}</Badge>
+        <Badge variant="outline">{row.getValue("code")}</Badge>
       ),
     },
     {
-      accessorKey: 'name',
-      header: 'Nama Provinsi',
+      accessorKey: "name",
+      header: "Nama Provinsi",
       cell: ({ row }) => (
-        <div className="font-medium">{row.getValue('name')}</div>
+        <div className="font-medium">{row.getValue("name")}</div>
       ),
     },
     {
-      id: 'regencyCount',
-      header: 'Jumlah Kabupaten/Kota',
+      id: "regencyCount",
+      header: "Jumlah Kabupaten/Kota",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
           {row.original._count?.regencies || 0} kabupaten/kota
@@ -122,15 +128,15 @@ export default function WilayahPage() {
       ),
     },
     {
-      id: 'actions',
-      header: '',
+      id: "actions",
+      header: "",
       cell: ({ row }) => (
         <Button
           variant="ghost"
           size="sm"
           onClick={() => {
             setSelectedProvince(row.original.id);
-            setActiveTab('regencies');
+            setActiveTab("regencies");
           }}
         >
           Lihat Kabupaten/Kota
@@ -139,35 +145,35 @@ export default function WilayahPage() {
       ),
     },
   ];
-  
+
   // Regency columns
   const regencyColumns: ColumnDef<Regency>[] = [
     {
-      accessorKey: 'code',
-      header: 'Kode',
+      accessorKey: "code",
+      header: "Kode",
       cell: ({ row }) => (
-        <Badge variant="outline">{row.getValue('code')}</Badge>
+        <Badge variant="outline">{row.getValue("code")}</Badge>
       ),
     },
     {
-      accessorKey: 'name',
-      header: 'Nama Kabupaten/Kota',
+      accessorKey: "name",
+      header: "Nama Kabupaten/Kota",
       cell: ({ row }) => (
-        <div className="font-medium">{row.getValue('name')}</div>
+        <div className="font-medium">{row.getValue("name")}</div>
       ),
     },
     {
-      id: 'province',
-      header: 'Provinsi',
+      id: "province",
+      header: "Provinsi",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.original.province?.name || '-'}
+          {row.original.province?.name || "-"}
         </span>
       ),
     },
     {
-      id: 'districtCount',
-      header: 'Jumlah Kecamatan',
+      id: "districtCount",
+      header: "Jumlah Kecamatan",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
           {row.original._count?.districts || 0} kecamatan
@@ -175,15 +181,15 @@ export default function WilayahPage() {
       ),
     },
     {
-      id: 'actions',
-      header: '',
+      id: "actions",
+      header: "",
       cell: ({ row }) => (
         <Button
           variant="ghost"
           size="sm"
           onClick={() => {
             setSelectedRegency(row.original.id);
-            setActiveTab('districts');
+            setActiveTab("districts");
           }}
         >
           Lihat Kecamatan
@@ -192,35 +198,35 @@ export default function WilayahPage() {
       ),
     },
   ];
-  
+
   // District columns
   const districtColumns: ColumnDef<District>[] = [
     {
-      accessorKey: 'code',
-      header: 'Kode',
+      accessorKey: "code",
+      header: "Kode",
       cell: ({ row }) => (
-        <Badge variant="outline">{row.getValue('code')}</Badge>
+        <Badge variant="outline">{row.getValue("code")}</Badge>
       ),
     },
     {
-      accessorKey: 'name',
-      header: 'Nama Kecamatan',
+      accessorKey: "name",
+      header: "Nama Kecamatan",
       cell: ({ row }) => (
-        <div className="font-medium">{row.getValue('name')}</div>
+        <div className="font-medium">{row.getValue("name")}</div>
       ),
     },
     {
-      id: 'regency',
-      header: 'Kabupaten/Kota',
+      id: "regency",
+      header: "Kabupaten/Kota",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.original.regency?.name || '-'}
+          {row.original.regency?.name || "-"}
         </span>
       ),
     },
     {
-      id: 'villageCount',
-      header: 'Jumlah Kelurahan/Desa',
+      id: "villageCount",
+      header: "Jumlah Kelurahan/Desa",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
           {row.original._count?.villages || 0} kelurahan/desa
@@ -228,15 +234,15 @@ export default function WilayahPage() {
       ),
     },
     {
-      id: 'actions',
-      header: '',
+      id: "actions",
+      header: "",
       cell: ({ row }) => (
         <Button
           variant="ghost"
           size="sm"
           onClick={() => {
             setSelectedDistrict(row.original.id);
-            setActiveTab('villages');
+            setActiveTab("villages");
           }}
         >
           Lihat Kelurahan/Desa
@@ -245,54 +251,54 @@ export default function WilayahPage() {
       ),
     },
   ];
-  
+
   // Village columns
   const villageColumns: ColumnDef<Village>[] = [
     {
-      accessorKey: 'code',
-      header: 'Kode',
+      accessorKey: "code",
+      header: "Kode",
       cell: ({ row }) => (
-        <Badge variant="outline">{row.getValue('code')}</Badge>
+        <Badge variant="outline">{row.getValue("code")}</Badge>
       ),
     },
     {
-      accessorKey: 'name',
-      header: 'Nama Kelurahan/Desa',
+      accessorKey: "name",
+      header: "Nama Kelurahan/Desa",
       cell: ({ row }) => (
-        <div className="font-medium">{row.getValue('name')}</div>
+        <div className="font-medium">{row.getValue("name")}</div>
       ),
     },
     {
-      id: 'district',
-      header: 'Kecamatan',
+      id: "district",
+      header: "Kecamatan",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.original.district?.name || '-'}
+          {row.original.district?.name || "-"}
         </span>
       ),
     },
     {
-      accessorKey: 'postalCode',
-      header: 'Kode Pos',
+      accessorKey: "postalCode",
+      header: "Kode Pos",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.getValue('postalCode') || '-'}
+          {row.getValue("postalCode") || "-"}
         </span>
       ),
     },
   ];
-  
+
   const handleAdd = async () => {
     try {
-      if (activeTab === 'provinces') {
+      if (activeTab === "provinces") {
         await createProvince.mutateAsync({
           code: newItemData.code,
           name: newItemData.name,
         });
-        toast.success('Provinsi berhasil ditambahkan');
-      } else if (activeTab === 'regencies') {
+        toast.success("Provinsi berhasil ditambahkan");
+      } else if (activeTab === "regencies") {
         if (!selectedProvince) {
-          toast.error('Pilih provinsi terlebih dahulu');
+          toast.error("Pilih provinsi terlebih dahulu");
           return;
         }
         await createRegency.mutateAsync({
@@ -300,10 +306,10 @@ export default function WilayahPage() {
           name: newItemData.name,
           provinceId: selectedProvince,
         });
-        toast.success('Kabupaten/Kota berhasil ditambahkan');
-      } else if (activeTab === 'districts') {
+        toast.success("Kabupaten/Kota berhasil ditambahkan");
+      } else if (activeTab === "districts") {
         if (!selectedRegency) {
-          toast.error('Pilih kabupaten/kota terlebih dahulu');
+          toast.error("Pilih kabupaten/kota terlebih dahulu");
           return;
         }
         await createDistrict.mutateAsync({
@@ -311,10 +317,10 @@ export default function WilayahPage() {
           name: newItemData.name,
           regencyId: selectedRegency,
         });
-        toast.success('Kecamatan berhasil ditambahkan');
-      } else if (activeTab === 'villages') {
+        toast.success("Kecamatan berhasil ditambahkan");
+      } else if (activeTab === "villages") {
         if (!selectedDistrict) {
-          toast.error('Pilih kecamatan terlebih dahulu');
+          toast.error("Pilih kecamatan terlebih dahulu");
           return;
         }
         await createVillage.mutateAsync({
@@ -323,59 +329,60 @@ export default function WilayahPage() {
           districtId: selectedDistrict,
           postalCode: newItemData.postalCode || undefined,
         });
-        toast.success('Kelurahan/Desa berhasil ditambahkan');
+        toast.success("Kelurahan/Desa berhasil ditambahkan");
       }
       setIsAddDialogOpen(false);
-      setNewItemData({ code: '', name: '', postalCode: '' });
+      setNewItemData({ code: "", name: "", postalCode: "" });
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal menambahkan data';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal menambahkan data";
       toast.error(errorMessage);
     }
   };
-  
+
   const getTabLabel = () => {
     switch (activeTab) {
-      case 'provinces':
-        return 'Provinsi';
-      case 'regencies':
-        return 'Kabupaten/Kota';
-      case 'districts':
-        return 'Kecamatan';
-      case 'villages':
-        return 'Kelurahan/Desa';
+      case "provinces":
+        return "Provinsi";
+      case "regencies":
+        return "Kabupaten/Kota";
+      case "districts":
+        return "Kecamatan";
+      case "villages":
+        return "Kelurahan/Desa";
       default:
-        return '';
+        return "";
     }
   };
-  
+
   const stats = [
     {
-      title: 'Provinsi',
+      title: "Provinsi",
       value: provinces?.length || 0,
       icon: Map,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      color: "text-blue-600",
+      bgColor: "bg-blue-100",
     },
     {
-      title: 'Kabupaten/Kota',
+      title: "Kabupaten/Kota",
       value: regencies?.length || 0,
       icon: Building2,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
+      color: "text-green-600",
+      bgColor: "bg-green-100",
     },
     {
-      title: 'Kecamatan',
+      title: "Kecamatan",
       value: districts?.length || 0,
       icon: MapPin,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100',
+      color: "text-orange-600",
+      bgColor: "bg-orange-100",
     },
     {
-      title: 'Kelurahan/Desa',
+      title: "Kelurahan/Desa",
       value: villages?.length || 0,
       icon: Home,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      color: "text-purple-600",
+      bgColor: "bg-purple-100",
     },
   ];
 
@@ -385,8 +392,8 @@ export default function WilayahPage() {
         title="Wilayah Indonesia"
         description="Kelola data wilayah administratif Indonesia (Provinsi, Kabupaten/Kota, Kecamatan, Kelurahan/Desa)"
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Wilayah' },
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Wilayah" },
         ]}
       />
 
@@ -450,7 +457,12 @@ export default function WilayahPage() {
                         id="code"
                         placeholder="Masukkan kode"
                         value={newItemData.code}
-                        onChange={(e) => setNewItemData({ ...newItemData, code: e.target.value })}
+                        onChange={(e) =>
+                          setNewItemData({
+                            ...newItemData,
+                            code: e.target.value,
+                          })
+                        }
                       />
                     </div>
                     <div className="grid gap-2">
@@ -459,24 +471,37 @@ export default function WilayahPage() {
                         id="name"
                         placeholder={`Masukkan nama ${getTabLabel().toLowerCase()}`}
                         value={newItemData.name}
-                        onChange={(e) => setNewItemData({ ...newItemData, name: e.target.value })}
+                        onChange={(e) =>
+                          setNewItemData({
+                            ...newItemData,
+                            name: e.target.value,
+                          })
+                        }
                       />
                     </div>
-                    {activeTab === 'villages' && (
+                    {activeTab === "villages" && (
                       <div className="grid gap-2">
                         <Label htmlFor="postalCode">Kode Pos (Opsional)</Label>
                         <Input
                           id="postalCode"
                           placeholder="Masukkan kode pos"
                           value={newItemData.postalCode}
-                          onChange={(e) => setNewItemData({ ...newItemData, postalCode: e.target.value })}
+                          onChange={(e) =>
+                            setNewItemData({
+                              ...newItemData,
+                              postalCode: e.target.value,
+                            })
+                          }
                         />
                       </div>
                     )}
-                    {activeTab === 'regencies' && (
+                    {activeTab === "regencies" && (
                       <div className="grid gap-2">
                         <Label>Provinsi</Label>
-                        <Select value={selectedProvince} onValueChange={setSelectedProvince}>
+                        <Select
+                          value={selectedProvince}
+                          onValueChange={setSelectedProvince}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih provinsi" />
                           </SelectTrigger>
@@ -490,10 +515,13 @@ export default function WilayahPage() {
                         </Select>
                       </div>
                     )}
-                    {activeTab === 'districts' && (
+                    {activeTab === "districts" && (
                       <div className="grid gap-2">
                         <Label>Kabupaten/Kota</Label>
-                        <Select value={selectedRegency} onValueChange={setSelectedRegency}>
+                        <Select
+                          value={selectedRegency}
+                          onValueChange={setSelectedRegency}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih kabupaten/kota" />
                           </SelectTrigger>
@@ -507,10 +535,13 @@ export default function WilayahPage() {
                         </Select>
                       </div>
                     )}
-                    {activeTab === 'villages' && (
+                    {activeTab === "villages" && (
                       <div className="grid gap-2">
                         <Label>Kecamatan</Label>
-                        <Select value={selectedDistrict} onValueChange={setSelectedDistrict}>
+                        <Select
+                          value={selectedDistrict}
+                          onValueChange={setSelectedDistrict}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih kecamatan" />
                           </SelectTrigger>
@@ -526,14 +557,27 @@ export default function WilayahPage() {
                     )}
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsAddDialogOpen(false)}
+                    >
                       Batal
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleAdd}
-                      disabled={createProvince.isPending || createRegency.isPending || createDistrict.isPending || createVillage.isPending}
+                      disabled={
+                        createProvince.isPending ||
+                        createRegency.isPending ||
+                        createDistrict.isPending ||
+                        createVillage.isPending
+                      }
                     >
-                      {(createProvince.isPending || createRegency.isPending || createDistrict.isPending || createVillage.isPending) ? 'Menyimpan...' : 'Simpan'}
+                      {createProvince.isPending ||
+                      createRegency.isPending ||
+                      createDistrict.isPending ||
+                      createVillage.isPending
+                        ? "Menyimpan..."
+                        : "Simpan"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -561,11 +605,14 @@ export default function WilayahPage() {
                 Kelurahan/Desa
               </TabsTrigger>
             </TabsList>
-            
+
             {/* Filter Bar for sub-levels */}
-            {activeTab === 'regencies' && (
+            {activeTab === "regencies" && (
               <div className="mb-4 flex gap-2">
-                <Select value={selectedProvince} onValueChange={setSelectedProvince}>
+                <Select
+                  value={selectedProvince}
+                  onValueChange={setSelectedProvince}
+                >
                   <SelectTrigger className="w-[250px]">
                     <SelectValue placeholder="Filter by Provinsi" />
                   </SelectTrigger>
@@ -579,19 +626,25 @@ export default function WilayahPage() {
                   </SelectContent>
                 </Select>
                 {selectedProvince && (
-                  <Button variant="outline" onClick={() => setSelectedProvince('')}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedProvince("")}
+                  >
                     Reset Filter
                   </Button>
                 )}
               </div>
             )}
-            
-            {activeTab === 'districts' && (
+
+            {activeTab === "districts" && (
               <div className="mb-4 flex gap-2">
-                <Select value={selectedProvince} onValueChange={(val) => {
-                  setSelectedProvince(val);
-                  setSelectedRegency('');
-                }}>
+                <Select
+                  value={selectedProvince}
+                  onValueChange={(val) => {
+                    setSelectedProvince(val);
+                    setSelectedRegency("");
+                  }}
+                >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Pilih Provinsi" />
                   </SelectTrigger>
@@ -604,37 +657,52 @@ export default function WilayahPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={selectedRegency} onValueChange={setSelectedRegency}>
+                <Select
+                  value={selectedRegency}
+                  onValueChange={setSelectedRegency}
+                >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Pilih Kabupaten/Kota" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Semua Kabupaten/Kota</SelectItem>
-                    {regencies?.filter(r => !selectedProvince || r.provinceId === selectedProvince).map((regency) => (
-                      <SelectItem key={regency.id} value={regency.id}>
-                        {regency.name}
-                      </SelectItem>
-                    ))}
+                    {regencies
+                      ?.filter(
+                        (r) =>
+                          !selectedProvince ||
+                          r.provinceId === selectedProvince,
+                      )
+                      .map((regency) => (
+                        <SelectItem key={regency.id} value={regency.id}>
+                          {regency.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 {(selectedProvince || selectedRegency) && (
-                  <Button variant="outline" onClick={() => {
-                    setSelectedProvince('');
-                    setSelectedRegency('');
-                  }}>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedProvince("");
+                      setSelectedRegency("");
+                    }}
+                  >
                     Reset Filter
                   </Button>
                 )}
               </div>
             )}
-            
-            {activeTab === 'villages' && (
+
+            {activeTab === "villages" && (
               <div className="mb-4 flex gap-2 flex-wrap">
-                <Select value={selectedProvince} onValueChange={(val) => {
-                  setSelectedProvince(val);
-                  setSelectedRegency('');
-                  setSelectedDistrict('');
-                }}>
+                <Select
+                  value={selectedProvince}
+                  onValueChange={(val) => {
+                    setSelectedProvince(val);
+                    setSelectedRegency("");
+                    setSelectedDistrict("");
+                  }}
+                >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Pilih Provinsi" />
                   </SelectTrigger>
@@ -647,47 +715,67 @@ export default function WilayahPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={selectedRegency} onValueChange={(val) => {
-                  setSelectedRegency(val);
-                  setSelectedDistrict('');
-                }}>
+                <Select
+                  value={selectedRegency}
+                  onValueChange={(val) => {
+                    setSelectedRegency(val);
+                    setSelectedDistrict("");
+                  }}
+                >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Pilih Kab/Kota" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Semua</SelectItem>
-                    {regencies?.filter(r => !selectedProvince || r.provinceId === selectedProvince).map((regency) => (
-                      <SelectItem key={regency.id} value={regency.id}>
-                        {regency.name}
-                      </SelectItem>
-                    ))}
+                    {regencies
+                      ?.filter(
+                        (r) =>
+                          !selectedProvince ||
+                          r.provinceId === selectedProvince,
+                      )
+                      .map((regency) => (
+                        <SelectItem key={regency.id} value={regency.id}>
+                          {regency.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
-                <Select value={selectedDistrict} onValueChange={setSelectedDistrict}>
+                <Select
+                  value={selectedDistrict}
+                  onValueChange={setSelectedDistrict}
+                >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Pilih Kecamatan" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Semua</SelectItem>
-                    {districts?.filter(d => !selectedRegency || d.regencyId === selectedRegency).map((district) => (
-                      <SelectItem key={district.id} value={district.id}>
-                        {district.name}
-                      </SelectItem>
-                    ))}
+                    {districts
+                      ?.filter(
+                        (d) =>
+                          !selectedRegency || d.regencyId === selectedRegency,
+                      )
+                      .map((district) => (
+                        <SelectItem key={district.id} value={district.id}>
+                          {district.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 {(selectedProvince || selectedRegency || selectedDistrict) && (
-                  <Button variant="outline" onClick={() => {
-                    setSelectedProvince('');
-                    setSelectedRegency('');
-                    setSelectedDistrict('');
-                  }}>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedProvince("");
+                      setSelectedRegency("");
+                      setSelectedDistrict("");
+                    }}
+                  >
                     Reset
                   </Button>
                 )}
               </div>
             )}
-            
+
             <TabsContent value="provinces">
               <DataTable
                 columns={provinceColumns}
@@ -695,7 +783,7 @@ export default function WilayahPage() {
                 isLoading={loadingProvinces}
               />
             </TabsContent>
-            
+
             <TabsContent value="regencies">
               <DataTable
                 columns={regencyColumns}
@@ -703,7 +791,7 @@ export default function WilayahPage() {
                 isLoading={loadingRegencies}
               />
             </TabsContent>
-            
+
             <TabsContent value="districts">
               <DataTable
                 columns={districtColumns}
@@ -711,7 +799,7 @@ export default function WilayahPage() {
                 isLoading={loadingDistricts}
               />
             </TabsContent>
-            
+
             <TabsContent value="villages">
               <DataTable
                 columns={villageColumns}

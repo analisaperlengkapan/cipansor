@@ -1,23 +1,29 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import {
   MessageSquare,
   Send,
@@ -36,19 +42,19 @@ import {
   Settings,
   Play,
   RefreshCw,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { useUnits } from '@/hooks';
+} from "lucide-react";
+import { toast } from "sonner";
+import { useUnits } from "@/hooks";
 
 // Template types for WhatsApp
 const WA_TEMPLATES = [
   {
-    id: 'payment_reminder',
-    name: 'Pengingat Pembayaran',
-    description: 'Notifikasi pengingat pembayaran SPP/tagihan',
+    id: "payment_reminder",
+    name: "Pengingat Pembayaran",
+    description: "Notifikasi pengingat pembayaran SPP/tagihan",
     icon: CreditCard,
-    category: 'finance',
-    variables: ['parentName', 'studentName', 'amount', 'dueDate'],
+    category: "finance",
+    variables: ["parentName", "studentName", "amount", "dueDate"],
     preview: `Assalamu\'alaikum Bapak/Ibu *{parentName}*,
 
 Ini adalah pengingat pembayaran untuk:
@@ -61,12 +67,12 @@ Mohon segera melakukan pembayaran.
 _Pesantren Cipansor_`,
   },
   {
-    id: 'violation_alert',
-    name: 'Laporan Pelanggaran',
-    description: 'Notifikasi pelanggaran siswa ke orang tua',
+    id: "violation_alert",
+    name: "Laporan Pelanggaran",
+    description: "Notifikasi pelanggaran siswa ke orang tua",
     icon: AlertTriangle,
-    category: 'discipline',
-    variables: ['parentName', 'studentName', 'type', 'description', 'date'],
+    category: "discipline",
+    variables: ["parentName", "studentName", "type", "description", "date"],
     preview: `Assalamu\'alaikum Bapak/Ibu *{parentName}*,
 
 📋 *LAPORAN PELANGGARAN*
@@ -81,12 +87,12 @@ Mohon kerja sama untuk pembinaan.
 _Tim Pembinaan Pesantren Cipansor_`,
   },
   {
-    id: 'absence_alert',
-    name: 'Laporan Ketidakhadiran',
-    description: 'Notifikasi siswa alpha/tidak hadir',
+    id: "absence_alert",
+    name: "Laporan Ketidakhadiran",
+    description: "Notifikasi siswa alpha/tidak hadir",
     icon: Calendar,
-    category: 'attendance',
-    variables: ['parentName', 'studentName', 'date'],
+    category: "attendance",
+    variables: ["parentName", "studentName", "date"],
     preview: `Assalamu\'alaikum Bapak/Ibu *{parentName}*,
 
 📅 *Hari ini ({date})*
@@ -98,12 +104,19 @@ Mohon konfirmasi kondisi putra/putri.
 _Pesantren Cipansor_`,
   },
   {
-    id: 'tahfidz_progress',
-    name: 'Progress Tahfidz',
-    description: 'Laporan perkembangan hafalan Al-Quran',
+    id: "tahfidz_progress",
+    name: "Progress Tahfidz",
+    description: "Laporan perkembangan hafalan Al-Quran",
     icon: BookOpen,
-    category: 'academic',
-    variables: ['parentName', 'studentName', 'surah', 'ayahStart', 'ayahEnd', 'juz'],
+    category: "academic",
+    variables: [
+      "parentName",
+      "studentName",
+      "surah",
+      "ayahStart",
+      "ayahEnd",
+      "juz",
+    ],
     preview: `Assalamu\'alaikum Bapak/Ibu *{parentName}*,
 
 🕌 *LAPORAN TAHFIDZ*
@@ -118,12 +131,19 @@ Barakallahu fiikum.
 _Tim Tahfidz Pesantren Cipansor_`,
   },
   {
-    id: 'permit_status',
-    name: 'Status Izin',
-    description: 'Update status pengajuan izin',
+    id: "permit_status",
+    name: "Status Izin",
+    description: "Update status pengajuan izin",
     icon: FileCheck,
-    category: 'permit',
-    variables: ['parentName', 'studentName', 'permitType', 'status', 'startDate', 'endDate'],
+    category: "permit",
+    variables: [
+      "parentName",
+      "studentName",
+      "permitType",
+      "status",
+      "startDate",
+      "endDate",
+    ],
     preview: `Assalamu\'alaikum Bapak/Ibu *{parentName}*,
 
 📋 *UPDATE STATUS IZIN*
@@ -136,12 +156,12 @@ _Tim Tahfidz Pesantren Cipansor_`,
 _Pesantren Cipansor_`,
   },
   {
-    id: 'announcement',
-    name: 'Pengumuman',
-    description: 'Broadcast pengumuman umum',
+    id: "announcement",
+    name: "Pengumuman",
+    description: "Broadcast pengumuman umum",
     icon: Bell,
-    category: 'general',
-    variables: ['title', 'content'],
+    category: "general",
+    variables: ["title", "content"],
     preview: `🔔 *PENGUMUMAN*
 
 *{title}*
@@ -155,61 +175,61 @@ _Pesantren Cipansor_`,
 // Scheduled tasks
 const SCHEDULED_TASKS = [
   {
-    id: 'payment_reminder',
-    name: 'Pengingat Pembayaran Harian',
-    description: 'Mengirim pengingat pembayaran H-7, H-3, H-1',
-    schedule: '08:00 setiap hari',
+    id: "payment_reminder",
+    name: "Pengingat Pembayaran Harian",
+    description: "Mengirim pengingat pembayaran H-7, H-3, H-1",
+    schedule: "08:00 setiap hari",
     enabled: true,
   },
   {
-    id: 'attendance_alert',
-    name: 'Notifikasi Kehadiran',
-    description: 'Mengirim notifikasi siswa alpha kepada orang tua',
-    schedule: '09:00 Senin-Sabtu',
+    id: "attendance_alert",
+    name: "Notifikasi Kehadiran",
+    description: "Mengirim notifikasi siswa alpha kepada orang tua",
+    schedule: "09:00 Senin-Sabtu",
     enabled: true,
   },
   {
-    id: 'daily_summary',
-    name: 'Ringkasan Harian Wali Kelas',
-    description: 'Mengirim ringkasan kehadiran dan pelanggaran ke wali kelas',
-    schedule: '17:00 Senin-Sabtu',
+    id: "daily_summary",
+    name: "Ringkasan Harian Wali Kelas",
+    description: "Mengirim ringkasan kehadiran dan pelanggaran ke wali kelas",
+    schedule: "17:00 Senin-Sabtu",
     enabled: true,
   },
   {
-    id: 'tahfidz_report',
-    name: 'Laporan Tahfidz Mingguan',
-    description: 'Mengirim laporan progress hafalan mingguan',
-    schedule: '10:00 setiap Jumat',
+    id: "tahfidz_report",
+    name: "Laporan Tahfidz Mingguan",
+    description: "Mengirim laporan progress hafalan mingguan",
+    schedule: "10:00 setiap Jumat",
     enabled: true,
   },
   {
-    id: 'event_reminder',
-    name: 'Pengingat Kegiatan',
-    description: 'Mengirim pengingat kegiatan H-1',
-    schedule: '18:00 setiap hari',
+    id: "event_reminder",
+    name: "Pengingat Kegiatan",
+    description: "Mengirim pengingat kegiatan H-1",
+    schedule: "18:00 setiap hari",
     enabled: true,
   },
   {
-    id: 'overdue_payment',
-    name: 'Peringatan Tunggakan',
-    description: 'Mengirim peringatan tagihan overdue',
-    schedule: '10:00 setiap Senin',
+    id: "overdue_payment",
+    name: "Peringatan Tunggakan",
+    description: "Mengirim peringatan tagihan overdue",
+    schedule: "10:00 setiap Senin",
     enabled: true,
   },
 ];
 
 export default function WhatsAppPage() {
-  const [activeTab, setActiveTab] = useState('broadcast');
+  const [activeTab, setActiveTab] = useState("broadcast");
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [broadcastForm, setBroadcastForm] = useState({
-    title: '',
-    content: '',
-    priority: 'NORMAL',
-    unitId: '',
+    title: "",
+    content: "",
+    priority: "NORMAL",
+    unitId: "",
   });
   const [singleSend, setSingleSend] = useState({
-    phone: '',
-    message: '',
+    phone: "",
+    message: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [providerStatus, setProviderStatus] = useState<{
@@ -222,40 +242,40 @@ export default function WhatsAppPage() {
   // Check WhatsApp status
   const checkStatus = async () => {
     try {
-      const res = await fetch('/api/notifications/whatsapp/status');
+      const res = await fetch("/api/notifications/whatsapp/status");
       const data = await res.json();
       if (data.success) {
         setProviderStatus(data.data);
       }
     } catch {
-      toast.error('Gagal memeriksa status WhatsApp');
+      toast.error("Gagal memeriksa status WhatsApp");
     }
   };
 
   // Send single message
   const handleSingleSend = async () => {
     if (!singleSend.phone || !singleSend.message) {
-      toast.error('Nomor telepon dan pesan harus diisi');
+      toast.error("Nomor telepon dan pesan harus diisi");
       return;
     }
 
     setIsLoading(true);
     try {
-      const res = await fetch('/api/notifications/whatsapp/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/notifications/whatsapp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(singleSend),
       });
       const data = await res.json();
-      
+
       if (data.success) {
-        toast.success('Pesan berhasil dikirim');
-        setSingleSend({ phone: '', message: '' });
+        toast.success("Pesan berhasil dikirim");
+        setSingleSend({ phone: "", message: "" });
       } else {
-        toast.error(data.data?.error || 'Gagal mengirim pesan');
+        toast.error(data.data?.error || "Gagal mengirim pesan");
       }
     } catch {
-      toast.error('Gagal mengirim pesan');
+      toast.error("Gagal mengirim pesan");
     } finally {
       setIsLoading(false);
     }
@@ -264,27 +284,34 @@ export default function WhatsAppPage() {
   // Send broadcast
   const handleBroadcast = async () => {
     if (!broadcastForm.title || !broadcastForm.content) {
-      toast.error('Judul dan konten harus diisi');
+      toast.error("Judul dan konten harus diisi");
       return;
     }
 
     setIsLoading(true);
     try {
-      const res = await fetch('/api/notifications/whatsapp/broadcast', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/notifications/whatsapp/broadcast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(broadcastForm),
       });
       const data = await res.json();
-      
+
       if (data.success) {
-        toast.success(`Broadcast terkirim ke ${data.data.sent} penerima (${data.data.failed} gagal)`);
-        setBroadcastForm({ title: '', content: '', priority: 'NORMAL', unitId: '' });
+        toast.success(
+          `Broadcast terkirim ke ${data.data.sent} penerima (${data.data.failed} gagal)`,
+        );
+        setBroadcastForm({
+          title: "",
+          content: "",
+          priority: "NORMAL",
+          unitId: "",
+        });
       } else {
-        toast.error('Gagal mengirim broadcast');
+        toast.error("Gagal mengirim broadcast");
       }
     } catch {
-      toast.error('Gagal mengirim broadcast');
+      toast.error("Gagal mengirim broadcast");
     } finally {
       setIsLoading(false);
     }
@@ -294,26 +321,28 @@ export default function WhatsAppPage() {
   const handleTriggerTask = async (taskId: string) => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/notifications/scheduler/trigger', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/notifications/scheduler/trigger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task: taskId }),
       });
       const data = await res.json();
-      
+
       if (data.success) {
         toast.success(data.message);
       } else {
-        toast.error('Gagal menjalankan tugas');
+        toast.error("Gagal menjalankan tugas");
       }
     } catch {
-      toast.error('Gagal menjalankan tugas');
+      toast.error("Gagal menjalankan tugas");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const selectedTemplateData = WA_TEMPLATES.find((t) => t.id === selectedTemplate);
+  const selectedTemplateData = WA_TEMPLATES.find(
+    (t) => t.id === selectedTemplate,
+  );
 
   return (
     <MainLayout>
@@ -346,7 +375,7 @@ export default function WhatsAppPage() {
                 <div>
                   <p className="font-medium">Status Provider</p>
                   <p className="text-sm text-muted-foreground">
-                    {providerStatus?.provider || 'Belum dicek'}
+                    {providerStatus?.provider || "Belum dicek"}
                   </p>
                 </div>
               </div>
@@ -408,7 +437,12 @@ export default function WhatsAppPage() {
                       id="broadcast-title"
                       placeholder="Judul pengumuman"
                       value={broadcastForm.title}
-                      onChange={(e) => setBroadcastForm({ ...broadcastForm, title: e.target.value })}
+                      onChange={(e) =>
+                        setBroadcastForm({
+                          ...broadcastForm,
+                          title: e.target.value,
+                        })
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -418,7 +452,12 @@ export default function WhatsAppPage() {
                       placeholder="Isi pengumuman..."
                       rows={5}
                       value={broadcastForm.content}
-                      onChange={(e) => setBroadcastForm({ ...broadcastForm, content: e.target.value })}
+                      onChange={(e) =>
+                        setBroadcastForm({
+                          ...broadcastForm,
+                          content: e.target.value,
+                        })
+                      }
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -426,7 +465,9 @@ export default function WhatsAppPage() {
                       <Label htmlFor="broadcast-priority">Prioritas</Label>
                       <Select
                         value={broadcastForm.priority}
-                        onValueChange={(v) => setBroadcastForm({ ...broadcastForm, priority: v })}
+                        onValueChange={(v) =>
+                          setBroadcastForm({ ...broadcastForm, priority: v })
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -442,7 +483,9 @@ export default function WhatsAppPage() {
                       <Label htmlFor="broadcast-unit">Unit (Opsional)</Label>
                       <Select
                         value={broadcastForm.unitId}
-                        onValueChange={(v) => setBroadcastForm({ ...broadcastForm, unitId: v })}
+                        onValueChange={(v) =>
+                          setBroadcastForm({ ...broadcastForm, unitId: v })
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Semua unit" />
@@ -482,13 +525,12 @@ export default function WhatsAppPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="bg-green-50 rounded-lg p-4 font-mono text-sm whitespace-pre-wrap">
-                    {broadcastForm.priority === 'HIGH' && '⚠️ *PENTING - '}
-                    🔔 *PENGUMUMAN*{broadcastForm.priority === 'HIGH' && '*'}
-                    {'\n\n'}
-                    *{broadcastForm.title || '[Judul]'}*
-                    {'\n\n'}
-                    {broadcastForm.content || '[Konten pengumuman akan ditampilkan di sini]'}
-                    {'\n\n'}
+                    {broadcastForm.priority === "HIGH" && "⚠️ *PENTING - "}
+                    🔔 *PENGUMUMAN*{broadcastForm.priority === "HIGH" && "*"}
+                    {"\n\n"}*{broadcastForm.title || "[Judul]"}*{"\n\n"}
+                    {broadcastForm.content ||
+                      "[Konten pengumuman akan ditampilkan di sini]"}
+                    {"\n\n"}
                     _Pesantren Cipansor_
                   </div>
                 </CardContent>
@@ -512,7 +554,9 @@ export default function WhatsAppPage() {
                     id="single-phone"
                     placeholder="08xxxxxxxxxx atau 628xxxxxxxxx"
                     value={singleSend.phone}
-                    onChange={(e) => setSingleSend({ ...singleSend, phone: e.target.value })}
+                    onChange={(e) =>
+                      setSingleSend({ ...singleSend, phone: e.target.value })
+                    }
                   />
                   <p className="text-xs text-muted-foreground">
                     Format: 08xx atau 628xx (tanpa +)
@@ -525,13 +569,12 @@ export default function WhatsAppPage() {
                     placeholder="Ketik pesan..."
                     rows={5}
                     value={singleSend.message}
-                    onChange={(e) => setSingleSend({ ...singleSend, message: e.target.value })}
+                    onChange={(e) =>
+                      setSingleSend({ ...singleSend, message: e.target.value })
+                    }
                   />
                 </div>
-                <Button
-                  onClick={handleSingleSend}
-                  disabled={isLoading}
-                >
+                <Button onClick={handleSingleSend} disabled={isLoading}>
                   {isLoading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
@@ -553,8 +596,8 @@ export default function WhatsAppPage() {
                     key={template.id}
                     className={`cursor-pointer transition-all ${
                       selectedTemplate === template.id
-                        ? 'ring-2 ring-green-500'
-                        : 'hover:shadow-md'
+                        ? "ring-2 ring-green-500"
+                        : "hover:shadow-md"
                     }`}
                     onClick={() => setSelectedTemplate(template.id)}
                   >
@@ -564,7 +607,9 @@ export default function WhatsAppPage() {
                           <Icon className="h-5 w-5 text-green-600" />
                         </div>
                         <div className="flex-1">
-                          <CardTitle className="text-base">{template.name}</CardTitle>
+                          <CardTitle className="text-base">
+                            {template.name}
+                          </CardTitle>
                           <CardDescription className="text-xs">
                             {template.description}
                           </CardDescription>
@@ -573,10 +618,16 @@ export default function WhatsAppPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
-                        <p className="text-xs font-medium text-muted-foreground">Variabel:</p>
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Variabel:
+                        </p>
                         <div className="flex flex-wrap gap-1">
                           {template.variables.map((v) => (
-                            <Badge key={v} variant="secondary" className="text-xs">
+                            <Badge
+                              key={v}
+                              variant="secondary"
+                              className="text-xs"
+                            >
                               {`{${v}}`}
                             </Badge>
                           ))}
@@ -621,18 +672,20 @@ export default function WhatsAppPage() {
                       <div className="flex items-center gap-4">
                         <div
                           className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                            task.enabled ? 'bg-green-100' : 'bg-gray-100'
+                            task.enabled ? "bg-green-100" : "bg-gray-100"
                           }`}
                         >
                           <Clock
                             className={`h-5 w-5 ${
-                              task.enabled ? 'text-green-600' : 'text-gray-400'
+                              task.enabled ? "text-green-600" : "text-gray-400"
                             }`}
                           />
                         </div>
                         <div>
                           <p className="font-medium">{task.name}</p>
-                          <p className="text-sm text-muted-foreground">{task.description}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {task.description}
+                          </p>
                           <p className="text-xs text-muted-foreground mt-1">
                             Jadwal: {task.schedule}
                           </p>
@@ -674,7 +727,9 @@ export default function WhatsAppPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="META">Meta WhatsApp Cloud API</SelectItem>
+                      <SelectItem value="META">
+                        Meta WhatsApp Cloud API
+                      </SelectItem>
                       <SelectItem value="FONNTE">Fonnte (Indonesia)</SelectItem>
                       <SelectItem value="WATROOP">WATroop</SelectItem>
                       <SelectItem value="WHACENTER">Whacenter</SelectItem>
@@ -692,7 +747,7 @@ export default function WhatsAppPage() {
                     <Input type="password" placeholder="Masukkan API Key" />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Dapatkan API Key dari{' '}
+                    Dapatkan API Key dari{" "}
                     <a
                       href="https://fonnte.com"
                       target="_blank"
@@ -714,7 +769,10 @@ export default function WhatsAppPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Access Token</Label>
-                    <Input type="password" placeholder="Masukkan Access Token" />
+                    <Input
+                      type="password"
+                      placeholder="Masukkan Access Token"
+                    />
                   </div>
                 </div>
 

@@ -1,6 +1,6 @@
 /**
  * Notifications Module
- * 
+ *
  * Exports:
  * - Notification CRUD operations
  * - Announcement management

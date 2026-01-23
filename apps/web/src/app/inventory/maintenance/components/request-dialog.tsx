@@ -27,7 +27,13 @@ import { useState } from "react";
 import { useCreateMaintenanceRequest } from "@/hooks/use-inventory";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useInventoryItems, AssetStatus } from "@/hooks/use-inventory";
 
 const formSchema = z.object({
@@ -39,8 +45,12 @@ const formSchema = z.object({
 
 export function MaintenanceRequestDialog() {
   const [open, setOpen] = useState(false);
-  const { mutateAsync: createRequest, isPending } = useCreateMaintenanceRequest();
-  const { data: assets } = useInventoryItems({ limit: 100, status: AssetStatus.ACTIVE });
+  const { mutateAsync: createRequest, isPending } =
+    useCreateMaintenanceRequest();
+  const { data: assets } = useInventoryItems({
+    limit: 100,
+    status: AssetStatus.ACTIVE,
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -74,9 +84,7 @@ export function MaintenanceRequestDialog() {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Request Maintenance</DialogTitle>
-          <DialogDescription>
-            Report an issue with an asset.
-          </DialogDescription>
+          <DialogDescription>Report an issue with an asset.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -86,7 +94,10 @@ export function MaintenanceRequestDialog() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Asset</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select asset" />
@@ -110,7 +121,10 @@ export function MaintenanceRequestDialog() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Issue Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select type" />
@@ -120,7 +134,9 @@ export function MaintenanceRequestDialog() {
                       <SelectItem value="Repair">Repair</SelectItem>
                       <SelectItem value="Broken">Broken</SelectItem>
                       <SelectItem value="Malfunction">Malfunction</SelectItem>
-                      <SelectItem value="Maintenance">Routine Maintenance</SelectItem>
+                      <SelectItem value="Maintenance">
+                        Routine Maintenance
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

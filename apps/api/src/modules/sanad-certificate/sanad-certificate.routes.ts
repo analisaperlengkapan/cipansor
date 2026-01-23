@@ -90,12 +90,7 @@ const router: IRouter = Router();
  *       200:
  *         description: List of sanad records
  */
-router.get(
-  '/',
-  authenticate,
-  validateQuery(listSanadQuerySchema),
-  controller.listSanadRecords
-);
+router.get('/', authenticate, validateQuery(listSanadQuerySchema), controller.listSanadRecords);
 
 /**
  * @openapi
@@ -115,11 +110,7 @@ router.get(
  *       200:
  *         description: Student sanad summary with progress
  */
-router.get(
-  '/students/:studentId/summary',
-  authenticate,
-  controller.getStudentSanadSummary
-);
+router.get('/students/:studentId/summary', authenticate, controller.getStudentSanadSummary);
 
 /**
  * @openapi
@@ -144,11 +135,7 @@ router.get(
  *       200:
  *         description: Certificate verification result
  */
-router.post(
-  '/verify',
-  validate(verifyCertificateSchema),
-  controller.verifyCertificate
-);
+router.post('/verify', validate(verifyCertificateSchema), controller.verifyCertificate);
 
 /**
  * @openapi
@@ -260,11 +247,7 @@ router.post(
  *             schema:
  *               type: string
  */
-router.get(
-  '/:id/certificate',
-  authenticate,
-  controller.getCertificatePdf
-);
+router.get('/:id/certificate', authenticate, controller.getCertificatePdf);
 
 /**
  * @openapi
@@ -284,11 +267,7 @@ router.get(
  *       200:
  *         description: Sanad record details
  */
-router.get(
-  '/:id',
-  authenticate,
-  controller.getSanadById
-);
+router.get('/:id', authenticate, controller.getSanadById);
 
 /**
  * @openapi

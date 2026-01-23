@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import { useAuthStore } from '@/stores/auth';
-import { useRouter, usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useAuthStore } from "@/stores/auth";
+import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { 
-  LayoutDashboard, 
-  Users, 
-  GraduationCap, 
-  Receipt, 
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import {
+  LayoutDashboard,
+  Users,
+  GraduationCap,
+  Receipt,
   AlertTriangle,
   Award,
   Heart,
@@ -21,8 +21,8 @@ import {
   Bell,
   LogOut,
   Menu,
-  type LucideIcon
-} from 'lucide-react';
+  type LucideIcon,
+} from "lucide-react";
 
 interface NavItem {
   title: string;
@@ -32,43 +32,43 @@ interface NavItem {
 
 const parentNavItems: NavItem[] = [
   {
-    title: 'Dashboard',
-    href: '/parent',
+    title: "Dashboard",
+    href: "/parent",
     icon: LayoutDashboard,
   },
   {
-    title: 'Anak Saya',
-    href: '/parent/children',
+    title: "Anak Saya",
+    href: "/parent/children",
     icon: Users,
   },
   {
-    title: 'Keuangan',
-    href: '/parent/finance',
+    title: "Keuangan",
+    href: "/parent/finance",
     icon: Receipt,
   },
   {
-    title: 'Pelanggaran',
-    href: '/parent/violations',
+    title: "Pelanggaran",
+    href: "/parent/violations",
     icon: AlertTriangle,
   },
   {
-    title: 'Penghargaan',
-    href: '/parent/rewards',
+    title: "Penghargaan",
+    href: "/parent/rewards",
     icon: Award,
   },
   {
-    title: 'Kesehatan',
-    href: '/parent/health',
+    title: "Kesehatan",
+    href: "/parent/health",
     icon: Heart,
   },
   {
-    title: 'Izin',
-    href: '/parent/permits',
+    title: "Izin",
+    href: "/parent/permits",
     icon: FileText,
   },
   {
-    title: 'Pengumuman',
-    href: '/parent/announcements',
+    title: "Pengumuman",
+    href: "/parent/announcements",
     icon: Bell,
   },
 ];
@@ -78,13 +78,13 @@ const SidebarContent = ({
   user,
   handleLogout,
   pathname,
-  setMobileOpen
+  setMobileOpen,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  user: any,
-  handleLogout: () => void,
-  pathname: string,
-  setMobileOpen: (v: boolean) => void
+  user: any;
+  handleLogout: () => void;
+  pathname: string;
+  setMobileOpen: (v: boolean) => void;
 }) => (
   <div className="flex h-full flex-col">
     {/* Logo */}
@@ -97,13 +97,14 @@ const SidebarContent = ({
     <ScrollArea className="flex-1 px-3 py-4">
       <nav className="space-y-1">
         {parentNavItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const isActive =
+            pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
 
           return (
             <Link key={item.href} href={item.href}>
               <Button
-                variant={isActive ? 'secondary' : 'ghost'}
+                variant={isActive ? "secondary" : "ghost"}
                 className="w-full justify-start"
                 onClick={() => setMobileOpen(false)}
               >
@@ -124,7 +125,9 @@ const SidebarContent = ({
         </div>
         <div className="flex-1 overflow-hidden">
           <p className="truncate text-sm font-medium">{user?.name}</p>
-          <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {user?.email}
+          </p>
         </div>
       </div>
       <Button
@@ -151,11 +154,11 @@ export default function ParentLayout({
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login?redirect=/parent');
+      router.push("/login?redirect=/parent");
     }
     // Check if user is a parent role
-    if (user && user.role !== 'PARENT' && user.role !== 'SUPER_ADMIN') {
-      router.push('/dashboard');
+    if (user && user.role !== "PARENT" && user.role !== "SUPER_ADMIN") {
+      router.push("/dashboard");
     }
   }, [isAuthenticated, user, router]);
 
@@ -169,7 +172,7 @@ export default function ParentLayout({
 
   const handleLogout = () => {
     logout();
-    router.push('/login');
+    router.push("/login");
   };
 
   return (

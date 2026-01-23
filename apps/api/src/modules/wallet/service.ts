@@ -73,12 +73,12 @@ export class WalletService {
     }
 
     if (unitId) {
-      where.student = { ...where.student as object, unitId };
+      where.student = { ...(where.student as object), unitId };
     }
 
     if (classId) {
       where.student = {
-        ...where.student as object,
+        ...(where.student as object),
         enrollments: { some: { classId, status: 'ACTIVE' } },
       };
     }

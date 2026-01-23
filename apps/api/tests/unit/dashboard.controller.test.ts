@@ -152,13 +152,13 @@ describe('Dashboard Controller - Metrics History', () => {
     await getDashboardMetrics(req as Request, res as Response);
 
     expect(jsonMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: true,
-          data: expect.objectContaining({
-            current: mockCurrent,
-            recent: [mockCurrent],
-          }),
-        })
-      );
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({
+          current: mockCurrent,
+          recent: [mockCurrent],
+        }),
+      })
+    );
   });
 });

@@ -10,7 +10,7 @@ import {
   Scale,
   Ruler,
   Activity,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -21,11 +21,17 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
-} from 'recharts';
+  ResponsiveContainer,
+} from "recharts";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -45,18 +51,30 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useClasses } from "@/hooks/use-classes";
 
 export default function GrowthTrackingPage() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
-  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(
+    null,
+  );
   const [isAddOpen, setIsAddOpen] = useState(false);
 
   // Form State
@@ -65,7 +83,7 @@ export default function GrowthTrackingPage() {
     weight: "",
     height: "",
     headCircumference: "",
-    notes: ""
+    notes: "",
   });
 
   // Fetch Classes
@@ -89,7 +107,9 @@ export default function GrowthTrackingPage() {
     queryKey: ["growth-records", selectedStudentId],
     queryFn: async () => {
       if (!selectedStudentId) return null;
-      const res = await fetch(`/api/health/growth?studentId=${selectedStudentId}`);
+      const res = await fetch(
+        `/api/health/growth?studentId=${selectedStudentId}`,
+      );
       if (!res.ok) throw new Error("Failed to fetch growth records");
       const json = await res.json();
       return json.data;
@@ -116,9 +136,11 @@ export default function GrowthTrackingPage() {
         weight: "",
         height: "",
         headCircumference: "",
-        notes: ""
+        notes: "",
       });
-      queryClient.invalidateQueries({ queryKey: ["growth-records", selectedStudentId] });
+      queryClient.invalidateQueries({
+        queryKey: ["growth-records", selectedStudentId],
+      });
     },
     onError: () => toast.error("Gagal menyimpan data"),
   });
@@ -132,46 +154,65 @@ export default function GrowthTrackingPage() {
       weight: parseFloat(formData.weight) || undefined,
       height: parseFloat(formData.height) || undefined,
       headCircumference: parseFloat(formData.headCircumference) || undefined,
-      notes: formData.notes
+      notes: formData.notes,
     });
   };
 
   // Prepare chart data (reverse to show chronological order left to right)
-  const chartData = growthData ? [...growthData].reverse().map((r: any) => ({
-    date: format(new Date(r.recordDate), 'dd/MM/yy'),
-    weight: r.weight,
-    height: r.height,
-    head: r.headCircumference
-  })) : [];
+  const chartData = growthData
+    ? [...growthData].reverse().map((r: any) => ({
+        date: format(new Date(r.recordDate), "dd/MM/yy"),
+        weight: r.weight,
+        height: r.height,
+        head: r.headCircumference,
+      }))
+    : [];
 
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Pantau Tumbuh Kembang</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Pantau Tumbuh Kembang
+          </h1>
           <p className="text-muted-foreground">
-            Catat dan pantau Berat Badan (BB), Tinggi Badan (TB), dan Lingkar Kepala (LK).
+            Catat dan pantau Berat Badan (BB), Tinggi Badan (TB), dan Lingkar
+            Kepala (LK).
           </p>
         </div>
         <div className="flex gap-2">
-          <Select value={selectedClassId || ""} onValueChange={(val) => { setSelectedClassId(val); setSelectedStudentId(null); }}>
+          <Select
+            value={selectedClassId || ""}
+            onValueChange={(val) => {
+              setSelectedClassId(val);
+              setSelectedStudentId(null);
+            }}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Pilih Kelas" />
             </SelectTrigger>
             <SelectContent>
               {classesData?.data?.map((c: any) => (
-                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <Select value={selectedStudentId || ""} onValueChange={setSelectedStudentId} disabled={!selectedClassId}>
+          <Select
+            value={selectedStudentId || ""}
+            onValueChange={setSelectedStudentId}
+            disabled={!selectedClassId}
+          >
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Pilih Siswa" />
             </SelectTrigger>
             <SelectContent>
               {studentsData?.map((e: any) => (
-                <SelectItem key={e.student.id} value={e.student.id}>{e.student.user.name}</SelectItem>
+                <SelectItem key={e.student.id} value={e.student.id}>
+                  {e.student.user.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -202,18 +243,24 @@ export default function GrowthTrackingPage() {
                           variant={"outline"}
                           className={cn(
                             "w-full justify-start text-left font-normal",
-                            !formData.date && "text-muted-foreground"
+                            !formData.date && "text-muted-foreground",
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {formData.date ? format(formData.date, "PPP", { locale: id }) : <span>Pilih tanggal</span>}
+                          {formData.date ? (
+                            format(formData.date, "PPP", { locale: id })
+                          ) : (
+                            <span>Pilih tanggal</span>
+                          )}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">
                         <Calendar
                           mode="single"
                           selected={formData.date}
-                          onSelect={(d) => d && setFormData({...formData, date: d})}
+                          onSelect={(d) =>
+                            d && setFormData({ ...formData, date: d })
+                          }
                           initialFocus
                         />
                       </PopoverContent>
@@ -230,7 +277,9 @@ export default function GrowthTrackingPage() {
                     step="0.1"
                     className="col-span-3"
                     value={formData.weight}
-                    onChange={(e) => setFormData({...formData, weight: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, weight: e.target.value })
+                    }
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -243,7 +292,9 @@ export default function GrowthTrackingPage() {
                     step="0.1"
                     className="col-span-3"
                     value={formData.height}
-                    onChange={(e) => setFormData({...formData, height: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, height: e.target.value })
+                    }
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -256,7 +307,12 @@ export default function GrowthTrackingPage() {
                     step="0.1"
                     className="col-span-3"
                     value={formData.headCircumference}
-                    onChange={(e) => setFormData({...formData, headCircumference: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        headCircumference: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -267,13 +323,20 @@ export default function GrowthTrackingPage() {
                     id="notes"
                     className="col-span-3"
                     value={formData.notes}
-                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, notes: e.target.value })
+                    }
                   />
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={handleSubmit} disabled={createMutation.isPending}>
-                  {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button
+                  onClick={handleSubmit}
+                  disabled={createMutation.isPending}
+                >
+                  {createMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Simpan
                 </Button>
               </DialogFooter>
@@ -285,10 +348,12 @@ export default function GrowthTrackingPage() {
       {!selectedStudentId ? (
         <div className="flex flex-col items-center justify-center h-[400px] border rounded-lg bg-muted/10">
           <Activity className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
-          <p className="text-muted-foreground">Pilih siswa untuk melihat data tumbuh kembang.</p>
+          <p className="text-muted-foreground">
+            Pilih siswa untuk melihat data tumbuh kembang.
+          </p>
         </div>
       ) : isLoading ? (
-         <div className="flex justify-center py-20">
+        <div className="flex justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       ) : (
@@ -299,7 +364,7 @@ export default function GrowthTrackingPage() {
               <CardTitle>Grafik Pertumbuhan</CardTitle>
             </CardHeader>
             <CardContent className="h-[300px]">
-               <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
@@ -307,8 +372,20 @@ export default function GrowthTrackingPage() {
                   <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
                   <Tooltip />
                   <Legend />
-                  <Line yAxisId="left" type="monotone" dataKey="weight" name="Berat (kg)" stroke="#8884d8" />
-                  <Line yAxisId="right" type="monotone" dataKey="height" name="Tinggi (cm)" stroke="#82ca9d" />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="weight"
+                    name="Berat (kg)"
+                    stroke="#8884d8"
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="height"
+                    name="Tinggi (cm)"
+                    stroke="#82ca9d"
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -333,16 +410,27 @@ export default function GrowthTrackingPage() {
                 <TableBody>
                   {growthData?.map((record: any) => (
                     <TableRow key={record.id}>
-                      <TableCell>{format(new Date(record.recordDate), 'dd MMM yyyy', { locale: id })}</TableCell>
+                      <TableCell>
+                        {format(new Date(record.recordDate), "dd MMM yyyy", {
+                          locale: id,
+                        })}
+                      </TableCell>
                       <TableCell>{record.weight || "-"}</TableCell>
                       <TableCell>{record.height || "-"}</TableCell>
                       <TableCell>{record.headCircumference || "-"}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">{record.notes}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {record.notes}
+                      </TableCell>
                     </TableRow>
                   ))}
                   {growthData?.length === 0 && (
-                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">Belum ada data.</TableCell>
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="text-center text-muted-foreground"
+                      >
+                        Belum ada data.
+                      </TableCell>
                     </TableRow>
                   )}
                 </TableBody>

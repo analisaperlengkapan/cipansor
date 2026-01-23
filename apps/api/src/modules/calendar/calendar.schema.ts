@@ -5,36 +5,36 @@ import { z } from 'zod';
 // ======================
 
 export const CalendarEventCategory = z.enum([
-  'ACADEMIC',           // Kegiatan akademik (ujian, ulangan)
-  'HOLIDAY',            // Libur nasional/sekolah
-  'EXTRACURRICULAR',    // Kegiatan ekstrakurikuler
-  'MEETING',            // Rapat (guru, orang tua)
-  'CEREMONY',           // Upacara (bendera, wisuda)
-  'RELIGIOUS',          // Kegiatan keagamaan (pesantren)
-  'COMPETITION',        // Lomba/kompetisi
-  'FIELD_TRIP',         // Karyawisata/field trip
-  'REGISTRATION',       // Pendaftaran (PPDB, dll)
-  'EXAM',               // Ujian (PTS, PAS, UN)
-  'WORKSHOP',           // Workshop/pelatihan
-  'PARENT_MEETING',     // Pertemuan wali murid
-  'GRADUATION',         // Wisuda/kelulusan
-  'ORIENTATION',        // Orientasi siswa baru
-  'OTHER',              // Lainnya
+  'ACADEMIC', // Kegiatan akademik (ujian, ulangan)
+  'HOLIDAY', // Libur nasional/sekolah
+  'EXTRACURRICULAR', // Kegiatan ekstrakurikuler
+  'MEETING', // Rapat (guru, orang tua)
+  'CEREMONY', // Upacara (bendera, wisuda)
+  'RELIGIOUS', // Kegiatan keagamaan (pesantren)
+  'COMPETITION', // Lomba/kompetisi
+  'FIELD_TRIP', // Karyawisata/field trip
+  'REGISTRATION', // Pendaftaran (PPDB, dll)
+  'EXAM', // Ujian (PTS, PAS, UN)
+  'WORKSHOP', // Workshop/pelatihan
+  'PARENT_MEETING', // Pertemuan wali murid
+  'GRADUATION', // Wisuda/kelulusan
+  'ORIENTATION', // Orientasi siswa baru
+  'OTHER', // Lainnya
 ]);
 
 export const RecurrenceType = z.enum([
-  'NONE',               // Tidak berulang
-  'DAILY',              // Harian
-  'WEEKLY',             // Mingguan
-  'MONTHLY',            // Bulanan
-  'YEARLY',             // Tahunan
+  'NONE', // Tidak berulang
+  'DAILY', // Harian
+  'WEEKLY', // Mingguan
+  'MONTHLY', // Bulanan
+  'YEARLY', // Tahunan
 ]);
 
 export const EventVisibility = z.enum([
-  'PUBLIC',             // Semua bisa melihat
-  'INTERNAL',           // Hanya internal sekolah
-  'STAFF_ONLY',         // Hanya guru/staff
-  'CLASS_SPECIFIC',     // Kelas tertentu
+  'PUBLIC', // Semua bisa melihat
+  'INTERNAL', // Hanya internal sekolah
+  'STAFF_ONLY', // Hanya guru/staff
+  'CLASS_SPECIFIC', // Kelas tertentu
 ]);
 
 // ======================
@@ -50,7 +50,10 @@ export const listEventsQuerySchema = z.object({
   endDate: z.string().datetime().optional(),
   month: z.coerce.number().min(1).max(12).optional(),
   year: z.coerce.number().min(2020).max(2100).optional(),
-  isAllDay: z.enum(['true', 'false']).transform(v => v === 'true').optional(),
+  isAllDay: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
   search: z.string().optional(),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(50),
@@ -71,28 +74,33 @@ export const createEventSchema = z.object({
   isAllDay: z.boolean().default(false),
   location: z.string().max(200).optional(),
   visibility: EventVisibility.default('PUBLIC'),
-  
+
   // Target audience
   targetClassIds: z.array(z.string().uuid()).optional(),
   targetRoles: z.array(z.string()).optional(),
-  
+
   // Recurrence
   recurrenceType: RecurrenceType.default('NONE'),
   recurrenceEndDate: z.string().datetime().optional(),
   recurrenceCount: z.number().int().positive().optional(),
-  
+
   // Additional fields
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional(),
   isImportant: z.boolean().default(false),
   reminderMinutes: z.number().int().positive().optional(),
   attachments: z.array(z.string().url()).optional(),
   externalLink: z.string().url().optional(),
-  
+
   // Metadata
   metadata: z.record(z.any()).optional(),
 });
 
-export const updateEventSchema = createEventSchema.partial().omit({ unitId: true, academicYearId: true });
+export const updateEventSchema = createEventSchema
+  .partial()
+  .omit({ unitId: true, academicYearId: true });
 
 export const bulkCreateEventsSchema = z.object({
   events: z.array(createEventSchema).min(1).max(100),
@@ -105,15 +113,17 @@ export const bulkCreateEventsSchema = z.object({
 export const importAcademicCalendarSchema = z.object({
   unitId: z.string().uuid(),
   academicYearId: z.string().uuid(),
-  events: z.array(z.object({
-    title: z.string().min(1).max(200),
-    description: z.string().max(2000).optional(),
-    category: CalendarEventCategory,
-    startDate: z.string().datetime(),
-    endDate: z.string().datetime(),
-    isAllDay: z.boolean().default(true),
-    isImportant: z.boolean().default(false),
-  })),
+  events: z.array(
+    z.object({
+      title: z.string().min(1).max(200),
+      description: z.string().max(2000).optional(),
+      category: CalendarEventCategory,
+      startDate: z.string().datetime(),
+      endDate: z.string().datetime(),
+      isAllDay: z.boolean().default(true),
+      isImportant: z.boolean().default(false),
+    })
+  ),
 });
 
 // ======================

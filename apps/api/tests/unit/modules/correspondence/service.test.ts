@@ -49,14 +49,10 @@ describe('CorrespondenceService', () => {
       } as any);
 
       vi.mocked(prisma.agendaNumber.update).mockResolvedValue({
-        lastNumber: 11
+        lastNumber: 11,
       } as any);
 
-      const result = await CorrespondenceService.generateNumber(
-        'unit-1',
-        'OUTGOING',
-        'year-1'
-      );
+      const result = await CorrespondenceService.generateNumber('unit-1', 'OUTGOING', 'year-1');
 
       const date = new Date();
       const year = date.getFullYear().toString();
@@ -72,7 +68,7 @@ describe('CorrespondenceService', () => {
         format: '[NO]/[TYPE]/[ROMAN]/[YEAR]',
       } as any);
       vi.mocked(prisma.agendaNumber.update).mockResolvedValue({
-        lastNumber: 1
+        lastNumber: 1,
       } as any);
 
       await CorrespondenceService.generateNumber('unit-1', 'OUTGOING', 'year-1');
@@ -88,11 +84,7 @@ describe('CorrespondenceService', () => {
         isSigner: false,
       } as any);
 
-      const result = await CorrespondenceService.processReview(
-        'letter-1',
-        'user-1',
-        'APPROVE'
-      );
+      const result = await CorrespondenceService.processReview('letter-1', 'user-1', 'APPROVE');
 
       expect(result.success).toBe(true);
       expect(prisma.letterReviewer.update).toHaveBeenCalledWith(

@@ -1,33 +1,38 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ColumnDef } from '@tanstack/react-table';
-import { MainLayout } from '@/components/layout';
-import { PageHeader, DataTable, SearchInput, ConfirmDialog } from '@/components/shared';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ColumnDef } from "@tanstack/react-table";
+import { MainLayout } from "@/components/layout";
+import {
+  PageHeader,
+  DataTable,
+  SearchInput,
+  ConfirmDialog,
+} from "@/components/shared";
 import {
   useMurojaahRecords,
   useDeleteMurojaah,
   MurojaahRecord,
-} from '@/hooks/use-murojaah';
-import { useClasses } from '@/hooks/use-classes';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+} from "@/hooks/use-murojaah";
+import { useClasses } from "@/hooks/use-classes";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { DatePickerWithRange } from '@/components/ui/date-range-picker';
+} from "@/components/ui/select";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import {
   MoreHorizontal,
   Eye,
@@ -39,26 +44,26 @@ import {
   XCircle,
   Clock,
   AlertTriangle,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { useAuthStore } from '@/stores/auth';
-import { cn } from '@/lib/utils';
-import { DateRange } from 'react-day-picker';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { toast } from "sonner";
+import { useAuthStore } from "@/stores/auth";
+import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'Menunggu',
-  REVIEWED: 'Direview',
-  PASSED: 'Lulus',
-  NEED_IMPROVEMENT: 'Perlu Perbaikan',
+  PENDING: "Menunggu",
+  REVIEWED: "Direview",
+  PASSED: "Lulus",
+  NEED_IMPROVEMENT: "Perlu Perbaikan",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-800',
-  REVIEWED: 'bg-blue-100 text-blue-800',
-  PASSED: 'bg-green-100 text-green-800',
-  NEED_IMPROVEMENT: 'bg-orange-100 text-orange-800',
+  PENDING: "bg-yellow-100 text-yellow-800",
+  REVIEWED: "bg-blue-100 text-blue-800",
+  PASSED: "bg-green-100 text-green-800",
+  NEED_IMPROVEMENT: "bg-orange-100 text-orange-800",
 };
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
@@ -73,9 +78,9 @@ export default function MurojaahListPage() {
   const { user } = useAuthStore();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [classFilter, setClassFilter] = useState<string>('');
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [classFilter, setClassFilter] = useState<string>("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -87,9 +92,11 @@ export default function MurojaahListPage() {
     search: search || undefined,
     status: statusFilter || undefined,
     classId: classFilter || undefined,
-    dateFrom: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
-    dateTo: dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined,
-    unitId: user?.role !== 'SUPER_ADMIN' ? user?.unitId : undefined,
+    dateFrom: dateRange?.from
+      ? format(dateRange.from, "yyyy-MM-dd")
+      : undefined,
+    dateTo: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
+    unitId: user?.role !== "SUPER_ADMIN" ? user?.unitId : undefined,
   });
 
   const deleteMutation = useDeleteMurojaah();
@@ -98,17 +105,17 @@ export default function MurojaahListPage() {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      toast.success('Record murojaah berhasil dihapus');
+      toast.success("Record murojaah berhasil dihapus");
       setDeleteId(null);
     } catch {
-      toast.error('Gagal menghapus record murojaah');
+      toast.error("Gagal menghapus record murojaah");
     }
   };
 
   const columns: ColumnDef<MurojaahRecord>[] = [
     {
-      accessorKey: 'student',
-      header: 'Santri',
+      accessorKey: "student",
+      header: "Santri",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           {row.original.student?.photoUrl ? (
@@ -120,29 +127,39 @@ export default function MurojaahListPage() {
           ) : (
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
               <span className="text-xs font-medium">
-                {row.original.student?.name?.[0] || row.original.student?.user?.name?.[0] || '?'}
+                {row.original.student?.name?.[0] ||
+                  row.original.student?.user?.name?.[0] ||
+                  "?"}
               </span>
             </div>
           )}
           <div>
-            <p className="font-medium">{row.original.student?.name || row.original.student?.user?.name || '-'}</p>
-            <p className="text-xs text-muted-foreground">{row.original.student?.nis}</p>
+            <p className="font-medium">
+              {row.original.student?.name ||
+                row.original.student?.user?.name ||
+                "-"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {row.original.student?.nis}
+            </p>
           </div>
         </div>
       ),
     },
     {
-      accessorKey: 'date',
-      header: 'Tanggal',
+      accessorKey: "date",
+      header: "Tanggal",
       cell: ({ row }) => (
         <span className="text-sm">
-          {format(new Date(row.original.date), 'dd MMM yyyy', { locale: idLocale })}
+          {format(new Date(row.original.date), "dd MMM yyyy", {
+            locale: idLocale,
+          })}
         </span>
       ),
     },
     {
-      accessorKey: 'surah',
-      header: 'Surah & Ayat',
+      accessorKey: "surah",
+      header: "Surah & Ayat",
       cell: ({ row }) => (
         <div>
           <p className="font-medium flex items-center gap-1">
@@ -156,51 +173,60 @@ export default function MurojaahListPage() {
       ),
     },
     {
-      accessorKey: 'repetitions',
-      header: 'Pengulangan',
+      accessorKey: "repetitions",
+      header: "Pengulangan",
       cell: ({ row }) => (
         <span className="text-sm">{row.original.repetitions}x</span>
       ),
     },
     {
-      accessorKey: 'status',
-      header: 'Status',
+      accessorKey: "status",
+      header: "Status",
       cell: ({ row }) => (
-        <Badge className={cn('font-normal gap-1', STATUS_COLORS[row.original.status])}>
+        <Badge
+          className={cn(
+            "font-normal gap-1",
+            STATUS_COLORS[row.original.status],
+          )}
+        >
           {STATUS_ICONS[row.original.status]}
           {STATUS_LABELS[row.original.status]}
         </Badge>
       ),
     },
     {
-      accessorKey: 'grade',
-      header: 'Nilai',
+      accessorKey: "grade",
+      header: "Nilai",
       cell: ({ row }) => (
         <span
           className={cn(
-            'font-semibold',
+            "font-semibold",
             row.original.grade
               ? row.original.grade >= 80
-                ? 'text-green-600'
+                ? "text-green-600"
                 : row.original.grade >= 60
-                  ? 'text-yellow-600'
-                  : 'text-red-600'
-              : 'text-muted-foreground'
+                  ? "text-yellow-600"
+                  : "text-red-600"
+              : "text-muted-foreground",
           )}
         >
-          {row.original.grade ?? '-'}
+          {row.original.grade ?? "-"}
         </span>
       ),
     },
     {
-      accessorKey: 'teacher',
-      header: 'Musyrif',
+      accessorKey: "teacher",
+      header: "Musyrif",
       cell: ({ row }) => (
-        <span className="text-sm">{row.original.teacher?.name || row.original.teacher?.user?.name || '-'}</span>
+        <span className="text-sm">
+          {row.original.teacher?.name ||
+            row.original.teacher?.user?.name ||
+            "-"}
+        </span>
       ),
     },
     {
-      id: 'actions',
+      id: "actions",
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -209,16 +235,28 @@ export default function MurojaahListPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => router.push(`/tahfidz/murojaah/${row.original.id}`)}>
+            <DropdownMenuItem
+              onClick={() =>
+                router.push(`/tahfidz/murojaah/${row.original.id}`)
+              }
+            >
               <Eye className="mr-2 h-4 w-4" />
               Lihat Detail
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push(`/tahfidz/murojaah/${row.original.id}/edit`)}>
+            <DropdownMenuItem
+              onClick={() =>
+                router.push(`/tahfidz/murojaah/${row.original.id}/edit`)
+              }
+            >
               <Pencil className="mr-2 h-4 w-4" />
               Edit
             </DropdownMenuItem>
-            {row.original.status === 'PENDING' && (
-              <DropdownMenuItem onClick={() => router.push(`/tahfidz/murojaah/${row.original.id}/review`)}>
+            {row.original.status === "PENDING" && (
+              <DropdownMenuItem
+                onClick={() =>
+                  router.push(`/tahfidz/murojaah/${row.original.id}/review`)
+                }
+              >
                 <CheckCircle className="mr-2 h-4 w-4" />
                 Review
               </DropdownMenuItem>
@@ -245,7 +283,7 @@ export default function MurojaahListPage() {
           description="Kelola catatan murojaah (pengulangan) hafalan santri"
           actions={
             <Button
-              onClick={() => router.push('/tahfidz/murojaah/new')}
+              onClick={() => router.push("/tahfidz/murojaah/new")}
               className="transition-all hover:shadow-md hover:-translate-y-0.5"
             >
               <Plus className="mr-2 h-4 w-4" />
@@ -302,7 +340,9 @@ export default function MurojaahListPage() {
           <div className="glass-card border-none bg-yellow-50/50 rounded-xl p-4 transition-all hover:shadow-lg group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-yellow-600 uppercase tracking-wider">Menunggu Review</p>
+                <p className="text-xs font-bold text-yellow-600 uppercase tracking-wider">
+                  Menunggu Review
+                </p>
                 <p className="text-2xl font-bold text-yellow-800 mt-1">
                   {data?.summary?.pending || 0}
                 </p>
@@ -315,7 +355,9 @@ export default function MurojaahListPage() {
           <div className="glass-card border-none bg-green-50/50 rounded-xl p-4 transition-all hover:shadow-lg group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-green-600 uppercase tracking-wider">Lulus</p>
+                <p className="text-xs font-bold text-green-600 uppercase tracking-wider">
+                  Lulus
+                </p>
                 <p className="text-2xl font-bold text-green-800 mt-1">
                   {data?.summary?.passed || 0}
                 </p>
@@ -328,7 +370,9 @@ export default function MurojaahListPage() {
           <div className="glass-card border-none bg-orange-50/50 rounded-xl p-4 transition-all hover:shadow-lg group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-orange-600 uppercase tracking-wider">Perlu Perbaikan</p>
+                <p className="text-xs font-bold text-orange-600 uppercase tracking-wider">
+                  Perlu Perbaikan
+                </p>
                 <p className="text-2xl font-bold text-orange-800 mt-1">
                   {data?.summary?.needImprovement || 0}
                 </p>
@@ -341,7 +385,9 @@ export default function MurojaahListPage() {
           <div className="glass-card border-none bg-blue-50/50 rounded-xl p-4 transition-all hover:shadow-lg group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">Total Bulan Ini</p>
+                <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+                  Total Bulan Ini
+                </p>
                 <p className="text-2xl font-bold text-blue-800 mt-1">
                   {data?.summary?.thisMonth || 0}
                 </p>

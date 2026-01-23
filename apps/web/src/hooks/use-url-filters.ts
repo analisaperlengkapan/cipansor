@@ -3,10 +3,10 @@
  * Persists filter state in URL parameters
  */
 
-'use client';
+"use client";
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useMemo } from 'react';
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo } from "react";
 
 type FilterValue = string | number | boolean | null | undefined;
 
@@ -16,7 +16,7 @@ interface UseURLFiltersOptions {
 }
 
 export function useURLFilters<T extends Record<string, FilterValue>>(
-  options: UseURLFiltersOptions = {}
+  options: UseURLFiltersOptions = {},
 ) {
   const { defaultValues = {} } = options;
   const router = useRouter();
@@ -28,11 +28,11 @@ export function useURLFilters<T extends Record<string, FilterValue>>(
     const result: Record<string, FilterValue> = { ...defaultValues };
     searchParams.forEach((value, key) => {
       // Try to parse as number or boolean
-      if (value === 'true') {
+      if (value === "true") {
         result[key] = true;
-      } else if (value === 'false') {
+      } else if (value === "false") {
         result[key] = false;
-      } else if (!isNaN(Number(value)) && value !== '') {
+      } else if (!isNaN(Number(value)) && value !== "") {
         result[key] = Number(value);
       } else {
         result[key] = value;
@@ -45,42 +45,52 @@ export function useURLFilters<T extends Record<string, FilterValue>>(
   const setFilter = useCallback(
     (key: string, value: FilterValue) => {
       const params = new URLSearchParams(searchParams.toString());
-      
-      if (value === null || value === undefined || value === '' || value === defaultValues[key]) {
+
+      if (
+        value === null ||
+        value === undefined ||
+        value === "" ||
+        value === defaultValues[key]
+      ) {
         params.delete(key);
       } else {
         params.set(key, String(value));
       }
-      
+
       // Reset page when filters change
-      if (key !== 'page') {
-        params.delete('page');
+      if (key !== "page") {
+        params.delete("page");
       }
-      
+
       router.push(`${pathname}?${params.toString()}`, { scroll: false });
     },
-    [pathname, router, searchParams, defaultValues]
+    [pathname, router, searchParams, defaultValues],
   );
 
   // Set multiple filters at once
   const setFilters = useCallback(
     (newFilters: Partial<T>) => {
       const params = new URLSearchParams(searchParams.toString());
-      
+
       Object.entries(newFilters).forEach(([key, value]) => {
-        if (value === null || value === undefined || value === '' || value === defaultValues[key]) {
+        if (
+          value === null ||
+          value === undefined ||
+          value === "" ||
+          value === defaultValues[key]
+        ) {
           params.delete(key);
         } else {
           params.set(key, String(value));
         }
       });
-      
+
       // Reset page when filters change
-      params.delete('page');
-      
+      params.delete("page");
+
       router.push(`${pathname}?${params.toString()}`, { scroll: false });
     },
-    [pathname, router, searchParams, defaultValues]
+    [pathname, router, searchParams, defaultValues],
   );
 
   // Clear all filters
@@ -91,7 +101,7 @@ export function useURLFilters<T extends Record<string, FilterValue>>(
   // Check if any filter is active
   const hasActiveFilters = useMemo(() => {
     return Array.from(searchParams.entries()).some(([key, value]) => {
-      return key !== 'page' && value !== String(defaultValues[key]);
+      return key !== "page" && value !== String(defaultValues[key]);
     });
   }, [searchParams, defaultValues]);
 
@@ -113,7 +123,7 @@ export function useURLPagination(defaultPageSize = 10) {
   return {
     page: Number(filters.page) || 1,
     limit: Number(filters.limit) || defaultPageSize,
-    setPage: (page: number) => setFilter('page', page),
-    setPageSize: (size: number) => setFilter('limit', size),
+    setPage: (page: number) => setFilter("page", page),
+    setPageSize: (size: number) => setFilter("limit", size),
   };
 }

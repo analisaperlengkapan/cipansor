@@ -57,21 +57,33 @@ describe('Class Service', () => {
       await classService.promoteStudents({ studentIds, targetClassId });
 
       // Should deactivate old enrollments
-      expect(prisma.classEnrollment.updateMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: {
-          studentId: { in: studentIds },
-          status: 'active',
-        },
-        data: { status: 'completed' },
-      }));
+      expect(prisma.classEnrollment.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            studentId: { in: studentIds },
+            status: 'active',
+          },
+          data: { status: 'completed' },
+        })
+      );
 
       // Should create new enrollments
-      expect(prisma.classEnrollment.createMany).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.arrayContaining([
-          expect.objectContaining({ studentId: 'student-1', classId: targetClassId, status: 'active' }),
-          expect.objectContaining({ studentId: 'student-2', classId: targetClassId, status: 'active' }),
-        ]),
-      }));
+      expect(prisma.classEnrollment.createMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.arrayContaining([
+            expect.objectContaining({
+              studentId: 'student-1',
+              classId: targetClassId,
+              status: 'active',
+            }),
+            expect.objectContaining({
+              studentId: 'student-2',
+              classId: targetClassId,
+              status: 'active',
+            }),
+          ]),
+        })
+      );
     });
 
     it('should throw error if class capacity exceeded', async () => {
@@ -85,8 +97,9 @@ describe('Class Service', () => {
         _count: { enrollments: 29 },
       });
 
-      await expect(classService.promoteStudents({ studentIds, targetClassId }))
-        .rejects.toThrow('Target class capacity exceeded');
+      await expect(classService.promoteStudents({ studentIds, targetClassId })).rejects.toThrow(
+        'Target class capacity exceeded'
+      );
     });
   });
 
@@ -140,12 +153,12 @@ describe('Class Service', () => {
           },
         },
         orderBy: {
-            student: {
-              user: {
-                name: 'asc',
-              },
+          student: {
+            user: {
+              name: 'asc',
             },
           },
+        },
       });
 
       expect(result).toEqual([

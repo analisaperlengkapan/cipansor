@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import Link from "next/link";
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -14,22 +20,27 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useRegistrations, REGISTRATION_STATUSES, REGISTRATION_STATUS_LABELS, REGISTRATION_STATUS_COLORS } from '@/hooks/use-psb';
-import { Search, Eye, Filter } from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+} from "@/components/ui/select";
+import {
+  useRegistrations,
+  REGISTRATION_STATUSES,
+  REGISTRATION_STATUS_LABELS,
+  REGISTRATION_STATUS_COLORS,
+} from "@/hooks/use-psb";
+import { Search, Eye, Filter } from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 export default function RegistrationsPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const limit = 10;
 
@@ -37,7 +48,7 @@ export default function RegistrationsPage() {
     page,
     limit,
     search: searchQuery,
-    status: statusFilter === 'all' ? undefined : (statusFilter as any),
+    status: statusFilter === "all" ? undefined : (statusFilter as any),
   });
 
   const registrations = data?.data || [];
@@ -48,7 +59,9 @@ export default function RegistrationsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Data Pendaftar</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Data Pendaftar
+            </h1>
             <p className="text-muted-foreground">
               Kelola data calon santri baru
             </p>
@@ -116,7 +129,10 @@ export default function RegistrationsPage() {
                     </TableRow>
                   ) : registrations.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={6}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         Tidak ada data ditemukan
                       </TableCell>
                     </TableRow>
@@ -129,15 +145,19 @@ export default function RegistrationsPage() {
                         <TableCell>
                           <div className="font-medium">{reg.fullName}</div>
                           <div className="text-xs text-muted-foreground">
-                            {reg.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}
+                            {reg.gender === "MALE" ? "Laki-laki" : "Perempuan"}
                           </div>
                         </TableCell>
                         <TableCell>{reg.unit?.name}</TableCell>
                         <TableCell>
-                          {format(new Date(reg.createdAt), 'd MMM yyyy', { locale: idLocale })}
+                          {format(new Date(reg.createdAt), "d MMM yyyy", {
+                            locale: idLocale,
+                          })}
                         </TableCell>
                         <TableCell>
-                          <Badge className={`${REGISTRATION_STATUS_COLORS[reg.status]} hover:bg-opacity-80`}>
+                          <Badge
+                            className={`${REGISTRATION_STATUS_COLORS[reg.status]} hover:bg-opacity-80`}
+                          >
                             {REGISTRATION_STATUS_LABELS[reg.status]}
                           </Badge>
                         </TableCell>

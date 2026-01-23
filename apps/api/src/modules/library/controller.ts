@@ -1,5 +1,5 @@
-import type { Request, Response, NextFunction } from "express";
-import * as service from "./service";
+import type { Request, Response, NextFunction } from 'express';
+import * as service from './service';
 import {
   createBookCategorySchema,
   updateBookCategorySchema,
@@ -9,8 +9,8 @@ import {
   createBorrowingSchema,
   returnBookSchema,
   queryBorrowingSchema,
-} from "./schema";
-import { Errors } from "../../middleware/error";
+} from './schema';
+import { Errors } from '../../middleware/error';
 
 // ==================== BOOK CATEGORY ====================
 
@@ -28,7 +28,7 @@ export async function getBookCategoryById(req: Request, res: Response, next: Nex
   try {
     const category = await service.getBookCategoryById(req.params.id);
     if (!category) {
-      throw Errors.notFound("Book category not found");
+      throw Errors.notFound('Book category not found');
     }
     res.json({ success: true, data: category });
   } catch (error) {
@@ -59,7 +59,7 @@ export async function updateBookCategory(req: Request, res: Response, next: Next
 export async function deleteBookCategory(req: Request, res: Response, next: NextFunction) {
   try {
     await service.deleteBookCategory(req.params.id);
-    res.json({ success: true, message: "Book category deleted" });
+    res.json({ success: true, message: 'Book category deleted' });
   } catch (error) {
     next(error);
   }
@@ -81,7 +81,7 @@ export async function getBookById(req: Request, res: Response, next: NextFunctio
   try {
     const book = await service.getBookById(req.params.id);
     if (!book) {
-      throw Errors.notFound("Book not found");
+      throw Errors.notFound('Book not found');
     }
     res.json({ success: true, data: book });
   } catch (error) {
@@ -104,7 +104,7 @@ export async function updateBook(req: Request, res: Response, next: NextFunction
     const data = updateBookSchema.parse(req.body);
     const book = await service.updateBook(req.params.id, data);
     if (!book) {
-      throw Errors.notFound("Book not found");
+      throw Errors.notFound('Book not found');
     }
     res.json({ success: true, data: book });
   } catch (error) {
@@ -115,7 +115,7 @@ export async function updateBook(req: Request, res: Response, next: NextFunction
 export async function deleteBook(req: Request, res: Response, next: NextFunction) {
   try {
     await service.deleteBook(req.params.id);
-    res.json({ success: true, message: "Book deleted" });
+    res.json({ success: true, message: 'Book deleted' });
   } catch (error) {
     next(error);
   }
@@ -137,7 +137,7 @@ export async function getBorrowingById(req: Request, res: Response, next: NextFu
   try {
     const borrowing = await service.getBorrowingById(req.params.id);
     if (!borrowing) {
-      throw Errors.notFound("Borrowing record not found");
+      throw Errors.notFound('Borrowing record not found');
     }
     res.json({ success: true, data: borrowing });
   } catch (error) {

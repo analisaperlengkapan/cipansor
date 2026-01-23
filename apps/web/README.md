@@ -41,6 +41,7 @@ pnpm test:e2e:firefox
 ### Test Coverage
 
 **Total: 176 E2E Tests** across 10 major modules:
+
 - ✅ Authentication & RBAC (11 tests)
 - ✅ Student Management (19 tests)
 - ✅ Teacher Management (24 tests)
@@ -54,6 +55,7 @@ pnpm test:e2e:firefox
 - ✅ Cross-Module Integration (7 tests)
 
 ### Documentation
+
 - [E2E Testing Guide](./docs/E2E_TESTING_GUIDE.md)
 - [E2E Infrastructure](./docs/E2E_INFRASTRUCTURE.md)
 - [E2E CI/CD Setup](./docs/E2E_CI_CD_SETUP.md)

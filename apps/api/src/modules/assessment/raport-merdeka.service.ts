@@ -1,12 +1,12 @@
 /**
  * Raport Merdeka Service
- * 
+ *
  * Implementasi Kurikulum Merdeka:
  * - Capaian Pembelajaran (CP) dan Tujuan Pembelajaran (TP)
  * - Projek Penguatan Profil Pelajar Pancasila (P5)
  * - Penilaian Formatif dan Sumatif
  * - Deskripsi naratif capaian kompetensi
- * 
+ *
  * Referensi: Permendikbudristek No. 56 Tahun 2022 tentang Kurikulum Merdeka
  */
 
@@ -43,20 +43,13 @@ export const PROFIL_PELAJAR_PANCASILA = [
     code: 'GR',
     name: 'Gotong Royong',
     description: 'Melakukan kegiatan bersama-sama dengan sukarela',
-    elements: [
-      'Kolaborasi',
-      'Kepedulian',
-      'Berbagi',
-    ],
+    elements: ['Kolaborasi', 'Kepedulian', 'Berbagi'],
   },
   {
     code: 'MAN',
     name: 'Mandiri',
     description: 'Bertanggung jawab atas proses dan hasil belajarnya',
-    elements: [
-      'Kesadaran akan diri dan situasi',
-      'Regulasi diri',
-    ],
+    elements: ['Kesadaran akan diri dan situasi', 'Regulasi diri'],
   },
   {
     code: 'BK',
@@ -82,11 +75,35 @@ export const PROFIL_PELAJAR_PANCASILA = [
 ];
 
 // Tabel Konversi Nilai - Kurikulum Merdeka
-const NILAI_TO_CAPAIAN: Record<string, { min: number; max: number; predikat: string; deskripsi: string }> = {
-  'SANGAT BAIK': { min: 91, max: 100, predikat: 'A', deskripsi: 'Sangat mampu mendemonstrasikan pemahaman dan keterampilan di atas standar yang ditetapkan' },
-  'BAIK': { min: 76, max: 90, predikat: 'B', deskripsi: 'Mampu mendemonstrasikan pemahaman dan keterampilan sesuai standar yang ditetapkan' },
-  'CUKUP': { min: 61, max: 75, predikat: 'C', deskripsi: 'Cukup mampu mendemonstrasikan pemahaman dan keterampilan sesuai standar minimal' },
-  'PERLU BIMBINGAN': { min: 0, max: 60, predikat: 'D', deskripsi: 'Perlu bimbingan lebih lanjut untuk mencapai kompetensi yang diharapkan' },
+const NILAI_TO_CAPAIAN: Record<
+  string,
+  { min: number; max: number; predikat: string; deskripsi: string }
+> = {
+  'SANGAT BAIK': {
+    min: 91,
+    max: 100,
+    predikat: 'A',
+    deskripsi:
+      'Sangat mampu mendemonstrasikan pemahaman dan keterampilan di atas standar yang ditetapkan',
+  },
+  BAIK: {
+    min: 76,
+    max: 90,
+    predikat: 'B',
+    deskripsi: 'Mampu mendemonstrasikan pemahaman dan keterampilan sesuai standar yang ditetapkan',
+  },
+  CUKUP: {
+    min: 61,
+    max: 75,
+    predikat: 'C',
+    deskripsi: 'Cukup mampu mendemonstrasikan pemahaman dan keterampilan sesuai standar minimal',
+  },
+  'PERLU BIMBINGAN': {
+    min: 0,
+    max: 60,
+    predikat: 'D',
+    deskripsi: 'Perlu bimbingan lebih lanjut untuk mencapai kompetensi yang diharapkan',
+  },
 };
 
 export class RaportMerdekaService {
@@ -125,11 +142,7 @@ export class RaportMerdekaService {
    * Generate Raport Merdeka for a student
    * Includes: Intrakurikuler, Projek P5, Ekstrakurikuler
    */
-  static async generateRaportMerdeka(
-    studentId: string,
-    academicYearId: string,
-    semester: number
-  ) {
+  static async generateRaportMerdeka(studentId: string, academicYearId: string, semester: number) {
     // Get student data with enrollment
     const student = await prisma.student.findUnique({
       where: { id: studentId },
@@ -160,7 +173,10 @@ export class RaportMerdekaService {
 
     const enrollment = student.enrollments[0];
     if (!enrollment) {
-      throw new ApiError(ErrorCode.NOT_FOUND, 'Data enrollment tidak ditemukan untuk tahun ajaran ini');
+      throw new ApiError(
+        ErrorCode.NOT_FOUND,
+        'Data enrollment tidak ditemukan untuk tahun ajaran ini'
+      );
     }
 
     // Get report card
@@ -296,25 +312,32 @@ export class RaportMerdekaService {
   ): string {
     const subjectDescriptions: Record<string, Record<string, string>> = {
       Matematika: {
-        'SANGAT BAIK': 'Peserta didik sangat mampu memahami konsep matematika dan menerapkannya dalam pemecahan masalah dengan sangat baik.',
+        'SANGAT BAIK':
+          'Peserta didik sangat mampu memahami konsep matematika dan menerapkannya dalam pemecahan masalah dengan sangat baik.',
         BAIK: 'Peserta didik mampu memahami konsep matematika dan menerapkannya dalam pemecahan masalah dengan baik.',
-        CUKUP: 'Peserta didik cukup mampu memahami konsep dasar matematika namun perlu latihan lebih dalam pemecahan masalah.',
-        'PERLU BIMBINGAN': 'Peserta didik memerlukan bimbingan lebih lanjut dalam memahami konsep matematika.',
+        CUKUP:
+          'Peserta didik cukup mampu memahami konsep dasar matematika namun perlu latihan lebih dalam pemecahan masalah.',
+        'PERLU BIMBINGAN':
+          'Peserta didik memerlukan bimbingan lebih lanjut dalam memahami konsep matematika.',
       },
       'Bahasa Indonesia': {
-        'SANGAT BAIK': 'Peserta didik sangat mampu berkomunikasi dalam bahasa Indonesia baik lisan maupun tulisan dengan sangat baik.',
+        'SANGAT BAIK':
+          'Peserta didik sangat mampu berkomunikasi dalam bahasa Indonesia baik lisan maupun tulisan dengan sangat baik.',
         BAIK: 'Peserta didik mampu berkomunikasi dalam bahasa Indonesia dengan baik.',
         CUKUP: 'Peserta didik cukup mampu berkomunikasi dalam bahasa Indonesia.',
-        'PERLU BIMBINGAN': 'Peserta didik memerlukan bimbingan dalam berkomunikasi menggunakan bahasa Indonesia.',
+        'PERLU BIMBINGAN':
+          'Peserta didik memerlukan bimbingan dalam berkomunikasi menggunakan bahasa Indonesia.',
       },
       'Tahfidz Al-Quran': {
-        'SANGAT BAIK': 'Peserta didik menunjukkan hafalan yang sangat baik dengan tajwid dan makhorijul huruf yang sempurna.',
+        'SANGAT BAIK':
+          'Peserta didik menunjukkan hafalan yang sangat baik dengan tajwid dan makhorijul huruf yang sempurna.',
         BAIK: 'Peserta didik menunjukkan hafalan yang baik dengan tajwid yang sesuai.',
         CUKUP: 'Peserta didik mampu menghafal dengan cukup baik namun perlu perbaikan pada tajwid.',
         'PERLU BIMBINGAN': 'Peserta didik perlu bimbingan lebih lanjut dalam menghafal Al-Quran.',
       },
       Fiqih: {
-        'SANGAT BAIK': 'Peserta didik sangat memahami dan mampu mengamalkan hukum-hukum Islam dalam kehidupan sehari-hari.',
+        'SANGAT BAIK':
+          'Peserta didik sangat memahami dan mampu mengamalkan hukum-hukum Islam dalam kehidupan sehari-hari.',
         BAIK: 'Peserta didik memahami hukum-hukum Islam dan berupaya mengamalkannya dengan baik.',
         CUKUP: 'Peserta didik cukup memahami hukum-hukum Islam dasar.',
         'PERLU BIMBINGAN': 'Peserta didik perlu bimbingan lebih dalam memahami hukum-hukum Islam.',
@@ -323,20 +346,24 @@ export class RaportMerdekaService {
 
     return (
       subjectDescriptions[subjectName]?.[capaian.level] ??
-      'Peserta didik ' + capaian.level.toLowerCase() + ' dalam menguasai kompetensi ' + subjectName + '. ' + capaian.deskripsi
+      'Peserta didik ' +
+        capaian.level.toLowerCase() +
+        ' dalam menguasai kompetensi ' +
+        subjectName +
+        '. ' +
+        capaian.deskripsi
     );
   }
 
   /**
    * Get P5 project assessments
    */
-  private static async getP5Projects(
-    studentId: string,
-    academicYearId: string,
-    semester: number
-  ) {
+  private static async getP5Projects(studentId: string, academicYearId: string, semester: number) {
     // Fetch real P5 assessments from database
-    const p5Assessments = await P5ProjectService.getStudentAssessmentsForReport(studentId, academicYearId);
+    const p5Assessments = await P5ProjectService.getStudentAssessmentsForReport(
+      studentId,
+      academicYearId
+    );
 
     if (p5Assessments.length > 0) {
       // Map to report structure
@@ -350,11 +377,11 @@ export class RaportMerdekaService {
       // Since we are building a "Unified" report later, let's return the array structure
       // but wrapped to match what we need.
 
-      return p5Assessments.map(assessment => ({
+      return p5Assessments.map((assessment) => ({
         tema: assessment.theme,
         judul: assessment.title,
         deskripsiProyek: assessment.description,
-        dimensiTerkait: assessment.dimensions.map(dim => ({
+        dimensiTerkait: assessment.dimensions.map((dim) => ({
           dimensiCode: dim.code,
           dimensiName: dim.name,
           capaian: dim.capaian,
@@ -456,12 +483,14 @@ export class RaportMerdekaService {
     }
 
     // Define semester date range
-    const startDate = semester === 1 
-      ? academicYear.startDate 
-      : new Date(academicYear.startDate.getFullYear() + 1, 0, 1);
-    const endDate = semester === 1 
-      ? new Date(academicYear.startDate.getFullYear(), 11, 31) 
-      : academicYear.endDate;
+    const startDate =
+      semester === 1
+        ? academicYear.startDate
+        : new Date(academicYear.startDate.getFullYear() + 1, 0, 1);
+    const endDate =
+      semester === 1
+        ? new Date(academicYear.startDate.getFullYear(), 11, 31)
+        : academicYear.endDate;
 
     const attendance = await prisma.attendance.groupBy({
       by: ['status'],
@@ -512,7 +541,9 @@ export class RaportMerdekaService {
     return {
       ...summary,
       persentaseKehadiran:
-        summary.total > 0 ? Math.round(((summary.hadir + summary.terlambat) / summary.total) * 100) : 0,
+        summary.total > 0
+          ? Math.round(((summary.hadir + summary.terlambat) / summary.total) * 100)
+          : 0,
     };
   }
 
@@ -571,38 +602,23 @@ export class RaportMerdekaService {
       THF: {
         '1-2': {
           fase: 'A',
-          cp: [
-            'Hafal Juz 30 dengan tajwid yang benar',
-            'Mampu membaca Al-Quran dengan lancar',
-          ],
+          cp: ['Hafal Juz 30 dengan tajwid yang benar', 'Mampu membaca Al-Quran dengan lancar'],
         },
         '3-4': {
           fase: 'B',
-          cp: [
-            'Hafal Juz 30 dan sebagian Juz 29',
-            'Pemahaman makna ayat-ayat pendek',
-          ],
+          cp: ['Hafal Juz 30 dan sebagian Juz 29', 'Pemahaman makna ayat-ayat pendek'],
         },
         '5-6': {
           fase: 'C',
-          cp: [
-            'Hafal Juz 29-30',
-            'Memahami tafsir surah-surah pendek',
-          ],
+          cp: ['Hafal Juz 29-30', 'Memahami tafsir surah-surah pendek'],
         },
         '7-9': {
           fase: 'D',
-          cp: [
-            'Target 5 Juz',
-            'Hafal dengan sanad dan tartil',
-          ],
+          cp: ['Target 5 Juz', 'Hafal dengan sanad dan tartil'],
         },
         '10-12': {
           fase: 'E-F',
-          cp: [
-            'Target 10-15 Juz',
-            'Khatam dengan ijazah',
-          ],
+          cp: ['Target 10-15 Juz', 'Khatam dengan ijazah'],
         },
       },
     };
@@ -668,7 +684,11 @@ export class RaportMerdekaService {
   /**
    * Generate bulk raport for a class
    */
-  static async generateBulkRaportMerdeka(classId: string, academicYearId: string, semester: number) {
+  static async generateBulkRaportMerdeka(
+    classId: string,
+    academicYearId: string,
+    semester: number
+  ) {
     // Get class with academic year check
     const classInfo = await prisma.class.findUnique({
       where: { id: classId },
@@ -692,7 +712,9 @@ export class RaportMerdekaService {
     });
 
     const reports = await Promise.all(
-      enrollments.map((enrollment) => this.generateRaportMerdeka(enrollment.student.id, academicYearId, semester))
+      enrollments.map((enrollment) =>
+        this.generateRaportMerdeka(enrollment.student.id, academicYearId, semester)
+      )
     );
 
     return {

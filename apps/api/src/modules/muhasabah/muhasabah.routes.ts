@@ -3,10 +3,7 @@ import muhasabahController from './muhasabah.controller';
 import { authenticate, authorize } from '@/middleware/auth';
 import { validate } from '@/middleware/validate';
 import { UserRole } from '@prisma/client';
-import {
-  createMuhasabahSchema,
-  updateMuhasabahSchema,
-} from './muhasabah.schema';
+import { createMuhasabahSchema, updateMuhasabahSchema } from './muhasabah.schema';
 
 const router = Router();
 

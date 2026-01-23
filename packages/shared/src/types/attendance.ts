@@ -1,5 +1,5 @@
-import { SharedPaginatedResponse } from './models';
-import { AttendanceStatus } from './enums';
+import { SharedPaginatedResponse } from "./models";
+import { AttendanceStatus } from "./enums";
 
 export { AttendanceStatus };
 

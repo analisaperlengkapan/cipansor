@@ -6,15 +6,50 @@ const router = Router();
 
 // --- Admin/Teacher Routes ---
 // Bank Management
-router.get('/banks', authenticate, authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']), CBTController.getQuestionBanks);
-router.post('/banks', authenticate, authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']), CBTController.createQuestionBank);
-router.get('/banks/:id', authenticate, authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']), CBTController.getQuestionBankById);
-router.delete('/banks/:id', authenticate, authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']), CBTController.deleteQuestionBank);
+router.get(
+  '/banks',
+  authenticate,
+  authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']),
+  CBTController.getQuestionBanks
+);
+router.post(
+  '/banks',
+  authenticate,
+  authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']),
+  CBTController.createQuestionBank
+);
+router.get(
+  '/banks/:id',
+  authenticate,
+  authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']),
+  CBTController.getQuestionBankById
+);
+router.delete(
+  '/banks/:id',
+  authenticate,
+  authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']),
+  CBTController.deleteQuestionBank
+);
 
 // Question Management
-router.post('/banks/:id/questions', authenticate, authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']), CBTController.addQuestion);
-router.put('/banks/:id/questions/:questionId', authenticate, authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']), CBTController.updateQuestion);
-router.delete('/banks/:id/questions/:questionId', authenticate, authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']), CBTController.deleteQuestion);
+router.post(
+  '/banks/:id/questions',
+  authenticate,
+  authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']),
+  CBTController.addQuestion
+);
+router.put(
+  '/banks/:id/questions/:questionId',
+  authenticate,
+  authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']),
+  CBTController.updateQuestion
+);
+router.delete(
+  '/banks/:id/questions/:questionId',
+  authenticate,
+  authorize(['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']),
+  CBTController.deleteQuestion
+);
 
 // --- Student Routes ---
 // Exam Taking
@@ -25,9 +60,19 @@ router.post('/exams/:examId/start', authenticate, authorize(['STUDENT']), CBTCon
 router.get('/attempts/:attemptId', authenticate, authorize(['STUDENT']), CBTController.getAttempt);
 
 // Submit Answer
-router.post('/attempts/:attemptId/answer', authenticate, authorize(['STUDENT']), CBTController.submitAnswer);
+router.post(
+  '/attempts/:attemptId/answer',
+  authenticate,
+  authorize(['STUDENT']),
+  CBTController.submitAnswer
+);
 
 // Finish Exam
-router.post('/attempts/:attemptId/finish', authenticate, authorize(['STUDENT']), CBTController.finishExam);
+router.post(
+  '/attempts/:attemptId/finish',
+  authenticate,
+  authorize(['STUDENT']),
+  CBTController.finishExam
+);
 
 export const cbtRoutes = router;

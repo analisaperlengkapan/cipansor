@@ -1,23 +1,35 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useStudents, Student } from '@/hooks/use-students';
-import { useClasses } from '@/hooks/use-classes';
-import { useUnits } from '@/hooks/use-units';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { api } from '@/lib/api';
-import { 
-  IdCard, 
+import { useState, useRef, useEffect } from "react";
+import { MainLayout } from "@/components/layout/main-layout";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useStudents, Student } from "@/hooks/use-students";
+import { useClasses } from "@/hooks/use-classes";
+import { useUnits } from "@/hooks/use-units";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import {
+  IdCard,
   Printer,
   Download,
   Search,
@@ -33,8 +45,8 @@ import {
   Scan,
   AlertTriangle,
   Loader2,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
 // Simple QR Code component using SVG
 function SimpleQRCode({ value, size = 48 }: { value: string; size?: number }) {
@@ -43,7 +55,7 @@ function SimpleQRCode({ value, size = 48 }: { value: string; size?: number }) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
     return Math.abs(hash);
@@ -83,8 +95,8 @@ function SimpleQRCode({ value, size = 48 }: { value: string; size?: number }) {
               height={cellSize}
               fill="black"
             />
-          ) : null
-        )
+          ) : null,
+        ),
       )}
     </svg>
   );
@@ -96,11 +108,15 @@ interface StudentCardProps {
   showPreview?: boolean;
 }
 
-function StudentIDCard({ student, unitName, showPreview = false }: StudentCardProps) {
+function StudentIDCard({
+  student,
+  unitName,
+  showPreview = false,
+}: StudentCardProps) {
   const initials = student.name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
     .substring(0, 2)
     .toUpperCase();
 
@@ -112,12 +128,12 @@ function StudentIDCard({ student, unitName, showPreview = false }: StudentCardPr
   });
 
   return (
-    <div 
+    <div
       className={`
         bg-linear-to-br from-emerald-500 to-teal-600 text-white rounded-xl overflow-hidden shadow-lg
-        ${showPreview ? 'w-[340px]' : 'w-full max-w-[340px]'}
+        ${showPreview ? "w-[340px]" : "w-full max-w-[340px]"}
       `}
-      style={{ aspectRatio: '85.6/53.98' }}
+      style={{ aspectRatio: "85.6/53.98" }}
     >
       {/* Header */}
       <div className="bg-white/10 px-4 py-2 flex items-center justify-between">
@@ -130,9 +146,7 @@ function StudentIDCard({ student, unitName, showPreview = false }: StudentCardPr
             <p className="text-[10px] opacity-80">Yayasan Pendidikan Islam</p>
           </div>
         </div>
-        <Badge className="bg-white/20 text-white text-[10px]">
-          SISWA
-        </Badge>
+        <Badge className="bg-white/20 text-white text-[10px]">SISWA</Badge>
       </div>
 
       {/* Content */}
@@ -140,7 +154,10 @@ function StudentIDCard({ student, unitName, showPreview = false }: StudentCardPr
         {/* Photo */}
         <div className="shrink-0">
           <Avatar className="w-16 h-20 rounded-lg border-2 border-white/30">
-            <AvatarImage src={`/api/students/${student.id}/photo`} alt={student.name} />
+            <AvatarImage
+              src={`/api/students/${student.id}/photo`}
+              alt={student.name}
+            />
             <AvatarFallback className="bg-white/20 text-white text-lg rounded-lg">
               {initials}
             </AvatarFallback>
@@ -167,10 +184,10 @@ function StudentIDCard({ student, unitName, showPreview = false }: StudentCardPr
             )}
             <p className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
-              {new Date(student.birthDate).toLocaleDateString('id-ID', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric'
+              {new Date(student.birthDate).toLocaleDateString("id-ID", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
               })}
             </p>
           </div>
@@ -178,16 +195,15 @@ function StudentIDCard({ student, unitName, showPreview = false }: StudentCardPr
 
         {/* QR Code */}
         <div className="shrink-0 bg-white p-1 rounded">
-          <SimpleQRCode 
-            value={cardData} 
-            size={48} 
-          />
+          <SimpleQRCode value={cardData} size={48} />
         </div>
       </div>
 
       {/* Footer */}
       <div className="bg-white/10 px-4 py-1.5 flex items-center justify-between text-[9px]">
-        <span>Berlaku: TA {new Date().getFullYear()}/{new Date().getFullYear() + 1}</span>
+        <span>
+          Berlaku: TA {new Date().getFullYear()}/{new Date().getFullYear() + 1}
+        </span>
         <span className="opacity-75">ID: {student.id.substring(0, 8)}</span>
       </div>
     </div>
@@ -196,14 +212,16 @@ function StudentIDCard({ student, unitName, showPreview = false }: StudentCardPr
 
 function StudentIDCardBack({ student }: { student: Student }) {
   return (
-    <div 
+    <div
       className="bg-linear-to-br from-gray-100 to-gray-200 text-gray-800 rounded-xl overflow-hidden shadow-lg w-full max-w-[340px]"
-      style={{ aspectRatio: '85.6/53.98' }}
+      style={{ aspectRatio: "85.6/53.98" }}
     >
       {/* Header */}
       <div className="bg-emerald-600 text-white px-4 py-2 text-center">
         <p className="font-bold text-xs">KARTU PELAJAR</p>
-        <p className="text-[10px] opacity-90">CIPANSOR - Yayasan Pendidikan Islam</p>
+        <p className="text-[10px] opacity-90">
+          CIPANSOR - Yayasan Pendidikan Islam
+        </p>
       </div>
 
       {/* Content */}
@@ -232,15 +250,15 @@ function StudentIDCardBack({ student }: { student: Student }) {
 }
 
 export default function StudentIDCardPage() {
-  const [selectedUnitId, setSelectedUnitId] = useState<string>('');
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUnitId, setSelectedUnitId] = useState<string>("");
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [previewStudent, setPreviewStudent] = useState<Student | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const { data: units = [], isLoading: unitsLoading } = useUnits();
-  const { data: classesData, isLoading: classesLoading } = useClasses({ 
+  const { data: classesData, isLoading: classesLoading } = useClasses({
     unitId: selectedUnitId || undefined,
   });
   const classes = classesData?.data || [];
@@ -248,7 +266,7 @@ export default function StudentIDCardPage() {
     unitId: selectedUnitId || undefined,
     classId: selectedClassId || undefined,
     search: searchQuery || undefined,
-    status: 'ACTIVE',
+    status: "ACTIVE",
     limit: 100,
   });
 
@@ -258,30 +276,30 @@ export default function StudentIDCardPage() {
     if (selectedStudents.length === students.length) {
       setSelectedStudents([]);
     } else {
-      setSelectedStudents(students.map(s => s.id));
+      setSelectedStudents(students.map((s) => s.id));
     }
   };
 
   const handleSelectStudent = (studentId: string) => {
-    setSelectedStudents(prev => 
+    setSelectedStudents((prev) =>
       prev.includes(studentId)
-        ? prev.filter(id => id !== studentId)
-        : [...prev, studentId]
+        ? prev.filter((id) => id !== studentId)
+        : [...prev, studentId],
     );
   };
 
   const handlePrint = () => {
     if (selectedStudents.length === 0) {
-      toast.error('Pilih minimal satu siswa untuk dicetak');
+      toast.error("Pilih minimal satu siswa untuk dicetak");
       return;
     }
 
     const printContent = printRef.current;
     if (!printContent) return;
 
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (!printWindow) {
-      toast.error('Popup diblokir. Izinkan popup untuk mencetak.');
+      toast.error("Popup diblokir. Izinkan popup untuk mencetak.");
       return;
     }
 
@@ -327,7 +345,9 @@ export default function StudentIDCardPage() {
     toast.success(`${selectedStudents.length} kartu siap dicetak`);
   };
 
-  const selectedStudentsList = students.filter(s => selectedStudents.includes(s.id));
+  const selectedStudentsList = students.filter((s) =>
+    selectedStudents.includes(s.id),
+  );
 
   return (
     <MainLayout>
@@ -344,13 +364,16 @@ export default function StudentIDCardPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="default" 
+            <Button
+              variant="default"
               onClick={handlePrint}
               disabled={selectedStudents.length === 0}
             >
               <Printer className="h-4 w-4 mr-2" />
-              Cetak {selectedStudents.length > 0 ? `(${selectedStudents.length})` : ''}
+              Cetak{" "}
+              {selectedStudents.length > 0
+                ? `(${selectedStudents.length})`
+                : ""}
             </Button>
           </div>
         </div>
@@ -364,11 +387,11 @@ export default function StudentIDCardPage() {
                 <div className="flex flex-col gap-4 md:flex-row">
                   {/* Unit Select */}
                   <div className="flex-1">
-                    <Select 
-                      value={selectedUnitId} 
+                    <Select
+                      value={selectedUnitId}
                       onValueChange={(value) => {
                         setSelectedUnitId(value);
-                        setSelectedClassId('');
+                        setSelectedClassId("");
                         setSelectedStudents([]);
                       }}
                     >
@@ -388,8 +411,8 @@ export default function StudentIDCardPage() {
 
                   {/* Class Select */}
                   <div className="flex-1">
-                    <Select 
-                      value={selectedClassId} 
+                    <Select
+                      value={selectedClassId}
                       onValueChange={(value) => {
                         setSelectedClassId(value);
                         setSelectedStudents([]);
@@ -433,12 +456,14 @@ export default function StudentIDCardPage() {
                     Daftar Siswa
                   </CardTitle>
                   {students.length > 0 && (
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={handleSelectAll}
                     >
-                      {selectedStudents.length === students.length ? 'Batal Pilih Semua' : 'Pilih Semua'}
+                      {selectedStudents.length === students.length
+                        ? "Batal Pilih Semua"
+                        : "Pilih Semua"}
                     </Button>
                   )}
                 </div>
@@ -446,7 +471,7 @@ export default function StudentIDCardPage() {
               <CardContent>
                 {studentsLoading ? (
                   <div className="space-y-2">
-                    {[1, 2, 3, 4, 5].map(i => (
+                    {[1, 2, 3, 4, 5].map((i) => (
                       <Skeleton key={i} className="h-16 w-full" />
                     ))}
                   </div>
@@ -454,26 +479,35 @@ export default function StudentIDCardPage() {
                   <div className="text-center py-8 text-muted-foreground">
                     <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>Tidak ada siswa ditemukan</p>
-                    <p className="text-sm">Pilih unit atau kelas untuk melihat siswa</p>
+                    <p className="text-sm">
+                      Pilih unit atau kelas untuk melihat siswa
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                    {students.map(student => {
+                    {students.map((student) => {
                       const isSelected = selectedStudents.includes(student.id);
-                      const initials = student.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                      const initials = student.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .substring(0, 2)
+                        .toUpperCase();
 
                       return (
                         <div
                           key={student.id}
                           className={`
                             flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors
-                            ${isSelected ? 'bg-emerald-50 border-emerald-300' : 'hover:bg-gray-50'}
+                            ${isSelected ? "bg-emerald-50 border-emerald-300" : "hover:bg-gray-50"}
                           `}
                           onClick={() => handleSelectStudent(student.id)}
                         >
-                          <Checkbox 
+                          <Checkbox
                             checked={isSelected}
-                            onCheckedChange={() => handleSelectStudent(student.id)}
+                            onCheckedChange={() =>
+                              handleSelectStudent(student.id)
+                            }
                           />
                           <Avatar className="h-10 w-10">
                             <AvatarFallback className="bg-emerald-100 text-emerald-700">
@@ -481,9 +515,12 @@ export default function StudentIDCardPage() {
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{student.name}</p>
+                            <p className="font-medium truncate">
+                              {student.name}
+                            </p>
                             <p className="text-sm text-muted-foreground">
-                              NIS: {student.nis} • {student.currentClass?.name || '-'}
+                              NIS: {student.nis} •{" "}
+                              {student.currentClass?.name || "-"}
                             </p>
                           </div>
                           <Button
@@ -514,7 +551,9 @@ export default function StudentIDCardPage() {
                   Preview Kartu
                 </CardTitle>
                 <CardDescription>
-                  {previewStudent ? previewStudent.name : 'Pilih siswa untuk preview'}
+                  {previewStudent
+                    ? previewStudent.name
+                    : "Pilih siswa untuk preview"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -522,11 +561,15 @@ export default function StudentIDCardPage() {
                   <>
                     <div className="flex flex-col items-center gap-4">
                       <div>
-                        <p className="text-xs text-center text-muted-foreground mb-2">Depan</p>
+                        <p className="text-xs text-center text-muted-foreground mb-2">
+                          Depan
+                        </p>
                         <StudentIDCard student={previewStudent} showPreview />
                       </div>
                       <div>
-                        <p className="text-xs text-center text-muted-foreground mb-2">Belakang</p>
+                        <p className="text-xs text-center text-muted-foreground mb-2">
+                          Belakang
+                        </p>
                         <StudentIDCardBack student={previewStudent} />
                       </div>
                     </div>
@@ -552,8 +595,11 @@ export default function StudentIDCardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-1 max-h-[200px] overflow-y-auto">
-                    {selectedStudentsList.slice(0, 10).map(student => (
-                      <div key={student.id} className="flex items-center gap-2 text-sm">
+                    {selectedStudentsList.slice(0, 10).map((student) => (
+                      <div
+                        key={student.id}
+                        className="flex items-center gap-2 text-sm"
+                      >
                         <CheckCircle2 className="h-3 w-3 text-emerald-600" />
                         <span className="truncate">{student.name}</span>
                       </div>
@@ -573,7 +619,7 @@ export default function StudentIDCardPage() {
         {/* Hidden Print Area */}
         <div ref={printRef} className="hidden">
           <div className="card-container">
-            {selectedStudentsList.map(student => (
+            {selectedStudentsList.map((student) => (
               <div key={student.id} className="card mb-4">
                 <StudentIDCard student={student} />
               </div>

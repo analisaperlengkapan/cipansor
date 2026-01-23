@@ -1,5 +1,5 @@
-import { prisma } from "../../lib/prisma";
-import { Prisma, AdmissionStatus, Gender } from "@prisma/client";
+import { prisma } from '../../lib/prisma';
+import { Prisma, AdmissionStatus, Gender } from '@prisma/client';
 import {
   CreateAdmissionPeriodInput,
   UpdateAdmissionPeriodInput,
@@ -8,7 +8,7 @@ import {
   UpdateRegistrantScoreInput,
   UpdateRegistrantStatusInput,
   CreateRegistrantDocumentInput,
-} from "./schema";
+} from './schema';
 
 interface CreateRegistrantExtendedInput extends CreateRegistrantInput {
   source?: string;
@@ -40,7 +40,7 @@ export async function getAdmissionPeriods(params: {
       where,
       skip,
       take: limit,
-      orderBy: { startDate: "desc" },
+      orderBy: { startDate: 'desc' },
       include: {
         unit: { select: { id: true, name: true, type: true } },
         academicYear: { select: { id: true, name: true } },
@@ -99,7 +99,7 @@ export async function deleteAdmissionPeriod(id: string) {
   });
 
   if (period?._count.registrants && period._count.registrants > 0) {
-    throw new Error("Cannot delete admission period with registrants");
+    throw new Error('Cannot delete admission period with registrants');
   }
 
   return prisma.admissionPeriod.delete({ where: { id } });
@@ -117,13 +117,13 @@ export async function getAdmissionPeriodStats(id: string) {
   if (!period) return null;
 
   const statusCounts = await prisma.registrant.groupBy({
-    by: ["status"],
+    by: ['status'],
     where: { admissionPeriodId: id },
     _count: { status: true },
   });
 
   const genderCounts = await prisma.registrant.groupBy({
-    by: ["gender"],
+    by: ['gender'],
     where: { admissionPeriodId: id },
     _count: { gender: true },
   });
@@ -158,14 +158,14 @@ async function generateRegistrationNo(admissionPeriodId: string): Promise<string
     include: { unit: true, academicYear: true },
   });
 
-  if (!period) throw new Error("Admission period not found");
+  if (!period) throw new Error('Admission period not found');
 
-  const year = period.academicYear.name.split("/")[0];
+  const year = period.academicYear.name.split('/')[0];
   const count = await prisma.registrant.count({
     where: { admissionPeriodId },
   });
 
-  return `REG-${year}-${String(count + 1).padStart(5, "0")}`;
+  return `REG-${year}-${String(count + 1).padStart(5, '0')}`;
 }
 
 export async function getRegistrants(params: {
@@ -173,7 +173,7 @@ export async function getRegistrants(params: {
   limit: number;
   admissionPeriodId?: string;
   status?: AdmissionStatus;
-  gender?: "MALE" | "FEMALE";
+  gender?: 'MALE' | 'FEMALE';
   search?: string;
 }) {
   const { page, limit, admissionPeriodId, status, gender, search } = params;
@@ -187,9 +187,9 @@ export async function getRegistrants(params: {
 
   if (search) {
     where.OR = [
-      { name: { contains: search, mode: "insensitive" } },
-      { registrationNo: { contains: search, mode: "insensitive" } },
-      { parentName: { contains: search, mode: "insensitive" } },
+      { name: { contains: search, mode: 'insensitive' } },
+      { registrationNo: { contains: search, mode: 'insensitive' } },
+      { parentName: { contains: search, mode: 'insensitive' } },
     ];
   }
 
@@ -198,7 +198,7 @@ export async function getRegistrants(params: {
       where,
       skip,
       take: limit,
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       include: {
         admissionPeriod: {
           select: { id: true, name: true, unit: { select: { id: true, name: true } } },
@@ -230,7 +230,7 @@ export async function getRegistrantById(id: string) {
           academicYear: { select: { id: true, name: true } },
         },
       },
-      documents: { orderBy: { createdAt: "desc" } },
+      documents: { orderBy: { createdAt: 'desc' } },
       student: { select: { id: true, nis: true, userId: true } },
     },
   });
@@ -286,27 +286,30 @@ export async function updateRegistrantStatus(id: string, data: UpdateRegistrantS
   });
 }
 
-export async function enrollRegistrant(registrantId: string, studentData: {
-  nis: string;
-  nisn?: string;
-  classId?: string;
-  roomId?: string;
-}) {
+export async function enrollRegistrant(
+  registrantId: string,
+  studentData: {
+    nis: string;
+    nisn?: string;
+    classId?: string;
+    roomId?: string;
+  }
+) {
   const registrant = await prisma.registrant.findUnique({
     where: { id: registrantId },
     include: { admissionPeriod: { include: { unit: true } } },
   });
 
-  if (!registrant) throw new Error("Registrant not found");
+  if (!registrant) throw new Error('Registrant not found');
   if (registrant.status !== AdmissionStatus.ACCEPTED) {
-    throw new Error("Registrant must be accepted before enrollment");
+    throw new Error('Registrant must be accepted before enrollment');
   }
 
   // Check if user already exists (Internal Track / Alumni)
   const existingUser = registrant.email
     ? await prisma.user.findUnique({
         where: { email: registrant.email },
-        include: { student: true }
+        include: { student: true },
       })
     : null;
 
@@ -322,27 +325,26 @@ export async function enrollRegistrant(registrantId: string, studentData: {
         where: { id: existingUser.student.id },
         data: {
           unitId: registrant.admissionPeriod.unitId, // Update to new unit
-          status: "active",
+          status: 'active',
           nis: studentData.nis, // Update NIS for new level
           graduateYear: null, // Clear graduation status if any
           // Update other fields if necessary
-        }
+        },
       });
 
       // Deactivate previous class enrollments if any active
       await tx.classEnrollment.updateMany({
-        where: { studentId: student.id, status: "active" },
-        data: { status: "completed", endDate: new Date() } // Mark as completed
+        where: { studentId: student.id, status: 'active' },
+        data: { status: 'completed', endDate: new Date() }, // Mark as completed
       });
-
     } else {
       // External Track: Create new user and student
       user = await tx.user.create({
         data: {
           name: registrant.name,
           email: registrant.email || `${studentData.nis}@student.cipansor.id`,
-          passwordHash: "$2a$10$defaultpasswordhash", // Should be changed on first login
-          role: "STUDENT",
+          passwordHash: '$2a$10$defaultpasswordhash', // Should be changed on first login
+          role: 'STUDENT',
           unitId: registrant.admissionPeriod.unitId,
           isActive: true,
         },
@@ -361,7 +363,7 @@ export async function enrollRegistrant(registrantId: string, studentData: {
           parentName: registrant.parentName,
           parentPhone: registrant.parentPhone,
           parentEmail: registrant.parentEmail,
-          status: "active",
+          status: 'active',
           entryYear: new Date().getFullYear(),
         },
       });
@@ -372,23 +374,23 @@ export async function enrollRegistrant(registrantId: string, studentData: {
       // Deactivate any existing enrollments for this class/academic year if needed, but this is new student
       await tx.classEnrollment.create({
         data: {
-            studentId: student.id,
-            classId: studentData.classId,
-            status: "active",
-        }
+          studentId: student.id,
+          classId: studentData.classId,
+          status: 'active',
+        },
       });
     }
 
     // Assign to room if provided
     if (studentData.roomId) {
-        await tx.roomAssignment.create({
-            data: {
-                studentId: student.id,
-                roomId: studentData.roomId,
-                isActive: true,
-                assignedAt: new Date(),
-            }
-        });
+      await tx.roomAssignment.create({
+        data: {
+          studentId: student.id,
+          roomId: studentData.roomId,
+          isActive: true,
+          assignedAt: new Date(),
+        },
+      });
     }
 
     // Update registrant status
@@ -409,9 +411,9 @@ export async function enrollRegistrant(registrantId: string, studentData: {
 
 export async function deleteRegistrant(id: string) {
   const registrant = await prisma.registrant.findUnique({ where: { id } });
-  
+
   if (registrant?.status === AdmissionStatus.ENROLLED) {
-    throw new Error("Cannot delete enrolled registrant");
+    throw new Error('Cannot delete enrolled registrant');
   }
 
   return prisma.registrant.delete({ where: { id } });
@@ -424,7 +426,7 @@ export async function deleteRegistrant(id: string) {
 export async function getRegistrantDocuments(registrantId: string) {
   return prisma.registrantDocument.findMany({
     where: { registrantId },
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: 'desc' },
   });
 }
 

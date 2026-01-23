@@ -15,7 +15,13 @@ router.use(authenticate);
 // GET /meals/schedules - List all meal schedules
 router.get(
   '/schedules',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.PARENT),
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.TEACHER,
+    UserRole.STUDENT,
+    UserRole.PARENT
+  ),
   mealsController.listSchedules.bind(mealsController)
 );
 
@@ -54,14 +60,26 @@ router.delete(
 // GET /meals/menus - List all menus
 router.get(
   '/menus',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.PARENT),
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.TEACHER,
+    UserRole.STUDENT,
+    UserRole.PARENT
+  ),
   mealsController.listMenus.bind(mealsController)
 );
 
 // GET /meals/menus/today/:unitId - Get today's menu for a unit
 router.get(
   '/menus/today/:unitId',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.PARENT),
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.TEACHER,
+    UserRole.STUDENT,
+    UserRole.PARENT
+  ),
   mealsController.getTodayMenu.bind(mealsController)
 );
 
@@ -139,7 +157,13 @@ router.put(
 // GET /meals/student/:studentId - Get student meal history
 router.get(
   '/student/:studentId',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.PARENT),
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.TEACHER,
+    UserRole.STUDENT,
+    UserRole.PARENT
+  ),
   mealsController.getStudentHistory.bind(mealsController)
 );
 

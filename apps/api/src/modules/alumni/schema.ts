@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 // ==================== ALUMNI ====================
 
@@ -6,7 +6,7 @@ export const createAlumniSchema = z.object({
   studentId: z.string().uuid().optional(),
   unitId: z.string().uuid(),
   name: z.string().min(2).max(100),
-  gender: z.enum(["MALE", "FEMALE"]),
+  gender: z.enum(['MALE', 'FEMALE']),
   birthPlace: z.string().max(100).optional(),
   birthDate: z.string().datetime().optional(),
   graduationYear: z.number().int().min(1980).max(2100),
@@ -18,9 +18,9 @@ export const createAlumniSchema = z.object({
   address: z.string().optional(),
   city: z.string().max(100).optional(),
   province: z.string().max(100).optional(),
-  country: z.string().max(100).default("Indonesia"),
+  country: z.string().max(100).default('Indonesia'),
   photo: z.string().url().optional(),
-  status: z.enum(["ACTIVE", "INACTIVE", "DECEASED"]).default("ACTIVE"),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'DECEASED']).default('ACTIVE'),
   notes: z.string().optional(),
 });
 
@@ -32,7 +32,7 @@ export const alumniQuerySchema = z.object({
   search: z.string().optional(),
   unitId: z.string().uuid().optional(),
   graduationYear: z.coerce.number().int().optional(),
-  status: z.enum(["ACTIVE", "INACTIVE", "DECEASED"]).optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'DECEASED']).optional(),
 });
 
 export const convertFromStudentSchema = z.object({
@@ -76,7 +76,7 @@ export const updateEducationSchema = createEducationSchema.partial();
 
 export const createDonationSchema = z.object({
   unitId: z.string().uuid().optional(),
-  type: z.enum(["MONETARY", "GOODS", "SERVICE", "SCHOLARSHIP", "OTHER"]),
+  type: z.enum(['MONETARY', 'GOODS', 'SERVICE', 'SCHOLARSHIP', 'OTHER']),
   amount: z.number().positive().optional(),
   description: z.string().min(1),
   purpose: z.string().max(200).optional(),
@@ -93,7 +93,7 @@ export const donationQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(10),
   alumniId: z.string().uuid().optional(),
   unitId: z.string().uuid().optional(),
-  type: z.enum(["MONETARY", "GOODS", "SERVICE", "SCHOLARSHIP", "OTHER"]).optional(),
+  type: z.enum(['MONETARY', 'GOODS', 'SERVICE', 'SCHOLARSHIP', 'OTHER']).optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
 });
@@ -102,7 +102,7 @@ export const donationQuerySchema = z.object({
 
 export const createEventSchema = z.object({
   unitId: z.string().uuid().optional(),
-  type: z.enum(["REUNION", "SEMINAR", "WORKSHOP", "GATHERING", "CHARITY", "OTHER"]),
+  type: z.enum(['REUNION', 'SEMINAR', 'WORKSHOP', 'GATHERING', 'CHARITY', 'OTHER']),
   name: z.string().min(1).max(200),
   description: z.string().optional(),
   location: z.string().max(300).optional(),
@@ -117,15 +117,15 @@ export const createEventSchema = z.object({
 });
 
 export const updateEventSchema = createEventSchema.partial().extend({
-  status: z.enum(["upcoming", "ongoing", "completed", "cancelled"]).optional(),
+  status: z.enum(['upcoming', 'ongoing', 'completed', 'cancelled']).optional(),
 });
 
 export const eventQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(10),
   unitId: z.string().uuid().optional(),
-  type: z.enum(["REUNION", "SEMINAR", "WORKSHOP", "GATHERING", "CHARITY", "OTHER"]).optional(),
-  status: z.enum(["upcoming", "ongoing", "completed", "cancelled"]).optional(),
+  type: z.enum(['REUNION', 'SEMINAR', 'WORKSHOP', 'GATHERING', 'CHARITY', 'OTHER']).optional(),
+  status: z.enum(['upcoming', 'ongoing', 'completed', 'cancelled']).optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
 });
@@ -138,7 +138,7 @@ export const registerEventSchema = z.object({
 });
 
 export const updateAttendeeStatusSchema = z.object({
-  status: z.enum(["registered", "confirmed", "attended", "cancelled"]),
+  status: z.enum(['registered', 'confirmed', 'attended', 'cancelled']),
 });
 
 // Type exports

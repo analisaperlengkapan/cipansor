@@ -61,10 +61,13 @@ export class CBTController {
   static async addQuestion(req: Request, res: Response, next: NextFunction) {
     try {
       const user = (req as any).user;
-      const question = await CBTService.addQuestion({
-        ...req.body,
-        bankId: req.params.id,
-      }, user);
+      const question = await CBTService.addQuestion(
+        {
+          ...req.body,
+          bankId: req.params.id,
+        },
+        user
+      );
       res.status(201).json({ success: true, data: question });
     } catch (error) {
       next(error);
@@ -104,11 +107,11 @@ export class CBTController {
 
   static async getAttempt(req: Request, res: Response, next: NextFunction) {
     try {
-        const user = (req as any).user;
-        const attempt = await CBTService.getAttempt(req.params.attemptId, user.studentId);
-        res.json({ success: true, data: attempt });
+      const user = (req as any).user;
+      const attempt = await CBTService.getAttempt(req.params.attemptId, user.studentId);
+      res.json({ success: true, data: attempt });
     } catch (error) {
-        next(error);
+      next(error);
     }
   }
 

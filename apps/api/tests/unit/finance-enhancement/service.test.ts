@@ -41,7 +41,7 @@ vi.mock('../../../src/lib/prisma', () => ({
       create: vi.fn(),
     },
     $queryRaw: vi.fn(),
-  }
+  },
 }));
 
 describe('FinanceEnhancementService', () => {
@@ -55,7 +55,7 @@ describe('FinanceEnhancementService', () => {
   describe('Account Codes', () => {
     it('should get account codes with pagination', async () => {
       (prisma.accountCode.findMany as any).mockResolvedValue([
-        { id: '1', code: '100', name: 'Assets', type: 'ASSET' }
+        { id: '1', code: '100', name: 'Assets', type: 'ASSET' },
       ]);
       (prisma.accountCode.count as any).mockResolvedValue(1);
 
@@ -92,7 +92,7 @@ describe('FinanceEnhancementService', () => {
         accountId: 'a1',
         date: new Date(),
         debit: 1000,
-        createdById: 'user1'
+        createdById: 'user1',
       };
 
       // Mock period check
@@ -102,7 +102,7 @@ describe('FinanceEnhancementService', () => {
         id: '1',
         ...input,
         debit: 1000,
-        credit: 0
+        credit: 0,
       });
 
       const result = await service.createJournalEntry(input);
@@ -117,19 +117,19 @@ describe('FinanceEnhancementService', () => {
       // Setup mocks
       const groupByResult = [
         { accountId: 'a1', _sum: { debit: 1000, credit: 0 } },
-        { accountId: 'a2', _sum: { debit: 0, credit: 1000 } }
+        { accountId: 'a2', _sum: { debit: 0, credit: 1000 } },
       ];
       (prisma.journalEntry.groupBy as any).mockResolvedValue(groupByResult);
 
       (prisma.accountCode.findMany as any).mockResolvedValue([
         { id: 'a1', code: '100', name: 'Cash', type: 'ASSET' },
-        { id: 'a2', code: '400', name: 'Revenue', type: 'REVENUE' }
+        { id: 'a2', code: '400', name: 'Revenue', type: 'REVENUE' },
       ]);
 
       const result = await service.getTrialBalance({
         unitId: 'u1',
         startDate: new Date(),
-        endDate: new Date()
+        endDate: new Date(),
       });
 
       expect(result.accounts).toHaveLength(2);
@@ -144,7 +144,7 @@ describe('FinanceEnhancementService', () => {
       // Mock $queryRaw response
       const mockRawData = [
         { period: '2023-10', type: 'REVENUE', total: BigInt(5000) },
-        { period: '2023-10', type: 'EXPENSE', total: BigInt(-2000) }
+        { period: '2023-10', type: 'EXPENSE', total: BigInt(-2000) },
       ];
 
       (prisma.$queryRaw as any).mockResolvedValue(mockRawData);
@@ -153,7 +153,7 @@ describe('FinanceEnhancementService', () => {
         unitId: 'u1',
         startDate: new Date('2023-01-01'),
         endDate: new Date('2023-12-31'),
-        groupBy: 'month'
+        groupBy: 'month',
       });
 
       expect(prisma.$queryRaw).toHaveBeenCalled();

@@ -8,11 +8,11 @@ declare global {
 }
 
 // Create prisma instance
-export const prisma = global.__prisma || new PrismaClient({
-  log: config.env === 'development' 
-    ? ['query', 'info', 'warn', 'error'] 
-    : ['error'],
-});
+export const prisma =
+  global.__prisma ||
+  new PrismaClient({
+    log: config.env === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
+  });
 
 // In development, store in global to prevent too many connections
 if (config.env === 'development') {

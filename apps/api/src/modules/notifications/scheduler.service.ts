@@ -1,6 +1,6 @@
 /**
  * Notification Scheduler Service
- * 
+ *
  * Automated notification scheduling for:
  * - Payment reminders (H-7, H-3, H-1)
  * - Attendance alerts
@@ -10,7 +10,12 @@
  */
 
 import { prisma } from '../../lib/prisma';
-import { createNotification, createBulkNotifications, createManyNotifications, mapTypeToPrisma } from './service';
+import {
+  createNotification,
+  createBulkNotifications,
+  createManyNotifications,
+  mapTypeToPrisma,
+} from './service';
 import { whatsAppService } from './whatsapp.service';
 import { CreateNotificationInput } from './schema';
 import { NotificationType, AttendanceStatus, PaymentStatus, Prisma } from '@prisma/client';
@@ -32,7 +37,7 @@ export class SchedulerService {
 
   static initialize(): void {
     if (this.initialized) return;
-    
+
     this.registerDefaultTasks();
     this.initialized = true;
     logger.info('Notification Scheduler initialized');
@@ -107,7 +112,7 @@ export class SchedulerService {
 
       logger.info('Running scheduled task: ' + name);
       task.lastRun = now;
-      
+
       try {
         await handler();
         logger.info('Task completed: ' + name);
@@ -268,7 +273,14 @@ export class SchedulerService {
       const title = 'Pengingat Pembayaran';
       const typeName = invoice.paymentType?.name || 'SPP';
       const amount = Number(invoice.amount).toLocaleString('id-ID');
-      const message = 'Tagihan ' + typeName + ' sebesar Rp ' + amount + ' akan jatuh tempo dalam ' + daysUntilDue + ' hari.';
+      const message =
+        'Tagihan ' +
+        typeName +
+        ' sebesar Rp ' +
+        amount +
+        ' akan jatuh tempo dalam ' +
+        daysUntilDue +
+        ' hari.';
 
       const { dbType, originalType } = mapTypeToPrisma(NotificationType.PAYMENT);
 
@@ -326,11 +338,14 @@ export class SchedulerService {
     });
 
     // Group by student
-    const studentAbsences = new Map<string, { studentName: string; userId: string; count: number }>();
+    const studentAbsences = new Map<
+      string,
+      { studentName: string; userId: string; count: number }
+    >();
 
     for (const record of absentRecords) {
       if (!record.student?.user) continue;
-      
+
       const existing = studentAbsences.get(record.studentId);
       if (existing) {
         existing.count++;
@@ -390,12 +405,15 @@ export class SchedulerService {
     });
 
     // Group by student - using correct field names: ayahStart, ayahEnd, totalAyah
-    const studentProgress = new Map<string, {
-      studentName: string;
-      userId: string;
-      totalAyat: number;
-      sessions: number;
-    }>();
+    const studentProgress = new Map<
+      string,
+      {
+        studentName: string;
+        userId: string;
+        totalAyat: number;
+        sessions: number;
+      }
+    >();
 
     for (const record of tahfidzRecords) {
       if (!record.student?.user) continue;
@@ -421,7 +439,14 @@ export class SchedulerService {
 
     for (const data of studentProgress.values()) {
       const title = 'Laporan Tahfidz Mingguan';
-      const message = 'Alhamdulillah, ' + data.studentName + ' telah menghafal ' + data.totalAyat + ' ayat minggu ini dalam ' + data.sessions + ' sesi.';
+      const message =
+        'Alhamdulillah, ' +
+        data.studentName +
+        ' telah menghafal ' +
+        data.totalAyat +
+        ' ayat minggu ini dalam ' +
+        data.sessions +
+        ' sesi.';
 
       notifications.push({
         userId: data.userId,
@@ -484,7 +509,8 @@ export class SchedulerService {
 
       const title = 'Pengingat Acara Besok';
       const locationPart = event.location ? ' di ' + event.location : '';
-      const message = event.title + ' akan dilaksanakan besok pukul ' + timeStr + locationPart + '.';
+      const message =
+        event.title + ' akan dilaksanakan besok pukul ' + timeStr + locationPart + '.';
 
       for (const user of users) {
         await createNotification({
@@ -528,7 +554,12 @@ export class SchedulerService {
 
       const studentName = student.user.name;
       const title = 'Laporan Bulanan ' + monthName;
-      const message = 'Laporan progress bulanan ' + studentName + ' untuk bulan ' + monthName + ' telah tersedia. Silakan cek di portal orang tua.';
+      const message =
+        'Laporan progress bulanan ' +
+        studentName +
+        ' untuk bulan ' +
+        monthName +
+        ' telah tersedia. Silakan cek di portal orang tua.';
 
       notifications.push({
         userId: student.user.id,
@@ -668,7 +699,6 @@ export class SchedulerService {
         // If WA disabled, we count all as sent (since DB insert succeeded)
         sent = users.length;
       }
-
     } catch (error) {
       // If bulk operation fails, we mark all as failed
       failed = users.length;

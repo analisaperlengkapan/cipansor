@@ -1,11 +1,17 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -14,14 +20,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   useCreateAssessment,
   ASSESSMENT_TYPES,
@@ -30,28 +36,42 @@ import {
   useSubjects,
   useAcademicYears,
   ExamType,
-} from '@/hooks';
-import { useQuestionBanks } from '@/hooks/use-cbt';
-import { useAuthStore } from '@/stores/auth';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
+} from "@/hooks";
+import { useQuestionBanks } from "@/hooks/use-cbt";
+import { useAuthStore } from "@/stores/auth";
+import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
 
 const assessmentSchema = z.object({
-  title: z.string().min(1, 'Nama penilaian wajib diisi'),
-  type: z.enum(['DAILY_TEST', 'MIDTERM', 'FINAL', 'PRACTICAL', 'PROJECT', 'QUIZ', 'TAHFIDZ_TEST'], {
-    required_error: 'Tipe penilaian wajib dipilih',
-  }),
-  classId: z.string().min(1, 'Kelas wajib dipilih'),
-  subjectId: z.string().min(1, 'Mata pelajaran wajib dipilih'),
-  academicYearId: z.string().min(1, 'Tahun ajaran wajib dipilih'),
-  semester: z.coerce.number().min(1).max(2, 'Semester harus 1 atau 2'),
+  title: z.string().min(1, "Nama penilaian wajib diisi"),
+  type: z.enum(
+    [
+      "DAILY_TEST",
+      "MIDTERM",
+      "FINAL",
+      "PRACTICAL",
+      "PROJECT",
+      "QUIZ",
+      "TAHFIDZ_TEST",
+    ],
+    {
+      required_error: "Tipe penilaian wajib dipilih",
+    },
+  ),
+  classId: z.string().min(1, "Kelas wajib dipilih"),
+  subjectId: z.string().min(1, "Mata pelajaran wajib dipilih"),
+  academicYearId: z.string().min(1, "Tahun ajaran wajib dipilih"),
+  semester: z.coerce.number().min(1).max(2, "Semester harus 1 atau 2"),
   scheduledAt: z.string({
-    required_error: 'Tanggal wajib diisi',
+    required_error: "Tanggal wajib diisi",
   }),
-  maxScore: z.coerce.number().min(1, 'Nilai maksimal minimal 1').max(100, 'Nilai maksimal tidak boleh lebih dari 100'),
+  maxScore: z.coerce
+    .number()
+    .min(1, "Nilai maksimal minimal 1")
+    .max(100, "Nilai maksimal tidak boleh lebih dari 100"),
   passingScore: z.coerce.number().min(0).max(100).optional(),
   weight: z.coerce.number().min(0.1).max(10).optional(),
   description: z.string().optional(),
@@ -72,43 +92,43 @@ export default function NewAssessmentPage() {
   const form = useForm<AssessmentFormData>({
     resolver: zodResolver(assessmentSchema),
     defaultValues: {
-      title: '',
+      title: "",
       type: undefined,
-      classId: '',
-      subjectId: '',
-      academicYearId: academicYears?.data?.find((ay) => ay.isActive)?.id ?? '',
+      classId: "",
+      subjectId: "",
+      academicYearId: academicYears?.data?.find((ay) => ay.isActive)?.id ?? "",
       semester: 1,
-      scheduledAt: new Date().toISOString().split('T')[0],
+      scheduledAt: new Date().toISOString().split("T")[0],
       maxScore: 100,
       passingScore: 70,
       weight: 1,
-      description: '',
-      questionBankId: '',
+      description: "",
+      questionBankId: "",
     },
   });
 
-  const selectedSubject = form.watch('subjectId');
+  const selectedSubject = form.watch("subjectId");
   const { data: questionBanks } = useQuestionBanks({
     subjectId: selectedSubject || undefined,
   });
 
   const onSubmit = async (data: AssessmentFormData) => {
     if (!user) {
-      toast.error('Sesi berakhir, silakan login kembali');
+      toast.error("Sesi berakhir, silakan login kembali");
       return;
     }
 
     try {
       await createAssessment.mutateAsync({
         ...data,
-        unitId: user.unitId || '',
+        unitId: user.unitId || "",
         teacherId: user.id,
         scheduledAt: new Date(data.scheduledAt).toISOString(),
       });
-      toast.success('Penilaian berhasil dibuat');
-      router.push('/assessment');
+      toast.success("Penilaian berhasil dibuat");
+      router.push("/assessment");
     } catch (error) {
-      toast.error('Gagal membuat penilaian');
+      toast.error("Gagal membuat penilaian");
     }
   };
 
@@ -121,7 +141,9 @@ export default function NewAssessmentPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Buat Penilaian Baru</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Buat Penilaian Baru
+            </h1>
             <p className="text-muted-foreground">
               Tambahkan penilaian baru untuk kelas
             </p>
@@ -145,7 +167,10 @@ export default function NewAssessmentPage() {
                       <FormItem>
                         <FormLabel>Nama Penilaian</FormLabel>
                         <FormControl>
-                          <Input placeholder="Contoh: UTS Matematika" {...field} />
+                          <Input
+                            placeholder="Contoh: UTS Matematika"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -158,7 +183,10 @@ export default function NewAssessmentPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tipe Penilaian</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih tipe penilaian" />
@@ -216,14 +244,19 @@ export default function NewAssessmentPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Bank Soal (Opsional - Mode CBT)</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih Bank Soal (Kosongkan jika manual)" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="none">-- Tidak Menggunakan Bank Soal --</SelectItem>
+                            <SelectItem value="none">
+                              -- Tidak Menggunakan Bank Soal --
+                            </SelectItem>
                             {questionBanks?.data?.map((bank: any) => (
                               <SelectItem key={bank.id} value={bank.id}>
                                 {bank.title} ({bank._count?.questions} soal)
@@ -232,7 +265,8 @@ export default function NewAssessmentPage() {
                           </SelectContent>
                         </Select>
                         <FormDescription>
-                          Jika dipilih, siswa akan mengerjakan soal secara online (CBT).
+                          Jika dipilih, siswa akan mengerjakan soal secara
+                          online (CBT).
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -245,7 +279,9 @@ export default function NewAssessmentPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Kelas & Mata Pelajaran</CardTitle>
-                  <CardDescription>Pilih kelas dan mata pelajaran</CardDescription>
+                  <CardDescription>
+                    Pilih kelas dan mata pelajaran
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
@@ -254,7 +290,10 @@ export default function NewAssessmentPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tahun Ajaran</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih tahun ajaran" />
@@ -263,7 +302,7 @@ export default function NewAssessmentPage() {
                           <SelectContent>
                             {academicYears?.data?.map((year) => (
                               <SelectItem key={year.id} value={year.id}>
-                                {year.name} {year.isActive && '(Aktif)'}
+                                {year.name} {year.isActive && "(Aktif)"}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -279,15 +318,22 @@ export default function NewAssessmentPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Semester</FormLabel>
-                        <Select onValueChange={(v) => field.onChange(parseInt(v))} value={field.value?.toString()}>
+                        <Select
+                          onValueChange={(v) => field.onChange(parseInt(v))}
+                          value={field.value?.toString()}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih semester" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="1">Semester 1 (Ganjil)</SelectItem>
-                            <SelectItem value="2">Semester 2 (Genap)</SelectItem>
+                            <SelectItem value="1">
+                              Semester 1 (Ganjil)
+                            </SelectItem>
+                            <SelectItem value="2">
+                              Semester 2 (Genap)
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -301,7 +347,10 @@ export default function NewAssessmentPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Kelas</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih kelas" />
@@ -326,7 +375,10 @@ export default function NewAssessmentPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Mata Pelajaran</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih mata pelajaran" />
@@ -375,11 +427,15 @@ export default function NewAssessmentPage() {
                       name="passingScore"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>KKM (Kriteria Ketuntasan Minimal)</FormLabel>
+                          <FormLabel>
+                            KKM (Kriteria Ketuntasan Minimal)
+                          </FormLabel>
                           <FormControl>
                             <Input type="number" min={0} max={100} {...field} />
                           </FormControl>
-                          <FormDescription>Nilai minimal untuk lulus</FormDescription>
+                          <FormDescription>
+                            Nilai minimal untuk lulus
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -392,9 +448,17 @@ export default function NewAssessmentPage() {
                         <FormItem>
                           <FormLabel>Bobot</FormLabel>
                           <FormControl>
-                            <Input type="number" min={0.1} max={10} step={0.1} {...field} />
+                            <Input
+                              type="number"
+                              min={0.1}
+                              max={10}
+                              step={0.1}
+                              {...field}
+                            />
                           </FormControl>
-                          <FormDescription>Bobot nilai untuk rapor</FormDescription>
+                          <FormDescription>
+                            Bobot nilai untuk rapor
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -406,7 +470,11 @@ export default function NewAssessmentPage() {
 
             {/* Submit Buttons */}
             <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => router.back()}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+              >
                 Batal
               </Button>
               <Button type="submit" disabled={createAssessment.isPending}>

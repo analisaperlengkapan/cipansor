@@ -1,19 +1,19 @@
-import { z } from "zod";
-import { PaymentStatus, PaymentMethod } from "@prisma/client";
+import { z } from 'zod';
+import { PaymentStatus, PaymentMethod } from '@prisma/client';
 
 // =====================================
 // PAYMENT TYPE SCHEMAS
 // =====================================
 
 export const createPaymentTypeSchema = z.object({
-  unitId: z.string().uuid("Invalid unit ID"),
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  code: z.string().min(2, "Code must be at least 2 characters"),
+  unitId: z.string().uuid('Invalid unit ID'),
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  code: z.string().min(2, 'Code must be at least 2 characters'),
   description: z.string().optional(),
-  amount: z.number().positive("Amount must be positive"),
+  amount: z.number().positive('Amount must be positive'),
   isRecurring: z.boolean().default(false),
   isActive: z.boolean().default(true),
-  accountId: z.string().uuid("Invalid account ID").optional(),
+  accountId: z.string().uuid('Invalid account ID').optional(),
 });
 
 export const updatePaymentTypeSchema = createPaymentTypeSchema.partial().omit({
@@ -34,10 +34,10 @@ export const queryPaymentTypeSchema = z.object({
 // =====================================
 
 export const createInvoiceSchema = z.object({
-  studentId: z.string().uuid("Invalid student ID"),
-  paymentTypeId: z.string().uuid("Invalid payment type ID"),
-  amount: z.number().positive("Amount must be positive"),
-  dueDate: z.string().datetime("Invalid due date"),
+  studentId: z.string().uuid('Invalid student ID'),
+  paymentTypeId: z.string().uuid('Invalid payment type ID'),
+  amount: z.number().positive('Amount must be positive'),
+  dueDate: z.string().datetime('Invalid due date'),
   period: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -65,8 +65,8 @@ export const queryInvoiceSchema = z.object({
 // =====================================
 
 export const createPaymentSchema = z.object({
-  invoiceId: z.string().uuid("Invalid invoice ID"),
-  amount: z.number().positive("Amount must be positive"),
+  invoiceId: z.string().uuid('Invalid invoice ID'),
+  amount: z.number().positive('Amount must be positive'),
   method: z.nativeEnum(PaymentMethod),
   referenceNo: z.string().optional(),
   notes: z.string().optional(),
@@ -98,10 +98,10 @@ export type QueryPaymentDto = z.infer<typeof queryPaymentSchema>;
 // =====================================
 
 export const createAccountSchema = z.object({
-  code: z.string().min(1, "Code is required"),
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  type: z.string().min(1, "Type is required"),
-  normalBalance: z.enum(["DEBIT", "CREDIT"]),
+  code: z.string().min(1, 'Code is required'),
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  type: z.string().min(1, 'Type is required'),
+  normalBalance: z.enum(['DEBIT', 'CREDIT']),
   parentId: z.string().uuid().optional(),
   cashFlowCategory: z.string().optional(),
   isActive: z.boolean().default(true),
@@ -119,11 +119,15 @@ export const createJournalSchema = z.object({
   unitId: z.string().uuid(),
   date: z.string().datetime(),
   description: z.string().min(1),
-  entries: z.array(z.object({
-    accountId: z.string().uuid(),
-    debit: z.number().min(0),
-    credit: z.number().min(0),
-  })).min(2),
+  entries: z
+    .array(
+      z.object({
+        accountId: z.string().uuid(),
+        debit: z.number().min(0),
+        credit: z.number().min(0),
+      })
+    )
+    .min(2),
 });
 
 export const queryJournalSchema = z.object({

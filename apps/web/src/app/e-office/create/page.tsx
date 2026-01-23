@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
-import { useCorrespondence } from '@/hooks/use-correspondence';
-import { useTeachers } from '@/hooks/use-teachers';
-import { Button } from '@/components/ui/button';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
+import { useCorrespondence } from "@/hooks/use-correspondence";
+import { useTeachers } from "@/hooks/use-teachers";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -16,27 +16,32 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 // import { MultiSelect } from '@/components/ui/multi-select';
-import { LetterDirection, LetterUrgency, LetterNature, LetterStatus } from '@cipansor/shared';
-import { toast } from 'sonner';
-import { api } from '@/lib/api';
-import React from 'react';
-import { Upload } from 'lucide-react';
+import {
+  LetterDirection,
+  LetterUrgency,
+  LetterNature,
+  LetterStatus,
+} from "@cipansor/shared";
+import { toast } from "sonner";
+import { api } from "@/lib/api";
+import React from "react";
+import { Upload } from "lucide-react";
 
 const letterSchema = z.object({
   direction: z.nativeEnum(LetterDirection),
-  subject: z.string().min(1, 'Perihal wajib diisi'),
+  subject: z.string().min(1, "Perihal wajib diisi"),
   date: z.string(),
   urgency: z.nativeEnum(LetterUrgency),
   nature: z.nativeEnum(LetterNature),
@@ -57,20 +62,21 @@ export default function CreateLetterPage() {
   const { data: teachers } = useTeachers({
     page: 1,
     limit: 100,
-    unitId: user?.unitId
+    unitId: user?.unitId,
   });
   const [uploading, setUploading] = React.useState(false);
 
-  const staffOptions = teachers?.data.map((t: any) => ({
-    label: t.user?.name || t.nip,
-    value: t.userId
-  })) || [];
+  const staffOptions =
+    teachers?.data.map((t: any) => ({
+      label: t.user?.name || t.nip,
+      value: t.userId,
+    })) || [];
 
   const form = useForm<z.infer<typeof letterSchema>>({
     resolver: zodResolver(letterSchema),
     defaultValues: {
       direction: LetterDirection.OUTGOING,
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().split("T")[0],
       urgency: LetterUrgency.NORMAL,
       nature: LetterNature.PUBLIC,
       reviewerIds: [],
@@ -78,7 +84,7 @@ export default function CreateLetterPage() {
     },
   });
 
-  const direction = form.watch('direction');
+  const direction = form.watch("direction");
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -86,19 +92,19 @@ export default function CreateLetterPage() {
 
     setUploading(true);
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
     try {
-      const response = await api.post('/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const response = await api.post("/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       if (response.data.success) {
-        form.setValue('fileUrl', response.data.data.url);
-        toast.success('File berhasil diupload');
+        form.setValue("fileUrl", response.data.data.url);
+        toast.success("File berhasil diupload");
       }
     } catch (error) {
-      toast.error('Gagal upload file');
+      toast.error("Gagal upload file");
     } finally {
       setUploading(false);
     }
@@ -106,7 +112,7 @@ export default function CreateLetterPage() {
 
   async function onSubmit(values: z.infer<typeof letterSchema>) {
     if (!user?.unitId) {
-      toast.error('Unit ID tidak ditemukan');
+      toast.error("Unit ID tidak ditemukan");
       return;
     }
 
@@ -116,10 +122,10 @@ export default function CreateLetterPage() {
         unitId: user.unitId,
         status: LetterStatus.DRAFT,
       });
-      toast.success('Surat berhasil dibuat');
-      router.push('/e-office/inbox');
+      toast.success("Surat berhasil dibuat");
+      router.push("/e-office/inbox");
     } catch (error) {
-      toast.error('Gagal membuat surat');
+      toast.error("Gagal membuat surat");
       console.error(error);
     }
   }
@@ -146,15 +152,22 @@ export default function CreateLetterPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Jenis Surat</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Pilih jenis surat" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value={LetterDirection.INCOMING}>Surat Masuk (Dari Luar)</SelectItem>
-                        <SelectItem value={LetterDirection.OUTGOING}>Surat Keluar (Ke Luar)</SelectItem>
+                        <SelectItem value={LetterDirection.INCOMING}>
+                          Surat Masuk (Dari Luar)
+                        </SelectItem>
+                        <SelectItem value={LetterDirection.OUTGOING}>
+                          Surat Keluar (Ke Luar)
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -169,7 +182,10 @@ export default function CreateLetterPage() {
                   <FormItem>
                     <FormLabel>Perihal</FormLabel>
                     <FormControl>
-                      <Input placeholder="Contoh: Undangan Rapat Wali Murid" {...field} />
+                      <Input
+                        placeholder="Contoh: Undangan Rapat Wali Murid"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -183,16 +199,25 @@ export default function CreateLetterPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Urgensi</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value={LetterUrgency.NORMAL}>Biasa</SelectItem>
-                          <SelectItem value={LetterUrgency.IMMEDIATE}>Segera</SelectItem>
-                          <SelectItem value={LetterUrgency.URGENT}>Amat Segera</SelectItem>
+                          <SelectItem value={LetterUrgency.NORMAL}>
+                            Biasa
+                          </SelectItem>
+                          <SelectItem value={LetterUrgency.IMMEDIATE}>
+                            Segera
+                          </SelectItem>
+                          <SelectItem value={LetterUrgency.URGENT}>
+                            Amat Segera
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -206,16 +231,27 @@ export default function CreateLetterPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Sifat</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value={LetterNature.PUBLIC}>Biasa</SelectItem>
-                          <SelectItem value={LetterNature.CONFIDENTIAL}>Rahasia</SelectItem>
-                          <SelectItem value={LetterNature.STRICTLY_CONFIDENTIAL}>Sangat Rahasia</SelectItem>
+                          <SelectItem value={LetterNature.PUBLIC}>
+                            Biasa
+                          </SelectItem>
+                          <SelectItem value={LetterNature.CONFIDENTIAL}>
+                            Rahasia
+                          </SelectItem>
+                          <SelectItem
+                            value={LetterNature.STRICTLY_CONFIDENTIAL}
+                          >
+                            Sangat Rahasia
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -249,18 +285,27 @@ export default function CreateLetterPage() {
                         {/* Simple multiple select using standard Select for now as MultiSelect component is missing */}
                         <div className="space-y-2 border rounded-md p-4 max-h-48 overflow-y-auto">
                           {staffOptions.map((option: any) => (
-                            <div key={option.value} className="flex items-center space-x-2">
+                            <div
+                              key={option.value}
+                              className="flex items-center space-x-2"
+                            >
                               <input
                                 type="checkbox"
                                 value={option.value}
-                                checked={(field.value || []).includes(option.value)}
+                                checked={(field.value || []).includes(
+                                  option.value,
+                                )}
                                 onChange={(e) => {
                                   const checked = e.target.checked;
                                   const current = field.value || [];
                                   if (checked) {
                                     field.onChange([...current, option.value]);
                                   } else {
-                                    field.onChange(current.filter((val: string) => val !== option.value));
+                                    field.onChange(
+                                      current.filter(
+                                        (val: string) => val !== option.value,
+                                      ),
+                                    );
                                   }
                                 }}
                                 className="h-4 w-4 rounded border-gray-300"
@@ -271,7 +316,8 @@ export default function CreateLetterPage() {
                         </div>
                       </FormControl>
                       <FormDescription>
-                        Pilih urutan pemeriksa (Paraf) hingga Penandatangan terakhir.
+                        Pilih urutan pemeriksa (Paraf) hingga Penandatangan
+                        terakhir.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -284,7 +330,9 @@ export default function CreateLetterPage() {
           <Card>
             <CardHeader>
               <CardTitle>
-                {direction === LetterDirection.INCOMING ? 'Asal & Tujuan' : 'Tujuan Surat'}
+                {direction === LetterDirection.INCOMING
+                  ? "Asal & Tujuan"
+                  : "Tujuan Surat"}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -297,7 +345,10 @@ export default function CreateLetterPage() {
                       <FormItem>
                         <FormLabel>Nama Pengirim</FormLabel>
                         <FormControl>
-                          <Input placeholder="Nama Instansi / Perorangan" {...field} />
+                          <Input
+                            placeholder="Nama Instansi / Perorangan"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -310,7 +361,10 @@ export default function CreateLetterPage() {
                       <FormItem>
                         <FormLabel>Instansi Pengirim</FormLabel>
                         <FormControl>
-                          <Input placeholder="Dinas Pendidikan / Sekolah Lain" {...field} />
+                          <Input
+                            placeholder="Dinas Pendidikan / Sekolah Lain"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -340,7 +394,10 @@ export default function CreateLetterPage() {
                   <FormItem>
                     <FormLabel>Instansi Penerima</FormLabel>
                     <FormControl>
-                      <Input placeholder="Alamat / Instansi Tujuan" {...field} />
+                      <Input
+                        placeholder="Alamat / Instansi Tujuan"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -361,7 +418,11 @@ export default function CreateLetterPage() {
                           onChange={handleFileUpload}
                           disabled={uploading}
                         />
-                        {uploading && <span className="text-sm text-muted-foreground">Uploading...</span>}
+                        {uploading && (
+                          <span className="text-sm text-muted-foreground">
+                            Uploading...
+                          </span>
+                        )}
                       </div>
                     </FormControl>
                     {field.value && (
@@ -401,8 +462,12 @@ export default function CreateLetterPage() {
             </CardContent>
           </Card>
 
-          <Button type="submit" className="w-full" disabled={createLetter.isPending}>
-            {createLetter.isPending ? 'Menyimpan...' : 'Simpan Draft'}
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={createLetter.isPending}
+          >
+            {createLetter.isPending ? "Menyimpan..." : "Simpan Draft"}
           </Button>
         </form>
       </Form>

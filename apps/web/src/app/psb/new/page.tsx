@@ -1,23 +1,29 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Form,
   FormControl,
@@ -25,49 +31,48 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import {
-  useCreateRegistration,
-  useRegistrationPeriods,
-} from '@/hooks';
-import { useUnits } from '@/hooks';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
-import Link from 'next/link';
-import { toast } from 'sonner';
+} from "@/components/ui/form";
+import { useCreateRegistration, useRegistrationPeriods } from "@/hooks";
+import { useUnits } from "@/hooks";
+import { ArrowLeft, Loader2, Save } from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
 
 const registrationSchema = z.object({
-  periodId: z.string().min(1, 'Periode pendaftaran wajib dipilih'),
-  unitId: z.string().min(1, 'Unit tujuan wajib dipilih'),
-  fullName: z.string().min(1, 'Nama lengkap wajib diisi'),
+  periodId: z.string().min(1, "Periode pendaftaran wajib dipilih"),
+  unitId: z.string().min(1, "Unit tujuan wajib dipilih"),
+  fullName: z.string().min(1, "Nama lengkap wajib diisi"),
   nickname: z.string().optional(),
-  gender: z.enum(['MALE', 'FEMALE'], { required_error: 'Jenis kelamin wajib dipilih' }),
-  birthPlace: z.string().min(1, 'Tempat lahir wajib diisi'),
-  birthDate: z.string().min(1, 'Tanggal lahir wajib diisi'),
+  gender: z.enum(["MALE", "FEMALE"], {
+    required_error: "Jenis kelamin wajib dipilih",
+  }),
+  birthPlace: z.string().min(1, "Tempat lahir wajib diisi"),
+  birthDate: z.string().min(1, "Tanggal lahir wajib diisi"),
   nationalId: z.string().optional(),
   familyCardNumber: z.string().optional(),
-  
+
   previousSchool: z.string().optional(),
   previousSchoolAddress: z.string().optional(),
   graduationYear: z.string().optional(),
-  
-  fatherName: z.string().min(1, 'Nama ayah wajib diisi'),
+
+  fatherName: z.string().min(1, "Nama ayah wajib diisi"),
   fatherOccupation: z.string().optional(),
   fatherPhone: z.string().optional(),
-  fatherEmail: z.string().email().optional().or(z.literal('')),
-  motherName: z.string().min(1, 'Nama ibu wajib diisi'),
+  fatherEmail: z.string().email().optional().or(z.literal("")),
+  motherName: z.string().min(1, "Nama ibu wajib diisi"),
   motherOccupation: z.string().optional(),
   motherPhone: z.string().optional(),
-  
-  address: z.string().min(1, 'Alamat wajib diisi'),
-  village: z.string().min(1, 'Desa/Kelurahan wajib diisi'),
-  district: z.string().min(1, 'Kecamatan wajib diisi'),
-  city: z.string().min(1, 'Kota/Kabupaten wajib diisi'),
-  province: z.string().min(1, 'Provinsi wajib diisi'),
+
+  address: z.string().min(1, "Alamat wajib diisi"),
+  village: z.string().min(1, "Desa/Kelurahan wajib diisi"),
+  district: z.string().min(1, "Kecamatan wajib diisi"),
+  city: z.string().min(1, "Kota/Kabupaten wajib diisi"),
+  province: z.string().min(1, "Provinsi wajib diisi"),
   postalCode: z.string().optional(),
-  
+
   quranAbility: z.string().optional(),
   memorizedJuz: z.string().optional(),
-  
+
   notes: z.string().optional(),
 });
 
@@ -85,34 +90,34 @@ export default function NewRegistrationPage() {
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
-      periodId: '',
-      unitId: '',
-      fullName: '',
-      nickname: '',
+      periodId: "",
+      unitId: "",
+      fullName: "",
+      nickname: "",
       gender: undefined,
-      birthPlace: '',
-      birthDate: '',
-      nationalId: '',
-      familyCardNumber: '',
-      previousSchool: '',
-      previousSchoolAddress: '',
-      graduationYear: '',
-      fatherName: '',
-      fatherOccupation: '',
-      fatherPhone: '',
-      fatherEmail: '',
-      motherName: '',
-      motherOccupation: '',
-      motherPhone: '',
-      address: '',
-      village: '',
-      district: '',
-      city: '',
-      province: '',
-      postalCode: '',
-      quranAbility: '',
-      memorizedJuz: '',
-      notes: '',
+      birthPlace: "",
+      birthDate: "",
+      nationalId: "",
+      familyCardNumber: "",
+      previousSchool: "",
+      previousSchoolAddress: "",
+      graduationYear: "",
+      fatherName: "",
+      fatherOccupation: "",
+      fatherPhone: "",
+      fatherEmail: "",
+      motherName: "",
+      motherOccupation: "",
+      motherPhone: "",
+      address: "",
+      village: "",
+      district: "",
+      city: "",
+      province: "",
+      postalCode: "",
+      quranAbility: "",
+      memorizedJuz: "",
+      notes: "",
     },
   });
 
@@ -120,9 +125,9 @@ export default function NewRegistrationPage() {
     try {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
-        if (value !== undefined && value !== '') {
-          if (key === 'memorizedJuz' || key === 'graduationYear') {
-            formData.append(key, value ? String(parseInt(value)) : '');
+        if (value !== undefined && value !== "") {
+          if (key === "memorizedJuz" || key === "graduationYear") {
+            formData.append(key, value ? String(parseInt(value)) : "");
           } else {
             formData.append(key, String(value));
           }
@@ -130,16 +135,18 @@ export default function NewRegistrationPage() {
       });
 
       await createMutation.mutateAsync(formData);
-      toast.success('Pendaftaran berhasil disimpan');
-      router.push('/psb');
+      toast.success("Pendaftaran berhasil disimpan");
+      router.push("/psb");
     } catch {
-      toast.error('Gagal menyimpan pendaftaran');
+      toast.error("Gagal menyimpan pendaftaran");
     }
   };
 
   const nextStep = async () => {
     const fieldsToValidate = getFieldsForStep(step);
-    const isValid = await form.trigger(fieldsToValidate as (keyof RegistrationFormData)[]);
+    const isValid = await form.trigger(
+      fieldsToValidate as (keyof RegistrationFormData)[],
+    );
     if (isValid) {
       setStep(step + 1);
     }
@@ -152,11 +159,18 @@ export default function NewRegistrationPage() {
   const getFieldsForStep = (stepNumber: number): string[] => {
     switch (stepNumber) {
       case 1:
-        return ['periodId', 'unitId', 'fullName', 'gender', 'birthPlace', 'birthDate'];
+        return [
+          "periodId",
+          "unitId",
+          "fullName",
+          "gender",
+          "birthPlace",
+          "birthDate",
+        ];
       case 2:
-        return ['fatherName', 'motherName'];
+        return ["fatherName", "motherName"];
       case 3:
-        return ['address', 'village', 'district', 'city', 'province'];
+        return ["address", "village", "district", "city", "province"];
       case 4:
         return [];
       default:
@@ -188,7 +202,7 @@ export default function NewRegistrationPage() {
             <div
               key={i}
               className={`h-2 flex-1 rounded-full ${
-                i + 1 <= step ? 'bg-primary' : 'bg-muted'
+                i + 1 <= step ? "bg-primary" : "bg-muted"
               }`}
             />
           ))}
@@ -213,7 +227,10 @@ export default function NewRegistrationPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Periode Pendaftaran *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Pilih periode" />
@@ -237,7 +254,10 @@ export default function NewRegistrationPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Unit Tujuan *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Pilih unit" />
@@ -264,7 +284,10 @@ export default function NewRegistrationPage() {
                       <FormItem>
                         <FormLabel>Nama Lengkap *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Nama lengkap sesuai akta" {...field} />
+                          <Input
+                            placeholder="Nama lengkap sesuai akta"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -291,7 +314,10 @@ export default function NewRegistrationPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Jenis Kelamin *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Pilih jenis kelamin" />
@@ -390,7 +416,10 @@ export default function NewRegistrationPage() {
                           <FormItem>
                             <FormLabel>Nama Ayah *</FormLabel>
                             <FormControl>
-                              <Input placeholder="Nama lengkap ayah" {...field} />
+                              <Input
+                                placeholder="Nama lengkap ayah"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -431,7 +460,11 @@ export default function NewRegistrationPage() {
                           <FormItem>
                             <FormLabel>Email Ayah</FormLabel>
                             <FormControl>
-                              <Input type="email" placeholder="email@example.com" {...field} />
+                              <Input
+                                type="email"
+                                placeholder="email@example.com"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -451,7 +484,10 @@ export default function NewRegistrationPage() {
                           <FormItem>
                             <FormLabel>Nama Ibu *</FormLabel>
                             <FormControl>
-                              <Input placeholder="Nama lengkap ibu" {...field} />
+                              <Input
+                                placeholder="Nama lengkap ibu"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -524,7 +560,10 @@ export default function NewRegistrationPage() {
                         <FormItem>
                           <FormLabel>Desa/Kelurahan *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Nama desa/kelurahan" {...field} />
+                            <Input
+                              placeholder="Nama desa/kelurahan"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -553,7 +592,10 @@ export default function NewRegistrationPage() {
                         <FormItem>
                           <FormLabel>Kota/Kabupaten *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Nama kota/kabupaten" {...field} />
+                            <Input
+                              placeholder="Nama kota/kabupaten"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -638,7 +680,11 @@ export default function NewRegistrationPage() {
                           <FormItem>
                             <FormLabel>Tahun Lulus</FormLabel>
                             <FormControl>
-                              <Input type="number" placeholder="2024" {...field} />
+                              <Input
+                                type="number"
+                                placeholder="2024"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -657,14 +703,19 @@ export default function NewRegistrationPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Kemampuan Baca</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Pilih kemampuan" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="BELUM_BISA">Belum bisa</SelectItem>
+                                <SelectItem value="BELUM_BISA">
+                                  Belum bisa
+                                </SelectItem>
                                 <SelectItem value="IQRA">Iqra</SelectItem>
                                 <SelectItem value="LANCAR">Lancar</SelectItem>
                                 <SelectItem value="TARTIL">Tartil</SelectItem>

@@ -1,17 +1,23 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -19,7 +25,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   AreaChart,
   Area,
@@ -34,7 +40,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from 'recharts';
+} from "recharts";
 import {
   useStudentStatistics,
   useAttendanceSummaryAnalytics,
@@ -46,16 +52,23 @@ import {
   type TimeRange,
   downloadReport,
   type ExportReportFormat,
-} from '@/hooks';
-import { Download } from 'lucide-react';
-import { toast } from 'sonner';
+} from "@/hooks";
+import { Download } from "lucide-react";
+import { toast } from "sonner";
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+const COLORS = [
+  "#0088FE",
+  "#00C49F",
+  "#FFBB28",
+  "#FF8042",
+  "#8884d8",
+  "#82ca9d",
+];
 
 const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
@@ -65,50 +78,60 @@ const formatCurrency = (value: number) => {
 const currencyFormatter = (value: any) => formatCurrency(value as number);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const pieLabelFormatter = ({ name, percent }: any) => `${name}: ${(percent * 100).toFixed(0)}%`;
+const pieLabelFormatter = ({ name, percent }: any) =>
+  `${name}: ${(percent * 100).toFixed(0)}%`;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const categoryLabelFormatter = ({ category, percent }: any) => `${category}: ${(percent * 100).toFixed(0)}%`;
+const categoryLabelFormatter = ({ category, percent }: any) =>
+  `${category}: ${(percent * 100).toFixed(0)}%`;
 
 export default function AnalyticsPage() {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [timeRange, setTimeRange] = useState<TimeRange>('MONTHLY');
+  const [activeTab, setActiveTab] = useState("overview");
+  const [timeRange, setTimeRange] = useState<TimeRange>("MONTHLY");
 
   const filter = { timeRange };
 
-  const { data: studentStats, isLoading: studentLoading } = useStudentStatistics(filter);
-  const { data: attendanceStats, isLoading: attendanceLoading } = useAttendanceSummaryAnalytics(filter);
-  const { data: financeStats, isLoading: financeLoading } = useFinanceReport(filter);
-  const { data: academicStats, isLoading: academicLoading } = useAcademicPerformance(filter);
-  const { data: tahfidzStats, isLoading: tahfidzLoading } = useTahfidzProgress(filter);
+  const { data: studentStats, isLoading: studentLoading } =
+    useStudentStatistics(filter);
+  const { data: attendanceStats, isLoading: attendanceLoading } =
+    useAttendanceSummaryAnalytics(filter);
+  const { data: financeStats, isLoading: financeLoading } =
+    useFinanceReport(filter);
+  const { data: academicStats, isLoading: academicLoading } =
+    useAcademicPerformance(filter);
+  const { data: tahfidzStats, isLoading: tahfidzLoading } =
+    useTahfidzProgress(filter);
 
-  const handleExport = (reportType: string, format: ExportReportFormat = 'JSON') => {
-    const date = new Date().toISOString().split('T')[0];
+  const handleExport = (
+    reportType: string,
+    format: ExportReportFormat = "JSON",
+  ) => {
+    const date = new Date().toISOString().split("T")[0];
     let data: unknown;
     let filename: string;
 
     switch (reportType) {
-      case 'students':
+      case "students":
         data = studentStats?.data;
         filename = `Statistik_Santri_${date}`;
         break;
-      case 'attendance':
+      case "attendance":
         data = attendanceStats?.data;
         filename = `Statistik_Kehadiran_${date}`;
         break;
-      case 'finance':
+      case "finance":
         data = financeStats?.data;
         filename = `Statistik_Keuangan_${date}`;
         break;
-      case 'academic':
+      case "academic":
         data = academicStats?.data;
         filename = `Statistik_Akademik_${date}`;
         break;
-      case 'tahfidz':
+      case "tahfidz":
         data = tahfidzStats?.data;
         filename = `Statistik_Tahfidz_${date}`;
         break;
-      case 'all':
+      case "all":
       default:
         data = {
           exportedAt: new Date().toISOString(),
@@ -123,7 +146,7 @@ export default function AnalyticsPage() {
     }
 
     if (!data) {
-      toast.error('Data tidak tersedia untuk di-export');
+      toast.error("Data tidak tersedia untuk di-export");
       return;
     }
 
@@ -131,7 +154,7 @@ export default function AnalyticsPage() {
       downloadReport(data, filename, format);
       toast.success(`Berhasil mengunduh ${filename}.${format.toLowerCase()}`);
     } catch {
-      toast.error('Gagal mengunduh laporan');
+      toast.error("Gagal mengunduh laporan");
     }
   };
 
@@ -139,18 +162,23 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Analitik & Laporan</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Analitik & Laporan
+          </h1>
           <p className="text-muted-foreground">
             Dashboard analitik dan laporan komprehensif
           </p>
         </div>
         <div className="flex gap-2">
-          <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
+          <Select
+            value={timeRange}
+            onValueChange={(v) => setTimeRange(v as TimeRange)}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Rentang Waktu" />
             </SelectTrigger>
             <SelectContent>
-              {TIME_RANGES.filter((t) => t !== 'CUSTOM').map((range) => (
+              {TIME_RANGES.filter((t) => t !== "CUSTOM").map((range) => (
                 <SelectItem key={range} value={range}>
                   {TIME_RANGE_LABELS[range]}
                 </SelectItem>
@@ -163,7 +191,9 @@ export default function AnalyticsPage() {
           <Button variant="outline" asChild>
             <a href="/analytics/export">📊 Export</a>
           </Button>
-          <Select onValueChange={(v) => handleExport('all', v as ExportReportFormat)}>
+          <Select
+            onValueChange={(v) => handleExport("all", v as ExportReportFormat)}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Export Laporan" />
             </SelectTrigger>
@@ -192,7 +222,9 @@ export default function AnalyticsPage() {
               <CardHeader className="pb-2">
                 <CardDescription>Total Santri</CardDescription>
                 <CardTitle className="text-2xl">
-                  {studentLoading ? '...' : studentStats?.data?.totalStudents || 0}
+                  {studentLoading
+                    ? "..."
+                    : studentStats?.data?.totalStudents || 0}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -205,16 +237,26 @@ export default function AnalyticsPage() {
               <CardHeader className="pb-2">
                 <CardDescription>Tingkat Kehadiran</CardDescription>
                 <CardTitle className="text-2xl">
-                  {attendanceLoading ? '...' : `${attendanceStats?.data?.presentRate || 0}%`}
+                  {attendanceLoading
+                    ? "..."
+                    : `${attendanceStats?.data?.presentRate || 0}%`}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Badge variant={
-                  (attendanceStats?.data?.presentRate || 0) >= 90 ? 'default' :
-                    (attendanceStats?.data?.presentRate || 0) >= 80 ? 'secondary' : 'destructive'
-                }>
-                  {(attendanceStats?.data?.presentRate || 0) >= 90 ? 'Baik' :
-                    (attendanceStats?.data?.presentRate || 0) >= 80 ? 'Cukup' : 'Perlu Perhatian'}
+                <Badge
+                  variant={
+                    (attendanceStats?.data?.presentRate || 0) >= 90
+                      ? "default"
+                      : (attendanceStats?.data?.presentRate || 0) >= 80
+                        ? "secondary"
+                        : "destructive"
+                  }
+                >
+                  {(attendanceStats?.data?.presentRate || 0) >= 90
+                    ? "Baik"
+                    : (attendanceStats?.data?.presentRate || 0) >= 80
+                      ? "Cukup"
+                      : "Perlu Perhatian"}
                 </Badge>
               </CardContent>
             </Card>
@@ -222,7 +264,9 @@ export default function AnalyticsPage() {
               <CardHeader className="pb-2">
                 <CardDescription>Pendapatan Bulan Ini</CardDescription>
                 <CardTitle className="text-2xl">
-                  {financeLoading ? '...' : formatCurrency(financeStats?.data?.totalRevenue || 0)}
+                  {financeLoading
+                    ? "..."
+                    : formatCurrency(financeStats?.data?.totalRevenue || 0)}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -235,7 +279,9 @@ export default function AnalyticsPage() {
               <CardHeader className="pb-2">
                 <CardDescription>Rata-rata IPK</CardDescription>
                 <CardTitle className="text-2xl">
-                  {academicLoading ? '...' : (academicStats?.data?.averageGpa || 0).toFixed(2)}
+                  {academicLoading
+                    ? "..."
+                    : (academicStats?.data?.averageGpa || 0).toFixed(2)}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -290,7 +336,11 @@ export default function AnalyticsPage() {
                       <Tooltip formatter={currencyFormatter} />
                       <Legend />
                       <Bar dataKey="revenue" fill="#00C49F" name="Pendapatan" />
-                      <Bar dataKey="expense" fill="#FF8042" name="Pengeluaran" />
+                      <Bar
+                        dataKey="expense"
+                        fill="#FF8042"
+                        name="Pengeluaran"
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -308,11 +358,17 @@ export default function AnalyticsPage() {
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Rata-rata Juz</p>
-                  <p className="text-3xl font-bold">{tahfidzStats?.data?.averageJuz || 0}</p>
+                  <p className="text-3xl font-bold">
+                    {tahfidzStats?.data?.averageJuz || 0}
+                  </p>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Hafidz (30 Juz)</p>
-                  <p className="text-3xl font-bold">{tahfidzStats?.data?.completedHafidz || 0}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Hafidz (30 Juz)
+                  </p>
+                  <p className="text-3xl font-bold">
+                    {tahfidzStats?.data?.completedHafidz || 0}
+                  </p>
                 </div>
                 <div className="h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -329,9 +385,14 @@ export default function AnalyticsPage() {
                         nameKey="range"
                         label
                       >
-                        {(tahfidzStats?.data?.byJuzRange || []).map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
+                        {(tahfidzStats?.data?.byJuzRange || []).map(
+                          (_, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={COLORS[index % COLORS.length]}
+                            />
+                          ),
+                        )}
                       </Pie>
                       <Tooltip />
                     </PieChart>
@@ -348,7 +409,7 @@ export default function AnalyticsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleExport('students', 'CSV')}
+              onClick={() => handleExport("students", "CSV")}
               disabled={studentLoading}
             >
               <Download className="mr-2 h-4 w-4" />
@@ -359,25 +420,33 @@ export default function AnalyticsPage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardDescription>Total Santri</CardDescription>
-                <CardTitle className="text-2xl">{studentStats?.data?.totalStudents || 0}</CardTitle>
+                <CardTitle className="text-2xl">
+                  {studentStats?.data?.totalStudents || 0}
+                </CardTitle>
               </CardHeader>
             </Card>
             <Card>
               <CardHeader className="pb-2">
                 <CardDescription>Santri Aktif</CardDescription>
-                <CardTitle className="text-2xl">{studentStats?.data?.activeStudents || 0}</CardTitle>
+                <CardTitle className="text-2xl">
+                  {studentStats?.data?.activeStudents || 0}
+                </CardTitle>
               </CardHeader>
             </Card>
             <Card>
               <CardHeader className="pb-2">
                 <CardDescription>Baru Bulan Ini</CardDescription>
-                <CardTitle className="text-2xl">{studentStats?.data?.newStudentsThisMonth || 0}</CardTitle>
+                <CardTitle className="text-2xl">
+                  {studentStats?.data?.newStudentsThisMonth || 0}
+                </CardTitle>
               </CardHeader>
             </Card>
             <Card>
               <CardHeader className="pb-2">
                 <CardDescription>Lulus Tahun Ini</CardDescription>
-                <CardTitle className="text-2xl">{studentStats?.data?.graduatedThisYear || 0}</CardTitle>
+                <CardTitle className="text-2xl">
+                  {studentStats?.data?.graduatedThisYear || 0}
+                </CardTitle>
               </CardHeader>
             </Card>
           </div>
@@ -393,8 +462,14 @@ export default function AnalyticsPage() {
                     <PieChart>
                       <Pie
                         data={[
-                          { name: 'Laki-laki', value: studentStats?.data?.byGender?.male || 0 },
-                          { name: 'Perempuan', value: studentStats?.data?.byGender?.female || 0 },
+                          {
+                            name: "Laki-laki",
+                            value: studentStats?.data?.byGender?.male || 0,
+                          },
+                          {
+                            name: "Perempuan",
+                            value: studentStats?.data?.byGender?.female || 0,
+                          },
                         ]}
                         cx="50%"
                         cy="50%"
@@ -420,12 +495,19 @@ export default function AnalyticsPage() {
               <CardContent>
                 <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={studentStats?.data?.byUnit || []} layout="vertical">
+                    <BarChart
+                      data={studentStats?.data?.byUnit || []}
+                      layout="vertical"
+                    >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis type="number" />
                       <YAxis dataKey="unitName" type="category" width={100} />
                       <Tooltip />
-                      <Bar dataKey="count" fill="#8884d8" name="Jumlah Santri" />
+                      <Bar
+                        dataKey="count"
+                        fill="#8884d8"
+                        name="Jumlah Santri"
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -452,10 +534,12 @@ export default function AnalyticsPage() {
                       <TableCell className="text-right">{item.count}</TableCell>
                     </TableRow>
                   )) || (
-                      <TableRow>
-                        <TableCell colSpan={2} className="text-center">Tidak ada data</TableCell>
-                      </TableRow>
-                    )}
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center">
+                        Tidak ada data
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -468,7 +552,7 @@ export default function AnalyticsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleExport('attendance', 'CSV')}
+              onClick={() => handleExport("attendance", "CSV")}
               disabled={attendanceLoading}
             >
               <Download className="mr-2 h-4 w-4" />
@@ -571,7 +655,9 @@ export default function AnalyticsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Kelas</TableHead>
-                    <TableHead className="text-right">Tingkat Kehadiran</TableHead>
+                    <TableHead className="text-right">
+                      Tingkat Kehadiran
+                    </TableHead>
                     <TableHead className="text-right">Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -579,18 +665,34 @@ export default function AnalyticsPage() {
                   {attendanceStats?.data?.byClass?.map((item) => (
                     <TableRow key={item.classId}>
                       <TableCell>{item.className}</TableCell>
-                      <TableCell className="text-right">{item.presentRate}%</TableCell>
                       <TableCell className="text-right">
-                        <Badge variant={item.presentRate >= 90 ? 'default' : item.presentRate >= 80 ? 'secondary' : 'destructive'}>
-                          {item.presentRate >= 90 ? 'Baik' : item.presentRate >= 80 ? 'Cukup' : 'Kurang'}
+                        {item.presentRate}%
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Badge
+                          variant={
+                            item.presentRate >= 90
+                              ? "default"
+                              : item.presentRate >= 80
+                                ? "secondary"
+                                : "destructive"
+                          }
+                        >
+                          {item.presentRate >= 90
+                            ? "Baik"
+                            : item.presentRate >= 80
+                              ? "Cukup"
+                              : "Kurang"}
                         </Badge>
                       </TableCell>
                     </TableRow>
                   )) || (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center">Tidak ada data</TableCell>
-                      </TableRow>
-                    )}
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center">
+                        Tidak ada data
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -603,7 +705,7 @@ export default function AnalyticsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleExport('finance', 'CSV')}
+              onClick={() => handleExport("finance", "CSV")}
               disabled={financeLoading}
             >
               <Download className="mr-2 h-4 w-4" />
@@ -664,9 +766,14 @@ export default function AnalyticsPage() {
                         nameKey="category"
                         label={categoryLabelFormatter}
                       >
-                        {(financeStats?.data?.revenueByCategory || []).map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
+                        {(financeStats?.data?.revenueByCategory || []).map(
+                          (_, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={COLORS[index % COLORS.length]}
+                            />
+                          ),
+                        )}
                       </Pie>
                       <Tooltip formatter={currencyFormatter} />
                     </PieChart>
@@ -682,7 +789,10 @@ export default function AnalyticsPage() {
               <CardContent>
                 <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={financeStats?.data?.expenseByCategory || []} layout="vertical">
+                    <BarChart
+                      data={financeStats?.data?.expenseByCategory || []}
+                      layout="vertical"
+                    >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis type="number" tickFormatter={currencyFormatter} />
                       <YAxis dataKey="category" type="category" width={100} />
@@ -737,7 +847,7 @@ export default function AnalyticsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleExport('academic', 'CSV')}
+              onClick={() => handleExport("academic", "CSV")}
               disabled={academicLoading}
             >
               <Download className="mr-2 h-4 w-4" />
@@ -748,19 +858,25 @@ export default function AnalyticsPage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardDescription>Rata-rata IPK</CardDescription>
-                <CardTitle className="text-2xl">{(academicStats?.data?.averageGpa || 0).toFixed(2)}</CardTitle>
+                <CardTitle className="text-2xl">
+                  {(academicStats?.data?.averageGpa || 0).toFixed(2)}
+                </CardTitle>
               </CardHeader>
             </Card>
             <Card>
               <CardHeader className="pb-2">
                 <CardDescription>Tingkat Kelulusan</CardDescription>
-                <CardTitle className="text-2xl">{academicStats?.data?.passRate || 0}%</CardTitle>
+                <CardTitle className="text-2xl">
+                  {academicStats?.data?.passRate || 0}%
+                </CardTitle>
               </CardHeader>
             </Card>
             <Card>
               <CardHeader className="pb-2">
                 <CardDescription>Top Performers</CardDescription>
-                <CardTitle className="text-2xl">{academicStats?.data?.topPerformers?.length || 0}</CardTitle>
+                <CardTitle className="text-2xl">
+                  {academicStats?.data?.topPerformers?.length || 0}
+                </CardTitle>
               </CardHeader>
             </Card>
           </div>
@@ -773,23 +889,32 @@ export default function AnalyticsPage() {
               <CardContent>
                 <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={academicStats?.data?.gradeDistribution || []}>
+                    <BarChart
+                      data={academicStats?.data?.gradeDistribution || []}
+                    >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="grade" />
                       <YAxis />
                       <Tooltip />
                       <Bar dataKey="count" fill="#8884d8" name="Jumlah Santri">
-                        {(academicStats?.data?.gradeDistribution || []).map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={
-                              entry.grade === 'A' ? '#00C49F' :
-                                entry.grade === 'B' ? '#0088FE' :
-                                  entry.grade === 'C' ? '#FFBB28' :
-                                    entry.grade === 'D' ? '#FF8042' : '#FF4444'
-                            }
-                          />
-                        ))}
+                        {(academicStats?.data?.gradeDistribution || []).map(
+                          (entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={
+                                entry.grade === "A"
+                                  ? "#00C49F"
+                                  : entry.grade === "B"
+                                    ? "#0088FE"
+                                    : entry.grade === "C"
+                                      ? "#FFBB28"
+                                      : entry.grade === "D"
+                                        ? "#FF8042"
+                                        : "#FF4444"
+                              }
+                            />
+                          ),
+                        )}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
@@ -842,18 +967,26 @@ export default function AnalyticsPage() {
                     {academicStats?.data?.bySubject?.map((item) => (
                       <TableRow key={item.subjectId}>
                         <TableCell>{item.subjectName}</TableCell>
-                        <TableCell className="text-right">{item.averageScore.toFixed(1)}</TableCell>
                         <TableCell className="text-right">
-                          <Badge variant={item.passRate >= 80 ? 'default' : 'secondary'}>
+                          {item.averageScore.toFixed(1)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge
+                            variant={
+                              item.passRate >= 80 ? "default" : "secondary"
+                            }
+                          >
                             {item.passRate}%
                           </Badge>
                         </TableCell>
                       </TableRow>
                     )) || (
-                        <TableRow>
-                          <TableCell colSpan={3} className="text-center">Tidak ada data</TableCell>
-                        </TableRow>
-                      )}
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center">
+                          Tidak ada data
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -873,19 +1006,25 @@ export default function AnalyticsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {academicStats?.data?.topPerformers?.slice(0, 10).map((student) => (
-                      <TableRow key={student.studentId}>
-                        <TableCell className="font-medium">{student.studentName}</TableCell>
-                        <TableCell>{student.className}</TableCell>
-                        <TableCell className="text-right">
-                          <Badge>{student.gpa.toFixed(2)}</Badge>
+                    {academicStats?.data?.topPerformers
+                      ?.slice(0, 10)
+                      .map((student) => (
+                        <TableRow key={student.studentId}>
+                          <TableCell className="font-medium">
+                            {student.studentName}
+                          </TableCell>
+                          <TableCell>{student.className}</TableCell>
+                          <TableCell className="text-right">
+                            <Badge>{student.gpa.toFixed(2)}</Badge>
+                          </TableCell>
+                        </TableRow>
+                      )) || (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center">
+                          Tidak ada data
                         </TableCell>
                       </TableRow>
-                    )) || (
-                        <TableRow>
-                          <TableCell colSpan={3} className="text-center">Tidak ada data</TableCell>
-                        </TableRow>
-                      )}
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>

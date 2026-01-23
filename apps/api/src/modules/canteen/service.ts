@@ -139,14 +139,16 @@ export const itemService = {
   },
 
   async getLowStockItems(unitId: string) {
-    return prisma.$queryRaw<Array<{
-      id: string;
-      name: string;
-      code: string | null;
-      stock: number;
-      minStock: number;
-      categoryName: string;
-    }>>`
+    return prisma.$queryRaw<
+      Array<{
+        id: string;
+        name: string;
+        code: string | null;
+        stock: number;
+        minStock: number;
+        categoryName: string;
+      }>
+    >`
       SELECT 
         i.id, i.name, i.code, i.stock, i.min_stock as "minStock",
         c.name as "categoryName"
@@ -190,7 +192,8 @@ export const itemService = {
     if (data.name !== undefined) updateData.name = data.name;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.price !== undefined) updateData.price = new Prisma.Decimal(data.price);
-    if (data.costPrice !== undefined) updateData.costPrice = data.costPrice ? new Prisma.Decimal(data.costPrice) : null;
+    if (data.costPrice !== undefined)
+      updateData.costPrice = data.costPrice ? new Prisma.Decimal(data.costPrice) : null;
     if (data.stock !== undefined) updateData.stock = data.stock;
     if (data.minStock !== undefined) updateData.minStock = data.minStock;
     if (data.unit !== undefined) updateData.unit = data.unit;
@@ -262,12 +265,13 @@ export const transactionService = {
       ...(query.studentId && { studentId: query.studentId }),
       ...(query.status && { status: query.status }),
       ...(query.paymentMethod && { paymentMethod: query.paymentMethod }),
-      ...(query.startDate && query.endDate && {
-        createdAt: {
-          gte: new Date(query.startDate),
-          lte: new Date(query.endDate + 'T23:59:59.999Z'),
-        },
-      }),
+      ...(query.startDate &&
+        query.endDate && {
+          createdAt: {
+            gte: new Date(query.startDate),
+            lte: new Date(query.endDate + 'T23:59:59.999Z'),
+          },
+        }),
     };
 
     const [transactions, total] = await Promise.all([
@@ -323,7 +327,7 @@ export const transactionService = {
   async create(unitId: string, cashierId: string, data: CreateTransactionInput) {
     return prisma.$transaction(async (tx) => {
       // Get all items
-      const itemIds = data.items.map(i => i.itemId);
+      const itemIds = data.items.map((i) => i.itemId);
       const items = await tx.canteenItem.findMany({
         where: { id: { in: itemIds }, unitId, isAvailable: true, isActive: true },
       });
@@ -334,7 +338,7 @@ export const transactionService = {
 
       // Check stock
       for (const orderItem of data.items) {
-        const item = items.find(i => i.id === orderItem.itemId);
+        const item = items.find((i) => i.id === orderItem.itemId);
         if (item && item.stock < orderItem.quantity) {
           throw new Error(`Stok ${item.name} tidak mencukupi (tersedia: ${item.stock})`);
         }
@@ -354,7 +358,7 @@ export const transactionService = {
       }> = [];
 
       for (const orderItem of data.items) {
-        const item = items.find(i => i.id === orderItem.itemId)!;
+        const item = items.find((i) => i.id === orderItem.itemId)!;
         const itemSubtotal = item.price.mul(orderItem.quantity);
         subtotal = subtotal.add(itemSubtotal);
 
@@ -385,7 +389,9 @@ export const transactionService = {
         }
 
         if (wallet.balance.lessThan(total)) {
-          throw new Error(`Saldo wallet tidak mencukupi (saldo: Rp ${wallet.balance.toNumber().toLocaleString('id-ID')})`);
+          throw new Error(
+            `Saldo wallet tidak mencukupi (saldo: Rp ${wallet.balance.toNumber().toLocaleString('id-ID')})`
+          );
         }
 
         // Deduct wallet balance
@@ -452,7 +458,7 @@ export const transactionService = {
 
       // Update stock and create stock movements
       for (const orderItem of data.items) {
-        const item = items.find(i => i.id === orderItem.itemId)!;
+        const item = items.find((i) => i.id === orderItem.itemId)!;
         const newStock = item.stock - orderItem.quantity;
 
         await tx.canteenItem.update({
@@ -478,7 +484,12 @@ export const transactionService = {
     });
   },
 
-  async updateStatus(id: string, unitId: string, userId: string, data: UpdateTransactionStatusInput) {
+  async updateStatus(
+    id: string,
+    unitId: string,
+    userId: string,
+    data: UpdateTransactionStatusInput
+  ) {
     const transaction = await prisma.canteenTransaction.findFirst({
       where: { id, unitId },
       include: { items: true },
@@ -564,16 +575,19 @@ export const transactionService = {
   },
 
   async getStats(unitId: string, startDate?: string, endDate?: string) {
-    const dateFilter = startDate && endDate ? {
-      createdAt: {
-        gte: new Date(startDate),
-        lte: new Date(endDate + 'T23:59:59.999Z'),
-      },
-    } : {
-      createdAt: {
-        gte: new Date(new Date().setHours(0, 0, 0, 0)),
-      },
-    };
+    const dateFilter =
+      startDate && endDate
+        ? {
+            createdAt: {
+              gte: new Date(startDate),
+              lte: new Date(endDate + 'T23:59:59.999Z'),
+            },
+          }
+        : {
+            createdAt: {
+              gte: new Date(new Date().setHours(0, 0, 0, 0)),
+            },
+          };
 
     const [todayStats, totalTransactions, topItems, paymentBreakdown] = await Promise.all([
       prisma.canteenTransaction.aggregate({
@@ -611,13 +625,13 @@ export const transactionService = {
         totalTransactions: todayStats._count.id,
         allTimeTransactions: totalTransactions,
       },
-      topItems: topItems.map(item => ({
+      topItems: topItems.map((item) => ({
         itemId: item.itemId,
         itemName: item.itemName,
         quantitySold: item._sum.quantity || 0,
         totalRevenue: item._sum.total?.toNumber() || 0,
       })),
-      paymentBreakdown: paymentBreakdown.map(p => ({
+      paymentBreakdown: paymentBreakdown.map((p) => ({
         method: p.paymentMethod,
         count: p._count.id,
         total: p._sum.total?.toNumber() || 0,
@@ -640,12 +654,13 @@ export const stockMovementService = {
       item: { unitId },
       ...(query.itemId && { itemId: query.itemId }),
       ...(query.type && { type: query.type }),
-      ...(query.startDate && query.endDate && {
-        createdAt: {
-          gte: new Date(query.startDate),
-          lte: new Date(query.endDate + 'T23:59:59.999Z'),
-        },
-      }),
+      ...(query.startDate &&
+        query.endDate && {
+          createdAt: {
+            gte: new Date(query.startDate),
+            lte: new Date(query.endDate + 'T23:59:59.999Z'),
+          },
+        }),
     };
 
     const [movements, total] = await Promise.all([

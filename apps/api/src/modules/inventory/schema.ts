@@ -1,5 +1,10 @@
-import { z } from "zod";
-import { AssetStatus, AssetCondition, AssetMaintenanceStatus, AssetDisposalReason } from "@prisma/client";
+import { z } from 'zod';
+import {
+  AssetStatus,
+  AssetCondition,
+  AssetMaintenanceStatus,
+  AssetDisposalReason,
+} from '@prisma/client';
 
 // ==================== ASSET CATEGORY ====================
 
@@ -44,7 +49,9 @@ export const createInventoryItemSchema = z.object({
   photoUrl: z.string().url().optional(),
 });
 
-export const updateInventoryItemSchema = createInventoryItemSchema.partial().omit({ categoryId: true, unitId: true });
+export const updateInventoryItemSchema = createInventoryItemSchema
+  .partial()
+  .omit({ categoryId: true, unitId: true });
 
 export const queryInventoryItemSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

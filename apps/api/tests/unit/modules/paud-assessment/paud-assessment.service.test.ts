@@ -28,22 +28,22 @@ describe('PAUD Assessment Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockTransaction.mockImplementation((callback: any) => {
-        // If the callback is an array (which Promise.all(map) effectively produces when passed to $transaction in some contexts,
-        // but here the service passes an array of promises directly if it was map... wait.
-        // The service code: await prisma.$transaction(assessments.map(...))
-        // So $transaction receives an ARRAY of Promises (or pending promises).
-        // BUT prisma.$transaction usually takes an array of promises OR a callback.
-        // In the service code: `prisma.$transaction(assessments.map(...))` -> This is the array overload.
+      // If the callback is an array (which Promise.all(map) effectively produces when passed to $transaction in some contexts,
+      // but here the service passes an array of promises directly if it was map... wait.
+      // The service code: await prisma.$transaction(assessments.map(...))
+      // So $transaction receives an ARRAY of Promises (or pending promises).
+      // BUT prisma.$transaction usually takes an array of promises OR a callback.
+      // In the service code: `prisma.$transaction(assessments.map(...))` -> This is the array overload.
 
-        // So the mock should just return Promise.all(arg) if arg is array.
-        if (Array.isArray(callback)) {
-            return Promise.all(callback);
-        }
-        // If it's a function (interactive transaction), call it.
-        if (typeof callback === 'function') {
-            return callback(prisma);
-        }
-        return Promise.resolve(callback);
+      // So the mock should just return Promise.all(arg) if arg is array.
+      if (Array.isArray(callback)) {
+        return Promise.all(callback);
+      }
+      // If it's a function (interactive transaction), call it.
+      if (typeof callback === 'function') {
+        return callback(prisma);
+      }
+      return Promise.resolve(callback);
     });
   });
 
@@ -95,8 +95,9 @@ describe('PAUD Assessment Service', () => {
     it('should throw error if class does not belong to unit', async () => {
       mockFindUnique.mockResolvedValue({ id: 'class-1', unitId: 'other-unit' });
 
-      await expect(paudAssessmentService.createClassAssessment(mockInput, userId))
-        .rejects.toThrow('Class not found or does not belong to this unit');
+      await expect(paudAssessmentService.createClassAssessment(mockInput, userId)).rejects.toThrow(
+        'Class not found or does not belong to this unit'
+      );
     });
   });
 });

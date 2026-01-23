@@ -1,9 +1,9 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const createRewardSchema = z.object({
-  studentId: z.string().uuid("Invalid student ID"),
-  category: z.string().min(2, "Category is required"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
+  studentId: z.string().uuid('Invalid student ID'),
+  category: z.string().min(2, 'Category is required'),
+  description: z.string().min(10, 'Description must be at least 10 characters'),
   points: z.number().int().nonnegative().default(0),
   givenAt: z.string().datetime().optional(),
 });

@@ -9,8 +9,8 @@ export const leaveBalanceService = {
           userId,
           academicYearId,
           leaveType,
-        }
-      }
+        },
+      },
     });
   },
 
@@ -18,12 +18,18 @@ export const leaveBalanceService = {
     return prisma.leaveBalance.findMany({
       where: {
         userId,
-        academicYearId
-      }
+        academicYearId,
+      },
     });
   },
 
-  async initializeBalance(data: { userId: string; unitId: string; academicYearId: string; leaveType: any; totalDays: number }) {
+  async initializeBalance(data: {
+    userId: string;
+    unitId: string;
+    academicYearId: string;
+    leaveType: any;
+    totalDays: number;
+  }) {
     return prisma.leaveBalance.create({
       data: {
         unit: { connect: { id: data.unitId } },
@@ -33,7 +39,7 @@ export const leaveBalanceService = {
         totalDays: data.totalDays,
         remainingDays: data.totalDays,
         usedDays: 0,
-      }
+      },
     });
   },
 
@@ -49,7 +55,7 @@ export const leaveBalanceService = {
       data: {
         totalDays,
         remainingDays: remaining,
-      }
+      },
     });
-  }
+  },
 };

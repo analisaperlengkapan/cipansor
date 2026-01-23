@@ -1,16 +1,22 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +24,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   useAlumniDetail,
   useVerifyAlumni,
@@ -30,7 +36,7 @@ import {
   EMPLOYMENT_STATUS_LABELS,
   type AlumniStatus,
   type AlumniAchievement,
-} from '@/hooks';
+} from "@/hooks";
 import {
   ArrowLeft,
   User,
@@ -51,11 +57,11 @@ import {
   Linkedin,
   Instagram,
   Facebook,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import Link from 'next/link';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import Link from "next/link";
+import { toast } from "sonner";
 
 export default function AlumniDetailPage() {
   const params = useParams();
@@ -70,13 +76,15 @@ export default function AlumniDetailPage() {
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [achievementOpen, setAchievementOpen] = useState(false);
-  const [deleteAchievementId, setDeleteAchievementId] = useState<string | null>(null);
+  const [deleteAchievementId, setDeleteAchievementId] = useState<string | null>(
+    null,
+  );
 
   // Achievement form
-  const [achievementTitle, setAchievementTitle] = useState('');
-  const [achievementDesc, setAchievementDesc] = useState('');
-  const [achievementYear, setAchievementYear] = useState('');
-  const [achievementCategory, setAchievementCategory] = useState('');
+  const [achievementTitle, setAchievementTitle] = useState("");
+  const [achievementDesc, setAchievementDesc] = useState("");
+  const [achievementYear, setAchievementYear] = useState("");
+  const [achievementCategory, setAchievementCategory] = useState("");
 
   if (isLoading) {
     return (
@@ -104,39 +112,42 @@ export default function AlumniDetailPage() {
   const handleVerify = async () => {
     try {
       await verifyMutation.mutateAsync(id);
-      toast.success('Alumni berhasil diverifikasi');
+      toast.success("Alumni berhasil diverifikasi");
     } catch {
-      toast.error('Gagal memverifikasi alumni');
+      toast.error("Gagal memverifikasi alumni");
     }
   };
 
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(id);
-      toast.success('Data alumni berhasil dihapus');
-      router.push('/alumni');
+      toast.success("Data alumni berhasil dihapus");
+      router.push("/alumni");
     } catch {
-      toast.error('Gagal menghapus data');
+      toast.error("Gagal menghapus data");
     }
   };
 
   const handleAddAchievement = async () => {
     try {
       const formData = new FormData();
-      formData.append('title', achievementTitle);
-      formData.append('description', achievementDesc);
-      formData.append('year', achievementYear);
-      formData.append('category', achievementCategory);
+      formData.append("title", achievementTitle);
+      formData.append("description", achievementDesc);
+      formData.append("year", achievementYear);
+      formData.append("category", achievementCategory);
 
-      await addAchievementMutation.mutateAsync({ alumniId: id, data: formData });
-      toast.success('Prestasi berhasil ditambahkan');
+      await addAchievementMutation.mutateAsync({
+        alumniId: id,
+        data: formData,
+      });
+      toast.success("Prestasi berhasil ditambahkan");
       setAchievementOpen(false);
-      setAchievementTitle('');
-      setAchievementDesc('');
-      setAchievementYear('');
-      setAchievementCategory('');
+      setAchievementTitle("");
+      setAchievementDesc("");
+      setAchievementYear("");
+      setAchievementCategory("");
     } catch {
-      toast.error('Gagal menambahkan prestasi');
+      toast.error("Gagal menambahkan prestasi");
     }
   };
 
@@ -147,32 +158,30 @@ export default function AlumniDetailPage() {
         alumniId: id,
         achievementId: deleteAchievementId,
       });
-      toast.success('Prestasi berhasil dihapus');
+      toast.success("Prestasi berhasil dihapus");
       setDeleteAchievementId(null);
     } catch {
-      toast.error('Gagal menghapus prestasi');
+      toast.error("Gagal menghapus prestasi");
     }
   };
 
   const getStatusBadge = (status: AlumniStatus) => {
     const colors: Record<AlumniStatus, string> = {
-      REGISTERED: 'bg-gray-100 text-gray-800',
-      VERIFIED: 'bg-blue-100 text-blue-800',
-      ACTIVE: 'bg-green-100 text-green-800',
-      INACTIVE: 'bg-red-100 text-red-800',
+      REGISTERED: "bg-gray-100 text-gray-800",
+      VERIFIED: "bg-blue-100 text-blue-800",
+      ACTIVE: "bg-green-100 text-green-800",
+      INACTIVE: "bg-red-100 text-red-800",
     };
     return (
-      <Badge className={colors[status]}>
-        {ALUMNI_STATUS_LABELS[status]}
-      </Badge>
+      <Badge className={colors[status]}>{ALUMNI_STATUS_LABELS[status]}</Badge>
     );
   };
 
   const getInitials = (name: string) => {
     return name
-      .split(' ')
+      .split(" ")
       .map((n) => n[0])
-      .join('')
+      .join("")
       .toUpperCase()
       .slice(0, 2);
   };
@@ -205,7 +214,7 @@ export default function AlumniDetailPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            {alumni.status === 'REGISTERED' && (
+            {alumni.status === "REGISTERED" && (
               <Button
                 variant="outline"
                 onClick={handleVerify}
@@ -242,7 +251,9 @@ export default function AlumniDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Tahun Lulus</p>
-                  <p className="text-lg font-semibold">{alumni.graduationYear}</p>
+                  <p className="text-lg font-semibold">
+                    {alumni.graduationYear}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -254,11 +265,13 @@ export default function AlumniDetailPage() {
                   <Briefcase className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Status Pekerjaan</p>
+                  <p className="text-sm text-muted-foreground">
+                    Status Pekerjaan
+                  </p>
                   <p className="text-lg font-semibold">
                     {alumni.employmentStatus
                       ? EMPLOYMENT_STATUS_LABELS[alumni.employmentStatus]
-                      : '-'}
+                      : "-"}
                   </p>
                 </div>
               </div>
@@ -275,7 +288,7 @@ export default function AlumniDetailPage() {
                   <p className="text-lg font-semibold">
                     {alumni.currentEducation
                       ? EDUCATION_LEVEL_LABELS[alumni.currentEducation]
-                      : '-'}
+                      : "-"}
                   </p>
                 </div>
               </div>
@@ -327,21 +340,23 @@ export default function AlumniDetailPage() {
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Jenis Kelamin</Label>
                   <p className="font-medium">
-                    {alumni.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}
+                    {alumni.gender === "MALE" ? "Laki-laki" : "Perempuan"}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground">Tempat, Tanggal Lahir</Label>
+                  <Label className="text-muted-foreground">
+                    Tempat, Tanggal Lahir
+                  </Label>
                   <p className="font-medium">
-                    {alumni.birthPlace},{' '}
-                    {format(new Date(alumni.birthDate), 'd MMMM yyyy', {
+                    {alumni.birthPlace},{" "}
+                    {format(new Date(alumni.birthDate), "d MMMM yyyy", {
                       locale: idLocale,
                     })}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Unit Asal</Label>
-                  <p className="font-medium">{alumni.unit?.name || '-'}</p>
+                  <p className="font-medium">{alumni.unit?.name || "-"}</p>
                 </div>
               </CardContent>
             </Card>
@@ -355,14 +370,14 @@ export default function AlumniDetailPage() {
                   <Phone className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm text-muted-foreground">Telepon</p>
-                    <p className="font-medium">{alumni.phone || '-'}</p>
+                    <p className="font-medium">{alumni.phone || "-"}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Mail className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium">{alumni.email || '-'}</p>
+                    <p className="font-medium">{alumni.email || "-"}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 md:col-span-2">
@@ -372,7 +387,7 @@ export default function AlumniDetailPage() {
                     <p className="font-medium">
                       {[alumni.address, alumni.city, alumni.province]
                         .filter(Boolean)
-                        .join(', ') || '-'}
+                        .join(", ") || "-"}
                     </p>
                   </div>
                 </div>
@@ -420,9 +435,13 @@ export default function AlumniDetailPage() {
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
-                {!alumni.linkedinUrl && !alumni.instagramUrl && !alumni.facebookUrl && (
-                  <p className="text-muted-foreground">Belum ada media sosial</p>
-                )}
+                {!alumni.linkedinUrl &&
+                  !alumni.instagramUrl &&
+                  !alumni.facebookUrl && (
+                    <p className="text-muted-foreground">
+                      Belum ada media sosial
+                    </p>
+                  )}
               </CardContent>
             </Card>
 
@@ -445,28 +464,36 @@ export default function AlumniDetailPage() {
               </CardHeader>
               <CardContent className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground">Status Pekerjaan</Label>
+                  <Label className="text-muted-foreground">
+                    Status Pekerjaan
+                  </Label>
                   <p className="font-medium">
                     {alumni.employmentStatus
                       ? EMPLOYMENT_STATUS_LABELS[alumni.employmentStatus]
-                      : '-'}
+                      : "-"}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Jabatan</Label>
-                  <p className="font-medium">{alumni.position || alumni.currentOccupation || '-'}</p>
+                  <p className="font-medium">
+                    {alumni.position || alumni.currentOccupation || "-"}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Perusahaan</Label>
-                  <p className="font-medium">{alumni.companyName || alumni.currentCompany || '-'}</p>
+                  <p className="font-medium">
+                    {alumni.companyName || alumni.currentCompany || "-"}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Industri</Label>
-                  <p className="font-medium">{alumni.industry || '-'}</p>
+                  <p className="font-medium">{alumni.industry || "-"}</p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Kota</Label>
-                  <p className="font-medium">{alumni.workCity || alumni.currentCity || '-'}</p>
+                  <p className="font-medium">
+                    {alumni.workCity || alumni.currentCity || "-"}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -481,20 +508,22 @@ export default function AlumniDetailPage() {
                   <p className="font-medium">
                     {alumni.currentEducation
                       ? EDUCATION_LEVEL_LABELS[alumni.currentEducation]
-                      : '-'}
+                      : "-"}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Institusi</Label>
-                  <p className="font-medium">{alumni.educationInstitution || '-'}</p>
+                  <p className="font-medium">
+                    {alumni.educationInstitution || "-"}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Jurusan</Label>
-                  <p className="font-medium">{alumni.educationMajor || '-'}</p>
+                  <p className="font-medium">{alumni.educationMajor || "-"}</p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Tahun</Label>
-                  <p className="font-medium">{alumni.educationYear || '-'}</p>
+                  <p className="font-medium">{alumni.educationYear || "-"}</p>
                 </div>
               </CardContent>
             </Card>
@@ -516,8 +545,12 @@ export default function AlumniDetailPage() {
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-start">
                         <div>
-                          <CardTitle className="text-base">{achievement.title}</CardTitle>
-                          <CardDescription>{achievement.category}</CardDescription>
+                          <CardTitle className="text-base">
+                            {achievement.title}
+                          </CardTitle>
+                          <CardDescription>
+                            {achievement.category}
+                          </CardDescription>
                         </div>
                         <Button
                           variant="ghost"
@@ -559,8 +592,8 @@ export default function AlumniDetailPage() {
           <DialogHeader>
             <DialogTitle>Hapus Alumni</DialogTitle>
             <DialogDescription>
-              Apakah Anda yakin ingin menghapus data alumni ini? Tindakan ini tidak
-              dapat dibatalkan.
+              Apakah Anda yakin ingin menghapus data alumni ini? Tindakan ini
+              tidak dapat dibatalkan.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -650,7 +683,10 @@ export default function AlumniDetailPage() {
       </Dialog>
 
       {/* Delete Achievement Dialog */}
-      <Dialog open={!!deleteAchievementId} onOpenChange={() => setDeleteAchievementId(null)}>
+      <Dialog
+        open={!!deleteAchievementId}
+        onOpenChange={() => setDeleteAchievementId(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Hapus Prestasi</DialogTitle>
@@ -659,7 +695,10 @@ export default function AlumniDetailPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteAchievementId(null)}>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteAchievementId(null)}
+            >
               Batal
             </Button>
             <Button

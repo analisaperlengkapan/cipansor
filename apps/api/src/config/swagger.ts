@@ -138,8 +138,8 @@ Token didapat dari endpoint POST /api/auth/login
             name: { type: 'string', example: 'Ahmad Fauzi' },
             email: { type: 'string', format: 'email' },
             phone: { type: 'string', example: '081234567890' },
-            role: { 
-              type: 'string', 
+            role: {
+              type: 'string',
               enum: ['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER', 'STAFF', 'STUDENT', 'PARENT'],
             },
             unitId: { type: 'string', format: 'uuid', nullable: true },
@@ -170,8 +170,8 @@ Token didapat dari endpoint POST /api/auth/login
           properties: {
             id: { type: 'string', format: 'uuid' },
             name: { type: 'string', example: 'Pondok Pesantren Al-Hikmah' },
-            type: { 
-              type: 'string', 
+            type: {
+              type: 'string',
               enum: ['PESANTREN', 'PAUD', 'SD_IT', 'SMP_IT', 'SMA_QURAN', 'OTHER'],
             },
             address: { type: 'string' },
@@ -201,8 +201,8 @@ Token didapat dari endpoint POST /api/auth/login
             graduationYear: { type: 'integer', example: 2020 },
             email: { type: 'string', format: 'email' },
             phone: { type: 'string' },
-            status: { 
-              type: 'string', 
+            status: {
+              type: 'string',
               enum: ['REGISTERED', 'VERIFIED', 'ACTIVE', 'INACTIVE'],
             },
           },
@@ -274,8 +274,8 @@ Token didapat dari endpoint POST /api/auth/login
               schema: { $ref: '#/components/schemas/Error' },
               example: {
                 success: false,
-                error: { 
-                  code: 'VALIDATION_ERROR', 
+                error: {
+                  code: 'VALIDATION_ERROR',
                   message: 'Invalid input data',
                   details: [{ field: 'email', message: 'Invalid email format' }],
                 },
@@ -287,10 +287,7 @@ Token didapat dari endpoint POST /api/auth/login
     },
     security: [{ bearerAuth: [] }],
   },
-  apis: [
-    `${modulesPath}/**/*.routes.ts`,
-    `${modulesPath}/**/routes.ts`,
-  ],
+  apis: [`${modulesPath}/**/*.routes.ts`, `${modulesPath}/**/routes.ts`],
 };
 
 const generatedSpec = swaggerJsdoc(options) as { paths?: Record<string, unknown> };

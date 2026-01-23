@@ -1,21 +1,34 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   useActivePeriod,
   useCreateRegistration,
-  Gender
-} from '@/hooks/use-psb';
-import { useUnits } from '@/hooks/use-units';
+  Gender,
+} from "@/hooks/use-psb";
+import { useUnits } from "@/hooks/use-units";
 import {
   CheckCircle2,
   User,
@@ -29,17 +42,17 @@ import {
   ChevronLeft,
   AlertCircle,
   Info,
-  Calendar
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { format, differenceInDays } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+  Calendar,
+} from "lucide-react";
+import { toast } from "sonner";
+import { format, differenceInDays } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 interface FormData {
   // Student info
   fullName: string;
   nickname: string;
-  gender: Gender | '';
+  gender: Gender | "";
   birthPlace: string;
   birthDate: string;
   nationalId: string;
@@ -79,41 +92,41 @@ interface FormData {
 }
 
 const initialFormData: FormData = {
-  fullName: '',
-  nickname: '',
-  gender: '',
-  birthPlace: '',
-  birthDate: '',
-  nationalId: '',
-  familyCardNumber: '',
-  previousSchool: '',
-  previousSchoolAddress: '',
-  graduationYear: '',
-  fatherName: '',
-  fatherOccupation: '',
-  fatherPhone: '',
-  fatherEmail: '',
-  motherName: '',
-  motherOccupation: '',
-  motherPhone: '',
-  address: '',
-  village: '',
-  district: '',
-  city: '',
-  province: '',
-  postalCode: '',
-  quranAbility: '',
-  memorizedJuz: '',
-  unitId: '',
-  periodId: '',
+  fullName: "",
+  nickname: "",
+  gender: "",
+  birthPlace: "",
+  birthDate: "",
+  nationalId: "",
+  familyCardNumber: "",
+  previousSchool: "",
+  previousSchoolAddress: "",
+  graduationYear: "",
+  fatherName: "",
+  fatherOccupation: "",
+  fatherPhone: "",
+  fatherEmail: "",
+  motherName: "",
+  motherOccupation: "",
+  motherPhone: "",
+  address: "",
+  village: "",
+  district: "",
+  city: "",
+  province: "",
+  postalCode: "",
+  quranAbility: "",
+  memorizedJuz: "",
+  unitId: "",
+  periodId: "",
 };
 
 const QURAN_ABILITIES = [
-  { value: 'BELUM_BISA', label: 'Belum bisa membaca' },
-  { value: 'IQRO', label: 'Masih Iqro' },
-  { value: 'LANCAR', label: 'Lancar membaca Al-Quran' },
-  { value: 'TARTIL', label: 'Tartil dan Tajwid baik' },
-  { value: 'HAFIDZ', label: 'Sudah hafal beberapa juz' },
+  { value: "BELUM_BISA", label: "Belum bisa membaca" },
+  { value: "IQRO", label: "Masih Iqro" },
+  { value: "LANCAR", label: "Lancar membaca Al-Quran" },
+  { value: "TARTIL", label: "Tartil dan Tajwid baik" },
+  { value: "HAFIDZ", label: "Sudah hafal beberapa juz" },
 ];
 
 export default function PublicPPDBPage() {
@@ -122,22 +135,25 @@ export default function PublicPPDBPage() {
   const createRegistration = useCreateRegistration();
   const searchParams = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState("info");
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successData, setSuccessData] = useState<{ registrationNumber: string; name: string } | null>(null);
+  const [successData, setSuccessData] = useState<{
+    registrationNumber: string;
+    name: string;
+  } | null>(null);
 
   // Capture source/campaign from URL
   useEffect(() => {
-    const source = searchParams.get('source');
-    const campaignId = searchParams.get('campaign_id');
+    const source = searchParams.get("source");
+    const campaignId = searchParams.get("campaign_id");
 
     if (source || campaignId) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         source: source || undefined,
-        campaignId: campaignId || undefined
+        campaignId: campaignId || undefined,
       }));
     }
   }, [searchParams]);
@@ -153,35 +169,45 @@ export default function PublicPPDBPage() {
   });
 
   const steps = [
-    { id: 'student', title: 'Data Calon Santri', icon: User },
-    { id: 'parent', title: 'Data Orang Tua', icon: Users },
-    { id: 'address', title: 'Alamat', icon: MapPin },
-    { id: 'quran', title: 'Kemampuan Quran', icon: BookOpen },
-    { id: 'documents', title: 'Dokumen', icon: Upload },
-    { id: 'confirm', title: 'Konfirmasi', icon: CheckCircle2 },
+    { id: "student", title: "Data Calon Santri", icon: User },
+    { id: "parent", title: "Data Orang Tua", icon: Users },
+    { id: "address", title: "Alamat", icon: MapPin },
+    { id: "quran", title: "Kemampuan Quran", icon: BookOpen },
+    { id: "documents", title: "Dokumen", icon: Upload },
+    { id: "confirm", title: "Konfirmasi", icon: CheckCircle2 },
   ];
 
   const handlePrev = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 0));
+    setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
 
   const handleNext = () => {
     // Validation per step
     if (currentStep === 0) {
-      if (!formData.fullName || !formData.gender || !formData.birthPlace || !formData.birthDate || !formData.unitId) {
-        toast.error('Lengkapi semua data yang wajib diisi');
+      if (
+        !formData.fullName ||
+        !formData.gender ||
+        !formData.birthPlace ||
+        !formData.birthDate ||
+        !formData.unitId
+      ) {
+        toast.error("Lengkapi semua data yang wajib diisi");
         return;
       }
     }
     if (currentStep === 1) {
-      if (!formData.fatherName || !formData.motherName || !formData.fatherPhone) {
-        toast.error('Lengkapi data orang tua yang wajib diisi');
+      if (
+        !formData.fatherName ||
+        !formData.motherName ||
+        !formData.fatherPhone
+      ) {
+        toast.error("Lengkapi data orang tua yang wajib diisi");
         return;
       }
     }
     if (currentStep === 2) {
       if (!formData.address || !formData.city || !formData.province) {
-        toast.error('Lengkapi alamat yang wajib diisi');
+        toast.error("Lengkapi alamat yang wajib diisi");
         return;
       }
     }
@@ -191,18 +217,25 @@ export default function PublicPPDBPage() {
     if (currentStep === 4) {
       // Optional for now or mandatory? Let's make photo mandatory
       const requirements = (activePeriod as any)?.requirements;
-      if (typeof requirements === 'string' && requirements.includes('photo') && !files.photo) {
-         toast.error('Pas foto wajib diupload');
-         return;
+      if (
+        typeof requirements === "string" &&
+        requirements.includes("photo") &&
+        !files.photo
+      ) {
+        toast.error("Pas foto wajib diupload");
+        return;
       }
     }
 
-    setCurrentStep(prev => Math.min(prev + 1, steps.length - 1));
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: keyof typeof files) => {
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: keyof typeof files,
+  ) => {
     if (e.target.files && e.target.files[0]) {
-      setFiles(prev => ({ ...prev, [field]: e.target.files![0] }));
+      setFiles((prev) => ({ ...prev, [field]: e.target.files![0] }));
     }
   };
 
@@ -219,19 +252,21 @@ export default function PublicPPDBPage() {
       });
 
       // Add files
-      if (files.photo) formDataToSend.append('photo', files.photo);
-      if (files.birthCertificate) formDataToSend.append('birthCertificate', files.birthCertificate);
-      if (files.familyCard) formDataToSend.append('familyCard', files.familyCard);
+      if (files.photo) formDataToSend.append("photo", files.photo);
+      if (files.birthCertificate)
+        formDataToSend.append("birthCertificate", files.birthCertificate);
+      if (files.familyCard)
+        formDataToSend.append("familyCard", files.familyCard);
 
       // Set period if not selected
       if (!formData.periodId && activePeriod) {
-        formDataToSend.set('periodId', activePeriod.id);
+        formDataToSend.set("periodId", activePeriod.id);
       }
 
       const result = await createRegistration.mutateAsync(formDataToSend);
 
       setSuccessData({
-        registrationNumber: result.registrationNumber || 'PSB-' + Date.now(),
+        registrationNumber: result.registrationNumber || "PSB-" + Date.now(),
         name: formData.fullName,
       });
 
@@ -240,7 +275,7 @@ export default function PublicPPDBPage() {
       setFiles({ photo: null, birthCertificate: null, familyCard: null });
       setCurrentStep(0);
     } catch (error) {
-      toast.error('Gagal mengirim pendaftaran. Silakan coba lagi.');
+      toast.error("Gagal mengirim pendaftaran. Silakan coba lagi.");
     } finally {
       setIsSubmitting(false);
     }
@@ -258,13 +293,18 @@ export default function PublicPPDBPage() {
             <span className="font-bold text-xl text-gray-900">PSB Online</span>
           </div>
           <div className="text-sm text-muted-foreground hidden sm:block">
-            Penerimaan Santri Baru Tahun Ajaran {activePeriod?.academicYear?.name || '...'}
+            Penerimaan Santri Baru Tahun Ajaran{" "}
+            {activePeriod?.academicYear?.name || "..."}
           </div>
         </div>
       </header>
 
       <main className="flex-1 max-w-3xl mx-auto px-4 py-8 w-full">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-6"
+        >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="info">Informasi & Pendaftaran</TabsTrigger>
             <TabsTrigger value="check">Cek Status</TabsTrigger>
@@ -278,10 +318,13 @@ export default function PublicPPDBPage() {
                   <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
                     <Calendar className="h-8 w-8 text-gray-400" />
                   </div>
-                  <h3 className="text-lg font-semibold">Pendaftaran Belum Dibuka</h3>
+                  <h3 className="text-lg font-semibold">
+                    Pendaftaran Belum Dibuka
+                  </h3>
                   <p className="text-muted-foreground mt-2">
-                    Mohon maaf, saat ini belum ada periode penerimaan santri baru yang aktif.
-                    Silakan hubungi panitia untuk informasi lebih lanjut.
+                    Mohon maaf, saat ini belum ada periode penerimaan santri
+                    baru yang aktif. Silakan hubungi panitia untuk informasi
+                    lebih lanjut.
                   </p>
                 </CardContent>
               </Card>
@@ -291,15 +334,31 @@ export default function PublicPPDBPage() {
                   <CardContent className="pt-6">
                     <div className="flex flex-col md:flex-row justify-between gap-4">
                       <div>
-                        <h2 className="text-2xl font-bold text-green-900">{activePeriod.name}</h2>
+                        <h2 className="text-2xl font-bold text-green-900">
+                          {activePeriod.name}
+                        </h2>
                         <p className="text-green-700 mt-1">
-                          Gelombang pendaftaran aktif hingga {format(new Date(activePeriod.endDate), 'd MMMM yyyy', { locale: idLocale })}
+                          Gelombang pendaftaran aktif hingga{" "}
+                          {format(
+                            new Date(activePeriod.endDate),
+                            "d MMMM yyyy",
+                            { locale: idLocale },
+                          )}
                         </p>
                       </div>
                       <div className="bg-white/50 p-3 rounded-lg border border-green-100 backdrop-blur-sm">
-                        <div className="text-sm text-green-800 font-medium">Sisa Waktu</div>
+                        <div className="text-sm text-green-800 font-medium">
+                          Sisa Waktu
+                        </div>
                         <div className="text-2xl font-bold text-green-600">
-                          {Math.max(0, differenceInDays(new Date(activePeriod.endDate), new Date()))} Hari
+                          {Math.max(
+                            0,
+                            differenceInDays(
+                              new Date(activePeriod.endDate),
+                              new Date(),
+                            ),
+                          )}{" "}
+                          Hari
                         </div>
                       </div>
                     </div>
@@ -316,19 +375,24 @@ export default function PublicPPDBPage() {
                       const isCompleted = index < currentStep;
 
                       return (
-                        <div key={step.id} className="flex flex-col items-center gap-2 bg-gray-50 px-2">
+                        <div
+                          key={step.id}
+                          className="flex flex-col items-center gap-2 bg-gray-50 px-2"
+                        >
                           <div
                             className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
                               isActive
-                                ? 'bg-green-600 text-white ring-4 ring-green-100'
+                                ? "bg-green-600 text-white ring-4 ring-green-100"
                                 : isCompleted
-                                ? 'bg-green-100 text-green-600'
-                                : 'bg-gray-200 text-gray-400'
+                                  ? "bg-green-100 text-green-600"
+                                  : "bg-gray-200 text-gray-400"
                             }`}
                           >
                             <Icon className="w-4 h-4" />
                           </div>
-                          <span className={`text-xs font-medium hidden sm:block ${isActive ? 'text-green-600' : 'text-gray-500'}`}>
+                          <span
+                            className={`text-xs font-medium hidden sm:block ${isActive ? "text-green-600" : "text-gray-500"}`}
+                          >
                             {step.title}
                           </span>
                         </div>
@@ -346,13 +410,17 @@ export default function PublicPPDBPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-
                     {/* Step 1: Student Data */}
                     {currentStep === 0 && (
                       <div className="grid gap-4">
                         <div className="space-y-2">
                           <Label>Pilih Unit Pendidikan</Label>
-                          <Select value={formData.unitId} onValueChange={(v) => setFormData({ ...formData, unitId: v })}>
+                          <Select
+                            value={formData.unitId}
+                            onValueChange={(v) =>
+                              setFormData({ ...formData, unitId: v })
+                            }
+                          >
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih unit tujuan" />
                             </SelectTrigger>
@@ -371,7 +439,12 @@ export default function PublicPPDBPage() {
                             <Label>Nama Lengkap</Label>
                             <Input
                               value={formData.fullName}
-                              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  fullName: e.target.value,
+                                })
+                              }
                               placeholder="Sesuai Akte Kelahiran"
                             />
                           </div>
@@ -379,7 +452,12 @@ export default function PublicPPDBPage() {
                             <Label>Nama Panggilan</Label>
                             <Input
                               value={formData.nickname}
-                              onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  nickname: e.target.value,
+                                })
+                              }
                             />
                           </div>
                         </div>
@@ -389,7 +467,12 @@ export default function PublicPPDBPage() {
                             <Label>Tempat Lahir</Label>
                             <Input
                               value={formData.birthPlace}
-                              onChange={(e) => setFormData({ ...formData, birthPlace: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  birthPlace: e.target.value,
+                                })
+                              }
                             />
                           </div>
                           <div className="space-y-2">
@@ -397,14 +480,24 @@ export default function PublicPPDBPage() {
                             <Input
                               type="date"
                               value={formData.birthDate}
-                              onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  birthDate: e.target.value,
+                                })
+                              }
                             />
                           </div>
                         </div>
 
                         <div className="space-y-2">
                           <Label>Jenis Kelamin</Label>
-                          <Select value={formData.gender} onValueChange={(v) => setFormData({ ...formData, gender: v as Gender })}>
+                          <Select
+                            value={formData.gender}
+                            onValueChange={(v) =>
+                              setFormData({ ...formData, gender: v as Gender })
+                            }
+                          >
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih jenis kelamin" />
                             </SelectTrigger>
@@ -420,7 +513,12 @@ export default function PublicPPDBPage() {
                             <Label>NIK</Label>
                             <Input
                               value={formData.nationalId}
-                              onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  nationalId: e.target.value,
+                                })
+                              }
                               maxLength={16}
                             />
                           </div>
@@ -428,7 +526,12 @@ export default function PublicPPDBPage() {
                             <Label>Nomor Kartu Keluarga</Label>
                             <Input
                               value={formData.familyCardNumber}
-                              onChange={(e) => setFormData({ ...formData, familyCardNumber: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  familyCardNumber: e.target.value,
+                                })
+                              }
                               maxLength={16}
                             />
                           </div>
@@ -448,7 +551,12 @@ export default function PublicPPDBPage() {
                               <Label>Nama Ayah</Label>
                               <Input
                                 value={formData.fatherName}
-                                onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    fatherName: e.target.value,
+                                  })
+                                }
                               />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -456,14 +564,24 @@ export default function PublicPPDBPage() {
                                 <Label>Pekerjaan</Label>
                                 <Input
                                   value={formData.fatherOccupation}
-                                  onChange={(e) => setFormData({ ...formData, fatherOccupation: e.target.value })}
+                                  onChange={(e) =>
+                                    setFormData({
+                                      ...formData,
+                                      fatherOccupation: e.target.value,
+                                    })
+                                  }
                                 />
                               </div>
                               <div className="space-y-2">
                                 <Label>No. WhatsApp</Label>
                                 <Input
                                   value={formData.fatherPhone}
-                                  onChange={(e) => setFormData({ ...formData, fatherPhone: e.target.value })}
+                                  onChange={(e) =>
+                                    setFormData({
+                                      ...formData,
+                                      fatherPhone: e.target.value,
+                                    })
+                                  }
                                 />
                               </div>
                             </div>
@@ -479,7 +597,12 @@ export default function PublicPPDBPage() {
                               <Label>Nama Ibu</Label>
                               <Input
                                 value={formData.motherName}
-                                onChange={(e) => setFormData({ ...formData, motherName: e.target.value })}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    motherName: e.target.value,
+                                  })
+                                }
                               />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -487,14 +610,24 @@ export default function PublicPPDBPage() {
                                 <Label>Pekerjaan</Label>
                                 <Input
                                   value={formData.motherOccupation}
-                                  onChange={(e) => setFormData({ ...formData, motherOccupation: e.target.value })}
+                                  onChange={(e) =>
+                                    setFormData({
+                                      ...formData,
+                                      motherOccupation: e.target.value,
+                                    })
+                                  }
                                 />
                               </div>
                               <div className="space-y-2">
                                 <Label>No. WhatsApp</Label>
                                 <Input
                                   value={formData.motherPhone}
-                                  onChange={(e) => setFormData({ ...formData, motherPhone: e.target.value })}
+                                  onChange={(e) =>
+                                    setFormData({
+                                      ...formData,
+                                      motherPhone: e.target.value,
+                                    })
+                                  }
                                 />
                               </div>
                             </div>
@@ -510,7 +643,12 @@ export default function PublicPPDBPage() {
                           <Label>Alamat Lengkap (Jalan, RT/RW)</Label>
                           <Textarea
                             value={formData.address}
-                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                address: e.target.value,
+                              })
+                            }
                             rows={3}
                           />
                         </div>
@@ -519,14 +657,24 @@ export default function PublicPPDBPage() {
                             <Label>Desa/Kelurahan</Label>
                             <Input
                               value={formData.village}
-                              onChange={(e) => setFormData({ ...formData, village: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  village: e.target.value,
+                                })
+                              }
                             />
                           </div>
                           <div className="space-y-2">
                             <Label>Kecamatan</Label>
                             <Input
                               value={formData.district}
-                              onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  district: e.target.value,
+                                })
+                              }
                             />
                           </div>
                         </div>
@@ -535,21 +683,36 @@ export default function PublicPPDBPage() {
                             <Label>Kota/Kabupaten</Label>
                             <Input
                               value={formData.city}
-                              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  city: e.target.value,
+                                })
+                              }
                             />
                           </div>
                           <div className="space-y-2">
                             <Label>Provinsi</Label>
                             <Input
                               value={formData.province}
-                              onChange={(e) => setFormData({ ...formData, province: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  province: e.target.value,
+                                })
+                              }
                             />
                           </div>
                           <div className="space-y-2">
                             <Label>Kode Pos</Label>
                             <Input
                               value={formData.postalCode}
-                              onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  postalCode: e.target.value,
+                                })
+                              }
                             />
                           </div>
                         </div>
@@ -561,13 +724,21 @@ export default function PublicPPDBPage() {
                       <>
                         <div className="space-y-2">
                           <Label>Kemampuan Membaca Al-Quran</Label>
-                          <Select value={formData.quranAbility} onValueChange={(v) => setFormData({ ...formData, quranAbility: v })}>
+                          <Select
+                            value={formData.quranAbility}
+                            onValueChange={(v) =>
+                              setFormData({ ...formData, quranAbility: v })
+                            }
+                          >
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih kemampuan" />
                             </SelectTrigger>
                             <SelectContent>
                               {QURAN_ABILITIES.map((ability) => (
-                                <SelectItem key={ability.value} value={ability.value}>
+                                <SelectItem
+                                  key={ability.value}
+                                  value={ability.value}
+                                >
                                   {ability.label}
                                 </SelectItem>
                               ))}
@@ -580,7 +751,12 @@ export default function PublicPPDBPage() {
                           <Input
                             type="number"
                             value={formData.memorizedJuz}
-                            onChange={(e) => setFormData({ ...formData, memorizedJuz: e.target.value })}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                memorizedJuz: e.target.value,
+                              })
+                            }
                             placeholder="Jika sudah hafal, tulis jumlah juz"
                             min={0}
                             max={30}
@@ -595,9 +771,13 @@ export default function PublicPPDBPage() {
                             <div className="flex items-start gap-3">
                               <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                               <div className="text-sm">
-                                <p className="font-medium text-amber-800">Catatan:</p>
+                                <p className="font-medium text-amber-800">
+                                  Catatan:
+                                </p>
                                 <p className="text-amber-700">
-                                  Kemampuan Al-Quran akan diuji saat tahap tes masuk. Isilah dengan jujur sesuai kondisi sebenarnya.
+                                  Kemampuan Al-Quran akan diuji saat tahap tes
+                                  masuk. Isilah dengan jujur sesuai kondisi
+                                  sebenarnya.
                                 </p>
                               </div>
                             </div>
@@ -614,9 +794,12 @@ export default function PublicPPDBPage() {
                             <div className="flex items-start gap-3">
                               <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
                               <div className="text-sm">
-                                <p className="font-medium text-blue-800">Instruksi Upload:</p>
+                                <p className="font-medium text-blue-800">
+                                  Instruksi Upload:
+                                </p>
                                 <p className="text-blue-700">
-                                  Format file yang didukung: JPG, PNG, PDF. Ukuran maksimal 2MB per file.
+                                  Format file yang didukung: JPG, PNG, PDF.
+                                  Ukuran maksimal 2MB per file.
                                 </p>
                               </div>
                             </div>
@@ -629,9 +812,13 @@ export default function PublicPPDBPage() {
                             <Input
                               type="file"
                               accept="image/*"
-                              onChange={(e) => handleFileChange(e, 'photo')}
+                              onChange={(e) => handleFileChange(e, "photo")}
                             />
-                            {files.photo && <p className="text-xs text-green-600">File terpilih: {files.photo.name}</p>}
+                            {files.photo && (
+                              <p className="text-xs text-green-600">
+                                File terpilih: {files.photo.name}
+                              </p>
+                            )}
                           </div>
 
                           <div className="space-y-2">
@@ -639,9 +826,15 @@ export default function PublicPPDBPage() {
                             <Input
                               type="file"
                               accept="image/*,application/pdf"
-                              onChange={(e) => handleFileChange(e, 'birthCertificate')}
+                              onChange={(e) =>
+                                handleFileChange(e, "birthCertificate")
+                              }
                             />
-                            {files.birthCertificate && <p className="text-xs text-green-600">File terpilih: {files.birthCertificate.name}</p>}
+                            {files.birthCertificate && (
+                              <p className="text-xs text-green-600">
+                                File terpilih: {files.birthCertificate.name}
+                              </p>
+                            )}
                           </div>
 
                           <div className="space-y-2">
@@ -649,9 +842,15 @@ export default function PublicPPDBPage() {
                             <Input
                               type="file"
                               accept="image/*,application/pdf"
-                              onChange={(e) => handleFileChange(e, 'familyCard')}
+                              onChange={(e) =>
+                                handleFileChange(e, "familyCard")
+                              }
                             />
-                            {files.familyCard && <p className="text-xs text-green-600">File terpilih: {files.familyCard.name}</p>}
+                            {files.familyCard && (
+                              <p className="text-xs text-green-600">
+                                File terpilih: {files.familyCard.name}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -662,23 +861,53 @@ export default function PublicPPDBPage() {
                       <div className="space-y-4">
                         <Card>
                           <CardHeader className="pb-2">
-                            <CardTitle className="text-base">Data Calon Santri</CardTitle>
+                            <CardTitle className="text-base">
+                              Data Calon Santri
+                            </CardTitle>
                           </CardHeader>
                           <CardContent className="text-sm space-y-1">
-                            <p><strong>Nama:</strong> {formData.fullName}</p>
-                            <p><strong>Jenis Kelamin:</strong> {formData.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}</p>
-                            <p><strong>TTL:</strong> {formData.birthPlace}, {formData.birthDate && format(new Date(formData.birthDate), 'd MMMM yyyy', { locale: idLocale })}</p>
-                            <p><strong>Unit:</strong> {units.find(u => u.id === formData.unitId)?.name}</p>
+                            <p>
+                              <strong>Nama:</strong> {formData.fullName}
+                            </p>
+                            <p>
+                              <strong>Jenis Kelamin:</strong>{" "}
+                              {formData.gender === "MALE"
+                                ? "Laki-laki"
+                                : "Perempuan"}
+                            </p>
+                            <p>
+                              <strong>TTL:</strong> {formData.birthPlace},{" "}
+                              {formData.birthDate &&
+                                format(
+                                  new Date(formData.birthDate),
+                                  "d MMMM yyyy",
+                                  { locale: idLocale },
+                                )}
+                            </p>
+                            <p>
+                              <strong>Unit:</strong>{" "}
+                              {
+                                units.find((u) => u.id === formData.unitId)
+                                  ?.name
+                              }
+                            </p>
                           </CardContent>
                         </Card>
 
                         <Card>
                           <CardHeader className="pb-2">
-                            <CardTitle className="text-base">Data Orang Tua</CardTitle>
+                            <CardTitle className="text-base">
+                              Data Orang Tua
+                            </CardTitle>
                           </CardHeader>
                           <CardContent className="text-sm space-y-1">
-                            <p><strong>Ayah:</strong> {formData.fatherName} ({formData.fatherPhone})</p>
-                            <p><strong>Ibu:</strong> {formData.motherName}</p>
+                            <p>
+                              <strong>Ayah:</strong> {formData.fatherName} (
+                              {formData.fatherPhone})
+                            </p>
+                            <p>
+                              <strong>Ibu:</strong> {formData.motherName}
+                            </p>
                           </CardContent>
                         </Card>
 
@@ -688,8 +917,13 @@ export default function PublicPPDBPage() {
                           </CardHeader>
                           <CardContent className="text-sm">
                             <p>{formData.address}</p>
-                            <p>{formData.village}, {formData.district}</p>
-                            <p>{formData.city}, {formData.province} {formData.postalCode}</p>
+                            <p>
+                              {formData.village}, {formData.district}
+                            </p>
+                            <p>
+                              {formData.city}, {formData.province}{" "}
+                              {formData.postalCode}
+                            </p>
                           </CardContent>
                         </Card>
 
@@ -699,16 +933,35 @@ export default function PublicPPDBPage() {
                           </CardHeader>
                           <CardContent className="text-sm space-y-1">
                             <p className="flex items-center gap-2">
-                                {files.photo ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <AlertCircle className="h-4 w-4 text-gray-400" />}
-                                Pas Foto: {files.photo ? 'Terupload' : 'Belum diupload'}
+                              {files.photo ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <AlertCircle className="h-4 w-4 text-gray-400" />
+                              )}
+                              Pas Foto:{" "}
+                              {files.photo ? "Terupload" : "Belum diupload"}
                             </p>
                             <p className="flex items-center gap-2">
-                                {files.birthCertificate ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <AlertCircle className="h-4 w-4 text-gray-400" />}
-                                Akte Kelahiran: {files.birthCertificate ? 'Terupload' : 'Belum diupload'}
+                              {files.birthCertificate ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <AlertCircle className="h-4 w-4 text-gray-400" />
+                              )}
+                              Akte Kelahiran:{" "}
+                              {files.birthCertificate
+                                ? "Terupload"
+                                : "Belum diupload"}
                             </p>
                             <p className="flex items-center gap-2">
-                                {files.familyCard ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <AlertCircle className="h-4 w-4 text-gray-400" />}
-                                Kartu Keluarga: {files.familyCard ? 'Terupload' : 'Belum diupload'}
+                              {files.familyCard ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <AlertCircle className="h-4 w-4 text-gray-400" />
+                              )}
+                              Kartu Keluarga:{" "}
+                              {files.familyCard
+                                ? "Terupload"
+                                : "Belum diupload"}
                             </p>
                           </CardContent>
                         </Card>
@@ -718,9 +971,13 @@ export default function PublicPPDBPage() {
                             <div className="flex items-start gap-3">
                               <CheckCircle2 className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
                               <div className="text-sm">
-                                <p className="font-medium text-blue-800">Pernyataan:</p>
+                                <p className="font-medium text-blue-800">
+                                  Pernyataan:
+                                </p>
                                 <p className="text-blue-700">
-                                  Dengan mengirim formulir ini, saya menyatakan bahwa data yang saya isikan adalah benar dan dapat dipertanggungjawabkan.
+                                  Dengan mengirim formulir ini, saya menyatakan
+                                  bahwa data yang saya isikan adalah benar dan
+                                  dapat dipertanggungjawabkan.
                                 </p>
                               </div>
                             </div>
@@ -745,7 +1002,7 @@ export default function PublicPPDBPage() {
                       </Button>
                     ) : (
                       <Button onClick={handleSubmit} disabled={isSubmitting}>
-                        {isSubmitting ? 'Mengirim...' : 'Kirim Pendaftaran'}
+                        {isSubmitting ? "Mengirim..." : "Kirim Pendaftaran"}
                       </Button>
                     )}
                   </CardFooter>
@@ -765,11 +1022,15 @@ export default function PublicPPDBPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex gap-2">
-                  <Input placeholder="Contoh: PSB-2024-0001" className="flex-1" />
+                  <Input
+                    placeholder="Contoh: PSB-2024-0001"
+                    className="flex-1"
+                  />
                   <Button>Cek Status</Button>
                 </div>
                 <p className="text-sm text-muted-foreground text-center">
-                  Nomor pendaftaran dikirimkan via SMS/WhatsApp setelah formulir disubmit.
+                  Nomor pendaftaran dikirimkan via SMS/WhatsApp setelah formulir
+                  disubmit.
                 </p>
               </CardContent>
             </Card>
@@ -782,14 +1043,22 @@ export default function PublicPPDBPage() {
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div>
                 <h4 className="font-semibold text-lg mb-2">Butuh Bantuan?</h4>
-                <p className="text-muted-foreground">Hubungi panitia PSB untuk informasi lebih lanjut</p>
+                <p className="text-muted-foreground">
+                  Hubungi panitia PSB untuk informasi lebih lanjut
+                </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                <a href="tel:+6281234567890" className="flex items-center gap-2 text-blue-600 hover:underline">
+                <a
+                  href="tel:+6281234567890"
+                  className="flex items-center gap-2 text-blue-600 hover:underline"
+                >
                   <Phone className="h-4 w-4" />
                   0812-3456-7890
                 </a>
-                <a href="mailto:psb@cipansor.id" className="flex items-center gap-2 text-blue-600 hover:underline">
+                <a
+                  href="mailto:psb@cipansor.id"
+                  className="flex items-center gap-2 text-blue-600 hover:underline"
+                >
                   <Mail className="h-4 w-4" />
                   psb@cipansor.id
                 </a>
@@ -802,7 +1071,9 @@ export default function PublicPPDBPage() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gray-400">© 2024 Yayasan Pendidikan Islam CIPANSOR. Semua hak dilindungi.</p>
+          <p className="text-gray-400">
+            © 2024 Yayasan Pendidikan Islam CIPANSOR. Semua hak dilindungi.
+          </p>
         </div>
       </footer>
 
@@ -813,20 +1084,25 @@ export default function PublicPPDBPage() {
             <div className="w-16 h-16 bg-green-100 rounded-full mx-auto mb-4 flex items-center justify-center">
               <CheckCircle2 className="h-8 w-8 text-green-600" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Pendaftaran Berhasil!</h3>
+            <h3 className="text-xl font-semibold mb-2">
+              Pendaftaran Berhasil!
+            </h3>
             <p className="text-muted-foreground mb-4">
               Terima kasih, <strong>{successData?.name}</strong>
             </p>
             <Card className="bg-blue-50 mb-4">
               <CardContent className="pt-4">
-                <p className="text-sm text-muted-foreground">Nomor Pendaftaran:</p>
+                <p className="text-sm text-muted-foreground">
+                  Nomor Pendaftaran:
+                </p>
                 <p className="text-2xl font-mono font-bold text-blue-600">
                   {successData?.registrationNumber}
                 </p>
               </CardContent>
             </Card>
             <p className="text-sm text-muted-foreground mb-6">
-              Simpan nomor pendaftaran ini. Informasi selanjutnya akan dikirim via WhatsApp/SMS.
+              Simpan nomor pendaftaran ini. Informasi selanjutnya akan dikirim
+              via WhatsApp/SMS.
             </p>
             <Button onClick={() => setSuccessData(null)} className="w-full">
               Tutup

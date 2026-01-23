@@ -1,4 +1,4 @@
-import { MainLayout } from '@/components/layout';
+import { MainLayout } from "@/components/layout";
 
 export default function MarketingLayout({
   children,

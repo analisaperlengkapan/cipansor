@@ -1,2 +1,2 @@
-export { LiveAttendanceWidget } from './LiveAttendanceWidget';
-export { RecentPaymentsWidget } from './RecentPaymentsWidget';
+export { LiveAttendanceWidget } from "./LiveAttendanceWidget";
+export { RecentPaymentsWidget } from "./RecentPaymentsWidget";

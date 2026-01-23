@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { use, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowLeft, Search, UserPlus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { use, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, Search, UserPlus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -15,12 +21,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
-import { useDormitory, useRoom, useAssignRoom } from '@/hooks/use-dormitory';
-import { useStudents } from '@/hooks/use-students';
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { useDormitory, useRoom, useAssignRoom } from "@/hooks/use-dormitory";
+import { useStudents } from "@/hooks/use-students";
 
 export default function AssignRoomPage({
   params,
@@ -30,9 +36,13 @@ export default function AssignRoomPage({
   const { id, roomId } = use(params);
   const router = useRouter();
 
-  const [search, setSearch] = useState('');
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [startDate, setStartDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(
+    null,
+  );
 
   const { data: dormitory, isLoading: dormitoryLoading } = useDormitory(id);
   const { data: room, isLoading: roomLoading } = useRoom(roomId);
@@ -45,12 +55,12 @@ export default function AssignRoomPage({
 
   const handleAssign = async () => {
     if (!selectedStudentId) {
-      toast.error('Pilih santri terlebih dahulu');
+      toast.error("Pilih santri terlebih dahulu");
       return;
     }
 
     if (!startDate) {
-      toast.error('Tanggal masuk wajib diisi');
+      toast.error("Tanggal masuk wajib diisi");
       return;
     }
 
@@ -60,10 +70,10 @@ export default function AssignRoomPage({
         studentId: selectedStudentId,
         startDate,
       });
-      toast.success('Santri berhasil ditambahkan ke kamar');
+      toast.success("Santri berhasil ditambahkan ke kamar");
       router.push(`/dormitories/${id}`);
     } catch {
-      toast.error('Gagal menambahkan santri ke kamar');
+      toast.error("Gagal menambahkan santri ke kamar");
     }
   };
 
@@ -121,18 +131,24 @@ export default function AssignRoomPage({
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Nama Kamar</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              Nama Kamar
+            </p>
             <p className="font-medium">{room.name}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Kapasitas</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              Kapasitas
+            </p>
             <p>
               {room.currentOccupancy || 0}/{room.capacity} terisi
             </p>
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Tersedia</p>
-            <Badge variant={availableSpots > 0 ? 'default' : 'destructive'}>
+            <p className="text-sm font-medium text-muted-foreground">
+              Tersedia
+            </p>
+            <Badge variant={availableSpots > 0 ? "default" : "destructive"}>
               {availableSpots} tempat
             </Badge>
           </div>
@@ -142,7 +158,9 @@ export default function AssignRoomPage({
       {availableSpots <= 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <h3 className="text-lg font-semibold text-destructive">Kamar Penuh</h3>
+            <h3 className="text-lg font-semibold text-destructive">
+              Kamar Penuh
+            </h3>
             <p className="mt-2 text-muted-foreground">
               Kamar ini sudah penuh. Tidak dapat menambahkan penghuni baru.
             </p>
@@ -195,7 +213,9 @@ export default function AssignRoomPage({
                 </div>
               ) : studentsData?.data.length === 0 ? (
                 <div className="py-8 text-center text-muted-foreground">
-                  {search ? 'Tidak ada santri ditemukan' : 'Masukkan nama atau NIS untuk mencari'}
+                  {search
+                    ? "Tidak ada santri ditemukan"
+                    : "Masukkan nama atau NIS untuk mencari"}
                 </div>
               ) : (
                 <div className="rounded-md border">
@@ -214,7 +234,7 @@ export default function AssignRoomPage({
                         <TableRow
                           key={student.id}
                           className={`cursor-pointer ${
-                            selectedStudentId === student.id ? 'bg-muted' : ''
+                            selectedStudentId === student.id ? "bg-muted" : ""
                           }`}
                           onClick={() => setSelectedStudentId(student.id)}
                         >
@@ -228,11 +248,17 @@ export default function AssignRoomPage({
                             />
                           </TableCell>
                           <TableCell>{student.nis}</TableCell>
-                          <TableCell className="font-medium">{student.name}</TableCell>
-                          <TableCell>
-                            {student.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}
+                          <TableCell className="font-medium">
+                            {student.name}
                           </TableCell>
-                          <TableCell>{student.currentClass?.name || '-'}</TableCell>
+                          <TableCell>
+                            {student.gender === "MALE"
+                              ? "Laki-laki"
+                              : "Perempuan"}
+                          </TableCell>
+                          <TableCell>
+                            {student.currentClass?.name || "-"}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -249,7 +275,9 @@ export default function AssignRoomPage({
                   disabled={!selectedStudentId || assignMutation.isPending}
                 >
                   <UserPlus className="mr-2 h-4 w-4" />
-                  {assignMutation.isPending ? 'Menyimpan...' : 'Tambahkan ke Kamar'}
+                  {assignMutation.isPending
+                    ? "Menyimpan..."
+                    : "Tambahkan ke Kamar"}
                 </Button>
               </div>
             </CardContent>

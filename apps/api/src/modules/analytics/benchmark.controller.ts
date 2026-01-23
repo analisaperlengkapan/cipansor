@@ -19,12 +19,12 @@ import * as benchmarkService from './benchmark.service';
  *         description: Benchmark summary with top performers
  */
 export async function getBenchmarkSummary(req: Request, res: Response, next: NextFunction) {
-    try {
-        const summary = await benchmarkService.getBenchmarkSummary();
-        res.json({ success: true, data: summary });
-    } catch (error) {
-        next(error);
-    }
+  try {
+    const summary = await benchmarkService.getBenchmarkSummary();
+    res.json({ success: true, data: summary });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -56,20 +56,20 @@ export async function getBenchmarkSummary(req: Request, res: Response, next: Nex
  *         description: Comparison data for units
  */
 export async function compareUnits(req: Request, res: Response, next: NextFunction) {
-    try {
-        const { unitIds, startDate, endDate } = req.query;
+  try {
+    const { unitIds, startDate, endDate } = req.query;
 
-        const options = {
-            unitIds: unitIds ? (unitIds as string).split(',') : undefined,
-            startDate: startDate ? new Date(startDate as string) : undefined,
-            endDate: endDate ? new Date(endDate as string) : undefined,
-        };
+    const options = {
+      unitIds: unitIds ? (unitIds as string).split(',') : undefined,
+      startDate: startDate ? new Date(startDate as string) : undefined,
+      endDate: endDate ? new Date(endDate as string) : undefined,
+    };
 
-        const comparison = await benchmarkService.compareUnitsPerformance(options);
-        res.json({ success: true, data: comparison });
-    } catch (error) {
-        next(error);
-    }
+    const comparison = await benchmarkService.compareUnitsPerformance(options);
+    res.json({ success: true, data: comparison });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -92,13 +92,14 @@ export async function compareUnits(req: Request, res: Response, next: NextFuncti
  *         description: Rankings data
  */
 export async function getUnitRankings(req: Request, res: Response, next: NextFunction) {
-    try {
-        const metric = (req.query.metric as 'attendance' | 'payment' | 'tahfidz' | 'academic' | 'all') || 'all';
-        const rankings = await benchmarkService.getUnitRankings(metric);
-        res.json({ success: true, data: rankings });
-    } catch (error) {
-        next(error);
-    }
+  try {
+    const metric =
+      (req.query.metric as 'attendance' | 'payment' | 'tahfidz' | 'academic' | 'all') || 'all';
+    const rankings = await benchmarkService.getUnitRankings(metric);
+    res.json({ success: true, data: rankings });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -120,11 +121,11 @@ export async function getUnitRankings(req: Request, res: Response, next: NextFun
  *         description: Year-over-year comparison
  */
 export async function getYearOverYear(req: Request, res: Response, next: NextFunction) {
-    try {
-        const { unitId } = req.params;
-        const comparison = await benchmarkService.getYearOverYearComparison(unitId);
-        res.json({ success: true, data: comparison });
-    } catch (error) {
-        next(error);
-    }
+  try {
+    const { unitId } = req.params;
+    const comparison = await benchmarkService.getYearOverYearComparison(unitId);
+    res.json({ success: true, data: comparison });
+  } catch (error) {
+    next(error);
+  }
 }

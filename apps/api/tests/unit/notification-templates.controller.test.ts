@@ -15,7 +15,7 @@ describe('Notification Templates Controller', () => {
       params: {},
       query: {},
       body: {},
-      user: { sub: 'user-id', role: 'SUPER_ADMIN', unitId: 'unit-1' }
+      user: { sub: 'user-id', role: 'SUPER_ADMIN', unitId: 'unit-1' },
     };
     res = {
       json: vi.fn(),
@@ -55,11 +55,13 @@ describe('Notification Templates Controller', () => {
 
       await controller.getTemplateById(req, res, next);
 
-      const expectedError = Errors.notFound("Template not found");
-      expect(next).toHaveBeenCalledWith(expect.objectContaining({
-        message: expectedError.message,
-        code: expectedError.code
-      }));
+      const expectedError = Errors.notFound('Template not found');
+      expect(next).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expectedError.message,
+          code: expectedError.code,
+        })
+      );
     });
   });
 });

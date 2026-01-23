@@ -1,5 +1,5 @@
-import { prisma } from "../../lib/prisma";
-import { Prisma } from "@prisma/client";
+import { prisma } from '../../lib/prisma';
+import { Prisma } from '@prisma/client';
 import {
   CreateFoundationInput,
   UpdateFoundationInput,
@@ -7,17 +7,13 @@ import {
   UpdateBoardMemberInput,
   CreateDocumentInput,
   UpdateDocumentInput,
-} from "./schema";
+} from './schema';
 
 // =====================================
 // FOUNDATION SERVICE
 // =====================================
 
-export async function getFoundations(params: {
-  page: number;
-  limit: number;
-  search?: string;
-}) {
+export async function getFoundations(params: { page: number; limit: number; search?: string }) {
   const { page, limit, search } = params;
   const skip = (page - 1) * limit;
 
@@ -25,8 +21,8 @@ export async function getFoundations(params: {
 
   if (search) {
     where.OR = [
-      { name: { contains: search, mode: "insensitive" } },
-      { legalName: { contains: search, mode: "insensitive" } },
+      { name: { contains: search, mode: 'insensitive' } },
+      { legalName: { contains: search, mode: 'insensitive' } },
     ];
   }
 
@@ -35,7 +31,7 @@ export async function getFoundations(params: {
       where,
       skip,
       take: limit,
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       include: {
         _count: { select: { units: true, boardMembers: true, documents: true } },
       },
@@ -54,8 +50,8 @@ export async function getFoundationById(id: string) {
     where: { id },
     include: {
       units: { select: { id: true, name: true, type: true } },
-      boardMembers: { where: { isActive: true }, orderBy: { position: "asc" } },
-      documents: { orderBy: { issueDate: "desc" } },
+      boardMembers: { where: { isActive: true }, orderBy: { position: 'asc' } },
+      documents: { orderBy: { issueDate: 'desc' } },
     },
   });
 }
@@ -88,7 +84,7 @@ export async function deleteFoundation(id: string) {
   });
 
   if (foundation?._count.units && foundation._count.units > 0) {
-    throw new Error("Cannot delete foundation with associated units");
+    throw new Error('Cannot delete foundation with associated units');
   }
 
   return prisma.foundation.delete({ where: { id } });
@@ -115,8 +111,8 @@ export async function getBoardMembers(params: {
 
   if (search) {
     where.OR = [
-      { name: { contains: search, mode: "insensitive" } },
-      { position: { contains: search, mode: "insensitive" } },
+      { name: { contains: search, mode: 'insensitive' } },
+      { position: { contains: search, mode: 'insensitive' } },
     ];
   }
 
@@ -125,7 +121,7 @@ export async function getBoardMembers(params: {
       where,
       skip,
       take: limit,
-      orderBy: [{ isActive: "desc" }, { position: "asc" }],
+      orderBy: [{ isActive: 'desc' }, { position: 'asc' }],
       include: {
         foundation: { select: { id: true, name: true } },
       },
@@ -200,8 +196,8 @@ export async function getDocuments(params: {
 
   if (search) {
     where.OR = [
-      { name: { contains: search, mode: "insensitive" } },
-      { documentNo: { contains: search, mode: "insensitive" } },
+      { name: { contains: search, mode: 'insensitive' } },
+      { documentNo: { contains: search, mode: 'insensitive' } },
     ];
   }
 
@@ -210,7 +206,7 @@ export async function getDocuments(params: {
       where,
       skip,
       take: limit,
-      orderBy: { issueDate: "desc" },
+      orderBy: { issueDate: 'desc' },
       include: {
         foundation: { select: { id: true, name: true } },
       },
@@ -279,18 +275,9 @@ export async function getFoundationStats(foundationId: string) {
 
   if (!foundation) return null;
 
-  const totalStudents = foundation.units.reduce(
-    (acc, unit) => acc + unit._count.students,
-    0
-  );
-  const totalTeachers = foundation.units.reduce(
-    (acc, unit) => acc + unit._count.teachers,
-    0
-  );
-  const totalStaff = foundation.units.reduce(
-    (acc, unit) => acc + unit._count.staff,
-    0
-  );
+  const totalStudents = foundation.units.reduce((acc, unit) => acc + unit._count.students, 0);
+  const totalTeachers = foundation.units.reduce((acc, unit) => acc + unit._count.teachers, 0);
+  const totalStaff = foundation.units.reduce((acc, unit) => acc + unit._count.staff, 0);
 
   const activeBoardMembers = await prisma.boardMember.count({
     where: { foundationId, isActive: true },

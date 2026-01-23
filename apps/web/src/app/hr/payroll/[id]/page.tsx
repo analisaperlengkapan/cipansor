@@ -2,7 +2,12 @@
 
 import { use } from "react";
 import { useRouter } from "next/navigation";
-import { usePayrollPeriod, usePayrolls, usePayrollPeriodSummary, PAYROLL_STATUS_LABELS } from "@/hooks/use-hr";
+import {
+  usePayrollPeriod,
+  usePayrolls,
+  usePayrollPeriodSummary,
+  PAYROLL_STATUS_LABELS,
+} from "@/hooks/use-hr";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -19,16 +24,28 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 
 // Use standard Next.js 15 'use' pattern for dynamic params
-export default function PayrollDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function PayrollDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const router = useRouter();
 
   const { data: period, isLoading: periodLoading } = usePayrollPeriod(id);
   const { data: summary } = usePayrollPeriodSummary(id);
-  const { data: slips, isLoading: slipsLoading } = usePayrolls({ periodId: id, page: 1, limit: 100 }); // Pagination simplified for now
+  const { data: slips, isLoading: slipsLoading } = usePayrolls({
+    periodId: id,
+    page: 1,
+    limit: 100,
+  }); // Pagination simplified for now
 
   if (periodLoading) {
-    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
   if (!period) {
@@ -44,7 +61,8 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{period.name}</h1>
           <p className="text-muted-foreground">
-            {format(new Date(period.startDate), "MMM d, yyyy")} - {format(new Date(period.endDate), "MMM d, yyyy")}
+            {format(new Date(period.startDate), "MMM d, yyyy")} -{" "}
+            {format(new Date(period.endDate), "MMM d, yyyy")}
           </p>
         </div>
         <div className="ml-auto flex gap-2">
@@ -63,7 +81,10 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(Number(summary?.totalNetSalary || 0))}
+              {new Intl.NumberFormat("id-ID", {
+                style: "currency",
+                currency: "IDR",
+              }).format(Number(summary?.totalNetSalary || 0))}
             </div>
           </CardContent>
         </Card>
@@ -72,7 +93,9 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
             <CardTitle className="text-sm font-medium">Employees</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{period._count?.payrolls || 0}</div>
+            <div className="text-2xl font-bold">
+              {period._count?.payrolls || 0}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -112,7 +135,10 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
                   </TableRow>
                 ) : slips?.data?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={7}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       No slips found.
                     </TableCell>
                   </TableRow>
@@ -120,23 +146,51 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
                   slips?.data?.map((slip) => (
                     <TableRow key={slip.id}>
                       <TableCell>
-                        <div className="font-medium">{slip.staff?.fullName || slip.employee?.fullName || "Unknown"}</div>
-                        <div className="text-xs text-muted-foreground">{slip.staff?.nip || slip.employee?.nip}</div>
+                        <div className="font-medium">
+                          {slip.staff?.fullName ||
+                            slip.employee?.fullName ||
+                            "Unknown"}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {slip.staff?.nip || slip.employee?.nip}
+                        </div>
                       </TableCell>
-                      <TableCell>{slip.staff?.department?.name || slip.employee?.department?.name || "-"}</TableCell>
-                      <TableCell>{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(Number(slip.baseSalary))}</TableCell>
+                      <TableCell>
+                        {slip.staff?.department?.name ||
+                          slip.employee?.department?.name ||
+                          "-"}
+                      </TableCell>
+                      <TableCell>
+                        {new Intl.NumberFormat("id-ID", {
+                          style: "currency",
+                          currency: "IDR",
+                        }).format(Number(slip.baseSalary))}
+                      </TableCell>
                       <TableCell className="text-green-600">
-                        {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(Number(slip.totalAllowances))}
+                        {new Intl.NumberFormat("id-ID", {
+                          style: "currency",
+                          currency: "IDR",
+                        }).format(Number(slip.totalAllowances))}
                       </TableCell>
                       <TableCell className="text-red-600">
-                        {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(Number(slip.totalDeductions))}
+                        {new Intl.NumberFormat("id-ID", {
+                          style: "currency",
+                          currency: "IDR",
+                        }).format(Number(slip.totalDeductions))}
                       </TableCell>
                       <TableCell className="font-bold">
-                        {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(Number(slip.netSalary))}
+                        {new Intl.NumberFormat("id-ID", {
+                          style: "currency",
+                          currency: "IDR",
+                        }).format(Number(slip.netSalary))}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {PAYROLL_STATUS_LABELS[slip.status as keyof typeof PAYROLL_STATUS_LABELS]}
+                          {
+                            PAYROLL_STATUS_LABELS[
+                              slip.status as keyof typeof PAYROLL_STATUS_LABELS
+                            ]
+                          }
                         </Badge>
                       </TableCell>
                     </TableRow>

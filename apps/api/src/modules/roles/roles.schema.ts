@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
 export const getRolesQuerySchema = z.object({
-  realm: z.enum(['GLOBAL', 'YAYASAN', 'TK_QURAN', 'SD_IT', 'SMP_IT', 'SMA_QURAN', 'PESANTREN']).optional(),
+  realm: z
+    .enum(['GLOBAL', 'YAYASAN', 'TK_QURAN', 'SD_IT', 'SMP_IT', 'SMA_QURAN', 'PESANTREN'])
+    .optional(),
 });
 
 export const assignRoleSchema = z.object({

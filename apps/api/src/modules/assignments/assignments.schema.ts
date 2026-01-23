@@ -11,7 +11,7 @@ export const createAssignmentSchema = z.object({
   description: z.string().optional(),
   type: z.nativeEnum(AssignmentType).optional(),
   dueDate: z.string().or(z.date()),
-  attachments: z.array(z.any()).optional()
+  attachments: z.array(z.any()).optional(),
 });
 
 export const updateAssignmentSchema = z.object({
@@ -19,16 +19,16 @@ export const updateAssignmentSchema = z.object({
   description: z.string().optional(),
   type: z.nativeEnum(AssignmentType).optional(),
   dueDate: z.string().or(z.date()).optional(),
-  attachments: z.array(z.any()).optional()
+  attachments: z.array(z.any()).optional(),
 });
 
 export const submitAssignmentSchema = z.object({
   studentId: z.string().uuid(),
   content: z.string().optional(),
-  attachments: z.array(z.any()).optional()
+  attachments: z.array(z.any()).optional(),
 });
 
 export const gradeSubmissionSchema = z.object({
   grade: z.number().min(0).max(100),
-  feedback: z.string().optional()
+  feedback: z.string().optional(),
 });

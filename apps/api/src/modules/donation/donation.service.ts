@@ -1,5 +1,10 @@
 import { prisma } from '@/lib/prisma';
-import { PublicDonationType, DonationStatus, DonationPaymentMethod, CampaignStatus } from '@prisma/client';
+import {
+  PublicDonationType,
+  DonationStatus,
+  DonationPaymentMethod,
+  CampaignStatus,
+} from '@prisma/client';
 import {
   CreateCampaignInput,
   UpdateCampaignInput,
@@ -16,12 +21,7 @@ export const campaignService = {
   /**
    * Get all campaigns with pagination
    */
-  async findAll(params: {
-    page: number;
-    limit: number;
-    status?: string;
-    unitId?: string;
-  }) {
+  async findAll(params: { page: number; limit: number; status?: string; unitId?: string }) {
     const { page, limit, status, unitId } = params;
     const skip = (page - 1) * limit;
 
@@ -46,10 +46,13 @@ export const campaignService = {
     ]);
 
     // Add progress percentage
-    const campaignsWithProgress = data.map(campaign => ({
+    const campaignsWithProgress = data.map((campaign) => ({
       ...campaign,
       progressPercentage: campaign.targetAmount
-        ? Math.min(100, Math.round((Number(campaign.collectedAmount) / Number(campaign.targetAmount)) * 100))
+        ? Math.min(
+            100,
+            Math.round((Number(campaign.collectedAmount) / Number(campaign.targetAmount)) * 100)
+          )
         : null,
     }));
 
@@ -75,10 +78,7 @@ export const campaignService = {
         status: 'ACTIVE',
         deletedAt: null,
         startDate: { lte: now },
-        OR: [
-          { endDate: null },
-          { endDate: { gte: now } },
-        ],
+        OR: [{ endDate: null }, { endDate: { gte: now } }],
       },
       orderBy: { createdAt: 'desc' },
       include: {
@@ -86,7 +86,7 @@ export const campaignService = {
       },
     });
 
-    return campaigns.map(campaign => ({
+    return campaigns.map((campaign) => ({
       id: campaign.id,
       title: campaign.title,
       slug: campaign.slug,
@@ -96,7 +96,10 @@ export const campaignService = {
       collectedAmount: campaign.collectedAmount,
       donorCount: campaign.donorCount,
       progressPercentage: campaign.targetAmount
-        ? Math.min(100, Math.round((Number(campaign.collectedAmount) / Number(campaign.targetAmount)) * 100))
+        ? Math.min(
+            100,
+            Math.round((Number(campaign.collectedAmount) / Number(campaign.targetAmount)) * 100)
+          )
         : null,
       endDate: campaign.endDate,
       unit: campaign.unit,
@@ -133,9 +136,12 @@ export const campaignService = {
     return {
       ...campaign,
       progressPercentage: campaign.targetAmount
-        ? Math.min(100, Math.round((Number(campaign.collectedAmount) / Number(campaign.targetAmount)) * 100))
+        ? Math.min(
+            100,
+            Math.round((Number(campaign.collectedAmount) / Number(campaign.targetAmount)) * 100)
+          )
         : null,
-      recentDonations: campaign.donations.map(d => ({
+      recentDonations: campaign.donations.map((d) => ({
         ...d,
         donorName: d.isAnonymous ? 'Hamba Allah' : d.donorName,
       })),
@@ -222,7 +228,8 @@ export const donationService = {
     endDate?: string;
     isAnonymous?: boolean;
   }) {
-    const { page, limit, campaignId, unitId, status, type, startDate, endDate, isAnonymous } = params;
+    const { page, limit, campaignId, unitId, status, type, startDate, endDate, isAnonymous } =
+      params;
     const skip = (page - 1) * limit;
 
     const where: any = {
@@ -423,12 +430,12 @@ export const donationService = {
       totalDonations,
       totalAmount: totalAmount._sum.amount || 0,
       pendingVerification: pendingCount,
-      byType: byType.map(t => ({
+      byType: byType.map((t) => ({
         type: t.type,
         count: t._count,
         amount: t._sum.amount || 0,
       })),
-      byPaymentMethod: byPaymentMethod.map(p => ({
+      byPaymentMethod: byPaymentMethod.map((p) => ({
         method: p.paymentMethod,
         count: p._count,
         amount: p._sum.amount || 0,
@@ -457,15 +464,16 @@ export const donationService = {
 
     // Group by month
     const monthlyData: Record<number, { total: number; byType: Record<string, number> }> = {};
-    
+
     for (let i = 0; i < 12; i++) {
       monthlyData[i] = { total: 0, byType: {} };
     }
 
-    donations.forEach(d => {
+    donations.forEach((d) => {
       const month = d.donatedAt.getMonth();
       monthlyData[month].total += Number(d.amount);
-      monthlyData[month].byType[d.type] = (monthlyData[month].byType[d.type] || 0) + Number(d.amount);
+      monthlyData[month].byType[d.type] =
+        (monthlyData[month].byType[d.type] || 0) + Number(d.amount);
     });
 
     return {

@@ -9,7 +9,7 @@ import {
   CreatePaymentComponentInput,
   CreateBudgetInput,
   UpdateBudgetInput,
-  CreateFinancialPeriodInput
+  CreateFinancialPeriodInput,
 } from '@cipansor/shared';
 import { createBudget, updateBudget, getBudgets } from './budget.service';
 import { createFinancialPeriod, closePeriod, getFinancialPeriods } from './period.service';
@@ -19,17 +19,16 @@ import {
   getTrialBalance,
   getGeneralLedger,
   getCashFlowStatement,
-  getBudgetRealizationReport
+  getBudgetRealizationReport,
 } from './reporting.service';
 
 // Helper for parsing pagination params
 const parsePagination = (req: Request) => ({
   page: Number(req.query.page) || 1,
-  limit: Number(req.query.limit) || 20
+  limit: Number(req.query.limit) || 20,
 });
 
 export class FinanceEnhancementController {
-
   // ==================== ACCOUNT CODES ====================
 
   async getAccountCodes(req: Request, res: Response, next: NextFunction) {
@@ -42,7 +41,7 @@ export class FinanceEnhancementController {
         isActive: isActive !== undefined ? isActive === 'true' : undefined,
         search: search as string,
         page,
-        limit
+        limit,
       });
 
       res.json(result);
@@ -56,13 +55,12 @@ export class FinanceEnhancementController {
       const { unitId, academicYearId } = req.query;
 
       if (!unitId || !academicYearId) {
-        return res.status(400).json({ success: false, message: 'Unit ID and Academic Year ID are required' });
+        return res
+          .status(400)
+          .json({ success: false, message: 'Unit ID and Academic Year ID are required' });
       }
 
-      const result = await getBudgetRealizationReport(
-        unitId as string,
-        academicYearId as string
-      );
+      const result = await getBudgetRealizationReport(unitId as string, academicYearId as string);
 
       res.json({ success: true, data: result });
     } catch (error) {
@@ -105,7 +103,7 @@ export class FinanceEnhancementController {
         endDate: endDate ? new Date(endDate as string) : undefined,
         search: search as string,
         page,
-        limit
+        limit,
       });
 
       res.json(result);
@@ -121,7 +119,7 @@ export class FinanceEnhancementController {
 
       const result = await financeEnhancementService.createJournalEntry({
         ...input,
-        createdById: userId
+        createdById: userId,
       });
 
       res.status(201).json({ success: true, data: result });
@@ -137,7 +135,7 @@ export class FinanceEnhancementController {
 
       await financeEnhancementService.createManualJournal({
         ...input,
-        createdById: userId
+        createdById: userId,
       });
 
       res.status(201).json({ success: true, message: 'Manual journal created successfully' });
@@ -174,7 +172,7 @@ export class FinanceEnhancementController {
         source: source as string,
         isActive: isActive !== undefined ? isActive === 'true' : undefined,
         page,
-        limit
+        limit,
       });
 
       res.json(result);
@@ -217,7 +215,7 @@ export class FinanceEnhancementController {
       const result = await financeEnhancementService.getScholarshipRecipients(id, {
         status: status as string,
         page,
-        limit
+        limit,
       });
 
       res.json(result);
@@ -248,7 +246,7 @@ export class FinanceEnhancementController {
         category: category as string,
         isActive: isActive !== undefined ? isActive === 'true' : undefined,
         page,
-        limit
+        limit,
       });
 
       res.json(result);
@@ -274,7 +272,9 @@ export class FinanceEnhancementController {
       const { unitId, startDate, endDate } = req.query;
 
       if (!startDate || !endDate) {
-        return res.status(400).json({ success: false, message: 'Start date and end date are required' });
+        return res
+          .status(400)
+          .json({ success: false, message: 'Start date and end date are required' });
       }
 
       // Use Reporting Service Logic
@@ -295,7 +295,9 @@ export class FinanceEnhancementController {
       const { unitId, accountId, startDate, endDate } = req.query;
 
       if (!startDate || !endDate || !accountId) {
-        return res.status(400).json({ success: false, message: 'Start date, end date, and accountId are required' });
+        return res
+          .status(400)
+          .json({ success: false, message: 'Start date, end date, and accountId are required' });
       }
 
       const result = await getGeneralLedger(
@@ -316,7 +318,9 @@ export class FinanceEnhancementController {
       const { unitId, startDate, endDate } = req.query;
 
       if (!startDate || !endDate) {
-        return res.status(400).json({ success: false, message: 'Start date and end date are required' });
+        return res
+          .status(400)
+          .json({ success: false, message: 'Start date and end date are required' });
       }
 
       const result = await getCashFlowStatement(
@@ -336,7 +340,9 @@ export class FinanceEnhancementController {
       const { unitId, startDate, endDate } = req.query;
 
       if (!startDate || !endDate) {
-        return res.status(400).json({ success: false, message: 'Start date and end date are required' });
+        return res
+          .status(400)
+          .json({ success: false, message: 'Start date and end date are required' });
       }
 
       const result = await getIncomeStatement(
@@ -359,10 +365,7 @@ export class FinanceEnhancementController {
         return res.status(400).json({ success: false, message: 'Date is required' });
       }
 
-      const result = await getBalanceSheet(
-        unitId as string,
-        new Date(date as string)
-      );
+      const result = await getBalanceSheet(unitId as string, new Date(date as string));
 
       res.json({ success: true, data: result });
     } catch (error) {
@@ -381,7 +384,7 @@ export class FinanceEnhancementController {
         unitId: unitId as string,
         academicYearId: academicYearId as string,
         page,
-        limit
+        limit,
       });
 
       res.json({ success: true, data: result });
@@ -397,7 +400,7 @@ export class FinanceEnhancementController {
 
       const result = await createBudget({
         ...input,
-        createdById: userId
+        createdById: userId,
       });
 
       res.status(201).json({ success: true, data: result });
@@ -427,7 +430,7 @@ export class FinanceEnhancementController {
       const result = await getFinancialPeriods({
         unitId: unitId as string,
         page,
-        limit
+        limit,
       });
 
       res.json({ success: true, data: result });

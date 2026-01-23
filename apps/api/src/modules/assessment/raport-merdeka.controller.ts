@@ -1,6 +1,6 @@
 /**
  * Raport Merdeka Controller
- * 
+ *
  * Endpoints untuk Kurikulum Merdeka:
  * - GET /raport-merdeka/p5-dimensions - Get P5 dimensions
  * - GET /raport-merdeka/cp/:subjectCode/:gradeLevel - Get CP mapping
@@ -20,7 +20,7 @@ export class RaportMerdekaController {
   static async getP5Dimensions(req: Request, res: Response, next: NextFunction) {
     try {
       const dimensions = PROFIL_PELAJAR_PANCASILA;
-      
+
       return res.json(
         ApiResponse.success(dimensions, '6 Dimensi Profil Pelajar Pancasila berhasil diambil')
       );
@@ -35,9 +35,9 @@ export class RaportMerdekaController {
   static async getCPMapping(req: Request, res: Response, next: NextFunction) {
     try {
       const { subjectCode, gradeLevel } = req.params;
-      
+
       const cpMapping = RaportMerdekaService.getCPMapping(subjectCode, gradeLevel);
-      
+
       if (!cpMapping) {
         return res.json(
           ApiResponse.success(
@@ -46,7 +46,7 @@ export class RaportMerdekaController {
           )
         );
       }
-      
+
       return res.json(
         ApiResponse.success(
           { subjectCode, gradeLevel, ...cpMapping },
@@ -64,9 +64,9 @@ export class RaportMerdekaController {
   static async getTPMapping(req: Request, res: Response, next: NextFunction) {
     try {
       const { subjectCode, fase } = req.params;
-      
+
       const tpList = RaportMerdekaService.getTPMapping(subjectCode, fase);
-      
+
       return res.json(
         ApiResponse.success(
           { subjectCode, fase, tujuanPembelajaran: tpList },
@@ -85,23 +85,21 @@ export class RaportMerdekaController {
     try {
       const { studentId } = req.params;
       const { academicYearId, semester } = req.query;
-      
+
       if (!academicYearId || !semester) {
         return res.status(400).json({
           success: false,
           message: 'academicYearId dan semester harus diisi',
         });
       }
-      
+
       const raport = await RaportMerdekaService.generateRaportMerdeka(
         studentId,
         academicYearId as string,
         parseInt(semester as string, 10)
       );
-      
-      return res.json(
-        ApiResponse.success(raport, 'Raport Merdeka berhasil digenerate')
-      );
+
+      return res.json(ApiResponse.success(raport, 'Raport Merdeka berhasil digenerate'));
     } catch (error) {
       next(error);
     }
@@ -114,23 +112,21 @@ export class RaportMerdekaController {
     try {
       const { classId } = req.params;
       const { academicYearId, semester } = req.query;
-      
+
       if (!academicYearId || !semester) {
         return res.status(400).json({
           success: false,
           message: 'academicYearId dan semester harus diisi',
         });
       }
-      
+
       const raports = await RaportMerdekaService.generateBulkRaportMerdeka(
         classId,
         academicYearId as string,
         parseInt(semester as string, 10)
       );
-      
-      return res.json(
-        ApiResponse.success(raports, 'Raport Merdeka kelas berhasil digenerate')
-      );
+
+      return res.json(ApiResponse.success(raports, 'Raport Merdeka kelas berhasil digenerate'));
     } catch (error) {
       next(error);
     }
@@ -142,21 +138,18 @@ export class RaportMerdekaController {
   static async getCapaianMapping(req: Request, res: Response, next: NextFunction) {
     try {
       const score = parseFloat(req.query.score as string);
-      
+
       if (isNaN(score)) {
         return res.status(400).json({
           success: false,
           message: 'Parameter score harus berupa angka',
         });
       }
-      
+
       const capaian = RaportMerdekaService.getCapaianPembelajaran(score);
-      
+
       return res.json(
-        ApiResponse.success(
-          { score, ...capaian },
-          'Konversi nilai ke capaian berhasil'
-        )
+        ApiResponse.success({ score, ...capaian }, 'Konversi nilai ke capaian berhasil')
       );
     } catch (error) {
       next(error);

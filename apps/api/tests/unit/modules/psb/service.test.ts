@@ -25,7 +25,7 @@ const { prismaMock } = vi.hoisted(() => {
         updateMany: vi.fn(),
       },
       $transaction: vi.fn(),
-    }
+    },
   };
 });
 
@@ -43,7 +43,11 @@ vi.mock('@prisma/client', () => ({
     FEMALE: 'FEMALE',
   },
   Prisma: {
-    Decimal: class { constructor(val: any) { return val; } }
+    Decimal: class {
+      constructor(val: any) {
+        return val;
+      }
+    },
   },
   PrismaClient: class {
     constructor() {
@@ -96,15 +100,19 @@ describe('PSB Service - enrollRegistrant', () => {
 
     expect(prisma.user.create).toHaveBeenCalled();
     expect(prisma.student.create).toHaveBeenCalled();
-    expect(prisma.classEnrollment.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({
-        status: 'active',
+    expect(prisma.classEnrollment.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'active',
+        }),
       })
-    }));
-    expect(prisma.registrant.update).toHaveBeenCalledWith(expect.objectContaining({
-      where: { id: 'reg-id' },
-      data: expect.objectContaining({ status: AdmissionStatus.ENROLLED }),
-    }));
+    );
+    expect(prisma.registrant.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'reg-id' },
+        data: expect.objectContaining({ status: AdmissionStatus.ENROLLED }),
+      })
+    );
   });
 
   it('should handle internal track (existing user) correctly', async () => {
@@ -126,15 +134,17 @@ describe('PSB Service - enrollRegistrant', () => {
     expect(prisma.student.create).not.toHaveBeenCalled();
 
     // Should UPDATE existing student
-    expect(prisma.student.update).toHaveBeenCalledWith(expect.objectContaining({
-      where: { id: 'existing-student-id' },
-      data: expect.objectContaining({
-        status: 'active',
-        unitId: 'unit-id',
-        nis: studentData.nis,
-        graduateYear: null,
-      }),
-    }));
+    expect(prisma.student.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'existing-student-id' },
+        data: expect.objectContaining({
+          status: 'active',
+          unitId: 'unit-id',
+          nis: studentData.nis,
+          graduateYear: null,
+        }),
+      })
+    );
 
     // Should handle class enrollment
     expect(prisma.classEnrollment.updateMany).toHaveBeenCalled(); // Close old

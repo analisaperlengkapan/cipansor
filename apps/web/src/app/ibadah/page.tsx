@@ -1,9 +1,15 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useState } from "react";
+import Link from "next/link";
+import {
+  format,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+} from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   Sparkles,
   Plus,
@@ -21,21 +27,21 @@ import {
   Users,
   BarChart3,
   Settings,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Pagination } from '@/components/shared/pagination';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { Button } from '@/components/ui/button';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Pagination } from "@/components/shared/pagination";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -43,26 +49,26 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
+} from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   useIbadahRecords,
   useIbadahTargets,
@@ -79,18 +85,19 @@ import {
   type IbadahCategory,
   type LeaderboardPeriod,
   type VerificationStatus,
-} from '@/hooks/use-ibadah';
-import { useUnits } from '@/hooks/use-units';
-import { cn } from '@/lib/utils';
+} from "@/hooks/use-ibadah";
+import { useUnits } from "@/hooks/use-units";
+import { cn } from "@/lib/utils";
 
 export default function IbadahPage() {
-  const [activeTab, setActiveTab] = useState('records');
+  const [activeTab, setActiveTab] = useState("records");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [category, setCategory] = useState<string>('');
-  const [verificationStatus, setVerificationStatus] = useState<string>('');
-  const [selectedUnit, setSelectedUnit] = useState<string>('');
-  const [leaderboardPeriod, setLeaderboardPeriod] = useState<LeaderboardPeriod>('WEEKLY');
+  const [category, setCategory] = useState<string>("");
+  const [verificationStatus, setVerificationStatus] = useState<string>("");
+  const [selectedUnit, setSelectedUnit] = useState<string>("");
+  const [leaderboardPeriod, setLeaderboardPeriod] =
+    useState<LeaderboardPeriod>("WEEKLY");
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [deleteRecordId, setDeleteRecordId] = useState<string | null>(null);
@@ -105,8 +112,8 @@ export default function IbadahPage() {
     unitId: selectedUnit || undefined,
     category: (category as IbadahCategory) || undefined,
     verificationStatus: (verificationStatus as VerificationStatus) || undefined,
-    startDate: startDate ? format(startDate, 'yyyy-MM-dd') : undefined,
-    endDate: endDate ? format(endDate, 'yyyy-MM-dd') : undefined,
+    startDate: startDate ? format(startDate, "yyyy-MM-dd") : undefined,
+    endDate: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
   });
 
   const { data: targetsData, isLoading: targetsLoading } = useIbadahTargets({
@@ -116,11 +123,12 @@ export default function IbadahPage() {
     limit: 100,
   });
 
-  const { data: leaderboardData, isLoading: leaderboardLoading } = useIbadahLeaderboard({
-    unitId: selectedUnit || units[0]?.id || '',
-    periodType: leaderboardPeriod,
-    limit: 10,
-  });
+  const { data: leaderboardData, isLoading: leaderboardLoading } =
+    useIbadahLeaderboard({
+      unitId: selectedUnit || units[0]?.id || "",
+      periodType: leaderboardPeriod,
+      limit: 10,
+    });
 
   // Mutations
   const deleteRecord = useDeleteIbadahRecord();
@@ -133,18 +141,22 @@ export default function IbadahPage() {
 
   // Stats
   const totalRecords = pagination?.total || 0;
-  const completedRecords = records.filter(r => r.isCompleted).length;
-  const verifiedRecords = records.filter(r => r.verificationStatus === 'VERIFIED').length;
-  const pendingRecords = records.filter(r => r.verificationStatus === 'PENDING').length;
+  const completedRecords = records.filter((r) => r.isCompleted).length;
+  const verifiedRecords = records.filter(
+    (r) => r.verificationStatus === "VERIFIED",
+  ).length;
+  const pendingRecords = records.filter(
+    (r) => r.verificationStatus === "PENDING",
+  ).length;
 
   const handleDeleteRecord = async () => {
     if (!deleteRecordId) return;
     try {
       await deleteRecord.mutateAsync(deleteRecordId);
-      toast.success('Catatan ibadah berhasil dihapus');
+      toast.success("Catatan ibadah berhasil dihapus");
       setDeleteRecordId(null);
     } catch {
-      toast.error('Gagal menghapus catatan');
+      toast.error("Gagal menghapus catatan");
     }
   };
 
@@ -152,16 +164,16 @@ export default function IbadahPage() {
     if (!deleteTargetId) return;
     try {
       await deleteTarget.mutateAsync(deleteTargetId);
-      toast.success('Target ibadah berhasil dihapus');
+      toast.success("Target ibadah berhasil dihapus");
       setDeleteTargetId(null);
     } catch {
-      toast.error('Gagal menghapus target');
+      toast.error("Gagal menghapus target");
     }
   };
 
   const clearFilters = () => {
-    setCategory('');
-    setVerificationStatus('');
+    setCategory("");
+    setVerificationStatus("");
     setStartDate(undefined);
     setEndDate(undefined);
     setPage(1);
@@ -173,9 +185,9 @@ export default function IbadahPage() {
         title="Jurnal Ibadah Harian"
         description="Pantau dan kelola catatan ibadah harian santri"
         action={{
-          label: 'Check-in Hari Ini',
+          label: "Check-in Hari Ini",
           icon: <Plus className="h-4 w-4" />,
-          href: '/ibadah/check-in',
+          href: "/ibadah/check-in",
         }}
       />
 
@@ -207,7 +219,9 @@ export default function IbadahPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Total Catatan</span>
+              <span className="text-sm text-muted-foreground">
+                Total Catatan
+              </span>
             </div>
             <p className="text-2xl font-bold">{totalRecords}</p>
           </CardContent>
@@ -218,16 +232,22 @@ export default function IbadahPage() {
               <CheckCircle className="h-4 w-4 text-green-500" />
               <span className="text-sm text-muted-foreground">Selesai</span>
             </div>
-            <p className="text-2xl font-bold text-green-600">{completedRecords}</p>
+            <p className="text-2xl font-bold text-green-600">
+              {completedRecords}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Star className="h-4 w-4 text-blue-500" />
-              <span className="text-sm text-muted-foreground">Terverifikasi</span>
+              <span className="text-sm text-muted-foreground">
+                Terverifikasi
+              </span>
             </div>
-            <p className="text-2xl font-bold text-blue-600">{verifiedRecords}</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {verifiedRecords}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -236,12 +256,18 @@ export default function IbadahPage() {
               <Clock className="h-4 w-4 text-yellow-500" />
               <span className="text-sm text-muted-foreground">Pending</span>
             </div>
-            <p className="text-2xl font-bold text-yellow-600">{pendingRecords}</p>
+            <p className="text-2xl font-bold text-yellow-600">
+              {pendingRecords}
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-4"
+      >
         <TabsList>
           <TabsTrigger value="records">Catatan Ibadah</TabsTrigger>
           <TabsTrigger value="targets">Target Aktif</TabsTrigger>
@@ -260,7 +286,12 @@ export default function IbadahPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-4">
-                <Select value={selectedUnit || 'all'} onValueChange={(val) => setSelectedUnit(val === 'all' ? '' : val)}>
+                <Select
+                  value={selectedUnit || "all"}
+                  onValueChange={(val) =>
+                    setSelectedUnit(val === "all" ? "" : val)
+                  }
+                >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Pilih Unit" />
                   </SelectTrigger>
@@ -274,7 +305,10 @@ export default function IbadahPage() {
                   </SelectContent>
                 </Select>
 
-                <Select value={category || 'all'} onValueChange={(val) => setCategory(val === 'all' ? '' : val)}>
+                <Select
+                  value={category || "all"}
+                  onValueChange={(val) => setCategory(val === "all" ? "" : val)}
+                >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Kategori" />
                   </SelectTrigger>
@@ -288,7 +322,12 @@ export default function IbadahPage() {
                   </SelectContent>
                 </Select>
 
-                <Select value={verificationStatus || 'all'} onValueChange={(val) => setVerificationStatus(val === 'all' ? '' : val)}>
+                <Select
+                  value={verificationStatus || "all"}
+                  onValueChange={(val) =>
+                    setVerificationStatus(val === "all" ? "" : val)
+                  }
+                >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
@@ -304,9 +343,14 @@ export default function IbadahPage() {
 
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-[180px] justify-start">
+                    <Button
+                      variant="outline"
+                      className="w-[180px] justify-start"
+                    >
                       <CalendarIcon className="h-4 w-4 mr-2" />
-                      {startDate ? format(startDate, 'dd MMM yyyy') : 'Dari Tanggal'}
+                      {startDate
+                        ? format(startDate, "dd MMM yyyy")
+                        : "Dari Tanggal"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -321,9 +365,14 @@ export default function IbadahPage() {
 
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-[180px] justify-start">
+                    <Button
+                      variant="outline"
+                      className="w-[180px] justify-start"
+                    >
                       <CalendarIcon className="h-4 w-4 mr-2" />
-                      {endDate ? format(endDate, 'dd MMM yyyy') : 'Sampai Tanggal'}
+                      {endDate
+                        ? format(endDate, "dd MMM yyyy")
+                        : "Sampai Tanggal"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -363,42 +412,73 @@ export default function IbadahPage() {
                   {recordsLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i}>
-                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-24" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-32" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-28" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-20" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-16" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-12" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-24" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-20" />
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : records.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={8}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         Belum ada catatan ibadah
                       </TableCell>
                     </TableRow>
                   ) : (
                     records.map((record) => {
-                      const categoryInfo = getCategoryInfo(record.target?.category || 'OTHER');
-                      const statusInfo = getVerificationStatusInfo(record.verificationStatus);
+                      const categoryInfo = getCategoryInfo(
+                        record.target?.category || "OTHER",
+                      );
+                      const statusInfo = getVerificationStatusInfo(
+                        record.verificationStatus,
+                      );
                       return (
                         <TableRow key={record.id}>
                           <TableCell>
-                            {format(new Date(record.date), 'dd MMM yyyy', { locale: localeId })}
+                            {format(new Date(record.date), "dd MMM yyyy", {
+                              locale: localeId,
+                            })}
                           </TableCell>
                           <TableCell>
                             <div>
-                              <p className="font-medium">{record.student?.name || '-'}</p>
+                              <p className="font-medium">
+                                {record.student?.name || "-"}
+                              </p>
                               <p className="text-xs text-muted-foreground">
-                                {record.student?.nis} • {record.student?.class?.name}
+                                {record.student?.nis} •{" "}
+                                {record.student?.class?.name}
                               </p>
                             </div>
                           </TableCell>
-                          <TableCell>{record.target?.name || '-'}</TableCell>
+                          <TableCell>{record.target?.name || "-"}</TableCell>
                           <TableCell>
-                            <Badge variant="secondary" className={categoryInfo.color}>
+                            <Badge
+                              variant="secondary"
+                              className={categoryInfo.color}
+                            >
                               {categoryInfo.icon} {categoryInfo.label}
                             </Badge>
                           </TableCell>
@@ -415,11 +495,16 @@ export default function IbadahPage() {
                           <TableCell>
                             <div className="flex items-center gap-1">
                               <Star className="h-3 w-3 text-yellow-500" />
-                              <span>{record.pointsEarned + record.bonusEarned}</span>
+                              <span>
+                                {record.pointsEarned + record.bonusEarned}
+                              </span>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="secondary" className={statusInfo.color}>
+                            <Badge
+                              variant="secondary"
+                              className={statusInfo.color}
+                            >
                               {statusInfo.label}
                             </Badge>
                           </TableCell>
@@ -431,7 +516,9 @@ export default function IbadahPage() {
                                 </Link>
                               </Button>
                               <Button variant="ghost" size="icon" asChild>
-                                <Link href={`/ibadah/records/${record.id}/edit`}>
+                                <Link
+                                  href={`/ibadah/records/${record.id}/edit`}
+                                >
                                   <Pencil className="h-4 w-4" />
                                 </Link>
                               </Button>
@@ -468,7 +555,10 @@ export default function IbadahPage() {
         {/* Targets Tab */}
         <TabsContent value="targets" className="space-y-4">
           <div className="flex justify-between items-center">
-            <Select value={category || 'all'} onValueChange={(val) => setCategory(val === 'all' ? '' : val)}>
+            <Select
+              value={category || "all"}
+              onValueChange={(val) => setCategory(val === "all" ? "" : val)}
+            >
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter Kategori" />
               </SelectTrigger>
@@ -515,13 +605,18 @@ export default function IbadahPage() {
               targets.map((target) => {
                 const categoryInfo = getCategoryInfo(target.category);
                 return (
-                  <Card key={target.id} className="group hover:shadow-md transition-shadow">
+                  <Card
+                    key={target.id}
+                    className="group hover:shadow-md transition-shadow"
+                  >
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-2xl">{categoryInfo.icon}</span>
                           <div>
-                            <CardTitle className="text-base">{target.name}</CardTitle>
+                            <CardTitle className="text-base">
+                              {target.name}
+                            </CardTitle>
                             {target.nameAr && (
                               <p className="text-sm text-muted-foreground font-arabic">
                                 {target.nameAr}
@@ -529,7 +624,10 @@ export default function IbadahPage() {
                             )}
                           </div>
                         </div>
-                        <Badge variant="secondary" className={categoryInfo.color}>
+                        <Badge
+                          variant="secondary"
+                          className={categoryInfo.color}
+                        >
                           {categoryInfo.label}
                         </Badge>
                       </div>
@@ -541,7 +639,10 @@ export default function IbadahPage() {
                         </p>
                       )}
                       <div className="flex items-center justify-between text-sm">
-                        <span>Target: {target.targetCount} {target.targetUnit.toLowerCase()}</span>
+                        <span>
+                          Target: {target.targetCount}{" "}
+                          {target.targetUnit.toLowerCase()}
+                        </span>
                         <div className="flex items-center gap-1 text-yellow-600">
                           <Star className="h-4 w-4" />
                           <span>{target.points} poin</span>
@@ -553,7 +654,12 @@ export default function IbadahPage() {
                         </p>
                       )}
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="outline" size="sm" asChild className="flex-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className="flex-1"
+                        >
                           <Link href={`/ibadah/targets/${target.id}/edit`}>
                             <Pencil className="h-3 w-3 mr-1" />
                             Edit
@@ -579,7 +685,12 @@ export default function IbadahPage() {
         {/* Leaderboard Tab */}
         <TabsContent value="leaderboard" className="space-y-4">
           <div className="flex justify-between items-center">
-            <Select value={leaderboardPeriod} onValueChange={(v) => setLeaderboardPeriod(v as LeaderboardPeriod)}>
+            <Select
+              value={leaderboardPeriod}
+              onValueChange={(v) =>
+                setLeaderboardPeriod(v as LeaderboardPeriod)
+              }
+            >
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Pilih Periode" />
               </SelectTrigger>
@@ -613,7 +724,8 @@ export default function IbadahPage() {
                 <CardTitle>Papan Peringkat</CardTitle>
               </div>
               <CardDescription>
-                {LEADERBOARD_PERIODS.find(p => p.value === leaderboardPeriod)?.label || 'Periode'}
+                {LEADERBOARD_PERIODS.find((p) => p.value === leaderboardPeriod)
+                  ?.label || "Periode"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -641,40 +753,44 @@ export default function IbadahPage() {
                     const rank = index + 1;
                     const isTop3 = rank <= 3;
                     const rankColors = {
-                      1: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-                      2: 'bg-gray-100 text-gray-800 border-gray-300',
-                      3: 'bg-orange-100 text-orange-800 border-orange-300',
+                      1: "bg-yellow-100 text-yellow-800 border-yellow-300",
+                      2: "bg-gray-100 text-gray-800 border-gray-300",
+                      3: "bg-orange-100 text-orange-800 border-orange-300",
                     };
-                    const rankEmoji = { 1: '🥇', 2: '🥈', 3: '🥉' };
+                    const rankEmoji = { 1: "🥇", 2: "🥈", 3: "🥉" };
 
                     return (
                       <div
                         key={entry.id}
                         className={cn(
-                          'flex items-center gap-4 p-3 rounded-lg transition-colors',
-                          isTop3 ? 'bg-muted/50' : 'hover:bg-muted/30'
+                          "flex items-center gap-4 p-3 rounded-lg transition-colors",
+                          isTop3 ? "bg-muted/50" : "hover:bg-muted/30",
                         )}
                       >
                         <div
                           className={cn(
-                            'w-10 h-10 rounded-full flex items-center justify-center font-bold',
+                            "w-10 h-10 rounded-full flex items-center justify-center font-bold",
                             isTop3
                               ? rankColors[rank as keyof typeof rankColors]
-                              : 'bg-muted text-muted-foreground'
+                              : "bg-muted text-muted-foreground",
                           )}
                         >
-                          {isTop3 ? rankEmoji[rank as keyof typeof rankEmoji] : rank}
+                          {isTop3
+                            ? rankEmoji[rank as keyof typeof rankEmoji]
+                            : rank}
                         </div>
 
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={entry.student?.avatar} />
                           <AvatarFallback>
-                            {entry.student?.name?.charAt(0) || '?'}
+                            {entry.student?.name?.charAt(0) || "?"}
                           </AvatarFallback>
                         </Avatar>
 
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{entry.student?.name}</p>
+                          <p className="font-medium truncate">
+                            {entry.student?.name}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             {entry.student?.class?.name} • {entry.student?.nis}
                           </p>
@@ -687,12 +803,16 @@ export default function IbadahPage() {
                           </div>
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Flame className="h-3 w-3 text-orange-500" />
-                            {entry.streakDays} hari {getStreakEmoji(entry.streakDays)}
+                            {entry.streakDays} hari{" "}
+                            {getStreakEmoji(entry.streakDays)}
                           </div>
                         </div>
 
                         <div className="hidden md:block w-24">
-                          <Progress value={entry.completionRate} className="h-2" />
+                          <Progress
+                            value={entry.completionRate}
+                            className="h-2"
+                          />
                           <p className="text-xs text-muted-foreground text-center mt-1">
                             {entry.completionRate.toFixed(0)}%
                           </p>

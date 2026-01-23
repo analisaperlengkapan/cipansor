@@ -9,7 +9,7 @@ import {
   createJournalEntrySchema,
   createScholarshipSchema,
   assignScholarshipSchema,
-  createPaymentComponentSchema
+  createPaymentComponentSchema,
 } from './schema';
 import { z } from 'zod';
 
@@ -50,10 +50,7 @@ router.use(authenticate);
 
 // ==================== ACCOUNT CODES ====================
 
-router.get(
-  '/account-codes',
-  financeEnhancementController.getAccountCodes
-);
+router.get('/account-codes', financeEnhancementController.getAccountCodes);
 
 router.post(
   '/account-codes',
@@ -84,17 +81,11 @@ router.post(
   financeEnhancementController.createJournalEntry
 );
 
-router.get(
-  '/journal-entries/:id',
-  financeEnhancementController.getJournalEntryById
-);
+router.get('/journal-entries/:id', financeEnhancementController.getJournalEntryById);
 
 // ==================== SCHOLARSHIPS ====================
 
-router.get(
-  '/scholarships',
-  financeEnhancementController.getScholarships
-);
+router.get('/scholarships', financeEnhancementController.getScholarships);
 
 router.post(
   '/scholarships',
@@ -103,15 +94,9 @@ router.post(
   financeEnhancementController.createScholarship
 );
 
-router.get(
-  '/scholarships/:id',
-  financeEnhancementController.getScholarshipById
-);
+router.get('/scholarships/:id', financeEnhancementController.getScholarshipById);
 
-router.get(
-  '/scholarships/:id/recipients',
-  financeEnhancementController.getScholarshipRecipients
-);
+router.get('/scholarships/:id/recipients', financeEnhancementController.getScholarshipRecipients);
 
 router.post(
   '/scholarship-recipients',
@@ -122,10 +107,7 @@ router.post(
 
 // ==================== PAYMENT COMPONENTS ====================
 
-router.get(
-  '/payment-components',
-  financeEnhancementController.getPaymentComponents
-);
+router.get('/payment-components', financeEnhancementController.getPaymentComponents);
 
 router.post(
   '/payment-components',

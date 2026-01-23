@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   PieChart,
   Pie,
@@ -20,11 +20,11 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from 'recharts';
-import { Skeleton } from '@/components/ui/skeleton';
-import { api } from '@/lib/api';
+} from "recharts";
+import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/lib/api";
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 type TracerStudyStats = {
   totalAlumni: number;
@@ -41,9 +41,9 @@ type TracerStudyStats = {
 
 export function AlumniDashboard() {
   const { data: stats, isLoading } = useQuery<TracerStudyStats>({
-    queryKey: ['alumni-tracer-stats'],
+    queryKey: ["alumni-tracer-stats"],
     queryFn: async () => {
-      const res = await api.get('/alumni/stats/tracer');
+      const res = await api.get("/alumni/stats/tracer");
       return res.data.data;
     },
   });
@@ -55,10 +55,13 @@ export function AlumniDashboard() {
   if (!stats) return null;
 
   const statusData = [
-    { name: 'Bekerja', value: stats.statusDistribution.working },
-    { name: 'Kuliah', value: stats.statusDistribution.studying },
-    { name: 'Bekerja & Kuliah', value: stats.statusDistribution.workingAndStudying },
-    { name: 'Lainnya', value: stats.statusDistribution.other },
+    { name: "Bekerja", value: stats.statusDistribution.working },
+    { name: "Kuliah", value: stats.statusDistribution.studying },
+    {
+      name: "Bekerja & Kuliah",
+      value: stats.statusDistribution.workingAndStudying,
+    },
+    { name: "Lainnya", value: stats.statusDistribution.other },
   ].filter((d) => d.value > 0);
 
   return (
@@ -78,8 +81,12 @@ export function AlumniDashboard() {
             <CardTitle className="text-sm font-medium">Bekerja</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.statusDistribution.working}</div>
-            <p className="text-xs text-muted-foreground">Alumni sudah bekerja</p>
+            <div className="text-2xl font-bold">
+              {stats.statusDistribution.working}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Alumni sudah bekerja
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -87,19 +94,28 @@ export function AlumniDashboard() {
             <CardTitle className="text-sm font-medium">Kuliah</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.statusDistribution.studying}</div>
-            <p className="text-xs text-muted-foreground">Melanjutkan pendidikan</p>
+            <div className="text-2xl font-bold">
+              {stats.statusDistribution.studying}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Melanjutkan pendidikan
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Wirausaha/Lainnya</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Wirausaha/Lainnya
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats.statusDistribution.other + stats.statusDistribution.workingAndStudying}
+              {stats.statusDistribution.other +
+                stats.statusDistribution.workingAndStudying}
             </div>
-            <p className="text-xs text-muted-foreground">Termasuk freelance & gap year</p>
+            <p className="text-xs text-muted-foreground">
+              Termasuk freelance & gap year
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -108,7 +124,9 @@ export function AlumniDashboard() {
         <Card className="col-span-3">
           <CardHeader>
             <CardTitle>Status Alumni</CardTitle>
-            <CardDescription>Distribusi aktivitas alumni saat ini</CardDescription>
+            <CardDescription>
+              Distribusi aktivitas alumni saat ini
+            </CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
             <ResponsiveContainer width="100%" height={300}>
@@ -125,7 +143,10 @@ export function AlumniDashboard() {
                   label
                 >
                   {statusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -137,7 +158,9 @@ export function AlumniDashboard() {
         <Card className="col-span-4">
           <CardHeader>
             <CardTitle>Top Universitas</CardTitle>
-            <CardDescription>Universitas tujuan alumni terbanyak</CardDescription>
+            <CardDescription>
+              Universitas tujuan alumni terbanyak
+            </CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
             <ResponsiveContainer width="100%" height={300}>

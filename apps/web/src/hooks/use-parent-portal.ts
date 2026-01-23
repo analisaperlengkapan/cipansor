@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { ApiResponse, PaginatedResponse } from "@/lib/api";
 
 // ==================== TYPES ====================
 
@@ -9,10 +9,10 @@ export interface ParentChild {
     id: string;
     nis: string;
     name: string;
-    gender: 'MALE' | 'FEMALE';
+    gender: "MALE" | "FEMALE";
     birthDate: string;
     photoUrl?: string;
-    status: 'ACTIVE' | 'INACTIVE' | 'GRADUATED';
+    status: "ACTIVE" | "INACTIVE" | "GRADUATED";
     class?: {
       id: string;
       name: string;
@@ -24,7 +24,7 @@ export interface ParentChild {
       type: string;
     };
   };
-  relation: 'FATHER' | 'MOTHER' | 'GUARDIAN' | 'OTHER';
+  relation: "FATHER" | "MOTHER" | "GUARDIAN" | "OTHER";
   isPrimary: boolean;
 }
 
@@ -33,7 +33,7 @@ export interface ChildSummary {
   studentName: string;
   className?: string;
   photoUrl?: string;
-  
+
   // Attendance
   attendance: {
     present: number;
@@ -42,7 +42,7 @@ export interface ChildSummary {
     permitted: number;
     percentage: number;
   };
-  
+
   // Academic
   academic: {
     averageScore?: number;
@@ -53,7 +53,7 @@ export interface ChildSummary {
       date: string;
     }>;
   };
-  
+
   // Violations & Rewards
   behavior: {
     violationCount: number;
@@ -64,7 +64,7 @@ export interface ChildSummary {
       status: string;
     }>;
   };
-  
+
   // Finance
   finance: {
     pendingPayments: number;
@@ -75,14 +75,14 @@ export interface ChildSummary {
     }>;
     walletBalance?: number;
   };
-  
+
   // Health (PAUD/SD)
   health?: {
     lastCheckup?: string;
     height?: number;
     weight?: number;
   };
-  
+
   // Tahfidz (if applicable)
   tahfidz?: {
     currentJuz?: number;
@@ -98,7 +98,7 @@ export interface ParentDashboardData {
     title: string;
     content: string;
     createdAt: string;
-    priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+    priority: "LOW" | "NORMAL" | "HIGH" | "URGENT";
   }>;
   unreadNotifications: number;
   unreadMessages: number;
@@ -132,18 +132,18 @@ export interface ChildDailyReport {
   id: string;
   date: string;
   studentId: string;
-  attendance: 'PRESENT' | 'ABSENT' | 'SICK' | 'PERMITTED';
+  attendance: "PRESENT" | "ABSENT" | "SICK" | "PERMITTED";
   activities: Array<{
     time: string;
     activity: string;
     notes?: string;
   }>;
   meals: Array<{
-    type: 'BREAKFAST' | 'LUNCH' | 'SNACK';
-    status: 'ATE_WELL' | 'ATE_LITTLE' | 'DID_NOT_EAT';
+    type: "BREAKFAST" | "LUNCH" | "SNACK";
+    status: "ATE_WELL" | "ATE_LITTLE" | "DID_NOT_EAT";
     notes?: string;
   }>;
-  mood?: 'HAPPY' | 'NEUTRAL' | 'SAD' | 'TIRED';
+  mood?: "HAPPY" | "NEUTRAL" | "SAD" | "TIRED";
   teacherNotes?: string;
   photos?: Array<{
     url: string;
@@ -158,9 +158,10 @@ export interface ChildDailyReport {
  */
 export function useParentChildren() {
   return useQuery({
-    queryKey: ['parent', 'children'],
+    queryKey: ["parent", "children"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<ParentChild[]>>('/parent/children');
+      const response =
+        await api.get<ApiResponse<ParentChild[]>>("/parent/children");
       return response.data.data;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -172,9 +173,11 @@ export function useParentChildren() {
  */
 export function useParentChild(studentId: string) {
   return useQuery({
-    queryKey: ['parent', 'children', studentId],
+    queryKey: ["parent", "children", studentId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<ParentChild>>(`/parent/children/${studentId}`);
+      const response = await api.get<ApiResponse<ParentChild>>(
+        `/parent/children/${studentId}`,
+      );
       return response.data.data;
     },
     enabled: !!studentId,
@@ -186,9 +189,11 @@ export function useParentChild(studentId: string) {
  */
 export function useChildSummary(studentId: string) {
   return useQuery({
-    queryKey: ['parent', 'children', studentId, 'summary'],
+    queryKey: ["parent", "children", studentId, "summary"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<ChildSummary>>(`/parent/children/${studentId}/summary`);
+      const response = await api.get<ApiResponse<ChildSummary>>(
+        `/parent/children/${studentId}/summary`,
+      );
       return response.data.data;
     },
     enabled: !!studentId,
@@ -204,9 +209,10 @@ export function useChildSummary(studentId: string) {
  */
 export function useParentDashboard() {
   return useQuery({
-    queryKey: ['parent', 'dashboard'],
+    queryKey: ["parent", "dashboard"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<ParentDashboardData>>('/parent/dashboard');
+      const response =
+        await api.get<ApiResponse<ParentDashboardData>>("/parent/dashboard");
       return response.data.data;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -219,14 +225,16 @@ export function useParentDashboard() {
  */
 export function useParentQuickStats() {
   return useQuery({
-    queryKey: ['parent', 'quick-stats'],
+    queryKey: ["parent", "quick-stats"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<{
-        unreadNotifications: number;
-        unreadMessages: number;
-        pendingPayments: number;
-        upcomingEvents: number;
-      }>>('/parent/quick-stats');
+      const response = await api.get<
+        ApiResponse<{
+          unreadNotifications: number;
+          unreadMessages: number;
+          pendingPayments: number;
+          upcomingEvents: number;
+        }>
+      >("/parent/quick-stats");
       return response.data.data;
     },
     staleTime: 60 * 1000, // 1 minute
@@ -239,16 +247,19 @@ export function useParentQuickStats() {
 /**
  * Get parent messages/inbox
  */
-export function useParentPortalMessages(params?: { 
-  isRead?: boolean; 
+export function useParentPortalMessages(params?: {
+  isRead?: boolean;
   studentId?: string;
   page?: number;
   limit?: number;
 }) {
   return useQuery({
-    queryKey: ['parent', 'messages', params],
+    queryKey: ["parent", "messages", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<ParentPortalMessage>>('/parent/messages', { params });
+      const response = await api.get<PaginatedResponse<ParentPortalMessage>>(
+        "/parent/messages",
+        { params },
+      );
       return response.data;
     },
   });
@@ -259,9 +270,11 @@ export function useParentPortalMessages(params?: {
  */
 export function useParentMessage(messageId: string) {
   return useQuery({
-    queryKey: ['parent', 'messages', messageId],
+    queryKey: ["parent", "messages", messageId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<ParentPortalMessage>>(`/parent/messages/${messageId}`);
+      const response = await api.get<ApiResponse<ParentPortalMessage>>(
+        `/parent/messages/${messageId}`,
+      );
       return response.data.data;
     },
     enabled: !!messageId,
@@ -273,7 +286,7 @@ export function useParentMessage(messageId: string) {
  */
 export function useSendParentPortalMessage() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: {
       receiverId: string;
@@ -282,12 +295,15 @@ export function useSendParentPortalMessage() {
       content: string;
       replyToId?: string;
     }) => {
-      const response = await api.post<ApiResponse<ParentPortalMessage>>('/parent/messages', data);
+      const response = await api.post<ApiResponse<ParentPortalMessage>>(
+        "/parent/messages",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['parent', 'messages'] });
-      queryClient.invalidateQueries({ queryKey: ['parent', 'quick-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["parent", "messages"] });
+      queryClient.invalidateQueries({ queryKey: ["parent", "quick-stats"] });
     },
   });
 }
@@ -297,14 +313,14 @@ export function useSendParentPortalMessage() {
  */
 export function useMarkParentMessageAsRead() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (messageId: string) => {
       await api.put(`/parent/messages/${messageId}/read`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['parent', 'messages'] });
-      queryClient.invalidateQueries({ queryKey: ['parent', 'quick-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["parent", "messages"] });
+      queryClient.invalidateQueries({ queryKey: ["parent", "quick-stats"] });
     },
   });
 }
@@ -314,18 +330,21 @@ export function useMarkParentMessageAsRead() {
 /**
  * Get daily reports for child (PAUD/TK)
  */
-export function useChildDailyReports(studentId: string, params?: {
-  startDate?: string;
-  endDate?: string;
-  page?: number;
-  limit?: number;
-}) {
+export function useChildDailyReports(
+  studentId: string,
+  params?: {
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  },
+) {
   return useQuery({
-    queryKey: ['parent', 'children', studentId, 'daily-reports', params],
+    queryKey: ["parent", "children", studentId, "daily-reports", params],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<ChildDailyReport>>(
         `/parent/children/${studentId}/daily-reports`,
-        { params }
+        { params },
       );
       return response.data;
     },
@@ -338,10 +357,10 @@ export function useChildDailyReports(studentId: string, params?: {
  */
 export function useChildDailyReport(studentId: string, reportId: string) {
   return useQuery({
-    queryKey: ['parent', 'children', studentId, 'daily-reports', reportId],
+    queryKey: ["parent", "children", studentId, "daily-reports", reportId],
     queryFn: async () => {
       const response = await api.get<ApiResponse<ChildDailyReport>>(
-        `/parent/children/${studentId}/daily-reports/${reportId}`
+        `/parent/children/${studentId}/daily-reports/${reportId}`,
       );
       return response.data.data;
     },
@@ -354,29 +373,34 @@ export function useChildDailyReport(studentId: string, reportId: string) {
 /**
  * Get child attendance history
  */
-export function useChildAttendance(studentId: string, params?: {
-  month?: number;
-  year?: number;
-  academicYearId?: string;
-}) {
+export function useChildAttendance(
+  studentId: string,
+  params?: {
+    month?: number;
+    year?: number;
+    academicYearId?: string;
+  },
+) {
   return useQuery({
-    queryKey: ['parent', 'children', studentId, 'attendance', params],
+    queryKey: ["parent", "children", studentId, "attendance", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<{
-        summary: {
-          present: number;
-          absent: number;
-          sick: number;
-          permitted: number;
-          percentage: number;
-        };
-        records: Array<{
-          date: string;
-          status: 'PRESENT' | 'ABSENT' | 'SICK' | 'PERMITTED';
-          checkInTime?: string;
-          notes?: string;
-        }>;
-      }>>(`/parent/children/${studentId}/attendance`, { params });
+      const response = await api.get<
+        ApiResponse<{
+          summary: {
+            present: number;
+            absent: number;
+            sick: number;
+            permitted: number;
+            percentage: number;
+          };
+          records: Array<{
+            date: string;
+            status: "PRESENT" | "ABSENT" | "SICK" | "PERMITTED";
+            checkInTime?: string;
+            notes?: string;
+          }>;
+        }>
+      >(`/parent/children/${studentId}/attendance`, { params });
       return response.data.data;
     },
     enabled: !!studentId,
@@ -388,28 +412,33 @@ export function useChildAttendance(studentId: string, params?: {
 /**
  * Get child grades/scores
  */
-export function useChildGrades(studentId: string, params?: {
-  academicYearId?: string;
-  semester?: 'GANJIL' | 'GENAP';
-  subjectId?: string;
-}) {
+export function useChildGrades(
+  studentId: string,
+  params?: {
+    academicYearId?: string;
+    semester?: "GANJIL" | "GENAP";
+    subjectId?: string;
+  },
+) {
   return useQuery({
-    queryKey: ['parent', 'children', studentId, 'grades', params],
+    queryKey: ["parent", "children", studentId, "grades", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<{
-        subjects: Array<{
-          subjectId: string;
-          subjectName: string;
-          scores: Array<{
-            type: string;
-            score: number;
-            date: string;
+      const response = await api.get<
+        ApiResponse<{
+          subjects: Array<{
+            subjectId: string;
+            subjectName: string;
+            scores: Array<{
+              type: string;
+              score: number;
+              date: string;
+            }>;
+            average: number;
           }>;
-          average: number;
-        }>;
-        overallAverage: number;
-        ranking?: number;
-      }>>(`/parent/children/${studentId}/grades`, { params });
+          overallAverage: number;
+          ranking?: number;
+        }>
+      >(`/parent/children/${studentId}/grades`, { params });
       return response.data.data;
     },
     enabled: !!studentId,
@@ -421,16 +450,20 @@ export function useChildGrades(studentId: string, params?: {
  */
 export function useChildReportCards(studentId: string) {
   return useQuery({
-    queryKey: ['parent', 'children', studentId, 'report-cards'],
+    queryKey: ["parent", "children", studentId, "report-cards"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Array<{
-        id: string;
-        academicYearId: string;
-        academicYearName: string;
-        semester: 'GANJIL' | 'GENAP';
-        status: 'DRAFT' | 'FINALIZED' | 'PRINTED';
-        downloadUrl?: string;
-      }>>>(`/parent/children/${studentId}/report-cards`);
+      const response = await api.get<
+        ApiResponse<
+          Array<{
+            id: string;
+            academicYearId: string;
+            academicYearName: string;
+            semester: "GANJIL" | "GENAP";
+            status: "DRAFT" | "FINALIZED" | "PRINTED";
+            downloadUrl?: string;
+          }>
+        >
+      >(`/parent/children/${studentId}/report-cards`);
       return response.data.data;
     },
     enabled: !!studentId,
@@ -442,26 +475,31 @@ export function useChildReportCards(studentId: string) {
 /**
  * Get child pending payments
  */
-export function useChildPayments(studentId: string, params?: {
-  status?: 'PENDING' | 'PAID' | 'OVERDUE';
-  type?: string;
-}) {
+export function useChildPayments(
+  studentId: string,
+  params?: {
+    status?: "PENDING" | "PAID" | "OVERDUE";
+    type?: string;
+  },
+) {
   return useQuery({
-    queryKey: ['parent', 'children', studentId, 'payments', params],
+    queryKey: ["parent", "children", studentId, "payments", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<{
-        payments: Array<{
-          id: string;
-          name: string;
-          amount: number;
-          dueDate: string;
-          status: 'PENDING' | 'PAID' | 'OVERDUE' | 'PARTIAL';
-          paidAmount?: number;
-          paidAt?: string;
-        }>;
-        totalPending: number;
-        totalPaid: number;
-      }>>(`/parent/children/${studentId}/payments`, { params });
+      const response = await api.get<
+        ApiResponse<{
+          payments: Array<{
+            id: string;
+            name: string;
+            amount: number;
+            dueDate: string;
+            status: "PENDING" | "PAID" | "OVERDUE" | "PARTIAL";
+            paidAmount?: number;
+            paidAt?: string;
+          }>;
+          totalPending: number;
+          totalPaid: number;
+        }>
+      >(`/parent/children/${studentId}/payments`, { params });
       return response.data.data;
     },
     enabled: !!studentId,
@@ -471,25 +509,30 @@ export function useChildPayments(studentId: string, params?: {
 /**
  * Get child wallet transactions
  */
-export function useChildWallet(studentId: string, params?: {
-  startDate?: string;
-  endDate?: string;
-  type?: 'DEBIT' | 'CREDIT';
-  limit?: number;
-}) {
+export function useChildWallet(
+  studentId: string,
+  params?: {
+    startDate?: string;
+    endDate?: string;
+    type?: "DEBIT" | "CREDIT";
+    limit?: number;
+  },
+) {
   return useQuery({
-    queryKey: ['parent', 'children', studentId, 'wallet', params],
+    queryKey: ["parent", "children", studentId, "wallet", params],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<{
-        balance: number;
-        transactions: Array<{
-          id: string;
-          type: 'DEBIT' | 'CREDIT';
-          amount: number;
-          description: string;
-          date: string;
-        }>;
-      }>>(`/parent/children/${studentId}/wallet`, { params });
+      const response = await api.get<
+        ApiResponse<{
+          balance: number;
+          transactions: Array<{
+            id: string;
+            type: "DEBIT" | "CREDIT";
+            amount: number;
+            description: string;
+            date: string;
+          }>;
+        }>
+      >(`/parent/children/${studentId}/wallet`, { params });
       return response.data.data;
     },
     enabled: !!studentId,
@@ -503,21 +546,26 @@ export function useChildWallet(studentId: string, params?: {
  */
 export function useRequestChildPermit() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: {
       studentId: string;
-      type: 'SICK' | 'FAMILY' | 'OTHER';
+      type: "SICK" | "FAMILY" | "OTHER";
       startDate: string;
       endDate: string;
       reason: string;
       attachmentUrl?: string;
     }) => {
-      const response = await api.post<ApiResponse<any>>('/parent/permits', data);
+      const response = await api.post<ApiResponse<any>>(
+        "/parent/permits",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['parent', 'children', variables.studentId, 'permits'] });
+      queryClient.invalidateQueries({
+        queryKey: ["parent", "children", variables.studentId, "permits"],
+      });
     },
   });
 }
@@ -525,25 +573,30 @@ export function useRequestChildPermit() {
 /**
  * Get child permit history
  */
-export function useChildPermits(studentId: string, params?: {
-  status?: 'PENDING' | 'APPROVED' | 'REJECTED';
-  page?: number;
-  limit?: number;
-}) {
+export function useChildPermits(
+  studentId: string,
+  params?: {
+    status?: "PENDING" | "APPROVED" | "REJECTED";
+    page?: number;
+    limit?: number;
+  },
+) {
   return useQuery({
-    queryKey: ['parent', 'children', studentId, 'permits', params],
+    queryKey: ["parent", "children", studentId, "permits", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<{
-        id: string;
-        type: string;
-        startDate: string;
-        endDate: string;
-        reason: string;
-        status: 'PENDING' | 'APPROVED' | 'REJECTED';
-        approvedBy?: string;
-        rejectionReason?: string;
-        createdAt: string;
-      }>>(`/parent/children/${studentId}/permits`, { params });
+      const response = await api.get<
+        PaginatedResponse<{
+          id: string;
+          type: string;
+          startDate: string;
+          endDate: string;
+          reason: string;
+          status: "PENDING" | "APPROVED" | "REJECTED";
+          approvedBy?: string;
+          rejectionReason?: string;
+          createdAt: string;
+        }>
+      >(`/parent/children/${studentId}/permits`, { params });
       return response.data;
     },
     enabled: !!studentId,

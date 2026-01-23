@@ -1,17 +1,39 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
-import { useStartExam, useSubmitAnswer, useFinishExam, ExamAttempt, Question, QuestionType } from '@/hooks/use-cbt';
-import { useExam } from '@/hooks/use-assessment';
-import { Loader2, Timer, AlertTriangle, CheckCircle, ChevronLeft, ChevronRight, Save } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  useStartExam,
+  useSubmitAnswer,
+  useFinishExam,
+  ExamAttempt,
+  Question,
+  QuestionType,
+} from "@/hooks/use-cbt";
+import { useExam } from "@/hooks/use-assessment";
+import {
+  Loader2,
+  Timer,
+  AlertTriangle,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Save,
+} from "lucide-react";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +44,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 
 export default function TakeExamPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -38,7 +60,7 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
       const data = await startExam.mutateAsync(params.id);
       setAttempt(data);
     } catch (error: any) {
-      toast.error(error.message || 'Gagal memulai ujian');
+      toast.error(error.message || "Gagal memulai ujian");
     } finally {
       setIsStarting(false);
     }
@@ -58,7 +80,7 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
         <div className="flex flex-col items-center justify-center h-96 gap-4">
           <AlertTriangle className="h-12 w-12 text-yellow-500" />
           <h2 className="text-xl font-semibold">Ujian Tidak Ditemukan</h2>
-          <Button onClick={() => router.push('/student/exams')}>Kembali</Button>
+          <Button onClick={() => router.push("/student/exams")}>Kembali</Button>
         </div>
       </MainLayout>
     );
@@ -80,7 +102,9 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
                   <p className="text-xl font-bold">{exam.duration} Menit</p>
                 </div>
                 <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">Mata Pelajaran</p>
+                  <p className="text-sm text-muted-foreground">
+                    Mata Pelajaran
+                  </p>
                   <p className="text-xl font-bold">{exam.subject?.name}</p>
                 </div>
               </div>
@@ -89,14 +113,22 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
                 <p className="font-semibold mb-2">Perhatian:</p>
                 <ul className="list-disc pl-5 space-y-1">
                   <li>Pastikan koneksi internet stabil.</li>
-                  <li>Waktu akan berjalan mundur otomatis setelah tombol Mulai ditekan.</li>
+                  <li>
+                    Waktu akan berjalan mundur otomatis setelah tombol Mulai
+                    ditekan.
+                  </li>
                   <li>Jawaban akan tersimpan otomatis.</li>
                   <li>Jangan me-refresh halaman jika tidak diperlukan.</li>
                 </ul>
               </div>
             </CardContent>
             <CardFooter>
-              <Button size="lg" className="w-full" onClick={handleStart} disabled={isStarting}>
+              <Button
+                size="lg"
+                className="w-full"
+                onClick={handleStart}
+                disabled={isStarting}
+              >
                 {isStarting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -114,7 +146,13 @@ export default function TakeExamPage({ params }: { params: { id: string } }) {
   return <ExamPlayer attempt={attempt} examDuration={exam.duration} />;
 }
 
-function ExamPlayer({ attempt, examDuration }: { attempt: ExamAttempt; examDuration: number }) {
+function ExamPlayer({
+  attempt,
+  examDuration,
+}: {
+  attempt: ExamAttempt;
+  examDuration: number;
+}) {
   const router = useRouter();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -139,7 +177,7 @@ function ExamPlayer({ attempt, examDuration }: { attempt: ExamAttempt; examDurat
     // Calculate time left based on startedAt
     if (attempt.startedAt) {
       const startTime = new Date(attempt.startedAt).getTime();
-      const endTime = startTime + (examDuration * 60 * 1000);
+      const endTime = startTime + examDuration * 60 * 1000;
       const now = new Date().getTime();
       const diff = Math.floor((endTime - now) / 1000);
       setTimeLeft(diff > 0 ? diff : 0);
@@ -148,7 +186,7 @@ function ExamPlayer({ attempt, examDuration }: { attempt: ExamAttempt; examDurat
 
   // Timer
   useEffect(() => {
-    if (attempt.status !== 'IN_PROGRESS') return;
+    if (attempt.status !== "IN_PROGRESS") return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -179,21 +217,21 @@ function ExamPlayer({ attempt, examDuration }: { attempt: ExamAttempt; examDurat
         answer: value,
       });
     } catch (error) {
-      console.error('Failed to save answer');
+      console.error("Failed to save answer");
     }
   };
 
   const handleFinish = async () => {
     try {
       await finishExam.mutateAsync(attempt.id);
-      toast.success('Ujian selesai!');
-      router.push('/student/exams');
+      toast.success("Ujian selesai!");
+      router.push("/student/exams");
     } catch (error) {
-      toast.error('Gagal menyelesaikan ujian');
+      toast.error("Gagal menyelesaikan ujian");
     }
   };
 
-  if (attempt.status !== 'IN_PROGRESS') {
+  if (attempt.status !== "IN_PROGRESS") {
     return (
       <MainLayout>
         <div className="flex flex-col items-center justify-center h-96 gap-4">
@@ -203,13 +241,18 @@ function ExamPlayer({ attempt, examDuration }: { attempt: ExamAttempt; examDurat
             Terima kasih telah mengerjakan ujian. Jawaban Anda telah tersimpan.
           </p>
           <div className="flex gap-4">
-            <Button variant="outline" onClick={() => router.push('/student/exams')}>
+            <Button
+              variant="outline"
+              onClick={() => router.push("/student/exams")}
+            >
               Kembali ke Daftar
             </Button>
             {attempt.score !== undefined && attempt.score !== null && (
               <Card className="p-4">
                 <p className="text-sm text-muted-foreground">Nilai Anda</p>
-                <p className="text-3xl font-bold text-primary">{Number(attempt.score)}</p>
+                <p className="text-3xl font-bold text-primary">
+                  {Number(attempt.score)}
+                </p>
               </Card>
             )}
           </div>
@@ -221,7 +264,7 @@ function ExamPlayer({ attempt, examDuration }: { attempt: ExamAttempt; examDurat
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
   return (
@@ -233,7 +276,9 @@ function ExamPlayer({ attempt, examDuration }: { attempt: ExamAttempt; examDurat
             {attempt.exam?.title}
           </div>
           <div className="flex items-center gap-4">
-            <div className={`flex items-center gap-2 font-mono text-xl font-bold ${timeLeft < 300 ? 'text-red-500' : 'text-primary'}`}>
+            <div
+              className={`flex items-center gap-2 font-mono text-xl font-bold ${timeLeft < 300 ? "text-red-500" : "text-primary"}`}
+            >
               <Timer className="h-5 w-5" />
               {formatTime(timeLeft)}
             </div>
@@ -247,12 +292,16 @@ function ExamPlayer({ attempt, examDuration }: { attempt: ExamAttempt; examDurat
                 <AlertDialogHeader>
                   <AlertDialogTitle>Selesaikan Ujian?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Pastikan Anda telah menjawab semua soal. Anda tidak dapat mengubah jawaban setelah ini.
+                    Pastikan Anda telah menjawab semua soal. Anda tidak dapat
+                    mengubah jawaban setelah ini.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Batal</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleFinish} className="bg-primary">
+                  <AlertDialogAction
+                    onClick={handleFinish}
+                    className="bg-primary"
+                  >
                     Ya, Selesai
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -269,47 +318,68 @@ function ExamPlayer({ attempt, examDuration }: { attempt: ExamAttempt; examDurat
             <CardHeader>
               <div className="flex justify-between">
                 <CardTitle>Soal No. {currentIndex + 1}</CardTitle>
-                <span className="text-sm text-muted-foreground">{currentQuestion?.points} Poin</span>
+                <span className="text-sm text-muted-foreground">
+                  {currentQuestion?.points} Poin
+                </span>
               </div>
             </CardHeader>
             <CardContent className="flex-1">
               {currentQuestion ? (
                 <div className="space-y-6">
                   <div className="prose max-w-none">
-                    <p className="whitespace-pre-wrap text-lg">{currentQuestion.content}</p>
+                    <p className="whitespace-pre-wrap text-lg">
+                      {currentQuestion.content}
+                    </p>
                   </div>
 
                   <div className="pt-4 border-t">
-                    {currentQuestion.type === QuestionType.MULTIPLE_CHOICE && currentQuestion.options && (
-                      <RadioGroup
-                        value={answers[currentQuestion.id] || ''}
-                        onValueChange={handleAnswerChange}
-                        className="space-y-3"
-                      >
-                        {currentQuestion.options.map((opt: any) => (
-                          <div key={opt.id} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent cursor-pointer transition-colors">
-                            <RadioGroupItem value={opt.id} id={opt.id} />
-                            <label htmlFor={opt.id} className="flex-1 cursor-pointer font-medium">
-                              {opt.text}
-                            </label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    )}
+                    {currentQuestion.type === QuestionType.MULTIPLE_CHOICE &&
+                      currentQuestion.options && (
+                        <RadioGroup
+                          value={answers[currentQuestion.id] || ""}
+                          onValueChange={handleAnswerChange}
+                          className="space-y-3"
+                        >
+                          {currentQuestion.options.map((opt: any) => (
+                            <div
+                              key={opt.id}
+                              className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent cursor-pointer transition-colors"
+                            >
+                              <RadioGroupItem value={opt.id} id={opt.id} />
+                              <label
+                                htmlFor={opt.id}
+                                className="flex-1 cursor-pointer font-medium"
+                              >
+                                {opt.text}
+                              </label>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      )}
 
                     {currentQuestion.type === QuestionType.TRUE_FALSE && (
                       <RadioGroup
-                        value={answers[currentQuestion.id] || ''}
+                        value={answers[currentQuestion.id] || ""}
                         onValueChange={handleAnswerChange}
                         className="space-y-3"
                       >
                         <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent cursor-pointer">
                           <RadioGroupItem value="true" id="true" />
-                          <label htmlFor="true" className="flex-1 cursor-pointer font-medium">Benar</label>
+                          <label
+                            htmlFor="true"
+                            className="flex-1 cursor-pointer font-medium"
+                          >
+                            Benar
+                          </label>
                         </div>
                         <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent cursor-pointer">
                           <RadioGroupItem value="false" id="false" />
-                          <label htmlFor="false" className="flex-1 cursor-pointer font-medium">Salah</label>
+                          <label
+                            htmlFor="false"
+                            className="flex-1 cursor-pointer font-medium"
+                          >
+                            Salah
+                          </label>
                         </div>
                       </RadioGroup>
                     )}
@@ -317,7 +387,7 @@ function ExamPlayer({ attempt, examDuration }: { attempt: ExamAttempt; examDurat
                     {currentQuestion.type === QuestionType.ESSAY && (
                       <Textarea
                         placeholder="Tulis jawaban Anda di sini..."
-                        value={answers[currentQuestion.id] || ''}
+                        value={answers[currentQuestion.id] || ""}
                         onChange={(e) => handleAnswerChange(e.target.value)}
                         className="min-h-[200px]"
                       />
@@ -341,7 +411,11 @@ function ExamPlayer({ attempt, examDuration }: { attempt: ExamAttempt; examDurat
               </Button>
 
               <Button
-                onClick={() => setCurrentIndex((prev) => Math.min(questions.length - 1, prev + 1))}
+                onClick={() =>
+                  setCurrentIndex((prev) =>
+                    Math.min(questions.length - 1, prev + 1),
+                  )
+                }
                 disabled={currentIndex === questions.length - 1}
               >
                 Selanjutnya
@@ -360,7 +434,8 @@ function ExamPlayer({ attempt, examDuration }: { attempt: ExamAttempt; examDurat
             <CardContent>
               <div className="grid grid-cols-5 gap-2">
                 {questions.map((q, idx) => {
-                  const isAnswered = answers[q.id] !== undefined && answers[q.id] !== '';
+                  const isAnswered =
+                    answers[q.id] !== undefined && answers[q.id] !== "";
                   const isCurrent = currentIndex === idx;
 
                   return (
@@ -369,8 +444,13 @@ function ExamPlayer({ attempt, examDuration }: { attempt: ExamAttempt; examDurat
                       onClick={() => setCurrentIndex(idx)}
                       className={`
                         h-10 w-10 rounded-md text-sm font-medium transition-colors
-                        ${isCurrent ? 'bg-primary text-primary-foreground ring-2 ring-offset-2 ring-primary' :
-                          isAnswered ? 'bg-green-500 text-white' : 'bg-muted hover:bg-muted/80'}
+                        ${
+                          isCurrent
+                            ? "bg-primary text-primary-foreground ring-2 ring-offset-2 ring-primary"
+                            : isAnswered
+                              ? "bg-green-500 text-white"
+                              : "bg-muted hover:bg-muted/80"
+                        }
                       `}
                     >
                       {idx + 1}

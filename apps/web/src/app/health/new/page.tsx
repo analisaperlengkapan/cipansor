@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
@@ -18,42 +24,37 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
-} from '@/components/ui/table';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { toast } from "sonner";
 import {
   useCreateHealthRecord,
   HEALTH_RECORD_TYPES,
   HEALTH_STATUSES,
   HealthRecordType,
   HealthStatus,
-} from '@/hooks/use-health';
-import { useStudents } from '@/hooks/use-students';
+} from "@/hooks/use-health";
+import { useStudents } from "@/hooks/use-students";
 
 const formSchema = z.object({
-  studentId: z.string().min(1, 'Santri wajib dipilih'),
-  recordType: z.string().min(1, 'Jenis rekam wajib dipilih'),
-  date: z.string().min(1, 'Tanggal wajib diisi'),
+  studentId: z.string().min(1, "Santri wajib dipilih"),
+  recordType: z.string().min(1, "Jenis rekam wajib dipilih"),
+  date: z.string().min(1, "Tanggal wajib diisi"),
   symptoms: z.string().optional(),
   diagnosis: z.string().optional(),
   treatment: z.string().optional(),
   medication: z.string().optional(),
   notes: z.string().optional(),
-  status: z.string().min(1, 'Status wajib dipilih'),
+  status: z.string().min(1, "Status wajib dipilih"),
   followUpDate: z.string().optional(),
   createAttendance: z.boolean().default(true),
   notifyParent: z.boolean().default(true),
@@ -63,7 +64,7 @@ type FormData = z.infer<typeof formSchema>;
 
 export default function NewHealthRecordPage() {
   const router = useRouter();
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<{
     id: string;
     name: string;
@@ -80,16 +81,16 @@ export default function NewHealthRecordPage() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      studentId: '',
-      recordType: '',
-      date: new Date().toISOString().split('T')[0],
-      symptoms: '',
-      diagnosis: '',
-      treatment: '',
-      medication: '',
-      notes: '',
-      status: 'HEALTHY',
-      followUpDate: '',
+      studentId: "",
+      recordType: "",
+      date: new Date().toISOString().split("T")[0],
+      symptoms: "",
+      diagnosis: "",
+      treatment: "",
+      medication: "",
+      notes: "",
+      status: "HEALTHY",
+      followUpDate: "",
       createAttendance: true,
       notifyParent: true,
     },
@@ -101,7 +102,7 @@ export default function NewHealthRecordPage() {
         studentId: data.studentId,
         type: data.recordType as HealthRecordType,
         visitDate: data.date,
-        complaint: data.symptoms || '',
+        complaint: data.symptoms || "",
         diagnosis: data.diagnosis || undefined,
         treatment: data.treatment || undefined,
         prescription: data.medication || undefined,
@@ -111,17 +112,21 @@ export default function NewHealthRecordPage() {
         createAttendance: data.createAttendance,
         notifyParent: data.notifyParent,
       });
-      toast.success('Rekam kesehatan berhasil dibuat');
-      router.push('/health');
+      toast.success("Rekam kesehatan berhasil dibuat");
+      router.push("/health");
     } catch {
-      toast.error('Gagal membuat rekam kesehatan');
+      toast.error("Gagal membuat rekam kesehatan");
     }
   };
 
-  const handleSelectStudent = (student: { id: string; name: string; nis: string }) => {
+  const handleSelectStudent = (student: {
+    id: string;
+    name: string;
+    nis: string;
+  }) => {
     setSelectedStudent(student);
-    form.setValue('studentId', student.id);
-    setSearch('');
+    form.setValue("studentId", student.id);
+    setSearch("");
   };
 
   return (
@@ -153,14 +158,16 @@ export default function NewHealthRecordPage() {
                   <div className="flex items-center justify-between rounded-lg border p-4">
                     <div>
                       <p className="font-medium">{selectedStudent.name}</p>
-                      <p className="text-sm text-muted-foreground">{selectedStudent.nis}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedStudent.nis}
+                      </p>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
                         setSelectedStudent(null);
-                        form.setValue('studentId', '');
+                        form.setValue("studentId", "");
                       }}
                     >
                       Ganti
@@ -204,7 +211,9 @@ export default function NewHealthRecordPage() {
                                   }
                                 >
                                   <TableCell>{student.nis}</TableCell>
-                                  <TableCell className="font-medium">{student.name}</TableCell>
+                                  <TableCell className="font-medium">
+                                    {student.name}
+                                  </TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>
@@ -241,9 +250,7 @@ export default function NewHealthRecordPage() {
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Buat Data Absensi (Sakit)
-                        </FormLabel>
+                        <FormLabel>Buat Data Absensi (Sakit)</FormLabel>
                         <FormDescription>
                           Otomatis tandai santri 'Sakit' di sistem absensi.
                         </FormDescription>
@@ -263,9 +270,7 @@ export default function NewHealthRecordPage() {
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Kirim Notifikasi Wali Santri
-                        </FormLabel>
+                        <FormLabel>Kirim Notifikasi Wali Santri</FormLabel>
                         <FormDescription>
                           Kirim pesan notifikasi ke orang tua.
                         </FormDescription>
@@ -290,7 +295,10 @@ export default function NewHealthRecordPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Jenis Rekam</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih jenis" />
@@ -330,7 +338,10 @@ export default function NewHealthRecordPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Status Kesehatan</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih status" />
@@ -461,7 +472,7 @@ export default function NewHealthRecordPage() {
               <Link href="/health">Batal</Link>
             </Button>
             <Button type="submit" disabled={createMutation.isPending}>
-              {createMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+              {createMutation.isPending ? "Menyimpan..." : "Simpan"}
             </Button>
           </div>
         </form>

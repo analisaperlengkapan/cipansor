@@ -24,7 +24,7 @@ export const suppliersService = {
 
     const suppliers = await prisma.supplier.findMany({
       where,
-      orderBy: { name: 'asc' }
+      orderBy: { name: 'asc' },
     });
 
     return suppliers as unknown as Supplier[];
@@ -32,7 +32,7 @@ export const suppliersService = {
 
   findById: async (id: string) => {
     const supplier = await prisma.supplier.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!supplier) throw Errors.notFound('Supplier');
@@ -43,8 +43,8 @@ export const suppliersService = {
     const supplier = await prisma.supplier.create({
       data: {
         ...data,
-        isActive: true
-      }
+        isActive: true,
+      },
     });
     return supplier as unknown as Supplier;
   },
@@ -55,7 +55,7 @@ export const suppliersService = {
 
     const supplier = await prisma.supplier.update({
       where: { id },
-      data
+      data,
     });
     return supplier as unknown as Supplier;
   },
@@ -64,8 +64,8 @@ export const suppliersService = {
     // Soft delete by setting isActive to false
     const supplier = await prisma.supplier.update({
       where: { id },
-      data: { isActive: false }
+      data: { isActive: false },
     });
     return supplier as unknown as Supplier;
-  }
+  },
 };

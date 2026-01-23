@@ -1,17 +1,23 @@
-'use client';
+"use client";
 
-import { use, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, Calendar, Clock, Trash2 } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+import { use, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Save, Calendar, Clock, Trash2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Form,
   FormControl,
@@ -20,16 +26,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { toast } from "sonner";
 import {
   useSchedules,
   useUpdateSchedule,
@@ -38,29 +44,44 @@ import {
   SCHEDULE_DAYS,
   SCHEDULE_DAY_LABELS,
   ScheduleDay,
-} from '@/hooks/use-curriculum';
-import { useClasses } from '@/hooks/use-classes';
-import { useUsers } from '@/hooks/use-users';
-import { useAcademicYears } from '@/hooks/use-academic-years';
+} from "@/hooks/use-curriculum";
+import { useClasses } from "@/hooks/use-classes";
+import { useUsers } from "@/hooks/use-users";
+import { useAcademicYears } from "@/hooks/use-academic-years";
 
 const scheduleSchema = z.object({
-  classId: z.string().min(1, 'Kelas wajib dipilih'),
-  subjectId: z.string().min(1, 'Mata pelajaran wajib dipilih'),
-  teacherId: z.string().min(1, 'Guru wajib dipilih'),
-  day: z.enum(['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'] as const, {
-    required_error: 'Hari wajib dipilih',
-  }),
-  startTime: z.string().min(1, 'Waktu mulai wajib diisi'),
-  endTime: z.string().min(1, 'Waktu selesai wajib diisi'),
+  classId: z.string().min(1, "Kelas wajib dipilih"),
+  subjectId: z.string().min(1, "Mata pelajaran wajib dipilih"),
+  teacherId: z.string().min(1, "Guru wajib dipilih"),
+  day: z.enum(
+    [
+      "MONDAY",
+      "TUESDAY",
+      "WEDNESDAY",
+      "THURSDAY",
+      "FRIDAY",
+      "SATURDAY",
+      "SUNDAY",
+    ] as const,
+    {
+      required_error: "Hari wajib dipilih",
+    },
+  ),
+  startTime: z.string().min(1, "Waktu mulai wajib diisi"),
+  endTime: z.string().min(1, "Waktu selesai wajib diisi"),
   room: z.string().optional(),
   notes: z.string().optional(),
-  academicYearId: z.string().min(1, 'Tahun ajaran wajib dipilih'),
+  academicYearId: z.string().min(1, "Tahun ajaran wajib dipilih"),
   isActive: z.boolean(),
 });
 
 type ScheduleFormData = z.infer<typeof scheduleSchema>;
 
-export default function EditSchedulePage({ params }: { params: Promise<{ id: string }> }) {
+export default function EditSchedulePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const router = useRouter();
 
@@ -71,7 +92,7 @@ export default function EditSchedulePage({ params }: { params: Promise<{ id: str
   const deleteMutation = useDeleteSchedule();
   const { data: subjects } = useSubjects({ isActive: true });
   const { data: classesData } = useClasses();
-  const { data: usersData } = useUsers({ role: 'TEACHER' });
+  const { data: usersData } = useUsers({ role: "TEACHER" });
   const { data: academicYearsData } = useAcademicYears();
 
   const classes = classesData?.data || [];
@@ -81,15 +102,15 @@ export default function EditSchedulePage({ params }: { params: Promise<{ id: str
   const form = useForm<ScheduleFormData>({
     resolver: zodResolver(scheduleSchema),
     defaultValues: {
-      classId: '',
-      subjectId: '',
-      teacherId: '',
+      classId: "",
+      subjectId: "",
+      teacherId: "",
       day: undefined,
-      startTime: '07:00',
-      endTime: '08:30',
-      room: '',
-      notes: '',
-      academicYearId: '',
+      startTime: "07:00",
+      endTime: "08:30",
+      room: "",
+      notes: "",
+      academicYearId: "",
       isActive: true,
     },
   });
@@ -103,8 +124,8 @@ export default function EditSchedulePage({ params }: { params: Promise<{ id: str
         day: schedule.day,
         startTime: schedule.startTime,
         endTime: schedule.endTime,
-        room: schedule.room || '',
-        notes: schedule.notes || '',
+        room: schedule.room || "",
+        notes: schedule.notes || "",
         academicYearId: schedule.academicYearId,
         isActive: schedule.isActive,
       });
@@ -128,20 +149,20 @@ export default function EditSchedulePage({ params }: { params: Promise<{ id: str
           isActive: data.isActive,
         },
       });
-      toast.success('Jadwal berhasil diperbarui');
-      router.push('/curriculum?tab=schedule');
+      toast.success("Jadwal berhasil diperbarui");
+      router.push("/curriculum?tab=schedule");
     } catch {
-      toast.error('Gagal memperbarui jadwal');
+      toast.error("Gagal memperbarui jadwal");
     }
   };
 
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(id);
-      toast.success('Jadwal berhasil dihapus');
-      router.push('/curriculum?tab=schedule');
+      toast.success("Jadwal berhasil dihapus");
+      router.push("/curriculum?tab=schedule");
     } catch {
-      toast.error('Gagal menghapus jadwal');
+      toast.error("Gagal menghapus jadwal");
     }
   };
 
@@ -202,7 +223,10 @@ export default function EditSchedulePage({ params }: { params: Promise<{ id: str
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Kelas *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih kelas" />
@@ -227,7 +251,10 @@ export default function EditSchedulePage({ params }: { params: Promise<{ id: str
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Mata Pelajaran *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih mata pelajaran" />
@@ -253,7 +280,10 @@ export default function EditSchedulePage({ params }: { params: Promise<{ id: str
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Guru Pengajar *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih guru" />
@@ -278,7 +308,10 @@ export default function EditSchedulePage({ params }: { params: Promise<{ id: str
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Hari *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih hari" />
@@ -375,7 +408,10 @@ export default function EditSchedulePage({ params }: { params: Promise<{ id: str
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tahun Ajaran *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih tahun ajaran" />
@@ -384,7 +420,7 @@ export default function EditSchedulePage({ params }: { params: Promise<{ id: str
                           <SelectContent>
                             {academicYears.map((ay) => (
                               <SelectItem key={ay.id} value={ay.id}>
-                                {ay.name} {ay.isActive && '(Aktif)'}
+                                {ay.name} {ay.isActive && "(Aktif)"}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -435,20 +471,20 @@ export default function EditSchedulePage({ params }: { params: Promise<{ id: str
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Hari</span>
                     <span>
-                      {form.watch('day')
-                        ? SCHEDULE_DAY_LABELS[form.watch('day')]
-                        : '-'}
+                      {form.watch("day")
+                        ? SCHEDULE_DAY_LABELS[form.watch("day")]
+                        : "-"}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Waktu</span>
                     <span>
-                      {form.watch('startTime')} - {form.watch('endTime')}
+                      {form.watch("startTime")} - {form.watch("endTime")}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Ruangan</span>
-                    <span>{form.watch('room') || '-'}</span>
+                    <span>{form.watch("room") || "-"}</span>
                   </div>
                 </CardContent>
               </Card>

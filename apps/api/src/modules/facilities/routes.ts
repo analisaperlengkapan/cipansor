@@ -51,11 +51,7 @@ router.put(
  * @desc Delete land
  * @access SUPER_ADMIN
  */
-router.delete(
-  '/lands/:id',
-  authorize(UserRole.SUPER_ADMIN),
-  facilitiesController.deleteLand
-);
+router.delete('/lands/:id', authorize(UserRole.SUPER_ADMIN), facilitiesController.deleteLand);
 
 // ==================== BUILDINGS ====================
 
@@ -127,22 +123,14 @@ router.get('/room-types/:id', facilitiesController.getRoomType);
  * @desc Create new room type
  * @access SUPER_ADMIN
  */
-router.post(
-  '/room-types',
-  authorize(UserRole.SUPER_ADMIN),
-  facilitiesController.createRoomType
-);
+router.post('/room-types', authorize(UserRole.SUPER_ADMIN), facilitiesController.createRoomType);
 
 /**
  * @route PUT /api/facilities/room-types/:id
  * @desc Update room type
  * @access SUPER_ADMIN
  */
-router.put(
-  '/room-types/:id',
-  authorize(UserRole.SUPER_ADMIN),
-  facilitiesController.updateRoomType
-);
+router.put('/room-types/:id', authorize(UserRole.SUPER_ADMIN), facilitiesController.updateRoomType);
 
 /**
  * @route DELETE /api/facilities/room-types/:id

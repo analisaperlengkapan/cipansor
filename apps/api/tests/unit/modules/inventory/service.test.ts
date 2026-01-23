@@ -3,7 +3,7 @@ import {
   createMaintenanceRequest,
   updateMaintenanceStatus,
   disposeAsset,
-  getQrCode
+  getQrCode,
 } from '../../../../src/modules/inventory/service';
 import { AssetStatus, AssetMaintenanceStatus, AssetDisposalReason } from '@prisma/client';
 
@@ -14,9 +14,13 @@ vi.mock('@prisma/client', async (importOriginal) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ...(original as any),
     AssetStatus: { ACTIVE: 'ACTIVE', DISPOSED: 'DISPOSED', MAINTENANCE: 'MAINTENANCE' },
-    AssetMaintenanceStatus: { PENDING: 'PENDING', COMPLETED: 'COMPLETED', IN_PROGRESS: 'IN_PROGRESS' },
+    AssetMaintenanceStatus: {
+      PENDING: 'PENDING',
+      COMPLETED: 'COMPLETED',
+      IN_PROGRESS: 'IN_PROGRESS',
+    },
     AssetDisposalReason: { SOLD: 'SOLD' },
-    NotificationType: { ALERT: 'ALERT' }
+    NotificationType: { ALERT: 'ALERT' },
   };
 });
 
@@ -78,7 +82,7 @@ describe('Inventory Service', () => {
         id: 'asset-1',
         code: 'AST-001',
         name: 'Laptop',
-        unitId: 'unit-1'
+        unitId: 'unit-1',
       });
 
       prismaMock.assetMaintenance.create.mockResolvedValue({
@@ -104,10 +108,12 @@ describe('Inventory Service', () => {
       // Allow async promises to settle
       await new Promise(process.nextTick);
 
-      expect(createNotification).toHaveBeenCalledWith(expect.objectContaining({
-        userId: 'admin-1',
-        type: 'ALERT',
-      }));
+      expect(createNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'admin-1',
+          type: 'ALERT',
+        })
+      );
     });
   });
 
@@ -134,10 +140,12 @@ describe('Inventory Service', () => {
         data: { status: AssetStatus.ACTIVE },
       });
 
-      expect(prismaMock.assetMaintenance.update).toHaveBeenCalledWith(expect.objectContaining({
-        where: { id: maintenanceId },
-        data: expect.objectContaining({ status: AssetMaintenanceStatus.COMPLETED }),
-      }));
+      expect(prismaMock.assetMaintenance.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: maintenanceId },
+          data: expect.objectContaining({ status: AssetMaintenanceStatus.COMPLETED }),
+        })
+      );
     });
   });
 

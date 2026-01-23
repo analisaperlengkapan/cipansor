@@ -1,9 +1,16 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isToday } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useState } from "react";
+import Link from "next/link";
+import {
+  format,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameDay,
+  isToday,
+} from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   Plus,
   Calendar,
@@ -14,40 +21,40 @@ import {
   Sun,
   CheckCircle2,
   XCircle,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import {
   useMuhasabahRecords,
   useMyMuhasabahStats,
   MUHASABAH_MOODS,
   SHOLAT_WAJIB,
   calculateSholatCompletion,
-} from '@/hooks/use-muhasabah';
-import { cn } from '@/lib/utils';
+} from "@/hooks/use-muhasabah";
+import { cn } from "@/lib/utils";
 
 export default function MuhasabahPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  
+
   // Get week dates
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
   const { data: recordsData, isLoading: recordsLoading } = useMuhasabahRecords({
-    startDate: format(weekStart, 'yyyy-MM-dd'),
-    endDate: format(weekEnd, 'yyyy-MM-dd'),
+    startDate: format(weekStart, "yyyy-MM-dd"),
+    endDate: format(weekEnd, "yyyy-MM-dd"),
     limit: 7,
   });
 
@@ -69,9 +76,9 @@ export default function MuhasabahPage() {
         title="Muhasabah Harian"
         description="Evaluasi dan introspeksi ibadah harian"
         action={{
-          label: 'Isi Muhasabah',
+          label: "Isi Muhasabah",
           icon: <Plus className="h-4 w-4" />,
-          href: '/muhasabah/new',
+          href: "/muhasabah/new",
         }}
       />
 
@@ -81,10 +88,12 @@ export default function MuhasabahPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Flame className="h-4 w-4 text-orange-500" />
-              <span className="text-sm text-muted-foreground">Streak Saat Ini</span>
+              <span className="text-sm text-muted-foreground">
+                Streak Saat Ini
+              </span>
             </div>
             <p className="text-2xl font-bold text-orange-600">
-              {statsLoading ? '-' : `${stats?.currentStreak || 0} Hari`}
+              {statsLoading ? "-" : `${stats?.currentStreak || 0} Hari`}
             </p>
           </CardContent>
         </Card>
@@ -92,10 +101,12 @@ export default function MuhasabahPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-blue-500" />
-              <span className="text-sm text-muted-foreground">Streak Terpanjang</span>
+              <span className="text-sm text-muted-foreground">
+                Streak Terpanjang
+              </span>
             </div>
             <p className="text-2xl font-bold text-blue-600">
-              {statsLoading ? '-' : `${stats?.longestStreak || 0} Hari`}
+              {statsLoading ? "-" : `${stats?.longestStreak || 0} Hari`}
             </p>
           </CardContent>
         </Card>
@@ -103,10 +114,12 @@ export default function MuhasabahPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Moon className="h-4 w-4 text-green-500" />
-              <span className="text-sm text-muted-foreground">Rata-rata Sholat</span>
+              <span className="text-sm text-muted-foreground">
+                Rata-rata Sholat
+              </span>
             </div>
             <p className="text-2xl font-bold text-green-600">
-              {statsLoading ? '-' : `${stats?.averageSholatCompletion || 0}%`}
+              {statsLoading ? "-" : `${stats?.averageSholatCompletion || 0}%`}
             </p>
           </CardContent>
         </Card>
@@ -114,10 +127,12 @@ export default function MuhasabahPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-purple-500" />
-              <span className="text-sm text-muted-foreground">Rata-rata Tilawah</span>
+              <span className="text-sm text-muted-foreground">
+                Rata-rata Tilawah
+              </span>
             </div>
             <p className="text-2xl font-bold text-purple-600">
-              {statsLoading ? '-' : `${stats?.averageTilawahPages || 0} Hal`}
+              {statsLoading ? "-" : `${stats?.averageTilawahPages || 0} Hal`}
             </p>
           </CardContent>
         </Card>
@@ -133,15 +148,17 @@ export default function MuhasabahPage() {
                 Minggu Ini
               </CardTitle>
               <CardDescription>
-                {format(weekStart, 'd MMM', { locale: localeId })} -{' '}
-                {format(weekEnd, 'd MMM yyyy', { locale: localeId })}
+                {format(weekStart, "d MMM", { locale: localeId })} -{" "}
+                {format(weekEnd, "d MMM yyyy", { locale: localeId })}
               </CardDescription>
             </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setSelectedDate((d) => new Date(d.setDate(d.getDate() - 7)))}
+                onClick={() =>
+                  setSelectedDate((d) => new Date(d.setDate(d.getDate() - 7)))
+                }
               >
                 Sebelumnya
               </Button>
@@ -155,7 +172,9 @@ export default function MuhasabahPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setSelectedDate((d) => new Date(d.setDate(d.getDate() + 7)))}
+                onClick={() =>
+                  setSelectedDate((d) => new Date(d.setDate(d.getDate() + 7)))
+                }
               >
                 Selanjutnya
               </Button>
@@ -167,25 +186,27 @@ export default function MuhasabahPage() {
             {weekDays.map((day) => {
               const record = getRecordForDate(day);
               const moodConfig = record ? getMoodConfig(record.mood) : null;
-              const sholatCompletion = record ? calculateSholatCompletion(record) : 0;
+              const sholatCompletion = record
+                ? calculateSholatCompletion(record)
+                : 0;
               const hasRecord = !!record;
 
               return (
                 <div
                   key={day.toISOString()}
                   className={cn(
-                    'p-3 rounded-lg text-center transition-colors',
-                    isToday(day) && 'ring-2 ring-primary',
+                    "p-3 rounded-lg text-center transition-colors",
+                    isToday(day) && "ring-2 ring-primary",
                     hasRecord
-                      ? 'bg-green-50 dark:bg-green-950'
-                      : 'bg-gray-50 dark:bg-gray-900'
+                      ? "bg-green-50 dark:bg-green-950"
+                      : "bg-gray-50 dark:bg-gray-900",
                   )}
                 >
                   <p className="text-xs text-muted-foreground uppercase">
-                    {format(day, 'EEE', { locale: localeId })}
+                    {format(day, "EEE", { locale: localeId })}
                   </p>
-                  <p className="text-lg font-bold">{format(day, 'd')}</p>
-                  
+                  <p className="text-lg font-bold">{format(day, "d")}</p>
+
                   {hasRecord ? (
                     <div className="mt-2">
                       <span className="text-2xl">{moodConfig?.emoji}</span>
@@ -197,23 +218,44 @@ export default function MuhasabahPage() {
                   ) : (
                     <div className="mt-2">
                       <XCircle className="h-6 w-6 mx-auto text-muted-foreground/50" />
-                      <p className="text-xs text-muted-foreground mt-1">Belum isi</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Belum isi
+                      </p>
                     </div>
                   )}
 
                   {!hasRecord && !day.getTime ? (
-                    <Button variant="ghost" size="sm" className="mt-2 w-full" asChild>
-                      <Link href={`/muhasabah/new?date=${format(day, 'yyyy-MM-dd')}`}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-2 w-full"
+                      asChild
+                    >
+                      <Link
+                        href={`/muhasabah/new?date=${format(day, "yyyy-MM-dd")}`}
+                      >
                         Isi
                       </Link>
                     </Button>
                   ) : hasRecord ? (
-                    <Button variant="ghost" size="sm" className="mt-2 w-full" asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-2 w-full"
+                      asChild
+                    >
                       <Link href={`/muhasabah/${record.id}`}>Detail</Link>
                     </Button>
                   ) : (
-                    <Button variant="ghost" size="sm" className="mt-2 w-full" asChild>
-                      <Link href={`/muhasabah/new?date=${format(day, 'yyyy-MM-dd')}`}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-2 w-full"
+                      asChild
+                    >
+                      <Link
+                        href={`/muhasabah/new?date=${format(day, "yyyy-MM-dd")}`}
+                      >
                         Isi
                       </Link>
                     </Button>
@@ -251,10 +293,12 @@ export default function MuhasabahPage() {
                       <div className="flex items-center gap-4">
                         <div className="text-center">
                           <p className="text-sm text-muted-foreground">
-                            {format(new Date(record.date), 'EEE', { locale: localeId })}
+                            {format(new Date(record.date), "EEE", {
+                              locale: localeId,
+                            })}
                           </p>
                           <p className="text-lg font-bold">
-                            {format(new Date(record.date), 'd')}
+                            {format(new Date(record.date), "d")}
                           </p>
                         </div>
                         <div className="text-3xl">{moodConfig?.emoji}</div>
@@ -279,10 +323,10 @@ export default function MuhasabahPage() {
                             <div
                               key={sholat.key}
                               className={cn(
-                                'w-6 h-6 rounded-full flex items-center justify-center text-xs',
+                                "w-6 h-6 rounded-full flex items-center justify-center text-xs",
                                 record[sholat.key as keyof typeof record]
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-red-100 text-red-800'
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800",
                               )}
                               title={sholat.label}
                             >
@@ -314,7 +358,8 @@ export default function MuhasabahPage() {
             <Sun className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">Belum Ada Catatan</h3>
             <p className="text-muted-foreground mb-4">
-              Mulai catat muhasabah harian Anda untuk melacak ibadah dan perkembangan spiritual
+              Mulai catat muhasabah harian Anda untuk melacak ibadah dan
+              perkembangan spiritual
             </p>
             <Button asChild>
               <Link href="/muhasabah/new">

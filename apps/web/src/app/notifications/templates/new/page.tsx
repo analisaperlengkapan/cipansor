@@ -1,16 +1,22 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import {
   Form,
   FormControl,
@@ -19,15 +25,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   useCreateNotificationTemplate,
   NOTIFICATION_TYPES,
@@ -36,17 +42,17 @@ import {
   NOTIFICATION_CHANNEL_LABELS,
   type NotificationType,
   type NotificationChannel,
-} from '@/hooks';
-import { ArrowLeft, Loader2, Plus, X, Info } from 'lucide-react';
-import { toast } from 'sonner';
-import { useState } from 'react';
+} from "@/hooks";
+import { ArrowLeft, Loader2, Plus, X, Info } from "lucide-react";
+import { toast } from "sonner";
+import { useState } from "react";
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Nama template wajib diisi'),
-  type: z.string().min(1, 'Tipe notifikasi wajib dipilih'),
-  titleTemplate: z.string().min(1, 'Template judul wajib diisi'),
-  messageTemplate: z.string().min(1, 'Template pesan wajib diisi'),
-  channels: z.array(z.string()).min(1, 'Minimal pilih satu channel'),
+  name: z.string().min(1, "Nama template wajib diisi"),
+  type: z.string().min(1, "Tipe notifikasi wajib dipilih"),
+  titleTemplate: z.string().min(1, "Template judul wajib diisi"),
+  messageTemplate: z.string().min(1, "Template pesan wajib diisi"),
+  channels: z.array(z.string()).min(1, "Minimal pilih satu channel"),
   isActive: z.boolean(),
 });
 
@@ -54,36 +60,66 @@ type FormValues = z.infer<typeof formSchema>;
 
 // Common variables for each notification type
 const COMMON_VARIABLES: Record<string, string[]> = {
-  ANNOUNCEMENT: ['{{nama_santri}}', '{{nama_kelas}}', '{{tanggal}}'],
-  PAYMENT_REMINDER: ['{{nama_santri}}', '{{nama_tagihan}}', '{{jumlah}}', '{{jatuh_tempo}}'],
-  ATTENDANCE: ['{{nama_santri}}', '{{tanggal}}', '{{status}}', '{{waktu}}'],
-  ACADEMIC: ['{{nama_santri}}', '{{mata_pelajaran}}', '{{nilai}}', '{{semester}}'],
-  HEALTH: ['{{nama_santri}}', '{{keluhan}}', '{{diagnosis}}', '{{tanggal_pemeriksaan}}'],
-  PERMIT: ['{{nama_santri}}', '{{jenis_izin}}', '{{tanggal_mulai}}', '{{tanggal_selesai}}'],
-  VIOLATION: ['{{nama_santri}}', '{{jenis_pelanggaran}}', '{{poin}}', '{{tanggal}}'],
-  REWARD: ['{{nama_santri}}', '{{jenis_penghargaan}}', '{{poin}}', '{{tanggal}}'],
-  OTHER: ['{{nama_santri}}', '{{pesan}}'],
+  ANNOUNCEMENT: ["{{nama_santri}}", "{{nama_kelas}}", "{{tanggal}}"],
+  PAYMENT_REMINDER: [
+    "{{nama_santri}}",
+    "{{nama_tagihan}}",
+    "{{jumlah}}",
+    "{{jatuh_tempo}}",
+  ],
+  ATTENDANCE: ["{{nama_santri}}", "{{tanggal}}", "{{status}}", "{{waktu}}"],
+  ACADEMIC: [
+    "{{nama_santri}}",
+    "{{mata_pelajaran}}",
+    "{{nilai}}",
+    "{{semester}}",
+  ],
+  HEALTH: [
+    "{{nama_santri}}",
+    "{{keluhan}}",
+    "{{diagnosis}}",
+    "{{tanggal_pemeriksaan}}",
+  ],
+  PERMIT: [
+    "{{nama_santri}}",
+    "{{jenis_izin}}",
+    "{{tanggal_mulai}}",
+    "{{tanggal_selesai}}",
+  ],
+  VIOLATION: [
+    "{{nama_santri}}",
+    "{{jenis_pelanggaran}}",
+    "{{poin}}",
+    "{{tanggal}}",
+  ],
+  REWARD: [
+    "{{nama_santri}}",
+    "{{jenis_penghargaan}}",
+    "{{poin}}",
+    "{{tanggal}}",
+  ],
+  OTHER: ["{{nama_santri}}", "{{pesan}}"],
 };
 
 export default function NewTemplatePage() {
   const router = useRouter();
   const createTemplate = useCreateNotificationTemplate();
-  const [customVariable, setCustomVariable] = useState('');
+  const [customVariable, setCustomVariable] = useState("");
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      type: '',
-      titleTemplate: '',
-      messageTemplate: '',
-      channels: ['IN_APP'],
+      name: "",
+      type: "",
+      titleTemplate: "",
+      messageTemplate: "",
+      channels: ["IN_APP"],
       isActive: true,
     },
   });
 
   const [variables, setVariables] = useState<string[]>([]);
-  const selectedType = form.watch('type');
+  const selectedType = form.watch("type");
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -93,10 +129,10 @@ export default function NewTemplatePage() {
         channels: values.channels as NotificationChannel[],
         variables,
       });
-      toast.success('Template berhasil dibuat');
-      router.push('/notifications/templates');
+      toast.success("Template berhasil dibuat");
+      router.push("/notifications/templates");
     } catch {
-      toast.error('Gagal membuat template');
+      toast.error("Gagal membuat template");
     }
   };
 
@@ -113,13 +149,13 @@ export default function NewTemplatePage() {
   const addCustomVariable = () => {
     if (customVariable && !variables.includes(`{{${customVariable}}}`)) {
       setVariables([...variables, `{{${customVariable}}}`]);
-      setCustomVariable('');
+      setCustomVariable("");
     }
   };
 
   const insertVariableToMessage = (variable: string) => {
-    const currentMessage = form.getValues('messageTemplate');
-    form.setValue('messageTemplate', currentMessage + variable);
+    const currentMessage = form.getValues("messageTemplate");
+    form.setValue("messageTemplate", currentMessage + variable);
   };
 
   return (
@@ -132,8 +168,12 @@ export default function NewTemplatePage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Buat Template Baru</h1>
-          <p className="text-muted-foreground">Buat template notifikasi otomatis</p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Buat Template Baru
+          </h1>
+          <p className="text-muted-foreground">
+            Buat template notifikasi otomatis
+          </p>
         </div>
       </div>
 
@@ -145,7 +185,9 @@ export default function NewTemplatePage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Informasi Template</CardTitle>
-                  <CardDescription>Detail dasar template notifikasi</CardDescription>
+                  <CardDescription>
+                    Detail dasar template notifikasi
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
@@ -155,7 +197,10 @@ export default function NewTemplatePage() {
                       <FormItem>
                         <FormLabel>Nama Template</FormLabel>
                         <FormControl>
-                          <Input placeholder="Contoh: Pengingat Pembayaran SPP" {...field} />
+                          <Input
+                            placeholder="Contoh: Pengingat Pembayaran SPP"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -168,7 +213,10 @@ export default function NewTemplatePage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tipe Notifikasi</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih tipe notifikasi" />
@@ -200,7 +248,7 @@ export default function NewTemplatePage() {
                           />
                         </FormControl>
                         <FormDescription>
-                          Gunakan variabel dengan format {'{{nama_variabel}}'}
+                          Gunakan variabel dengan format {"{{nama_variabel}}"}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -241,7 +289,9 @@ export default function NewTemplatePage() {
                               control={form.control}
                               name="channels"
                               render={({ field }) => {
-                                const currentValue = Array.isArray(field.value) ? field.value : [];
+                                const currentValue = Array.isArray(field.value)
+                                  ? field.value
+                                  : [];
                                 return (
                                   <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                                     <FormControl>
@@ -250,7 +300,9 @@ export default function NewTemplatePage() {
                                         onCheckedChange={(checked) => {
                                           const newValue = checked
                                             ? [...currentValue, channel]
-                                            : currentValue.filter((v: string) => v !== channel);
+                                            : currentValue.filter(
+                                                (v: string) => v !== channel,
+                                              );
                                           field.onChange(newValue);
                                         }}
                                       />
@@ -275,13 +327,19 @@ export default function NewTemplatePage() {
                     render={({ field }) => (
                       <FormItem className="flex items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel className="text-base">Status Aktif</FormLabel>
+                          <FormLabel className="text-base">
+                            Status Aktif
+                          </FormLabel>
                           <FormDescription>
-                            Template aktif dapat digunakan untuk notifikasi otomatis
+                            Template aktif dapat digunakan untuk notifikasi
+                            otomatis
                           </FormDescription>
                         </div>
                         <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         </FormControl>
                       </FormItem>
                     )}
@@ -325,7 +383,9 @@ export default function NewTemplatePage() {
                   )}
 
                   <div>
-                    <p className="text-sm font-medium mb-2">Variabel Digunakan:</p>
+                    <p className="text-sm font-medium mb-2">
+                      Variabel Digunakan:
+                    </p>
                     {variables.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
                         {variables.map((variable) => (
@@ -341,19 +401,23 @@ export default function NewTemplatePage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">Belum ada variabel</p>
+                      <p className="text-sm text-muted-foreground">
+                        Belum ada variabel
+                      </p>
                     )}
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium mb-2">Tambah Variabel Kustom:</p>
+                    <p className="text-sm font-medium mb-2">
+                      Tambah Variabel Kustom:
+                    </p>
                     <div className="flex gap-2">
                       <Input
                         placeholder="nama_variabel"
                         value={customVariable}
                         onChange={(e) => setCustomVariable(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
+                          if (e.key === "Enter") {
                             e.preventDefault();
                             addCustomVariable();
                           }
@@ -379,10 +443,11 @@ export default function NewTemplatePage() {
                 <CardContent>
                   <div className="rounded-lg border p-4 bg-muted/50 space-y-2">
                     <p className="font-semibold text-sm">
-                      {form.watch('titleTemplate') || 'Judul notifikasi...'}
+                      {form.watch("titleTemplate") || "Judul notifikasi..."}
                     </p>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {form.watch('messageTemplate') || 'Isi pesan notifikasi...'}
+                      {form.watch("messageTemplate") ||
+                        "Isi pesan notifikasi..."}
                     </p>
                   </div>
                 </CardContent>
@@ -396,7 +461,9 @@ export default function NewTemplatePage() {
               <Link href="/notifications/templates">Batal</Link>
             </Button>
             <Button type="submit" disabled={createTemplate.isPending}>
-              {createTemplate.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {createTemplate.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Simpan Template
             </Button>
           </div>

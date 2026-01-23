@@ -1,10 +1,16 @@
-'use client';
+"use client";
 
-import { useParams, useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useParams, useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -12,8 +18,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { useReportCard, usePublishReportCards } from '@/hooks';
+} from "@/components/ui/table";
+import { useReportCard, usePublishReportCards } from "@/hooks";
 import {
   ArrowLeft,
   Download,
@@ -27,11 +33,11 @@ import {
   Award,
   BookOpen,
   Clock,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import Link from 'next/link';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import Link from "next/link";
+import { toast } from "sonner";
 
 export default function ReportCardDetailPage() {
   const params = useParams();
@@ -57,7 +63,7 @@ export default function ReportCardDetailPage() {
         <div className="flex flex-col items-center justify-center h-64 space-y-4">
           <AlertCircle className="h-12 w-12 text-muted-foreground" />
           <p className="text-muted-foreground">Rapor tidak ditemukan</p>
-          <Button onClick={() => router.push('/assessment/report-cards')}>
+          <Button onClick={() => router.push("/assessment/report-cards")}>
             Kembali ke Daftar
           </Button>
         </div>
@@ -69,25 +75,25 @@ export default function ReportCardDetailPage() {
     if (!reportCard) return;
     try {
       await publishReportCards.mutateAsync([reportCardId]);
-      toast.success('Rapor berhasil dipublikasikan');
+      toast.success("Rapor berhasil dipublikasikan");
     } catch (error) {
-      toast.error('Gagal mempublikasikan rapor');
+      toast.error("Gagal mempublikasikan rapor");
     }
   };
 
   const getGradeColor = (score: number) => {
-    if (score >= 90) return 'text-green-600';
-    if (score >= 80) return 'text-blue-600';
-    if (score >= 70) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 90) return "text-green-600";
+    if (score >= 80) return "text-blue-600";
+    if (score >= 70) return "text-yellow-600";
+    return "text-red-600";
   };
 
   const getGradeLetter = (score: number): string => {
-    if (score >= 90) return 'A';
-    if (score >= 80) return 'B';
-    if (score >= 70) return 'C';
-    if (score >= 60) return 'D';
-    return 'E';
+    if (score >= 90) return "A";
+    if (score >= 80) return "B";
+    if (score >= 70) return "C";
+    if (score >= 60) return "D";
+    return "E";
   };
 
   return (
@@ -100,7 +106,9 @@ export default function ReportCardDetailPage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Detail Rapor</h1>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Detail Rapor
+              </h1>
               <p className="text-muted-foreground">
                 Semester {reportCard.semester} - {reportCard.academicYear?.name}
               </p>
@@ -108,7 +116,11 @@ export default function ReportCardDetailPage() {
           </div>
           <div className="flex gap-2">
             {!reportCard.isPublished && (
-              <Button variant="outline" onClick={handlePublish} disabled={publishReportCards.isPending}>
+              <Button
+                variant="outline"
+                onClick={handlePublish}
+                disabled={publishReportCards.isPending}
+              >
                 {publishReportCards.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -130,7 +142,9 @@ export default function ReportCardDetailPage() {
               </Link>
             </Button>
             <Button asChild>
-              <Link href={`/assessment/report-cards/${reportCardId}/print-merdeka`}>
+              <Link
+                href={`/assessment/report-cards/${reportCardId}/print-merdeka`}
+              >
                 <Download className="mr-2 h-4 w-4" />
                 Cetak Kurikulum Merdeka
               </Link>
@@ -139,8 +153,11 @@ export default function ReportCardDetailPage() {
         </div>
 
         {/* Status Banner */}
-        <Badge variant={reportCard.isPublished ? 'default' : 'secondary'} className="text-sm">
-          {reportCard.isPublished ? 'Dipublikasikan' : 'Draft'}
+        <Badge
+          variant={reportCard.isPublished ? "default" : "secondary"}
+          className="text-sm"
+        >
+          {reportCard.isPublished ? "Dipublikasikan" : "Draft"}
         </Badge>
 
         <div className="grid gap-6 md:grid-cols-3">
@@ -156,7 +173,9 @@ export default function ReportCardDetailPage() {
               <dl className="space-y-3 text-sm">
                 <div>
                   <dt className="text-muted-foreground">Nama</dt>
-                  <dd className="font-medium text-lg">{reportCard.student?.user?.name || '-'}</dd>
+                  <dd className="font-medium text-lg">
+                    {reportCard.student?.user?.name || "-"}
+                  </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">NIS</dt>
@@ -164,7 +183,9 @@ export default function ReportCardDetailPage() {
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">NISN</dt>
-                  <dd className="font-mono">{reportCard.student?.nisn ?? '-'}</dd>
+                  <dd className="font-mono">
+                    {reportCard.student?.nisn ?? "-"}
+                  </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Kelas</dt>
@@ -186,22 +207,30 @@ export default function ReportCardDetailPage() {
               <dl className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Tahun Ajaran</dt>
-                  <dd className="font-medium">{reportCard.academicYear?.name}</dd>
+                  <dd className="font-medium">
+                    {reportCard.academicYear?.name}
+                  </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Semester</dt>
-                  <dd className="font-medium">Semester {reportCard.semester}</dd>
+                  <dd className="font-medium">
+                    Semester {reportCard.semester}
+                  </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Wali Kelas</dt>
-                  <dd className="font-medium">{reportCard.class?.teacher?.name ?? '-'}</dd>
+                  <dd className="font-medium">
+                    {reportCard.class?.teacher?.name ?? "-"}
+                  </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Tanggal Cetak</dt>
                   <dd>
                     {reportCard.printedAt
-                      ? format(new Date(reportCard.printedAt), 'd MMM yyyy', { locale: idLocale })
-                      : '-'}
+                      ? format(new Date(reportCard.printedAt), "d MMM yyyy", {
+                          locale: idLocale,
+                        })
+                      : "-"}
                   </dd>
                 </div>
               </dl>
@@ -220,20 +249,24 @@ export default function ReportCardDetailPage() {
               <div className="text-center space-y-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Rata-rata</p>
-                  <p className={`text-4xl font-bold ${getGradeColor(reportCard.averageScore ?? 0)}`}>
-                    {reportCard.averageScore?.toFixed(1) ?? '-'}
+                  <p
+                    className={`text-4xl font-bold ${getGradeColor(reportCard.averageScore ?? 0)}`}
+                  >
+                    {reportCard.averageScore?.toFixed(1) ?? "-"}
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-3 bg-muted rounded-lg">
                     <p className="text-xs text-muted-foreground">Peringkat</p>
                     <p className="text-xl font-bold">
-                      {reportCard.rank ?? '-'}/{reportCard.totalStudents ?? '-'}
+                      {reportCard.rank ?? "-"}/{reportCard.totalStudents ?? "-"}
                     </p>
                   </div>
                   <div className="p-3 bg-muted rounded-lg">
                     <p className="text-xs text-muted-foreground">Grade</p>
-                    <p className={`text-xl font-bold ${getGradeColor(reportCard.averageScore ?? 0)}`}>
+                    <p
+                      className={`text-xl font-bold ${getGradeColor(reportCard.averageScore ?? 0)}`}
+                    >
                       {getGradeLetter(reportCard.averageScore ?? 0)}
                     </p>
                   </div>
@@ -250,7 +283,9 @@ export default function ReportCardDetailPage() {
               <BookOpen className="h-5 w-5" />
               Nilai Per Mata Pelajaran
             </CardTitle>
-            <CardDescription>Detail nilai untuk setiap mata pelajaran</CardDescription>
+            <CardDescription>
+              Detail nilai untuk setiap mata pelajaran
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -269,28 +304,43 @@ export default function ReportCardDetailPage() {
                 {reportCard.subjects?.length ? (
                   reportCard.subjects.map((subject, index) => (
                     <TableRow key={subject.id ?? index}>
-                      <TableCell className="text-muted-foreground">{index + 1}</TableCell>
-                      <TableCell className="font-medium">{subject.subject?.name ?? subject.subjectName}</TableCell>
-                      <TableCell className={`text-center ${getGradeColor(subject.knowledgeScore ?? 0)}`}>
+                      <TableCell className="text-muted-foreground">
+                        {index + 1}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {subject.subject?.name ?? subject.subjectName}
+                      </TableCell>
+                      <TableCell
+                        className={`text-center ${getGradeColor(subject.knowledgeScore ?? 0)}`}
+                      >
                         {(subject.knowledgeScore ?? 0).toFixed(0)}
                       </TableCell>
-                      <TableCell className={`text-center ${getGradeColor(subject.skillScore ?? 0)}`}>
+                      <TableCell
+                        className={`text-center ${getGradeColor(subject.skillScore ?? 0)}`}
+                      >
                         {(subject.skillScore ?? 0).toFixed(0)}
                       </TableCell>
-                      <TableCell className={`text-center font-bold ${getGradeColor(subject.finalScore ?? 0)}`}>
-                        {subject.finalScore?.toFixed(0) ?? '-'}
+                      <TableCell
+                        className={`text-center font-bold ${getGradeColor(subject.finalScore ?? 0)}`}
+                      >
+                        {subject.finalScore?.toFixed(0) ?? "-"}
                       </TableCell>
-                      <TableCell className={`text-center font-bold ${getGradeColor(subject.finalScore ?? 0)}`}>
+                      <TableCell
+                        className={`text-center font-bold ${getGradeColor(subject.finalScore ?? 0)}`}
+                      >
                         {getGradeLetter(subject.finalScore ?? 0)}
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">
-                        {subject.notes ?? '-'}
+                        {subject.notes ?? "-"}
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={7}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       Belum ada data nilai
                     </TableCell>
                   </TableRow>
@@ -339,7 +389,9 @@ export default function ReportCardDetailPage() {
                   </div>
                 </div>
               ) : (
-                <p className="text-muted-foreground text-center py-4">Tidak ada data kehadiran</p>
+                <p className="text-muted-foreground text-center py-4">
+                  Tidak ada data kehadiran
+                </p>
               )}
             </CardContent>
           </Card>
@@ -354,7 +406,7 @@ export default function ReportCardDetailPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                {reportCard.teacherNotes || 'Tidak ada catatan'}
+                {reportCard.teacherNotes || "Tidak ada catatan"}
               </p>
             </CardContent>
           </Card>

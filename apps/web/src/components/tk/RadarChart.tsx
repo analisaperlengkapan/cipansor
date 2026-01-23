@@ -6,9 +6,19 @@ import {
   PolarRadiusAxis,
   ResponsiveContainer,
   Tooltip,
-} from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { TKAspect, TKAchievementLevel, ASPECT_LABELS } from '@/hooks/use-tk-assessment';
+} from "recharts";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import {
+  TKAspect,
+  TKAchievementLevel,
+  ASPECT_LABELS,
+} from "@/hooks/use-tk-assessment";
 
 interface AspectScore {
   aspect: TKAspect;
@@ -18,28 +28,31 @@ interface AspectScore {
 }
 
 interface TKRadarChartProps {
-  data: Record<TKAspect, {
-    latestLevel: TKAchievementLevel | null;
-    assessmentCount: number;
-    progressTrend: 'UP' | 'DOWN' | 'STABLE' | 'NONE';
-  }>;
+  data: Record<
+    TKAspect,
+    {
+      latestLevel: TKAchievementLevel | null;
+      assessmentCount: number;
+      progressTrend: "UP" | "DOWN" | "STABLE" | "NONE";
+    }
+  >;
   studentName?: string;
   className?: string;
 }
 
 // Achievement level to numeric score mapping
 const LEVEL_TO_SCORE: Record<TKAchievementLevel, number> = {
-  BB: 1,  // Belum Berkembang
-  MB: 2,  // Mulai Berkembang
+  BB: 1, // Belum Berkembang
+  MB: 2, // Mulai Berkembang
   BSH: 3, // Berkembang Sesuai Harapan
   BSB: 4, // Berkembang Sangat Baik
 };
 
 const LEVEL_COLORS: Record<TKAchievementLevel, string> = {
-  BB: '#ef4444',  // red
-  MB: '#f59e0b',  // yellow/orange
-  BSH: '#3b82f6', // blue
-  BSB: '#22c55e', // green
+  BB: "#ef4444", // red
+  MB: "#f59e0b", // yellow/orange
+  BSH: "#3b82f6", // blue
+  BSB: "#22c55e", // green
 };
 
 // Define CustomTooltip outside component to avoid re-creation
@@ -50,11 +63,12 @@ const CustomTooltip = ({ active, payload }: any) => {
     return (
       <div className="bg-white p-3 border rounded-lg shadow-lg">
         <p className="font-semibold text-sm">{data.label}</p>
-        <p className="text-sm text-muted-foreground">
-          Score: {data.score}/4
-        </p>
+        <p className="text-sm text-muted-foreground">Score: {data.score}/4</p>
         {data.level && (
-          <p className="text-sm font-medium" style={{ color: LEVEL_COLORS[data.level] }}>
+          <p
+            className="text-sm font-medium"
+            style={{ color: LEVEL_COLORS[data.level] }}
+          >
             {data.level}
           </p>
         )}
@@ -64,9 +78,13 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-export function TKRadarChart({ data, studentName, className }: TKRadarChartProps) {
+export function TKRadarChart({
+  data,
+  studentName,
+  className,
+}: TKRadarChartProps) {
   // Transform data for radar chart
-  const aspects: TKAspect[] = ['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI'];
+  const aspects: TKAspect[] = ["NAM", "FM", "KOG", "BHS", "SE", "SNI"];
 
   const chartData: AspectScore[] = aspects.map((aspect) => {
     const aspectData = data[aspect];
@@ -82,7 +100,8 @@ export function TKRadarChart({ data, studentName, className }: TKRadarChartProps
   });
 
   // Calculate average score
-  const avgScore = chartData.reduce((sum, item) => sum + item.score, 0) / chartData.length;
+  const avgScore =
+    chartData.reduce((sum, item) => sum + item.score, 0) / chartData.length;
   const avgPercentage = (avgScore / 4) * 100;
 
   // Determine overall color based on average
@@ -110,12 +129,12 @@ export function TKRadarChart({ data, studentName, className }: TKRadarChartProps
                 <PolarGrid stroke="#e5e7eb" />
                 <PolarAngleAxis
                   dataKey="label"
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tick={{ fill: "#6b7280", fontSize: 12 }}
                 />
                 <PolarRadiusAxis
                   angle={90}
                   domain={[0, 4]}
-                  tick={{ fill: '#6b7280', fontSize: 10 }}
+                  tick={{ fill: "#6b7280", fontSize: 10 }}
                   tickCount={5}
                 />
                 <Radar
@@ -137,7 +156,10 @@ export function TKRadarChart({ data, studentName, className }: TKRadarChartProps
               <p className="text-sm font-medium text-muted-foreground">
                 Rata-rata Capaian
               </p>
-              <p className="text-2xl font-bold" style={{ color: getOverallColor() }}>
+              <p
+                className="text-2xl font-bold"
+                style={{ color: getOverallColor() }}
+              >
                 {avgScore.toFixed(2)}/4
               </p>
             </div>
@@ -145,7 +167,10 @@ export function TKRadarChart({ data, studentName, className }: TKRadarChartProps
               <p className="text-sm font-medium text-muted-foreground">
                 Persentase
               </p>
-              <p className="text-2xl font-bold" style={{ color: getOverallColor() }}>
+              <p
+                className="text-2xl font-bold"
+                style={{ color: getOverallColor() }}
+              >
                 {avgPercentage.toFixed(0)}%
               </p>
             </div>
@@ -160,10 +185,14 @@ export function TKRadarChart({ data, studentName, className }: TKRadarChartProps
                   style={{ backgroundColor: color }}
                 />
                 <span className="text-xs">
-                  {level} - {level === 'BB' ? 'Belum Berkembang' :
-                    level === 'MB' ? 'Mulai Berkembang' :
-                      level === 'BSH' ? 'Berkembang Sesuai Harapan' :
-                        'Berkembang Sangat Baik'}
+                  {level} -{" "}
+                  {level === "BB"
+                    ? "Belum Berkembang"
+                    : level === "MB"
+                      ? "Mulai Berkembang"
+                      : level === "BSH"
+                        ? "Berkembang Sesuai Harapan"
+                        : "Berkembang Sangat Baik"}
                 </span>
               </div>
             ))}
@@ -201,8 +230,11 @@ export function TKRadarChart({ data, studentName, className }: TKRadarChartProps
 }
 
 // Helper component for compact version (dashboard widget)
-export function TKRadarChartCompact({ data, className }: Omit<TKRadarChartProps, 'studentName'>) {
-  const aspects: TKAspect[] = ['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI'];
+export function TKRadarChartCompact({
+  data,
+  className,
+}: Omit<TKRadarChartProps, "studentName">) {
+  const aspects: TKAspect[] = ["NAM", "FM", "KOG", "BHS", "SE", "SNI"];
 
   const chartData = aspects.map((aspect) => {
     const aspectData = data[aspect];
@@ -216,7 +248,8 @@ export function TKRadarChartCompact({ data, className }: Omit<TKRadarChartProps,
     };
   });
 
-  const avgScore = chartData.reduce((sum, item) => sum + item.score, 0) / chartData.length;
+  const avgScore =
+    chartData.reduce((sum, item) => sum + item.score, 0) / chartData.length;
 
   const getOverallColor = () => {
     if (avgScore >= 3.5) return LEVEL_COLORS.BSB;
@@ -233,13 +266,9 @@ export function TKRadarChartCompact({ data, className }: Omit<TKRadarChartProps,
             <PolarGrid stroke="#e5e7eb" />
             <PolarAngleAxis
               dataKey="label"
-              tick={{ fill: '#6b7280', fontSize: 10 }}
+              tick={{ fill: "#6b7280", fontSize: 10 }}
             />
-            <PolarRadiusAxis
-              angle={90}
-              domain={[0, 4]}
-              tick={false}
-            />
+            <PolarRadiusAxis angle={90} domain={[0, 4]} tick={false} />
             <Radar
               dataKey="score"
               stroke={getOverallColor()}
@@ -250,7 +279,10 @@ export function TKRadarChartCompact({ data, className }: Omit<TKRadarChartProps,
         </ResponsiveContainer>
       </div>
       <div className="text-center mt-2">
-        <p className="text-sm font-semibold" style={{ color: getOverallColor() }}>
+        <p
+          className="text-sm font-semibold"
+          style={{ color: getOverallColor() }}
+        >
           {avgScore.toFixed(1)}/4
         </p>
       </div>

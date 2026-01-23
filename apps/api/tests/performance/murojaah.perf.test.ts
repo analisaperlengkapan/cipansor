@@ -15,7 +15,7 @@ vi.mock('../../src/lib/prisma', () => ({
     },
     murojaahMistake: {
       groupBy: vi.fn(),
-    }
+    },
   },
 }));
 
@@ -32,7 +32,7 @@ describe('Murojaah Service Performance', () => {
     vi.mocked(prisma.student.findUnique).mockResolvedValue({
       id: studentId,
       nis: '12345',
-      user: { name: 'Test Student' }
+      user: { name: 'Test Student' },
     } as any);
 
     // Mock aggregate
@@ -44,12 +44,12 @@ describe('Murojaah Service Performance', () => {
         mistakeCount: recordCount,
         qualityScore: recordCount * 80,
         fluencyLevel: recordCount * 4,
-      }
+      },
     } as any);
 
     // Mock mistake groupBy
     vi.mocked(prisma.murojaahMistake.groupBy).mockResolvedValue([
-      { mistakeType: 'TAJWID', _count: { _all: recordCount } }
+      { mistakeType: 'TAJWID', _count: { _all: recordCount } },
     ] as any);
 
     // Mock findMany calls
@@ -81,15 +81,19 @@ describe('Murojaah Service Performance', () => {
     const end = performance.now();
     const duration = end - start;
 
-    process.stdout.write(`\n[Optimized] getStudentSummary with ${recordCount} records (simulated) took ${duration.toFixed(2)}ms\n`);
+    process.stdout.write(
+      `\n[Optimized] getStudentSummary with ${recordCount} records (simulated) took ${duration.toFixed(2)}ms\n`
+    );
 
     expect(summary.summary.totalSessions).toBe(recordCount);
     expect(prisma.murojaahRecord.aggregate).toHaveBeenCalled();
     expect(prisma.murojaahMistake.groupBy).toHaveBeenCalled();
 
     // Verify we didn't fetch everything with include
-    expect(prisma.murojaahRecord.findMany).not.toHaveBeenCalledWith(expect.objectContaining({
-      include: { mistakes: true }
-    }));
+    expect(prisma.murojaahRecord.findMany).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: { mistakes: true },
+      })
+    );
   });
 });

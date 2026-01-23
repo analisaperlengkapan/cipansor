@@ -1,13 +1,9 @@
-import { Router } from "express";
-import { UserRole } from "@prisma/client";
-import * as controller from "./controller";
-import { authenticate, authorize } from "../../middleware/auth";
-import { validateQuery } from "../../middleware/error";
-import {
-  queryDormitorySchema,
-  queryRoomSchema,
-  queryRoomAssignmentSchema,
-} from "./schema";
+import { Router } from 'express';
+import { UserRole } from '@prisma/client';
+import * as controller from './controller';
+import { authenticate, authorize } from '../../middleware/auth';
+import { validateQuery } from '../../middleware/error';
+import { queryDormitorySchema, queryRoomSchema, queryRoomAssignmentSchema } from './schema';
 
 const router = Router();
 
@@ -27,7 +23,7 @@ router.use(authenticate);
  *       200:
  *         description: List of students
  */
-router.get("/my-students", authenticate, controller.getStudentsByMusyrif);
+router.get('/my-students', authenticate, controller.getStudentsByMusyrif);
 
 /**
  * @swagger
@@ -59,7 +55,12 @@ router.get("/my-students", authenticate, controller.getStudentsByMusyrif);
  *       200:
  *         description: List of rooms
  */
-router.get("/rooms/list", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), validateQuery(queryRoomSchema), controller.getRooms);
+router.get(
+  '/rooms/list',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  validateQuery(queryRoomSchema),
+  controller.getRooms
+);
 
 /**
  * @swagger
@@ -94,7 +95,12 @@ router.get("/rooms/list", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, U
  *       200:
  *         description: List of room assignments
  */
-router.get("/assignments/list", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), validateQuery(queryRoomAssignmentSchema), controller.getRoomAssignments);
+router.get(
+  '/assignments/list',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  validateQuery(queryRoomAssignmentSchema),
+  controller.getRoomAssignments
+);
 
 // ==================== DORMITORIES (General) ====================
 
@@ -128,7 +134,12 @@ router.get("/assignments/list", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_AD
  *       200:
  *         description: List of dormitories
  */
-router.get("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), validateQuery(queryDormitorySchema), controller.getDormitories);
+router.get(
+  '/',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  validateQuery(queryDormitorySchema),
+  controller.getDormitories
+);
 
 /**
  * @swagger
@@ -164,7 +175,7 @@ router.get("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TE
  *       201:
  *         description: Dormitory created
  */
-router.post("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.createDormitory);
+router.post('/', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.createDormitory);
 
 /**
  * @swagger
@@ -186,7 +197,11 @@ router.post("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controlle
  *       404:
  *         description: Dormitory not found
  */
-router.get("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getDormitoryById);
+router.get(
+  '/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  controller.getDormitoryById
+);
 
 /**
  * @swagger
@@ -206,7 +221,11 @@ router.get("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole
  *       200:
  *         description: Dormitory statistics (occupancy, room status, etc.)
  */
-router.get("/:id/stats", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getDormitoryStats);
+router.get(
+  '/:id/stats',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  controller.getDormitoryStats
+);
 
 /**
  * @swagger
@@ -226,7 +245,11 @@ router.get("/:id/stats", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, Us
  *       200:
  *         description: Dormitory updated
  */
-router.put("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.updateDormitory);
+router.put(
+  '/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.updateDormitory
+);
 
 /**
  * @swagger
@@ -246,7 +269,11 @@ router.put("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), control
  *       204:
  *         description: Dormitory deleted
  */
-router.delete("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteDormitory);
+router.delete(
+  '/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.deleteDormitory
+);
 
 // ==================== ROOMS ====================
 
@@ -281,7 +308,7 @@ router.delete("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), cont
  *       201:
  *         description: Room created
  */
-router.post("/rooms", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.createRoom);
+router.post('/rooms', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.createRoom);
 
 /**
  * @swagger
@@ -301,7 +328,11 @@ router.post("/rooms", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), cont
  *       200:
  *         description: Room details
  */
-router.get("/rooms/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getRoomById);
+router.get(
+  '/rooms/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  controller.getRoomById
+);
 
 /**
  * @swagger
@@ -321,7 +352,11 @@ router.get("/rooms/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, Us
  *       200:
  *         description: Room occupancy with current students
  */
-router.get("/rooms/:id/occupancy", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getRoomOccupancy);
+router.get(
+  '/rooms/:id/occupancy',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  controller.getRoomOccupancy
+);
 
 /**
  * @swagger
@@ -341,7 +376,11 @@ router.get("/rooms/:id/occupancy", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT
  *       200:
  *         description: Room updated
  */
-router.put("/rooms/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.updateRoom);
+router.put(
+  '/rooms/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.updateRoom
+);
 
 /**
  * @swagger
@@ -361,7 +400,11 @@ router.put("/rooms/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), c
  *       204:
  *         description: Room deleted
  */
-router.delete("/rooms/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteRoom);
+router.delete(
+  '/rooms/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.deleteRoom
+);
 
 // ==================== ROOM ASSIGNMENTS ====================
 
@@ -396,7 +439,11 @@ router.delete("/rooms/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN)
  *       201:
  *         description: Room assignment created
  */
-router.post("/assignments", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.createRoomAssignment);
+router.post(
+  '/assignments',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.createRoomAssignment
+);
 
 /**
  * @swagger
@@ -416,7 +463,11 @@ router.post("/assignments", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN)
  *       200:
  *         description: Room assignment details
  */
-router.get("/assignments/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER), controller.getRoomAssignmentById);
+router.get(
+  '/assignments/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER),
+  controller.getRoomAssignmentById
+);
 
 /**
  * @swagger
@@ -436,7 +487,11 @@ router.get("/assignments/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADM
  *       200:
  *         description: Room assignment updated
  */
-router.put("/assignments/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.updateRoomAssignment);
+router.put(
+  '/assignments/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.updateRoomAssignment
+);
 
 /**
  * @swagger
@@ -456,6 +511,10 @@ router.put("/assignments/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADM
  *       204:
  *         description: Room assignment ended
  */
-router.delete("/assignments/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.endRoomAssignment);
+router.delete(
+  '/assignments/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.endRoomAssignment
+);
 
 export default router;

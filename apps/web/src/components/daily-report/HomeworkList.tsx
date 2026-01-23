@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus,
   Trash2,
@@ -22,27 +22,27 @@ import {
   Calendar,
   GripVertical,
   CheckCircle2,
-  Clock
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+  Clock,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Common subjects for SD IT
 const SUBJECTS = [
-  { value: 'matematika', label: 'Matematika' },
-  { value: 'bahasa_indonesia', label: 'Bahasa Indonesia' },
-  { value: 'bahasa_inggris', label: 'Bahasa Inggris' },
-  { value: 'bahasa_arab', label: 'Bahasa Arab' },
-  { value: 'ipa', label: 'IPA' },
-  { value: 'ips', label: 'IPS' },
-  { value: 'pkn', label: 'PKn' },
-  { value: 'pai', label: 'Pendidikan Agama Islam' },
-  { value: 'tahfidz', label: 'Tahfidz' },
-  { value: 'aqidah', label: 'Aqidah Akhlaq' },
-  { value: 'fiqih', label: 'Fiqih' },
-  { value: 'sbdp', label: 'SBdP' },
-  { value: 'pjok', label: 'PJOK' },
-  { value: 'informatika', label: 'Informatika' },
-  { value: 'lainnya', label: 'Lainnya' },
+  { value: "matematika", label: "Matematika" },
+  { value: "bahasa_indonesia", label: "Bahasa Indonesia" },
+  { value: "bahasa_inggris", label: "Bahasa Inggris" },
+  { value: "bahasa_arab", label: "Bahasa Arab" },
+  { value: "ipa", label: "IPA" },
+  { value: "ips", label: "IPS" },
+  { value: "pkn", label: "PKn" },
+  { value: "pai", label: "Pendidikan Agama Islam" },
+  { value: "tahfidz", label: "Tahfidz" },
+  { value: "aqidah", label: "Aqidah Akhlaq" },
+  { value: "fiqih", label: "Fiqih" },
+  { value: "sbdp", label: "SBdP" },
+  { value: "pjok", label: "PJOK" },
+  { value: "informatika", label: "Informatika" },
+  { value: "lainnya", label: "Lainnya" },
 ];
 
 export interface HomeworkItem {
@@ -74,9 +74,9 @@ export function HomeworkList({
   const addHomework = () => {
     const newItem: HomeworkItem = {
       id: crypto.randomUUID(),
-      subject: '',
-      description: '',
-      dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
+      subject: "",
+      description: "",
+      dueDate: new Date(Date.now() + 86400000).toISOString().split("T")[0], // Tomorrow
       isCompleted: false,
     };
     onChange([...items, newItem]);
@@ -85,9 +85,7 @@ export function HomeworkList({
 
   const updateHomework = (id: string, updates: Partial<HomeworkItem>) => {
     onChange(
-      items.map((item) =>
-        item.id === id ? { ...item, ...updates } : item
-      )
+      items.map((item) => (item.id === id ? { ...item, ...updates } : item)),
     );
   };
 
@@ -97,12 +95,12 @@ export function HomeworkList({
 
   const toggleCompletion = (id: string) => {
     updateHomework(id, {
-      isCompleted: !items.find(i => i.id === id)?.isCompleted
+      isCompleted: !items.find((i) => i.id === id)?.isCompleted,
     });
   };
 
   const getSubjectLabel = (value: string) => {
-    return SUBJECTS.find(s => s.value === value)?.label || value;
+    return SUBJECTS.find((s) => s.value === value)?.label || value;
   };
 
   const getDueDateStatus = (dueDate?: string) => {
@@ -112,12 +110,21 @@ export function HomeworkList({
     const due = new Date(dueDate);
     due.setHours(0, 0, 0, 0);
 
-    const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil(
+      (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+    );
 
-    if (diffDays < 0) return { label: 'Terlambat', variant: 'destructive' as const };
-    if (diffDays === 0) return { label: 'Hari ini', variant: 'default' as const, color: 'bg-amber-100 text-amber-800' };
-    if (diffDays === 1) return { label: 'Besok', variant: 'secondary' as const, color: '' };
-    return { label: `${diffDays} hari lagi`, variant: 'outline' as const };
+    if (diffDays < 0)
+      return { label: "Terlambat", variant: "destructive" as const };
+    if (diffDays === 0)
+      return {
+        label: "Hari ini",
+        variant: "default" as const,
+        color: "bg-amber-100 text-amber-800",
+      };
+    if (diffDays === 1)
+      return { label: "Besok", variant: "secondary" as const, color: "" };
+    return { label: `${diffDays} hari lagi`, variant: "outline" as const };
   };
 
   if (readOnly && items.length === 0) {
@@ -163,7 +170,7 @@ export function HomeworkList({
             key={item.id}
             className={cn(
               "transition-all",
-              item.isCompleted && "opacity-60 bg-muted/50"
+              item.isCompleted && "opacity-60 bg-muted/50",
             )}
           >
             <CardContent className="p-3">
@@ -185,10 +192,10 @@ export function HomeworkList({
                       {item.dueDate && (
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {new Date(item.dueDate).toLocaleDateString('id-ID', {
-                            weekday: 'short',
-                            day: 'numeric',
-                            month: 'short',
+                          {new Date(item.dueDate).toLocaleDateString("id-ID", {
+                            weekday: "short",
+                            day: "numeric",
+                            month: "short",
                           })}
                         </span>
                       )}
@@ -201,16 +208,21 @@ export function HomeworkList({
                         </Badge>
                       )}
                       {item.isCompleted && (
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">
+                        <Badge
+                          variant="secondary"
+                          className="bg-green-100 text-green-800"
+                        >
                           <CheckCircle2 className="h-3 w-3 mr-1" />
                           Selesai
                         </Badge>
                       )}
                     </div>
-                    <p className={cn(
-                      "text-sm mt-1",
-                      item.isCompleted && "line-through"
-                    )}>
+                    <p
+                      className={cn(
+                        "text-sm mt-1",
+                        item.isCompleted && "line-through",
+                      )}
+                    >
                       {item.description}
                     </p>
                     {item.notes && (
@@ -245,14 +257,19 @@ export function HomeworkList({
                       <Label className="text-xs">Mata Pelajaran</Label>
                       <Select
                         value={item.subject}
-                        onValueChange={(value) => updateHomework(item.id, { subject: value })}
+                        onValueChange={(value) =>
+                          updateHomework(item.id, { subject: value })
+                        }
                       >
                         <SelectTrigger className="h-9">
                           <SelectValue placeholder="Pilih mapel" />
                         </SelectTrigger>
                         <SelectContent>
                           {SUBJECTS.map((subject) => (
-                            <SelectItem key={subject.value} value={subject.value}>
+                            <SelectItem
+                              key={subject.value}
+                              value={subject.value}
+                            >
                               {subject.label}
                             </SelectItem>
                           ))}
@@ -264,8 +281,10 @@ export function HomeworkList({
                       <Label className="text-xs">Batas Waktu</Label>
                       <Input
                         type="date"
-                        value={item.dueDate || ''}
-                        onChange={(e) => updateHomework(item.id, { dueDate: e.target.value })}
+                        value={item.dueDate || ""}
+                        onChange={(e) =>
+                          updateHomework(item.id, { dueDate: e.target.value })
+                        }
                         className="h-9"
                       />
                     </div>
@@ -275,7 +294,9 @@ export function HomeworkList({
                     <Label className="text-xs">Deskripsi Tugas</Label>
                     <Textarea
                       value={item.description}
-                      onChange={(e) => updateHomework(item.id, { description: e.target.value })}
+                      onChange={(e) =>
+                        updateHomework(item.id, { description: e.target.value })
+                      }
                       placeholder="Contoh: Kerjakan halaman 25 nomor 1-10"
                       rows={2}
                       className="resize-none"
@@ -306,7 +327,7 @@ export function HomeworkList({
         <div className="flex items-center justify-between text-sm pt-2 border-t">
           <span className="text-muted-foreground">Progress PR:</span>
           <span className="font-medium">
-            {items.filter(i => i.isCompleted).length} / {items.length} selesai
+            {items.filter((i) => i.isCompleted).length} / {items.length} selesai
           </span>
         </div>
       )}

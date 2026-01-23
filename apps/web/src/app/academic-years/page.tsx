@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   CalendarDays,
   Plus,
@@ -13,21 +13,21 @@ import {
   Trash2,
   CheckCircle,
   Circle,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Pagination } from '@/components/shared/pagination';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { Button } from '@/components/ui/button';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Pagination } from "@/components/shared/pagination";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -35,21 +35,21 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   useAcademicYears,
   useDeleteAcademicYear,
   useActivateAcademicYear,
-} from '@/hooks/use-academic-years';
-import { useUnits } from '@/hooks/use-units';
+} from "@/hooks/use-academic-years";
+import { useUnits } from "@/hooks/use-units";
 
 export default function AcademicYearsPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [unitId, setUnitId] = useState<string>('ALL');
+  const [unitId, setUnitId] = useState<string>("ALL");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [activateId, setActivateId] = useState<string | null>(null);
 
@@ -57,7 +57,7 @@ export default function AcademicYearsPage() {
   const { data: academicYearsData, isLoading } = useAcademicYears({
     page,
     limit: pageSize,
-    unitId: unitId !== 'ALL' ? unitId : undefined,
+    unitId: unitId !== "ALL" ? unitId : undefined,
   });
 
   const deleteAcademicYear = useDeleteAcademicYear();
@@ -71,10 +71,11 @@ export default function AcademicYearsPage() {
 
     try {
       await deleteAcademicYear.mutateAsync(deleteId);
-      toast.success('Tahun ajaran berhasil dihapus');
+      toast.success("Tahun ajaran berhasil dihapus");
       setDeleteId(null);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal menghapus tahun ajaran';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal menghapus tahun ajaran";
       toast.error(errorMessage);
     }
   };
@@ -84,10 +85,13 @@ export default function AcademicYearsPage() {
 
     try {
       await activateAcademicYear.mutateAsync(activateId);
-      toast.success('Tahun ajaran berhasil diaktifkan');
+      toast.success("Tahun ajaran berhasil diaktifkan");
       setActivateId(null);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal mengaktifkan tahun ajaran';
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Gagal mengaktifkan tahun ajaran";
       toast.error(errorMessage);
     }
   };
@@ -98,9 +102,9 @@ export default function AcademicYearsPage() {
         title="Tahun Ajaran"
         description="Kelola tahun ajaran untuk setiap unit pendidikan"
         action={{
-          label: 'Tambah Tahun Ajaran',
+          label: "Tambah Tahun Ajaran",
           icon: <Plus className="h-4 w-4" />,
-          href: '/academic-years/new',
+          href: "/academic-years/new",
         }}
       />
 
@@ -122,8 +126,8 @@ export default function AcademicYearsPage() {
               </SelectContent>
             </Select>
 
-            {unitId !== 'ALL' && (
-              <Button variant="ghost" onClick={() => setUnitId('ALL')}>
+            {unitId !== "ALL" && (
+              <Button variant="ghost" onClick={() => setUnitId("ALL")}>
                 Reset
               </Button>
             )}
@@ -158,23 +162,32 @@ export default function AcademicYearsPage() {
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8">
                     <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-muted-foreground">Tidak ada tahun ajaran</p>
+                    <p className="text-muted-foreground">
+                      Tidak ada tahun ajaran
+                    </p>
                   </TableCell>
                 </TableRow>
               ) : (
                 academicYears.map((ay) => (
                   <TableRow key={ay.id}>
                     <TableCell className="font-medium">{ay.name}</TableCell>
-                    <TableCell>{ay.unit?.name || '-'}</TableCell>
+                    <TableCell>{ay.unit?.name || "-"}</TableCell>
                     <TableCell>
-                      {format(new Date(ay.startDate), 'd MMMM yyyy', { locale: localeId })}
+                      {format(new Date(ay.startDate), "d MMMM yyyy", {
+                        locale: localeId,
+                      })}
                     </TableCell>
                     <TableCell>
-                      {format(new Date(ay.endDate), 'd MMMM yyyy', { locale: localeId })}
+                      {format(new Date(ay.endDate), "d MMMM yyyy", {
+                        locale: localeId,
+                      })}
                     </TableCell>
                     <TableCell>
                       {ay.isActive ? (
-                        <Badge variant="default" className="bg-green-100 text-green-800">
+                        <Badge
+                          variant="default"
+                          className="bg-green-100 text-green-800"
+                        >
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Aktif
                         </Badge>

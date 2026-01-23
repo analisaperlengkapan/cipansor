@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { use, useState } from 'react';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
+import { use, useState } from "react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   BookOpen,
@@ -17,20 +17,20 @@ import {
   Plus,
   Check,
   Award,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -39,7 +39,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -47,16 +47,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   useEnrollment,
   useStudentProgress,
@@ -64,35 +64,37 @@ import {
   TAKHOSUS_STATUSES,
   SANAD_GRADES,
   TakhosusStatus,
-} from '@/hooks/use-takhosus';
-import { useUsers } from '@/hooks/use-users';
-import { cn } from '@/lib/utils';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MurojaahList } from '@/components/takhosus/murojaah/murojaah-list';
-import { SimaanList } from '@/components/takhosus/simaan/simaan-list';
+} from "@/hooks/use-takhosus";
+import { useUsers } from "@/hooks/use-users";
+import { cn } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MurojaahList } from "@/components/takhosus/murojaah/murojaah-list";
+import { SimaanList } from "@/components/takhosus/simaan/simaan-list";
 
 interface EnrollmentDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
 const sanadFormSchema = z.object({
-  juz: z.coerce.number().min(1, 'Juz minimal 1').max(30, 'Juz maksimal 30'),
-  teacherId: z.string().min(1, 'Penguji wajib dipilih'),
-  grade: z.string().min(1, 'Nilai wajib dipilih'),
+  juz: z.coerce.number().min(1, "Juz minimal 1").max(30, "Juz maksimal 30"),
+  teacherId: z.string().min(1, "Penguji wajib dipilih"),
+  grade: z.string().min(1, "Nilai wajib dipilih"),
   notes: z.string().optional(),
 });
 
 type SanadFormValues = z.infer<typeof sanadFormSchema>;
 
-export default function EnrollmentDetailPage({ params }: EnrollmentDetailPageProps) {
+export default function EnrollmentDetailPage({
+  params,
+}: EnrollmentDetailPageProps) {
   const { id } = use(params);
   const [sanadDialogOpen, setSanadDialogOpen] = useState(false);
-  
+
   const { data: enrollment, isLoading: enrollmentLoading } = useEnrollment(id);
   const { data: progress, isLoading: progressLoading } = useStudentProgress(
-    enrollment?.studentId || ''
+    enrollment?.studentId || "",
   );
-  const { data: usersData } = useUsers({ role: 'TEACHER', limit: 100 });
+  const { data: usersData } = useUsers({ role: "TEACHER", limit: 100 });
   const createSanad = useCreateSanad();
 
   const teachers = usersData?.data || [];
@@ -101,9 +103,9 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
     resolver: zodResolver(sanadFormSchema),
     defaultValues: {
       juz: 1,
-      teacherId: '',
-      grade: '',
-      notes: '',
+      teacherId: "",
+      grade: "",
+      notes: "",
     },
   });
 
@@ -136,7 +138,8 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
       setSanadDialogOpen(false);
       form.reset();
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal menambahkan sanad';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal menambahkan sanad";
       toast.error(errorMessage);
     }
   };
@@ -162,7 +165,9 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
       <MainLayout>
         <div className="text-center py-12">
           <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Pendaftaran Tidak Ditemukan</h2>
+          <h2 className="text-xl font-semibold mb-2">
+            Pendaftaran Tidak Ditemukan
+          </h2>
           <p className="text-muted-foreground mb-4">
             Data pendaftaran yang Anda cari tidak ditemukan
           </p>
@@ -187,7 +192,7 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">
-              {enrollment.student?.user.name || 'Santri Takhosus'}
+              {enrollment.student?.user.name || "Santri Takhosus"}
             </h1>
             <p className="text-muted-foreground">
               {enrollment.halaqoh?.name} • {enrollment.halaqoh?.code}
@@ -221,7 +226,9 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
               <Check className="h-4 w-4 text-green-500" />
               <span className="text-sm text-muted-foreground">Selesai</span>
             </div>
-            <p className="text-2xl font-bold text-green-600">{enrollment.completedJuz} Juz</p>
+            <p className="text-2xl font-bold text-green-600">
+              {enrollment.completedJuz} Juz
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -230,7 +237,9 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
               <Award className="h-4 w-4 text-blue-500" />
               <span className="text-sm text-muted-foreground">Sanad</span>
             </div>
-            <p className="text-2xl font-bold text-blue-600">{enrollment.sanadCount || 0}</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {enrollment.sanadCount || 0}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -254,7 +263,10 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Progress value={enrollment.progressPercentage || 0} className="h-4" />
+          <Progress
+            value={enrollment.progressPercentage || 0}
+            className="h-4"
+          />
         </CardContent>
       </Card>
 
@@ -290,7 +302,10 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
                     </DialogDescription>
                   </DialogHeader>
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmitSanad)} className="space-y-4">
+                    <form
+                      onSubmit={form.handleSubmit(onSubmitSanad)}
+                      className="space-y-4"
+                    >
                       <FormField
                         control={form.control}
                         name="juz"
@@ -298,7 +313,12 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
                           <FormItem>
                             <FormLabel>Juz</FormLabel>
                             <FormControl>
-                              <Input type="number" min={1} max={30} {...field} />
+                              <Input
+                                type="number"
+                                min={1}
+                                max={30}
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -311,7 +331,10 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Penguji</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Pilih penguji" />
@@ -319,7 +342,10 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
                               </FormControl>
                               <SelectContent>
                                 {teachers.map((teacher) => (
-                                  <SelectItem key={teacher.id} value={teacher.id}>
+                                  <SelectItem
+                                    key={teacher.id}
+                                    value={teacher.id}
+                                  >
                                     {teacher.name}
                                   </SelectItem>
                                 ))}
@@ -336,7 +362,10 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Nilai</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Pilih nilai" />
@@ -344,7 +373,10 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
                               </FormControl>
                               <SelectContent>
                                 {SANAD_GRADES.map((grade) => (
-                                  <SelectItem key={grade.value} value={grade.value}>
+                                  <SelectItem
+                                    key={grade.value}
+                                    value={grade.value}
+                                  >
                                     {grade.label}
                                   </SelectItem>
                                 ))}
@@ -382,7 +414,9 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
                           Batal
                         </Button>
                         <Button type="submit" disabled={createSanad.isPending}>
-                          {createSanad.isPending ? 'Menyimpan...' : 'Simpan Sanad'}
+                          {createSanad.isPending
+                            ? "Menyimpan..."
+                            : "Simpan Sanad"}
                         </Button>
                       </DialogFooter>
                     </form>
@@ -402,15 +436,15 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
                       key={juz.juz}
                       onClick={() => {
                         if (!juz.certified) {
-                          form.setValue('juz', juz.juz);
+                          form.setValue("juz", juz.juz);
                           setSanadDialogOpen(true);
                         }
                       }}
                       className={cn(
-                        'aspect-square rounded-lg flex flex-col items-center justify-center text-sm font-medium transition-colors',
+                        "aspect-square rounded-lg flex flex-col items-center justify-center text-sm font-medium transition-colors",
                         juz.certified
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 cursor-pointer'
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 cursor-pointer",
                       )}
                       title={
                         juz.certified
@@ -432,7 +466,9 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
             <Card>
               <CardHeader>
                 <CardTitle>Aktivitas Terakhir</CardTitle>
-                <CardDescription>Riwayat setoran dan murajaah terbaru</CardDescription>
+                <CardDescription>
+                  Riwayat setoran dan murajaah terbaru
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -444,7 +480,8 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
                       <div>
                         <p className="font-medium">{activity.surah}</p>
                         <p className="text-sm text-muted-foreground">
-                          Ayat {activity.ayahStart} - {activity.ayahEnd} • {activity.type}
+                          Ayat {activity.ayahStart} - {activity.ayahEnd} •{" "}
+                          {activity.type}
                         </p>
                       </div>
                       <div className="text-right">
@@ -452,7 +489,9 @@ export default function EnrollmentDetailPage({ params }: EnrollmentDetailPagePro
                           <Badge variant="secondary">{activity.score}</Badge>
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
-                          {format(new Date(activity.recordedAt), 'd MMM yyyy', { locale: localeId })}
+                          {format(new Date(activity.recordedAt), "d MMM yyyy", {
+                            locale: localeId,
+                          })}
                         </p>
                       </div>
                     </div>

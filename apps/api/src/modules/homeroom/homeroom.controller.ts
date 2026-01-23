@@ -105,7 +105,7 @@ export class HomeroomController {
   async deleteStudentNote(req: Request, res: Response, next: NextFunction) {
     try {
       const { noteId } = req.params;
-      const noteType = req.query.noteType as 'violation' | 'reward' || 'violation';
+      const noteType = (req.query.noteType as 'violation' | 'reward') || 'violation';
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       await homeroomService.deleteStudentNote(noteId, noteType, user);
       res.json({ success: true, message: 'Note deleted successfully' });

@@ -60,10 +60,7 @@ export class AnnouncementService {
     // Only published announcements
     if (published) {
       where.publishedAt = { lte: new Date() };
-      where.OR = [
-        { expiresAt: null },
-        { expiresAt: { gte: new Date() } },
-      ];
+      where.OR = [{ expiresAt: null }, { expiresAt: { gte: new Date() } }];
     }
 
     const [announcements, total] = await Promise.all([
@@ -77,11 +74,7 @@ export class AnnouncementService {
             select: { id: true, name: true },
           },
         },
-        orderBy: [
-          { priority: 'desc' },
-          { publishedAt: 'desc' },
-          { createdAt: 'desc' },
-        ],
+        orderBy: [{ priority: 'desc' }, { publishedAt: 'desc' }, { createdAt: 'desc' }],
         skip,
         take: limit,
       }),
@@ -162,12 +155,9 @@ export class AnnouncementService {
   // Get stats for dashboard
   async getStats(unitId?: string) {
     const where: any = {};
-    
+
     if (unitId) {
-      where.OR = [
-        { unitId },
-        { unitId: null },
-      ];
+      where.OR = [{ unitId }, { unitId: null }];
     }
 
     const now = new Date();
@@ -179,10 +169,7 @@ export class AnnouncementService {
         where: {
           ...where,
           publishedAt: { lte: now },
-          OR: [
-            { expiresAt: null },
-            { expiresAt: { gte: now } },
-          ],
+          OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
         },
       }),
       prisma.announcement.count({
@@ -190,10 +177,7 @@ export class AnnouncementService {
           ...where,
           priority: 2, // urgent
           publishedAt: { lte: now },
-          OR: [
-            { expiresAt: null },
-            { expiresAt: { gte: now } },
-          ],
+          OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
         },
       }),
       prisma.announcement.count({
@@ -219,10 +203,7 @@ export class AnnouncementService {
     };
 
     if (unitId) {
-      where.OR = [
-        { unitId },
-        { unitId: null },
-      ];
+      where.OR = [{ unitId }, { unitId: null }];
     }
 
     return prisma.announcement.findMany({
@@ -235,10 +216,7 @@ export class AnnouncementService {
           select: { id: true, name: true },
         },
       },
-      orderBy: [
-        { priority: 'desc' },
-        { publishedAt: 'desc' },
-      ],
+      orderBy: [{ priority: 'desc' }, { publishedAt: 'desc' }],
       take: limit,
     });
   }

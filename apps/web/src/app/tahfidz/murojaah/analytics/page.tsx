@@ -1,27 +1,33 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
+import { useState, useMemo } from "react";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
 import {
   useMurojaahRecords,
   useClassMurojaahSummary,
   MurojaahRecord,
-} from '@/hooks/use-murojaah';
-import { useClasses } from '@/hooks/use-classes';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+} from "@/hooks/use-murojaah";
+import { useClasses } from "@/hooks/use-classes";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { useAuthStore } from '@/stores/auth';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { useAuthStore } from "@/stores/auth";
+import { cn } from "@/lib/utils";
 import {
   BarChart3,
   TrendingUp,
@@ -32,28 +38,28 @@ import {
   BookOpen,
   Target,
   AlertCircle,
-} from 'lucide-react';
-import { format, subDays } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+} from "lucide-react";
+import { format, subDays } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 // Mistake type labels
 const MISTAKE_TYPE_LABELS: Record<string, string> = {
-  TAJWID: 'Tajwid',
-  MAKHROJ: 'Makhroj',
-  HARAKAT: 'Harakat',
-  WAQF: 'Waqaf',
-  LAFAZ: 'Lafaz',
-  OTHER: 'Lainnya',
+  TAJWID: "Tajwid",
+  MAKHROJ: "Makhroj",
+  HARAKAT: "Harakat",
+  WAQF: "Waqaf",
+  LAFAZ: "Lafaz",
+  OTHER: "Lainnya",
 };
 
 // Mistake type colors
 const MISTAKE_TYPE_COLORS: Record<string, string> = {
-  TAJWID: 'bg-purple-500',
-  MAKHROJ: 'bg-blue-500',
-  HARAKAT: 'bg-orange-500',
-  WAQF: 'bg-green-500',
-  LAFAZ: 'bg-red-500',
-  OTHER: 'bg-gray-500',
+  TAJWID: "bg-purple-500",
+  MAKHROJ: "bg-blue-500",
+  HARAKAT: "bg-orange-500",
+  WAQF: "bg-green-500",
+  LAFAZ: "bg-red-500",
+  OTHER: "bg-gray-500",
 };
 
 interface MistakeStats {
@@ -71,18 +77,18 @@ interface QualityDistribution {
 
 export default function MurojaahAnalyticsPage() {
   const { user } = useAuthStore();
-  const [selectedClass, setSelectedClass] = useState<string>('');
-  const [dateRange, setDateRange] = useState<string>('30');
+  const [selectedClass, setSelectedClass] = useState<string>("");
+  const [dateRange, setDateRange] = useState<string>("30");
 
   const { data: classes } = useClasses({ unitId: user?.unitId });
 
   const dateFrom = useMemo(() => {
-    return format(subDays(new Date(), parseInt(dateRange)), 'yyyy-MM-dd');
+    return format(subDays(new Date(), parseInt(dateRange)), "yyyy-MM-dd");
   }, [dateRange]);
 
   const { data: recordsData, isLoading } = useMurojaahRecords({
     classId: selectedClass || undefined,
-    unitId: user?.role !== 'SUPER_ADMIN' ? user?.unitId : undefined,
+    unitId: user?.role !== "SUPER_ADMIN" ? user?.unitId : undefined,
     dateFrom,
     limit: 1000, // Get more records for analytics
   });
@@ -97,19 +103,25 @@ export default function MurojaahAnalyticsPage() {
         passedRecords: 0,
         pendingRecords: 0,
         averageGrade: 0,
-        qualityDistribution: { excellent: 0, good: 0, moderate: 0, needsWork: 0 },
+        qualityDistribution: {
+          excellent: 0,
+          good: 0,
+          moderate: 0,
+          needsWork: 0,
+        },
         mistakeStats: [],
         surahCoverage: [],
         dailyActivity: [],
       };
 
     const totalRecords = records.length;
-    const passedRecords = records.filter((r) => r.status === 'PASSED').length;
-    const pendingRecords = records.filter((r) => r.status === 'PENDING').length;
+    const passedRecords = records.filter((r) => r.status === "PASSED").length;
+    const pendingRecords = records.filter((r) => r.status === "PENDING").length;
 
     // Average grade
     const gradesSum = records.reduce((sum, r) => sum + (r.grade || 0), 0);
-    const averageGrade = totalRecords > 0 ? Math.round(gradesSum / totalRecords) : 0;
+    const averageGrade =
+      totalRecords > 0 ? Math.round(gradesSum / totalRecords) : 0;
 
     // Quality distribution
     const qualityDistribution: QualityDistribution = {
@@ -142,7 +154,8 @@ export default function MurojaahAnalyticsPage() {
       .map(([type, count]) => ({
         type,
         count,
-        percentage: totalMistakes > 0 ? Math.round((count / totalMistakes) * 100) : 0,
+        percentage:
+          totalMistakes > 0 ? Math.round((count / totalMistakes) * 100) : 0,
       }))
       .sort((a, b) => b.count - a.count);
 
@@ -171,7 +184,7 @@ export default function MurojaahAnalyticsPage() {
   }, [records]);
 
   return (
-    <MainLayout allowedRoles={['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']}>
+    <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN", "TEACHER"]}>
       <div className="space-y-6">
         <PageHeader
           title="Analitik Murojaah"
@@ -211,7 +224,9 @@ export default function MurojaahAnalyticsPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <Card className="glass-card">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Murojaah</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Murojaah
+              </CardTitle>
               <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -222,7 +237,9 @@ export default function MurojaahAnalyticsPage() {
 
           <Card className="glass-card">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Rata-rata Nilai</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Rata-rata Nilai
+              </CardTitle>
               <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -233,26 +250,34 @@ export default function MurojaahAnalyticsPage() {
 
           <Card className="glass-card border-green-500/30">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-green-600">Lulus</CardTitle>
+              <CardTitle className="text-sm font-medium text-green-600">
+                Lulus
+              </CardTitle>
               <CheckCircle2 className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{analytics.passedRecords}</div>
+              <div className="text-2xl font-bold">
+                {analytics.passedRecords}
+              </div>
               <p className="text-xs text-muted-foreground">
                 {analytics.totalRecords > 0
                   ? `${Math.round((analytics.passedRecords / analytics.totalRecords) * 100)}%`
-                  : '0%'}
+                  : "0%"}
               </p>
             </CardContent>
           </Card>
 
           <Card className="glass-card border-yellow-500/30">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-yellow-600">Pending</CardTitle>
+              <CardTitle className="text-sm font-medium text-yellow-600">
+                Pending
+              </CardTitle>
               <Clock className="h-4 w-4 text-yellow-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{analytics.pendingRecords}</div>
+              <div className="text-2xl font-bold">
+                {analytics.pendingRecords}
+              </div>
               <p className="text-xs text-muted-foreground">menunggu review</p>
             </CardContent>
           </Card>
@@ -327,7 +352,8 @@ export default function MurojaahAnalyticsPage() {
                           className="bg-blue-500 flex items-center justify-center text-xs text-white"
                           style={{
                             width: `${
-                              (analytics.qualityDistribution.good / analytics.totalRecords) *
+                              (analytics.qualityDistribution.good /
+                                analytics.totalRecords) *
                               100
                             }%`,
                           }}
@@ -339,7 +365,8 @@ export default function MurojaahAnalyticsPage() {
                           className="bg-yellow-500 flex items-center justify-center text-xs"
                           style={{
                             width: `${
-                              (analytics.qualityDistribution.moderate / analytics.totalRecords) *
+                              (analytics.qualityDistribution.moderate /
+                                analytics.totalRecords) *
                               100
                             }%`,
                           }}
@@ -351,7 +378,8 @@ export default function MurojaahAnalyticsPage() {
                           className="bg-red-500 flex items-center justify-center text-xs text-white"
                           style={{
                             width: `${
-                              (analytics.qualityDistribution.needsWork / analytics.totalRecords) *
+                              (analytics.qualityDistribution.needsWork /
+                                analytics.totalRecords) *
                               100
                             }%`,
                           }}
@@ -391,8 +419,8 @@ export default function MurojaahAnalyticsPage() {
                           <div className="flex items-center gap-2">
                             <div
                               className={cn(
-                                'w-3 h-3 rounded-full',
-                                MISTAKE_TYPE_COLORS[stat.type]
+                                "w-3 h-3 rounded-full",
+                                MISTAKE_TYPE_COLORS[stat.type],
                               )}
                             />
                             <span className="font-medium">
@@ -410,7 +438,9 @@ export default function MurojaahAnalyticsPage() {
                 ) : (
                   <div className="text-center py-8">
                     <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-4" />
-                    <h3 className="font-semibold">Tidak Ada Kesalahan Tercatat</h3>
+                    <h3 className="font-semibold">
+                      Tidak Ada Kesalahan Tercatat
+                    </h3>
                     <p className="text-sm text-muted-foreground">
                       Belum ada data kesalahan dalam periode ini
                     </p>
@@ -424,7 +454,9 @@ export default function MurojaahAnalyticsPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Surah yang Sering Dimurojaah</CardTitle>
-                <CardDescription>10 surah teratas dalam periode ini</CardDescription>
+                <CardDescription>
+                  10 surah teratas dalam periode ini
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {analytics.surahCoverage.length > 0 ? (

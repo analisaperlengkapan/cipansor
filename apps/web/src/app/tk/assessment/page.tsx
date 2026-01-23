@@ -1,78 +1,108 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader, DataTable } from '@/components/shared';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Plus, Search, Calendar, Filter, Eye, FileEdit, Trash2 } from 'lucide-react';
-import { useTKAssessments, useDeleteTKAssessment, ACHIEVEMENT_COLORS, ACHIEVEMENT_LABELS, ASPECT_LABELS } from '@/hooks/use-tk-assessment';
-import { ColumnDef } from '@tanstack/react-table';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader, DataTable } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  Plus,
+  Search,
+  Calendar,
+  Filter,
+  Eye,
+  FileEdit,
+  Trash2,
+} from "lucide-react";
+import {
+  useTKAssessments,
+  useDeleteTKAssessment,
+  ACHIEVEMENT_COLORS,
+  ACHIEVEMENT_LABELS,
+  ASPECT_LABELS,
+} from "@/hooks/use-tk-assessment";
+import { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export default function TKAssessmentListPage() {
   const router = useRouter();
-  const [search, setSearch] = useState('');
-  const [aspect, setAspect] = useState<string>('ALL');
+  const [search, setSearch] = useState("");
+  const [aspect, setAspect] = useState<string>("ALL");
   const [date, setDate] = useState<Date | undefined>(undefined);
 
   const deleteMutation = useDeleteTKAssessment();
 
   const handleDelete = async (id: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus penilaian ini?')) {
+    if (confirm("Apakah Anda yakin ingin menghapus penilaian ini?")) {
       try {
         await deleteMutation.mutateAsync(id);
-        toast.success('Penilaian berhasil dihapus');
+        toast.success("Penilaian berhasil dihapus");
       } catch (error) {
-        toast.error('Gagal menghapus penilaian');
+        toast.error("Gagal menghapus penilaian");
       }
     }
   };
 
   const { data, isLoading } = useTKAssessments({
     search,
-    aspect: aspect !== 'ALL' ? aspect as any : undefined,
-    startDate: date ? format(date, 'yyyy-MM-dd') : undefined,
+    aspect: aspect !== "ALL" ? (aspect as any) : undefined,
+    startDate: date ? format(date, "yyyy-MM-dd") : undefined,
     limit: 20,
   });
 
   const columns: ColumnDef<any>[] = [
     {
-      accessorKey: 'periodDate',
-      header: 'Tanggal',
-      cell: ({ row }) => format(new Date(row.getValue('periodDate')), 'dd MMM yyyy', { locale: idLocale }),
+      accessorKey: "periodDate",
+      header: "Tanggal",
+      cell: ({ row }) =>
+        format(new Date(row.getValue("periodDate")), "dd MMM yyyy", {
+          locale: idLocale,
+        }),
     },
     {
-      accessorKey: 'student.user.name',
-      header: 'Siswa',
+      accessorKey: "student.user.name",
+      header: "Siswa",
     },
     {
-      accessorKey: 'indicator.code',
-      header: 'Kode',
+      accessorKey: "indicator.code",
+      header: "Kode",
     },
     {
-      accessorKey: 'indicator.name',
-      header: 'Indikator',
+      accessorKey: "indicator.name",
+      header: "Indikator",
       cell: ({ row }) => (
-        <div className="max-w-[300px] truncate" title={row.original.indicator?.name}>
+        <div
+          className="max-w-[300px] truncate"
+          title={row.original.indicator?.name}
+        >
           {row.original.indicator?.name}
         </div>
       ),
     },
     {
-      accessorKey: 'achievementLevel',
-      header: 'Capaian',
+      accessorKey: "achievementLevel",
+      header: "Capaian",
       cell: ({ row }) => {
-        const level = row.getValue('achievementLevel') as string;
+        const level = row.getValue("achievementLevel") as string;
         return (
           <Badge className={ACHIEVEMENT_COLORS[level]} variant="outline">
             {ACHIEVEMENT_LABELS[level] || level}
@@ -81,17 +111,17 @@ export default function TKAssessmentListPage() {
       },
     },
     {
-      accessorKey: 'notes',
-      header: 'Catatan',
+      accessorKey: "notes",
+      header: "Catatan",
       cell: ({ row }) => (
         <div className="max-w-[200px] truncate text-muted-foreground">
-          {row.getValue('notes') || '-'}
+          {row.getValue("notes") || "-"}
         </div>
       ),
     },
     {
-      id: 'actions',
-      header: 'Aksi',
+      id: "actions",
+      header: "Aksi",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Button
@@ -104,7 +134,9 @@ export default function TKAssessmentListPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push(`/tk/assessment/${row.original.id}/edit`)}
+            onClick={() =>
+              router.push(`/tk/assessment/${row.original.id}/edit`)
+            }
           >
             <FileEdit className="h-4 w-4" />
           </Button>
@@ -127,7 +159,7 @@ export default function TKAssessmentListPage() {
           title="Penilaian TK"
           description="Daftar penilaian perkembangan siswa"
           actions={
-            <Button onClick={() => router.push('/tk/assessment/create')}>
+            <Button onClick={() => router.push("/tk/assessment/create")}>
               <Plus className="mr-2 h-4 w-4" />
               Input Penilaian
             </Button>
@@ -171,12 +203,14 @@ export default function TKAssessmentListPage() {
                   <Button
                     variant="outline"
                     className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !date && 'text-muted-foreground'
+                      "w-full justify-start text-left font-normal",
+                      !date && "text-muted-foreground",
                     )}
                   >
                     <Calendar className="mr-2 h-4 w-4" />
-                    {date ? format(date, 'PPP', { locale: idLocale }) : 'Pilih Tanggal'}
+                    {date
+                      ? format(date, "PPP", { locale: idLocale })
+                      : "Pilih Tanggal"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">

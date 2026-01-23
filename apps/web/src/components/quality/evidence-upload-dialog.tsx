@@ -5,8 +5,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -14,22 +14,22 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { useCreateEvidence } from '@/hooks/use-quality';
-import { useState } from 'react';
-import { Upload } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
-import { useActiveAcademicYear } from '@/hooks/use-academic-years';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { useCreateEvidence } from "@/hooks/use-quality";
+import { useState } from "react";
+import { Upload } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useActiveAcademicYear } from "@/hooks/use-academic-years";
 
 const formSchema = z.object({
-  name: z.string().min(3, 'Nama dokumen wajib diisi'),
+  name: z.string().min(3, "Nama dokumen wajib diisi"),
   description: z.string().optional(),
-  fileUrl: z.string().url('File wajib diunggah'),
+  fileUrl: z.string().url("File wajib diunggah"),
 });
 
 interface EvidenceUploadDialogProps {
@@ -38,7 +38,11 @@ interface EvidenceUploadDialogProps {
   trigger?: React.ReactNode;
 }
 
-export function EvidenceUploadDialog({ unitId, indicatorId, trigger }: EvidenceUploadDialogProps) {
+export function EvidenceUploadDialog({
+  unitId,
+  indicatorId,
+  trigger,
+}: EvidenceUploadDialogProps) {
   const [open, setOpen] = useState(false);
   const createEvidence = useCreateEvidence();
   const { activeAcademicYear } = useActiveAcademicYear();
@@ -46,9 +50,9 @@ export function EvidenceUploadDialog({ unitId, indicatorId, trigger }: EvidenceU
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      description: '',
-      fileUrl: '', // In a real app, integrate with a file uploader component
+      name: "",
+      description: "",
+      fileUrl: "", // In a real app, integrate with a file uploader component
     },
   });
 
@@ -134,11 +138,15 @@ export function EvidenceUploadDialog({ unitId, indicatorId, trigger }: EvidenceU
             />
 
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
                 Batal
               </Button>
               <Button type="submit" disabled={createEvidence.isPending}>
-                {createEvidence.isPending ? 'Mengunggah...' : 'Simpan'}
+                {createEvidence.isPending ? "Mengunggah..." : "Simpan"}
               </Button>
             </div>
           </form>

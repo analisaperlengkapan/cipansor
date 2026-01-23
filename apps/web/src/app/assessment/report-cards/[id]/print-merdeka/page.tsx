@@ -1,112 +1,115 @@
-'use client';
+"use client";
 
-import { useParams, useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { useReportCard } from '@/hooks';
-import { ArrowLeft, Printer, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+import { useParams, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { useReportCard } from "@/hooks";
+import { ArrowLeft, Printer, Loader2 } from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 // ============================================
 // PROFIL PELAJAR PANCASILA (P5) - KURIKULUM MERDEKA
 // ============================================
 const PROFIL_PELAJAR_PANCASILA = [
   {
-    dimension: 'Beriman, Bertakwa kepada Tuhan YME, dan Berakhlak Mulia',
-    shortName: 'Beriman & Berakhlak Mulia',
+    dimension: "Beriman, Bertakwa kepada Tuhan YME, dan Berakhlak Mulia",
+    shortName: "Beriman & Berakhlak Mulia",
     elements: [
-      'Akhlak beragama',
-      'Akhlak pribadi',
-      'Akhlak kepada manusia',
-      'Akhlak kepada alam',
-      'Akhlak bernegara',
+      "Akhlak beragama",
+      "Akhlak pribadi",
+      "Akhlak kepada manusia",
+      "Akhlak kepada alam",
+      "Akhlak bernegara",
     ],
-    icon: '🤲',
+    icon: "🤲",
   },
   {
-    dimension: 'Berkebinekaan Global',
-    shortName: 'Berkebinekaan Global',
+    dimension: "Berkebinekaan Global",
+    shortName: "Berkebinekaan Global",
     elements: [
-      'Mengenal dan menghargai budaya',
-      'Kemampuan komunikasi interkultural',
-      'Refleksi dan tanggung jawab terhadap pengalaman kebinekaan',
-      'Berkeadilan sosial',
+      "Mengenal dan menghargai budaya",
+      "Kemampuan komunikasi interkultural",
+      "Refleksi dan tanggung jawab terhadap pengalaman kebinekaan",
+      "Berkeadilan sosial",
     ],
-    icon: '🌍',
+    icon: "🌍",
   },
   {
-    dimension: 'Bergotong Royong',
-    shortName: 'Gotong Royong',
-    elements: ['Kolaborasi', 'Kepedulian', 'Berbagi'],
-    icon: '🤝',
+    dimension: "Bergotong Royong",
+    shortName: "Gotong Royong",
+    elements: ["Kolaborasi", "Kepedulian", "Berbagi"],
+    icon: "🤝",
   },
   {
-    dimension: 'Mandiri',
-    shortName: 'Mandiri',
-    elements: ['Kesadaran akan diri dan situasi yang dihadapi', 'Regulasi diri'],
-    icon: '💪',
-  },
-  {
-    dimension: 'Bernalar Kritis',
-    shortName: 'Bernalar Kritis',
+    dimension: "Mandiri",
+    shortName: "Mandiri",
     elements: [
-      'Memperoleh dan memproses informasi dan gagasan',
-      'Menganalisis dan mengevaluasi penalaran',
-      'Merefleksi pemikiran dan proses berpikir',
-      'Mengambil keputusan',
+      "Kesadaran akan diri dan situasi yang dihadapi",
+      "Regulasi diri",
     ],
-    icon: '🧠',
+    icon: "💪",
   },
   {
-    dimension: 'Kreatif',
-    shortName: 'Kreatif',
+    dimension: "Bernalar Kritis",
+    shortName: "Bernalar Kritis",
     elements: [
-      'Menghasilkan gagasan yang orisinal',
-      'Menghasilkan karya dan tindakan yang orisinal',
-      'Memiliki keluwesan berpikir dalam mencari alternatif solusi',
+      "Memperoleh dan memproses informasi dan gagasan",
+      "Menganalisis dan mengevaluasi penalaran",
+      "Merefleksi pemikiran dan proses berpikir",
+      "Mengambil keputusan",
     ],
-    icon: '💡',
+    icon: "🧠",
+  },
+  {
+    dimension: "Kreatif",
+    shortName: "Kreatif",
+    elements: [
+      "Menghasilkan gagasan yang orisinal",
+      "Menghasilkan karya dan tindakan yang orisinal",
+      "Memiliki keluwesan berpikir dalam mencari alternatif solusi",
+    ],
+    icon: "💡",
   },
 ];
 
 // Capaian level untuk Kurikulum Merdeka
 const CAPAIAN_LEVELS = [
   {
-    code: 'SB',
-    label: 'Sangat Berkembang',
-    description: 'Membudaya',
-    color: 'bg-green-600 text-white',
-    printColor: 'bg-green-100',
+    code: "SB",
+    label: "Sangat Berkembang",
+    description: "Membudaya",
+    color: "bg-green-600 text-white",
+    printColor: "bg-green-100",
   },
   {
-    code: 'B',
-    label: 'Berkembang',
-    description: 'Berkembang Sesuai Harapan',
-    color: 'bg-blue-600 text-white',
-    printColor: 'bg-blue-100',
+    code: "B",
+    label: "Berkembang",
+    description: "Berkembang Sesuai Harapan",
+    color: "bg-blue-600 text-white",
+    printColor: "bg-blue-100",
   },
   {
-    code: 'MB',
-    label: 'Mulai Berkembang',
-    description: 'Mulai Berkembang',
-    color: 'bg-yellow-500 text-white',
-    printColor: 'bg-yellow-100',
+    code: "MB",
+    label: "Mulai Berkembang",
+    description: "Mulai Berkembang",
+    color: "bg-yellow-500 text-white",
+    printColor: "bg-yellow-100",
   },
   {
-    code: 'BB',
-    label: 'Belum Berkembang',
-    description: 'Belum Berkembang',
-    color: 'bg-red-500 text-white',
-    printColor: 'bg-red-100',
+    code: "BB",
+    label: "Belum Berkembang",
+    description: "Belum Berkembang",
+    color: "bg-red-500 text-white",
+    printColor: "bg-red-100",
   },
 ];
 
 // Literasi dan Numerasi levels
 const LITERASI_NUMERASI_LEVELS = [
-  { code: 'Mahir', color: 'text-green-700' },
-  { code: 'Cakap', color: 'text-blue-700' },
-  { code: 'Dasar', color: 'text-yellow-700' },
-  { code: 'Perlu Intervensi', color: 'text-red-700' },
+  { code: "Mahir", color: "text-green-700" },
+  { code: "Cakap", color: "text-blue-700" },
+  { code: "Dasar", color: "text-yellow-700" },
+  { code: "Perlu Intervensi", color: "text-red-700" },
 ];
 
 export default function PrintReportCardMerdekaPage() {
@@ -139,32 +142,32 @@ export default function PrintReportCardMerdekaPage() {
   }
 
   const getCapaianLabel = (score: number): { code: string; label: string } => {
-    if (score >= 90) return { code: 'SB', label: 'Sangat Berkembang' };
-    if (score >= 75) return { code: 'B', label: 'Berkembang' };
-    if (score >= 60) return { code: 'MB', label: 'Mulai Berkembang' };
-    return { code: 'BB', label: 'Belum Berkembang' };
+    if (score >= 90) return { code: "SB", label: "Sangat Berkembang" };
+    if (score >= 75) return { code: "B", label: "Berkembang" };
+    if (score >= 60) return { code: "MB", label: "Mulai Berkembang" };
+    return { code: "BB", label: "Belum Berkembang" };
   };
 
   const getCapaianKompetensi = (subject: string, score: number): string => {
     const predikat = getCapaianLabel(score);
     const descriptions: Record<string, Record<string, string>> = {
-      'Pendidikan Agama Islam': {
-        SB: 'Ananda sangat mampu memahami dan mengamalkan nilai-nilai keislaman dalam kehidupan sehari-hari.',
-        B: 'Ananda mampu memahami konsep-konsep dasar keislaman dengan baik.',
-        MB: 'Ananda mulai memahami nilai-nilai keislaman dengan bimbingan.',
-        BB: 'Ananda perlu bimbingan lebih dalam memahami konsep dasar keislaman.',
+      "Pendidikan Agama Islam": {
+        SB: "Ananda sangat mampu memahami dan mengamalkan nilai-nilai keislaman dalam kehidupan sehari-hari.",
+        B: "Ananda mampu memahami konsep-konsep dasar keislaman dengan baik.",
+        MB: "Ananda mulai memahami nilai-nilai keislaman dengan bimbingan.",
+        BB: "Ananda perlu bimbingan lebih dalam memahami konsep dasar keislaman.",
       },
-      'Bahasa Indonesia': {
-        SB: 'Ananda sangat mampu berkomunikasi dan menulis dengan baik dan benar.',
-        B: 'Ananda mampu berkomunikasi lisan dan tulisan dengan baik.',
-        MB: 'Ananda mulai mampu berkomunikasi dengan bimbingan.',
-        BB: 'Ananda perlu bimbingan dalam berkomunikasi.',
+      "Bahasa Indonesia": {
+        SB: "Ananda sangat mampu berkomunikasi dan menulis dengan baik dan benar.",
+        B: "Ananda mampu berkomunikasi lisan dan tulisan dengan baik.",
+        MB: "Ananda mulai mampu berkomunikasi dengan bimbingan.",
+        BB: "Ananda perlu bimbingan dalam berkomunikasi.",
       },
       Matematika: {
-        SB: 'Ananda sangat mampu memecahkan masalah matematika dengan berbagai strategi.',
-        B: 'Ananda mampu menerapkan konsep matematika dalam pemecahan masalah.',
-        MB: 'Ananda mulai mampu memahami konsep dasar matematika.',
-        BB: 'Ananda perlu bimbingan dalam memahami konsep matematika.',
+        SB: "Ananda sangat mampu memecahkan masalah matematika dengan berbagai strategi.",
+        B: "Ananda mampu menerapkan konsep matematika dalam pemecahan masalah.",
+        MB: "Ananda mulai mampu memahami konsep dasar matematika.",
+        BB: "Ananda perlu bimbingan dalam memahami konsep matematika.",
       },
       default: {
         SB: `Ananda menunjukkan penguasaan yang sangat baik dalam ${subject}.`,
@@ -174,25 +177,25 @@ export default function PrintReportCardMerdekaPage() {
       },
     };
 
-    const subjectDesc = descriptions[subject] ?? descriptions['default'];
-    return subjectDesc[predikat.code] ?? subjectDesc['B'];
+    const subjectDesc = descriptions[subject] ?? descriptions["default"];
+    return subjectDesc[predikat.code] ?? subjectDesc["B"];
   };
 
   // Mock data untuk P5 (seharusnya dari backend)
   const p5Data = PROFIL_PELAJAR_PANCASILA.map((p, index) => ({
     ...p,
-    capaian: index < 3 ? 'B' : 'MB',
+    capaian: index < 3 ? "B" : "MB",
     deskripsi: `Ananda menunjukkan perkembangan yang positif dalam dimensi ${p.shortName.toLowerCase()}. Terus tingkatkan semangat dalam menerapkan nilai-nilai ini dalam kehidupan sehari-hari.`,
   }));
 
   // Mock data untuk Literasi dan Numerasi
   const literasiData = {
-    literasi: 'Cakap',
-    numerasi: 'Cakap',
+    literasi: "Cakap",
+    numerasi: "Cakap",
     deskripsiLiterasi:
-      'Ananda mampu memahami teks bacaan dan mengekspresikan ide dalam tulisan dengan cukup baik.',
+      "Ananda mampu memahami teks bacaan dan mengekspresikan ide dalam tulisan dengan cukup baik.",
     deskripsiNumerasi:
-      'Ananda mampu menggunakan konsep bilangan dan operasi matematika dalam situasi kontekstual.',
+      "Ananda mampu menggunakan konsep bilangan dan operasi matematika dalam situasi kontekstual.",
   };
 
   return (
@@ -206,14 +209,18 @@ export default function PrintReportCardMerdekaPage() {
           </Button>
           <div>
             <p className="font-semibold">Preview Rapor Kurikulum Merdeka</p>
-            <p className="text-sm text-muted-foreground">{reportCard.student?.user?.name || '-'}</p>
+            <p className="text-sm text-muted-foreground">
+              {reportCard.student?.user?.name || "-"}
+            </p>
           </div>
         </div>
         <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => router.push(`/assessment/report-cards/${reportCardId}/print`)}
+            onClick={() =>
+              router.push(`/assessment/report-cards/${reportCardId}/print`)
+            }
           >
             Format Standar
           </Button>
@@ -260,12 +267,16 @@ export default function PrintReportCardMerdekaPage() {
                   <p className="text-xs font-medium text-gray-600">
                     KEMENTERIAN AGAMA REPUBLIK INDONESIA
                   </p>
-                  <h1 className="text-lg font-bold uppercase">Yayasan Pesantren Cipansor</h1>
+                  <h1 className="text-lg font-bold uppercase">
+                    Yayasan Pesantren Cipansor
+                  </h1>
                   <p className="text-xs">
-                    Jl. Pesantren No. 123, Kec. Ciparay, Kab. Bandung, Jawa Barat 40381
+                    Jl. Pesantren No. 123, Kec. Ciparay, Kab. Bandung, Jawa
+                    Barat 40381
                   </p>
                   <p className="text-xs">
-                    Telp: (022) 1234567 | Email: info@cipansor.sch.id | NSM: 121232040001
+                    Telp: (022) 1234567 | Email: info@cipansor.sch.id | NSM:
+                    121232040001
                   </p>
                 </div>
                 <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center text-xl">
@@ -277,25 +288,31 @@ export default function PrintReportCardMerdekaPage() {
                   Laporan Hasil Belajar Peserta Didik
                 </h2>
                 <p className="text-xs">
-                  Kurikulum Merdeka - Tahun Pelajaran {reportCard.academicYear?.name} - Semester{' '}
-                  {reportCard.semester === 1 ? 'Ganjil' : 'Genap'}
+                  Kurikulum Merdeka - Tahun Pelajaran{" "}
+                  {reportCard.academicYear?.name} - Semester{" "}
+                  {reportCard.semester === 1 ? "Ganjil" : "Genap"}
                 </p>
               </div>
             </div>
 
             {/* Identitas Peserta Didik */}
             <div className="no-break">
-              <h3 className="font-bold text-xs bg-gray-200 p-1 mb-2">IDENTITAS PESERTA DIDIK</h3>
+              <h3 className="font-bold text-xs bg-gray-200 p-1 mb-2">
+                IDENTITAS PESERTA DIDIK
+              </h3>
               <div className="grid grid-cols-2 gap-x-8 text-xs">
                 <div className="space-y-0.5">
                   <div className="flex">
                     <span className="w-28 text-gray-600">Nama Lengkap</span>
-                    <span className="font-semibold">: {reportCard.student?.user?.name || '-'}</span>
+                    <span className="font-semibold">
+                      : {reportCard.student?.user?.name || "-"}
+                    </span>
                   </div>
                   <div className="flex">
                     <span className="w-28 text-gray-600">NIS / NISN</span>
                     <span>
-                      : {reportCard.student?.nis} / {reportCard.student?.nisn ?? '-'}
+                      : {reportCard.student?.nis} /{" "}
+                      {reportCard.student?.nisn ?? "-"}
                     </span>
                   </div>
                   <div className="flex">
@@ -307,13 +324,13 @@ export default function PrintReportCardMerdekaPage() {
                   <div className="flex">
                     <span className="w-28 text-gray-600">Fase / Semester</span>
                     <span>
-                      : {reportCard.semester === 1 ? 'Ganjil' : 'Genap'} /{' '}
+                      : {reportCard.semester === 1 ? "Ganjil" : "Genap"} /{" "}
                       {reportCard.academicYear?.name}
                     </span>
                   </div>
                   <div className="flex">
                     <span className="w-28 text-gray-600">Wali Kelas</span>
-                    <span>: {reportCard.class?.teacher?.name ?? '-'}</span>
+                    <span>: {reportCard.class?.teacher?.name ?? "-"}</span>
                   </div>
                   <div className="flex">
                     <span className="w-28 text-gray-600">Kepala Satuan</span>
@@ -334,11 +351,21 @@ export default function PrintReportCardMerdekaPage() {
               <table className="w-full border-collapse text-xs">
                 <thead>
                   <tr className="bg-green-50">
-                    <th className="border border-gray-400 p-1 w-6 text-center">No</th>
-                    <th className="border border-gray-400 p-1 text-left">Mata Pelajaran</th>
-                    <th className="border border-gray-400 p-1 w-12 text-center">Nilai</th>
-                    <th className="border border-gray-400 p-1 w-20 text-center">Capaian</th>
-                    <th className="border border-gray-400 p-1">Deskripsi Capaian Kompetensi</th>
+                    <th className="border border-gray-400 p-1 w-6 text-center">
+                      No
+                    </th>
+                    <th className="border border-gray-400 p-1 text-left">
+                      Mata Pelajaran
+                    </th>
+                    <th className="border border-gray-400 p-1 w-12 text-center">
+                      Nilai
+                    </th>
+                    <th className="border border-gray-400 p-1 w-20 text-center">
+                      Capaian
+                    </th>
+                    <th className="border border-gray-400 p-1">
+                      Deskripsi Capaian Kompetensi
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -352,19 +379,26 @@ export default function PrintReportCardMerdekaPage() {
                     </td>
                   </tr>
                   {reportCard.subjects?.slice(0, 6).map((subject, index) => {
-                    const subjectName = subject.subject?.name ?? subject.subjectName ?? '';
+                    const subjectName =
+                      subject.subject?.name ?? subject.subjectName ?? "";
                     const capaian = getCapaianLabel(subject.finalScore ?? 0);
                     return (
                       <tr key={subject.id ?? index}>
-                        <td className="border border-gray-400 p-1 text-center">{index + 1}</td>
-                        <td className="border border-gray-400 p-1">{subjectName}</td>
+                        <td className="border border-gray-400 p-1 text-center">
+                          {index + 1}
+                        </td>
+                        <td className="border border-gray-400 p-1">
+                          {subjectName}
+                        </td>
                         <td className="border border-gray-400 p-1 text-center font-semibold">
-                          {subject.finalScore?.toFixed(0) ?? '-'}
+                          {subject.finalScore?.toFixed(0) ?? "-"}
                         </td>
                         <td className="border border-gray-400 p-1 text-center">
                           <span
                             className={`px-1 py-0.5 rounded text-xs ${
-                              CAPAIAN_LEVELS.find((c) => c.code === capaian.code)?.color
+                              CAPAIAN_LEVELS.find(
+                                (c) => c.code === capaian.code,
+                              )?.color
                             }`}
                           >
                             {capaian.code}
@@ -372,7 +406,10 @@ export default function PrintReportCardMerdekaPage() {
                         </td>
                         <td className="border border-gray-400 p-1 text-xs leading-tight">
                           {subject.notes ||
-                            getCapaianKompetensi(subjectName, subject.finalScore ?? 0)}
+                            getCapaianKompetensi(
+                              subjectName,
+                              subject.finalScore ?? 0,
+                            )}
                         </td>
                       </tr>
                     );
@@ -390,21 +427,28 @@ export default function PrintReportCardMerdekaPage() {
                         </td>
                       </tr>
                       {reportCard.subjects.slice(6).map((subject, index) => {
-                        const subjectName = subject.subject?.name ?? subject.subjectName ?? '';
-                        const capaian = getCapaianLabel(subject.finalScore ?? 0);
+                        const subjectName =
+                          subject.subject?.name ?? subject.subjectName ?? "";
+                        const capaian = getCapaianLabel(
+                          subject.finalScore ?? 0,
+                        );
                         return (
                           <tr key={subject.id ?? `b-${index}`}>
                             <td className="border border-gray-400 p-1 text-center">
                               {index + 7}
                             </td>
-                            <td className="border border-gray-400 p-1">{subjectName}</td>
+                            <td className="border border-gray-400 p-1">
+                              {subjectName}
+                            </td>
                             <td className="border border-gray-400 p-1 text-center font-semibold">
-                              {subject.finalScore?.toFixed(0) ?? '-'}
+                              {subject.finalScore?.toFixed(0) ?? "-"}
                             </td>
                             <td className="border border-gray-400 p-1 text-center">
                               <span
                                 className={`px-1 py-0.5 rounded text-xs ${
-                                  CAPAIAN_LEVELS.find((c) => c.code === capaian.code)?.color
+                                  CAPAIAN_LEVELS.find(
+                                    (c) => c.code === capaian.code,
+                                  )?.color
                                 }`}
                               >
                                 {capaian.code}
@@ -412,7 +456,10 @@ export default function PrintReportCardMerdekaPage() {
                             </td>
                             <td className="border border-gray-400 p-1 text-xs leading-tight">
                               {subject.notes ||
-                                getCapaianKompetensi(subjectName, subject.finalScore ?? 0)}
+                                getCapaianKompetensi(
+                                  subjectName,
+                                  subject.finalScore ?? 0,
+                                )}
                             </td>
                           </tr>
                         );
@@ -424,7 +471,10 @@ export default function PrintReportCardMerdekaPage() {
               <div className="flex gap-4 mt-1 text-xs">
                 <span className="font-semibold">Keterangan Capaian:</span>
                 {CAPAIAN_LEVELS.map((level) => (
-                  <span key={level.code} className={`${level.color} px-1 rounded`}>
+                  <span
+                    key={level.code}
+                    className={`${level.color} px-1 rounded`}
+                  >
                     {level.code} = {level.label}
                   </span>
                 ))}
@@ -454,15 +504,19 @@ export default function PrintReportCardMerdekaPage() {
                 <tbody>
                   {p5Data.map((profil, index) => (
                     <tr key={index}>
-                      <td className="border border-gray-400 p-1 text-center">{index + 1}</td>
+                      <td className="border border-gray-400 p-1 text-center">
+                        {index + 1}
+                      </td>
                       <td className="border border-gray-400 p-1">
                         <div className="flex items-center gap-1">
                           <span>{profil.icon}</span>
                           <div>
-                            <p className="font-semibold text-xs">{profil.shortName}</p>
+                            <p className="font-semibold text-xs">
+                              {profil.shortName}
+                            </p>
                             <p className="text-xs text-gray-500 leading-tight">
-                              {profil.elements.slice(0, 2).join(', ')}
-                              {profil.elements.length > 2 && '...'}
+                              {profil.elements.slice(0, 2).join(", ")}
+                              {profil.elements.length > 2 && "..."}
                             </p>
                           </div>
                         </div>
@@ -470,10 +524,16 @@ export default function PrintReportCardMerdekaPage() {
                       <td className="border border-gray-400 p-1 text-center">
                         <span
                           className={`px-1 py-0.5 rounded text-xs ${
-                            CAPAIAN_LEVELS.find((c) => c.code === profil.capaian)?.color
+                            CAPAIAN_LEVELS.find(
+                              (c) => c.code === profil.capaian,
+                            )?.color
                           }`}
                         >
-                          {CAPAIAN_LEVELS.find((c) => c.code === profil.capaian)?.label}
+                          {
+                            CAPAIAN_LEVELS.find(
+                              (c) => c.code === profil.capaian,
+                            )?.label
+                          }
                         </span>
                       </td>
                       <td className="border border-gray-400 p-1 text-xs leading-tight">
@@ -501,13 +561,17 @@ export default function PrintReportCardMerdekaPage() {
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="border border-gray-400 p-1 text-center">1</td>
-                    <td className="border border-gray-400 p-1 font-semibold">Literasi</td>
+                    <td className="border border-gray-400 p-1 text-center">
+                      1
+                    </td>
+                    <td className="border border-gray-400 p-1 font-semibold">
+                      Literasi
+                    </td>
                     <td className="border border-gray-400 p-1 text-center">
                       <span
                         className={`font-semibold ${
                           LITERASI_NUMERASI_LEVELS.find(
-                            (l) => l.code === literasiData.literasi
+                            (l) => l.code === literasiData.literasi,
                           )?.color
                         }`}
                       >
@@ -519,13 +583,17 @@ export default function PrintReportCardMerdekaPage() {
                     </td>
                   </tr>
                   <tr>
-                    <td className="border border-gray-400 p-1 text-center">2</td>
-                    <td className="border border-gray-400 p-1 font-semibold">Numerasi</td>
+                    <td className="border border-gray-400 p-1 text-center">
+                      2
+                    </td>
+                    <td className="border border-gray-400 p-1 font-semibold">
+                      Numerasi
+                    </td>
                     <td className="border border-gray-400 p-1 text-center">
                       <span
                         className={`font-semibold ${
                           LITERASI_NUMERASI_LEVELS.find(
-                            (l) => l.code === literasiData.numerasi
+                            (l) => l.code === literasiData.numerasi,
                           )?.color
                         }`}
                       >
@@ -539,7 +607,8 @@ export default function PrintReportCardMerdekaPage() {
                 </tbody>
               </table>
               <p className="text-xs mt-1 text-gray-600">
-                <strong>Keterangan:</strong> Mahir | Cakap | Dasar | Perlu Intervensi
+                <strong>Keterangan:</strong> Mahir | Cakap | Dasar | Perlu
+                Intervensi
               </p>
             </div>
 
@@ -552,15 +621,23 @@ export default function PrintReportCardMerdekaPage() {
                 <thead>
                   <tr className="bg-green-50">
                     <th className="border border-gray-400 p-1 w-6">No</th>
-                    <th className="border border-gray-400 p-1">Kegiatan Ekstrakurikuler</th>
-                    <th className="border border-gray-400 p-1 w-20">Predikat</th>
+                    <th className="border border-gray-400 p-1">
+                      Kegiatan Ekstrakurikuler
+                    </th>
+                    <th className="border border-gray-400 p-1 w-20">
+                      Predikat
+                    </th>
                     <th className="border border-gray-400 p-1">Keterangan</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="border border-gray-400 p-1 text-center">1</td>
-                    <td className="border border-gray-400 p-1">Pramuka (Wajib)</td>
+                    <td className="border border-gray-400 p-1 text-center">
+                      1
+                    </td>
+                    <td className="border border-gray-400 p-1">
+                      Pramuka (Wajib)
+                    </td>
                     <td className="border border-gray-400 p-1 text-center font-semibold">
                       Baik
                     </td>
@@ -569,8 +646,12 @@ export default function PrintReportCardMerdekaPage() {
                     </td>
                   </tr>
                   <tr>
-                    <td className="border border-gray-400 p-1 text-center">2</td>
-                    <td className="border border-gray-400 p-1">Tahfidz Al-Qur&apos;an</td>
+                    <td className="border border-gray-400 p-1 text-center">
+                      2
+                    </td>
+                    <td className="border border-gray-400 p-1">
+                      Tahfidz Al-Qur&apos;an
+                    </td>
                     <td className="border border-gray-400 p-1 text-center font-semibold">
                       Sangat Baik
                     </td>
@@ -579,7 +660,9 @@ export default function PrintReportCardMerdekaPage() {
                     </td>
                   </tr>
                   <tr>
-                    <td className="border border-gray-400 p-1 text-center">3</td>
+                    <td className="border border-gray-400 p-1 text-center">
+                      3
+                    </td>
                     <td className="border border-gray-400 p-1">Muhadhoroh</td>
                     <td className="border border-gray-400 p-1 text-center font-semibold">
                       Baik
@@ -594,21 +677,29 @@ export default function PrintReportCardMerdekaPage() {
 
             {/* Section E: Prestasi */}
             <div className="no-break">
-              <h3 className="font-bold text-xs bg-green-700 text-white p-1 mb-1">E. PRESTASI</h3>
+              <h3 className="font-bold text-xs bg-green-700 text-white p-1 mb-1">
+                E. PRESTASI
+              </h3>
               <table className="w-full border-collapse text-xs">
                 <thead>
                   <tr className="bg-green-50">
                     <th className="border border-gray-400 p-1 w-6">No</th>
-                    <th className="border border-gray-400 p-1">Jenis Prestasi</th>
+                    <th className="border border-gray-400 p-1">
+                      Jenis Prestasi
+                    </th>
                     <th className="border border-gray-400 p-1 w-24">Tingkat</th>
                     <th className="border border-gray-400 p-1">Keterangan</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="border border-gray-400 p-1 text-center">1</td>
+                    <td className="border border-gray-400 p-1 text-center">
+                      1
+                    </td>
                     <td className="border border-gray-400 p-1">-</td>
-                    <td className="border border-gray-400 p-1 text-center">-</td>
+                    <td className="border border-gray-400 p-1 text-center">
+                      -
+                    </td>
                     <td className="border border-gray-400 p-1">-</td>
                   </tr>
                 </tbody>
@@ -633,7 +724,9 @@ export default function PrintReportCardMerdekaPage() {
                       {reportCard.attendance?.permitted ?? 0}
                     </td>
                     <td className="border border-gray-400 p-1 w-12">hari</td>
-                    <td className="border border-gray-400 p-1 w-32">Tanpa Keterangan</td>
+                    <td className="border border-gray-400 p-1 w-32">
+                      Tanpa Keterangan
+                    </td>
                     <td className="border border-gray-400 p-1 w-16 text-center">
                       {reportCard.attendance?.absent ?? 0}
                     </td>
@@ -650,7 +743,7 @@ export default function PrintReportCardMerdekaPage() {
               </h3>
               <div className="border border-gray-400 p-2 min-h-[50px] text-xs">
                 {reportCard.teacherNotes ||
-                  'Ananda menunjukkan sikap dan perilaku yang baik selama semester ini. Terus pertahankan semangat belajar dan tingkatkan ibadah serta akhlak mulia. Semoga selalu dalam lindungan Allah SWT.'}
+                  "Ananda menunjukkan sikap dan perilaku yang baik selama semester ini. Terus pertahankan semangat belajar dan tingkatkan ibadah serta akhlak mulia. Semoga selalu dalam lindungan Allah SWT."}
               </div>
             </div>
 
@@ -670,21 +763,29 @@ export default function PrintReportCardMerdekaPage() {
                 <p>Mengetahui,</p>
                 <p>Orang Tua / Wali</p>
                 <div className="h-16"></div>
-                <p className="border-t border-gray-400 pt-1">(................................)</p>
+                <p className="border-t border-gray-400 pt-1">
+                  (................................)
+                </p>
               </div>
               <div>
-                <p>Bandung, {format(new Date(), 'd MMMM yyyy', { locale: idLocale })}</p>
+                <p>
+                  Bandung,{" "}
+                  {format(new Date(), "d MMMM yyyy", { locale: idLocale })}
+                </p>
                 <p>Wali Kelas</p>
                 <div className="h-16"></div>
                 <p className="border-t border-gray-400 pt-1">
-                  {reportCard.class?.teacher?.name || '(................................)'}
+                  {reportCard.class?.teacher?.name ||
+                    "(................................)"}
                 </p>
               </div>
               <div>
                 <p>Mengetahui,</p>
                 <p>Kepala Madrasah</p>
                 <div className="h-16"></div>
-                <p className="border-t border-gray-400 pt-1">H. Ahmad Fauzi, S.Pd.I., M.Pd.</p>
+                <p className="border-t border-gray-400 pt-1">
+                  H. Ahmad Fauzi, S.Pd.I., M.Pd.
+                </p>
                 <p className="text-xs text-gray-600">NIP. 196505121990031002</p>
               </div>
             </div>
@@ -692,8 +793,10 @@ export default function PrintReportCardMerdekaPage() {
             {/* Footer */}
             <div className="text-center text-xs text-gray-500 mt-4 pt-2 border-t">
               <p>
-                Dicetak dari Sistem Informasi Manajemen Pesantren Cipansor |{' '}
-                {format(new Date(), "EEEE, d MMMM yyyy 'pukul' HH:mm 'WIB'", { locale: idLocale })}
+                Dicetak dari Sistem Informasi Manajemen Pesantren Cipansor |{" "}
+                {format(new Date(), "EEEE, d MMMM yyyy 'pukul' HH:mm 'WIB'", {
+                  locale: idLocale,
+                })}
               </p>
             </div>
           </div>

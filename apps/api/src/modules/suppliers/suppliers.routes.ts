@@ -10,7 +10,7 @@ const ALLOWED_ROLES = [
   UserRole.SUPER_ADMIN,
   UserRole.UNIT_ADMIN,
   UserRole.STAFF,
-  UserRole.TEACHER // Teachers might need to see them, but maybe restricted
+  UserRole.TEACHER, // Teachers might need to see them, but maybe restricted
 ];
 
 router.get('/', authenticate, controller.getSuppliers);

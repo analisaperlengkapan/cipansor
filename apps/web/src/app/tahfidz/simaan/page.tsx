@@ -1,33 +1,38 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ColumnDef } from '@tanstack/react-table';
-import { MainLayout } from '@/components/layout';
-import { PageHeader, DataTable, SearchInput, ConfirmDialog } from '@/components/shared';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ColumnDef } from "@tanstack/react-table";
+import { MainLayout } from "@/components/layout";
+import {
+  PageHeader,
+  DataTable,
+  SearchInput,
+  ConfirmDialog,
+} from "@/components/shared";
 import {
   useSimaanExams,
   useDeleteSimaan,
   SimaanExam,
-} from '@/hooks/use-simaan';
-import { useClasses } from '@/hooks/use-classes';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+} from "@/hooks/use-simaan";
+import { useClasses } from "@/hooks/use-classes";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { DatePickerWithRange } from '@/components/ui/date-range-picker';
+} from "@/components/ui/select";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import {
   MoreHorizontal,
   Eye,
@@ -42,26 +47,26 @@ import {
   Calendar,
   Users,
   Award,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { useAuthStore } from '@/stores/auth';
-import { cn } from '@/lib/utils';
-import { DateRange } from 'react-day-picker';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { toast } from "sonner";
+import { useAuthStore } from "@/stores/auth";
+import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
 
 const STATUS_LABELS: Record<string, string> = {
-  SCHEDULED: 'Terjadwal',
-  IN_PROGRESS: 'Berlangsung',
-  COMPLETED: 'Selesai',
-  CANCELLED: 'Dibatalkan',
+  SCHEDULED: "Terjadwal",
+  IN_PROGRESS: "Berlangsung",
+  COMPLETED: "Selesai",
+  CANCELLED: "Dibatalkan",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  SCHEDULED: 'bg-blue-100 text-blue-800',
-  IN_PROGRESS: 'bg-yellow-100 text-yellow-800',
-  COMPLETED: 'bg-green-100 text-green-800',
-  CANCELLED: 'bg-red-100 text-red-800',
+  SCHEDULED: "bg-blue-100 text-blue-800",
+  IN_PROGRESS: "bg-yellow-100 text-yellow-800",
+  COMPLETED: "bg-green-100 text-green-800",
+  CANCELLED: "bg-red-100 text-red-800",
 };
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
@@ -72,11 +77,11 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
 };
 
 const EXAM_TYPE_LABELS: Record<string, string> = {
-  JUZ_30: 'Juz 30',
-  JUZ_1_15: 'Juz 1-15',
-  JUZ_16_30: 'Juz 16-30',
-  FULL_30_JUZ: '30 Juz',
-  CUSTOM: 'Custom',
+  JUZ_30: "Juz 30",
+  JUZ_1_15: "Juz 1-15",
+  JUZ_16_30: "Juz 16-30",
+  FULL_30_JUZ: "30 Juz",
+  CUSTOM: "Custom",
 };
 
 export default function SimaanListPage() {
@@ -84,10 +89,10 @@ export default function SimaanListPage() {
   const { user } = useAuthStore();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [examTypeFilter, setExamTypeFilter] = useState<string>('');
-  const [classFilter, setClassFilter] = useState<string>('');
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [examTypeFilter, setExamTypeFilter] = useState<string>("");
+  const [classFilter, setClassFilter] = useState<string>("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -100,9 +105,11 @@ export default function SimaanListPage() {
     status: statusFilter || undefined,
     examType: examTypeFilter || undefined,
     classId: classFilter || undefined,
-    dateFrom: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
-    dateTo: dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined,
-    unitId: user?.role !== 'SUPER_ADMIN' ? user?.unitId : undefined,
+    dateFrom: dateRange?.from
+      ? format(dateRange.from, "yyyy-MM-dd")
+      : undefined,
+    dateTo: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
+    unitId: user?.role !== "SUPER_ADMIN" ? user?.unitId : undefined,
   });
 
   const deleteMutation = useDeleteSimaan();
@@ -111,17 +118,17 @@ export default function SimaanListPage() {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      toast.success('Ujian simaan berhasil dihapus');
+      toast.success("Ujian simaan berhasil dihapus");
       setDeleteId(null);
     } catch {
-      toast.error('Gagal menghapus ujian simaan');
+      toast.error("Gagal menghapus ujian simaan");
     }
   };
 
   const columns: ColumnDef<SimaanExam>[] = [
     {
-      accessorKey: 'student',
-      header: 'Santri',
+      accessorKey: "student",
+      header: "Santri",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           {row.original.student?.photoUrl ? (
@@ -133,24 +140,28 @@ export default function SimaanListPage() {
           ) : (
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
               <span className="text-xs font-medium">
-                {row.original.student?.name?.[0] || '?'}
+                {row.original.student?.name?.[0] || "?"}
               </span>
             </div>
           )}
           <div>
-            <p className="font-medium">{row.original.student?.name || '-'}</p>
-            <p className="text-xs text-muted-foreground">{row.original.student?.nis}</p>
+            <p className="font-medium">{row.original.student?.name || "-"}</p>
+            <p className="text-xs text-muted-foreground">
+              {row.original.student?.nis}
+            </p>
           </div>
         </div>
       ),
     },
     {
-      accessorKey: 'examDate',
-      header: 'Tanggal',
+      accessorKey: "examDate",
+      header: "Tanggal",
       cell: ({ row }) => (
         <div>
           <p className="font-medium">
-            {format(new Date(row.original.examDate), 'dd MMM yyyy', { locale: idLocale })}
+            {format(new Date(row.original.examDate), "dd MMM yyyy", {
+              locale: idLocale,
+            })}
           </p>
           <p className="text-xs text-muted-foreground">
             {row.original.duration} menit
@@ -159,8 +170,8 @@ export default function SimaanListPage() {
       ),
     },
     {
-      accessorKey: 'examType',
-      header: 'Jenis Ujian',
+      accessorKey: "examType",
+      header: "Jenis Ujian",
       cell: ({ row }) => (
         <Badge variant="outline" className="font-normal">
           <BookOpen className="h-3 w-3 mr-1" />
@@ -169,18 +180,23 @@ export default function SimaanListPage() {
       ),
     },
     {
-      accessorKey: 'status',
-      header: 'Status',
+      accessorKey: "status",
+      header: "Status",
       cell: ({ row }) => (
-        <Badge className={cn('font-normal gap-1', STATUS_COLORS[row.original.status])}>
+        <Badge
+          className={cn(
+            "font-normal gap-1",
+            STATUS_COLORS[row.original.status],
+          )}
+        >
           {STATUS_ICONS[row.original.status]}
           {STATUS_LABELS[row.original.status]}
         </Badge>
       ),
     },
     {
-      accessorKey: 'examiners',
-      header: 'Penguji',
+      accessorKey: "examiners",
+      header: "Penguji",
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <Users className="h-4 w-4 text-muted-foreground" />
@@ -189,27 +205,27 @@ export default function SimaanListPage() {
       ),
     },
     {
-      accessorKey: 'overallGrade',
-      header: 'Nilai',
+      accessorKey: "overallGrade",
+      header: "Nilai",
       cell: ({ row }) => (
         <span
           className={cn(
-            'font-semibold',
+            "font-semibold",
             row.original.overallGrade
               ? row.original.overallGrade >= 80
-                ? 'text-green-600'
+                ? "text-green-600"
                 : row.original.overallGrade >= 60
-                  ? 'text-yellow-600'
-                  : 'text-red-600'
-              : 'text-muted-foreground'
+                  ? "text-yellow-600"
+                  : "text-red-600"
+              : "text-muted-foreground",
           )}
         >
-          {row.original.overallGrade ?? '-'}
+          {row.original.overallGrade ?? "-"}
         </span>
       ),
     },
     {
-      id: 'actions',
+      id: "actions",
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -218,30 +234,44 @@ export default function SimaanListPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => router.push(`/tahfidz/simaan/${row.original.id}`)}>
+            <DropdownMenuItem
+              onClick={() => router.push(`/tahfidz/simaan/${row.original.id}`)}
+            >
               <Eye className="mr-2 h-4 w-4" />
               Lihat Detail
             </DropdownMenuItem>
-            {row.original.status === 'SCHEDULED' && (
+            {row.original.status === "SCHEDULED" && (
               <>
-                <DropdownMenuItem onClick={() => router.push(`/tahfidz/simaan/${row.original.id}/edit`)}>
+                <DropdownMenuItem
+                  onClick={() =>
+                    router.push(`/tahfidz/simaan/${row.original.id}/edit`)
+                  }
+                >
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push(`/tahfidz/simaan/${row.original.id}/start`)}>
+                <DropdownMenuItem
+                  onClick={() =>
+                    router.push(`/tahfidz/simaan/${row.original.id}/start`)
+                  }
+                >
                   <Play className="mr-2 h-4 w-4" />
                   Mulai Ujian
                 </DropdownMenuItem>
               </>
             )}
-            {row.original.status === 'IN_PROGRESS' && (
-              <DropdownMenuItem onClick={() => router.push(`/tahfidz/simaan/${row.original.id}/score`)}>
+            {row.original.status === "IN_PROGRESS" && (
+              <DropdownMenuItem
+                onClick={() =>
+                  router.push(`/tahfidz/simaan/${row.original.id}/score`)
+                }
+              >
                 <Award className="mr-2 h-4 w-4" />
                 Input Nilai
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
-            {row.original.status === 'SCHEDULED' && (
+            {row.original.status === "SCHEDULED" && (
               <DropdownMenuItem
                 className="text-destructive"
                 onClick={() => setDeleteId(row.original.id)}
@@ -264,7 +294,7 @@ export default function SimaanListPage() {
           description="Kelola ujian simaan (tasmi') hafalan santri"
           actions={
             <Button
-              onClick={() => router.push('/tahfidz/simaan/new')}
+              onClick={() => router.push("/tahfidz/simaan/new")}
               className="transition-all hover:shadow-md hover:-translate-y-0.5"
             >
               <Plus className="mr-2 h-4 w-4" />
@@ -335,7 +365,9 @@ export default function SimaanListPage() {
           <div className="glass-card border-none bg-blue-50/50 rounded-xl p-4 transition-all hover:shadow-lg group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">Terjadwal</p>
+                <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+                  Terjadwal
+                </p>
                 <p className="text-2xl font-bold text-blue-800 mt-1">
                   {data?.summary?.scheduled || 0}
                 </p>
@@ -348,7 +380,9 @@ export default function SimaanListPage() {
           <div className="glass-card border-none bg-yellow-50/50 rounded-xl p-4 transition-all hover:shadow-lg group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-yellow-600 uppercase tracking-wider">Berlangsung</p>
+                <p className="text-xs font-bold text-yellow-600 uppercase tracking-wider">
+                  Berlangsung
+                </p>
                 <p className="text-2xl font-bold text-yellow-800 mt-1">
                   {data?.summary?.inProgress || 0}
                 </p>
@@ -361,7 +395,9 @@ export default function SimaanListPage() {
           <div className="glass-card border-none bg-green-50/50 rounded-xl p-4 transition-all hover:shadow-lg group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-green-600 uppercase tracking-wider">Selesai</p>
+                <p className="text-xs font-bold text-green-600 uppercase tracking-wider">
+                  Selesai
+                </p>
                 <p className="text-2xl font-bold text-green-800 mt-1">
                   {data?.summary?.completed || 0}
                 </p>
@@ -374,9 +410,11 @@ export default function SimaanListPage() {
           <div className="glass-card border-none bg-purple-50/50 rounded-xl p-4 transition-all hover:shadow-lg group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">Rata-rata Nilai</p>
+                <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">
+                  Rata-rata Nilai
+                </p>
                 <p className="text-2xl font-bold text-purple-800 mt-1">
-                  {data?.summary?.averageGrade?.toFixed(1) || '-'}
+                  {data?.summary?.averageGrade?.toFixed(1) || "-"}
                 </p>
               </div>
               <div className="p-2 bg-purple-100 rounded-lg group-hover:scale-110 transition-transform">

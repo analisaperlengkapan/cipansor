@@ -19,24 +19,16 @@ export const P5DimensionCodeEnum = z.enum([
   'KREATIF',
 ]);
 
-export const AssessmentCategoryEnum = z.enum([
-  'DIAGNOSTIK',
-  'FORMATIF',
-  'SUMATIF',
-]);
+export const AssessmentCategoryEnum = z.enum(['DIAGNOSTIK', 'FORMATIF', 'SUMATIF']);
 
 export const P5GradeEnum = z.enum([
-  'BB',  // Belum Berkembang
-  'MB',  // Mulai Berkembang
+  'BB', // Belum Berkembang
+  'MB', // Mulai Berkembang
   'BSH', // Berkembang Sesuai Harapan
-  'SB',  // Sangat Berkembang
+  'SB', // Sangat Berkembang
 ]);
 
-export const ProjectStatusEnum = z.enum([
-  'DRAFT',
-  'ACTIVE',
-  'COMPLETED',
-]);
+export const ProjectStatusEnum = z.enum(['DRAFT', 'ACTIVE', 'COMPLETED']);
 
 // ==================== LEARNING PHASES ====================
 
@@ -62,7 +54,10 @@ export const updatePhaseSchema = z.object({
 export const listLearningOutcomesQuerySchema = z.object({
   phaseId: z.string().uuid().optional(),
   subjectId: z.string().uuid().optional(),
-  isActive: z.string().transform(v => v === 'true').optional(),
+  isActive: z
+    .string()
+    .transform((v) => v === 'true')
+    .optional(),
   page: z.string().transform(Number).pipe(z.number().min(1)).default('1'),
   limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default('20'),
 });
@@ -93,7 +88,10 @@ export const updateLearningOutcomeSchema = z.object({
 
 export const listLearningObjectivesQuerySchema = z.object({
   learningOutcomeId: z.string().uuid().optional(),
-  isActive: z.string().transform(v => v === 'true').optional(),
+  isActive: z
+    .string()
+    .transform((v) => v === 'true')
+    .optional(),
   page: z.string().transform(Number).pipe(z.number().min(1)).default('1'),
   limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default('20'),
 });
@@ -122,7 +120,10 @@ export const listTeachingModulesQuerySchema = z.object({
   learningObjectiveId: z.string().uuid().optional(),
   teacherId: z.string().uuid().optional(),
   classId: z.string().uuid().optional(),
-  isPublished: z.string().transform(v => v === 'true').optional(),
+  isPublished: z
+    .string()
+    .transform((v) => v === 'true')
+    .optional(),
   page: z.string().transform(Number).pipe(z.number().min(1)).default('1'),
   limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default('20'),
 });

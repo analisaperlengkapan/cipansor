@@ -62,10 +62,7 @@ router.get('/children', parentController.getChildren.bind(parentController));
  *       200:
  *         description: Child profile data
  */
-router.get(
-  '/children/:studentId/profile',
-  parentController.getChildProfile.bind(parentController)
-);
+router.get('/children/:studentId/profile', parentController.getChildProfile.bind(parentController));
 
 /**
  * @swagger
@@ -123,10 +120,7 @@ router.get(
  *       200:
  *         description: Tahfidz records with summary
  */
-router.get(
-  '/children/:studentId/tahfidz',
-  parentController.getChildTahfidz.bind(parentController)
-);
+router.get('/children/:studentId/tahfidz', parentController.getChildTahfidz.bind(parentController));
 
 /**
  * @swagger
@@ -154,10 +148,7 @@ router.get(
  *       200:
  *         description: Grades with subject grouping
  */
-router.get(
-  '/children/:studentId/grades',
-  parentController.getChildGrades.bind(parentController)
-);
+router.get('/children/:studentId/grades', parentController.getChildGrades.bind(parentController));
 
 /**
  * @swagger
@@ -200,10 +191,7 @@ router.get(
  *       200:
  *         description: Invoices and payment summary
  */
-router.get(
-  '/children/:studentId/finance',
-  parentController.getChildFinance.bind(parentController)
-);
+router.get('/children/:studentId/finance', parentController.getChildFinance.bind(parentController));
 
 /**
  * @swagger
@@ -246,10 +234,7 @@ router.get(
  *       200:
  *         description: Rewards with summary
  */
-router.get(
-  '/children/:studentId/rewards',
-  parentController.getChildRewards.bind(parentController)
-);
+router.get('/children/:studentId/rewards', parentController.getChildRewards.bind(parentController));
 
 /**
  * @swagger
@@ -269,10 +254,7 @@ router.get(
  *       200:
  *         description: Medical records
  */
-router.get(
-  '/children/:studentId/health',
-  parentController.getChildHealth.bind(parentController)
-);
+router.get('/children/:studentId/health', parentController.getChildHealth.bind(parentController));
 
 /**
  * @swagger
@@ -292,10 +274,7 @@ router.get(
  *       200:
  *         description: Permit records
  */
-router.get(
-  '/children/:studentId/permits',
-  parentController.getChildPermits.bind(parentController)
-);
+router.get('/children/:studentId/permits', parentController.getChildPermits.bind(parentController));
 
 /**
  * @swagger

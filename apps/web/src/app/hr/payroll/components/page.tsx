@@ -1,15 +1,21 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -17,14 +23,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +39,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   useSalaryComponents,
   useCreateSalaryComponent,
@@ -44,7 +50,7 @@ import {
   type CalculationType,
   COMPONENT_TYPE_LABELS,
   CALCULATION_TYPE_LABELS,
-} from '@/hooks';
+} from "@/hooks";
 import {
   ArrowLeft,
   Plus,
@@ -56,33 +62,35 @@ import {
   Calculator,
   Percent,
   FileText,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
 export default function SalaryComponentsPage() {
   const router = useRouter();
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<ComponentType | 'ALL'>('ALL');
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<ComponentType | "ALL">("ALL");
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingComponent, setEditingComponent] = useState<SalaryComponent | null>(null);
+  const [editingComponent, setEditingComponent] =
+    useState<SalaryComponent | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Form state
-  const [code, setCode] = useState('');
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [type, setType] = useState<ComponentType>('ALLOWANCE');
-  const [calculationType, setCalculationType] = useState<CalculationType>('FIXED');
-  const [defaultAmount, setDefaultAmount] = useState('');
-  const [percentage, setPercentage] = useState('');
-  const [formula, setFormula] = useState('');
+  const [code, setCode] = useState("");
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [type, setType] = useState<ComponentType>("ALLOWANCE");
+  const [calculationType, setCalculationType] =
+    useState<CalculationType>("FIXED");
+  const [defaultAmount, setDefaultAmount] = useState("");
+  const [percentage, setPercentage] = useState("");
+  const [formula, setFormula] = useState("");
   const [isTaxable, setIsTaxable] = useState(true);
   const [isActive, setIsActive] = useState(true);
-  const [sortOrder, setSortOrder] = useState('0');
+  const [sortOrder, setSortOrder] = useState("0");
 
   const { data: components, isLoading } = useSalaryComponents({
-    type: typeFilter !== 'ALL' ? typeFilter : undefined,
+    type: typeFilter !== "ALL" ? typeFilter : undefined,
     search: search || undefined,
   });
   const createComponent = useCreateSalaryComponent();
@@ -90,25 +98,25 @@ export default function SalaryComponentsPage() {
   const deleteComponent = useDeleteSalaryComponent();
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
       minimumFractionDigits: 0,
     }).format(amount);
   };
 
   const resetForm = () => {
-    setCode('');
-    setName('');
-    setDescription('');
-    setType('ALLOWANCE');
-    setCalculationType('FIXED');
-    setDefaultAmount('');
-    setPercentage('');
-    setFormula('');
+    setCode("");
+    setName("");
+    setDescription("");
+    setType("ALLOWANCE");
+    setCalculationType("FIXED");
+    setDefaultAmount("");
+    setPercentage("");
+    setFormula("");
     setIsTaxable(true);
     setIsActive(true);
-    setSortOrder('0');
+    setSortOrder("0");
     setEditingComponent(null);
   };
 
@@ -116,12 +124,12 @@ export default function SalaryComponentsPage() {
     setEditingComponent(component);
     setCode(component.code);
     setName(component.name);
-    setDescription(component.description || '');
+    setDescription(component.description || "");
     setType(component.type);
     setCalculationType(component.calculationType);
-    setDefaultAmount(component.defaultAmount?.toString() || '');
-    setPercentage(component.percentage?.toString() || '');
-    setFormula(component.formula || '');
+    setDefaultAmount(component.defaultAmount?.toString() || "");
+    setPercentage(component.percentage?.toString() || "");
+    setFormula(component.formula || "");
     setIsTaxable(component.isTaxable);
     setIsActive(component.isActive);
     setSortOrder(component.sortOrder.toString());
@@ -130,7 +138,7 @@ export default function SalaryComponentsPage() {
 
   const handleSubmit = async () => {
     if (!code || !name) {
-      toast.error('Kode dan nama wajib diisi');
+      toast.error("Kode dan nama wajib diisi");
       return;
     }
 
@@ -151,28 +159,28 @@ export default function SalaryComponentsPage() {
     try {
       if (editingComponent) {
         await updateComponent.mutateAsync({ id: editingComponent.id, data });
-        toast.success('Komponen gaji berhasil diupdate');
+        toast.success("Komponen gaji berhasil diupdate");
       } else {
         await createComponent.mutateAsync(data);
-        toast.success('Komponen gaji berhasil dibuat');
+        toast.success("Komponen gaji berhasil dibuat");
       }
       setIsFormOpen(false);
       resetForm();
     } catch (error) {
-      toast.error('Gagal menyimpan komponen gaji');
+      toast.error("Gagal menyimpan komponen gaji");
     }
   };
 
   const handleDelete = async () => {
     if (!deletingId) return;
-    
+
     try {
       await deleteComponent.mutateAsync(deletingId);
-      toast.success('Komponen gaji berhasil dihapus');
+      toast.success("Komponen gaji berhasil dihapus");
       setIsDeleteOpen(false);
       setDeletingId(null);
     } catch (error) {
-      toast.error('Gagal menghapus komponen gaji');
+      toast.error("Gagal menghapus komponen gaji");
     }
   };
 
@@ -187,8 +195,8 @@ export default function SalaryComponentsPage() {
     return true;
   });
 
-  const allowances = filteredComponents.filter((c) => c.type === 'ALLOWANCE');
-  const deductions = filteredComponents.filter((c) => c.type === 'DEDUCTION');
+  const allowances = filteredComponents.filter((c) => c.type === "ALLOWANCE");
+  const deductions = filteredComponents.filter((c) => c.type === "DEDUCTION");
 
   return (
     <MainLayout>
@@ -196,20 +204,29 @@ export default function SalaryComponentsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.push('/hr/payroll')}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/hr/payroll")}
+            >
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Komponen Gaji</h1>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Komponen Gaji
+              </h1>
               <p className="text-muted-foreground">
                 Kelola komponen tunjangan dan potongan gaji
               </p>
             </div>
           </div>
-          <Dialog open={isFormOpen} onOpenChange={(open) => {
-            setIsFormOpen(open);
-            if (!open) resetForm();
-          }}>
+          <Dialog
+            open={isFormOpen}
+            onOpenChange={(open) => {
+              setIsFormOpen(open);
+              if (!open) resetForm();
+            }}
+          >
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
@@ -219,12 +236,14 @@ export default function SalaryComponentsPage() {
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>
-                  {editingComponent ? 'Edit Komponen Gaji' : 'Tambah Komponen Gaji'}
+                  {editingComponent
+                    ? "Edit Komponen Gaji"
+                    : "Tambah Komponen Gaji"}
                 </DialogTitle>
                 <DialogDescription>
                   {editingComponent
-                    ? 'Update informasi komponen gaji'
-                    : 'Buat komponen gaji baru untuk tunjangan atau potongan'}
+                    ? "Update informasi komponen gaji"
+                    : "Buat komponen gaji baru untuk tunjangan atau potongan"}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
@@ -239,7 +258,10 @@ export default function SalaryComponentsPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Tipe *</Label>
-                    <Select value={type} onValueChange={(v) => setType(v as ComponentType)}>
+                    <Select
+                      value={type}
+                      onValueChange={(v) => setType(v as ComponentType)}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -271,7 +293,9 @@ export default function SalaryComponentsPage() {
                     <Label>Jenis Kalkulasi</Label>
                     <Select
                       value={calculationType}
-                      onValueChange={(v) => setCalculationType(v as CalculationType)}
+                      onValueChange={(v) =>
+                        setCalculationType(v as CalculationType)
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -293,7 +317,7 @@ export default function SalaryComponentsPage() {
                     />
                   </div>
                 </div>
-                {calculationType === 'FIXED' && (
+                {calculationType === "FIXED" && (
                   <div className="space-y-2">
                     <Label>Nominal Default</Label>
                     <Input
@@ -304,7 +328,7 @@ export default function SalaryComponentsPage() {
                     />
                   </div>
                 )}
-                {calculationType === 'PERCENTAGE' && (
+                {calculationType === "PERCENTAGE" && (
                   <div className="space-y-2">
                     <Label>Persentase (%)</Label>
                     <Input
@@ -319,7 +343,7 @@ export default function SalaryComponentsPage() {
                     </p>
                   </div>
                 )}
-                {calculationType === 'FORMULA' && (
+                {calculationType === "FORMULA" && (
                   <div className="space-y-2">
                     <Label>Formula</Label>
                     <Textarea
@@ -357,12 +381,14 @@ export default function SalaryComponentsPage() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={createComponent.isPending || updateComponent.isPending}
+                  disabled={
+                    createComponent.isPending || updateComponent.isPending
+                  }
                 >
                   {(createComponent.isPending || updateComponent.isPending) && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  {editingComponent ? 'Update' : 'Simpan'}
+                  {editingComponent ? "Update" : "Simpan"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -373,11 +399,15 @@ export default function SalaryComponentsPage() {
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Komponen</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Komponen
+              </CardTitle>
               <Calculator className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{filteredComponents.length}</div>
+              <div className="text-2xl font-bold">
+                {filteredComponents.length}
+              </div>
               <p className="text-xs text-muted-foreground">komponen gaji</p>
             </CardContent>
           </Card>
@@ -387,8 +417,12 @@ export default function SalaryComponentsPage() {
               <DollarSign className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{allowances.length}</div>
-              <p className="text-xs text-muted-foreground">komponen tunjangan</p>
+              <div className="text-2xl font-bold text-green-600">
+                {allowances.length}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                komponen tunjangan
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -397,7 +431,9 @@ export default function SalaryComponentsPage() {
               <Percent className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{deductions.length}</div>
+              <div className="text-2xl font-bold text-red-600">
+                {deductions.length}
+              </div>
               <p className="text-xs text-muted-foreground">komponen potongan</p>
             </CardContent>
           </Card>
@@ -418,7 +454,7 @@ export default function SalaryComponentsPage() {
               </div>
               <Select
                 value={typeFilter}
-                onValueChange={(v) => setTypeFilter(v as ComponentType | 'ALL')}
+                onValueChange={(v) => setTypeFilter(v as ComponentType | "ALL")}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Semua Tipe" />
@@ -458,7 +494,9 @@ export default function SalaryComponentsPage() {
               ) : filteredComponents.length ? (
                 filteredComponents.map((component) => (
                   <TableRow key={component.id}>
-                    <TableCell className="font-mono text-sm">{component.code}</TableCell>
+                    <TableCell className="font-mono text-sm">
+                      {component.code}
+                    </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium">{component.name}</p>
@@ -472,9 +510,9 @@ export default function SalaryComponentsPage() {
                     <TableCell>
                       <Badge
                         className={
-                          component.type === 'ALLOWANCE'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
+                          component.type === "ALLOWANCE"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
                         }
                       >
                         {COMPONENT_TYPE_LABELS[component.type]}
@@ -486,22 +524,28 @@ export default function SalaryComponentsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      {component.calculationType === 'FIXED' && component.defaultAmount
+                      {component.calculationType === "FIXED" &&
+                      component.defaultAmount
                         ? formatCurrency(component.defaultAmount)
-                        : component.calculationType === 'PERCENTAGE' && component.percentage
-                        ? `${component.percentage}%`
-                        : '-'}
+                        : component.calculationType === "PERCENTAGE" &&
+                            component.percentage
+                          ? `${component.percentage}%`
+                          : "-"}
                     </TableCell>
                     <TableCell className="text-center">
                       {component.isTaxable ? (
-                        <Badge className="bg-yellow-100 text-yellow-800">Ya</Badge>
+                        <Badge className="bg-yellow-100 text-yellow-800">
+                          Ya
+                        </Badge>
                       ) : (
                         <Badge variant="outline">Tidak</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-center">
                       {component.isActive ? (
-                        <Badge className="bg-green-100 text-green-800">Aktif</Badge>
+                        <Badge className="bg-green-100 text-green-800">
+                          Aktif
+                        </Badge>
                       ) : (
                         <Badge variant="outline">Nonaktif</Badge>
                       )}
@@ -531,7 +575,10 @@ export default function SalaryComponentsPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell
+                    colSpan={8}
+                    className="text-center py-8 text-muted-foreground"
+                  >
                     Belum ada komponen gaji
                   </TableCell>
                 </TableRow>
@@ -546,8 +593,8 @@ export default function SalaryComponentsPage() {
             <DialogHeader>
               <DialogTitle>Hapus Komponen Gaji</DialogTitle>
               <DialogDescription>
-                Apakah Anda yakin ingin menghapus komponen gaji ini? Tindakan ini tidak dapat
-                dibatalkan.
+                Apakah Anda yakin ingin menghapus komponen gaji ini? Tindakan
+                ini tidak dapat dibatalkan.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

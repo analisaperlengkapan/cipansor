@@ -2,7 +2,12 @@ import { Router } from 'express';
 import { authenticate, isAdmin } from '@/middleware/auth';
 import { validate } from '@/middleware/error';
 import * as controller from './auth.controller';
-import { loginSchema, registerSchema, refreshTokenSchema, changePasswordSchema } from './auth.schema';
+import {
+  loginSchema,
+  registerSchema,
+  refreshTokenSchema,
+  changePasswordSchema,
+} from './auth.schema';
 
 const router = Router();
 

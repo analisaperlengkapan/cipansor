@@ -1,24 +1,24 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useState } from "react";
+import Link from "next/link";
+import { CalendarClock, Plus, Check, X, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
-  CalendarClock,
-  Plus,
-  Check,
-  X,
-  RotateCcw,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -26,18 +26,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Pagination, ConfirmDialog } from '@/components/shared';
-import { toast } from 'sonner';
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Pagination, ConfirmDialog } from "@/components/shared";
+import { toast } from "sonner";
 import {
   usePermits,
   useApprovePermit,
@@ -48,16 +48,16 @@ import {
   PermitType,
   PermitStatus,
   Permit,
-} from '@/hooks/use-permits';
+} from "@/hooks/use-permits";
 
 export default function PermitsPage() {
   const [page, setPage] = useState(1);
-  const [permitType, setPermitType] = useState<PermitType | ''>('');
-  const [status, setStatus] = useState<PermitStatus | ''>('');
+  const [permitType, setPermitType] = useState<PermitType | "">("");
+  const [status, setStatus] = useState<PermitStatus | "">("");
   const [approveId, setApproveId] = useState<string | null>(null);
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [returnId, setReturnId] = useState<string | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
+  const [rejectReason, setRejectReason] = useState("");
   const limit = 20;
 
   const { data: permitsData, isLoading } = usePermits({
@@ -75,25 +75,25 @@ export default function PermitsPage() {
     if (!approveId) return;
     try {
       await approveMutation.mutateAsync(approveId);
-      toast.success('Izin berhasil disetujui');
+      toast.success("Izin berhasil disetujui");
       setApproveId(null);
     } catch {
-      toast.error('Gagal menyetujui izin');
+      toast.error("Gagal menyetujui izin");
     }
   };
 
   const handleReject = async () => {
     if (!rejectId || !rejectReason) {
-      toast.error('Alasan penolakan wajib diisi');
+      toast.error("Alasan penolakan wajib diisi");
       return;
     }
     try {
       await rejectMutation.mutateAsync({ id: rejectId, reason: rejectReason });
-      toast.success('Izin berhasil ditolak');
+      toast.success("Izin berhasil ditolak");
       setRejectId(null);
-      setRejectReason('');
+      setRejectReason("");
     } catch {
-      toast.error('Gagal menolak izin');
+      toast.error("Gagal menolak izin");
     }
   };
 
@@ -101,10 +101,10 @@ export default function PermitsPage() {
     if (!returnId) return;
     try {
       await returnMutation.mutateAsync(returnId);
-      toast.success('Santri berhasil ditandai sudah kembali');
+      toast.success("Santri berhasil ditandai sudah kembali");
       setReturnId(null);
     } catch {
-      toast.error('Gagal menandai kembali');
+      toast.error("Gagal menandai kembali");
     }
   };
 
@@ -118,7 +118,8 @@ export default function PermitsPage() {
   };
 
   // Count pending permits
-  const pendingCount = permitsData?.data.filter((p) => p.status === 'PENDING').length || 0;
+  const pendingCount =
+    permitsData?.data.filter((p) => p.status === "PENDING").length || 0;
 
   return (
     <div className="space-y-6">
@@ -145,7 +146,9 @@ export default function PermitsPage() {
               <p className="font-medium text-yellow-800">
                 {pendingCount} izin menunggu persetujuan
               </p>
-              <p className="text-sm text-yellow-600">Segera proses izin yang tertunda</p>
+              <p className="text-sm text-yellow-600">
+                Segera proses izin yang tertunda
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -156,8 +159,10 @@ export default function PermitsPage() {
         <CardContent className="pt-6">
           <div className="flex flex-col gap-4 sm:flex-row">
             <Select
-              value={permitType || 'ALL'}
-              onValueChange={(v) => setPermitType(v === 'ALL' ? '' : v as PermitType)}
+              value={permitType || "ALL"}
+              onValueChange={(v) =>
+                setPermitType(v === "ALL" ? "" : (v as PermitType))
+              }
             >
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Jenis Izin" />
@@ -173,8 +178,10 @@ export default function PermitsPage() {
             </Select>
 
             <Select
-              value={status || 'ALL'}
-              onValueChange={(v) => setStatus(v === 'ALL' ? '' : v as PermitStatus)}
+              value={status || "ALL"}
+              onValueChange={(v) =>
+                setStatus(v === "ALL" ? "" : (v as PermitStatus))
+              }
             >
               <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder="Status" />
@@ -193,8 +200,8 @@ export default function PermitsPage() {
               <Button
                 variant="ghost"
                 onClick={() => {
-                  setPermitType('');
-                  setStatus('');
+                  setPermitType("");
+                  setStatus("");
                 }}
               >
                 Reset Filter
@@ -214,7 +221,9 @@ export default function PermitsPage() {
           ) : permitsData?.data.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <CalendarClock className="h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">Tidak ada data izin</h3>
+              <h3 className="mt-4 text-lg font-semibold">
+                Tidak ada data izin
+              </h3>
               <p className="text-muted-foreground">
                 Belum ada izin untuk filter yang dipilih
               </p>
@@ -244,8 +253,8 @@ export default function PermitsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {PERMIT_TYPES.find((t) => t.value === permit.permitType)?.label ||
-                          permit.permitType}
+                        {PERMIT_TYPES.find((t) => t.value === permit.permitType)
+                          ?.label || permit.permitType}
                       </TableCell>
                       <TableCell className="max-w-[200px] truncate">
                         {permit.reason}
@@ -253,17 +262,22 @@ export default function PermitsPage() {
                       <TableCell>
                         <div className="text-sm">
                           <p>
-                            {new Date(permit.startDate).toLocaleDateString('id-ID')}
+                            {new Date(permit.startDate).toLocaleDateString(
+                              "id-ID",
+                            )}
                           </p>
                           <p className="text-muted-foreground">
-                            s/d {new Date(permit.endDate).toLocaleDateString('id-ID')}
+                            s/d{" "}
+                            {new Date(permit.endDate).toLocaleDateString(
+                              "id-ID",
+                            )}
                           </p>
                         </div>
                       </TableCell>
                       <TableCell>{getStatusBadge(permit.status)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          {permit.status === 'PENDING' && (
+                          {permit.status === "PENDING" && (
                             <>
                               <Button
                                 size="sm"
@@ -285,7 +299,7 @@ export default function PermitsPage() {
                               </Button>
                             </>
                           )}
-                          {permit.status === 'APPROVED' && (
+                          {permit.status === "APPROVED" && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -331,7 +345,10 @@ export default function PermitsPage() {
       />
 
       {/* Reject Dialog */}
-      <Dialog open={!!rejectId} onOpenChange={(open) => !open && setRejectId(null)}>
+      <Dialog
+        open={!!rejectId}
+        onOpenChange={(open) => !open && setRejectId(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Tolak Izin</DialogTitle>
@@ -359,7 +376,7 @@ export default function PermitsPage() {
                 onClick={handleReject}
                 disabled={rejectMutation.isPending || !rejectReason}
               >
-                {rejectMutation.isPending ? 'Menolak...' : 'Tolak'}
+                {rejectMutation.isPending ? "Menolak..." : "Tolak"}
               </Button>
             </div>
           </div>

@@ -1,17 +1,13 @@
-import { Request, Response, NextFunction } from "express";
-import * as violationService from "./service";
-import {
-  createViolationSchema,
-  updateViolationSchema,
-  queryViolationSchema,
-} from "./schema";
-import { Errors } from "../../middleware/error";
+import { Request, Response, NextFunction } from 'express';
+import * as violationService from './service';
+import { createViolationSchema, updateViolationSchema, queryViolationSchema } from './schema';
+import { Errors } from '../../middleware/error';
 
 export async function createViolation(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createViolationSchema.parse(req.body);
     const userId = req.user?.sub;
-    
+
     if (!userId) {
       throw Errors.unauthorized();
     }
@@ -19,7 +15,7 @@ export async function createViolation(req: Request, res: Response, next: NextFun
     const violation = await violationService.createViolation(data, userId);
     res.status(201).json({
       success: true,
-      message: "Violation recorded successfully",
+      message: 'Violation recorded successfully',
       data: violation,
     });
   } catch (error) {
@@ -45,7 +41,7 @@ export async function getViolationById(req: Request, res: Response, next: NextFu
     const { id } = req.params;
     const violation = await violationService.getViolationById(id);
     if (!violation) {
-      throw Errors.notFound("Violation");
+      throw Errors.notFound('Violation');
     }
     res.json({
       success: true,
@@ -63,7 +59,7 @@ export async function updateViolation(req: Request, res: Response, next: NextFun
     const violation = await violationService.updateViolation(id, data);
     res.json({
       success: true,
-      message: "Violation updated successfully",
+      message: 'Violation updated successfully',
       data: violation,
     });
   } catch (error) {
@@ -77,7 +73,7 @@ export async function deleteViolation(req: Request, res: Response, next: NextFun
     await violationService.deleteViolation(id);
     res.json({
       success: true,
-      message: "Violation deleted successfully",
+      message: 'Violation deleted successfully',
     });
   } catch (error) {
     next(error);

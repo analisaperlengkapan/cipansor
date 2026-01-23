@@ -1,16 +1,34 @@
-'use client';
+"use client";
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { useLogInteraction } from '@/hooks/use-marketing';
-import { toast } from 'sonner';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { useLogInteraction } from "@/hooks/use-marketing";
+import { toast } from "sonner";
 
 const schema = z.object({
   type: z.string().min(1),
@@ -22,7 +40,7 @@ const schema = z.object({
 export function LogInteractionDialog({
   open,
   onOpenChange,
-  registrantId
+  registrantId,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -32,10 +50,10 @@ export function LogInteractionDialog({
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
-      type: 'CALL',
-      date: new Date().toISOString().split('T')[0],
-      notes: '',
-      nextActionDate: '',
+      type: "CALL",
+      date: new Date().toISOString().split("T")[0],
+      notes: "",
+      nextActionDate: "",
     },
   });
 
@@ -46,13 +64,15 @@ export function LogInteractionDialog({
         type: values.type,
         date: new Date(values.date).toISOString(),
         notes: values.notes,
-        nextActionDate: values.nextActionDate ? new Date(values.nextActionDate).toISOString() : undefined,
+        nextActionDate: values.nextActionDate
+          ? new Date(values.nextActionDate).toISOString()
+          : undefined,
       });
-      toast.success('Interaksi dicatat');
+      toast.success("Interaksi dicatat");
       form.reset();
       onOpenChange(false);
     } catch (e) {
-      toast.error('Gagal mencatat interaksi');
+      toast.error("Gagal mencatat interaksi");
     }
   };
 
@@ -71,7 +91,10 @@ export function LogInteractionDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Jenis</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Pilih jenis" />
@@ -128,7 +151,13 @@ export function LogInteractionDialog({
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={mutation.isPending}>Simpan</Button>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={mutation.isPending}
+            >
+              Simpan
+            </Button>
           </form>
         </Form>
       </DialogContent>

@@ -1,5 +1,5 @@
-import { Prisma, BookStatus, BorrowingStatus } from "@prisma/client";
-import { prisma } from "../../lib/prisma";
+import { Prisma, BookStatus, BorrowingStatus } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import type {
   CreateBookCategoryInput,
   UpdateBookCategoryInput,
@@ -9,7 +9,7 @@ import type {
   CreateBorrowingInput,
   ReturnBookInput,
   QueryBorrowingInput,
-} from "./schema";
+} from './schema';
 
 // ==================== BOOK CATEGORY ====================
 
@@ -20,7 +20,7 @@ export async function getBookCategories(unitId?: string) {
       unit: { select: { id: true, name: true } },
       _count: { select: { books: true } },
     },
-    orderBy: { name: "asc" },
+    orderBy: { name: 'asc' },
   });
 }
 
@@ -73,9 +73,9 @@ export async function getBooks(query: QueryBookInput) {
     ...(status && { status: status as BookStatus }),
     ...(search && {
       OR: [
-        { title: { contains: search as string, mode: "insensitive" } },
-        { author: { contains: search as string, mode: "insensitive" } },
-        { isbn: { contains: search as string, mode: "insensitive" } },
+        { title: { contains: search as string, mode: 'insensitive' } },
+        { author: { contains: search as string, mode: 'insensitive' } },
+        { isbn: { contains: search as string, mode: 'insensitive' } },
       ],
     }),
   };
@@ -90,7 +90,7 @@ export async function getBooks(query: QueryBookInput) {
         category: { select: { id: true, name: true, code: true } },
         _count: { select: { borrowings: { where: { status: BorrowingStatus.ACTIVE } } } },
       },
-      orderBy: { title: "asc" },
+      orderBy: { title: 'asc' },
     }),
     prisma.book.count({ where }),
   ]);
@@ -117,7 +117,7 @@ export async function getBookById(id: string) {
         include: {
           processedByUser: { select: { id: true, name: true } },
         },
-        orderBy: { borrowedAt: "desc" },
+        orderBy: { borrowedAt: 'desc' },
         take: 5,
       },
     },
@@ -191,11 +191,19 @@ export async function getBorrowings(query: QueryBorrowingInput) {
       skip,
       take: limit,
       include: {
-        book: { select: { id: true, title: true, author: true, isbn: true, category: { select: { id: true, name: true } } } },
+        book: {
+          select: {
+            id: true,
+            title: true,
+            author: true,
+            isbn: true,
+            category: { select: { id: true, name: true } },
+          },
+        },
         student: { select: { name: true, nis: true, class: { select: { name: true } } } },
         processedByUser: { select: { id: true, name: true } },
       },
-      orderBy: { borrowedAt: "desc" },
+      orderBy: { borrowedAt: 'desc' },
     }),
     prisma.borrowing.count({ where }),
   ]);
@@ -233,15 +241,15 @@ export async function createBorrowing(data: CreateBorrowingInput, processedBy: s
   // Check book availability
   const book = await prisma.book.findUnique({ where: { id: data.bookId } });
   if (!book || book.available < 1) {
-    throw new Error("Book not available for borrowing");
+    throw new Error('Book not available for borrowing');
   }
 
   const studentId = data.studentId;
   const borrowerId = data.borrowerId || studentId;
-  const borrowerType = data.borrowerType || (studentId ? "STUDENT" : "STAFF");
+  const borrowerType = data.borrowerType || (studentId ? 'STUDENT' : 'STAFF');
 
   if (!borrowerId) {
-    throw new Error("Borrower ID is required");
+    throw new Error('Borrower ID is required');
   }
 
   // Create borrowing and update book availability
@@ -282,7 +290,7 @@ export async function returnBook(id: string, data: ReturnBookInput, processedBy:
   });
 
   if (!borrowing || borrowing.status !== BorrowingStatus.ACTIVE) {
-    throw new Error("Borrowing not found or already returned");
+    throw new Error('Borrowing not found or already returned');
   }
 
   const isOverdue = new Date() > borrowing.dueDate;
@@ -321,7 +329,7 @@ export async function markAsLost(id: string) {
   });
 
   if (!borrowing || borrowing.status !== BorrowingStatus.ACTIVE) {
-    throw new Error("Borrowing not found or already returned");
+    throw new Error('Borrowing not found or already returned');
   }
 
   return prisma.$transaction(async (tx) => {

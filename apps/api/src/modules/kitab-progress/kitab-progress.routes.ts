@@ -86,7 +86,13 @@ router.delete(
 // GET /kitab-progress/progress - List student progress
 router.get(
   '/progress',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.PARENT),
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.TEACHER,
+    UserRole.STUDENT,
+    UserRole.PARENT
+  ),
   kitabProgressController.listProgress.bind(kitabProgressController)
 );
 
@@ -104,7 +110,13 @@ router.post(
 // GET /kitab-progress/records - List progress records
 router.get(
   '/records',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.PARENT),
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.TEACHER,
+    UserRole.STUDENT,
+    UserRole.PARENT
+  ),
   kitabProgressController.listRecords.bind(kitabProgressController)
 );
 
@@ -136,7 +148,13 @@ router.get(
 // GET /kitab-progress/student/:studentId/report - Get student report
 router.get(
   '/student/:studentId/report',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.PARENT),
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.TEACHER,
+    UserRole.STUDENT,
+    UserRole.PARENT
+  ),
   kitabProgressController.getStudentReport.bind(kitabProgressController)
 );
 

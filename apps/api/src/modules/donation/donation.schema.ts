@@ -16,11 +16,7 @@ export const PublicDonationTypeEnum = z.enum([
   'OTHERS',
 ]);
 
-export const DonationStatusEnum = z.enum([
-  'PENDING',
-  'VERIFIED',
-  'CANCELLED',
-]);
+export const DonationStatusEnum = z.enum(['PENDING', 'VERIFIED', 'CANCELLED']);
 
 export const DonationPaymentMethodEnum = z.enum([
   'CASH',
@@ -30,12 +26,7 @@ export const DonationPaymentMethodEnum = z.enum([
   'OTHERS',
 ]);
 
-export const CampaignStatusEnum = z.enum([
-  'DRAFT',
-  'ACTIVE',
-  'COMPLETED',
-  'CLOSED',
-]);
+export const CampaignStatusEnum = z.enum(['DRAFT', 'ACTIVE', 'COMPLETED', 'CLOSED']);
 
 // =====================================
 // CAMPAIGN SCHEMAS
@@ -51,7 +42,10 @@ export const listCampaignQuerySchema = z.object({
 export const createCampaignSchema = z.object({
   unitId: z.string().uuid().optional(),
   title: z.string().min(3, 'Title must be at least 3 characters'),
-  slug: z.string().min(3).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens'),
+  slug: z
+    .string()
+    .min(3)
+    .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   targetAmount: z.number().min(0),
   imageUrl: z.string().url().optional(),
@@ -63,7 +57,11 @@ export const createCampaignSchema = z.object({
 export const updateCampaignSchema = z.object({
   unitId: z.string().uuid().optional(),
   title: z.string().min(3).optional(),
-  slug: z.string().min(3).regex(/^[a-z0-9-]+$/).optional(),
+  slug: z
+    .string()
+    .min(3)
+    .regex(/^[a-z0-9-]+$/)
+    .optional(),
   description: z.string().min(10).optional(),
   targetAmount: z.number().min(0).optional(),
   imageUrl: z.string().url().optional(),
@@ -85,7 +83,10 @@ export const listDonationQuerySchema = z.object({
   type: PublicDonationTypeEnum.optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
-  isAnonymous: z.enum(['true', 'false']).optional().transform(v => v === 'true'),
+  isAnonymous: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => v === 'true'),
 });
 
 export const createDonationSchema = z.object({

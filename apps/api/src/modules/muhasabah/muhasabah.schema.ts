@@ -4,13 +4,7 @@ import { z } from 'zod';
 // MUHASABAH ENUMS (matching Prisma schema)
 // =====================================
 
-export const MuhasabahMoodEnum = z.enum([
-  'EXCELLENT',
-  'GOOD',
-  'NEUTRAL',
-  'LOW',
-  'STRUGGLING',
-]);
+export const MuhasabahMoodEnum = z.enum(['EXCELLENT', 'GOOD', 'NEUTRAL', 'LOW', 'STRUGGLING']);
 
 // =====================================
 // LIST/QUERY SCHEMAS

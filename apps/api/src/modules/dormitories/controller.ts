@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from "express";
-import * as dormitoryService from "./service";
+import { Request, Response, NextFunction } from 'express';
+import * as dormitoryService from './service';
 import {
   createDormitorySchema,
   updateDormitorySchema,
@@ -10,8 +10,8 @@ import {
   createRoomAssignmentSchema,
   updateRoomAssignmentSchema,
   queryRoomAssignmentSchema,
-} from "./schema";
-import { ApiError, Errors } from "../../middleware/error";
+} from './schema';
+import { ApiError, Errors } from '../../middleware/error';
 
 // =====================================
 // DORMITORY CONTROLLERS
@@ -23,7 +23,7 @@ export async function createDormitory(req: Request, res: Response, next: NextFun
     const dormitory = await dormitoryService.createDormitory(data);
     res.status(201).json({
       success: true,
-      message: "Dormitory created successfully",
+      message: 'Dormitory created successfully',
       data: dormitory,
     });
   } catch (error) {
@@ -39,7 +39,7 @@ export async function getStudentsByMusyrif(req: Request, res: Response, next: Ne
     // But since I don't see the type def, I'll cast it safely
     const userId = (req as any).user?.id;
     if (!userId) {
-      throw Errors.unauthorized("User not authenticated");
+      throw Errors.unauthorized('User not authenticated');
     }
 
     const students = await dormitoryService.getStudentsByMusyrif(userId);
@@ -70,7 +70,7 @@ export async function getDormitoryById(req: Request, res: Response, next: NextFu
     const { id } = req.params;
     const dormitory = await dormitoryService.getDormitoryById(id);
     if (!dormitory) {
-      throw Errors.notFound("Dormitory not found");
+      throw Errors.notFound('Dormitory not found');
     }
     res.json({
       success: true,
@@ -86,7 +86,7 @@ export async function getDormitoryStats(req: Request, res: Response, next: NextF
     const { id } = req.params;
     const stats = await dormitoryService.getDormitoryStats(id);
     if (!stats) {
-      throw Errors.notFound("Dormitory not found");
+      throw Errors.notFound('Dormitory not found');
     }
     res.json({
       success: true,
@@ -104,7 +104,7 @@ export async function updateDormitory(req: Request, res: Response, next: NextFun
     const dormitory = await dormitoryService.updateDormitory(id, data);
     res.json({
       success: true,
-      message: "Dormitory updated successfully",
+      message: 'Dormitory updated successfully',
       data: dormitory,
     });
   } catch (error) {
@@ -118,7 +118,7 @@ export async function deleteDormitory(req: Request, res: Response, next: NextFun
     await dormitoryService.deleteDormitory(id);
     res.json({
       success: true,
-      message: "Dormitory deleted successfully",
+      message: 'Dormitory deleted successfully',
     });
   } catch (error) {
     next(error);
@@ -135,7 +135,7 @@ export async function createRoom(req: Request, res: Response, next: NextFunction
     const room = await dormitoryService.createRoom(data);
     res.status(201).json({
       success: true,
-      message: "Room created successfully",
+      message: 'Room created successfully',
       data: room,
     });
   } catch (error) {
@@ -161,7 +161,7 @@ export async function getRoomById(req: Request, res: Response, next: NextFunctio
     const { id } = req.params;
     const room = await dormitoryService.getRoomById(id);
     if (!room) {
-      throw Errors.notFound("Room not found");
+      throw Errors.notFound('Room not found');
     }
     res.json({
       success: true,
@@ -177,7 +177,7 @@ export async function getRoomOccupancy(req: Request, res: Response, next: NextFu
     const { id } = req.params;
     const occupancy = await dormitoryService.getRoomOccupancy(id);
     if (!occupancy) {
-      throw Errors.notFound("Room not found");
+      throw Errors.notFound('Room not found');
     }
     res.json({
       success: true,
@@ -195,7 +195,7 @@ export async function updateRoom(req: Request, res: Response, next: NextFunction
     const room = await dormitoryService.updateRoom(id, data);
     res.json({
       success: true,
-      message: "Room updated successfully",
+      message: 'Room updated successfully',
       data: room,
     });
   } catch (error) {
@@ -209,7 +209,7 @@ export async function deleteRoom(req: Request, res: Response, next: NextFunction
     await dormitoryService.deleteRoom(id);
     res.json({
       success: true,
-      message: "Room deactivated successfully",
+      message: 'Room deactivated successfully',
     });
   } catch (error) {
     next(error);
@@ -226,7 +226,7 @@ export async function createRoomAssignment(req: Request, res: Response, next: Ne
     const assignment = await dormitoryService.createRoomAssignment(data);
     res.status(201).json({
       success: true,
-      message: "Student assigned to room successfully",
+      message: 'Student assigned to room successfully',
       data: assignment,
     });
   } catch (error) {
@@ -252,7 +252,7 @@ export async function getRoomAssignmentById(req: Request, res: Response, next: N
     const { id } = req.params;
     const assignment = await dormitoryService.getRoomAssignmentById(id);
     if (!assignment) {
-      throw Errors.notFound("Room assignment not found");
+      throw Errors.notFound('Room assignment not found');
     }
     res.json({
       success: true,
@@ -270,7 +270,7 @@ export async function updateRoomAssignment(req: Request, res: Response, next: Ne
     const assignment = await dormitoryService.updateRoomAssignment(id, data);
     res.json({
       success: true,
-      message: "Room assignment updated successfully",
+      message: 'Room assignment updated successfully',
       data: assignment,
     });
   } catch (error) {
@@ -284,7 +284,7 @@ export async function endRoomAssignment(req: Request, res: Response, next: NextF
     await dormitoryService.endRoomAssignment(id);
     res.json({
       success: true,
-      message: "Room assignment ended successfully",
+      message: 'Room assignment ended successfully',
     });
   } catch (error) {
     next(error);

@@ -39,196 +39,203 @@ Sistem ini menggabungkan manajemen akademik sekolah formal dengan manajemen kepe
 Cipansor menyediakan antarmuka modern yang responsif dan terorganisir berdasarkan modul fungsional.
 
 ### 1. Dashboard Eksekutif & Unit
+
 Pusat kendali utama untuk memantau statistik dan kinerja seluruh unit pendidikan.
 
-| Dashboard Global | Dashboard SMA Al-Qur'an |
-|------------------|-------------------------|
+| Dashboard Global                                      | Dashboard SMA Al-Qur'an                         |
+| ----------------------------------------------------- | ----------------------------------------------- |
 | ![Dashboard Global](docs/images/dashboard-global.png) | ![Dashboard SMA](docs/images/dashboard-sma.png) |
 
-| Dashboard SMP IT | Dashboard SD IT |
-|------------------|-----------------|
+| Dashboard SMP IT                                | Dashboard SD IT                               |
+| ----------------------------------------------- | --------------------------------------------- |
 | ![Dashboard SMP](docs/images/dashboard-smp.png) | ![Dashboard SD](docs/images/dashboard-sd.png) |
 
-| Dashboard PAUD/TK | Dashboard Umum |
-|-------------------|----------------|
+| Dashboard PAUD/TK                                 | Dashboard Umum                          |
+| ------------------------------------------------- | --------------------------------------- |
 | ![Dashboard PAUD](docs/images/dashboard-paud.png) | ![Dashboard](docs/images/dashboard.png) |
 
-| Login System | |
-|--------------|---|
-| ![Login](docs/images/login.png) | |
+| Login System                    |     |
+| ------------------------------- | --- |
+| ![Login](docs/images/login.png) |     |
 
 ### 2. Manajemen Yayasan & Administrasi (Foundation)
+
 Pengelolaan sumber daya yayasan, keuangan, dan administrasi perkantoran.
 
-| Profil & Unit | Keuangan Yayasan |
-|---------------|------------------|
+| Profil & Unit                          | Keuangan Yayasan                     |
+| -------------------------------------- | ------------------------------------ |
 | ![Yayasan](docs/images/foundation.png) | ![Keuangan](docs/images/finance.png) |
 
-| Kepegawaian (HR) | E-Office (Surat) |
-|------------------|------------------|
+| Kepegawaian (HR)          | E-Office (Surat)                      |
+| ------------------------- | ------------------------------------- |
 | ![HR](docs/images/hr.png) | ![E-Office](docs/images/e-office.png) |
 
-| Dashboard Guru | Jadwal Piket |
-|----------------|--------------|
+| Dashboard Guru                      | Jadwal Piket                                |
+| ----------------------------------- | ------------------------------------------- |
 | ![Teacher](docs/images/teacher.png) | ![Duty Roster](docs/images/duty-roster.png) |
 
-| Detail Pegawai | Cuti (Terverifikasi) |
-|----------------|----------------------|
+| Detail Pegawai                                      | Cuti (Terverifikasi)                                         |
+| --------------------------------------------------- | ------------------------------------------------------------ |
 | ![Employee Detail](docs/images/employee-detail.png) | ![Leaves Verified](docs/images/admin_my_leaves_verified.png) |
 
-| Resepsionis (Buku Tamu) | Pengadaan (Procurement) |
-|-------------------------|-------------------------|
+| Resepsionis (Buku Tamu)                 | Pengadaan (Procurement)                     |
+| --------------------------------------- | ------------------------------------------- |
 | ![Reception](docs/images/reception.png) | ![Procurement](docs/images/procurement.png) |
 
-| Manajemen User | Analitik & Laporan |
-|----------------|--------------------|
+| Manajemen User                  | Analitik & Laporan                      |
+| ------------------------------- | --------------------------------------- |
 | ![Users](docs/images/users.png) | ![Analytics](docs/images/analytics.png) |
 
-| Laporan Pusat | Manajemen Unit |
-|---------------|----------------|
+| Laporan Pusat                       | Manajemen Unit                  |
+| ----------------------------------- | ------------------------------- |
 | ![Reports](docs/images/reports.png) | ![Units](docs/images/units.png) |
 
-| Marketing & Pendaftaran | Penjaminan Mutu (SPMI) |
-|-------------------------|------------------------|
+| Marketing & Pendaftaran                 | Penjaminan Mutu (SPMI)              |
+| --------------------------------------- | ----------------------------------- |
 | ![Marketing](docs/images/marketing.png) | ![Quality](docs/images/quality.png) |
 
-| Dashboard Staff | |
-|-----------------|---|
-| ![Staff](docs/images/staff.png) | |
+| Dashboard Staff                 |     |
+| ------------------------------- | --- |
+| ![Staff](docs/images/staff.png) |     |
 
 ### 3. Akademik & Pembelajaran
+
 Sistem administrasi sekolah yang komprehensif.
 
-| Data Siswa | Kelas & Jadwal |
-|------------|----------------|
+| Data Siswa                            | Kelas & Jadwal                      |
+| ------------------------------------- | ----------------------------------- |
 | ![Students](docs/images/students.png) | ![Classes](docs/images/classes.png) |
 
-| Kurikulum | Kalender Akademik |
-|-----------|-------------------|
+| Kurikulum                                 | Kalender Akademik                     |
+| ----------------------------------------- | ------------------------------------- |
 | ![Curriculum](docs/images/curriculum.png) | ![Calendar](docs/images/calendar.png) |
 
-| Absensi | Penilaian (Rapor) |
-|---------|-------------------|
+| Absensi                                   | Penilaian (Rapor)                         |
+| ----------------------------------------- | ----------------------------------------- |
 | ![Attendance](docs/images/attendance.png) | ![Assessment](docs/images/assessment.png) |
 
-| Sertifikat & Ijazah | Wali Kelas (Homeroom) |
-|---------------------|-----------------------|
+| Sertifikat & Ijazah                           | Wali Kelas (Homeroom)                 |
+| --------------------------------------------- | ------------------------------------- |
 | ![Certificates](docs/images/certificates.png) | ![Homeroom](docs/images/homeroom.png) |
 
-| Tahun Ajaran | Jadwal Pelajaran |
-|--------------|------------------|
+| Tahun Ajaran                                      | Jadwal Pelajaran                      |
+| ------------------------------------------------- | ------------------------------------- |
 | ![Academic Years](docs/images/academic-years.png) | ![Schedule](docs/images/schedule.png) |
 
-| Detail Siswa | |
-|--------------|---|
-| ![Student Detail](docs/images/student-detail.png) | |
+| Detail Siswa                                      |     |
+| ------------------------------------------------- | --- |
+| ![Student Detail](docs/images/student-detail.png) |     |
 
-| Perpustakaan | Rapor PAUD |
-|--------------|------------|
+| Perpustakaan                        | Rapor PAUD                                     |
+| ----------------------------------- | ---------------------------------------------- |
 | ![Library](docs/images/library.png) | ![PAUD Rapor](docs/images/tk-daily-report.png) |
 
-| Manajemen PAUD | Daftar Siswa PAUD |
-|----------------|-------------------|
+| Manajemen PAUD                | Daftar Siswa PAUD                       |
+| ----------------------------- | --------------------------------------- |
 | ![PAUD](docs/images/paud.png) | ![PAUD List](docs/images/paud-list.png) |
 
-| Laporan Harian (Bulk) | |
-|-----------------------|---|
-| ![Daily Report Bulk](docs/images/daily-report-bulk.png) | |
+| Laporan Harian (Bulk)                                   |     |
+| ------------------------------------------------------- | --- |
+| ![Daily Report Bulk](docs/images/daily-report-bulk.png) |     |
 
-| Portofolio Siswa | |
-|------------------|---|
-| ![Portfolio](docs/images/portfolio.png) | |
+| Portofolio Siswa                        |     |
+| --------------------------------------- | --- |
+| ![Portfolio](docs/images/portfolio.png) |     |
 
 ### 4. Kepesantrenan (Boarding System)
+
 Fitur unggulan untuk manajemen pendidikan Islam berasrama.
 
-| Tahfidz Quran | Setoran Hafalan |
-|---------------|-----------------|
+| Tahfidz Quran                       | Setoran Hafalan                      |
+| ----------------------------------- | ------------------------------------ |
 | ![Tahfidz](docs/images/tahfidz.png) | ![Setoran](docs/images/takhosus.png) |
 
-| Ibadah Harian | Muhasabah Diri |
-|---------------|----------------|
+| Ibadah Harian                     | Muhasabah Diri                          |
+| --------------------------------- | --------------------------------------- |
 | ![Ibadah](docs/images/ibadah.png) | ![Muhasabah](docs/images/muhasabah.png) |
 
-| Pembelajaran Kitab | Muhadatsah (Bahasa) |
-|--------------------|---------------------|
+| Pembelajaran Kitab                       | Muhadatsah (Bahasa)                       |
+| ---------------------------------------- | ----------------------------------------- |
 | ![Kitab](docs/images/kitab-progress.png) | ![Muhadatsah](docs/images/muhadatsah.png) |
 
-| Asrama & Musyrif | Muhadhoroh (Pidato) |
-|------------------|---------------------|
+| Asrama & Musyrif                            | Muhadhoroh (Pidato)                       |
+| ------------------------------------------- | ----------------------------------------- |
 | ![Dormitories](docs/images/dormitories.png) | ![Muhadhoroh](docs/images/muhadhoroh.png) |
 
-| Dashboard Musyrif | Rapor Pesantren |
-|-------------------|-----------------|
+| Dashboard Musyrif                   | Rapor Pesantren                                     |
+| ----------------------------------- | --------------------------------------------------- |
 | ![Musyrif](docs/images/musyrif.png) | ![Rapor Pesantren](docs/images/rapor-pesantren.png) |
 
-| Pelanggaran | Konseling & Perizinan |
-|-------------|-----------------------|
+| Pelanggaran                               | Konseling & Perizinan                     |
+| ----------------------------------------- | ----------------------------------------- |
 | ![Violations](docs/images/violations.png) | ![Counseling](docs/images/counseling.png) |
 
-| Perizinan (Detail) | Penghargaan (Reward) |
-|--------------------|----------------------|
+| Perizinan (Detail)                  | Penghargaan (Reward)                |
+| ----------------------------------- | ----------------------------------- |
 | ![Permits](docs/images/permits.png) | ![Rewards](docs/images/rewards.png) |
 
 ### 5. Fasilitas & Layanan Pendukung
+
 Modul pendukung operasional harian dan pelayanan santri.
 
-| Kesehatan (UKS) | Tabungan Santri (E-Wallet) |
-|-----------------|----------------------------|
+| Kesehatan (UKS)                   | Tabungan Santri (E-Wallet)        |
+| --------------------------------- | --------------------------------- |
 | ![Health](docs/images/health.png) | ![Wallet](docs/images/wallet.png) |
 
-| Makan (Catering) | Laundry |
-|------------------|---------|
+| Makan (Catering)                | Laundry                             |
+| ------------------------------- | ----------------------------------- |
 | ![Meals](docs/images/meals.png) | ![Laundry](docs/images/laundry.png) |
 
-| Kantin | Inventaris & Aset |
-|--------|-------------------|
+| Kantin                              | Inventaris & Aset                       |
+| ----------------------------------- | --------------------------------------- |
 | ![Canteen](docs/images/canteen.png) | ![Inventory](docs/images/inventory.png) |
 
-| Fasilitas | Jadwal Makan |
-|-----------|--------------|
+| Fasilitas                                 | Jadwal Makan                    |
+| ----------------------------------------- | ------------------------------- |
 | ![Facilities](docs/images/facilities.png) | ![Meals](docs/images/meals.png) |
 
-| Ekstrakurikuler | Notifikasi |
-|-----------------|------------|
+| Ekstrakurikuler                                     | Notifikasi                                      |
+| --------------------------------------------------- | ----------------------------------------------- |
 | ![Extracurricular](docs/images/extracurricular.png) | ![Notifications](docs/images/notifications.png) |
 
 ### 6. Komunikasi & Penerimaan
-| Pengumuman & Notifikasi | PSB & PPDB |
-|-------------------------|------------|
+
+| Pengumuman & Notifikasi                | PSB & PPDB                    |
+| -------------------------------------- | ----------------------------- |
 | ![News](docs/images/announcements.png) | ![PPDB](docs/images/ppdb.png) |
 
-| Portal PSB Online | |
-|-------------------|---|
-| ![PSB](docs/images/psb.png) | |
+| Portal PSB Online           |     |
+| --------------------------- | --- |
+| ![PSB](docs/images/psb.png) |     |
 
-| Alumni | Donasi |
-|--------|--------|
+| Alumni                            | Donasi                                |
+| --------------------------------- | ------------------------------------- |
 | ![Alumni](docs/images/alumni.png) | ![Donation](docs/images/donation.png) |
 
 ### 7. Portal Wali Santri
+
 Akses khusus bagi orang tua untuk memantau perkembangan anak.
 
-| Dashboard Wali Murid | Data & Progres Anak |
-|----------------------|---------------------|
+| Dashboard Wali Murid                            | Data & Progres Anak                           |
+| ----------------------------------------------- | --------------------------------------------- |
 | ![Parent Portal](docs/images/parent-portal.png) | ![Data Anak](docs/images/parent-children.png) |
 
-| Info Keuangan & Tagihan | Laporan Harian Anak |
-|-------------------------|---------------------|
+| Info Keuangan & Tagihan                               | Laporan Harian Anak                                    |
+| ----------------------------------------------------- | ------------------------------------------------------ |
 | ![Keuangan Orang Tua](docs/images/parent-finance.png) | ![Laporan Harian](docs/images/parent-daily-report.png) |
 
 ### 8. Pengaturan & Personalisasi
 
-| Profil Pengguna | Detail Profil |
-|-----------------|---------------|
+| Profil Pengguna                             | Detail Profil                              |
+| ------------------------------------------- | ------------------------------------------ |
 | ![Profil](docs/images/settings-profile.png) | ![Profile Detail](docs/images/profile.png) |
 
-| Pengaturan Sistem | |
-|-------------------|---|
-| ![Settings](docs/images/settings.png) | |
+| Pengaturan Sistem                     |     |
+| ------------------------------------- | --- |
+| ![Settings](docs/images/settings.png) |     |
 
-| Manajemen User (Settings) | Tampilan & Tema |
-|---------------------------|-----------------|
+| Manajemen User (Settings)                         | Tampilan & Tema                                    |
+| ------------------------------------------------- | -------------------------------------------------- |
 | ![Users Settings](docs/images/settings-users.png) | ![Appearance](docs/images/settings-appearance.png) |
 
 ---
@@ -237,12 +244,12 @@ Akses khusus bagi orang tua untuk memantau perkembangan anak.
 
 Sistem Cipansor memiliki fitur-fitur unggulan yang disesuaikan dengan kebutuhan pesantren modern:
 
-*   **Multi-Unit Management**: Mengelola TK, SD, SMP, SMA dalam satu dashboard terpusat.
-*   **Manajemen Tahfidz**: Pencatatan hafalan (ziyadah, murojaah), penilaian, dan laporan perkembangan santri.
-*   **Kesantrian & Asrama**: Pengelolaan kamar, perizinan keluar/pulang, pelanggaran, dan poin penghargaan.
-*   **Akademik Terpadu**: Jadwal pelajaran, absensi, penilaian, dan rapor (K13 & Kurikulum Merdeka).
-*   **Keuangan & SPP**: Tagihan otomatis, pembayaran via berbagai metode, dan laporan keuangan yayasan.
-*   **Portal Orang Tua**: Akses bagi wali santri untuk memantau hafalan, akademik, dan tagihan anak.
+- **Multi-Unit Management**: Mengelola TK, SD, SMP, SMA dalam satu dashboard terpusat.
+- **Manajemen Tahfidz**: Pencatatan hafalan (ziyadah, murojaah), penilaian, dan laporan perkembangan santri.
+- **Kesantrian & Asrama**: Pengelolaan kamar, perizinan keluar/pulang, pelanggaran, dan poin penghargaan.
+- **Akademik Terpadu**: Jadwal pelajaran, absensi, penilaian, dan rapor (K13 & Kurikulum Merdeka).
+- **Keuangan & SPP**: Tagihan otomatis, pembayaran via berbagai metode, dan laporan keuangan yayasan.
+- **Portal Orang Tua**: Akses bagi wali santri untuk memantau hafalan, akademik, dan tagihan anak.
 
 ---
 
@@ -251,28 +258,32 @@ Sistem Cipansor memiliki fitur-fitur unggulan yang disesuaikan dengan kebutuhan 
 Cipansor terdiri dari berbagai modul yang saling terintegrasi:
 
 ### 1. Modul Akademik
-*   Manajemen Siswa & Guru
-*   Kelas & Tahun Ajaran
-*   Jadwal Pelajaran
-*   Absensi (Siswa & Guru)
-*   Penilaian & Rapor
+
+- Manajemen Siswa & Guru
+- Kelas & Tahun Ajaran
+- Jadwal Pelajaran
+- Absensi (Siswa & Guru)
+- Penilaian & Rapor
 
 ### 2. Modul Kepesantrenan
-*   **Tahfidz**: Target hafalan, setoran harian, ujian tahfidz.
-*   **Asrama**: Data kamar, penempatan santri, piket.
-*   **Perizinan**: Izin sakit, pulang, atau keluar komplek.
-*   **Kedisiplinan**: Poin pelanggaran dan prestasi.
+
+- **Tahfidz**: Target hafalan, setoran harian, ujian tahfidz.
+- **Asrama**: Data kamar, penempatan santri, piket.
+- **Perizinan**: Izin sakit, pulang, atau keluar komplek.
+- **Kedisiplinan**: Poin pelanggaran dan prestasi.
 
 ### 3. Modul Administratif
-*   **Keuangan**: SPP, uang gedung, tabungan santri.
-*   **SDM**: Data pegawai, penggajian (payroll), cuti.
-*   **Aset & Inventaris**: Manajemen aset yayasan dan pemeliharaan.
-*   **PSB (Penerimaan Santri Baru)**: Pendaftaran online, seleksi, dan pengumuman.
+
+- **Keuangan**: SPP, uang gedung, tabungan santri.
+- **SDM**: Data pegawai, penggajian (payroll), cuti.
+- **Aset & Inventaris**: Manajemen aset yayasan dan pemeliharaan.
+- **PSB (Penerimaan Santri Baru)**: Pendaftaran online, seleksi, dan pengumuman.
 
 ### 4. Modul Pendukung
-*   **Perpustakaan**: Sirkulasi buku dan katalog.
-*   **UKS (Kesehatan)**: Rekam medis santri dan stok obat.
-*   **Alumni**: Database alumni dan legalisir ijazah.
+
+- **Perpustakaan**: Sirkulasi buku dan katalog.
+- **UKS (Kesehatan)**: Rekam medis santri dan stok obat.
+- **Alumni**: Database alumni dan legalisir ijazah.
 
 ---
 
@@ -281,24 +292,27 @@ Cipansor terdiri dari berbagai modul yang saling terintegrasi:
 Dibangun dengan teknologi modern untuk performa dan skalabilitas tinggi:
 
 ### Backend (`apps/api`)
-*   **Framework**: Express.js
-*   **Bahasa**: TypeScript
-*   **Database**: PostgreSQL
-*   **ORM**: Prisma
-*   **Real-time**: Socket.IO + Redis
-*   **Testing**: Vitest
+
+- **Framework**: Express.js
+- **Bahasa**: TypeScript
+- **Database**: PostgreSQL
+- **ORM**: Prisma
+- **Real-time**: Socket.IO + Redis
+- **Testing**: Vitest
 
 ### Frontend (`apps/web`)
-*   **Framework**: Next.js 16 (App Router)
-*   **UI Library**: React 19, Tailwind CSS, shadcn/ui
-*   **State Management**: Zustand, React Query
-*   **Testing**: Playwright (E2E)
+
+- **Framework**: Next.js 16 (App Router)
+- **UI Library**: React 19, Tailwind CSS, shadcn/ui
+- **State Management**: Zustand, React Query
+- **Testing**: Playwright (E2E)
 
 ### Infrastruktur
-*   **Package Manager**: pnpm
-*   **Monorepo Tool**: Turborepo
-*   **Containerization**: Docker
-*   **CI/CD**: GitHub Actions
+
+- **Package Manager**: pnpm
+- **Monorepo Tool**: Turborepo
+- **Containerization**: Docker
+- **CI/CD**: GitHub Actions
 
 ---
 
@@ -307,45 +321,51 @@ Dibangun dengan teknologi modern untuk performa dan skalabilitas tinggi:
 Ikuti langkah berikut untuk menjalankan proyek di lingkungan lokal Anda:
 
 ### Prasyarat
-*   Node.js (v20+)
-*   pnpm
-*   PostgreSQL
-*   Docker (Opsional)
+
+- Node.js (v20+)
+- pnpm
+- PostgreSQL
+- Docker (Opsional)
 
 ### Langkah-langkah
 
 1.  **Clone Repository**
+
     ```bash
     git clone https://github.com/your-org/cipansor.git
     cd cipansor
     ```
 
 2.  **Install Dependencies**
+
     ```bash
     pnpm install
     ```
 
 3.  **Setup Environment Variables**
     Salin file `.env.example` ke `.env` dan sesuaikan konfigurasinya.
+
     ```bash
     cp .env.example .env
     ```
 
 4.  **Setup Database**
     Pastikan PostgreSQL berjalan, lalu jalankan migrasi dan seeding data awal.
+
     ```bash
     pnpm db:push
     pnpm db:seed
     ```
 
 5.  **Jalankan Aplikasi**
+
     ```bash
     pnpm dev
     ```
 
     Akses aplikasi di:
-    *   Web: `http://localhost:3000`
-    *   API: `http://localhost:3001`
+    - Web: `http://localhost:3000`
+    - API: `http://localhost:3001`
 
 ---
 
@@ -353,11 +373,11 @@ Ikuti langkah berikut untuk menjalankan proyek di lingkungan lokal Anda:
 
 Perintah-perintah umum yang digunakan dalam pengembangan:
 
-*   `pnpm dev`: Menjalankan semua aplikasi dalam mode development.
-*   `pnpm build`: Membuild aplikasi untuk produksi.
-*   `pnpm lint`: Memeriksa kode dengan ESLint.
-*   `pnpm test`: Menjalankan unit test.
-*   `pnpm db:studio`: Membuka Prisma Studio untuk melihat data database.
+- `pnpm dev`: Menjalankan semua aplikasi dalam mode development.
+- `pnpm build`: Membuild aplikasi untuk produksi.
+- `pnpm lint`: Memeriksa kode dengan ESLint.
+- `pnpm test`: Menjalankan unit test.
+- `pnpm db:studio`: Membuka Prisma Studio untuk melihat data database.
 
 ### Testing
 
@@ -392,12 +412,14 @@ pnpm test:e2e:mobile
 ```
 
 **Documentation:**
+
 - 📖 [E2E Testing Guide](docs/E2E_TESTING_GUIDE.md) - Comprehensive guide
 - 🏗️ [E2E Architecture](docs/E2E_TESTING_ARCHITECTURE.md) - Architecture diagrams
 - ✅ [E2E Checklist](docs/planning/E2E_TESTING_CHECKLIST.md) - Implementation checklist
 - 📊 [E2E Summary](docs/planning/E2E_OPTIMIZATION_SUMMARY.md) - Optimization summary
 
 **Test Coverage:**
+
 - ✅ Authentication (11 tests)
 - ✅ Dashboard Real-time (9 tests)
 - ✅ Tahfidz Dashboard (8 tests)
@@ -414,9 +436,10 @@ pnpm test:e2e:mobile
 Dokumentasi lengkap API tersedia di endpoint `/docs` pada service API (jika Swagger diaktifkan) atau dapat dilihat pada file spesifikasi di folder `docs/`.
 
 Contoh endpoint utama:
-*   `POST /api/auth/login`: Masuk ke sistem
-*   `GET /api/students`: Mengambil daftar santri
-*   `GET /api/tahfidz/records`: Mengambil data hafalan
+
+- `POST /api/auth/login`: Masuk ke sistem
+- `GET /api/students`: Mengambil daftar santri
+- `GET /api/tahfidz/records`: Mengambil data hafalan
 
 ---
 

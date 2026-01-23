@@ -15,7 +15,7 @@ import {
   ScholarshipType,
   PaymentCategory, // Mapped from PaymentComponentCategory
   SharedPaginatedResponse,
-  FinanceReportPeriod
+  FinanceReportPeriod,
 } from "@cipansor/shared";
 
 // Re-export types
@@ -36,7 +36,7 @@ export {
   ScholarshipSource,
   ScholarshipType,
   PaymentCategory,
-  FinanceReportPeriod
+  FinanceReportPeriod,
 };
 
 // Aliases to match local names if they differed significantly, or just use shared
@@ -59,16 +59,19 @@ export function useAccountCodes(filters: AccountCodeFilters = {}) {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters.type) params.append("type", filters.type);
-      if (filters.isActive !== undefined) params.append("isActive", String(filters.isActive));
+      if (filters.isActive !== undefined)
+        params.append("isActive", String(filters.isActive));
       if (filters.search) params.append("search", filters.search);
       if (filters.page) params.append("page", String(filters.page));
       if (filters.limit) params.append("limit", String(filters.limit));
 
-      const response = await api.get<SharedPaginatedResponse<AccountCode>>(`/finance-enhancement/account-codes?${params}`);
+      const response = await api.get<SharedPaginatedResponse<AccountCode>>(
+        `/finance-enhancement/account-codes?${params}`,
+      );
       const result = response.data;
       return {
         data: result.data,
-        pagination: result.meta.pagination
+        pagination: result.meta.pagination,
       };
     },
   });
@@ -84,7 +87,10 @@ export function useCreateAccountCode() {
       parentId?: string;
       isActive?: boolean;
     }) => {
-      const response = await api.post("/finance-enhancement/account-codes", data);
+      const response = await api.post(
+        "/finance-enhancement/account-codes",
+        data,
+      );
       return response.data;
     },
     onSuccess: () => {
@@ -106,7 +112,10 @@ export function useUpdateAccountCode() {
       parentId?: string | null;
       isActive?: boolean;
     }) => {
-      const response = await api.put(`/finance-enhancement/account-codes/${id}`, data);
+      const response = await api.put(
+        `/finance-enhancement/account-codes/${id}`,
+        data,
+      );
       return response.data;
     },
     onSuccess: () => {
@@ -140,11 +149,13 @@ export function useJournalEntries(filters: JournalEntryFilters = {}) {
       if (filters.page) params.append("page", String(filters.page));
       if (filters.limit) params.append("limit", String(filters.limit));
 
-      const response = await api.get<SharedPaginatedResponse<JournalEntry>>(`/finance-enhancement/journal-entries?${params}`);
+      const response = await api.get<SharedPaginatedResponse<JournalEntry>>(
+        `/finance-enhancement/journal-entries?${params}`,
+      );
       const result = response.data;
       return {
         data: result.data,
-        pagination: result.meta.pagination
+        pagination: result.meta.pagination,
       };
     },
   });
@@ -154,7 +165,9 @@ export function useJournalEntry(id: string) {
   return useQuery({
     queryKey: ["journal-entry", id],
     queryFn: async () => {
-      const response = await api.get<{ data: JournalEntry }>(`/finance-enhancement/journal-entries/${id}`);
+      const response = await api.get<{ data: JournalEntry }>(
+        `/finance-enhancement/journal-entries/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -174,7 +187,10 @@ export function useCreateJournalEntry() {
       reference?: string;
       referenceType?: string;
     }) => {
-      const response = await api.post("/finance-enhancement/journal-entries", data);
+      const response = await api.post(
+        "/finance-enhancement/journal-entries",
+        data,
+      );
       return response.data;
     },
     onSuccess: () => {
@@ -202,15 +218,18 @@ export function useScholarships(filters: ScholarshipFilters = {}) {
       if (filters.unitId) params.append("unitId", filters.unitId);
       if (filters.type) params.append("type", filters.type);
       if (filters.source) params.append("source", filters.source);
-      if (filters.isActive !== undefined) params.append("isActive", String(filters.isActive));
+      if (filters.isActive !== undefined)
+        params.append("isActive", String(filters.isActive));
       if (filters.page) params.append("page", String(filters.page));
       if (filters.limit) params.append("limit", String(filters.limit));
 
-      const response = await api.get<SharedPaginatedResponse<Scholarship>>(`/finance-enhancement/scholarships?${params}`);
+      const response = await api.get<SharedPaginatedResponse<Scholarship>>(
+        `/finance-enhancement/scholarships?${params}`,
+      );
       const result = response.data;
       return {
         data: result.data,
-        pagination: result.meta.pagination
+        pagination: result.meta.pagination,
       };
     },
   });
@@ -220,14 +239,19 @@ export function useScholarship(id: string) {
   return useQuery({
     queryKey: ["scholarship", id],
     queryFn: async () => {
-      const response = await api.get<{ data: Scholarship }>(`/finance-enhancement/scholarships/${id}`);
+      const response = await api.get<{ data: Scholarship }>(
+        `/finance-enhancement/scholarships/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
   });
 }
 
-export function useScholarshipRecipients(scholarshipId: string, filters: { status?: string; page?: number; limit?: number } = {}) {
+export function useScholarshipRecipients(
+  scholarshipId: string,
+  filters: { status?: string; page?: number; limit?: number } = {},
+) {
   return useQuery({
     queryKey: ["scholarship-recipients", scholarshipId, filters],
     queryFn: async () => {
@@ -236,11 +260,15 @@ export function useScholarshipRecipients(scholarshipId: string, filters: { statu
       if (filters.page) params.append("page", String(filters.page));
       if (filters.limit) params.append("limit", String(filters.limit));
 
-      const response = await api.get<SharedPaginatedResponse<ScholarshipRecipient>>(`/finance-enhancement/scholarships/${scholarshipId}/recipients?${params}`);
+      const response = await api.get<
+        SharedPaginatedResponse<ScholarshipRecipient>
+      >(
+        `/finance-enhancement/scholarships/${scholarshipId}/recipients?${params}`,
+      );
       const result = response.data;
       return {
         data: result.data,
-        pagination: result.meta.pagination
+        pagination: result.meta.pagination,
       };
     },
     enabled: !!scholarshipId,
@@ -262,7 +290,10 @@ export function useCreateScholarship() {
       unitId?: string;
       isActive?: boolean;
     }) => {
-      const response = await api.post("/finance-enhancement/scholarships", data);
+      const response = await api.post(
+        "/finance-enhancement/scholarships",
+        data,
+      );
       return response.data;
     },
     onSuccess: () => {
@@ -282,7 +313,10 @@ export function useAssignScholarship() {
       endDate?: string;
       notes?: string;
     }) => {
-      const response = await api.post("/finance-enhancement/scholarship-recipients", data);
+      const response = await api.post(
+        "/finance-enhancement/scholarship-recipients",
+        data,
+      );
       return response.data;
     },
     onSuccess: () => {
@@ -308,15 +342,18 @@ export function usePaymentComponents(filters: PaymentComponentFilters = {}) {
       const params = new URLSearchParams();
       if (filters.unitId) params.append("unitId", filters.unitId);
       if (filters.category) params.append("category", filters.category);
-      if (filters.isActive !== undefined) params.append("isActive", String(filters.isActive));
+      if (filters.isActive !== undefined)
+        params.append("isActive", String(filters.isActive));
       if (filters.page) params.append("page", String(filters.page));
       if (filters.limit) params.append("limit", String(filters.limit));
 
-      const response = await api.get<SharedPaginatedResponse<PaymentComponent>>(`/finance-enhancement/payment-components?${params}`);
+      const response = await api.get<SharedPaginatedResponse<PaymentComponent>>(
+        `/finance-enhancement/payment-components?${params}`,
+      );
       const result = response.data;
       return {
         data: result.data,
-        pagination: result.meta.pagination
+        pagination: result.meta.pagination,
       };
     },
   });
@@ -334,7 +371,10 @@ export function useCreatePaymentComponent() {
       unitId?: string;
       isActive?: boolean;
     }) => {
-      const response = await api.post("/finance-enhancement/payment-components", data);
+      const response = await api.post(
+        "/finance-enhancement/payment-components",
+        data,
+      );
       return response.data;
     },
     onSuccess: () => {
@@ -345,7 +385,11 @@ export function useCreatePaymentComponent() {
 
 // ==================== REPORTS ====================
 
-export function useTrialBalanceReport(filters: { unitId?: string; startDate: string; endDate: string }) {
+export function useTrialBalanceReport(filters: {
+  unitId?: string;
+  startDate: string;
+  endDate: string;
+}) {
   return useQuery({
     queryKey: ["trial-balance-report", filters],
     queryFn: async () => {
@@ -354,18 +398,20 @@ export function useTrialBalanceReport(filters: { unitId?: string; startDate: str
       params.append("startDate", filters.startDate);
       params.append("endDate", filters.endDate);
 
-      const response = await api.get<{ data: TrialBalanceReport }>(`/finance-enhancement/reports/trial-balance?${params}`);
+      const response = await api.get<{ data: TrialBalanceReport }>(
+        `/finance-enhancement/reports/trial-balance?${params}`,
+      );
       return response.data.data;
     },
     enabled: !!filters.startDate && !!filters.endDate,
   });
 }
 
-export function useIncomeExpenseReport(filters: { 
-  unitId?: string; 
-  startDate: string; 
-  endDate: string; 
-  groupBy?: FinanceReportPeriod | "month" | "day"
+export function useIncomeExpenseReport(filters: {
+  unitId?: string;
+  startDate: string;
+  endDate: string;
+  groupBy?: FinanceReportPeriod | "month" | "day";
 }) {
   return useQuery({
     queryKey: ["income-expense-report", filters],
@@ -376,7 +422,9 @@ export function useIncomeExpenseReport(filters: {
       params.append("endDate", filters.endDate);
       if (filters.groupBy) params.append("groupBy", filters.groupBy);
 
-      const response = await api.get<{ data: IncomeExpenseReport }>(`/finance-enhancement/reports/income-expense?${params}`);
+      const response = await api.get<{ data: IncomeExpenseReport }>(
+        `/finance-enhancement/reports/income-expense?${params}`,
+      );
       return response.data.data;
     },
     enabled: !!filters.startDate && !!filters.endDate,

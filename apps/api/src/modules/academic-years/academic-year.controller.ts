@@ -1,7 +1,11 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/middleware/error';
 import { academicYearService } from './academic-year.service';
-import type { ListAcademicYearsQuery, CreateAcademicYearInput, UpdateAcademicYearInput } from './academic-year.schema';
+import type {
+  ListAcademicYearsQuery,
+  CreateAcademicYearInput,
+  UpdateAcademicYearInput,
+} from './academic-year.schema';
 
 /**
  * List academic years

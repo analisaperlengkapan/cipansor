@@ -26,6 +26,7 @@
 **Refs:** [Req 1.4], [Req 11.5] [DB 1.1] [BE 1.1]
 
 ### 1.1 Tech Stack
+
 - **Framework:** Next.js 15+ (App Router)
 - **UI Library:** React 18+
 - **Styling:** TailwindCSS + shadcn/ui
@@ -35,12 +36,14 @@
 - **Icons:** Lucide React
 
 ### 1.2 Design System
+
 - **Component Library:** shadcn/ui (existing)
 - **Theme:** Light/Dark mode support
 - **Responsive:** Mobile-first approach
 - **Accessibility:** WCAG 2.1 AA compliance
 
 ### 1.3 Folder Structure Pattern
+
 ```
 app/
 └── [module]/
@@ -55,15 +58,15 @@ app/
 
 ### 1.4 Page Statistics Summary
 
-| Module | New Pages | Enhanced Pages |
-|--------|-----------|----------------|
-| PAUD Assessment | 6 | 0 |
-| PAUD Reports | 4 | 0 |
-| Daily Report | 5 | 0 |
-| Murojaah | 5 | 0 |
-| Simaan | 4 | 0 |
-| Dashboard | 2 | 1 |
-| **Total** | **26** | **1** |
+| Module          | New Pages | Enhanced Pages |
+| --------------- | --------- | -------------- |
+| PAUD Assessment | 6         | 0              |
+| PAUD Reports    | 4         | 0              |
+| Daily Report    | 5         | 0              |
+| Murojaah        | 5         | 0              |
+| Simaan          | 4         | 0              |
+| Dashboard       | 2         | 1              |
+| **Total**       | **26**    | **1**          |
 
 ---
 
@@ -72,14 +75,17 @@ app/
 **Refs:** [Req 4.1], [Req 4.2] [DB 3.x] [BE 2.x]
 
 ### 2.1 PAUD Assessment List
+
 **Route:** `/paud/assessment`
 **Refs:** [Req 4.1] [BE 2.1.1]
 
 **Components:**
+
 - PageHeader, FilterBar, DataTable, Pagination
 - AssessmentCard (mobile view)
 
 **Features:**
+
 - Filter by: student, class, aspect, period, achievement level
 - Search by student name
 - Date range picker
@@ -87,18 +93,22 @@ app/
 - Bulk actions (for admin)
 
 **API Integration:**
+
 - GET /api/paud/assessments
 
 **State:**
+
 - filters (local)
 - pagination (local)
 - assessments (server - React Query)
 
 ### 2.2 PAUD Assessment Create
+
 **Route:** `/paud/assessment/new`
 **Refs:** [Req 4.1.2] [BE 2.1.2]
 
 **Components:**
+
 - PageHeader, Form, StudentSelector, AspectSelector
 - AchievementLevelRadio, NarrativeTextarea
 - EvidenceUploader, IndicatorChecklist
@@ -118,18 +128,22 @@ app/
 | evidences | FileUpload | Max 5 files, 5MB each |
 
 **API Integration:**
+
 - POST /api/paud/assessments
 - POST /api/paud/assessments/:id/evidence
 
 ### 2.3 PAUD Assessment Detail
+
 **Route:** `/paud/assessment/[id]`
 **Refs:** [Req 4.1] [BE 2.1.1]
 
 **Components:**
+
 - PageHeader, DetailCard, EvidenceGallery
 - AspectBadge, AchievementBadge
 
 **Sections:**
+
 1. Student Info (name, class, photo)
 2. Assessment Info (period, aspect, date)
 3. Achievement & Narrative
@@ -138,23 +152,28 @@ app/
 6. Actions (edit, delete, print)
 
 **API Integration:**
+
 - GET /api/paud/assessments/:id
 - DELETE /api/paud/assessments/:id
 
 ### 2.4 Student Progress Dashboard
+
 **Route:** `/paud/assessment/student/[studentId]`
 **Refs:** [Req 4.1.3] [BE 2.1.1]
 
 **Components:**
+
 - PageHeader, StudentCard, ProgressChart
 - AspectProgressCard (x6), AssessmentTimeline
 
 **Visualizations:**
+
 1. **Radar Chart:** 6 aspects current level
 2. **Line Chart:** Progress over time per aspect
 3. **Timeline:** Recent assessments chronologically
 
 **Sections:**
+
 1. Student Overview
 2. Current Achievement Summary (6 cards)
 3. Progress Charts
@@ -162,14 +181,17 @@ app/
 5. Recommendations Summary
 
 **API Integration:**
+
 - GET /api/paud/assessments/student/:studentId/summary
 - GET /api/paud/assessments?studentId=xxx
 
 ### 2.5 PAUD Report List
+
 **Route:** `/paud/reports`
 **Refs:** [Req 4.2] [BE 2.2.1]
 
 **Components:**
+
 - PageHeader, FilterBar, DataTable
 - StatusBadge (DRAFT, FINALIZED, PRINTED)
 
@@ -184,17 +206,21 @@ app/
 | Actions | View, Edit, PDF, Finalize |
 
 **API Integration:**
+
 - GET /api/paud/reports
 
 ### 2.6 PAUD Report Detail/Edit
+
 **Route:** `/paud/reports/[id]`
 **Refs:** [Req 4.2] [BE 2.2.1]
 
 **Components:**
+
 - PageHeader, ReportForm, NarrativeEditor
 - PhotoGallery, SignatureInput, PrintPreview
 
 **Sections:**
+
 1. Header (Student, Year, Semester)
 2. Narrative per Aspect (6 rich text editors)
 3. Overall Strengths (textarea)
@@ -206,6 +232,7 @@ app/
 9. Actions (save draft, finalize, download PDF)
 
 **Workflow States:**
+
 ```
 DRAFT → FINALIZED → PRINTED
          ↑           ↑
@@ -213,20 +240,24 @@ DRAFT → FINALIZED → PRINTED
 ```
 
 **API Integration:**
+
 - GET /api/paud/reports/:id
 - PUT /api/paud/reports/:id
 - POST /api/paud/reports/:id/finalize
 - GET /api/paud/reports/:id/pdf
 
 ### 2.7 Generate Report Page
+
 **Route:** `/paud/reports/generate`
 **Refs:** [Req 4.2.2] [BE 2.2.1]
 
 **Components:**
+
 - PageHeader, StudentMultiSelect, PreviewCard
 - GenerateButton, ProgressIndicator
 
 **Flow:**
+
 1. Select Academic Year & Semester
 2. Select Students (single or batch)
 3. Preview assessment summary
@@ -234,6 +265,7 @@ DRAFT → FINALIZED → PRINTED
 5. Redirect to report list
 
 **API Integration:**
+
 - POST /api/paud/reports/generate
 
 ---
@@ -243,10 +275,12 @@ DRAFT → FINALIZED → PRINTED
 **Refs:** [Req 4.3], [Req 5.3] [DB 4.x] [BE 3.x]
 
 ### 3.1 Daily Report List
+
 **Route:** `/daily-reports`
 **Refs:** [Req 4.3] [BE 3.1.1]
 
 **Components:**
+
 - PageHeader, FilterBar, DatePicker
 - ReportGrid (card view for mobile)
 - DataTable (desktop)
@@ -261,18 +295,22 @@ DRAFT → FINALIZED → PRINTED
 | Notified | Toggle | All / Not Sent |
 
 **Quick Actions:**
+
 - "Buat Laporan Hari Ini" button
 - Bulk check-in shortcut
 - "Kirim Semua" notification button
 
 **API Integration:**
+
 - GET /api/daily-reports
 
 ### 3.2 Daily Report Create/Edit
+
 **Route:** `/daily-reports/new` atau `/daily-reports/[id]`
 **Refs:** [Req 4.3.1], [Req 4.3.2] [BE 3.1.2]
 
 **Components:**
+
 - PageHeader, StudentSelector, DatePicker
 - MoodSelector, HealthStatusInput
 - MealStatusRadio, ActivityTextarea
@@ -305,10 +343,12 @@ DRAFT → FINALIZED → PRINTED
 | homeActivity | Textarea | ✓ | ✓ |
 
 **Section C: Photos**
+
 - PhotoUploader (max 5 photos)
 - Caption input per photo
 
 **Section D: Homework (SD IT only)**
+
 - HomeworkList component
 - Add/remove subjects
 - Due date per homework
@@ -320,39 +360,47 @@ DRAFT → FINALIZED → PRINTED
 | pickedUpBy | Input |
 
 **API Integration:**
+
 - POST /api/daily-reports
 - PUT /api/daily-reports/:id
 - POST /api/daily-reports/:id/photos
 - POST /api/daily-reports/:id/homework
 
 ### 3.3 Bulk Check-in Page
+
 **Route:** `/daily-reports/bulk-checkin`
 **Refs:** [Req 4.3.1] [BE 3.1.1]
 
 **Components:**
+
 - PageHeader, ClassSelector, DatePicker
 - StudentCheckInTable, BulkMoodSelector
 - SubmitProgress
 
 **Features:**
+
 - Select class → load all students
 - Default values for common fields
 - Individual override per student
 - Progress indicator during submission
 
 **API Integration:**
+
 - POST /api/daily-reports/bulk-checkin
 
 ### 3.4 Daily Report Detail (Parent View)
+
 **Route:** `/parent/daily-reports/[id]`
 **Refs:** [Req 4.3.3] [BE 3.1.1]
 
 **Components:**
+
 - PageHeader, ReportCard, PhotoGallery
 - MoodDisplay, ActivityTimeline
 - HomeworkList (SD IT)
 
 **Sections:**
+
 1. Date & Student Info
 2. Mood & Health Status (visual)
 3. Meal Summary (PAUD)
@@ -363,24 +411,29 @@ DRAFT → FINALIZED → PRINTED
 8. Mark as Read button
 
 **API Integration:**
+
 - GET /api/daily-reports/:id
 - PUT /api/daily-reports/:id (parentReadAt)
 
 ### 3.5 Daily Report Class View
+
 **Route:** `/daily-reports/class/[classId]`
 **Refs:** [Req 4.3] [BE 3.1.1]
 
 **Components:**
+
 - PageHeader, ClassHeader, DatePicker
 - StudentReportGrid, CompletionProgress
 
 **Features:**
+
 - View all students in a class for selected date
 - Visual completion status (green/red dots)
 - Quick navigate to individual reports
 - Batch notification sender
 
 **API Integration:**
+
 - GET /api/daily-reports/class/:classId/today
 
 ---
@@ -390,10 +443,12 @@ DRAFT → FINALIZED → PRINTED
 **Refs:** [Req 7.1], [Req 7.2] [DB 5.x] [BE 4.x]
 
 ### 4.1 Murojaah Record List
+
 **Route:** `/murojaah`
 **Refs:** [Req 7.1.2] [BE 4.1.1]
 
 **Components:**
+
 - PageHeader, FilterBar, DataTable
 - QualityScoreBar, MurojaahTypeChip
 
@@ -409,16 +464,20 @@ DRAFT → FINALIZED → PRINTED
 | Actions | View, Edit, Delete |
 
 **Filters:**
+
 - Student, Halaqoh, Type, Date Range, Quality Range
 
 **API Integration:**
+
 - GET /api/murojaah
 
 ### 4.2 Murojaah Create/Edit
+
 **Route:** `/murojaah/new` atau `/murojaah/[id]`
 **Refs:** [Req 7.1.2] [BE 4.1.2]
 
 **Components:**
+
 - PageHeader, StudentSelector, HalaqohSelector
 - MurojaahTypeRadio, JuzRangeSelector
 - QualitySlider, MistakeLogger
@@ -442,25 +501,30 @@ DRAFT → FINALIZED → PRINTED
 | improvementAreas | Textarea | Optional |
 
 **Mistake Logger Component:**
+
 - Add mistake button
 - Fields: type, juz, surah, ayah, description
 - List view with delete
 
 **API Integration:**
+
 - POST /api/murojaah
 - PUT /api/murojaah/:id
 - POST /api/murojaah/:id/mistakes
 
 ### 4.3 Student Murojaah Dashboard
+
 **Route:** `/murojaah/student/[studentId]`
 **Refs:** [Req 7.1.2] [BE 4.1.1]
 
 **Components:**
+
 - PageHeader, StudentCard, SummaryCards
 - MurojaahCalendar, QualityTrendChart
 - MistakeBreakdownChart, HistoryTable
 
 **Sections:**
+
 1. **Summary Cards:**
    - Total Sessions (month)
    - Total Pages
@@ -483,18 +547,22 @@ DRAFT → FINALIZED → PRINTED
    - Quick actions
 
 **API Integration:**
+
 - GET /api/murojaah/student/:studentId/summary
 - GET /api/murojaah/student/:studentId
 
 ### 4.4 Murojaah Schedule Page
+
 **Route:** `/murojaah/schedule`
 **Refs:** [Req 7.1.2] [BE 4.1.1]
 
 **Components:**
+
 - PageHeader, ScheduleCard, TargetProgress
 - RecommendationList
 
 **Sections:**
+
 1. **Today's Target:**
    - YAUMIYAH target (juz range)
    - Estimated time
@@ -509,13 +577,16 @@ DRAFT → FINALIZED → PRINTED
    - Calendar view
 
 **API Integration:**
+
 - GET /api/murojaah/schedule
 
 ### 4.5 Simaan Exam List
+
 **Route:** `/simaan`
 **Refs:** [Req 7.1.3] [BE 4.2.1]
 
 **Components:**
+
 - PageHeader, FilterBar, DataTable
 - SimaanTypeBadge, GradeBadge, ScoreDisplay
 
@@ -532,13 +603,16 @@ DRAFT → FINALIZED → PRINTED
 | Actions | View, Edit, Finalize |
 
 **API Integration:**
+
 - GET /api/simaan
 
 ### 4.6 Simaan Create/Edit
+
 **Route:** `/simaan/new` atau `/simaan/[id]`
 **Refs:** [Req 7.1.3] [BE 4.2.2]
 
 **Components:**
+
 - PageHeader, StudentSelector, ExamTypeSelector
 - JuzRangeInput, ExaminerList, ScoreInputs
 - GradeCalculator, NotesTextarea
@@ -557,6 +631,7 @@ DRAFT → FINALIZED → PRINTED
 | juzEnd | NumberInput |
 
 **Section B: Examiners**
+
 - Add examiner (select from Muhafidz)
 - Score per examiner (optional)
 - Notes per examiner
@@ -569,24 +644,29 @@ DRAFT → FINALIZED → PRINTED
 | tartilScore | Slider | 0-100 |
 
 **Section D: Result (Auto-calculated)**
+
 - Overall Score (average)
 - Grade (Mumtaz/Jayyid Jiddan/etc)
 - Pass/Fail status
 
 **API Integration:**
+
 - POST /api/simaan
 - PUT /api/simaan/:id
 - POST /api/simaan/:id/finalize
 
 ### 4.7 Simaan Detail
+
 **Route:** `/simaan/[id]`
 **Refs:** [Req 7.1.3] [BE 4.2.1]
 
 **Components:**
+
 - PageHeader, ExamInfoCard, ExaminerList
 - ScoreRadarChart, ResultCard, CertificateLink
 
 **Sections:**
+
 1. Exam Info (student, type, date, juz range)
 2. Examiners & their scores
 3. Score breakdown (radar chart)
@@ -594,39 +674,48 @@ DRAFT → FINALIZED → PRINTED
 5. Actions (edit if not finalized, generate certificate)
 
 **API Integration:**
+
 - GET /api/simaan/:id
 
 ### 4.8 Sanad Certificate Page
+
 **Route:** `/sanad/[id]/certificate`
 **Refs:** [Req 7.2.3] [BE 4.3.2]
 
 **Components:**
+
 - PageHeader, CertificatePreview, QRCodeDisplay
 - DownloadButton, ShareButton
 
 **Sections:**
+
 1. Certificate Preview (iframe or image)
 2. Certificate Details (number, issued date)
 3. Verification Info (QR code, URL)
 4. Actions (download PDF, share, print)
 
 **API Integration:**
+
 - POST /api/sanad/:id/certificate
 - GET /api/sanad/:id/certificate/pdf
 
 ### 4.9 Public Verification Page
+
 **Route:** `/verify/[code]` (Public, no auth)
 **Refs:** [Req 7.2.3] [BE 4.3.2]
 
 **Components:**
+
 - VerificationResult, CertificateInfo, SchoolLogo
 
 **States:**
+
 1. Loading (verifying)
 2. Valid (show certificate info)
 3. Invalid (show error message)
 
 **Display Info (if valid):**
+
 - Student name
 - Juz/range certified
 - Grade
@@ -635,6 +724,7 @@ DRAFT → FINALIZED → PRINTED
 - School name
 
 **API Integration:**
+
 - GET /api/sanad/verify/:code (PUBLIC)
 
 ---
@@ -644,10 +734,12 @@ DRAFT → FINALIZED → PRINTED
 **Refs:** [Req 9.1] [DB 6.x] [BE 5.x]
 
 ### 5.1 Yayasan Dashboard
+
 **Route:** `/dashboard/yayasan`
 **Refs:** [Req 9.1.1] [BE 5.1.1]
 
 **Components:**
+
 - PageHeader, MetricCard, UnitSelector
 - TrendChart, ComparisonTable, AlertList
 - QuickActions
@@ -663,44 +755,54 @@ DRAFT → FINALIZED → PRINTED
 | Progress Tahfidz | BookOpen | 65.5% avg | +3.1% |
 
 **Row 2: Charts (2 columns)**
+
 - Left: Attendance trend (line chart, 30 days)
 - Right: Unit comparison (bar chart)
 
 **Row 3: Tables (2 columns)**
+
 - Left: Recent Achievements (top 5)
 - Right: Active Alerts
 
 **Row 4: Quick Actions**
+
 - Generate reports
 - View overdue payments
 - Check compliance status
 
 **API Integration:**
+
 - GET /api/dashboard/overview
 - GET /api/dashboard/alerts
 
 ### 5.2 Unit Comparison Page
+
 **Route:** `/dashboard/comparison`
 **Refs:** [Req 9.1.2] [BE 5.1.1]
 
 **Components:**
+
 - PageHeader, MetricSelector, PeriodSelector
 - ComparisonChart, RankingTable
 
 **Features:**
+
 - Compare: Attendance, Tahfidz, Finance, Academic
 - Period: Weekly, Monthly, Semester
 - Visualization: Bar chart + ranking table
 - Export to PDF/Excel
 
 **API Integration:**
+
 - GET /api/dashboard/comparison
 
 ### 5.3 Dashboard (Enhanced)
+
 **Route:** `/dashboard` (existing page enhancement)
 **Refs:** [Req 9.1] [BE 5.1.1]
 
 **Enhancements:**
+
 - Add "Lihat Data Yayasan" link (for YAYASAN roles)
 - Add unit comparison widget (for unit admins)
 - Add alert notification badge
@@ -714,40 +816,40 @@ DRAFT → FINALIZED → PRINTED
 
 ### 6.1 New Shared Components
 
-| Component | Purpose | Props |
-|-----------|---------|-------|
-| AspectBadge | Display PAUD aspect | aspect, size |
-| AchievementBadge | Display BB/MB/BSH/BSB | level, size |
-| MoodSelector | Emoji-based mood picker | value, onChange |
-| QualityScoreBar | Progress bar for scores | score, max |
-| GradeBadge | Tahfidz grade display | grade, passed |
-| EvidenceGallery | Photo/video gallery | items, onDelete |
-| MistakeLogger | Tahfidz mistake input | mistakes, onAdd, onRemove |
-| JuzRangeSelector | Juz range picker | start, end, onChange |
-| StudentSelector | Student search + select | unitId, classId, value, onChange |
-| DateRangePicker | Date range filter | startDate, endDate, onChange |
-| MetricCard | Dashboard metric display | title, value, trend, icon |
-| TrendChart | Line chart for trends | data, xKey, yKey |
-| ComparisonChart | Bar chart for comparison | data, units |
-| AlertCard | Alert notification card | type, title, message, action |
+| Component        | Purpose                  | Props                            |
+| ---------------- | ------------------------ | -------------------------------- |
+| AspectBadge      | Display PAUD aspect      | aspect, size                     |
+| AchievementBadge | Display BB/MB/BSH/BSB    | level, size                      |
+| MoodSelector     | Emoji-based mood picker  | value, onChange                  |
+| QualityScoreBar  | Progress bar for scores  | score, max                       |
+| GradeBadge       | Tahfidz grade display    | grade, passed                    |
+| EvidenceGallery  | Photo/video gallery      | items, onDelete                  |
+| MistakeLogger    | Tahfidz mistake input    | mistakes, onAdd, onRemove        |
+| JuzRangeSelector | Juz range picker         | start, end, onChange             |
+| StudentSelector  | Student search + select  | unitId, classId, value, onChange |
+| DateRangePicker  | Date range filter        | startDate, endDate, onChange     |
+| MetricCard       | Dashboard metric display | title, value, trend, icon        |
+| TrendChart       | Line chart for trends    | data, xKey, yKey                 |
+| ComparisonChart  | Bar chart for comparison | data, units                      |
+| AlertCard        | Alert notification card  | type, title, message, action     |
 
 ### 6.2 Form Components Enhancement
 
-| Component | Enhancement |
-|-----------|-------------|
-| FileUpload | Add preview, progress, max size validation |
-| RichTextarea | Add simple formatting (bold, italic, list) |
-| StarRating | 1-5 star rating input |
-| TimeRangePicker | Start + end time input |
+| Component       | Enhancement                                |
+| --------------- | ------------------------------------------ |
+| FileUpload      | Add preview, progress, max size validation |
+| RichTextarea    | Add simple formatting (bold, italic, list) |
+| StarRating      | 1-5 star rating input                      |
+| TimeRangePicker | Start + end time input                     |
 
 ### 6.3 Layout Components
 
-| Component | Purpose |
-|-----------|---------|
-| TwoColumnLayout | Responsive 2-col layout |
-| SectionCard | Card with title + collapsible |
-| StepWizard | Multi-step form wizard |
-| TabLayout | Tab-based content switch |
+| Component       | Purpose                       |
+| --------------- | ----------------------------- |
+| TwoColumnLayout | Responsive 2-col layout       |
+| SectionCard     | Card with title + collapsible |
+| StepWizard      | Multi-step form wizard        |
+| TabLayout       | Tab-based content switch      |
 
 ---
 
@@ -761,54 +863,54 @@ DRAFT → FINALIZED → PRINTED
 // New hooks to create
 
 // PAUD Assessment
-usePAUDIndicators(filters)
-usePAUDAssessments(filters)
-usePAUDAssessment(id)
-useCreatePAUDAssessment()
-useUpdatePAUDAssessment()
-useDeletePAUDAssessment()
-usePAUDStudentProgress(studentId)
+usePAUDIndicators(filters);
+usePAUDAssessments(filters);
+usePAUDAssessment(id);
+useCreatePAUDAssessment();
+useUpdatePAUDAssessment();
+useDeletePAUDAssessment();
+usePAUDStudentProgress(studentId);
 
 // PAUD Reports
-usePAUDReports(filters)
-usePAUDReport(id)
-useCreatePAUDReport()
-useUpdatePAUDReport()
-useFinalizePAUDReport()
-useGeneratePAUDReports()
-useDownloadPAUDReportPDF(id)
+usePAUDReports(filters);
+usePAUDReport(id);
+useCreatePAUDReport();
+useUpdatePAUDReport();
+useFinalizePAUDReport();
+useGeneratePAUDReports();
+useDownloadPAUDReportPDF(id);
 
 // Daily Report
-useDailyReports(filters)
-useDailyReport(id)
-useCreateDailyReport()
-useUpdateDailyReport()
-useDeleteDailyReport()
-useBulkCheckin()
-useNotifyParent(id)
-useClassDailyReports(classId, date)
+useDailyReports(filters);
+useDailyReport(id);
+useCreateDailyReport();
+useUpdateDailyReport();
+useDeleteDailyReport();
+useBulkCheckin();
+useNotifyParent(id);
+useClassDailyReports(classId, date);
 
 // Murojaah
-useMurojaahRecords(filters)
-useMurojaahRecord(id)
-useCreateMurojaah()
-useUpdateMurojaah()
-useDeleteMurojaah()
-useMurojaahStudentSummary(studentId)
-useMurojaahSchedule()
+useMurojaahRecords(filters);
+useMurojaahRecord(id);
+useCreateMurojaah();
+useUpdateMurojaah();
+useDeleteMurojaah();
+useMurojaahStudentSummary(studentId);
+useMurojaahSchedule();
 
 // Simaan
-useSimaanExams(filters)
-useSimaanExam(id)
-useCreateSimaan()
-useUpdateSimaan()
-useDeleteSimaan()
-useFinalizeSimaan()
+useSimaanExams(filters);
+useSimaanExam(id);
+useCreateSimaan();
+useUpdateSimaan();
+useDeleteSimaan();
+useFinalizeSimaan();
 
 // Dashboard
-useYayasanDashboard()
-useDashboardComparison(metric, period)
-useDashboardAlerts()
+useYayasanDashboard();
+useDashboardComparison(metric, period);
+useDashboardAlerts();
 ```
 
 ### 7.2 Zustand Stores
@@ -906,16 +1008,16 @@ interface MurojaahFilterStore {
 ```typescript
 // middleware.ts additions
 const protectedRoutes = {
-  '/paud/*': ['PAUD_*', 'SUPER_ADMIN'],
-  '/daily-reports/*': ['*_GURU', '*_ADMIN', 'SUPER_ADMIN'],
-  '/murojaah/*': ['MUHAFIDZ', '*_GURU', '*_ADMIN', 'SUPER_ADMIN'],
-  '/simaan/*': ['MUHAFIDZ', '*_ADMIN', 'SUPER_ADMIN'],
-  '/dashboard/yayasan': ['YAYASAN_*', 'SUPER_ADMIN'],
-  '/parent/*': ['*_ORANG_TUA'],
+  "/paud/*": ["PAUD_*", "SUPER_ADMIN"],
+  "/daily-reports/*": ["*_GURU", "*_ADMIN", "SUPER_ADMIN"],
+  "/murojaah/*": ["MUHAFIDZ", "*_GURU", "*_ADMIN", "SUPER_ADMIN"],
+  "/simaan/*": ["MUHAFIDZ", "*_ADMIN", "SUPER_ADMIN"],
+  "/dashboard/yayasan": ["YAYASAN_*", "SUPER_ADMIN"],
+  "/parent/*": ["*_ORANG_TUA"],
 };
 
 // Public routes (no auth)
-const publicRoutes = ['/verify/*'];
+const publicRoutes = ["/verify/*"];
 ```
 
 ---
@@ -932,11 +1034,11 @@ const paudAssessmentSchema = z.object({
   studentId: z.string().uuid(),
   academicYearId: z.string().uuid(),
   semesterId: z.string().uuid().optional(),
-  periodType: z.enum(['HARIAN', 'MINGGUAN', 'BULANAN', 'SEMESTER']),
-  periodDate: z.date().max(new Date(), 'Cannot be future date'),
-  aspect: z.enum(['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI']),
+  periodType: z.enum(["HARIAN", "MINGGUAN", "BULANAN", "SEMESTER"]),
+  periodDate: z.date().max(new Date(), "Cannot be future date"),
+  aspect: z.enum(["NAM", "FM", "KOG", "BHS", "SE", "SNI"]),
   indicatorId: z.string().uuid().optional(),
-  achievementLevel: z.enum(['BB', 'MB', 'BSH', 'BSB']),
+  achievementLevel: z.enum(["BB", "MB", "BSH", "BSB"]),
   narrativeText: z.string().max(2000).optional(),
   teacherNotes: z.string().max(1000).optional(),
   recommendations: z.string().max(1000).optional(),
@@ -946,14 +1048,16 @@ const paudAssessmentSchema = z.object({
 const dailyReportSchema = z.object({
   studentId: z.string().uuid(),
   reportDate: z.date(),
-  unitType: z.enum(['PAUD', 'TK', 'SD_IT']),
+  unitType: z.enum(["PAUD", "TK", "SD_IT"]),
   arrivalTime: z.string().optional(),
-  mood: z.enum(['HAPPY', 'NEUTRAL', 'SAD', 'TIRED', 'EXCITED', 'SICK']).optional(),
+  mood: z
+    .enum(["HAPPY", "NEUTRAL", "SAD", "TIRED", "EXCITED", "SICK"])
+    .optional(),
   healthStatus: z.string().optional(),
   temperature: z.number().min(35).max(42).optional(),
   hadBreakfast: z.boolean().optional(),
-  mealStatus: z.enum(['HABIS', 'SETENGAH', 'SEDIKIT', 'TIDAK_MAU']).optional(),
-  snackStatus: z.enum(['HABIS', 'SETENGAH', 'SEDIKIT', 'TIDAK_MAU']).optional(),
+  mealStatus: z.enum(["HABIS", "SETENGAH", "SEDIKIT", "TIDAK_MAU"]).optional(),
+  snackStatus: z.enum(["HABIS", "SETENGAH", "SEDIKIT", "TIDAK_MAU"]).optional(),
   napDuration: z.number().min(0).max(180).optional(),
   toiletNotes: z.string().max(500).optional(),
   sholatDhuha: z.boolean().optional(),
@@ -966,31 +1070,33 @@ const dailyReportSchema = z.object({
 });
 
 // Murojaah Schema
-const murojaahSchema = z.object({
-  studentId: z.string().uuid(),
-  enrollmentId: z.string().uuid().optional(),
-  halaqohId: z.string().uuid().optional(),
-  murojaahType: z.enum(['YAUMIYAH', 'USBUIYAH', 'SYAHRIYAH', 'TASMI']),
-  murojaahDate: z.date(),
-  juzStart: z.number().int().min(1).max(30),
-  juzEnd: z.number().int().min(1).max(30),
-  pagesReviewed: z.number().int().positive(),
-  durationMinutes: z.number().int().positive(),
-  qualityScore: z.number().int().min(1).max(100),
-  fluencyLevel: z.number().int().min(1).max(5).optional(),
-  tajwidScore: z.number().int().min(1).max(100).optional(),
-  notes: z.string().max(1000).optional(),
-  improvementAreas: z.string().max(1000).optional(),
-}).refine(data => data.juzEnd >= data.juzStart, {
-  message: 'Juz end must be >= juz start',
-  path: ['juzEnd'],
-});
+const murojaahSchema = z
+  .object({
+    studentId: z.string().uuid(),
+    enrollmentId: z.string().uuid().optional(),
+    halaqohId: z.string().uuid().optional(),
+    murojaahType: z.enum(["YAUMIYAH", "USBUIYAH", "SYAHRIYAH", "TASMI"]),
+    murojaahDate: z.date(),
+    juzStart: z.number().int().min(1).max(30),
+    juzEnd: z.number().int().min(1).max(30),
+    pagesReviewed: z.number().int().positive(),
+    durationMinutes: z.number().int().positive(),
+    qualityScore: z.number().int().min(1).max(100),
+    fluencyLevel: z.number().int().min(1).max(5).optional(),
+    tajwidScore: z.number().int().min(1).max(100).optional(),
+    notes: z.string().max(1000).optional(),
+    improvementAreas: z.string().max(1000).optional(),
+  })
+  .refine((data) => data.juzEnd >= data.juzStart, {
+    message: "Juz end must be >= juz start",
+    path: ["juzEnd"],
+  });
 
 // Simaan Schema
 const simaanSchema = z.object({
   studentId: z.string().uuid(),
   enrollmentId: z.string().uuid().optional(),
-  simaanType: z.enum(['BIN_NAZHR', 'BIL_GHAIB', 'TAHDIR', 'TASMI', 'KHATAM']),
+  simaanType: z.enum(["BIN_NAZHR", "BIL_GHAIB", "TAHDIR", "TASMI", "KHATAM"]),
   examDate: z.date(),
   sessionNumber: z.number().int().positive().default(1),
   totalSessions: z.number().int().positive().default(1),
@@ -1004,20 +1110,20 @@ const simaanSchema = z.object({
 
 ```typescript
 const errorMessages = {
-  required: 'Field ini wajib diisi',
-  invalid_type: 'Format tidak valid',
+  required: "Field ini wajib diisi",
+  invalid_type: "Format tidak valid",
   too_small: {
-    string: 'Minimal {min} karakter',
-    number: 'Minimal {min}',
+    string: "Minimal {min} karakter",
+    number: "Minimal {min}",
   },
   too_big: {
-    string: 'Maksimal {max} karakter',
-    number: 'Maksimal {max}',
+    string: "Maksimal {max} karakter",
+    number: "Maksimal {max}",
   },
   custom: {
-    future_date: 'Tanggal tidak boleh di masa depan',
-    invalid_juz_range: 'Juz akhir harus >= juz awal',
-    duplicate_report: 'Laporan untuk siswa dan tanggal ini sudah ada',
+    future_date: "Tanggal tidak boleh di masa depan",
+    invalid_juz_range: "Juz akhir harus >= juz awal",
+    duplicate_report: "Laporan untuk siswa dan tanggal ini sudah ada",
   },
 };
 ```
@@ -1026,27 +1132,27 @@ const errorMessages = {
 
 ## Appendix A: Page-Component Matrix
 
-| Page | Main Components |
-|------|-----------------|
-| PAUD Assessment List | PageHeader, FilterBar, DataTable, Pagination |
+| Page                   | Main Components                                         |
+| ---------------------- | ------------------------------------------------------- |
+| PAUD Assessment List   | PageHeader, FilterBar, DataTable, Pagination            |
 | PAUD Assessment Create | Form, StudentSelector, AspectSelector, EvidenceUploader |
-| PAUD Assessment Detail | DetailCard, EvidenceGallery, AspectBadge |
-| Student Progress | RadarChart, LineChart, Timeline, ProgressCard |
-| Daily Report Create | Form, MoodSelector, PhotoUploader, HomeworkList |
-| Murojaah Create | Form, JuzRangeSelector, QualitySlider, MistakeLogger |
-| Simaan Create | Form, ExaminerList, ScoreInputs, GradeCalculator |
-| Yayasan Dashboard | MetricCard, TrendChart, ComparisonTable, AlertList |
+| PAUD Assessment Detail | DetailCard, EvidenceGallery, AspectBadge                |
+| Student Progress       | RadarChart, LineChart, Timeline, ProgressCard           |
+| Daily Report Create    | Form, MoodSelector, PhotoUploader, HomeworkList         |
+| Murojaah Create        | Form, JuzRangeSelector, QualitySlider, MistakeLogger    |
+| Simaan Create          | Form, ExaminerList, ScoreInputs, GradeCalculator        |
+| Yayasan Dashboard      | MetricCard, TrendChart, ComparisonTable, AlertList      |
 
 ---
 
 ## Appendix B: Mobile Responsiveness Breakpoints
 
-| Breakpoint | Width | Layout Change |
-|------------|-------|---------------|
-| sm | 640px | Single column, stack cards |
-| md | 768px | Two columns where applicable |
-| lg | 1024px | Full sidebar visible |
-| xl | 1280px | Extra spacing, larger charts |
+| Breakpoint | Width  | Layout Change                |
+| ---------- | ------ | ---------------------------- |
+| sm         | 640px  | Single column, stack cards   |
+| md         | 768px  | Two columns where applicable |
+| lg         | 1024px | Full sidebar visible         |
+| xl         | 1280px | Extra spacing, larger charts |
 
 ---
 

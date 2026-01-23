@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { use } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { use } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -14,7 +20,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   useNotification,
   useSendNotification,
@@ -24,7 +30,7 @@ import {
   RECIPIENT_TYPE_LABELS,
   type NotificationType,
   type NotificationPriority,
-} from '@/hooks';
+} from "@/hooks";
 import {
   ArrowLeft,
   Send,
@@ -38,10 +44,10 @@ import {
   Clock,
   Mail,
   MessageSquare,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,7 +58,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -68,45 +74,51 @@ export default function NotificationDetailPage({ params }: PageProps) {
 
   const getTypeBadge = (type: NotificationType) => {
     const colors: Record<NotificationType, string> = {
-      ANNOUNCEMENT: 'bg-blue-100 text-blue-800',
-      ATTENDANCE: 'bg-green-100 text-green-800',
-      FINANCE: 'bg-yellow-100 text-yellow-800',
-      ACADEMIC: 'bg-purple-100 text-purple-800',
-      PERMIT: 'bg-indigo-100 text-indigo-800',
-      HEALTH: 'bg-pink-100 text-pink-800',
-      VIOLATION: 'bg-red-100 text-red-800',
-      REWARD: 'bg-emerald-100 text-emerald-800',
-      SYSTEM: 'bg-gray-100 text-gray-800',
+      ANNOUNCEMENT: "bg-blue-100 text-blue-800",
+      ATTENDANCE: "bg-green-100 text-green-800",
+      FINANCE: "bg-yellow-100 text-yellow-800",
+      ACADEMIC: "bg-purple-100 text-purple-800",
+      PERMIT: "bg-indigo-100 text-indigo-800",
+      HEALTH: "bg-pink-100 text-pink-800",
+      VIOLATION: "bg-red-100 text-red-800",
+      REWARD: "bg-emerald-100 text-emerald-800",
+      SYSTEM: "bg-gray-100 text-gray-800",
     };
-    return <Badge className={colors[type]}>{NOTIFICATION_TYPE_LABELS[type]}</Badge>;
+    return (
+      <Badge className={colors[type]}>{NOTIFICATION_TYPE_LABELS[type]}</Badge>
+    );
   };
 
   const getPriorityBadge = (priority: NotificationPriority) => {
     const colors: Record<NotificationPriority, string> = {
-      LOW: 'bg-gray-100 text-gray-800',
-      NORMAL: 'bg-blue-100 text-blue-800',
-      HIGH: 'bg-orange-100 text-orange-800',
-      URGENT: 'bg-red-100 text-red-800',
+      LOW: "bg-gray-100 text-gray-800",
+      NORMAL: "bg-blue-100 text-blue-800",
+      HIGH: "bg-orange-100 text-orange-800",
+      URGENT: "bg-red-100 text-red-800",
     };
-    return <Badge className={colors[priority]}>{NOTIFICATION_PRIORITY_LABELS[priority]}</Badge>;
+    return (
+      <Badge className={colors[priority]}>
+        {NOTIFICATION_PRIORITY_LABELS[priority]}
+      </Badge>
+    );
   };
 
   const handleSend = async () => {
     try {
       await sendNotification.mutateAsync(notificationId);
-      toast.success('Notifikasi berhasil dikirim');
+      toast.success("Notifikasi berhasil dikirim");
     } catch {
-      toast.error('Gagal mengirim notifikasi');
+      toast.error("Gagal mengirim notifikasi");
     }
   };
 
   const handleDelete = async () => {
     try {
       await deleteNotification.mutateAsync(notificationId);
-      toast.success('Notifikasi berhasil dihapus');
-      router.push('/notifications');
+      toast.success("Notifikasi berhasil dihapus");
+      router.push("/notifications");
     } catch {
-      toast.error('Gagal menghapus notifikasi');
+      toast.error("Gagal menghapus notifikasi");
     }
   };
 
@@ -141,16 +153,21 @@ export default function NotificationDetailPage({ params }: PageProps) {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Detail Notifikasi</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Detail Notifikasi
+            </h1>
             <p className="text-muted-foreground">
-              {isSent ? 'Terkirim' : isScheduled ? 'Dijadwalkan' : 'Draft'}
+              {isSent ? "Terkirim" : isScheduled ? "Dijadwalkan" : "Draft"}
             </p>
           </div>
         </div>
         <div className="flex gap-2">
           {!isSent && (
             <>
-              <Button onClick={handleSend} disabled={sendNotification.isPending}>
+              <Button
+                onClick={handleSend}
+                disabled={sendNotification.isPending}
+              >
                 {sendNotification.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -176,7 +193,9 @@ export default function NotificationDetailPage({ params }: PageProps) {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Batal</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete}>Hapus</AlertDialogAction>
+                <AlertDialogAction onClick={handleDelete}>
+                  Hapus
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -194,7 +213,12 @@ export default function NotificationDetailPage({ params }: PageProps) {
                   {notification.title}
                 </CardTitle>
                 <CardDescription>
-                  Dibuat pada {format(new Date(notification.createdAt), 'd MMMM yyyy, HH:mm', { locale: id })}
+                  Dibuat pada{" "}
+                  {format(
+                    new Date(notification.createdAt),
+                    "d MMMM yyyy, HH:mm",
+                    { locale: id },
+                  )}
                 </CardDescription>
               </div>
               <div className="flex gap-2">
@@ -206,20 +230,25 @@ export default function NotificationDetailPage({ params }: PageProps) {
           <CardContent>
             <div className="space-y-4">
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-2">Pesan</h4>
+                <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                  Pesan
+                </h4>
                 <div className="bg-muted p-4 rounded-lg">
                   <p className="whitespace-pre-wrap">{notification.message}</p>
                 </div>
               </div>
 
-              {notification.data && Object.keys(notification.data).length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Data Tambahan</h4>
-                  <pre className="bg-muted p-4 rounded-lg text-sm overflow-auto">
-                    {JSON.stringify(notification.data, null, 2)}
-                  </pre>
-                </div>
-              )}
+              {notification.data &&
+                Object.keys(notification.data).length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                      Data Tambahan
+                    </h4>
+                    <pre className="bg-muted p-4 rounded-lg text-sm overflow-auto">
+                      {JSON.stringify(notification.data, null, 2)}
+                    </pre>
+                  </div>
+                )}
             </div>
           </CardContent>
         </Card>
@@ -233,7 +262,9 @@ export default function NotificationDetailPage({ params }: PageProps) {
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-muted rounded-lg text-center">
                 <Users className="h-5 w-5 mx-auto text-muted-foreground" />
-                <p className="text-2xl font-bold mt-1">{notification.totalRecipients}</p>
+                <p className="text-2xl font-bold mt-1">
+                  {notification.totalRecipients}
+                </p>
                 <p className="text-xs text-muted-foreground">Penerima</p>
               </div>
               <div className="p-4 bg-green-50 rounded-lg text-center">
@@ -280,7 +311,11 @@ export default function NotificationDetailPage({ params }: PageProps) {
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Dikirim</span>
                   <span>
-                    {format(new Date(notification.sentAt), 'd MMM yyyy, HH:mm', { locale: id })}
+                    {format(
+                      new Date(notification.sentAt),
+                      "d MMM yyyy, HH:mm",
+                      { locale: id },
+                    )}
                   </span>
                 </div>
               )}
@@ -288,7 +323,11 @@ export default function NotificationDetailPage({ params }: PageProps) {
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Dijadwalkan</span>
                   <span className="text-yellow-600">
-                    {format(new Date(notification.scheduledAt), 'd MMM yyyy, HH:mm', { locale: id })}
+                    {format(
+                      new Date(notification.scheduledAt),
+                      "d MMM yyyy, HH:mm",
+                      { locale: id },
+                    )}
                   </span>
                 </div>
               )}
@@ -302,7 +341,9 @@ export default function NotificationDetailPage({ params }: PageProps) {
         <Card>
           <CardHeader>
             <CardTitle>Daftar Penerima</CardTitle>
-            <CardDescription>Status pengiriman untuk setiap penerima</CardDescription>
+            <CardDescription>
+              Status pengiriman untuk setiap penerima
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -320,9 +361,11 @@ export default function NotificationDetailPage({ params }: PageProps) {
                   <TableRow key={recipient.id}>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{recipient.user?.name ?? '-'}</p>
+                        <p className="font-medium">
+                          {recipient.user?.name ?? "-"}
+                        </p>
                         <p className="text-sm text-muted-foreground">
-                          {recipient.user?.email ?? '-'}
+                          {recipient.user?.email ?? "-"}
                         </p>
                       </div>
                     </TableCell>
@@ -359,8 +402,12 @@ export default function NotificationDetailPage({ params }: PageProps) {
                     </TableCell>
                     <TableCell>
                       {recipient.deliveredAt
-                        ? format(new Date(recipient.deliveredAt), 'd MMM HH:mm', { locale: id })
-                        : '-'}
+                        ? format(
+                            new Date(recipient.deliveredAt),
+                            "d MMM HH:mm",
+                            { locale: id },
+                          )
+                        : "-"}
                     </TableCell>
                   </TableRow>
                 ))}

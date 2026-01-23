@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import {
   UserPlus,
   Users,
@@ -17,80 +23,80 @@ import {
   FileText,
   Settings,
   BarChart3,
-} from 'lucide-react';
-import Link from 'next/link';
+} from "lucide-react";
+import Link from "next/link";
 
 export default function PPDBPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
 
   const menuItems = [
     {
-      title: 'Gelombang PPDB',
-      description: 'Kelola periode dan gelombang penerimaan',
+      title: "Gelombang PPDB",
+      description: "Kelola periode dan gelombang penerimaan",
       icon: Calendar,
-      href: '/ppdb/waves',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      count: '0',
+      href: "/ppdb/waves",
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
+      count: "0",
     },
     {
-      title: 'Pendaftar',
-      description: 'Daftar calon santri yang mendaftar',
+      title: "Pendaftar",
+      description: "Daftar calon santri yang mendaftar",
       icon: Users,
-      href: '/ppdb/registrations',
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-      count: '0',
+      href: "/ppdb/registrations",
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+      count: "0",
     },
     {
-      title: 'Seleksi',
-      description: 'Proses seleksi dan penilaian calon santri',
+      title: "Seleksi",
+      description: "Proses seleksi dan penilaian calon santri",
       icon: ClipboardList,
-      href: '/ppdb/selections',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      count: '0',
+      href: "/ppdb/selections",
+      color: "text-purple-600",
+      bgColor: "bg-purple-50",
+      count: "0",
     },
     {
-      title: 'Diterima',
-      description: 'Calon santri yang diterima',
+      title: "Diterima",
+      description: "Calon santri yang diterima",
       icon: CheckCircle,
-      href: '/ppdb/accepted',
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-      count: '0',
+      href: "/ppdb/accepted",
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-50",
+      count: "0",
     },
   ];
 
   const stats = [
     {
-      title: 'Total Pendaftar',
-      value: '0',
+      title: "Total Pendaftar",
+      value: "0",
       icon: UserPlus,
-      color: 'text-blue-600',
-      description: 'Calon santri',
+      color: "text-blue-600",
+      description: "Calon santri",
     },
     {
-      title: 'Menunggu Verifikasi',
-      value: '0',
+      title: "Menunggu Verifikasi",
+      value: "0",
       icon: Clock,
-      color: 'text-yellow-600',
-      description: 'Berkas pending',
+      color: "text-yellow-600",
+      description: "Berkas pending",
     },
     {
-      title: 'Lulus Seleksi',
-      value: '0',
+      title: "Lulus Seleksi",
+      value: "0",
       icon: CheckCircle,
-      color: 'text-green-600',
-      description: 'Diterima',
+      color: "text-green-600",
+      description: "Diterima",
     },
     {
-      title: 'Gelombang Aktif',
-      value: '0',
+      title: "Gelombang Aktif",
+      value: "0",
       icon: Calendar,
-      color: 'text-purple-600',
-      description: 'Periode berjalan',
+      color: "text-purple-600",
+      description: "Periode berjalan",
     },
   ];
 
@@ -221,9 +227,7 @@ export default function PPDBPage() {
                   </ol>
                 </div>
                 <Link href="/ppdb/registrations">
-                  <Button className="w-full">
-                    Kelola Pendaftaran
-                  </Button>
+                  <Button className="w-full">Kelola Pendaftaran</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -248,9 +252,7 @@ export default function PPDBPage() {
                   </ul>
                 </div>
                 <Link href="/ppdb/selections">
-                  <Button className="w-full">
-                    Lihat Jadwal Seleksi
-                  </Button>
+                  <Button className="w-full">Lihat Jadwal Seleksi</Button>
                 </Link>
               </CardContent>
             </Card>

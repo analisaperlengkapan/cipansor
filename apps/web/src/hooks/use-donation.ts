@@ -1,14 +1,28 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { ApiResponse, PaginatedResponse } from "@/lib/api";
 
 // =====================================
 // Types
 // =====================================
 
-export type CampaignStatus = 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'CLOSED';
-export type DonationType = 'INFAK' | 'INFAK_BULANAN' | 'ZAKAT_MAAL' | 'ZAKAT_FITRAH' | 'WAKAF' | 'SEDEKAH_JARIYAH' | 'PEMBANGUNAN' | 'BEASISWA' | 'OTHERS';
-export type PaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'QRIS' | 'EWALLET' | 'OTHERS';
-export type DonationStatus = 'PENDING' | 'VERIFIED' | 'CANCELLED';
+export type CampaignStatus = "DRAFT" | "ACTIVE" | "COMPLETED" | "CLOSED";
+export type DonationType =
+  | "INFAK"
+  | "INFAK_BULANAN"
+  | "ZAKAT_MAAL"
+  | "ZAKAT_FITRAH"
+  | "WAKAF"
+  | "SEDEKAH_JARIYAH"
+  | "PEMBANGUNAN"
+  | "BEASISWA"
+  | "OTHERS";
+export type PaymentMethod =
+  | "CASH"
+  | "BANK_TRANSFER"
+  | "QRIS"
+  | "EWALLET"
+  | "OTHERS";
+export type DonationStatus = "PENDING" | "VERIFIED" | "CANCELLED";
 
 export interface DonationCampaign {
   id: string;
@@ -69,37 +83,53 @@ export interface DonationStats {
 // Constants
 // =====================================
 
-export const CAMPAIGN_STATUSES: { value: CampaignStatus; label: string; color: string }[] = [
-  { value: 'DRAFT', label: 'Draft', color: 'bg-gray-100 text-gray-800' },
-  { value: 'ACTIVE', label: 'Aktif', color: 'bg-green-100 text-green-800' },
-  { value: 'COMPLETED', label: 'Selesai', color: 'bg-blue-100 text-blue-800' },
-  { value: 'CLOSED', label: 'Ditutup', color: 'bg-red-100 text-red-800' },
+export const CAMPAIGN_STATUSES: {
+  value: CampaignStatus;
+  label: string;
+  color: string;
+}[] = [
+  { value: "DRAFT", label: "Draft", color: "bg-gray-100 text-gray-800" },
+  { value: "ACTIVE", label: "Aktif", color: "bg-green-100 text-green-800" },
+  { value: "COMPLETED", label: "Selesai", color: "bg-blue-100 text-blue-800" },
+  { value: "CLOSED", label: "Ditutup", color: "bg-red-100 text-red-800" },
 ];
 
 export const DONATION_TYPES: { value: DonationType; label: string }[] = [
-  { value: 'INFAK', label: 'Infak' },
-  { value: 'INFAK_BULANAN', label: 'Infak Bulanan' },
-  { value: 'ZAKAT_MAAL', label: 'Zakat Maal' },
-  { value: 'ZAKAT_FITRAH', label: 'Zakat Fitrah' },
-  { value: 'WAKAF', label: 'Wakaf' },
-  { value: 'SEDEKAH_JARIYAH', label: 'Sedekah Jariyah' },
-  { value: 'PEMBANGUNAN', label: 'Pembangunan' },
-  { value: 'BEASISWA', label: 'Beasiswa' },
-  { value: 'OTHERS', label: 'Lainnya' },
+  { value: "INFAK", label: "Infak" },
+  { value: "INFAK_BULANAN", label: "Infak Bulanan" },
+  { value: "ZAKAT_MAAL", label: "Zakat Maal" },
+  { value: "ZAKAT_FITRAH", label: "Zakat Fitrah" },
+  { value: "WAKAF", label: "Wakaf" },
+  { value: "SEDEKAH_JARIYAH", label: "Sedekah Jariyah" },
+  { value: "PEMBANGUNAN", label: "Pembangunan" },
+  { value: "BEASISWA", label: "Beasiswa" },
+  { value: "OTHERS", label: "Lainnya" },
 ];
 
 export const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
-  { value: 'CASH', label: 'Tunai' },
-  { value: 'BANK_TRANSFER', label: 'Transfer Bank' },
-  { value: 'QRIS', label: 'QRIS' },
-  { value: 'EWALLET', label: 'E-Wallet' },
-  { value: 'OTHERS', label: 'Lainnya' },
+  { value: "CASH", label: "Tunai" },
+  { value: "BANK_TRANSFER", label: "Transfer Bank" },
+  { value: "QRIS", label: "QRIS" },
+  { value: "EWALLET", label: "E-Wallet" },
+  { value: "OTHERS", label: "Lainnya" },
 ];
 
-export const DONATION_STATUSES: { value: DonationStatus; label: string; color: string }[] = [
-  { value: 'PENDING', label: 'Menunggu', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'VERIFIED', label: 'Terverifikasi', color: 'bg-green-100 text-green-800' },
-  { value: 'CANCELLED', label: 'Dibatalkan', color: 'bg-red-100 text-red-800' },
+export const DONATION_STATUSES: {
+  value: DonationStatus;
+  label: string;
+  color: string;
+}[] = [
+  {
+    value: "PENDING",
+    label: "Menunggu",
+    color: "bg-yellow-100 text-yellow-800",
+  },
+  {
+    value: "VERIFIED",
+    label: "Terverifikasi",
+    color: "bg-green-100 text-green-800",
+  },
+  { value: "CANCELLED", label: "Dibatalkan", color: "bg-red-100 text-red-800" },
 ];
 
 // =====================================
@@ -116,9 +146,12 @@ export interface CampaignParams {
 
 export function useCampaigns(params: CampaignParams = {}) {
   return useQuery({
-    queryKey: ['donation', 'campaigns', params],
+    queryKey: ["donation", "campaigns", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<DonationCampaign>>('/donation/campaigns', { params });
+      const response = await api.get<PaginatedResponse<DonationCampaign>>(
+        "/donation/campaigns",
+        { params },
+      );
       return response.data;
     },
   });
@@ -126,9 +159,11 @@ export function useCampaigns(params: CampaignParams = {}) {
 
 export function useCampaign(id: string) {
   return useQuery({
-    queryKey: ['donation', 'campaigns', id],
+    queryKey: ["donation", "campaigns", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<DonationCampaign>>(`/donation/campaigns/${id}`);
+      const response = await api.get<ApiResponse<DonationCampaign>>(
+        `/donation/campaigns/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -137,9 +172,11 @@ export function useCampaign(id: string) {
 
 export function usePublicCampaigns() {
   return useQuery({
-    queryKey: ['donation', 'campaigns', 'public'],
+    queryKey: ["donation", "campaigns", "public"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<DonationCampaign[]>>('/donation/campaigns/public');
+      const response = await api.get<ApiResponse<DonationCampaign[]>>(
+        "/donation/campaigns/public",
+      );
       // The API returns { success: true, data: [...] } so we just need to return the data array
       // However, to match PaginatedResponse interface expected by consumers, we wrap it
       return { data: response.data.data || [] };
@@ -149,9 +186,11 @@ export function usePublicCampaigns() {
 
 export function usePublicCampaignBySlug(slug: string) {
   return useQuery({
-    queryKey: ['donation', 'campaigns', 'slug', slug],
+    queryKey: ["donation", "campaigns", "slug", slug],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<DonationCampaign>>(`/donation/campaigns/slug/${slug}`);
+      const response = await api.get<ApiResponse<DonationCampaign>>(
+        `/donation/campaigns/slug/${slug}`,
+      );
       return response.data.data;
     },
     enabled: !!slug,
@@ -174,11 +213,14 @@ export function useCreateCampaign() {
 
   return useMutation({
     mutationFn: async (data: CreateCampaignData) => {
-      const response = await api.post<ApiResponse<DonationCampaign>>('/donation/campaigns', data);
+      const response = await api.post<ApiResponse<DonationCampaign>>(
+        "/donation/campaigns",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['donation', 'campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ["donation", "campaigns"] });
     },
   });
 }
@@ -187,13 +229,24 @@ export function useUpdateCampaign() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateCampaignData> }) => {
-      const response = await api.put<ApiResponse<DonationCampaign>>(`/donation/campaigns/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateCampaignData>;
+    }) => {
+      const response = await api.put<ApiResponse<DonationCampaign>>(
+        `/donation/campaigns/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['donation', 'campaigns'] });
-      queryClient.invalidateQueries({ queryKey: ['donation', 'campaigns', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["donation", "campaigns"] });
+      queryClient.invalidateQueries({
+        queryKey: ["donation", "campaigns", variables.id],
+      });
     },
   });
 }
@@ -206,7 +259,7 @@ export function useDeleteCampaign() {
       await api.delete(`/donation/campaigns/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['donation', 'campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ["donation", "campaigns"] });
     },
   });
 }
@@ -227,9 +280,11 @@ export interface DonationParams {
 
 export function useDonations(params: DonationParams = {}) {
   return useQuery({
-    queryKey: ['donation', 'donations', params],
+    queryKey: ["donation", "donations", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Donation>>('/donation', { params });
+      const response = await api.get<PaginatedResponse<Donation>>("/donation", {
+        params,
+      });
       return response.data;
     },
   });
@@ -237,7 +292,7 @@ export function useDonations(params: DonationParams = {}) {
 
 export function useDonation(id: string) {
   return useQuery({
-    queryKey: ['donation', 'donations', id],
+    queryKey: ["donation", "donations", id],
     queryFn: async () => {
       const response = await api.get<ApiResponse<Donation>>(`/donation/${id}`);
       return response.data.data;
@@ -248,9 +303,10 @@ export function useDonation(id: string) {
 
 export function useDonationStats() {
   return useQuery({
-    queryKey: ['donation', 'stats'],
+    queryKey: ["donation", "stats"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<DonationStats>>('/donation/stats');
+      const response =
+        await api.get<ApiResponse<DonationStats>>("/donation/stats");
       return response.data.data;
     },
   });
@@ -275,11 +331,11 @@ export function useCreateDonation() {
 
   return useMutation({
     mutationFn: async (data: CreateDonationData) => {
-      const response = await api.post<ApiResponse<Donation>>('/donation', data);
+      const response = await api.post<ApiResponse<Donation>>("/donation", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['donation'] });
+      queryClient.invalidateQueries({ queryKey: ["donation"] });
     },
   });
 }
@@ -289,12 +345,19 @@ export function useCreatePublicDonation() {
 
   return useMutation({
     mutationFn: async (data: CreateDonationData) => {
-      const response = await api.post<ApiResponse<Donation>>('/donation/public', data);
+      const response = await api.post<ApiResponse<Donation>>(
+        "/donation/public",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['donation', 'campaigns', 'public'] });
-      queryClient.invalidateQueries({ queryKey: ['donation', 'campaigns', 'slug'] });
+      queryClient.invalidateQueries({
+        queryKey: ["donation", "campaigns", "public"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["donation", "campaigns", "slug"],
+      });
     },
   });
 }
@@ -303,13 +366,24 @@ export function useVerifyDonation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: DonationStatus }) => {
-      const response = await api.patch<ApiResponse<Donation>>(`/donation/${id}/verify`, { status });
+    mutationFn: async ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: DonationStatus;
+    }) => {
+      const response = await api.patch<ApiResponse<Donation>>(
+        `/donation/${id}/verify`,
+        { status },
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['donation'] });
-      queryClient.invalidateQueries({ queryKey: ['donation', 'donations', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["donation"] });
+      queryClient.invalidateQueries({
+        queryKey: ["donation", "donations", variables.id],
+      });
     },
   });
 }
@@ -322,16 +396,16 @@ export function useDeleteDonation() {
       await api.delete(`/donation/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['donation'] });
+      queryClient.invalidateQueries({ queryKey: ["donation"] });
     },
   });
 }
 
 // Utility functions
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);

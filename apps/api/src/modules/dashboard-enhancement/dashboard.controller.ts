@@ -40,12 +40,14 @@ export const getMetrics = async (req: Request, res: Response, next: NextFunction
   try {
     const query = req.query as any;
     const result = await dashboardService.getMetrics(query);
-    res.json(ApiResponse.paginated(
-      result.metrics,
-      result.pagination.page,
-      result.pagination.limit,
-      result.pagination.total
-    ));
+    res.json(
+      ApiResponse.paginated(
+        result.metrics,
+        result.pagination.page,
+        result.pagination.limit,
+        result.pagination.total
+      )
+    );
   } catch (error) {
     next(error);
   }

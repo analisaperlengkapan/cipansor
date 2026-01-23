@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { ApiResponse, PaginatedResponse } from "@/lib/api";
 
 export interface Permit {
   id: string;
@@ -8,7 +8,7 @@ export interface Permit {
     id: string;
     name: string;
     nis: string;
-    gender?: 'MALE' | 'FEMALE';
+    gender?: "MALE" | "FEMALE";
     class?: {
       id: string;
       name: string;
@@ -36,24 +36,49 @@ export interface Permit {
   updatedAt: string;
 }
 
-export type PermitType = 'SICK' | 'FAMILY' | 'EMERGENCY' | 'EVENT' | 'OTHER';
+export type PermitType = "SICK" | "FAMILY" | "EMERGENCY" | "EVENT" | "OTHER";
 
 export const PERMIT_TYPES: { value: PermitType; label: string }[] = [
-  { value: 'SICK', label: 'Sakit' },
-  { value: 'FAMILY', label: 'Keperluan Keluarga' },
-  { value: 'EMERGENCY', label: 'Darurat' },
-  { value: 'EVENT', label: 'Acara' },
-  { value: 'OTHER', label: 'Lainnya' },
+  { value: "SICK", label: "Sakit" },
+  { value: "FAMILY", label: "Keperluan Keluarga" },
+  { value: "EMERGENCY", label: "Darurat" },
+  { value: "EVENT", label: "Acara" },
+  { value: "OTHER", label: "Lainnya" },
 ];
 
-export type PermitStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'RETURNED';
+export type PermitStatus =
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "CANCELLED"
+  | "RETURNED";
 
-export const PERMIT_STATUSES: { value: PermitStatus; label: string; color: string }[] = [
-  { value: 'PENDING', label: 'Menunggu', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'APPROVED', label: 'Disetujui', color: 'bg-green-100 text-green-800' },
-  { value: 'REJECTED', label: 'Ditolak', color: 'bg-red-100 text-red-800' },
-  { value: 'CANCELLED', label: 'Dibatalkan', color: 'bg-gray-100 text-gray-800' },
-  { value: 'RETURNED', label: 'Sudah Kembali', color: 'bg-blue-100 text-blue-800' },
+export const PERMIT_STATUSES: {
+  value: PermitStatus;
+  label: string;
+  color: string;
+}[] = [
+  {
+    value: "PENDING",
+    label: "Menunggu",
+    color: "bg-yellow-100 text-yellow-800",
+  },
+  {
+    value: "APPROVED",
+    label: "Disetujui",
+    color: "bg-green-100 text-green-800",
+  },
+  { value: "REJECTED", label: "Ditolak", color: "bg-red-100 text-red-800" },
+  {
+    value: "CANCELLED",
+    label: "Dibatalkan",
+    color: "bg-gray-100 text-gray-800",
+  },
+  {
+    value: "RETURNED",
+    label: "Sudah Kembali",
+    color: "bg-blue-100 text-blue-800",
+  },
 ];
 
 export interface PermitParams {
@@ -68,9 +93,11 @@ export interface PermitParams {
 
 export function usePermits(params: PermitParams = {}) {
   return useQuery({
-    queryKey: ['permits', params],
+    queryKey: ["permits", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Permit>>('/permits', { params });
+      const response = await api.get<PaginatedResponse<Permit>>("/permits", {
+        params,
+      });
       return response.data;
     },
   });
@@ -78,7 +105,7 @@ export function usePermits(params: PermitParams = {}) {
 
 export function usePermit(id: string) {
   return useQuery({
-    queryKey: ['permits', id],
+    queryKey: ["permits", id],
     queryFn: async () => {
       const response = await api.get<ApiResponse<Permit>>(`/permits/${id}`);
       return response.data.data;
@@ -89,9 +116,11 @@ export function usePermit(id: string) {
 
 export function useStudentPermits(studentId: string) {
   return useQuery({
-    queryKey: ['students', studentId, 'permits'],
+    queryKey: ["students", studentId, "permits"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Permit[]>>(`/students/${studentId}/permits`);
+      const response = await api.get<ApiResponse<Permit[]>>(
+        `/students/${studentId}/permits`,
+      );
       return response.data.data;
     },
     enabled: !!studentId,
@@ -113,12 +142,14 @@ export function useCreatePermit() {
 
   return useMutation({
     mutationFn: async (data: CreatePermitData) => {
-      const response = await api.post<ApiResponse<Permit>>('/permits', data);
+      const response = await api.post<ApiResponse<Permit>>("/permits", data);
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['permits'] });
-      queryClient.invalidateQueries({ queryKey: ['students', variables.studentId, 'permits'] });
+      queryClient.invalidateQueries({ queryKey: ["permits"] });
+      queryClient.invalidateQueries({
+        queryKey: ["students", variables.studentId, "permits"],
+      });
     },
   });
 }
@@ -136,13 +167,22 @@ export function useUpdatePermit() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdatePermitData }) => {
-      const response = await api.put<ApiResponse<Permit>>(`/permits/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdatePermitData;
+    }) => {
+      const response = await api.put<ApiResponse<Permit>>(
+        `/permits/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['permits'] });
-      queryClient.invalidateQueries({ queryKey: ['permits', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["permits"] });
+      queryClient.invalidateQueries({ queryKey: ["permits", variables.id] });
     },
   });
 }
@@ -152,12 +192,14 @@ export function useApprovePermit() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<ApiResponse<Permit>>(`/permits/${id}/approve`);
+      const response = await api.post<ApiResponse<Permit>>(
+        `/permits/${id}/approve`,
+      );
       return response.data.data;
     },
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['permits'] });
-      queryClient.invalidateQueries({ queryKey: ['permits', id] });
+      queryClient.invalidateQueries({ queryKey: ["permits"] });
+      queryClient.invalidateQueries({ queryKey: ["permits", id] });
     },
   });
 }
@@ -167,12 +209,15 @@ export function useRejectPermit() {
 
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const response = await api.post<ApiResponse<Permit>>(`/permits/${id}/reject`, { reason });
+      const response = await api.post<ApiResponse<Permit>>(
+        `/permits/${id}/reject`,
+        { reason },
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['permits'] });
-      queryClient.invalidateQueries({ queryKey: ['permits', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["permits"] });
+      queryClient.invalidateQueries({ queryKey: ["permits", variables.id] });
     },
   });
 }
@@ -182,12 +227,14 @@ export function useMarkReturned() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<ApiResponse<Permit>>(`/permits/${id}/returned`);
+      const response = await api.post<ApiResponse<Permit>>(
+        `/permits/${id}/returned`,
+      );
       return response.data.data;
     },
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['permits'] });
-      queryClient.invalidateQueries({ queryKey: ['permits', id] });
+      queryClient.invalidateQueries({ queryKey: ["permits"] });
+      queryClient.invalidateQueries({ queryKey: ["permits", id] });
     },
   });
 }
@@ -200,7 +247,7 @@ export function useDeletePermit() {
       await api.delete(`/permits/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['permits'] });
+      queryClient.invalidateQueries({ queryKey: ["permits"] });
     },
   });
 }

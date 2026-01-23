@@ -1,15 +1,21 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -17,14 +23,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   useRegistration,
   useUpdateRegistrationStatus,
@@ -39,9 +45,9 @@ import {
   REGISTRATION_STATUS_LABELS,
   REGISTRATION_STATUS_COLORS,
   type RegistrationStatus,
-} from '@/hooks';
-import { useClasses } from '@/hooks';
-import { useDormitories, useDormitoryRooms } from '@/hooks';
+} from "@/hooks";
+import { useClasses } from "@/hooks";
+import { useDormitories, useDormitoryRooms } from "@/hooks";
 import {
   ArrowLeft,
   User,
@@ -61,11 +67,11 @@ import {
   Edit,
   Trash2,
   UserPlus,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import Link from 'next/link';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import Link from "next/link";
+import { toast } from "sonner";
 
 export default function PSBDetailPage() {
   const params = useParams();
@@ -77,11 +83,15 @@ export default function PSBDetailPage() {
   const { data: dormitories } = useDormitories();
 
   // Form states for enrollment
-  const [selectedClassId, setSelectedClassId] = useState('');
-  const [selectedDormitoryId, setSelectedDormitoryId] = useState('');
-  const [selectedRoomId, setSelectedRoomId] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState("");
+  const [selectedDormitoryId, setSelectedDormitoryId] = useState("");
+  const [selectedRoomId, setSelectedRoomId] = useState("");
 
-  const { data: rooms } = useDormitoryRooms(selectedDormitoryId && selectedDormitoryId !== 'none' ? selectedDormitoryId : '');
+  const { data: rooms } = useDormitoryRooms(
+    selectedDormitoryId && selectedDormitoryId !== "none"
+      ? selectedDormitoryId
+      : "",
+  );
 
   // Mutations
   const scheduleTestMutation = useScheduleTest();
@@ -104,13 +114,13 @@ export default function PSBDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Form states
-  const [testDate, setTestDate] = useState('');
-  const [testScore, setTestScore] = useState('');
-  const [testNotes, setTestNotes] = useState('');
-  const [interviewDate, setInterviewDate] = useState('');
-  const [interviewScore, setInterviewScore] = useState('');
-  const [interviewNotes, setInterviewNotes] = useState('');
-  const [rejectReason, setRejectReason] = useState('');
+  const [testDate, setTestDate] = useState("");
+  const [testScore, setTestScore] = useState("");
+  const [testNotes, setTestNotes] = useState("");
+  const [interviewDate, setInterviewDate] = useState("");
+  const [interviewScore, setInterviewScore] = useState("");
+  const [interviewNotes, setInterviewNotes] = useState("");
+  const [rejectReason, setRejectReason] = useState("");
 
   if (isLoading) {
     return (
@@ -126,7 +136,9 @@ export default function PSBDetailPage() {
     return (
       <MainLayout>
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Data pendaftaran tidak ditemukan</p>
+          <p className="text-muted-foreground">
+            Data pendaftaran tidak ditemukan
+          </p>
           <Button variant="link" asChild>
             <Link href="/psb">Kembali ke daftar</Link>
           </Button>
@@ -142,12 +154,12 @@ export default function PSBDetailPage() {
         testDate,
         notes: testNotes,
       });
-      toast.success('Jadwal tes berhasil disimpan');
+      toast.success("Jadwal tes berhasil disimpan");
       setScheduleTestOpen(false);
-      setTestDate('');
-      setTestNotes('');
+      setTestDate("");
+      setTestNotes("");
     } catch {
-      toast.error('Gagal menyimpan jadwal tes');
+      toast.error("Gagal menyimpan jadwal tes");
     }
   };
 
@@ -158,12 +170,12 @@ export default function PSBDetailPage() {
         score: Number(testScore),
         notes: testNotes,
       });
-      toast.success('Hasil tes berhasil disimpan');
+      toast.success("Hasil tes berhasil disimpan");
       setRecordTestOpen(false);
-      setTestScore('');
-      setTestNotes('');
+      setTestScore("");
+      setTestNotes("");
     } catch {
-      toast.error('Gagal menyimpan hasil tes');
+      toast.error("Gagal menyimpan hasil tes");
     }
   };
 
@@ -174,12 +186,12 @@ export default function PSBDetailPage() {
         interviewDate,
         notes: interviewNotes,
       });
-      toast.success('Jadwal wawancara berhasil disimpan');
+      toast.success("Jadwal wawancara berhasil disimpan");
       setScheduleInterviewOpen(false);
-      setInterviewDate('');
-      setInterviewNotes('');
+      setInterviewDate("");
+      setInterviewNotes("");
     } catch {
-      toast.error('Gagal menyimpan jadwal wawancara');
+      toast.error("Gagal menyimpan jadwal wawancara");
     }
   };
 
@@ -190,33 +202,33 @@ export default function PSBDetailPage() {
         score: Number(interviewScore),
         notes: interviewNotes,
       });
-      toast.success('Hasil wawancara berhasil disimpan');
+      toast.success("Hasil wawancara berhasil disimpan");
       setRecordInterviewOpen(false);
-      setInterviewScore('');
-      setInterviewNotes('');
+      setInterviewScore("");
+      setInterviewNotes("");
     } catch {
-      toast.error('Gagal menyimpan hasil wawancara');
+      toast.error("Gagal menyimpan hasil wawancara");
     }
   };
 
   const handleAccept = async () => {
     try {
       await acceptMutation.mutateAsync({ id });
-      toast.success('Pendaftar diterima');
+      toast.success("Pendaftar diterima");
       setAcceptOpen(false);
     } catch {
-      toast.error('Gagal menerima pendaftar');
+      toast.error("Gagal menerima pendaftar");
     }
   };
 
   const handleReject = async () => {
     try {
       await rejectMutation.mutateAsync({ id, reason: rejectReason });
-      toast.success('Pendaftar ditolak');
+      toast.success("Pendaftar ditolak");
       setRejectOpen(false);
-      setRejectReason('');
+      setRejectReason("");
     } catch {
-      toast.error('Gagal menolak pendaftar');
+      toast.error("Gagal menolak pendaftar");
     }
   };
 
@@ -227,20 +239,20 @@ export default function PSBDetailPage() {
         classId: selectedClassId,
         roomId: selectedRoomId || undefined,
       });
-      toast.success('Pendaftar berhasil didaftarkan sebagai santri');
+      toast.success("Pendaftar berhasil didaftarkan sebagai santri");
       setEnrollOpen(false);
     } catch {
-      toast.error('Gagal mendaftarkan santri');
+      toast.error("Gagal mendaftarkan santri");
     }
   };
 
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(id);
-      toast.success('Data pendaftaran berhasil dihapus');
-      router.push('/psb');
+      toast.success("Data pendaftaran berhasil dihapus");
+      router.push("/psb");
     } catch {
-      toast.error('Gagal menghapus data');
+      toast.error("Gagal menghapus data");
     }
   };
 
@@ -250,12 +262,14 @@ export default function PSBDetailPage() {
     </Badge>
   );
 
-  const canScheduleTest = ['SUBMITTED', 'DOCUMENT_REVIEW'].includes(registration.status);
-  const canRecordTest = registration.status === 'TEST_SCHEDULED';
-  const canScheduleInterview = registration.status === 'TEST_COMPLETED';
-  const canRecordInterview = registration.status === 'INTERVIEW_SCHEDULED';
-  const canDecide = registration.status === 'INTERVIEW_COMPLETED';
-  const canEnroll = registration.status === 'ACCEPTED';
+  const canScheduleTest = ["SUBMITTED", "DOCUMENT_REVIEW"].includes(
+    registration.status,
+  );
+  const canRecordTest = registration.status === "TEST_SCHEDULED";
+  const canScheduleInterview = registration.status === "TEST_COMPLETED";
+  const canRecordInterview = registration.status === "INTERVIEW_SCHEDULED";
+  const canDecide = registration.status === "INTERVIEW_COMPLETED";
+  const canEnroll = registration.status === "ACCEPTED";
 
   return (
     <MainLayout>
@@ -326,7 +340,10 @@ export default function PSBDetailPage() {
                     <CheckCircle className="mr-2 h-4 w-4" />
                     Terima
                   </Button>
-                  <Button variant="destructive" onClick={() => setRejectOpen(true)}>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setRejectOpen(true)}
+                  >
                     <XCircle className="mr-2 h-4 w-4" />
                     Tolak
                   </Button>
@@ -377,31 +394,41 @@ export default function PSBDetailPage() {
                   <p className="font-medium">{registration.fullName}</p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground">Nama Panggilan</Label>
-                  <p className="font-medium">{registration.nickname || '-'}</p>
+                  <Label className="text-muted-foreground">
+                    Nama Panggilan
+                  </Label>
+                  <p className="font-medium">{registration.nickname || "-"}</p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Jenis Kelamin</Label>
                   <p className="font-medium">
-                    {registration.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}
+                    {registration.gender === "MALE" ? "Laki-laki" : "Perempuan"}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground">Tempat, Tanggal Lahir</Label>
+                  <Label className="text-muted-foreground">
+                    Tempat, Tanggal Lahir
+                  </Label>
                   <p className="font-medium">
-                    {registration.birthPlace},{' '}
-                    {format(new Date(registration.birthDate), 'd MMMM yyyy', {
+                    {registration.birthPlace},{" "}
+                    {format(new Date(registration.birthDate), "d MMMM yyyy", {
                       locale: idLocale,
                     })}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">NIK</Label>
-                  <p className="font-medium font-mono">{registration.nationalId || '-'}</p>
+                  <p className="font-medium font-mono">
+                    {registration.nationalId || "-"}
+                  </p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground">No. Kartu Keluarga</Label>
-                  <p className="font-medium font-mono">{registration.familyCardNumber || '-'}</p>
+                  <Label className="text-muted-foreground">
+                    No. Kartu Keluarga
+                  </Label>
+                  <p className="font-medium font-mono">
+                    {registration.familyCardNumber || "-"}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -412,11 +439,15 @@ export default function PSBDetailPage() {
               </CardHeader>
               <CardContent className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-1 md:col-span-2">
-                  <Label className="text-muted-foreground">Alamat Lengkap</Label>
+                  <Label className="text-muted-foreground">
+                    Alamat Lengkap
+                  </Label>
                   <p className="font-medium">{registration.address}</p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground">Desa/Kelurahan</Label>
+                  <Label className="text-muted-foreground">
+                    Desa/Kelurahan
+                  </Label>
                   <p className="font-medium">{registration.village}</p>
                 </div>
                 <div className="space-y-1">
@@ -424,7 +455,9 @@ export default function PSBDetailPage() {
                   <p className="font-medium">{registration.district}</p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground">Kota/Kabupaten</Label>
+                  <Label className="text-muted-foreground">
+                    Kota/Kabupaten
+                  </Label>
                   <p className="font-medium">{registration.city}</p>
                 </div>
                 <div className="space-y-1">
@@ -433,7 +466,9 @@ export default function PSBDetailPage() {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Kode Pos</Label>
-                  <p className="font-medium">{registration.postalCode || '-'}</p>
+                  <p className="font-medium">
+                    {registration.postalCode || "-"}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -451,15 +486,21 @@ export default function PSBDetailPage() {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Pekerjaan</Label>
-                  <p className="font-medium">{registration.fatherOccupation || '-'}</p>
+                  <p className="font-medium">
+                    {registration.fatherOccupation || "-"}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">No. Telepon</Label>
-                  <p className="font-medium">{registration.fatherPhone || '-'}</p>
+                  <p className="font-medium">
+                    {registration.fatherPhone || "-"}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Email</Label>
-                  <p className="font-medium">{registration.fatherEmail || '-'}</p>
+                  <p className="font-medium">
+                    {registration.fatherEmail || "-"}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -475,11 +516,15 @@ export default function PSBDetailPage() {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Pekerjaan</Label>
-                  <p className="font-medium">{registration.motherOccupation || '-'}</p>
+                  <p className="font-medium">
+                    {registration.motherOccupation || "-"}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">No. Telepon</Label>
-                  <p className="font-medium">{registration.motherPhone || '-'}</p>
+                  <p className="font-medium">
+                    {registration.motherPhone || "-"}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -493,15 +538,23 @@ export default function PSBDetailPage() {
               <CardContent className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Asal Sekolah</Label>
-                  <p className="font-medium">{registration.previousSchool || '-'}</p>
+                  <p className="font-medium">
+                    {registration.previousSchool || "-"}
+                  </p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground">Alamat Sekolah</Label>
-                  <p className="font-medium">{registration.previousSchoolAddress || '-'}</p>
+                  <Label className="text-muted-foreground">
+                    Alamat Sekolah
+                  </Label>
+                  <p className="font-medium">
+                    {registration.previousSchoolAddress || "-"}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Tahun Lulus</Label>
-                  <p className="font-medium">{registration.graduationYear || '-'}</p>
+                  <p className="font-medium">
+                    {registration.graduationYear || "-"}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -512,13 +565,19 @@ export default function PSBDetailPage() {
               </CardHeader>
               <CardContent className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground">Kemampuan Baca</Label>
-                  <p className="font-medium">{registration.quranAbility || '-'}</p>
+                  <Label className="text-muted-foreground">
+                    Kemampuan Baca
+                  </Label>
+                  <p className="font-medium">
+                    {registration.quranAbility || "-"}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground">Hafalan (Juz)</Label>
                   <p className="font-medium">
-                    {registration.memorizedJuz ? `${registration.memorizedJuz} Juz` : '-'}
+                    {registration.memorizedJuz
+                      ? `${registration.memorizedJuz} Juz`
+                      : "-"}
                   </p>
                 </div>
               </CardContent>
@@ -529,14 +588,13 @@ export default function PSBDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Dokumen Persyaratan</CardTitle>
-                <CardDescription>Dokumen yang diunggah oleh pendaftar</CardDescription>
+                <CardDescription>
+                  Dokumen yang diunggah oleh pendaftar
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  <DocumentItem
-                    label="Pas Foto"
-                    url={registration.photoUrl}
-                  />
+                  <DocumentItem label="Pas Foto" url={registration.photoUrl} />
                   <DocumentItem
                     label="Akta Kelahiran"
                     url={registration.birthCertificateUrl}
@@ -569,16 +627,20 @@ export default function PSBDetailPage() {
                     <Label className="text-muted-foreground">Tanggal Tes</Label>
                     <p className="font-medium">
                       {registration.testDate
-                        ? format(new Date(registration.testDate), 'd MMMM yyyy, HH:mm', {
-                            locale: idLocale,
-                          })
-                        : '-'}
+                        ? format(
+                            new Date(registration.testDate),
+                            "d MMMM yyyy, HH:mm",
+                            {
+                              locale: idLocale,
+                            },
+                          )
+                        : "-"}
                     </p>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-muted-foreground">Nilai Tes</Label>
                     <p className="text-2xl font-bold">
-                      {registration.testScore ?? '-'}
+                      {registration.testScore ?? "-"}
                     </p>
                   </div>
                   {registration.testNotes && (
@@ -596,19 +658,27 @@ export default function PSBDetailPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-1">
-                    <Label className="text-muted-foreground">Tanggal Wawancara</Label>
+                    <Label className="text-muted-foreground">
+                      Tanggal Wawancara
+                    </Label>
                     <p className="font-medium">
                       {registration.interviewDate
-                        ? format(new Date(registration.interviewDate), 'd MMMM yyyy, HH:mm', {
-                            locale: idLocale,
-                          })
-                        : '-'}
+                        ? format(
+                            new Date(registration.interviewDate),
+                            "d MMMM yyyy, HH:mm",
+                            {
+                              locale: idLocale,
+                            },
+                          )
+                        : "-"}
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-muted-foreground">Nilai Wawancara</Label>
+                    <Label className="text-muted-foreground">
+                      Nilai Wawancara
+                    </Label>
                     <p className="text-2xl font-bold">
-                      {registration.interviewScore ?? '-'}
+                      {registration.interviewScore ?? "-"}
                     </p>
                   </div>
                   {registration.interviewNotes && (
@@ -621,37 +691,45 @@ export default function PSBDetailPage() {
               </Card>
             </div>
 
-            {registration.status === 'ACCEPTED' && (
+            {registration.status === "ACCEPTED" && (
               <Card className="border-green-200 bg-green-50">
                 <CardHeader>
                   <CardTitle className="text-green-700">Diterima</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-green-600">
-                    Diterima pada:{' '}
+                    Diterima pada:{" "}
                     {registration.acceptedAt
-                      ? format(new Date(registration.acceptedAt), 'd MMMM yyyy', {
-                          locale: idLocale,
-                        })
-                      : '-'}
+                      ? format(
+                          new Date(registration.acceptedAt),
+                          "d MMMM yyyy",
+                          {
+                            locale: idLocale,
+                          },
+                        )
+                      : "-"}
                   </p>
                 </CardContent>
               </Card>
             )}
 
-            {registration.status === 'REJECTED' && (
+            {registration.status === "REJECTED" && (
               <Card className="border-red-200 bg-red-50">
                 <CardHeader>
                   <CardTitle className="text-red-700">Ditolak</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <p className="text-red-600">
-                    Ditolak pada:{' '}
+                    Ditolak pada:{" "}
                     {registration.rejectedAt
-                      ? format(new Date(registration.rejectedAt), 'd MMMM yyyy', {
-                          locale: idLocale,
-                        })
-                      : '-'}
+                      ? format(
+                          new Date(registration.rejectedAt),
+                          "d MMMM yyyy",
+                          {
+                            locale: idLocale,
+                          },
+                        )
+                      : "-"}
                   </p>
                   {registration.rejectionReason && (
                     <p className="text-sm text-red-600">
@@ -662,22 +740,32 @@ export default function PSBDetailPage() {
               </Card>
             )}
 
-            {registration.status === 'ENROLLED' && (
+            {registration.status === "ENROLLED" && (
               <Card className="border-emerald-200 bg-emerald-50">
                 <CardHeader>
-                  <CardTitle className="text-emerald-700">Terdaftar sebagai Santri</CardTitle>
+                  <CardTitle className="text-emerald-700">
+                    Terdaftar sebagai Santri
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-emerald-600">
-                    Terdaftar pada:{' '}
+                    Terdaftar pada:{" "}
                     {registration.enrolledAt
-                      ? format(new Date(registration.enrolledAt), 'd MMMM yyyy', {
-                          locale: idLocale,
-                        })
-                      : '-'}
+                      ? format(
+                          new Date(registration.enrolledAt),
+                          "d MMMM yyyy",
+                          {
+                            locale: idLocale,
+                          },
+                        )
+                      : "-"}
                   </p>
                   {registration.studentId && (
-                    <Button variant="link" className="p-0 text-emerald-700" asChild>
+                    <Button
+                      variant="link"
+                      className="p-0 text-emerald-700"
+                      asChild
+                    >
                       <Link href={`/students/${registration.studentId}`}>
                         Lihat Data Santri →
                       </Link>
@@ -718,7 +806,10 @@ export default function PSBDetailPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setScheduleTestOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setScheduleTestOpen(false)}
+            >
               Batal
             </Button>
             <Button
@@ -739,7 +830,9 @@ export default function PSBDetailPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Input Hasil Tes</DialogTitle>
-            <DialogDescription>Masukkan nilai hasil tes pendaftar</DialogDescription>
+            <DialogDescription>
+              Masukkan nilai hasil tes pendaftar
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -779,7 +872,10 @@ export default function PSBDetailPage() {
       </Dialog>
 
       {/* Schedule Interview Dialog */}
-      <Dialog open={scheduleInterviewOpen} onOpenChange={setScheduleInterviewOpen}>
+      <Dialog
+        open={scheduleInterviewOpen}
+        onOpenChange={setScheduleInterviewOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Jadwalkan Wawancara</DialogTitle>
@@ -806,7 +902,10 @@ export default function PSBDetailPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setScheduleInterviewOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setScheduleInterviewOpen(false)}
+            >
               Batal
             </Button>
             <Button
@@ -827,7 +926,9 @@ export default function PSBDetailPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Input Hasil Wawancara</DialogTitle>
-            <DialogDescription>Masukkan nilai hasil wawancara pendaftar</DialogDescription>
+            <DialogDescription>
+              Masukkan nilai hasil wawancara pendaftar
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -850,7 +951,10 @@ export default function PSBDetailPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRecordInterviewOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setRecordInterviewOpen(false)}
+            >
               Batal
             </Button>
             <Button
@@ -877,11 +981,12 @@ export default function PSBDetailPage() {
           </DialogHeader>
           <div className="py-4">
             <p>
-              <strong>{registration.fullName}</strong> akan diterima sebagai calon santri.
+              <strong>{registration.fullName}</strong> akan diterima sebagai
+              calon santri.
             </p>
             <p className="text-sm text-muted-foreground mt-2">
-              Nilai Tes: {registration.testScore ?? '-'} | Nilai Wawancara:{' '}
-              {registration.interviewScore ?? '-'}
+              Nilai Tes: {registration.testScore ?? "-"} | Nilai Wawancara:{" "}
+              {registration.interviewScore ?? "-"}
             </p>
           </div>
           <DialogFooter>
@@ -947,7 +1052,10 @@ export default function PSBDetailPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Kelas</Label>
-              <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+              <Select
+                value={selectedClassId}
+                onValueChange={setSelectedClassId}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih kelas" />
                 </SelectTrigger>
@@ -962,10 +1070,13 @@ export default function PSBDetailPage() {
             </div>
             <div className="space-y-2">
               <Label>Asrama (Opsional)</Label>
-              <Select value={selectedDormitoryId} onValueChange={(val) => {
-                setSelectedDormitoryId(val);
-                setSelectedRoomId(''); // Reset room when dormitory changes
-              }}>
+              <Select
+                value={selectedDormitoryId}
+                onValueChange={(val) => {
+                  setSelectedDormitoryId(val);
+                  setSelectedRoomId(""); // Reset room when dormitory changes
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih asrama" />
                 </SelectTrigger>
@@ -979,21 +1090,27 @@ export default function PSBDetailPage() {
                 </SelectContent>
               </Select>
             </div>
-            
-            {selectedDormitoryId && selectedDormitoryId !== 'none' && (
+
+            {selectedDormitoryId && selectedDormitoryId !== "none" && (
               <div className="space-y-2">
                 <Label>Kamar</Label>
-                <Select value={selectedRoomId} onValueChange={setSelectedRoomId}>
+                <Select
+                  value={selectedRoomId}
+                  onValueChange={setSelectedRoomId}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih kamar" />
                   </SelectTrigger>
                   <SelectContent>
                     {!rooms?.length && (
-                         <SelectItem value="empty" disabled>Tidak ada kamar tersedia</SelectItem>
+                      <SelectItem value="empty" disabled>
+                        Tidak ada kamar tersedia
+                      </SelectItem>
                     )}
                     {rooms?.map((room) => (
                       <SelectItem key={room.id} value={room.id}>
-                        {room.name} (Lantai {room.floor}) - Sisa {room.capacity - (room.currentOccupancy || 0)}
+                        {room.name} (Lantai {room.floor}) - Sisa{" "}
+                        {room.capacity - (room.currentOccupancy || 0)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1024,8 +1141,8 @@ export default function PSBDetailPage() {
           <DialogHeader>
             <DialogTitle>Hapus Pendaftaran</DialogTitle>
             <DialogDescription>
-              Apakah Anda yakin ingin menghapus data pendaftaran ini? Tindakan ini
-              tidak dapat dibatalkan.
+              Apakah Anda yakin ingin menghapus data pendaftaran ini? Tindakan
+              ini tidak dapat dibatalkan.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

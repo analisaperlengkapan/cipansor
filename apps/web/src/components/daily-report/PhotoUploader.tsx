@@ -1,26 +1,22 @@
-'use client';
+"use client";
 
-import { useState, useRef, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
-import { 
-  Camera, 
-  Upload, 
-  X, 
+import { useState, useRef, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Camera,
+  Upload,
+  X,
   Image as ImageIcon,
   GripVertical,
   ZoomIn,
   RotateCw,
-  Trash2
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  Trash2,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 export interface PhotoItem {
   id: string;
@@ -49,7 +45,7 @@ export function PhotoUploader({
   readOnly = false,
   className,
   showCaption = true,
-  acceptedTypes = ['image/jpeg', 'image/png', 'image/webp'],
+  acceptedTypes = ["image/jpeg", "image/png", "image/webp"],
 }: PhotoUploaderProps) {
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +54,7 @@ export function PhotoUploader({
 
   const validateFile = (file: File): string | null => {
     if (!acceptedTypes.includes(file.type)) {
-      return 'Format file tidak didukung. Gunakan JPG, PNG, atau WebP.';
+      return "Format file tidak didukung. Gunakan JPG, PNG, atau WebP.";
     }
     if (file.size > maxSizeMB * 1024 * 1024) {
       return `Ukuran file maksimal ${maxSizeMB}MB`;
@@ -66,47 +62,53 @@ export function PhotoUploader({
     return null;
   };
 
-  const handleFiles = useCallback((files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    
-    setError(null);
-    const remainingSlots = maxPhotos - photos.length;
-    
-    if (remainingSlots <= 0) {
-      setError(`Maksimal ${maxPhotos} foto`);
-      return;
-    }
+  const handleFiles = useCallback(
+    (files: FileList | null) => {
+      if (!files || files.length === 0) return;
 
-    const newPhotos: PhotoItem[] = [];
-    const filesToProcess = Array.from(files).slice(0, remainingSlots);
+      setError(null);
+      const remainingSlots = maxPhotos - photos.length;
 
-    for (const file of filesToProcess) {
-      const validationError = validateFile(file);
-      if (validationError) {
-        setError(validationError);
-        continue;
+      if (remainingSlots <= 0) {
+        setError(`Maksimal ${maxPhotos} foto`);
+        return;
       }
 
-      const url = URL.createObjectURL(file);
-      newPhotos.push({
-        id: crypto.randomUUID(),
-        file,
-        url,
-        caption: '',
-        order: photos.length + newPhotos.length,
-      });
-    }
+      const newPhotos: PhotoItem[] = [];
+      const filesToProcess = Array.from(files).slice(0, remainingSlots);
 
-    if (newPhotos.length > 0) {
-      onChange([...photos, ...newPhotos]);
-    }
-  }, [photos, maxPhotos, onChange, acceptedTypes, maxSizeMB]);
+      for (const file of filesToProcess) {
+        const validationError = validateFile(file);
+        if (validationError) {
+          setError(validationError);
+          continue;
+        }
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    handleFiles(e.dataTransfer.files);
-  }, [handleFiles]);
+        const url = URL.createObjectURL(file);
+        newPhotos.push({
+          id: crypto.randomUUID(),
+          file,
+          url,
+          caption: "",
+          order: photos.length + newPhotos.length,
+        });
+      }
+
+      if (newPhotos.length > 0) {
+        onChange([...photos, ...newPhotos]);
+      }
+    },
+    [photos, maxPhotos, onChange, acceptedTypes, maxSizeMB],
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      handleFiles(e.dataTransfer.files);
+    },
+    [handleFiles],
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -119,26 +121,31 @@ export function PhotoUploader({
   }, []);
 
   const removePhoto = (id: string) => {
-    const photo = photos.find(p => p.id === id);
-    if (photo?.url.startsWith('blob:')) {
+    const photo = photos.find((p) => p.id === id);
+    if (photo?.url.startsWith("blob:")) {
       URL.revokeObjectURL(photo.url);
     }
-    onChange(photos.filter(p => p.id !== id).map((p, i) => ({ ...p, order: i })));
+    onChange(
+      photos.filter((p) => p.id !== id).map((p, i) => ({ ...p, order: i })),
+    );
   };
 
   const updateCaption = (id: string, caption: string) => {
-    onChange(photos.map(p => p.id === id ? { ...p, caption } : p));
+    onChange(photos.map((p) => (p.id === id ? { ...p, caption } : p)));
   };
 
-  const movePhoto = (id: string, direction: 'up' | 'down') => {
-    const index = photos.findIndex(p => p.id === id);
+  const movePhoto = (id: string, direction: "up" | "down") => {
+    const index = photos.findIndex((p) => p.id === id);
     if (index === -1) return;
-    
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
+
+    const newIndex = direction === "up" ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= photos.length) return;
 
     const newPhotos = [...photos];
-    [newPhotos[index], newPhotos[newIndex]] = [newPhotos[newIndex], newPhotos[index]];
+    [newPhotos[index], newPhotos[newIndex]] = [
+      newPhotos[newIndex],
+      newPhotos[index],
+    ];
     onChange(newPhotos.map((p, i) => ({ ...p, order: i })));
   };
 
@@ -156,7 +163,9 @@ export function PhotoUploader({
   if (readOnly) {
     if (photos.length === 0) {
       return (
-        <div className={cn("text-center py-6 text-muted-foreground", className)}>
+        <div
+          className={cn("text-center py-6 text-muted-foreground", className)}
+        >
           <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
           <p>Tidak ada foto</p>
         </div>
@@ -176,7 +185,7 @@ export function PhotoUploader({
                 <div className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group">
                   <img
                     src={photo.url}
-                    alt={photo.caption || 'Foto kegiatan'}
+                    alt={photo.caption || "Foto kegiatan"}
                     className="w-full h-full object-cover transition-transform group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -184,7 +193,9 @@ export function PhotoUploader({
                   </div>
                   {photo.caption && (
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-                      <p className="text-xs text-white truncate">{photo.caption}</p>
+                      <p className="text-xs text-white truncate">
+                        {photo.caption}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -192,7 +203,7 @@ export function PhotoUploader({
               <DialogContent className="max-w-3xl p-0">
                 <img
                   src={photo.url}
-                  alt={photo.caption || 'Foto kegiatan'}
+                  alt={photo.caption || "Foto kegiatan"}
                   className="w-full h-auto max-h-[80vh] object-contain"
                 />
                 {photo.caption && (
@@ -222,16 +233,16 @@ export function PhotoUploader({
       </div>
 
       {/* Error message */}
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
-      )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       {/* Upload area */}
       {photos.length < maxPhotos && (
         <div
           className={cn(
             "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer",
-            dragOver ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"
+            dragOver
+              ? "border-primary bg-primary/5"
+              : "border-muted-foreground/25 hover:border-primary/50",
           )}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -241,7 +252,7 @@ export function PhotoUploader({
           <input
             ref={fileInputRef}
             type="file"
-            accept={acceptedTypes.join(',')}
+            accept={acceptedTypes.join(",")}
             multiple
             className="hidden"
             onChange={(e) => handleFiles(e.target.files)}
@@ -287,7 +298,7 @@ export function PhotoUploader({
               {showCaption && (
                 <CardContent className="p-2">
                   <Input
-                    value={photo.caption || ''}
+                    value={photo.caption || ""}
                     onChange={(e) => updateCaption(photo.id, e.target.value)}
                     placeholder="Keterangan foto..."
                     className="h-8 text-sm"
@@ -307,9 +318,9 @@ export function PhotoUploader({
           className="w-full sm:hidden"
           onClick={() => {
             if (fileInputRef.current) {
-              fileInputRef.current.setAttribute('capture', 'environment');
+              fileInputRef.current.setAttribute("capture", "environment");
               fileInputRef.current.click();
-              fileInputRef.current.removeAttribute('capture');
+              fileInputRef.current.removeAttribute("capture");
             }
           }}
         >

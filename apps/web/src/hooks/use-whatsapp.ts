@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
 
 // ============================================
 // TYPES
@@ -10,7 +10,7 @@ import { apiClient } from '@/lib/api-client';
 export interface WhatsAppMessage {
   to: string;
   message: string;
-  type: 'text' | 'template';
+  type: "text" | "template";
   templateName?: string;
   templateParams?: string[];
 }
@@ -35,7 +35,7 @@ export interface WhatsAppStatus {
 export interface NotificationPreference {
   id: string;
   userId: string;
-  channel: 'WHATSAPP' | 'EMAIL' | 'PUSH' | 'SMS';
+  channel: "WHATSAPP" | "EMAIL" | "PUSH" | "SMS";
   category: string;
   enabled: boolean;
 }
@@ -45,9 +45,9 @@ export interface NotificationPreference {
 // ============================================
 
 export const whatsappKeys = {
-  all: ['whatsapp'] as const,
-  status: () => [...whatsappKeys.all, 'status'] as const,
-  preferences: () => [...whatsappKeys.all, 'preferences'] as const,
+  all: ["whatsapp"] as const,
+  status: () => [...whatsappKeys.all, "status"] as const,
+  preferences: () => [...whatsappKeys.all, "preferences"] as const,
 };
 
 // ============================================
@@ -59,7 +59,7 @@ export function useWhatsAppStatus() {
   return useQuery({
     queryKey: whatsappKeys.status(),
     queryFn: async () => {
-      const response = await apiClient.get('/notifications/whatsapp/status');
+      const response = await apiClient.get("/notifications/whatsapp/status");
       return response.data as WhatsAppStatus;
     },
   });
@@ -69,7 +69,10 @@ export function useWhatsAppStatus() {
 export function useSendWhatsApp() {
   return useMutation({
     mutationFn: async (data: WhatsAppMessage) => {
-      const response = await apiClient.post('/notifications/whatsapp/send', data);
+      const response = await apiClient.post(
+        "/notifications/whatsapp/send",
+        data,
+      );
       return response.data;
     },
   });
@@ -79,7 +82,10 @@ export function useSendWhatsApp() {
 export function useBroadcastWhatsApp() {
   return useMutation({
     mutationFn: async (data: WhatsAppBroadcast) => {
-      const response = await apiClient.post('/notifications/whatsapp/broadcast', data);
+      const response = await apiClient.post(
+        "/notifications/whatsapp/broadcast",
+        data,
+      );
       return response.data;
     },
   });
@@ -90,7 +96,7 @@ export function useNotificationPreferences() {
   return useQuery({
     queryKey: whatsappKeys.preferences(),
     queryFn: async () => {
-      const response = await apiClient.get('/notifications/preferences');
+      const response = await apiClient.get("/notifications/preferences");
       return response.data.data as NotificationPreference[];
     },
   });
@@ -102,7 +108,10 @@ export function useUpdateNotificationPreference() {
 
   return useMutation({
     mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
-      const response = await apiClient.patch(`/notifications/preferences/${id}`, { enabled });
+      const response = await apiClient.patch(
+        `/notifications/preferences/${id}`,
+        { enabled },
+      );
       return response.data;
     },
     onSuccess: () => {
@@ -115,7 +124,9 @@ export function useUpdateNotificationPreference() {
 export function useSendDailyReportWhatsApp() {
   return useMutation({
     mutationFn: async (reportId: string) => {
-      const response = await apiClient.post(`/daily-report/${reportId}/send-whatsapp`);
+      const response = await apiClient.post(
+        `/daily-report/${reportId}/send-whatsapp`,
+      );
       return response.data;
     },
   });
@@ -125,7 +136,9 @@ export function useSendDailyReportWhatsApp() {
 export function useSendTahfidzWhatsApp() {
   return useMutation({
     mutationFn: async (progressId: string) => {
-      const response = await apiClient.post(`/tahfidz/${progressId}/send-whatsapp`);
+      const response = await apiClient.post(
+        `/tahfidz/${progressId}/send-whatsapp`,
+      );
       return response.data;
     },
   });

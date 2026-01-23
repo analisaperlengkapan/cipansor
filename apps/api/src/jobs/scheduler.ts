@@ -109,7 +109,9 @@ export function stopScheduler(): void {
 /**
  * Run a specific job manually (for testing or manual trigger)
  */
-export async function runJob(jobName: 'dashboard-metrics' | 'daily-snapshot' | 'weekly-summary' | 'cleanup'): Promise<void> {
+export async function runJob(
+  jobName: 'dashboard-metrics' | 'daily-snapshot' | 'weekly-summary' | 'cleanup'
+): Promise<void> {
   logger.info(`[Scheduler] Manually running job: ${jobName}`);
 
   switch (jobName) {

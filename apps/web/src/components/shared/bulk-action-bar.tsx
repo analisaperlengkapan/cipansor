@@ -3,11 +3,11 @@
  * Displays actions for selected items
  */
 
-'use client';
+"use client";
 
-import { X, Trash2, Download, CheckSquare } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { X, Trash2, Download, CheckSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface BulkActionBarProps {
   selectedCount: number;
@@ -20,7 +20,7 @@ interface BulkActionBarProps {
     label: string;
     icon?: React.ReactNode;
     onClick: () => void;
-    variant?: 'default' | 'destructive' | 'outline';
+    variant?: "default" | "destructive" | "outline";
   }>;
   className?: string;
 }
@@ -40,8 +40,8 @@ export function BulkActionBar({
   return (
     <div
       className={cn(
-        'flex items-center justify-between gap-4 rounded-lg border bg-muted/50 p-3',
-        className
+        "flex items-center justify-between gap-4 rounded-lg border bg-muted/50 p-3",
+        className,
       )}
     >
       <div className="flex items-center gap-2">
@@ -69,7 +69,7 @@ export function BulkActionBar({
         {actions?.map((action, index) => (
           <Button
             key={index}
-            variant={action.variant || 'outline'}
+            variant={action.variant || "outline"}
             size="sm"
             onClick={action.onClick}
           >

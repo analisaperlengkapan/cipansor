@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -20,7 +20,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -28,29 +28,24 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
+} from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DollarSign,
   Users,
@@ -77,10 +72,10 @@ import {
   Play,
   Ban,
   Banknote,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+} from "lucide-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   usePayrollPeriods,
   usePayrollSlips,
@@ -108,39 +103,46 @@ import {
   type EmployeeSalary,
   type SalaryComponentType,
   type PayrollStatus,
-} from '@/hooks/use-payroll';
-import { useAuth } from '@/hooks/use-auth';
-import { useUnits } from '@/hooks/use-units';
-import { useHr } from '@/hooks/use-hr';
+} from "@/hooks/use-payroll";
+import { useAuth } from "@/hooks/use-auth";
+import { useUnits } from "@/hooks/use-units";
+import { useHr } from "@/hooks/use-hr";
 
 export default function PayrollPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('periods');
+  const [activeTab, setActiveTab] = useState("periods");
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
   const [showCreatePeriodDialog, setShowCreatePeriodDialog] = useState(false);
-  const [showCreateComponentDialog, setShowCreateComponentDialog] = useState(false);
-  const [showEmployeeSalaryDialog, setShowEmployeeSalaryDialog] = useState(false);
+  const [showCreateComponentDialog, setShowCreateComponentDialog] =
+    useState(false);
+  const [showEmployeeSalaryDialog, setShowEmployeeSalaryDialog] =
+    useState(false);
   const [showSlipDetailDialog, setShowSlipDetailDialog] = useState(false);
   const [selectedSlip, setSelectedSlip] = useState<PayrollSlip | null>(null);
   const [periodFilters, setPeriodFilters] = useState({
     year: new Date().getFullYear().toString(),
-    status: 'all',
+    status: "all",
   });
 
   // Queries
   const { data: units } = useUnits();
   const { data: periodsData, isLoading: loadingPeriods } = usePayrollPeriods({
     year: periodFilters.year,
-    status: periodFilters.status !== 'all' ? periodFilters.status as PayrollStatus : undefined,
-    limit: '20',
+    status:
+      periodFilters.status !== "all"
+        ? (periodFilters.status as PayrollStatus)
+        : undefined,
+    limit: "20",
   });
-  const { data: components, isLoading: loadingComponents } = useSalaryComponents();
-  const { data: salariesData, isLoading: loadingSalaries } = useEmployeeSalaries();
+  const { data: components, isLoading: loadingComponents } =
+    useSalaryComponents();
+  const { data: salariesData, isLoading: loadingSalaries } =
+    useEmployeeSalaries();
   const { data: slipsData, isLoading: loadingSlips } = usePayrollSlips({
     periodId: selectedPeriod || undefined,
   });
-  const { data: periodSummary } = usePayrollPeriodSummary(selectedPeriod || '');
+  const { data: periodSummary } = usePayrollPeriodSummary(selectedPeriod || "");
 
   // Mutations
   const createPeriod = useCreatePayrollPeriod();
@@ -162,28 +164,30 @@ export default function PayrollPage() {
   // Calculate stats
   const stats = {
     totalPeriods: periods.length,
-    pendingPeriods: periods.filter(p => p.status === 'DRAFT' || p.status === 'CALCULATED').length,
+    pendingPeriods: periods.filter(
+      (p) => p.status === "DRAFT" || p.status === "CALCULATED",
+    ).length,
     totalSalaries: salaries.length,
     totalComponents: components?.length || 0,
   };
 
   // Period form state
   const [periodForm, setPeriodForm] = useState({
-    unitId: user?.unitId || '',
-    name: '',
+    unitId: user?.unitId || "",
+    name: "",
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
-    startDate: '',
-    endDate: '',
-    notes: '',
+    startDate: "",
+    endDate: "",
+    notes: "",
   });
 
   // Component form state
   const [componentForm, setComponentForm] = useState({
-    code: '',
-    name: '',
-    type: 'ALLOWANCE' as SalaryComponentType,
-    description: '',
+    code: "",
+    name: "",
+    type: "ALLOWANCE" as SalaryComponentType,
+    description: "",
     defaultAmount: 0,
     isPercentage: false,
     isTaxable: true,
@@ -192,93 +196,98 @@ export default function PayrollPage() {
 
   const handleCreatePeriod = async () => {
     if (!periodForm.name || !periodForm.startDate || !periodForm.endDate) {
-      toast.error('Mohon lengkapi data periode');
+      toast.error("Mohon lengkapi data periode");
       return;
     }
 
     try {
       await createPeriod.mutateAsync(periodForm);
-      toast.success('Periode penggajian berhasil dibuat');
+      toast.success("Periode penggajian berhasil dibuat");
       setShowCreatePeriodDialog(false);
       resetPeriodForm();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal membuat periode');
+      toast.error(error.response?.data?.message || "Gagal membuat periode");
     }
   };
 
   const resetPeriodForm = () => {
     setPeriodForm({
-      unitId: user?.unitId || '',
-      name: '',
+      unitId: user?.unitId || "",
+      name: "",
       month: new Date().getMonth() + 1,
       year: new Date().getFullYear(),
-      startDate: '',
-      endDate: '',
-      notes: '',
+      startDate: "",
+      endDate: "",
+      notes: "",
     });
   };
 
   const handleGeneratePayroll = async (periodId: string) => {
     try {
       const result = await generatePayroll.mutateAsync({ periodId });
-      toast.success(`${result.created} slip gaji dibuat, ${result.updated} diperbarui`);
+      toast.success(
+        `${result.created} slip gaji dibuat, ${result.updated} diperbarui`,
+      );
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal generate slip gaji');
+      toast.error(error.response?.data?.message || "Gagal generate slip gaji");
     }
   };
 
   const handleApprovePeriod = async (periodId: string) => {
     try {
       await approvePeriod.mutateAsync({ id: periodId });
-      toast.success('Periode berhasil disetujui');
+      toast.success("Periode berhasil disetujui");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal menyetujui periode');
+      toast.error(error.response?.data?.message || "Gagal menyetujui periode");
     }
   };
 
   const handlePayPeriod = async (periodId: string) => {
     try {
-      await payPeriod.mutateAsync({ 
-        id: periodId, 
-        payDate: new Date().toISOString() 
+      await payPeriod.mutateAsync({
+        id: periodId,
+        payDate: new Date().toISOString(),
       });
-      toast.success('Periode ditandai sebagai dibayar');
+      toast.success("Periode ditandai sebagai dibayar");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal menandai pembayaran');
+      toast.error(error.response?.data?.message || "Gagal menandai pembayaran");
     }
   };
 
   const handleCancelPeriod = async (periodId: string) => {
     try {
-      await cancelPeriod.mutateAsync({ id: periodId, notes: 'Dibatalkan oleh admin' });
-      toast.success('Periode dibatalkan');
+      await cancelPeriod.mutateAsync({
+        id: periodId,
+        notes: "Dibatalkan oleh admin",
+      });
+      toast.success("Periode dibatalkan");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal membatalkan periode');
+      toast.error(error.response?.data?.message || "Gagal membatalkan periode");
     }
   };
 
   const handleCreateComponent = async () => {
     if (!componentForm.code || !componentForm.name) {
-      toast.error('Mohon lengkapi data komponen');
+      toast.error("Mohon lengkapi data komponen");
       return;
     }
 
     try {
       await createComponent.mutateAsync(componentForm);
-      toast.success('Komponen gaji berhasil dibuat');
+      toast.success("Komponen gaji berhasil dibuat");
       setShowCreateComponentDialog(false);
       setComponentForm({
-        code: '',
-        name: '',
-        type: 'ALLOWANCE',
-        description: '',
+        code: "",
+        name: "",
+        type: "ALLOWANCE",
+        description: "",
         defaultAmount: 0,
         isPercentage: false,
         isTaxable: true,
         sortOrder: 0,
       });
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal membuat komponen');
+      toast.error(error.response?.data?.message || "Gagal membuat komponen");
     }
   };
 
@@ -287,17 +296,15 @@ export default function PayrollPage() {
       const result = await seedComponents.mutateAsync();
       toast.success(`${result.created} komponen default dibuat`);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal membuat komponen default');
+      toast.error(
+        error.response?.data?.message || "Gagal membuat komponen default",
+      );
     }
   };
 
   const getStatusBadge = (status: PayrollStatus) => {
     const config = PAYROLL_STATUS_MAP[status];
-    return (
-      <Badge className={config.color}>
-        {config.label}
-      </Badge>
-    );
+    return <Badge className={config.color}>{config.label}</Badge>;
   };
 
   const viewSlipDetail = (slip: PayrollSlip) => {
@@ -316,7 +323,10 @@ export default function PayrollPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowCreateComponentDialog(true)}>
+          <Button
+            variant="outline"
+            onClick={() => setShowCreateComponentDialog(true)}
+          >
             <Settings className="mr-2 h-4 w-4" />
             Komponen
           </Button>
@@ -343,7 +353,9 @@ export default function PayrollPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Karyawan Aktif</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Karyawan Aktif
+            </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -367,12 +379,14 @@ export default function PayrollPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Gaji Bulan Ini</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Gaji Bulan Ini
+            </CardTitle>
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {periodSummary ? formatCurrency(periodSummary.totalNet) : '-'}
+              {periodSummary ? formatCurrency(periodSummary.totalNet) : "-"}
             </div>
             <p className="text-xs text-muted-foreground">
               {periodSummary?.totalEmployees || 0} karyawan
@@ -414,9 +428,11 @@ export default function PayrollPage() {
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Select 
-                    value={periodFilters.year} 
-                    onValueChange={(v) => setPeriodFilters({...periodFilters, year: v})}
+                  <Select
+                    value={periodFilters.year}
+                    onValueChange={(v) =>
+                      setPeriodFilters({ ...periodFilters, year: v })
+                    }
                   >
                     <SelectTrigger className="w-[120px]">
                       <SelectValue placeholder="Tahun" />
@@ -429,9 +445,11 @@ export default function PayrollPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Select 
-                    value={periodFilters.status} 
-                    onValueChange={(v) => setPeriodFilters({...periodFilters, status: v})}
+                  <Select
+                    value={periodFilters.status}
+                    onValueChange={(v) =>
+                      setPeriodFilters({ ...periodFilters, status: v })
+                    }
                   >
                     <SelectTrigger className="w-[140px]">
                       <SelectValue placeholder="Status" />
@@ -478,7 +496,7 @@ export default function PayrollPage() {
                             {getMonthName(period.month)} {period.year}
                           </div>
                         </TableCell>
-                        <TableCell>{period.unit?.name || '-'}</TableCell>
+                        <TableCell>{period.unit?.name || "-"}</TableCell>
                         <TableCell>{getStatusBadge(period.status)}</TableCell>
                         <TableCell className="text-right font-medium">
                           {formatCurrency(period.totalNet)}
@@ -494,31 +512,42 @@ export default function PayrollPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => setSelectedPeriod(period.id)}>
+                              <DropdownMenuItem
+                                onClick={() => setSelectedPeriod(period.id)}
+                              >
                                 <Eye className="mr-2 h-4 w-4" />
                                 Lihat Slip
                               </DropdownMenuItem>
-                              {period.status === 'DRAFT' && (
-                                <DropdownMenuItem onClick={() => handleGeneratePayroll(period.id)}>
+                              {period.status === "DRAFT" && (
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleGeneratePayroll(period.id)
+                                  }
+                                >
                                   <Calculator className="mr-2 h-4 w-4" />
                                   Generate Slip
                                 </DropdownMenuItem>
                               )}
-                              {period.status === 'CALCULATED' && (
-                                <DropdownMenuItem onClick={() => handleApprovePeriod(period.id)}>
+                              {period.status === "CALCULATED" && (
+                                <DropdownMenuItem
+                                  onClick={() => handleApprovePeriod(period.id)}
+                                >
                                   <CheckCircle className="mr-2 h-4 w-4" />
                                   Setujui
                                 </DropdownMenuItem>
                               )}
-                              {period.status === 'APPROVED' && (
-                                <DropdownMenuItem onClick={() => handlePayPeriod(period.id)}>
+                              {period.status === "APPROVED" && (
+                                <DropdownMenuItem
+                                  onClick={() => handlePayPeriod(period.id)}
+                                >
                                   <Banknote className="mr-2 h-4 w-4" />
                                   Tandai Dibayar
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuSeparator />
-                              {(period.status === 'DRAFT' || period.status === 'CALCULATED') && (
-                                <DropdownMenuItem 
+                              {(period.status === "DRAFT" ||
+                                period.status === "CALCULATED") && (
+                                <DropdownMenuItem
                                   onClick={() => handleCancelPeriod(period.id)}
                                   className="text-red-600"
                                 >
@@ -546,13 +575,13 @@ export default function PayrollPage() {
                 <div>
                   <CardTitle>Slip Gaji</CardTitle>
                   <CardDescription>
-                    {selectedPeriod 
-                      ? `Slip gaji untuk periode terpilih` 
-                      : 'Pilih periode untuk melihat slip gaji'}
+                    {selectedPeriod
+                      ? `Slip gaji untuk periode terpilih`
+                      : "Pilih periode untuk melihat slip gaji"}
                   </CardDescription>
                 </div>
-                <Select 
-                  value={selectedPeriod || ''} 
+                <Select
+                  value={selectedPeriod || ""}
                   onValueChange={setSelectedPeriod}
                 >
                   <SelectTrigger className="w-[250px]">
@@ -561,7 +590,8 @@ export default function PayrollPage() {
                   <SelectContent>
                     {periods.map((period) => (
                       <SelectItem key={period.id} value={period.id}>
-                        {period.name} - {getMonthName(period.month)} {period.year}
+                        {period.name} - {getMonthName(period.month)}{" "}
+                        {period.year}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -597,18 +627,21 @@ export default function PayrollPage() {
                   <TableBody>
                     {slips.map((slip) => {
                       const allowances = slip.items
-                        .filter(i => i.componentType === 'ALLOWANCE')
+                        .filter((i) => i.componentType === "ALLOWANCE")
                         .reduce((sum, i) => sum + i.amount, 0);
                       const deductions = slip.items
-                        .filter(i => i.componentType === 'DEDUCTION')
+                        .filter((i) => i.componentType === "DEDUCTION")
                         .reduce((sum, i) => sum + i.amount, 0);
 
                       return (
                         <TableRow key={slip.id}>
                           <TableCell>
-                            <div className="font-medium">{slip.staff?.name || '-'}</div>
+                            <div className="font-medium">
+                              {slip.staff?.name || "-"}
+                            </div>
                             <div className="text-sm text-muted-foreground">
-                              {slip.staff?.nip || '-'} • {slip.staff?.position || '-'}
+                              {slip.staff?.nip || "-"} •{" "}
+                              {slip.staff?.position || "-"}
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
@@ -628,8 +661,8 @@ export default function PayrollPage() {
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="icon"
                                 onClick={() => viewSlipDetail(slip)}
                               >
@@ -653,24 +686,44 @@ export default function PayrollPage() {
                   <h4 className="font-semibold mb-3">Ringkasan Periode</h4>
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div>
-                      <div className="text-sm text-muted-foreground">Total Karyawan</div>
-                      <div className="text-lg font-semibold">{periodSummary.totalEmployees}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Total Karyawan
+                      </div>
+                      <div className="text-lg font-semibold">
+                        {periodSummary.totalEmployees}
+                      </div>
                     </div>
                     <div>
-                      <div className="text-sm text-muted-foreground">Total Bruto</div>
-                      <div className="text-lg font-semibold">{formatCurrency(periodSummary.totalGross)}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Total Bruto
+                      </div>
+                      <div className="text-lg font-semibold">
+                        {formatCurrency(periodSummary.totalGross)}
+                      </div>
                     </div>
                     <div>
-                      <div className="text-sm text-muted-foreground">Total Potongan</div>
-                      <div className="text-lg font-semibold text-red-600">{formatCurrency(periodSummary.totalDeductions)}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Total Potongan
+                      </div>
+                      <div className="text-lg font-semibold text-red-600">
+                        {formatCurrency(periodSummary.totalDeductions)}
+                      </div>
                     </div>
                     <div>
-                      <div className="text-sm text-muted-foreground">Total PPh 21</div>
-                      <div className="text-lg font-semibold text-orange-600">{formatCurrency(periodSummary.totalTax)}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Total PPh 21
+                      </div>
+                      <div className="text-lg font-semibold text-orange-600">
+                        {formatCurrency(periodSummary.totalTax)}
+                      </div>
                     </div>
                     <div>
-                      <div className="text-sm text-muted-foreground">Total Neto</div>
-                      <div className="text-lg font-semibold text-green-600">{formatCurrency(periodSummary.totalNet)}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Total Neto
+                      </div>
+                      <div className="text-lg font-semibold text-green-600">
+                        {formatCurrency(periodSummary.totalNet)}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -722,12 +775,15 @@ export default function PayrollPage() {
                     {salaries.map((salary) => (
                       <TableRow key={salary.id}>
                         <TableCell>
-                          <div className="font-medium">{salary.staff?.name || '-'}</div>
+                          <div className="font-medium">
+                            {salary.staff?.name || "-"}
+                          </div>
                           <div className="text-sm text-muted-foreground">
-                            {salary.staff?.nip || '-'} • {salary.staff?.position || '-'}
+                            {salary.staff?.nip || "-"} •{" "}
+                            {salary.staff?.position || "-"}
                           </div>
                         </TableCell>
-                        <TableCell>{salary.staff?.unit?.name || '-'}</TableCell>
+                        <TableCell>{salary.staff?.unit?.name || "-"}</TableCell>
                         <TableCell className="text-right font-medium">
                           {formatCurrency(salary.basicSalary)}
                         </TableCell>
@@ -736,7 +792,10 @@ export default function PayrollPage() {
                         </TableCell>
                         <TableCell>
                           {salary.hasNpwp ? (
-                            <Badge variant="default" className="bg-green-100 text-green-800">
+                            <Badge
+                              variant="default"
+                              className="bg-green-100 text-green-800"
+                            >
                               Ada
                             </Badge>
                           ) : (
@@ -744,9 +803,11 @@ export default function PayrollPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="text-sm">{salary.bankName || '-'}</div>
+                          <div className="text-sm">
+                            {salary.bankName || "-"}
+                          </div>
                           <div className="text-xs text-muted-foreground">
-                            {salary.bankAccountNumber || '-'}
+                            {salary.bankAccountNumber || "-"}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -793,7 +854,8 @@ export default function PayrollPage() {
                 </div>
               ) : !components || components.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Belum ada komponen gaji. Klik "Seed Default" untuk membuat komponen standar.
+                  Belum ada komponen gaji. Klik "Seed Default" untuk membuat
+                  komponen standar.
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 gap-6">
@@ -805,16 +867,21 @@ export default function PayrollPage() {
                     </h4>
                     <div className="space-y-2">
                       {components
-                        .filter(c => c.type === 'ALLOWANCE')
+                        .filter((c) => c.type === "ALLOWANCE")
                         .map((component) => (
-                          <div 
+                          <div
                             key={component.id}
                             className="flex items-center justify-between p-3 border rounded-lg"
                           >
                             <div>
-                              <div className="font-medium">{component.name}</div>
+                              <div className="font-medium">
+                                {component.name}
+                              </div>
                               <div className="text-sm text-muted-foreground">
-                                {component.code} • {component.isTaxable ? 'Kena Pajak' : 'Bebas Pajak'}
+                                {component.code} •{" "}
+                                {component.isTaxable
+                                  ? "Kena Pajak"
+                                  : "Bebas Pajak"}
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -840,26 +907,27 @@ export default function PayrollPage() {
                     </h4>
                     <div className="space-y-2">
                       {components
-                        .filter(c => c.type === 'DEDUCTION')
+                        .filter((c) => c.type === "DEDUCTION")
                         .map((component) => (
-                          <div 
+                          <div
                             key={component.id}
                             className="flex items-center justify-between p-3 border rounded-lg"
                           >
                             <div>
-                              <div className="font-medium">{component.name}</div>
+                              <div className="font-medium">
+                                {component.name}
+                              </div>
                               <div className="text-sm text-muted-foreground">
                                 {component.code}
-                                {component.isPercentage && ' • Persentase'}
+                                {component.isPercentage && " • Persentase"}
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
                               {component.defaultAmount && (
                                 <Badge variant="outline">
-                                  {component.isPercentage 
+                                  {component.isPercentage
                                     ? `${component.defaultAmount}%`
-                                    : formatCurrency(component.defaultAmount)
-                                  }
+                                    : formatCurrency(component.defaultAmount)}
                                 </Badge>
                               )}
                               <Button variant="ghost" size="icon">
@@ -878,7 +946,10 @@ export default function PayrollPage() {
       </Tabs>
 
       {/* Create Period Dialog */}
-      <Dialog open={showCreatePeriodDialog} onOpenChange={setShowCreatePeriodDialog}>
+      <Dialog
+        open={showCreatePeriodDialog}
+        onOpenChange={setShowCreatePeriodDialog}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Buat Periode Penggajian</DialogTitle>
@@ -891,7 +962,9 @@ export default function PayrollPage() {
               <Label>Nama Periode</Label>
               <Input
                 value={periodForm.name}
-                onChange={(e) => setPeriodForm({...periodForm, name: e.target.value})}
+                onChange={(e) =>
+                  setPeriodForm({ ...periodForm, name: e.target.value })
+                }
                 placeholder="Gaji Januari 2026"
               />
             </div>
@@ -900,17 +973,21 @@ export default function PayrollPage() {
                 <Label>Bulan</Label>
                 <Select
                   value={periodForm.month.toString()}
-                  onValueChange={(v) => setPeriodForm({...periodForm, month: parseInt(v)})}
+                  onValueChange={(v) =>
+                    setPeriodForm({ ...periodForm, month: parseInt(v) })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.from({length: 12}, (_, i) => i + 1).map((month) => (
-                      <SelectItem key={month} value={month.toString()}>
-                        {getMonthName(month)}
-                      </SelectItem>
-                    ))}
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                      (month) => (
+                        <SelectItem key={month} value={month.toString()}>
+                          {getMonthName(month)}
+                        </SelectItem>
+                      ),
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -918,7 +995,9 @@ export default function PayrollPage() {
                 <Label>Tahun</Label>
                 <Select
                   value={periodForm.year.toString()}
-                  onValueChange={(v) => setPeriodForm({...periodForm, year: parseInt(v)})}
+                  onValueChange={(v) =>
+                    setPeriodForm({ ...periodForm, year: parseInt(v) })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -939,7 +1018,9 @@ export default function PayrollPage() {
                 <Input
                   type="date"
                   value={periodForm.startDate}
-                  onChange={(e) => setPeriodForm({...periodForm, startDate: e.target.value})}
+                  onChange={(e) =>
+                    setPeriodForm({ ...periodForm, startDate: e.target.value })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -947,7 +1028,9 @@ export default function PayrollPage() {
                 <Input
                   type="date"
                   value={periodForm.endDate}
-                  onChange={(e) => setPeriodForm({...periodForm, endDate: e.target.value})}
+                  onChange={(e) =>
+                    setPeriodForm({ ...periodForm, endDate: e.target.value })
+                  }
                 />
               </div>
             </div>
@@ -955,24 +1038,35 @@ export default function PayrollPage() {
               <Label>Catatan</Label>
               <Textarea
                 value={periodForm.notes}
-                onChange={(e) => setPeriodForm({...periodForm, notes: e.target.value})}
+                onChange={(e) =>
+                  setPeriodForm({ ...periodForm, notes: e.target.value })
+                }
                 placeholder="Catatan tambahan (opsional)"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreatePeriodDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreatePeriodDialog(false)}
+            >
               Batal
             </Button>
-            <Button onClick={handleCreatePeriod} disabled={createPeriod.isPending}>
-              {createPeriod.isPending ? 'Menyimpan...' : 'Simpan'}
+            <Button
+              onClick={handleCreatePeriod}
+              disabled={createPeriod.isPending}
+            >
+              {createPeriod.isPending ? "Menyimpan..." : "Simpan"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Create Component Dialog */}
-      <Dialog open={showCreateComponentDialog} onOpenChange={setShowCreateComponentDialog}>
+      <Dialog
+        open={showCreateComponentDialog}
+        onOpenChange={setShowCreateComponentDialog}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Tambah Komponen Gaji</DialogTitle>
@@ -986,7 +1080,12 @@ export default function PayrollPage() {
                 <Label>Kode</Label>
                 <Input
                   value={componentForm.code}
-                  onChange={(e) => setComponentForm({...componentForm, code: e.target.value.toUpperCase()})}
+                  onChange={(e) =>
+                    setComponentForm({
+                      ...componentForm,
+                      code: e.target.value.toUpperCase(),
+                    })
+                  }
                   placeholder="TJ_001"
                 />
               </div>
@@ -994,7 +1093,12 @@ export default function PayrollPage() {
                 <Label>Tipe</Label>
                 <Select
                   value={componentForm.type}
-                  onValueChange={(v) => setComponentForm({...componentForm, type: v as SalaryComponentType})}
+                  onValueChange={(v) =>
+                    setComponentForm({
+                      ...componentForm,
+                      type: v as SalaryComponentType,
+                    })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -1010,7 +1114,9 @@ export default function PayrollPage() {
               <Label>Nama Komponen</Label>
               <Input
                 value={componentForm.name}
-                onChange={(e) => setComponentForm({...componentForm, name: e.target.value})}
+                onChange={(e) =>
+                  setComponentForm({ ...componentForm, name: e.target.value })
+                }
                 placeholder="Tunjangan Transportasi"
               />
             </div>
@@ -1018,7 +1124,12 @@ export default function PayrollPage() {
               <Label>Deskripsi</Label>
               <Textarea
                 value={componentForm.description}
-                onChange={(e) => setComponentForm({...componentForm, description: e.target.value})}
+                onChange={(e) =>
+                  setComponentForm({
+                    ...componentForm,
+                    description: e.target.value,
+                  })
+                }
                 placeholder="Deskripsi komponen (opsional)"
               />
             </div>
@@ -1027,7 +1138,12 @@ export default function PayrollPage() {
               <Input
                 type="number"
                 value={componentForm.defaultAmount}
-                onChange={(e) => setComponentForm({...componentForm, defaultAmount: parseInt(e.target.value) || 0})}
+                onChange={(e) =>
+                  setComponentForm({
+                    ...componentForm,
+                    defaultAmount: parseInt(e.target.value) || 0,
+                  })
+                }
                 placeholder="0"
               />
             </div>
@@ -1035,24 +1151,38 @@ export default function PayrollPage() {
               <Checkbox
                 id="isTaxable"
                 checked={componentForm.isTaxable}
-                onCheckedChange={(checked) => setComponentForm({...componentForm, isTaxable: checked as boolean})}
+                onCheckedChange={(checked) =>
+                  setComponentForm({
+                    ...componentForm,
+                    isTaxable: checked as boolean,
+                  })
+                }
               />
               <Label htmlFor="isTaxable">Kena Pajak (PPh 21)</Label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateComponentDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateComponentDialog(false)}
+            >
               Batal
             </Button>
-            <Button onClick={handleCreateComponent} disabled={createComponent.isPending}>
-              {createComponent.isPending ? 'Menyimpan...' : 'Simpan'}
+            <Button
+              onClick={handleCreateComponent}
+              disabled={createComponent.isPending}
+            >
+              {createComponent.isPending ? "Menyimpan..." : "Simpan"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Slip Detail Dialog */}
-      <Dialog open={showSlipDetailDialog} onOpenChange={setShowSlipDetailDialog}>
+      <Dialog
+        open={showSlipDetailDialog}
+        onOpenChange={setShowSlipDetailDialog}
+      >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detail Slip Gaji</DialogTitle>
@@ -1065,42 +1195,61 @@ export default function PayrollPage() {
               {/* Employee Info */}
               <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
                 <div>
-                  <div className="text-sm text-muted-foreground">Nama Karyawan</div>
+                  <div className="text-sm text-muted-foreground">
+                    Nama Karyawan
+                  </div>
                   <div className="font-medium">{selectedSlip.staff?.name}</div>
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">NIP</div>
-                  <div className="font-medium">{selectedSlip.staff?.nip || '-'}</div>
+                  <div className="font-medium">
+                    {selectedSlip.staff?.nip || "-"}
+                  </div>
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Jabatan</div>
-                  <div className="font-medium">{selectedSlip.staff?.position || '-'}</div>
+                  <div className="font-medium">
+                    {selectedSlip.staff?.position || "-"}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground">Status Pajak</div>
+                  <div className="text-sm text-muted-foreground">
+                    Status Pajak
+                  </div>
                   <div className="font-medium">{selectedSlip.taxStatus}</div>
                 </div>
               </div>
 
               {/* Income */}
               <div>
-                <h4 className="font-semibold text-green-600 mb-2">Pendapatan</h4>
+                <h4 className="font-semibold text-green-600 mb-2">
+                  Pendapatan
+                </h4>
                 <div className="space-y-2">
                   <div className="flex justify-between p-2 border-b">
                     <span>Gaji Pokok</span>
-                    <span className="font-medium">{formatCurrency(selectedSlip.basicSalary)}</span>
+                    <span className="font-medium">
+                      {formatCurrency(selectedSlip.basicSalary)}
+                    </span>
                   </div>
                   {selectedSlip.items
-                    .filter(i => i.componentType === 'ALLOWANCE')
+                    .filter((i) => i.componentType === "ALLOWANCE")
                     .map((item) => (
-                      <div key={item.id} className="flex justify-between p-2 border-b">
+                      <div
+                        key={item.id}
+                        className="flex justify-between p-2 border-b"
+                      >
                         <span>{item.componentName}</span>
-                        <span className="font-medium">{formatCurrency(item.amount)}</span>
+                        <span className="font-medium">
+                          {formatCurrency(item.amount)}
+                        </span>
                       </div>
                     ))}
                   <div className="flex justify-between p-2 bg-green-50 rounded font-semibold">
                     <span>Total Pendapatan</span>
-                    <span className="text-green-600">{formatCurrency(selectedSlip.grossSalary)}</span>
+                    <span className="text-green-600">
+                      {formatCurrency(selectedSlip.grossSalary)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1110,20 +1259,32 @@ export default function PayrollPage() {
                 <h4 className="font-semibold text-red-600 mb-2">Potongan</h4>
                 <div className="space-y-2">
                   {selectedSlip.items
-                    .filter(i => i.componentType === 'DEDUCTION')
+                    .filter((i) => i.componentType === "DEDUCTION")
                     .map((item) => (
-                      <div key={item.id} className="flex justify-between p-2 border-b">
+                      <div
+                        key={item.id}
+                        className="flex justify-between p-2 border-b"
+                      >
                         <span>{item.componentName}</span>
-                        <span className="font-medium text-red-600">-{formatCurrency(item.amount)}</span>
+                        <span className="font-medium text-red-600">
+                          -{formatCurrency(item.amount)}
+                        </span>
                       </div>
                     ))}
                   <div className="flex justify-between p-2 border-b">
                     <span>PPh 21</span>
-                    <span className="font-medium text-orange-600">-{formatCurrency(selectedSlip.taxAmount)}</span>
+                    <span className="font-medium text-orange-600">
+                      -{formatCurrency(selectedSlip.taxAmount)}
+                    </span>
                   </div>
                   <div className="flex justify-between p-2 bg-red-50 rounded font-semibold">
                     <span>Total Potongan</span>
-                    <span className="text-red-600">-{formatCurrency(selectedSlip.totalDeductions + selectedSlip.taxAmount)}</span>
+                    <span className="text-red-600">
+                      -
+                      {formatCurrency(
+                        selectedSlip.totalDeductions + selectedSlip.taxAmount,
+                      )}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1131,12 +1292,17 @@ export default function PayrollPage() {
               {/* Net Salary */}
               <div className="flex justify-between p-4 bg-primary/10 rounded-lg text-lg font-bold">
                 <span>Gaji Bersih (Take Home Pay)</span>
-                <span className="text-primary">{formatCurrency(selectedSlip.netSalary)}</span>
+                <span className="text-primary">
+                  {formatCurrency(selectedSlip.netSalary)}
+                </span>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSlipDetailDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowSlipDetailDialog(false)}
+            >
               Tutup
             </Button>
             <Button>

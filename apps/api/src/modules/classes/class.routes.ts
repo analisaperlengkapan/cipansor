@@ -156,7 +156,13 @@ router.post('/', isAdmin, validate(createClassSchema), controller.create);
  *       200:
  *         description: Class updated
  */
-router.put('/:id', isAdmin, validateParams(classIdParamSchema), validate(updateClassSchema), controller.update);
+router.put(
+  '/:id',
+  isAdmin,
+  validateParams(classIdParamSchema),
+  validate(updateClassSchema),
+  controller.update
+);
 
 /**
  * @swagger
@@ -230,7 +236,13 @@ router.get('/:id/enrollments', validateParams(classIdParamSchema), controller.ge
  *       201:
  *         description: Student enrolled
  */
-router.post('/:id/enrollments', isAdmin, validateParams(classIdParamSchema), validate(enrollStudentSchema), controller.enrollStudent);
+router.post(
+  '/:id/enrollments',
+  isAdmin,
+  validateParams(classIdParamSchema),
+  validate(enrollStudentSchema),
+  controller.enrollStudent
+);
 
 /**
  * @swagger
@@ -257,7 +269,13 @@ router.post('/:id/enrollments', isAdmin, validateParams(classIdParamSchema), val
  *       200:
  *         description: Enrollment updated
  */
-router.patch('/:id/enrollments/:studentId', isAdmin, validateParams(classIdParamSchema), validate(updateEnrollmentSchema), controller.updateEnrollment);
+router.patch(
+  '/:id/enrollments/:studentId',
+  isAdmin,
+  validateParams(classIdParamSchema),
+  validate(updateEnrollmentSchema),
+  controller.updateEnrollment
+);
 
 /**
  * @swagger
@@ -284,6 +302,11 @@ router.patch('/:id/enrollments/:studentId', isAdmin, validateParams(classIdParam
  *       200:
  *         description: Student removed from class
  */
-router.delete('/:id/enrollments/:studentId', isAdmin, validateParams(classIdParamSchema), controller.removeStudent);
+router.delete(
+  '/:id/enrollments/:studentId',
+  isAdmin,
+  validateParams(classIdParamSchema),
+  controller.removeStudent
+);
 
 export default router;

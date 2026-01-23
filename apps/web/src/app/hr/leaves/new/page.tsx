@@ -1,11 +1,17 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -14,40 +20,54 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   useCreateLeaveRequest,
   useEmployees,
   LEAVE_TYPES,
   LEAVE_TYPE_LABELS,
-} from '@/hooks';
-import { ArrowLeft, Save, Loader2, Calendar, Info } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
-import { differenceInDays } from 'date-fns';
+} from "@/hooks";
+import { ArrowLeft, Save, Loader2, Calendar, Info } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { differenceInDays } from "date-fns";
 
-const leaveRequestSchema = z.object({
-  employeeId: z.string().min(1, 'Karyawan wajib dipilih'),
-  leaveType: z.enum(['ANNUAL', 'SICK', 'MATERNITY', 'PATERNITY', 'MARRIAGE', 'BEREAVEMENT', 'UNPAID', 'OTHER'], {
-    required_error: 'Jenis cuti wajib dipilih',
-  }),
-  startDate: z.string().min(1, 'Tanggal mulai wajib diisi'),
-  endDate: z.string().min(1, 'Tanggal selesai wajib diisi'),
-  reason: z.string().min(10, 'Alasan minimal 10 karakter'),
-  attachmentUrl: z.string().optional(),
-}).refine((data) => new Date(data.endDate) >= new Date(data.startDate), {
-  message: 'Tanggal selesai harus setelah tanggal mulai',
-  path: ['endDate'],
-});
+const leaveRequestSchema = z
+  .object({
+    employeeId: z.string().min(1, "Karyawan wajib dipilih"),
+    leaveType: z.enum(
+      [
+        "ANNUAL",
+        "SICK",
+        "MATERNITY",
+        "PATERNITY",
+        "MARRIAGE",
+        "BEREAVEMENT",
+        "UNPAID",
+        "OTHER",
+      ],
+      {
+        required_error: "Jenis cuti wajib dipilih",
+      },
+    ),
+    startDate: z.string().min(1, "Tanggal mulai wajib diisi"),
+    endDate: z.string().min(1, "Tanggal selesai wajib diisi"),
+    reason: z.string().min(10, "Alasan minimal 10 karakter"),
+    attachmentUrl: z.string().optional(),
+  })
+  .refine((data) => new Date(data.endDate) >= new Date(data.startDate), {
+    message: "Tanggal selesai harus setelah tanggal mulai",
+    path: ["endDate"],
+  });
 
 type LeaveRequestFormData = z.infer<typeof leaveRequestSchema>;
 
@@ -55,26 +75,27 @@ export default function NewLeavePage() {
   const router = useRouter();
   const createLeaveRequest = useCreateLeaveRequest();
 
-  const { data: employeesData } = useEmployees({ status: 'ACTIVE' });
+  const { data: employeesData } = useEmployees({ status: "ACTIVE" });
   const employees = employeesData?.data || [];
 
   const form = useForm<LeaveRequestFormData>({
     resolver: zodResolver(leaveRequestSchema),
     defaultValues: {
-      employeeId: '',
+      employeeId: "",
       leaveType: undefined,
-      startDate: '',
-      endDate: '',
-      reason: '',
-      attachmentUrl: '',
+      startDate: "",
+      endDate: "",
+      reason: "",
+      attachmentUrl: "",
     },
   });
 
-  const startDate = form.watch('startDate');
-  const endDate = form.watch('endDate');
-  const totalDays = startDate && endDate && new Date(endDate) >= new Date(startDate)
-    ? differenceInDays(new Date(endDate), new Date(startDate)) + 1
-    : 0;
+  const startDate = form.watch("startDate");
+  const endDate = form.watch("endDate");
+  const totalDays =
+    startDate && endDate && new Date(endDate) >= new Date(startDate)
+      ? differenceInDays(new Date(endDate), new Date(startDate)) + 1
+      : 0;
 
   const onSubmit = async (data: LeaveRequestFormData) => {
     try {
@@ -83,10 +104,10 @@ export default function NewLeavePage() {
         startDate: new Date(data.startDate).toISOString(),
         endDate: new Date(data.endDate).toISOString(),
       });
-      toast.success('Pengajuan cuti berhasil dibuat');
-      router.push('/hr');
+      toast.success("Pengajuan cuti berhasil dibuat");
+      router.push("/hr");
     } catch (error) {
-      toast.error('Gagal membuat pengajuan cuti');
+      toast.error("Gagal membuat pengajuan cuti");
     }
   };
 
@@ -109,7 +130,10 @@ export default function NewLeavePage() {
         <div className="grid gap-6 md:grid-cols-3">
           <div className="md:col-span-2">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -125,7 +149,10 @@ export default function NewLeavePage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Karyawan</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Pilih karyawan" />
@@ -150,7 +177,10 @@ export default function NewLeavePage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Jenis Cuti</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Pilih jenis cuti" />
@@ -224,7 +254,10 @@ export default function NewLeavePage() {
                         <FormItem>
                           <FormLabel>Lampiran (URL)</FormLabel>
                           <FormControl>
-                            <Input placeholder="URL dokumen pendukung (opsional)" {...field} />
+                            <Input
+                              placeholder="URL dokumen pendukung (opsional)"
+                              {...field}
+                            />
                           </FormControl>
                           <FormDescription>
                             Untuk cuti sakit, lampirkan surat keterangan dokter
@@ -237,7 +270,11 @@ export default function NewLeavePage() {
                 </Card>
 
                 <div className="flex justify-end gap-4">
-                  <Button type="button" variant="outline" onClick={() => router.back()}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.back()}
+                  >
                     Batal
                   </Button>
                   <Button type="submit" disabled={createLeaveRequest.isPending}>
@@ -284,7 +321,9 @@ export default function NewLeavePage() {
               <CardContent className="text-sm text-blue-800">
                 <ul className="list-disc list-inside space-y-1">
                   <li>Cuti tahunan maksimal 12 hari/tahun</li>
-                  <li>Cuti sakit lebih dari 2 hari wajib lampirkan surat dokter</li>
+                  <li>
+                    Cuti sakit lebih dari 2 hari wajib lampirkan surat dokter
+                  </li>
                   <li>Pengajuan akan direview oleh atasan</li>
                   <li>Cuti tidak dapat diuangkan</li>
                 </ul>

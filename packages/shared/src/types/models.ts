@@ -1,4 +1,4 @@
-import { UnitType, Gender } from './enums';
+import { UnitType, Gender } from "./enums";
 
 // Base types
 export interface BaseEntity {

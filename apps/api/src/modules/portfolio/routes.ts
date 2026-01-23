@@ -1,6 +1,6 @@
 /**
  * Portfolio API Routes
- * 
+ *
  * Endpoints untuk manajemen portofolio digital siswa
  */
 
@@ -24,7 +24,15 @@ const createPortfolioSchema = z.object({
   body: z.object({
     studentId: z.string().uuid(),
     title: z.string().min(1).max(200),
-    type: z.enum(['ACADEMIC', 'P5_PROJECT', 'EXTRACURRICULAR', 'ACHIEVEMENT', 'ARTWORK', 'TAHFIDZ', 'OTHER']),
+    type: z.enum([
+      'ACADEMIC',
+      'P5_PROJECT',
+      'EXTRACURRICULAR',
+      'ACHIEVEMENT',
+      'ARTWORK',
+      'TAHFIDZ',
+      'OTHER',
+    ]),
     category: z.string().optional(),
     description: z.string().optional(),
     reflection: z.string().optional(),
@@ -39,7 +47,17 @@ const createPortfolioSchema = z.object({
 const updatePortfolioSchema = z.object({
   body: z.object({
     title: z.string().min(1).max(200).optional(),
-    type: z.enum(['ACADEMIC', 'P5_PROJECT', 'EXTRACURRICULAR', 'ACHIEVEMENT', 'ARTWORK', 'TAHFIDZ', 'OTHER']).optional(),
+    type: z
+      .enum([
+        'ACADEMIC',
+        'P5_PROJECT',
+        'EXTRACURRICULAR',
+        'ACHIEVEMENT',
+        'ARTWORK',
+        'TAHFIDZ',
+        'OTHER',
+      ])
+      .optional(),
     category: z.string().optional(),
     description: z.string().optional(),
     reflection: z.string().optional(),
@@ -77,10 +95,12 @@ const reviewPortfolioSchema = z.object({
 
 // Get portfolio types and categories
 router.get('/types', (_req: Request, res: Response) => {
-  res.json(ApiResponse.success({
-    types: portfolioService.PORTFOLIO_TYPES,
-    categories: portfolioService.PORTFOLIO_CATEGORIES,
-  }));
+  res.json(
+    ApiResponse.success({
+      types: portfolioService.PORTFOLIO_TYPES,
+      categories: portfolioService.PORTFOLIO_CATEGORIES,
+    })
+  );
 });
 
 // List portfolios
@@ -119,14 +139,18 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // Create portfolio
-router.post('/', validate(createPortfolioSchema), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const portfolio = await portfolioService.createPortfolio(req.body);
-    res.status(201).json(ApiResponse.success(portfolio, 'Portfolio berhasil dibuat'));
-  } catch (err) {
-    next(err);
+router.post(
+  '/',
+  validate(createPortfolioSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const portfolio = await portfolioService.createPortfolio(req.body);
+      res.status(201).json(ApiResponse.success(portfolio, 'Portfolio berhasil dibuat'));
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 // Get portfolio by ID
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
@@ -142,14 +166,18 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // Update portfolio
-router.put('/:id', validate(updatePortfolioSchema), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const portfolio = await portfolioService.updatePortfolio(req.params.id, req.body);
-    res.json(ApiResponse.success(portfolio, 'Portfolio berhasil diperbarui'));
-  } catch (err) {
-    next(err);
+router.put(
+  '/:id',
+  validate(updatePortfolioSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const portfolio = await portfolioService.updatePortfolio(req.params.id, req.body);
+      res.json(ApiResponse.success(portfolio, 'Portfolio berhasil diperbarui'));
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 // Delete portfolio
 router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
@@ -166,17 +194,21 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
 // =====================================
 
 // Add file to portfolio
-router.post('/:id/files', validate(addFileSchema), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const file = await portfolioService.addPortfolioFile({
-      portfolioId: req.params.id,
-      ...req.body,
-    });
-    res.status(201).json(ApiResponse.success(file, 'File berhasil ditambahkan'));
-  } catch (err) {
-    next(err);
+router.post(
+  '/:id/files',
+  validate(addFileSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const file = await portfolioService.addPortfolioFile({
+        portfolioId: req.params.id,
+        ...req.body,
+      });
+      res.status(201).json(ApiResponse.success(file, 'File berhasil ditambahkan'));
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 // Update file
 router.patch('/files/:fileId', async (req: Request, res: Response, next: NextFunction) => {
@@ -207,18 +239,22 @@ router.delete('/files/:fileId', async (req: Request, res: Response, next: NextFu
 // =====================================
 
 // Add comment
-router.post('/:id/comments', validate(addCommentSchema), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const comment = await portfolioService.addPortfolioComment({
-      portfolioId: req.params.id,
-      userId: req.user!.sub,
-      content: req.body.content,
-    });
-    res.status(201).json(ApiResponse.success(comment, 'Komentar berhasil ditambahkan'));
-  } catch (err) {
-    next(err);
+router.post(
+  '/:id/comments',
+  validate(addCommentSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const comment = await portfolioService.addPortfolioComment({
+        portfolioId: req.params.id,
+        userId: req.user!.sub,
+        content: req.body.content,
+      });
+      res.status(201).json(ApiResponse.success(comment, 'Komentar berhasil ditambahkan'));
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 // Update comment
 router.patch('/comments/:commentId', async (req: Request, res: Response, next: NextFunction) => {

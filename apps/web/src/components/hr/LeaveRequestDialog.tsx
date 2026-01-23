@@ -39,7 +39,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useCreateLeaveRequest, LEAVE_TYPES, LEAVE_TYPE_LABELS } from "@/hooks/use-hr";
+import {
+  useCreateLeaveRequest,
+  LEAVE_TYPES,
+  LEAVE_TYPE_LABELS,
+} from "@/hooks/use-hr";
 import { toast } from "sonner";
 
 const formSchema = z.object({
@@ -49,7 +53,11 @@ const formSchema = z.object({
   reason: z.string().min(5, "Reason must be at least 5 characters"),
 });
 
-export function LeaveRequestDialog({ children }: { children: React.ReactNode }) {
+export function LeaveRequestDialog({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const createMutation = useCreateLeaveRequest();
 
@@ -78,7 +86,9 @@ export function LeaveRequestDialog({ children }: { children: React.ReactNode }) 
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const err = error as any;
-      toast.error(err.response?.data?.message || "Failed to submit leave request");
+      toast.error(
+        err.response?.data?.message || "Failed to submit leave request",
+      );
     }
   };
 
@@ -100,7 +110,10 @@ export function LeaveRequestDialog({ children }: { children: React.ReactNode }) 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Leave Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select leave type" />
@@ -132,7 +145,7 @@ export function LeaveRequestDialog({ children }: { children: React.ReactNode }) 
                             variant={"outline"}
                             className={cn(
                               "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
+                              !field.value && "text-muted-foreground",
                             )}
                           >
                             {field.value ? (
@@ -173,7 +186,7 @@ export function LeaveRequestDialog({ children }: { children: React.ReactNode }) 
                             variant={"outline"}
                             className={cn(
                               "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
+                              !field.value && "text-muted-foreground",
                             )}
                           >
                             {field.value ? (

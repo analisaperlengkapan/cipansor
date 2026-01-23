@@ -1,43 +1,43 @@
-'use client';
+"use client";
 
-import { useRouter, useParams } from 'next/navigation';
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { useRouter, useParams } from "next/navigation";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import Link from "next/link";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { useUnit, useUpdateUnit, UNIT_TYPES } from '@/hooks/use-units';
+} from "@/components/ui/card";
+import { useUnit, useUpdateUnit, UNIT_TYPES } from "@/hooks/use-units";
 
 const unitSchema = z.object({
-  name: z.string().min(1, 'Nama unit wajib diisi'),
-  type: z.enum(['PESANTREN', 'TK_QURAN', 'SD_IT', 'SMP_IT', 'SMA_QURAN'], {
-    required_error: 'Tipe unit wajib dipilih',
+  name: z.string().min(1, "Nama unit wajib diisi"),
+  type: z.enum(["PESANTREN", "TK_QURAN", "SD_IT", "SMP_IT", "SMA_QURAN"], {
+    required_error: "Tipe unit wajib dipilih",
   }),
   address: z.string().optional(),
   phone: z.string().optional(),
-  email: z.string().email('Email tidak valid').optional().or(z.literal('')),
+  email: z.string().email("Email tidak valid").optional().or(z.literal("")),
   headName: z.string().optional(),
 });
 
@@ -68,10 +68,10 @@ export default function EditUnitPage() {
       reset({
         name: unit.name,
         type: unit.type,
-        address: unit.address || '',
-        phone: unit.phone || '',
-        email: unit.email || '',
-        headName: unit.headName || '',
+        address: unit.address || "",
+        phone: unit.phone || "",
+        email: unit.email || "",
+        headName: unit.headName || "",
       });
     }
   }, [unit, reset]);
@@ -88,10 +88,11 @@ export default function EditUnitPage() {
           headName: data.headName || undefined,
         },
       });
-      toast.success('Unit berhasil diperbarui');
+      toast.success("Unit berhasil diperbarui");
       router.push(`/units/${unitId}`);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal memperbarui unit';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal memperbarui unit";
       toast.error(errorMessage);
     }
   };
@@ -130,7 +131,9 @@ export default function EditUnitPage() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Edit Unit</h1>
-            <p className="text-muted-foreground">Perbarui data unit {unit.name}</p>
+            <p className="text-muted-foreground">
+              Perbarui data unit {unit.name}
+            </p>
           </div>
         </div>
 
@@ -147,18 +150,22 @@ export default function EditUnitPage() {
                   <Input
                     id="name"
                     placeholder="Contoh: SMP IT Al-Hikmah"
-                    {...register('name')}
+                    {...register("name")}
                   />
                   {errors.name && (
-                    <p className="text-sm text-destructive">{errors.name.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.name.message}
+                    </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="type">Tipe Unit *</Label>
                   <Select
-                    value={watch('type')}
-                    onValueChange={(value) => setValue('type', value as UnitFormData['type'])}
+                    value={watch("type")}
+                    onValueChange={(value) =>
+                      setValue("type", value as UnitFormData["type"])
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih tipe unit" />
@@ -172,7 +179,9 @@ export default function EditUnitPage() {
                     </SelectContent>
                   </Select>
                   {errors.type && (
-                    <p className="text-sm text-destructive">{errors.type.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.type.message}
+                    </p>
                   )}
                 </div>
 
@@ -181,10 +190,12 @@ export default function EditUnitPage() {
                   <Input
                     id="headName"
                     placeholder="Nama kepala sekolah/pimpinan"
-                    {...register('headName')}
+                    {...register("headName")}
                   />
                   {errors.headName && (
-                    <p className="text-sm text-destructive">{errors.headName.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.headName.message}
+                    </p>
                   )}
                 </div>
               </CardContent>
@@ -202,10 +213,12 @@ export default function EditUnitPage() {
                     id="address"
                     placeholder="Alamat lengkap unit"
                     rows={3}
-                    {...register('address')}
+                    {...register("address")}
                   />
                   {errors.address && (
-                    <p className="text-sm text-destructive">{errors.address.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.address.message}
+                    </p>
                   )}
                 </div>
 
@@ -214,10 +227,12 @@ export default function EditUnitPage() {
                   <Input
                     id="phone"
                     placeholder="021-12345678"
-                    {...register('phone')}
+                    {...register("phone")}
                   />
                   {errors.phone && (
-                    <p className="text-sm text-destructive">{errors.phone.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.phone.message}
+                    </p>
                   )}
                 </div>
 
@@ -227,10 +242,12 @@ export default function EditUnitPage() {
                     id="email"
                     type="email"
                     placeholder="unit@pesantren.sch.id"
-                    {...register('email')}
+                    {...register("email")}
                   />
                   {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.email.message}
+                    </p>
                   )}
                 </div>
               </CardContent>
@@ -241,8 +258,13 @@ export default function EditUnitPage() {
             <Button type="button" variant="outline" asChild>
               <Link href={`/units/${unitId}`}>Batal</Link>
             </Button>
-            <Button type="submit" disabled={isSubmitting || updateUnit.isPending}>
-              {isSubmitting || updateUnit.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
+            <Button
+              type="submit"
+              disabled={isSubmitting || updateUnit.isPending}
+            >
+              {isSubmitting || updateUnit.isPending
+                ? "Menyimpan..."
+                : "Simpan Perubahan"}
             </Button>
           </div>
         </form>

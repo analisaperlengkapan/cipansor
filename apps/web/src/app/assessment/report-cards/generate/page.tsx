@@ -1,20 +1,26 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useGenerateReportCards } from '@/hooks';
-import { useClasses, useAcademicYears } from '@/hooks';
+} from "@/components/ui/select";
+import { useGenerateReportCards } from "@/hooks";
+import { useClasses, useAcademicYears } from "@/hooks";
 import {
   ArrowLeft,
   FileText,
@@ -22,14 +28,14 @@ import {
   AlertCircle,
   Info,
   CheckCircle,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
 export default function GenerateReportCardsPage() {
   const router = useRouter();
-  const [classId, setClassId] = useState<string>('');
-  const [semester, setSemester] = useState<string>('1');
-  const [academicYearId, setAcademicYearId] = useState<string>('');
+  const [classId, setClassId] = useState<string>("");
+  const [semester, setSemester] = useState<string>("1");
+  const [academicYearId, setAcademicYearId] = useState<string>("");
   const [includeAttendance, setIncludeAttendance] = useState(true);
   const [includeTahfidz, setIncludeTahfidz] = useState(true);
   const [includeExtracurricular, setIncludeExtracurricular] = useState(true);
@@ -43,7 +49,7 @@ export default function GenerateReportCardsPage() {
 
   const handleGenerate = async () => {
     if (!classId) {
-      toast.error('Pilih kelas terlebih dahulu');
+      toast.error("Pilih kelas terlebih dahulu");
       return;
     }
 
@@ -51,17 +57,17 @@ export default function GenerateReportCardsPage() {
       await generateReportCards.mutateAsync({
         classId,
         semester: parseInt(semester),
-        academicYearId: academicYearId || activeAcademicYear?.id || '',
+        academicYearId: academicYearId || activeAcademicYear?.id || "",
         options: {
           includeAttendance,
           includeTahfidz,
           includeExtracurricular,
         },
       });
-      toast.success('Rapor berhasil di-generate');
-      router.push('/assessment/report-cards');
+      toast.success("Rapor berhasil di-generate");
+      router.push("/assessment/report-cards");
     } catch (error) {
-      toast.error('Gagal generate rapor');
+      toast.error("Gagal generate rapor");
     }
   };
 
@@ -74,7 +80,9 @@ export default function GenerateReportCardsPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Generate Rapor</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Generate Rapor
+            </h1>
             <p className="text-muted-foreground">
               Buat rapor untuk seluruh santri dalam satu kelas
             </p>
@@ -86,19 +94,24 @@ export default function GenerateReportCardsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Pengaturan Generate</CardTitle>
-              <CardDescription>Pilih kelas dan semester untuk generate rapor</CardDescription>
+              <CardDescription>
+                Pilih kelas dan semester untuk generate rapor
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Tahun Ajaran</label>
-                <Select value={academicYearId} onValueChange={setAcademicYearId}>
+                <Select
+                  value={academicYearId}
+                  onValueChange={setAcademicYearId}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih tahun ajaran" />
                   </SelectTrigger>
                   <SelectContent>
                     {academicYears?.data?.map((year) => (
                       <SelectItem key={year.id} value={year.id}>
-                        {year.name} {year.isActive && '(Aktif)'}
+                        {year.name} {year.isActive && "(Aktif)"}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -146,9 +159,14 @@ export default function GenerateReportCardsPage() {
                     <Checkbox
                       id="attendance"
                       checked={includeAttendance}
-                      onCheckedChange={(checked) => setIncludeAttendance(checked as boolean)}
+                      onCheckedChange={(checked) =>
+                        setIncludeAttendance(checked as boolean)
+                      }
                     />
-                    <label htmlFor="attendance" className="text-sm cursor-pointer">
+                    <label
+                      htmlFor="attendance"
+                      className="text-sm cursor-pointer"
+                    >
                       Sertakan data kehadiran
                     </label>
                   </div>
@@ -156,7 +174,9 @@ export default function GenerateReportCardsPage() {
                     <Checkbox
                       id="tahfidz"
                       checked={includeTahfidz}
-                      onCheckedChange={(checked) => setIncludeTahfidz(checked as boolean)}
+                      onCheckedChange={(checked) =>
+                        setIncludeTahfidz(checked as boolean)
+                      }
                     />
                     <label htmlFor="tahfidz" className="text-sm cursor-pointer">
                       Sertakan nilai tahfidz
@@ -166,9 +186,14 @@ export default function GenerateReportCardsPage() {
                     <Checkbox
                       id="extracurricular"
                       checked={includeExtracurricular}
-                      onCheckedChange={(checked) => setIncludeExtracurricular(checked as boolean)}
+                      onCheckedChange={(checked) =>
+                        setIncludeExtracurricular(checked as boolean)
+                      }
                     />
-                    <label htmlFor="extracurricular" className="text-sm cursor-pointer">
+                    <label
+                      htmlFor="extracurricular"
+                      className="text-sm cursor-pointer"
+                    >
                       Sertakan nilai ekstrakurikuler
                     </label>
                   </div>
@@ -206,18 +231,25 @@ export default function GenerateReportCardsPage() {
               </CardHeader>
               <CardContent className="space-y-4 text-sm text-muted-foreground">
                 <p>
-                  Proses generate rapor akan membuat rapor untuk semua santri yang terdaftar di kelas
-                  yang dipilih berdasarkan nilai penilaian yang sudah dipublikasikan.
+                  Proses generate rapor akan membuat rapor untuk semua santri
+                  yang terdaftar di kelas yang dipilih berdasarkan nilai
+                  penilaian yang sudah dipublikasikan.
                 </p>
                 <div className="space-y-2">
-                  <p className="font-medium text-foreground">Yang akan dihitung:</p>
+                  <p className="font-medium text-foreground">
+                    Yang akan dihitung:
+                  </p>
                   <ul className="list-disc list-inside space-y-1">
                     <li>Nilai rata-rata setiap mata pelajaran</li>
                     <li>Nilai akhir berdasarkan bobot penilaian</li>
                     <li>Peringkat di kelas</li>
-                    {includeAttendance && <li>Rekap kehadiran (hadir, sakit, izin, alpha)</li>}
+                    {includeAttendance && (
+                      <li>Rekap kehadiran (hadir, sakit, izin, alpha)</li>
+                    )}
                     {includeTahfidz && <li>Catatan hafalan Al-Quran</li>}
-                    {includeExtracurricular && <li>Nilai ekstrakurikuler yang diikuti</li>}
+                    {includeExtracurricular && (
+                      <li>Nilai ekstrakurikuler yang diikuti</li>
+                    )}
                   </ul>
                 </div>
               </CardContent>
@@ -239,12 +271,14 @@ export default function GenerateReportCardsPage() {
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Jumlah Santri</dt>
-                      <dd className="font-medium">{selectedClass.studentCount ?? 0}</dd>
+                      <dd className="font-medium">
+                        {selectedClass.studentCount ?? 0}
+                      </dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-muted-foreground">Wali Kelas</dt>
                       <dd className="font-medium">
-                        {selectedClass.homeroomTeacher?.user.name ?? '-'}
+                        {selectedClass.homeroomTeacher?.user.name ?? "-"}
                       </dd>
                     </div>
                     <div className="flex justify-between">
@@ -266,7 +300,9 @@ export default function GenerateReportCardsPage() {
               <CardContent className="text-sm text-yellow-800">
                 <ul className="list-disc list-inside space-y-1">
                   <li>Pastikan semua nilai penilaian sudah dipublikasikan</li>
-                  <li>Rapor yang sudah ada akan di-update dengan data terbaru</li>
+                  <li>
+                    Rapor yang sudah ada akan di-update dengan data terbaru
+                  </li>
                   <li>Proses mungkin memakan waktu tergantung jumlah santri</li>
                 </ul>
               </CardContent>

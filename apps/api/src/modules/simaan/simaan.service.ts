@@ -155,15 +155,16 @@ export const simaanService = {
         passed: data.passed || false,
         notes: data.notes,
         recommendations: data.recommendations,
-        examiners: data.examiners && data.examiners.length > 0
-          ? {
-              create: data.examiners.map((e) => ({
-                examinerId: e.examinerId,
-                score: e.score,
-                notes: e.notes,
-              })),
-            }
-          : undefined,
+        examiners:
+          data.examiners && data.examiners.length > 0
+            ? {
+                create: data.examiners.map((e) => ({
+                  examinerId: e.examinerId,
+                  score: e.score,
+                  notes: e.notes,
+                })),
+              }
+            : undefined,
       },
       include: {
         student: { select: { id: true, user: { select: { name: true } } } },
@@ -319,12 +320,14 @@ export const simaanService = {
 
     const totalExams = records.length;
     const passedExams = records.filter((r) => r.passed).length;
-    const avgOverall = totalExams > 0
-      ? Math.round(records.reduce((sum, r) => sum + (r.overallScore || 0), 0) / totalExams)
-      : 0;
-    const avgTajwid = totalExams > 0
-      ? Math.round(records.reduce((sum, r) => sum + (r.tajwidScore || 0), 0) / totalExams)
-      : 0;
+    const avgOverall =
+      totalExams > 0
+        ? Math.round(records.reduce((sum, r) => sum + (r.overallScore || 0), 0) / totalExams)
+        : 0;
+    const avgTajwid =
+      totalExams > 0
+        ? Math.round(records.reduce((sum, r) => sum + (r.tajwidScore || 0), 0) / totalExams)
+        : 0;
 
     // Breakdown by type
     const typeBreakdown: Record<string, { total: number; passed: number }> = {};
@@ -433,7 +436,7 @@ export const simaanService = {
   async getUpcomingExams(halaqohId?: string, days: number = 7) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + days);
 

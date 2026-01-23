@@ -1,17 +1,13 @@
-import { Request, Response, NextFunction } from "express";
-import * as rewardService from "./service";
-import {
-  createRewardSchema,
-  updateRewardSchema,
-  queryRewardSchema,
-} from "./schema";
-import { Errors } from "../../middleware/error";
+import { Request, Response, NextFunction } from 'express';
+import * as rewardService from './service';
+import { createRewardSchema, updateRewardSchema, queryRewardSchema } from './schema';
+import { Errors } from '../../middleware/error';
 
 export async function createReward(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createRewardSchema.parse(req.body);
     const userId = req.user?.sub;
-    
+
     if (!userId) {
       throw Errors.unauthorized();
     }
@@ -19,7 +15,7 @@ export async function createReward(req: Request, res: Response, next: NextFuncti
     const reward = await rewardService.createReward(data, userId);
     res.status(201).json({
       success: true,
-      message: "Reward recorded successfully",
+      message: 'Reward recorded successfully',
       data: reward,
     });
   } catch (error) {
@@ -45,7 +41,7 @@ export async function getRewardById(req: Request, res: Response, next: NextFunct
     const { id } = req.params;
     const reward = await rewardService.getRewardById(id);
     if (!reward) {
-      throw Errors.notFound("Reward");
+      throw Errors.notFound('Reward');
     }
     res.json({
       success: true,
@@ -63,7 +59,7 @@ export async function updateReward(req: Request, res: Response, next: NextFuncti
     const reward = await rewardService.updateReward(id, data);
     res.json({
       success: true,
-      message: "Reward updated successfully",
+      message: 'Reward updated successfully',
       data: reward,
     });
   } catch (error) {
@@ -77,7 +73,7 @@ export async function deleteReward(req: Request, res: Response, next: NextFuncti
     await rewardService.deleteReward(id);
     res.json({
       success: true,
-      message: "Reward deleted successfully",
+      message: 'Reward deleted successfully',
     });
   } catch (error) {
     next(error);

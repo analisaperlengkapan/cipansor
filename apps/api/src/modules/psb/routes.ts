@@ -1,9 +1,9 @@
-import { Router } from "express";
-import { UserRole } from "@prisma/client";
-import * as controller from "./controller";
-import { authenticate, authorize } from "../../middleware/auth";
-import { validateQuery } from "../../middleware/error";
-import { queryAdmissionPeriodSchema, queryRegistrantSchema } from "./schema";
+import { Router } from 'express';
+import { UserRole } from '@prisma/client';
+import * as controller from './controller';
+import { authenticate, authorize } from '../../middleware/auth';
+import { validateQuery } from '../../middleware/error';
+import { queryAdmissionPeriodSchema, queryRegistrantSchema } from './schema';
 
 const router = Router();
 
@@ -40,7 +40,12 @@ router.use(authenticate);
  *       200:
  *         description: List of admission periods
  */
-router.get("/periods", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), validateQuery(queryAdmissionPeriodSchema), controller.getAdmissionPeriods);
+router.get(
+  '/periods',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validateQuery(queryAdmissionPeriodSchema),
+  controller.getAdmissionPeriods
+);
 
 /**
  * @swagger
@@ -78,7 +83,11 @@ router.get("/periods", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), val
  *       201:
  *         description: Admission period created
  */
-router.post("/periods", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.createAdmissionPeriod);
+router.post(
+  '/periods',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.createAdmissionPeriod
+);
 
 /**
  * @swagger
@@ -98,7 +107,11 @@ router.post("/periods", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), co
  *       200:
  *         description: Admission period details
  */
-router.get("/periods/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.getAdmissionPeriodById);
+router.get(
+  '/periods/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.getAdmissionPeriodById
+);
 
 /**
  * @swagger
@@ -118,7 +131,11 @@ router.get("/periods/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
  *       200:
  *         description: Admission period statistics (registrants, accepted, etc.)
  */
-router.get("/periods/:id/stats", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.getAdmissionPeriodStats);
+router.get(
+  '/periods/:id/stats',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.getAdmissionPeriodStats
+);
 
 /**
  * @swagger
@@ -138,7 +155,11 @@ router.get("/periods/:id/stats", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_A
  *       200:
  *         description: Admission period updated
  */
-router.put("/periods/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.updateAdmissionPeriod);
+router.put(
+  '/periods/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.updateAdmissionPeriod
+);
 
 /**
  * @swagger
@@ -158,7 +179,11 @@ router.put("/periods/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
  *       204:
  *         description: Admission period deleted
  */
-router.delete("/periods/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteAdmissionPeriod);
+router.delete(
+  '/periods/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.deleteAdmissionPeriod
+);
 
 // ==================== REGISTRANTS ====================
 
@@ -192,7 +217,12 @@ router.delete("/periods/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMI
  *       200:
  *         description: List of registrants
  */
-router.get("/registrants", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), validateQuery(queryRegistrantSchema), controller.getRegistrants);
+router.get(
+  '/registrants',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  validateQuery(queryRegistrantSchema),
+  controller.getRegistrants
+);
 
 /**
  * @swagger
@@ -234,7 +264,11 @@ router.get("/registrants", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, 
  *       201:
  *         description: Registrant created
  */
-router.post("/registrants", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.createRegistrant);
+router.post(
+  '/registrants',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.createRegistrant
+);
 
 /**
  * @swagger
@@ -254,7 +288,11 @@ router.post("/registrants", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN,
  *       200:
  *         description: Registrant details
  */
-router.get("/registrants/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.getRegistrantById);
+router.get(
+  '/registrants/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.getRegistrantById
+);
 
 /**
  * @swagger
@@ -274,7 +312,11 @@ router.get("/registrants/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADM
  *       200:
  *         description: Registrant updated
  */
-router.put("/registrants/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.updateRegistrant);
+router.put(
+  '/registrants/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.updateRegistrant
+);
 
 /**
  * @swagger
@@ -307,7 +349,11 @@ router.put("/registrants/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADM
  *       200:
  *         description: Score updated
  */
-router.patch("/registrants/:id/score", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.updateRegistrantScore);
+router.patch(
+  '/registrants/:id/score',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.updateRegistrantScore
+);
 
 /**
  * @swagger
@@ -339,7 +385,11 @@ router.patch("/registrants/:id/score", authorize(UserRole.SUPER_ADMIN, UserRole.
  *       200:
  *         description: Status updated
  */
-router.patch("/registrants/:id/status", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.updateRegistrantStatus);
+router.patch(
+  '/registrants/:id/status',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.updateRegistrantStatus
+);
 
 /**
  * @swagger
@@ -367,7 +417,11 @@ router.patch("/registrants/:id/status", authorize(UserRole.SUPER_ADMIN, UserRole
  *       201:
  *         description: Registrant enrolled as student
  */
-router.post("/registrants/:id/enroll", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.enrollRegistrant);
+router.post(
+  '/registrants/:id/enroll',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.enrollRegistrant
+);
 
 /**
  * @swagger
@@ -387,7 +441,11 @@ router.post("/registrants/:id/enroll", authorize(UserRole.SUPER_ADMIN, UserRole.
  *       204:
  *         description: Registrant deleted
  */
-router.delete("/registrants/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteRegistrant);
+router.delete(
+  '/registrants/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.deleteRegistrant
+);
 
 // ==================== DOCUMENTS ====================
 
@@ -409,7 +467,11 @@ router.delete("/registrants/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_
  *       200:
  *         description: List of registrant documents
  */
-router.get("/registrants/:registrantId/documents", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.getRegistrantDocuments);
+router.get(
+  '/registrants/:registrantId/documents',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.getRegistrantDocuments
+);
 
 /**
  * @swagger
@@ -444,7 +506,11 @@ router.get("/registrants/:registrantId/documents", authorize(UserRole.SUPER_ADMI
  *       201:
  *         description: Document uploaded
  */
-router.post("/registrants/:registrantId/documents", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.createRegistrantDocument);
+router.post(
+  '/registrants/:registrantId/documents',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.createRegistrantDocument
+);
 
 /**
  * @swagger
@@ -477,7 +543,11 @@ router.post("/registrants/:registrantId/documents", authorize(UserRole.SUPER_ADM
  *       200:
  *         description: Document verified
  */
-router.patch("/documents/:id/verify", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.verifyDocument);
+router.patch(
+  '/documents/:id/verify',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.verifyDocument
+);
 
 /**
  * @swagger
@@ -497,6 +567,10 @@ router.patch("/documents/:id/verify", authorize(UserRole.SUPER_ADMIN, UserRole.U
  *       204:
  *         description: Document deleted
  */
-router.delete("/documents/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteRegistrantDocument);
+router.delete(
+  '/documents/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.deleteRegistrantDocument
+);
 
 export default router;

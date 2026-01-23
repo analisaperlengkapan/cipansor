@@ -2,11 +2,11 @@ import { Router } from 'express';
 import { rolesController } from './roles.controller';
 import { authenticate, authorize } from '@/middleware/auth';
 import { validate, validateQuery } from '@/middleware/error';
-import { 
+import {
   getRolesQuerySchema,
-  assignRoleSchema, 
+  assignRoleSchema,
   switchRoleSchema,
-  setPrimaryRoleSchema 
+  setPrimaryRoleSchema,
 } from './roles.schema';
 import { UserRole } from '@prisma/client';
 
@@ -49,11 +49,7 @@ router.get(
  *       200:
  *         description: User's role assignments
  */
-router.get(
-  '/my-roles',
-  authenticate,
-  rolesController.getMyRoles.bind(rolesController)
-);
+router.get('/my-roles', authenticate, rolesController.getMyRoles.bind(rolesController));
 
 /**
  * @openapi
@@ -82,7 +78,7 @@ router.get(
 router.post(
   '/switch',
   authenticate,
-  validate(switchRoleSchema ),
+  validate(switchRoleSchema),
   rolesController.switchRole.bind(rolesController)
 );
 
@@ -104,11 +100,7 @@ router.post(
  *       200:
  *         description: Role details
  */
-router.get(
-  '/:id',
-  authenticate,
-  rolesController.getRoleById.bind(rolesController)
-);
+router.get('/:id', authenticate, rolesController.getRoleById.bind(rolesController));
 
 /**
  * @openapi
@@ -172,7 +164,7 @@ router.post(
   '/assign',
   authenticate,
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
-  validate(assignRoleSchema ),
+  validate(assignRoleSchema),
   rolesController.assignRole.bind(rolesController)
 );
 
@@ -210,7 +202,7 @@ router.patch(
   '/users/:userId/primary',
   authenticate,
   authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
-  validate(setPrimaryRoleSchema ),
+  validate(setPrimaryRoleSchema),
   rolesController.setPrimaryRole.bind(rolesController)
 );
 

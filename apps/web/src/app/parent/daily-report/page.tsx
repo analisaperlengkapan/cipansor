@@ -17,12 +17,19 @@ import {
   Smile,
   Meh,
   Frown,
-  Thermometer
+  Thermometer,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -46,7 +53,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { useStudentDailySummary, useAddParentNotes } from "@/hooks/use-daily-report";
+import {
+  useStudentDailySummary,
+  useAddParentNotes,
+} from "@/hooks/use-daily-report";
 import { useAuthStore } from "@/stores/auth";
 import { cn } from "@/lib/utils";
 import { User } from "@/lib/api";
@@ -58,7 +68,13 @@ interface ParentUser extends User {
 }
 
 // Mood Icon Helper
-const MoodIcon = ({ mood, className }: { mood: string; className?: string }) => {
+const MoodIcon = ({
+  mood,
+  className,
+}: {
+  mood: string;
+  className?: string;
+}) => {
   switch (mood) {
     case "HAPPY":
     case "EXCITED":
@@ -97,9 +113,15 @@ export default function ParentDailyReportPage() {
   const availableChildren = parentUser?.children || [];
   const defaultStudentId = parentUser?.studentId || availableChildren[0]?.id;
 
-  const [activeStudentId, setActiveStudentId] = useState<string>(defaultStudentId || "");
+  const [activeStudentId, setActiveStudentId] = useState<string>(
+    defaultStudentId || "",
+  );
 
-  const { data: summaryData, isLoading, refetch } = useStudentDailySummary({
+  const {
+    data: summaryData,
+    isLoading,
+    refetch,
+  } = useStudentDailySummary({
     studentId: activeStudentId,
     academicYearId: user?.academicYearId || "",
     month: currentDate.getMonth() + 1,
@@ -135,7 +157,7 @@ export default function ParentDailyReportPage() {
         onError: () => {
           toast.error("Gagal mengkonfirmasi laporan");
         },
-      }
+      },
     );
   };
 
@@ -144,7 +166,9 @@ export default function ParentDailyReportPage() {
       <div className="container mx-auto p-6 flex flex-col items-center justify-center min-h-[400px]">
         <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
         <h2 className="text-xl font-semibold">Data Siswa Tidak Ditemukan</h2>
-        <p className="text-muted-foreground">Anda belum terhubung dengan data siswa.</p>
+        <p className="text-muted-foreground">
+          Anda belum terhubung dengan data siswa.
+        </p>
       </div>
     );
   }
@@ -154,7 +178,9 @@ export default function ParentDailyReportPage() {
       {/* Header & Month Navigation */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Buku Penghubung Digital</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Buku Penghubung Digital
+          </h1>
           <p className="text-muted-foreground">
             Pantau aktivitas harian dan perkembangan Ananda.
           </p>
@@ -178,13 +204,21 @@ export default function ParentDailyReportPage() {
           )}
 
           <div className="flex items-center gap-2 bg-muted/50 p-1 rounded-lg">
-            <Button variant="ghost" size="icon" onClick={() => handleMonthChange(-1)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleMonthChange(-1)}
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="font-medium min-w-[140px] text-center">
               {format(currentDate, "MMMM yyyy", { locale: id })}
             </span>
-            <Button variant="ghost" size="icon" onClick={() => handleMonthChange(1)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleMonthChange(1)}
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -203,10 +237,14 @@ export default function ParentDailyReportPage() {
           <div className="grid gap-4 md:grid-cols-3">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Laporan</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Total Laporan
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{summaryData?.statistics.totalReports || 0}</div>
+                <div className="text-2xl font-bold">
+                  {summaryData?.statistics.totalReports || 0}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Hari efektif bulan ini
                 </p>
@@ -214,7 +252,9 @@ export default function ParentDailyReportPage() {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Dikonfirmasi</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Dikonfirmasi
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
@@ -227,13 +267,18 @@ export default function ParentDailyReportPage() {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Rata-rata Mood</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Rata-rata Mood
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-2">
                   <div className="text-2xl font-bold">
-                    {Object.entries(summaryData?.statistics.moodDistribution || {})
-                      .sort(([, a], [, b]) => (b as number) - (a as number))[0]?.[0] || "-"}
+                    {Object.entries(
+                      summaryData?.statistics.moodDistribution || {},
+                    ).sort(
+                      ([, a], [, b]) => (b as number) - (a as number),
+                    )[0]?.[0] || "-"}
                   </div>
                   {/* Show dominant mood icon */}
                 </div>
@@ -249,14 +294,19 @@ export default function ParentDailyReportPage() {
             <h3 className="font-semibold text-lg">Riwayat Harian</h3>
             {summaryData?.reports.length === 0 ? (
               <div className="text-center py-12 border rounded-lg bg-muted/20">
-                <p className="text-muted-foreground">Belum ada laporan untuk bulan ini.</p>
+                <p className="text-muted-foreground">
+                  Belum ada laporan untuk bulan ini.
+                </p>
               </div>
             ) : (
               summaryData?.reports.map((report) => (
-                <Card key={report.id} className={cn(
-                  "overflow-hidden transition-all hover:shadow-md",
-                  !report.parentReadAt && "border-l-4 border-l-blue-500"
-                )}>
+                <Card
+                  key={report.id}
+                  className={cn(
+                    "overflow-hidden transition-all hover:shadow-md",
+                    !report.parentReadAt && "border-l-4 border-l-blue-500",
+                  )}
+                >
                   <CardHeader className="pb-3 bg-muted/30">
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-3">
@@ -265,27 +315,41 @@ export default function ParentDailyReportPage() {
                         </div>
                         <div>
                           <CardTitle className="text-base">
-                            {format(parseISO(report.reportDate as unknown as string), "EEEE, d MMMM yyyy", { locale: id })}
+                            {format(
+                              parseISO(report.reportDate as unknown as string),
+                              "EEEE, d MMMM yyyy",
+                              { locale: id },
+                            )}
                           </CardTitle>
                           <CardDescription>
-                            Dicatat oleh: {report.createdBy?.name || "Guru Kelas"}
+                            Dicatat oleh:{" "}
+                            {report.createdBy?.name || "Guru Kelas"}
                           </CardDescription>
                         </div>
                       </div>
-                      <Badge variant={report.parentReadAt ? "outline" : "default"} className={cn(
-                        report.parentReadAt ? "text-green-600 border-green-200 bg-green-50" : "bg-blue-600 hover:bg-blue-700"
-                      )}>
-                        {report.parentReadAt ? "Sudah Dibaca" : "Perlu Konfirmasi"}
+                      <Badge
+                        variant={report.parentReadAt ? "outline" : "default"}
+                        className={cn(
+                          report.parentReadAt
+                            ? "text-green-600 border-green-200 bg-green-50"
+                            : "bg-blue-600 hover:bg-blue-700",
+                        )}
+                      >
+                        {report.parentReadAt
+                          ? "Sudah Dibaca"
+                          : "Perlu Konfirmasi"}
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="pt-4 grid gap-4 md:grid-cols-2">
-
                     {/* Left Column: Basic Info & Ibadah */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border">
                         <div className="flex items-center gap-2">
-                          <MoodIcon mood={report.mood || "NEUTRAL"} className="h-5 w-5" />
+                          <MoodIcon
+                            mood={report.mood || "NEUTRAL"}
+                            className="h-5 w-5"
+                          />
                           <span className="font-medium">Mood:</span>
                           <MoodLabel mood={report.mood || "NEUTRAL"} />
                         </div>
@@ -304,11 +368,15 @@ export default function ParentDailyReportPage() {
                         <div className="grid grid-cols-2 gap-2 text-sm">
                           <div className="flex justify-between border p-2 rounded">
                             <span>Makan Siang</span>
-                            <span className="font-medium">{report.mealStatus || "-"}</span>
+                            <span className="font-medium">
+                              {report.mealStatus || "-"}
+                            </span>
                           </div>
                           <div className="flex justify-between border p-2 rounded">
                             <span>Snack</span>
-                            <span className="font-medium">{report.snackStatus || "-"}</span>
+                            <span className="font-medium">
+                              {report.snackStatus || "-"}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -318,23 +386,39 @@ export default function ParentDailyReportPage() {
                           <CheckCircle2 className="h-4 w-4" /> Mutabaah Ibadah
                         </h4>
                         <div className="grid grid-cols-4 gap-2">
-                          {['Dhuha', 'Dzuhur', 'Ashar', 'Jamaah'].map((prayer) => {
-                            const key = `sholat${prayer}` as keyof typeof report;
-                            const isDone = !!report[key];
-                            return (
-                              <div key={prayer} className={cn(
-                                "flex flex-col items-center justify-center p-2 rounded border text-xs",
-                                isDone ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-red-700"
-                              )}>
-                                <span className="font-bold">{prayer}</span>
-                                {isDone ? <CheckCircle2 className="h-4 w-4 mt-1" /> : <span className="text-[10px] mt-1">Tidak</span>}
-                              </div>
-                            );
-                          })}
+                          {["Dhuha", "Dzuhur", "Ashar", "Jamaah"].map(
+                            (prayer) => {
+                              const key =
+                                `sholat${prayer}` as keyof typeof report;
+                              const isDone = !!report[key];
+                              return (
+                                <div
+                                  key={prayer}
+                                  className={cn(
+                                    "flex flex-col items-center justify-center p-2 rounded border text-xs",
+                                    isDone
+                                      ? "bg-green-50 border-green-200 text-green-700"
+                                      : "bg-red-50 border-red-200 text-red-700",
+                                  )}
+                                >
+                                  <span className="font-bold">{prayer}</span>
+                                  {isDone ? (
+                                    <CheckCircle2 className="h-4 w-4 mt-1" />
+                                  ) : (
+                                    <span className="text-[10px] mt-1">
+                                      Tidak
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            },
+                          )}
                         </div>
                         {report.tahfidzActivity && (
                           <div className="bg-blue-50 p-2 rounded border border-blue-100 text-sm mt-2">
-                            <span className="font-semibold text-blue-700">Tahfidz: </span>
+                            <span className="font-semibold text-blue-700">
+                              Tahfidz:{" "}
+                            </span>
                             {report.tahfidzActivity}
                           </div>
                         )}
@@ -369,7 +453,8 @@ export default function ParentDailyReportPage() {
                       {report.homeActivity && (
                         <div className="space-y-1">
                           <h4 className="text-sm font-semibold flex items-center gap-2 text-blue-600">
-                            <MessageCircle className="h-4 w-4" /> Kegiatan di Rumah / Tanggapan
+                            <MessageCircle className="h-4 w-4" /> Kegiatan di
+                            Rumah / Tanggapan
                           </h4>
                           <div className="text-sm bg-blue-50 border border-blue-100 p-3 rounded-lg text-blue-800 whitespace-pre-wrap">
                             {report.homeActivity}
@@ -378,31 +463,39 @@ export default function ParentDailyReportPage() {
                       )}
 
                       {/* Display homework if any */}
-                      {report.homework && (report.homework as any[]).length > 0 && (
-                        <div className="space-y-1">
-                          <h4 className="text-sm font-semibold flex items-center gap-2 text-purple-600">
-                            <BookOpen className="h-4 w-4" /> PR / Tugas
-                          </h4>
-                          <ul className="text-sm list-disc list-inside bg-purple-50 border border-purple-100 p-3 rounded-lg text-purple-800">
-                            {(report.homework as any[]).map((hw, idx) => (
-                              <li key={idx}>
-                                <strong>{hw.subjectName}:</strong> {hw.description}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                      {report.homework &&
+                        (report.homework as any[]).length > 0 && (
+                          <div className="space-y-1">
+                            <h4 className="text-sm font-semibold flex items-center gap-2 text-purple-600">
+                              <BookOpen className="h-4 w-4" /> PR / Tugas
+                            </h4>
+                            <ul className="text-sm list-disc list-inside bg-purple-50 border border-purple-100 p-3 rounded-lg text-purple-800">
+                              {(report.homework as any[]).map((hw, idx) => (
+                                <li key={idx}>
+                                  <strong>{hw.subjectName}:</strong>{" "}
+                                  {hw.description}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                     </div>
-
                   </CardContent>
                   <CardFooter className="bg-muted/10 flex justify-end pt-2 pb-4 px-6">
                     {!report.parentReadAt ? (
-                      <Dialog open={isFeedbackDialogOpen && selectedReportId === report.id} onOpenChange={(open) => {
-                        setIsFeedbackDialogOpen(open);
-                        if (!open) setSelectedReportId(null);
-                      }}>
+                      <Dialog
+                        open={
+                          isFeedbackDialogOpen && selectedReportId === report.id
+                        }
+                        onOpenChange={(open) => {
+                          setIsFeedbackDialogOpen(open);
+                          if (!open) setSelectedReportId(null);
+                        }}
+                      >
                         <DialogTrigger asChild>
-                          <Button onClick={() => setSelectedReportId(report.id)}>
+                          <Button
+                            onClick={() => setSelectedReportId(report.id)}
+                          >
                             Konfirmasi & Beri Balasan
                           </Button>
                         </DialogTrigger>
@@ -410,7 +503,16 @@ export default function ParentDailyReportPage() {
                           <DialogHeader>
                             <DialogTitle>Konfirmasi Laporan Harian</DialogTitle>
                             <DialogDescription>
-                              Anda mengkonfirmasi bahwa telah membaca laporan tanggal {format(parseISO(report.reportDate as unknown as string), "d MMMM yyyy", { locale: id })}.
+                              Anda mengkonfirmasi bahwa telah membaca laporan
+                              tanggal{" "}
+                              {format(
+                                parseISO(
+                                  report.reportDate as unknown as string,
+                                ),
+                                "d MMMM yyyy",
+                                { locale: id },
+                              )}
+                              .
                             </DialogDescription>
                           </DialogHeader>
                           <div className="py-4">
@@ -424,9 +526,19 @@ export default function ParentDailyReportPage() {
                             />
                           </div>
                           <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsFeedbackDialogOpen(false)}>Batal</Button>
-                            <Button onClick={handleConfirm} disabled={confirmMutation.isPending}>
-                              {confirmMutation.isPending && <Clock className="mr-2 h-4 w-4 animate-spin" />}
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsFeedbackDialogOpen(false)}
+                            >
+                              Batal
+                            </Button>
+                            <Button
+                              onClick={handleConfirm}
+                              disabled={confirmMutation.isPending}
+                            >
+                              {confirmMutation.isPending && (
+                                <Clock className="mr-2 h-4 w-4 animate-spin" />
+                              )}
                               Kirim Konfirmasi
                             </Button>
                           </DialogFooter>
@@ -434,7 +546,12 @@ export default function ParentDailyReportPage() {
                       </Dialog>
                     ) : (
                       <div className="text-xs text-muted-foreground flex items-center gap-1">
-                        <CheckCircle2 className="h-3 w-3" /> Dikonfirmasi pada {format(parseISO(report.parentReadAt as unknown as string), "d MMM yyyy HH:mm", { locale: id })}
+                        <CheckCircle2 className="h-3 w-3" /> Dikonfirmasi pada{" "}
+                        {format(
+                          parseISO(report.parentReadAt as unknown as string),
+                          "d MMM yyyy HH:mm",
+                          { locale: id },
+                        )}
                       </div>
                     )}
                   </CardFooter>

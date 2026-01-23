@@ -5,13 +5,19 @@ import { z } from 'zod';
 export const exportStudentsQuerySchema = z.object({
   unitId: z.string().uuid('Invalid unit ID format').optional(),
   academicYearId: z.string().uuid('Invalid academic year ID format').optional(),
-  includeInactive: z.string().transform(v => v === 'true').optional(),
+  includeInactive: z
+    .string()
+    .transform((v) => v === 'true')
+    .optional(),
   format: z.enum(['json', 'excel', 'csv']).default('json'),
 });
 
 export const exportTeachersQuerySchema = z.object({
   unitId: z.string().uuid('Invalid unit ID format').optional(),
-  includeInactive: z.string().transform(v => v === 'true').optional(),
+  includeInactive: z
+    .string()
+    .transform((v) => v === 'true')
+    .optional(),
   format: z.enum(['json', 'excel', 'csv']).default('json'),
 });
 
@@ -37,16 +43,28 @@ export const emisStudentDataSchema = z.object({
   kecamatan: z.string().max(100).optional(),
   kabupaten: z.string().max(100).optional(),
   provinsi: z.string().max(100).optional(),
-  kodePos: z.string().regex(/^\d{5}$/, 'Kode pos must be 5 digits').optional(),
+  kodePos: z
+    .string()
+    .regex(/^\d{5}$/, 'Kode pos must be 5 digits')
+    .optional(),
   noTelepon: z.string().max(20).optional(),
   namaAyah: z.string().max(100).optional(),
-  nikAyah: z.string().regex(/^\d{16}$/).optional(),
+  nikAyah: z
+    .string()
+    .regex(/^\d{16}$/)
+    .optional(),
   pekerjaanAyah: z.string().max(50).optional(),
   namaIbu: z.string().max(100).optional(),
-  nikIbu: z.string().regex(/^\d{16}$/).optional(),
+  nikIbu: z
+    .string()
+    .regex(/^\d{16}$/)
+    .optional(),
   pekerjaanIbu: z.string().max(50).optional(),
   namaWali: z.string().max(100).optional(),
-  nikWali: z.string().regex(/^\d{16}$/).optional(),
+  nikWali: z
+    .string()
+    .regex(/^\d{16}$/)
+    .optional(),
   hubunganWali: z.string().max(50).optional(),
   statusDalamKeluarga: z.enum(['KANDUNG', 'TIRI', 'ANGKAT']).optional(),
   anakKe: z.number().int().min(1).optional(),
@@ -65,7 +83,10 @@ export const emisStudentDataSchema = z.object({
 
 export const emisTeacherDataSchema = z.object({
   nip: z.string().max(18).optional(),
-  nuptk: z.string().regex(/^\d{16}$/, 'NUPTK must be 16 digits').optional(),
+  nuptk: z
+    .string()
+    .regex(/^\d{16}$/, 'NUPTK must be 16 digits')
+    .optional(),
   nik: z.string().regex(/^\d{16}$/, 'NIK must be 16 digits'),
   nama: z.string().min(1, 'Nama is required').max(100),
   tempatLahir: z.string().min(1).max(100),
@@ -106,7 +127,10 @@ export const emisInstitutionDataSchema = z.object({
   kecamatan: z.string().max(100),
   kabupaten: z.string().max(100),
   provinsi: z.string().max(100),
-  kodePos: z.string().regex(/^\d{5}$/).optional(),
+  kodePos: z
+    .string()
+    .regex(/^\d{5}$/)
+    .optional(),
   noTelepon: z.string().max(20).optional(),
   noFax: z.string().max(20).optional(),
   email: z.string().email().optional(),

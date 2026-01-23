@@ -10,39 +10,44 @@
 ## Module Overview
 
 ### Target Users
+
 - **PAUD Guru**: Input assessments, daily reports
 - **PAUD Kepala Sekolah**: Monitor class progress, approve reports
 - **Orang Tua**: View child development progress
 - **PAUD Admin**: System configuration, templates
 
 ### Pages Summary
-| Page | Route | Priority | Complexity |
-|------|-------|----------|------------|
-| Assessment List | `/paud/assessment` | P1 | Medium |
-| Assessment Create | `/paud/assessment/new` | P1 | High |
-| Assessment Edit | `/paud/assessment/:id/edit` | P1 | High |
-| Student Progress | `/paud/assessment/student/:id` | P1 | High |
-| Class Dashboard | `/paud/assessment/class/:id` | P1 | Medium |
-| Indicator Management | `/paud/assessment/indicators` | P2 | Low |
-| Report List | `/paud/reports` | P1 | Medium |
-| Report Generate | `/paud/reports/generate` | P1 | High |
-| Report View/Edit | `/paud/reports/:id` | P1 | Medium |
-| Daily Report Input | `/paud/daily-report/new` | P1 | Medium |
-| Daily Report List | `/paud/daily-report` | P1 | Low |
+
+| Page                 | Route                          | Priority | Complexity |
+| -------------------- | ------------------------------ | -------- | ---------- |
+| Assessment List      | `/paud/assessment`             | P1       | Medium     |
+| Assessment Create    | `/paud/assessment/new`         | P1       | High       |
+| Assessment Edit      | `/paud/assessment/:id/edit`    | P1       | High       |
+| Student Progress     | `/paud/assessment/student/:id` | P1       | High       |
+| Class Dashboard      | `/paud/assessment/class/:id`   | P1       | Medium     |
+| Indicator Management | `/paud/assessment/indicators`  | P2       | Low        |
+| Report List          | `/paud/reports`                | P1       | Medium     |
+| Report Generate      | `/paud/reports/generate`       | P1       | High       |
+| Report View/Edit     | `/paud/reports/:id`            | P1       | Medium     |
+| Daily Report Input   | `/paud/daily-report/new`       | P1       | Medium     |
+| Daily Report List    | `/paud/daily-report`           | P1       | Low        |
 
 ---
 
 ## Page 1: PAUD Assessment List
 
 ### Route
+
 `/paud/assessment`
 
 ### User Stories
+
 - **As a guru**, I want to see all assessments I've created, so I can track my work
 - **As a kepala sekolah**, I want to see all class assessments, so I can monitor progress
 - **As a guru**, I want to filter assessments by student/aspect/period, so I can find specific records
 
 ### Layout
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ Header: PAUD Assessment                          [+ New]    │
@@ -65,32 +70,33 @@
 ```
 
 ### Components
+
 ```typescript
 // Main component
 export default function PAUDAssessmentListPage() {
   const [filters, setFilters] = useState<AssessmentFilters>({})
   const [page, setPage] = useState(1)
-  
+
   const { data, isLoading } = useQuery({
     queryKey: ['paud-assessments', filters, page],
     queryFn: () => api.paud.getAssessments({ ...filters, page })
   })
-  
+
   return (
     <div>
-      <PageHeader 
+      <PageHeader
         title="PAUD Assessment"
         action={<Button>+ New Assessment</Button>}
       />
-      <AssessmentFilters 
+      <AssessmentFilters
         filters={filters}
         onChange={setFilters}
       />
-      <AssessmentTable 
+      <AssessmentTable
         data={data?.assessments}
         isLoading={isLoading}
       />
-      <Pagination 
+      <Pagination
         page={page}
         totalPages={data?.pagination.totalPages}
         onChange={setPage}
@@ -101,6 +107,7 @@ export default function PAUDAssessmentListPage() {
 ```
 
 ### Filter Component
+
 ```typescript
 interface AssessmentFiltersProps {
   filters: AssessmentFilters
@@ -128,10 +135,10 @@ function AssessmentFilters({ filters, onChange }: AssessmentFiltersProps) {
       <DateRangePicker
         from={filters.dateFrom}
         to={filters.dateTo}
-        onChange={(range) => onChange({ 
-          ...filters, 
+        onChange={(range) => onChange({
+          ...filters,
           dateFrom: range.from,
-          dateTo: range.to 
+          dateTo: range.to
         })}
       />
     </div>
@@ -140,18 +147,19 @@ function AssessmentFilters({ filters, onChange }: AssessmentFiltersProps) {
 ```
 
 ### API Integration
+
 ```typescript
 // src/lib/api/paud.ts
 export const paudApi = {
   getAssessments: async (params: GetAssessmentsParams) => {
-    const response = await fetch('/api/paud-assessment/assessments', {
-      method: 'GET',
+    const response = await fetch("/api/paud-assessment/assessments", {
+      method: "GET",
       headers: authHeaders(),
-      params: cleanParams(params)
-    })
-    return response.json()
-  }
-}
+      params: cleanParams(params),
+    });
+    return response.json();
+  },
+};
 ```
 
 ---
@@ -159,15 +167,18 @@ export const paudApi = {
 ## Page 2: PAUD Assessment Create/Edit
 
 ### Route
+
 - Create: `/paud/assessment/new`
 - Edit: `/paud/assessment/:id/edit`
 
 ### User Stories
+
 - **As a guru**, I want to input assessment quickly, so I can document learning
 - **As a guru**, I want to upload photos as evidence, so I can show concrete examples
 - **As a guru**, I want to use template narratives, so I can speed up input
 
 ### Layout (Multi-step Form)
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ New PAUD Assessment                         [Save] [Cancel] │
@@ -191,6 +202,7 @@ export const paudApi = {
 ```
 
 ### Step 2: Assessment Input
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ Step 2: Assessment Details                                  │
@@ -232,6 +244,7 @@ export const paudApi = {
 ```
 
 ### Step 3: Evidence Upload
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ Step 3: Evidence (Photos/Videos)                           │
@@ -254,6 +267,7 @@ export const paudApi = {
 ```
 
 ### Component Implementation
+
 ```typescript
 // Multi-step form with React Hook Form + Zod
 import { useForm } from 'react-hook-form'
@@ -272,7 +286,7 @@ export default function AssessmentForm() {
       evidences: []
     }
   })
-  
+
   const { mutate: createAssessment, isPending } = useMutation({
     mutationFn: paudApi.createAssessment,
     onSuccess: () => {
@@ -280,11 +294,11 @@ export default function AssessmentForm() {
       router.push('/paud/assessment')
     }
   })
-  
+
   const onSubmit = (data: AssessmentFormData) => {
     createAssessment(data)
   }
-  
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -292,8 +306,8 @@ export default function AssessmentForm() {
         {step === 2 && <AssessmentDetailsStep form={form} />}
         {step === 3 && <EvidenceUploadStep form={form} />}
         {step === 4 && <ReviewStep form={form} onSubmit={onSubmit} />}
-        
-        <FormNavigation 
+
+        <FormNavigation
           step={step}
           totalSteps={4}
           onNext={() => setStep(s => s + 1)}
@@ -306,10 +320,11 @@ export default function AssessmentForm() {
 ```
 
 ### Evidence Upload Component
+
 ```typescript
 function EvidenceUpload({ value, onChange }: FileUploadProps) {
   const [uploading, setUploading] = useState(false)
-  
+
   const handleFileSelect = async (files: File[]) => {
     setUploading(true)
     try {
@@ -323,16 +338,16 @@ function EvidenceUpload({ value, onChange }: FileUploadProps) {
       setUploading(false)
     }
   }
-  
+
   return (
     <div className="space-y-4">
-      <FileDropzone 
+      <FileDropzone
         onDrop={handleFileSelect}
         accept="image/*,video/*"
         maxSize={5 * 1024 * 1024}
         maxFiles={5}
       />
-      <EvidenceGallery 
+      <EvidenceGallery
         items={value}
         onRemove={(index) => {
           const newValue = [...value]
@@ -350,14 +365,17 @@ function EvidenceUpload({ value, onChange }: FileUploadProps) {
 ## Page 3: Student Progress Dashboard
 
 ### Route
+
 `/paud/assessment/student/:studentId`
 
 ### User Stories
+
 - **As a guru**, I want to see student development across 6 aspects
 - **As a kepala sekolah**, I want to see progress trends over time
 - **As a parent**, I want to understand my child's strengths and areas to develop
 
 ### Layout
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ ← Back to List                                              │
@@ -418,25 +436,26 @@ function EvidenceUpload({ value, onChange }: FileUploadProps) {
 ```
 
 ### Components
+
 ```typescript
 export default function StudentProgressPage({ params }: PageProps) {
   const { studentId } = params
-  
+
   const { data: student } = useQuery({
     queryKey: ['student', studentId],
     queryFn: () => api.students.getById(studentId)
   })
-  
+
   const { data: summary } = useQuery({
     queryKey: ['paud-summary', studentId],
     queryFn: () => api.paud.getStudentSummary(studentId)
   })
-  
+
   const { data: assessments } = useQuery({
     queryKey: ['paud-assessments', studentId],
     queryFn: () => api.paud.getAssessments({ studentId })
   })
-  
+
   return (
     <div className="space-y-6">
       <StudentHeader student={student} />
@@ -450,6 +469,7 @@ export default function StudentProgressPage({ params }: PageProps) {
 ```
 
 ### Radar Chart Component
+
 ```typescript
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts'
 
@@ -462,24 +482,24 @@ function AspectRadarChart({ data }: { data: AspectScore[] }) {
     { aspect: 'SE', current: data.SE.level, previous: data.SE.previousLevel },
     { aspect: 'SNI', current: data.SNI.level, previous: data.SNI.previousLevel },
   ]
-  
+
   return (
     <RadarChart width={500} height={400} data={chartData}>
       <PolarGrid />
       <PolarAngleAxis dataKey="aspect" />
-      <Radar 
-        name="Current" 
-        dataKey="current" 
-        stroke="#8884d8" 
-        fill="#8884d8" 
-        fillOpacity={0.6} 
+      <Radar
+        name="Current"
+        dataKey="current"
+        stroke="#8884d8"
+        fill="#8884d8"
+        fillOpacity={0.6}
       />
-      <Radar 
-        name="Previous" 
-        dataKey="previous" 
-        stroke="#82ca9d" 
-        fill="#82ca9d" 
-        fillOpacity={0.3} 
+      <Radar
+        name="Previous"
+        dataKey="previous"
+        stroke="#82ca9d"
+        fill="#82ca9d"
+        fillOpacity={0.3}
       />
     </RadarChart>
   )
@@ -491,13 +511,16 @@ function AspectRadarChart({ data }: { data: AspectScore[] }) {
 ## Page 4: Class Dashboard
 
 ### Route
+
 `/paud/assessment/class/:classId`
 
 ### User Stories
+
 - **As a guru**, I want to see class overview to identify students needing attention
 - **As a kepala sekolah**, I want to compare class progress
 
 ### Layout
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ Class PAUD A1 - Development Dashboard                      │
@@ -547,11 +570,13 @@ function AspectRadarChart({ data }: { data: AspectScore[] }) {
 ## Page 5: Report Generation & PDF
 
 ### Route
+
 - List: `/paud/reports`
 - Generate: `/paud/reports/generate`
 - View: `/paud/reports/:id`
 
 ### Report Template (Raport Narasi PAUD)
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                 YAYASAN PESANTREN CIPANSOR                  │
@@ -626,52 +651,53 @@ function AspectRadarChart({ data }: { data: AspectScore[] }) {
 ```
 
 ### PDF Generation Component
+
 ```typescript
-import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
 
 async function generateReportPDF(reportData: PAUDReport) {
-  const doc = new jsPDF()
-  
+  const doc = new jsPDF();
+
   // Header
-  doc.setFontSize(16)
-  doc.text('YAYASAN PESANTREN CIPANSOR', 105, 20, { align: 'center' })
-  doc.setFontSize(14)
-  doc.text('LAPORAN PERKEMBANGAN ANAK', 105, 30, { align: 'center' })
-  
+  doc.setFontSize(16);
+  doc.text("YAYASAN PESANTREN CIPANSOR", 105, 20, { align: "center" });
+  doc.setFontSize(14);
+  doc.text("LAPORAN PERKEMBANGAN ANAK", 105, 30, { align: "center" });
+
   // Student info
-  doc.setFontSize(12)
-  doc.text(`Nama: ${reportData.student.name}`, 20, 50)
-  doc.text(`Kelas: ${reportData.class.name}`, 20, 60)
-  
+  doc.setFontSize(12);
+  doc.text(`Nama: ${reportData.student.name}`, 20, 50);
+  doc.text(`Kelas: ${reportData.class.name}`, 20, 60);
+
   // Aspects (loop through 6 aspects)
-  let y = 80
+  let y = 80;
   for (const aspect of reportData.aspects) {
-    doc.setFontSize(11)
-    doc.setFont('bold')
-    doc.text(`${aspect.number}. ${aspect.name} - ${aspect.level}`, 20, y)
-    y += 10
-    
-    doc.setFont('normal')
-    const splitText = doc.splitTextToSize(aspect.narrative, 170)
-    doc.text(splitText, 20, y)
-    y += splitText.length * 7 + 10
+    doc.setFontSize(11);
+    doc.setFont("bold");
+    doc.text(`${aspect.number}. ${aspect.name} - ${aspect.level}`, 20, y);
+    y += 10;
+
+    doc.setFont("normal");
+    const splitText = doc.splitTextToSize(aspect.narrative, 170);
+    doc.text(splitText, 20, y);
+    y += splitText.length * 7 + 10;
   }
-  
+
   // Add photos
   if (reportData.photos?.length > 0) {
-    doc.addPage()
-    doc.text('DOKUMENTASI KEGIATAN', 20, 20)
+    doc.addPage();
+    doc.text("DOKUMENTASI KEGIATAN", 20, 20);
     // Add image grid
   }
-  
+
   // Signatures
-  doc.addPage()
-  doc.text('Jakarta, ' + formatDate(reportData.issueDate), 20, 20)
-  doc.text('Kepala Sekolah', 40, 60)
-  doc.text('Wali Kelas', 140, 60)
-  
-  return doc.output('blob')
+  doc.addPage();
+  doc.text("Jakarta, " + formatDate(reportData.issueDate), 20, 20);
+  doc.text("Kepala Sekolah", 40, 60);
+  doc.text("Wali Kelas", 140, 60);
+
+  return doc.output("blob");
 }
 ```
 
@@ -680,38 +706,39 @@ async function generateReportPDF(reportData: PAUDReport) {
 ## State Management
 
 ### Zustand Store for PAUD Module
+
 ```typescript
-import { create } from 'zustand'
+import { create } from "zustand";
 
 interface PAUDStore {
   // Filters state
-  filters: AssessmentFilters
-  setFilters: (filters: AssessmentFilters) => void
-  
+  filters: AssessmentFilters;
+  setFilters: (filters: AssessmentFilters) => void;
+
   // Current assessment form state (multi-step)
-  currentAssessment: Partial<AssessmentFormData>
-  updateCurrentAssessment: (data: Partial<AssessmentFormData>) => void
-  resetCurrentAssessment: () => void
-  
+  currentAssessment: Partial<AssessmentFormData>;
+  updateCurrentAssessment: (data: Partial<AssessmentFormData>) => void;
+  resetCurrentAssessment: () => void;
+
   // UI state
-  selectedAspect: PAUDAspect | null
-  setSelectedAspect: (aspect: PAUDAspect | null) => void
+  selectedAspect: PAUDAspect | null;
+  setSelectedAspect: (aspect: PAUDAspect | null) => void;
 }
 
 export const usePAUDStore = create<PAUDStore>((set) => ({
   filters: {},
   setFilters: (filters) => set({ filters }),
-  
+
   currentAssessment: {},
-  updateCurrentAssessment: (data) => 
-    set((state) => ({ 
-      currentAssessment: { ...state.currentAssessment, ...data } 
+  updateCurrentAssessment: (data) =>
+    set((state) => ({
+      currentAssessment: { ...state.currentAssessment, ...data },
     })),
   resetCurrentAssessment: () => set({ currentAssessment: {} }),
-  
+
   selectedAspect: null,
   setSelectedAspect: (aspect) => set({ selectedAspect: aspect }),
-}))
+}));
 ```
 
 ---
@@ -719,11 +746,13 @@ export const usePAUDStore = create<PAUDStore>((set) => ({
 ## Mobile Responsive Considerations
 
 ### Breakpoints
+
 - **Mobile**: < 640px - Single column, stacked forms
 - **Tablet**: 640px - 1024px - Two columns, simplified charts
 - **Desktop**: > 1024px - Full layout
 
 ### Mobile-specific Components
+
 ```typescript
 // Mobile view for assessment list (card-based)
 function AssessmentListMobile({ data }: Props) {
@@ -760,31 +789,33 @@ function AssessmentListMobile({ data }: Props) {
 ## Performance Optimization
 
 ### React Query Configuration
+
 ```typescript
 export const paudQueryConfig = {
   staleTime: 5 * 60 * 1000, // 5 minutes
   cacheTime: 10 * 60 * 1000, // 10 minutes
   refetchOnWindowFocus: false,
   refetchOnMount: true,
-}
+};
 
 // Prefetch strategy
 export function usePrefetchPAUD() {
-  const queryClient = useQueryClient()
-  
+  const queryClient = useQueryClient();
+
   const prefetchAssessments = (studentId: string) => {
     queryClient.prefetchQuery({
-      queryKey: ['paud-assessments', studentId],
+      queryKey: ["paud-assessments", studentId],
       queryFn: () => api.paud.getAssessments({ studentId }),
-      ...paudQueryConfig
-    })
-  }
-  
-  return { prefetchAssessments }
+      ...paudQueryConfig,
+    });
+  };
+
+  return { prefetchAssessments };
 }
 ```
 
 ### Image Optimization
+
 ```typescript
 // Use Next.js Image component
 import Image from 'next/image'
@@ -810,6 +841,7 @@ function EvidenceImage({ src, alt }: Props) {
 ## Testing Strategy
 
 ### Unit Tests
+
 ```typescript
 // Example: AspectCard component test
 import { render, screen } from '@testing-library/react'
@@ -818,13 +850,13 @@ import { AspectCard } from './AspectCard'
 describe('AspectCard', () => {
   it('renders aspect name and level', () => {
     render(
-      <AspectCard 
-        aspect="NAM" 
-        level="BSH" 
-        count={8} 
+      <AspectCard
+        aspect="NAM"
+        level="BSH"
+        count={8}
       />
     )
-    
+
     expect(screen.getByText('NAM')).toBeInTheDocument()
     expect(screen.getByText('BSH')).toBeInTheDocument()
     expect(screen.getByText('8 assessments')).toBeInTheDocument()
@@ -833,32 +865,33 @@ describe('AspectCard', () => {
 ```
 
 ### Integration Tests (Playwright)
+
 ```typescript
 // Example: Assessment creation flow
-import { test, expect } from '@playwright/test'
+import { test, expect } from "@playwright/test";
 
-test('create PAUD assessment', async ({ page }) => {
-  await page.goto('/paud/assessment/new')
-  
+test("create PAUD assessment", async ({ page }) => {
+  await page.goto("/paud/assessment/new");
+
   // Step 1: Student Info
-  await page.selectOption('[name="studentId"]', 'student-123')
-  await page.click('button:has-text("Next")')
-  
+  await page.selectOption('[name="studentId"]', "student-123");
+  await page.click('button:has-text("Next")');
+
   // Step 2: Assessment
-  await page.click('input[value="FM"]')
-  await page.click('input[value="MB"]')
-  await page.fill('textarea[name="narrativeText"]', 'Test narrative')
-  await page.click('button:has-text("Next")')
-  
+  await page.click('input[value="FM"]');
+  await page.click('input[value="MB"]');
+  await page.fill('textarea[name="narrativeText"]', "Test narrative");
+  await page.click('button:has-text("Next")');
+
   // Step 3: Evidence (skip)
-  await page.click('button:has-text("Next")')
-  
+  await page.click('button:has-text("Next")');
+
   // Step 4: Review & Submit
-  await page.click('button:has-text("Submit")')
-  
-  await expect(page).toHaveURL('/paud/assessment')
-  await expect(page.locator('.toast')).toContainText('Success')
-})
+  await page.click('button:has-text("Submit")');
+
+  await expect(page).toHaveURL("/paud/assessment");
+  await expect(page.locator(".toast")).toContainText("Success");
+});
 ```
 
 ---
@@ -866,6 +899,7 @@ test('create PAUD assessment', async ({ page }) => {
 ## Accessibility (WCAG 2.1 AA)
 
 ### Key Requirements
+
 1. **Keyboard Navigation**: All interactive elements accessible via Tab
 2. **Screen Reader**: Proper ARIA labels and roles
 3. **Color Contrast**: Minimum 4.5:1 for text
@@ -873,6 +907,7 @@ test('create PAUD assessment', async ({ page }) => {
 5. **Error Messages**: Clear and descriptive
 
 ### Implementation Example
+
 ```typescript
 // Accessible form field
 <FormField
@@ -881,8 +916,8 @@ test('create PAUD assessment', async ({ page }) => {
   render={({ field }) => (
     <FormItem>
       <FormLabel>Aspect of Development</FormLabel>
-      <Select 
-        onValueChange={field.onChange} 
+      <Select
+        onValueChange={field.onChange}
         defaultValue={field.value}
         aria-label="Select development aspect"
         aria-required="true"
@@ -911,20 +946,20 @@ test('create PAUD assessment', async ({ page }) => {
 
 ## Implementation Timeline
 
-| Page/Feature | Complexity | Estimated Hours |
-|--------------|------------|-----------------|
-| Assessment List | Medium | 8h |
-| Assessment Create/Edit | High | 16h |
-| Student Progress Dashboard | High | 20h |
-| Class Dashboard | Medium | 12h |
-| Report Generation | High | 16h |
-| Report PDF Export | Medium | 8h |
-| Daily Report Integration | Medium | 8h |
-| Mobile Responsive | Medium | 12h |
-| Testing | - | 16h |
-| **TOTAL** | - | **116 hours** |
+| Page/Feature               | Complexity | Estimated Hours |
+| -------------------------- | ---------- | --------------- |
+| Assessment List            | Medium     | 8h              |
+| Assessment Create/Edit     | High       | 16h             |
+| Student Progress Dashboard | High       | 20h             |
+| Class Dashboard            | Medium     | 12h             |
+| Report Generation          | High       | 16h             |
+| Report PDF Export          | Medium     | 8h              |
+| Daily Report Integration   | Medium     | 8h              |
+| Mobile Responsive          | Medium     | 12h             |
+| Testing                    | -          | 16h             |
+| **TOTAL**                  | -          | **116 hours**   |
 
 ---
 
-*End of PAUD Module Frontend Design*
-*Next: Chunk 3 - Tahfidz & Dashboard Enhancement*
+_End of PAUD Module Frontend Design_
+_Next: Chunk 3 - Tahfidz & Dashboard Enhancement_

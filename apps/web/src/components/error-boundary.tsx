@@ -3,13 +3,13 @@
  * Catches React errors and displays fallback UI
  */
 
-'use client';
+"use client";
 
-import React, { Component, ReactNode, ErrorInfo } from 'react';
-import { AlertCircle, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { captureError } from '@/lib/sentry';
+import React, { Component, ReactNode, ErrorInfo } from "react";
+import { AlertCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { captureError } from "@/lib/sentry";
 
 interface Props {
   children: ReactNode;
@@ -41,8 +41,8 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
+
     this.setState({
       error,
       errorInfo,
@@ -85,25 +85,25 @@ export class ErrorBoundary extends Component<Props, State> {
               </AlertTitle>
               <AlertDescription className="mt-2 space-y-2">
                 <p>
-                  Maaf, terjadi kesalahan yang tidak terduga. Tim kami telah diberitahu
-                  dan sedang menangani masalah ini.
+                  Maaf, terjadi kesalahan yang tidak terduga. Tim kami telah
+                  diberitahu dan sedang menangani masalah ini.
                 </p>
-                {process.env.NODE_ENV === 'development' && this.state.error && (
+                {process.env.NODE_ENV === "development" && this.state.error && (
                   <details className="mt-4 p-4 bg-gray-900 text-gray-100 rounded-md overflow-auto max-h-96">
                     <summary className="cursor-pointer font-mono text-sm mb-2">
                       Error Details (Development Only)
                     </summary>
                     <pre className="text-xs whitespace-pre-wrap">
                       <strong>Error:</strong> {this.state.error.message}
-                      {'\n\n'}
+                      {"\n\n"}
                       <strong>Stack:</strong>
-                      {'\n'}
+                      {"\n"}
                       {this.state.error.stack}
-                      {'\n\n'}
+                      {"\n\n"}
                       {this.state.errorInfo && (
                         <>
                           <strong>Component Stack:</strong>
-                          {'\n'}
+                          {"\n"}
                           {this.state.errorInfo.componentStack}
                         </>
                       )}
@@ -114,19 +114,31 @@ export class ErrorBoundary extends Component<Props, State> {
             </Alert>
 
             <div className="flex gap-3">
-              <Button onClick={this.handleReset} variant="default" className="flex-1">
+              <Button
+                onClick={this.handleReset}
+                variant="default"
+                className="flex-1"
+              >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Coba Lagi
               </Button>
-              <Button onClick={this.handleReload} variant="outline" className="flex-1">
+              <Button
+                onClick={this.handleReload}
+                variant="outline"
+                className="flex-1"
+              >
                 Muat Ulang Halaman
               </Button>
             </div>
 
             <div className="mt-4 text-center text-sm text-gray-600">
               <p>
-                Jika masalah berlanjut, silakan hubungi dukungan teknis atau{' '}
-                <Button variant="link" className="text-blue-600 hover:underline p-0 h-auto font-normal" onClick={() => window.location.href = '/'}>
+                Jika masalah berlanjut, silakan hubungi dukungan teknis atau{" "}
+                <Button
+                  variant="link"
+                  className="text-blue-600 hover:underline p-0 h-auto font-normal"
+                  onClick={() => (window.location.href = "/")}
+                >
                   kembali ke beranda
                 </Button>
                 .
@@ -144,7 +156,7 @@ export class ErrorBoundary extends Component<Props, State> {
 // HOC version for easier wrapping
 export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<Props, 'children'>
+  errorBoundaryProps?: Omit<Props, "children">,
 ) {
   const WrappedComponent = (props: P) => (
     <ErrorBoundary {...errorBoundaryProps}>
@@ -152,7 +164,7 @@ export function withErrorBoundary<P extends object>(
     </ErrorBoundary>
   );
 
-  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name || 'Component'})`;
+  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name || "Component"})`;
 
   return WrappedComponent;
 }
@@ -169,20 +181,29 @@ export class AsyncErrorBoundary extends Component<Props, State> {
   }
 
   componentDidMount() {
-    window.addEventListener('unhandledrejection', this.handleUnhandledRejection);
+    window.addEventListener(
+      "unhandledrejection",
+      this.handleUnhandledRejection,
+    );
   }
 
   componentWillUnmount() {
-    window.removeEventListener('unhandledrejection', this.handleUnhandledRejection);
+    window.removeEventListener(
+      "unhandledrejection",
+      this.handleUnhandledRejection,
+    );
   }
 
   handleUnhandledRejection = (event: PromiseRejectionEvent) => {
     event.preventDefault();
-    console.error('Unhandled promise rejection:', event.reason);
+    console.error("Unhandled promise rejection:", event.reason);
 
     this.setState({
       hasError: true,
-      error: event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
+      error:
+        event.reason instanceof Error
+          ? event.reason
+          : new Error(String(event.reason)),
       errorInfo: null,
     });
 
@@ -197,8 +218,8 @@ export class AsyncErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('AsyncErrorBoundary caught an error:', error, errorInfo);
-    
+    console.error("AsyncErrorBoundary caught an error:", error, errorInfo);
+
     this.setState({
       error,
       errorInfo,
@@ -228,8 +249,13 @@ export class AsyncErrorBoundary extends Component<Props, State> {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>
-              {this.state.error?.message || 'An unexpected error occurred'}
-              <Button onClick={this.handleReset} variant="outline" size="sm" className="mt-2">
+              {this.state.error?.message || "An unexpected error occurred"}
+              <Button
+                onClick={this.handleReset}
+                variant="outline"
+                size="sm"
+                className="mt-2"
+              >
                 <RefreshCw className="mr-2 h-3 w-3" />
                 Try Again
               </Button>

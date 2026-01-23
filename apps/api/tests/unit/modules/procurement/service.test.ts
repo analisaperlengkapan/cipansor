@@ -42,15 +42,22 @@ vi.mock('@/lib/prisma', () => ({
 // Mock @prisma/client to return local Enums
 vi.mock('@prisma/client', () => ({
   UserRole: { SUPER_ADMIN: 'SUPER_ADMIN', UNIT_ADMIN: 'UNIT_ADMIN' },
-  AssetCondition: { GOOD: 'GOOD', FAIR: 'FAIR', POOR: 'POOR', EXCELLENT: 'EXCELLENT', BROKEN: 'BROKEN' },
+  AssetCondition: {
+    GOOD: 'GOOD',
+    FAIR: 'FAIR',
+    POOR: 'POOR',
+    EXCELLENT: 'EXCELLENT',
+    BROKEN: 'BROKEN',
+  },
   PurchaseRequestStatus: { ...PurchaseRequestStatus },
   Prisma: {
-    JsonObject: {}
-  }
+    JsonObject: {},
+  },
 }));
 
 vi.mock('@/utils/code-generator', () => ({
   generateUniqueCode: vi.fn().mockResolvedValue('TEST-CODE'),
+  generateBulkUniqueCodes: vi.fn().mockResolvedValue(['TEST-CODE-1', 'TEST-CODE-2']),
 }));
 
 // Import service AFTER mocks are set up
@@ -111,11 +118,10 @@ describe('ProcurementService', () => {
       };
 
       mockPrisma.budget.findMany.mockResolvedValue([
-        { id: 'budget-low', amount: 1000, usedAmount: 0 }
+        { id: 'budget-low', amount: 1000, usedAmount: 0 },
       ]);
 
-      await expect(procurementService.create(input, 'user-1'))
-        .rejects.toThrow(ValidationError);
+      await expect(procurementService.create(input, 'user-1')).rejects.toThrow(ValidationError);
     });
   });
 
@@ -137,24 +143,26 @@ describe('ProcurementService', () => {
             assetCategoryId: 'cat-1',
             budgetId: 'budget-1',
             budget: {
-              accountId: 'acc-expense-1'
-            }
+              accountId: 'acc-expense-1',
+            },
           },
         ],
       };
 
       const fulfillInput = {
-        items: [{
-          itemId: 'item-1',
-          quantityReceived: 1,
-          actualPrice: 5000000,
-          condition: 'GOOD' as const,
-          notes: 'Received in good condition'
-        }],
+        items: [
+          {
+            itemId: 'item-1',
+            quantityReceived: 1,
+            actualPrice: 5000000,
+            condition: 'GOOD' as const,
+            notes: 'Received in good condition',
+          },
+        ],
         paymentAccountId: 'acc-cash-1',
         receiptDate: new Date(),
         purchaseOrderNo: 'PO-001',
-        supplier: 'Vendor A'
+        supplier: 'Vendor A',
       };
 
       mockPrisma.purchaseRequest.findUnique.mockResolvedValue(mockRequest);
@@ -164,7 +172,11 @@ describe('ProcurementService', () => {
       });
 
       // Mock Payment Account finding
-      mockPrisma.accountCode.findUnique.mockResolvedValue({ id: 'acc-cash-1', code: '1101', name: 'Cash' });
+      mockPrisma.accountCode.findUnique.mockResolvedValue({
+        id: 'acc-cash-1',
+        code: '1101',
+        name: 'Cash',
+      });
 
       await procurementService.fulfill('pr-1', fulfillInput, 'user-1');
 
@@ -180,26 +192,32 @@ describe('ProcurementService', () => {
       expect(mockPrisma.asset.create).toHaveBeenCalled();
 
       // 3. Create Journal Entries (Debit & Credit)
-      expect(mockPrisma.accountCode.findUnique).toHaveBeenCalledWith({ where: { id: 'acc-cash-1' } });
+      expect(mockPrisma.accountCode.findUnique).toHaveBeenCalledWith({
+        where: { id: 'acc-cash-1' },
+      });
       expect(mockPrisma.journalEntry.create).toHaveBeenCalledTimes(2);
 
       // Debit check
-      expect(mockPrisma.journalEntry.create).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({
-          accountId: 'acc-expense-1',
-          debit: 5000000,
-          credit: 0
+      expect(mockPrisma.journalEntry.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            accountId: 'acc-expense-1',
+            debit: 5000000,
+            credit: 0,
+          }),
         })
-      }));
+      );
 
       // Credit check
-      expect(mockPrisma.journalEntry.create).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({
-          accountId: 'acc-cash-1',
-          debit: 0,
-          credit: 5000000
+      expect(mockPrisma.journalEntry.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            accountId: 'acc-cash-1',
+            debit: 0,
+            credit: 5000000,
+          }),
         })
-      }));
+      );
 
       // Audit log check
       expect(mockPrisma.auditLog.create).toHaveBeenCalled();

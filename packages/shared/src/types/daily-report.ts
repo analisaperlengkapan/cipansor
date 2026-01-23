@@ -1,7 +1,12 @@
+export type DailyMood =
+  | "HAPPY"
+  | "NEUTRAL"
+  | "SAD"
+  | "TIRED"
+  | "EXCITED"
+  | "SICK";
 
-export type DailyMood = 'HAPPY' | 'NEUTRAL' | 'SAD' | 'TIRED' | 'EXCITED' | 'SICK';
-
-export type MealConsumption = 'HABIS' | 'SETENGAH' | 'SEDIKIT' | 'TIDAK_MAU';
+export type MealConsumption = "HABIS" | "SETENGAH" | "SEDIKIT" | "TIDAK_MAU";
 
 export interface DailyReportPhoto {
   id: string;
@@ -18,7 +23,13 @@ export interface DailyReport {
   unitId: string;
   academicYearId?: string;
   reportDate: string;
-  unitType: 'PESANTREN' | 'TK_QURAN' | 'SD_IT' | 'SMP_IT' | 'SMA_QURAN' | 'OTHER';
+  unitType:
+    | "PESANTREN"
+    | "TK_QURAN"
+    | "SD_IT"
+    | "SMP_IT"
+    | "SMA_QURAN"
+    | "OTHER";
   arrivalTime?: string;
   mood?: DailyMood;
   healthStatus?: string;
@@ -101,7 +112,12 @@ export interface CreateDailyReportInput {
   photoUrls?: string[];
 }
 
-export interface UpdateDailyReportInput extends Partial<Omit<CreateDailyReportInput, 'studentId' | 'unitId' | 'academicYearId' | 'reportDate'>> {}
+export interface UpdateDailyReportInput extends Partial<
+  Omit<
+    CreateDailyReportInput,
+    "studentId" | "unitId" | "academicYearId" | "reportDate"
+  >
+> {}
 
 export interface BulkCreateDailyReportsInput {
   unitId: string;

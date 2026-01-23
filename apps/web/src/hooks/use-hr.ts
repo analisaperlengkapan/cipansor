@@ -1,27 +1,43 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 // Types
-export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'RESIGNED' | 'RETIRED';
-export type EmployeeType = 'PERMANENT' | 'CONTRACT' | 'PART_TIME' | 'INTERN';
-type Gender = 'MALE' | 'FEMALE';
+export type EmployeeStatus =
+  | "ACTIVE"
+  | "INACTIVE"
+  | "ON_LEAVE"
+  | "RESIGNED"
+  | "RETIRED";
+export type EmployeeType = "PERMANENT" | "CONTRACT" | "PART_TIME" | "INTERN";
+type Gender = "MALE" | "FEMALE";
 
-export const EMPLOYEE_STATUSES: EmployeeStatus[] = ['ACTIVE', 'INACTIVE', 'ON_LEAVE', 'RESIGNED', 'RETIRED'];
-export const EMPLOYEE_TYPES: EmployeeType[] = ['PERMANENT', 'CONTRACT', 'PART_TIME', 'INTERN'];
+export const EMPLOYEE_STATUSES: EmployeeStatus[] = [
+  "ACTIVE",
+  "INACTIVE",
+  "ON_LEAVE",
+  "RESIGNED",
+  "RETIRED",
+];
+export const EMPLOYEE_TYPES: EmployeeType[] = [
+  "PERMANENT",
+  "CONTRACT",
+  "PART_TIME",
+  "INTERN",
+];
 
 export const EMPLOYEE_STATUS_LABELS: Record<EmployeeStatus, string> = {
-  ACTIVE: 'Aktif',
-  INACTIVE: 'Tidak Aktif',
-  ON_LEAVE: 'Cuti',
-  RESIGNED: 'Resign',
-  RETIRED: 'Pensiun',
+  ACTIVE: "Aktif",
+  INACTIVE: "Tidak Aktif",
+  ON_LEAVE: "Cuti",
+  RESIGNED: "Resign",
+  RETIRED: "Pensiun",
 };
 
 export const EMPLOYEE_TYPE_LABELS: Record<EmployeeType, string> = {
-  PERMANENT: 'Tetap',
-  CONTRACT: 'Kontrak',
-  PART_TIME: 'Part Time',
-  INTERN: 'Magang',
+  PERMANENT: "Tetap",
+  CONTRACT: "Kontrak",
+  PART_TIME: "Part Time",
+  INTERN: "Magang",
 };
 
 export interface Employee {
@@ -43,7 +59,7 @@ export interface Employee {
     id: string;
     name: string;
   };
-  
+
   // Personal info
   fullName: string;
   gender: Gender;
@@ -55,7 +71,7 @@ export interface Employee {
   npwp?: string;
   maritalStatus: string;
   religion: string;
-  
+
   // Contact
   phone: string;
   email?: string;
@@ -63,7 +79,7 @@ export interface Employee {
   city?: string;
   province?: string;
   postalCode?: string;
-  
+
   // Employment
   position: string;
   employeeType: EmployeeType;
@@ -71,26 +87,26 @@ export interface Employee {
   joinDate: string;
   endDate?: string;
   resignDate?: string;
-  
+
   // Education
   lastEducation?: string;
   educationMajor?: string;
   educationInstitution?: string;
   graduationYear?: number;
-  
+
   // Bank info
   bankName?: string;
   bankAccount?: string;
   bankAccountNumber?: string;
   bankAccountName?: string;
-  
+
   // Insurance
   bpjsKesehatan?: string;
   bpjsKetenagakerjaan?: string;
-  
+
   // Leave
   leaveBalance?: number;
-  
+
   // Documents
   photoUrl?: string;
   cvUrl?: string;
@@ -101,7 +117,7 @@ export interface Employee {
     type?: string;
     uploadedAt?: string;
   }[];
-  
+
   createdAt: string;
   updatedAt: string;
 }
@@ -153,28 +169,50 @@ export interface LeaveRequest {
   updatedAt: string;
 }
 
-export type LeaveType = 'ANNUAL' | 'SICK' | 'MATERNITY' | 'PATERNITY' | 'MARRIAGE' | 'BEREAVEMENT' | 'UNPAID' | 'OTHER';
-export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+export type LeaveType =
+  | "ANNUAL"
+  | "SICK"
+  | "MATERNITY"
+  | "PATERNITY"
+  | "MARRIAGE"
+  | "BEREAVEMENT"
+  | "UNPAID"
+  | "OTHER";
+export type LeaveStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
 
-export const LEAVE_TYPES: LeaveType[] = ['ANNUAL', 'SICK', 'MATERNITY', 'PATERNITY', 'MARRIAGE', 'BEREAVEMENT', 'UNPAID', 'OTHER'];
-export const LEAVE_STATUSES: LeaveStatus[] = ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'];
+export const LEAVE_TYPES: LeaveType[] = [
+  "ANNUAL",
+  "SICK",
+  "MATERNITY",
+  "PATERNITY",
+  "MARRIAGE",
+  "BEREAVEMENT",
+  "UNPAID",
+  "OTHER",
+];
+export const LEAVE_STATUSES: LeaveStatus[] = [
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+  "CANCELLED",
+];
 
 export const LEAVE_TYPE_LABELS: Record<LeaveType, string> = {
-  ANNUAL: 'Cuti Tahunan',
-  SICK: 'Sakit',
-  MATERNITY: 'Melahirkan',
-  PATERNITY: 'Kelahiran Anak',
-  MARRIAGE: 'Menikah',
-  BEREAVEMENT: 'Duka Cita',
-  UNPAID: 'Tanpa Gaji',
-  OTHER: 'Lainnya',
+  ANNUAL: "Cuti Tahunan",
+  SICK: "Sakit",
+  MATERNITY: "Melahirkan",
+  PATERNITY: "Kelahiran Anak",
+  MARRIAGE: "Menikah",
+  BEREAVEMENT: "Duka Cita",
+  UNPAID: "Tanpa Gaji",
+  OTHER: "Lainnya",
 };
 
 export const LEAVE_STATUS_LABELS: Record<LeaveStatus, string> = {
-  PENDING: 'Menunggu',
-  APPROVED: 'Disetujui',
-  REJECTED: 'Ditolak',
-  CANCELLED: 'Dibatalkan',
+  PENDING: "Menunggu",
+  APPROVED: "Disetujui",
+  REJECTED: "Ditolak",
+  CANCELLED: "Dibatalkan",
 };
 
 export interface Payroll {
@@ -201,7 +239,7 @@ export interface Payroll {
   employee?: Employee;
   month: number;
   year: number;
-  
+
   // Earnings
   basicSalary: number;
   baseSalary: number;
@@ -209,31 +247,31 @@ export interface Payroll {
   totalAllowances: number;
   overtime: number;
   bonus: number;
-  
+
   // Deductions
   deductions?: { name: string; amount: number; componentId?: string }[];
   taxDeduction: number;
   bpjsHealth: number;
   bpjsEmployment: number;
   otherDeductions: number;
-  
+
   // Net
   grossSalary: number;
   totalDeductions: number;
   netSalary: number;
-  
+
   // Items
   items?: PayrollItem[];
-  
+
   status: PayrollStatus;
   paidAt?: string;
   notes?: string;
-  
+
   processedById?: string;
   processedAt?: string;
   approvedById?: string;
   approvedAt?: string;
-  
+
   createdAt: string;
   updatedAt: string;
 }
@@ -321,41 +359,63 @@ export interface StaffSalaryComponent {
   updatedAt: string;
 }
 
-export type ComponentType = 'ALLOWANCE' | 'DEDUCTION';
-export type CalculationType = 'FIXED' | 'PERCENTAGE' | 'FORMULA';
-export type PayrollPeriodStatus = 'OPEN' | 'PROCESSING' | 'CLOSED';
-export type PayrollStatus = 'DRAFT' | 'CALCULATED' | 'APPROVED' | 'PAID' | 'CANCELLED' | 'PENDING' | 'PROCESSED';
+export type ComponentType = "ALLOWANCE" | "DEDUCTION";
+export type CalculationType = "FIXED" | "PERCENTAGE" | "FORMULA";
+export type PayrollPeriodStatus = "OPEN" | "PROCESSING" | "CLOSED";
+export type PayrollStatus =
+  | "DRAFT"
+  | "CALCULATED"
+  | "APPROVED"
+  | "PAID"
+  | "CANCELLED"
+  | "PENDING"
+  | "PROCESSED";
 
-export const PAYROLL_STATUSES: PayrollStatus[] = ['DRAFT', 'CALCULATED', 'APPROVED', 'PAID', 'CANCELLED'];
-export const PAYROLL_PERIOD_STATUSES: PayrollPeriodStatus[] = ['OPEN', 'PROCESSING', 'CLOSED'];
-export const COMPONENT_TYPES: ComponentType[] = ['ALLOWANCE', 'DEDUCTION'];
-export const CALCULATION_TYPES: CalculationType[] = ['FIXED', 'PERCENTAGE', 'FORMULA'];
+export const PAYROLL_STATUSES: PayrollStatus[] = [
+  "DRAFT",
+  "CALCULATED",
+  "APPROVED",
+  "PAID",
+  "CANCELLED",
+];
+export const PAYROLL_PERIOD_STATUSES: PayrollPeriodStatus[] = [
+  "OPEN",
+  "PROCESSING",
+  "CLOSED",
+];
+export const COMPONENT_TYPES: ComponentType[] = ["ALLOWANCE", "DEDUCTION"];
+export const CALCULATION_TYPES: CalculationType[] = [
+  "FIXED",
+  "PERCENTAGE",
+  "FORMULA",
+];
 
 export const PAYROLL_STATUS_LABELS: Record<PayrollStatus, string> = {
-  DRAFT: 'Draft',
-  CALCULATED: 'Dihitung',
-  APPROVED: 'Disetujui',
-  PAID: 'Dibayar',
-  CANCELLED: 'Dibatalkan',
-  PENDING: 'Menunggu',
-  PROCESSED: 'Diproses',
+  DRAFT: "Draft",
+  CALCULATED: "Dihitung",
+  APPROVED: "Disetujui",
+  PAID: "Dibayar",
+  CANCELLED: "Dibatalkan",
+  PENDING: "Menunggu",
+  PROCESSED: "Diproses",
 };
 
-export const PAYROLL_PERIOD_STATUS_LABELS: Record<PayrollPeriodStatus, string> = {
-  OPEN: 'Buka',
-  PROCESSING: 'Diproses',
-  CLOSED: 'Ditutup',
-};
+export const PAYROLL_PERIOD_STATUS_LABELS: Record<PayrollPeriodStatus, string> =
+  {
+    OPEN: "Buka",
+    PROCESSING: "Diproses",
+    CLOSED: "Ditutup",
+  };
 
 export const COMPONENT_TYPE_LABELS: Record<ComponentType, string> = {
-  ALLOWANCE: 'Tunjangan',
-  DEDUCTION: 'Potongan',
+  ALLOWANCE: "Tunjangan",
+  DEDUCTION: "Potongan",
 };
 
 export const CALCULATION_TYPE_LABELS: Record<CalculationType, string> = {
-  FIXED: 'Tetap',
-  PERCENTAGE: 'Persentase',
-  FORMULA: 'Formula',
+  FIXED: "Tetap",
+  PERCENTAGE: "Persentase",
+  FORMULA: "Formula",
 };
 
 // Employee queries
@@ -369,12 +429,17 @@ export function useEmployees(params?: {
   limit?: number;
 }) {
   return useQuery({
-    queryKey: ['employees', params],
+    queryKey: ["employees", params],
     queryFn: async () => {
-      const response = await api.get('/hr/employees', { params });
+      const response = await api.get("/hr/employees", { params });
       return response.data as {
         data: Employee[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
+        meta: {
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        };
       };
     },
   });
@@ -382,7 +447,7 @@ export function useEmployees(params?: {
 
 export function useEmployee(id: string) {
   return useQuery({
-    queryKey: ['employee', id],
+    queryKey: ["employee", id],
     queryFn: async () => {
       const response = await api.get(`/hr/employees/${id}`);
       return response.data.data as Employee;
@@ -396,13 +461,13 @@ export function useCreateEmployee() {
 
   return useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await api.post('/hr/employees', data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const response = await api.post("/hr/employees", data, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
     },
   });
 }
@@ -411,16 +476,24 @@ export function useUpdateEmployee() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: FormData | Partial<Employee> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: FormData | Partial<Employee>;
+    }) => {
       const isFormData = data instanceof FormData;
       const response = await api.put(`/hr/employees/${id}`, data, {
-        headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+        headers: isFormData
+          ? { "Content-Type": "multipart/form-data" }
+          : undefined,
       });
       return response.data.data;
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
-      queryClient.invalidateQueries({ queryKey: ['employee', id] });
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.invalidateQueries({ queryKey: ["employee", id] });
     },
   });
 }
@@ -433,11 +506,10 @@ export function useDeleteEmployee() {
       await api.delete(`/hr/employees/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
     },
   });
 }
-
 
 // Leave request queries
 export function useLeaveRequests(params?: {
@@ -451,12 +523,17 @@ export function useLeaveRequests(params?: {
   mine?: boolean;
 }) {
   return useQuery({
-    queryKey: ['leave-requests', params],
+    queryKey: ["leave-requests", params],
     queryFn: async () => {
-      const response = await api.get('/hr/leaves', { params });
+      const response = await api.get("/hr/leaves", { params });
       return response.data as {
         data: LeaveRequest[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
+        meta: {
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        };
       };
     },
   });
@@ -464,7 +541,7 @@ export function useLeaveRequests(params?: {
 
 export function useLeaveRequest(id: string) {
   return useQuery({
-    queryKey: ['leave-request', id],
+    queryKey: ["leave-request", id],
     queryFn: async () => {
       const response = await api.get(`/hr/leaves/${id}`);
       return response.data.data as LeaveRequest;
@@ -479,13 +556,15 @@ export function useCreateLeaveRequest() {
   return useMutation({
     mutationFn: async (data: FormData | Partial<LeaveRequest>) => {
       const isFormData = data instanceof FormData;
-      const response = await api.post('/hr/leave-requests', data, {
-        headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+      const response = await api.post("/hr/leave-requests", data, {
+        headers: isFormData
+          ? { "Content-Type": "multipart/form-data" }
+          : undefined,
       });
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
     },
   });
 }
@@ -499,7 +578,7 @@ export function useApproveLeaveRequest() {
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
     },
   });
 }
@@ -509,11 +588,13 @@ export function useRejectLeaveRequest() {
 
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const response = await api.post(`/hr/leave-requests/${id}/reject`, { reason });
+      const response = await api.post(`/hr/leave-requests/${id}/reject`, {
+        reason,
+      });
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
     },
   });
 }
@@ -527,7 +608,7 @@ export function useCancelLeaveRequest() {
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
     },
   });
 }
@@ -545,12 +626,17 @@ export function usePayrolls(params?: {
   limit?: number;
 }) {
   return useQuery({
-    queryKey: ['payrolls', params],
+    queryKey: ["payrolls", params],
     queryFn: async () => {
-      const response = await api.get('/payroll/slips', { params });
+      const response = await api.get("/payroll/slips", { params });
       return response.data as {
         data: Payroll[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
+        meta: {
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        };
       };
     },
   });
@@ -558,7 +644,7 @@ export function usePayrolls(params?: {
 
 export function usePayroll(id: string) {
   return useQuery({
-    queryKey: ['payroll', id],
+    queryKey: ["payroll", id],
     queryFn: async () => {
       const response = await api.get(`/payroll/slips/${id}`);
       return response.data.data as Payroll;
@@ -571,13 +657,25 @@ export function useGeneratePayrollSlips() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ periodId, staffIds, overwrite }: { periodId: string; staffIds?: string[]; overwrite?: boolean }) => {
-      const response = await api.post('/payroll/generate', { periodId, staffIds, overwrite });
+    mutationFn: async ({
+      periodId,
+      staffIds,
+      overwrite,
+    }: {
+      periodId: string;
+      staffIds?: string[];
+      overwrite?: boolean;
+    }) => {
+      const response = await api.post("/payroll/generate", {
+        periodId,
+        staffIds,
+        overwrite,
+      });
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payrolls'] });
-      queryClient.invalidateQueries({ queryKey: ['payroll-periods'] });
+      queryClient.invalidateQueries({ queryKey: ["payrolls"] });
+      queryClient.invalidateQueries({ queryKey: ["payroll-periods"] });
     },
   });
 }
@@ -586,13 +684,19 @@ export function useUpdatePayroll() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Payroll> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<Payroll>;
+    }) => {
       const response = await api.put(`/payroll/slips/${id}`, data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payrolls'] });
-      queryClient.invalidateQueries({ queryKey: ['payroll'] });
+      queryClient.invalidateQueries({ queryKey: ["payrolls"] });
+      queryClient.invalidateQueries({ queryKey: ["payroll"] });
     },
   });
 }
@@ -607,12 +711,14 @@ export function useApprovePayroll() {
       // Check routes: only PUT /slips/:id exists for update, and PUT /slips/:id/adjust
       // Status update is not explicitly exposed for single slip in routes.ts except via update
       // But period approve exists: POST /periods/:id/approve
-      const response = await api.put(`/payroll/slips/${id}`, { status: 'APPROVED' });
+      const response = await api.put(`/payroll/slips/${id}`, {
+        status: "APPROVED",
+      });
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payrolls'] });
-      queryClient.invalidateQueries({ queryKey: ['payroll'] });
+      queryClient.invalidateQueries({ queryKey: ["payrolls"] });
+      queryClient.invalidateQueries({ queryKey: ["payroll"] });
     },
   });
 }
@@ -625,13 +731,15 @@ export function usePayPayroll() {
       const idArray = Array.isArray(ids) ? ids : [ids];
       // Update each payroll status to PAID via PUT /slips/:id
       const results = await Promise.all(
-        idArray.map(id => api.put(`/payroll/slips/${id}`, { status: 'PAID' }))
+        idArray.map((id) =>
+          api.put(`/payroll/slips/${id}`, { status: "PAID" }),
+        ),
       );
-      return results.map(r => r.data.data);
+      return results.map((r) => r.data.data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payrolls'] });
-      queryClient.invalidateQueries({ queryKey: ['payroll'] });
+      queryClient.invalidateQueries({ queryKey: ["payrolls"] });
+      queryClient.invalidateQueries({ queryKey: ["payroll"] });
     },
   });
 }
@@ -648,39 +756,49 @@ export function useCancelPayroll() {
     mutationFn: async (ids: string | string[]) => {
       const idArray = Array.isArray(ids) ? ids : [ids];
       const results = await Promise.all(
-        idArray.map(id => api.put(`/payroll/slips/${id}`, { status: 'CANCELLED' }))
+        idArray.map((id) =>
+          api.put(`/payroll/slips/${id}`, { status: "CANCELLED" }),
+        ),
       );
-      return results.map(r => r.data.data);
+      return results.map((r) => r.data.data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payrolls'] });
-      queryClient.invalidateQueries({ queryKey: ['payroll'] });
+      queryClient.invalidateQueries({ queryKey: ["payrolls"] });
+      queryClient.invalidateQueries({ queryKey: ["payroll"] });
     },
   });
 }
 
-export function usePayrollSummary(params?: { month?: number; year?: number; unitId?: string }) {
+export function usePayrollSummary(params?: {
+  month?: number;
+  year?: number;
+  unitId?: string;
+}) {
   return useQuery({
-    queryKey: ['payroll-summary', params],
+    queryKey: ["payroll-summary", params],
     queryFn: async () => {
       // Get periods for this month/year and aggregate summary
       const periodParams = {
         month: params?.month,
         year: params?.year,
       };
-      const periodsResponse = await api.get('/payroll/periods', { params: periodParams });
+      const periodsResponse = await api.get("/payroll/periods", {
+        params: periodParams,
+      });
       const periods = periodsResponse.data.data || [];
-      
+
       // Aggregate summary from all matching periods
       let totalEmployees = 0;
       let totalGross = 0;
       let totalDeductions = 0;
       let totalNet = 0;
-      
+
       for (const period of periods) {
         if (period.id) {
           try {
-            const summaryResponse = await api.get(`/payroll/periods/${period.id}/summary`);
+            const summaryResponse = await api.get(
+              `/payroll/periods/${period.id}/summary`,
+            );
             const summary = summaryResponse.data.data || {};
             totalEmployees += summary.totalStaff || 0;
             totalGross += summary.totalBaseSalary || 0;
@@ -691,7 +809,7 @@ export function usePayrollSummary(params?: { month?: number; year?: number; unit
           }
         }
       }
-      
+
       return {
         totalEmployees,
         employeeCount: totalEmployees,
@@ -700,8 +818,17 @@ export function usePayrollSummary(params?: { month?: number; year?: number; unit
         totalDeductions,
         totalNetSalary: totalNet,
         totalNet,
-        byStatus: [] as { status: PayrollStatus; count: number; total: number }[],
-        byDepartment: [] as { departmentId: string; departmentName: string; count: number; total: number }[],
+        byStatus: [] as {
+          status: PayrollStatus;
+          count: number;
+          total: number;
+        }[],
+        byDepartment: [] as {
+          departmentId: string;
+          departmentName: string;
+          count: number;
+          total: number;
+        }[],
       };
     },
   });
@@ -717,9 +844,9 @@ export function useSalaryComponents(params?: {
   search?: string;
 }) {
   return useQuery({
-    queryKey: ['salary-components', params],
+    queryKey: ["salary-components", params],
     queryFn: async () => {
-      const response = await api.get('/payroll/components', { params });
+      const response = await api.get("/payroll/components", { params });
       return response.data.data as SalaryComponent[];
     },
   });
@@ -727,7 +854,7 @@ export function useSalaryComponents(params?: {
 
 export function useSalaryComponent(id: string) {
   return useQuery({
-    queryKey: ['salary-component', id],
+    queryKey: ["salary-component", id],
     queryFn: async () => {
       const response = await api.get(`/payroll/components/${id}`);
       return response.data.data as SalaryComponent;
@@ -741,11 +868,11 @@ export function useCreateSalaryComponent() {
 
   return useMutation({
     mutationFn: async (data: Partial<SalaryComponent>) => {
-      const response = await api.post('/payroll/components', data);
+      const response = await api.post("/payroll/components", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['salary-components'] });
+      queryClient.invalidateQueries({ queryKey: ["salary-components"] });
     },
   });
 }
@@ -754,13 +881,19 @@ export function useUpdateSalaryComponent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<SalaryComponent> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<SalaryComponent>;
+    }) => {
       const response = await api.put(`/payroll/components/${id}`, data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['salary-components'] });
-      queryClient.invalidateQueries({ queryKey: ['salary-component'] });
+      queryClient.invalidateQueries({ queryKey: ["salary-components"] });
+      queryClient.invalidateQueries({ queryKey: ["salary-component"] });
     },
   });
 }
@@ -774,7 +907,7 @@ export function useDeleteSalaryComponent() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['salary-components'] });
+      queryClient.invalidateQueries({ queryKey: ["salary-components"] });
     },
   });
 }
@@ -784,19 +917,22 @@ export function useDeleteSalaryComponent() {
 // ============================================
 
 export enum StaffAttendanceStatus {
-  PRESENT = 'PRESENT',
-  ABSENT = 'ABSENT',
-  LATE = 'LATE',
-  LEAVE = 'LEAVE',
-  SICK = 'SICK',
+  PRESENT = "PRESENT",
+  ABSENT = "ABSENT",
+  LATE = "LATE",
+  LEAVE = "LEAVE",
+  SICK = "SICK",
 }
 
-export const STAFF_ATTENDANCE_STATUS_LABELS: Record<StaffAttendanceStatus, string> = {
-  PRESENT: 'Hadir',
-  ABSENT: 'Alpa',
-  LATE: 'Terlambat',
-  LEAVE: 'Izin/Cuti',
-  SICK: 'Sakit',
+export const STAFF_ATTENDANCE_STATUS_LABELS: Record<
+  StaffAttendanceStatus,
+  string
+> = {
+  PRESENT: "Hadir",
+  ABSENT: "Alpa",
+  LATE: "Terlambat",
+  LEAVE: "Izin/Cuti",
+  SICK: "Sakit",
 };
 
 export interface StaffAttendance {
@@ -825,12 +961,17 @@ export function useStaffAttendances(params?: {
   limit?: number;
 }) {
   return useQuery({
-    queryKey: ['staff-attendances', params],
+    queryKey: ["staff-attendances", params],
     queryFn: async () => {
-      const response = await api.get('/hr/attendance', { params });
+      const response = await api.get("/hr/attendance", { params });
       return response.data as {
         data: StaffAttendance[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
+        meta: {
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        };
       };
     },
   });
@@ -841,11 +982,11 @@ export function useCreateStaffAttendance() {
 
   return useMutation({
     mutationFn: async (data: Partial<StaffAttendance>) => {
-      const response = await api.post('/hr/attendance', data);
+      const response = await api.post("/hr/attendance", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff-attendances'] });
+      queryClient.invalidateQueries({ queryKey: ["staff-attendances"] });
     },
   });
 }
@@ -856,24 +997,35 @@ export function useBulkStaffAttendance() {
   return useMutation({
     mutationFn: async (data: {
       date: string;
-      records: { staffId: string; status: StaffAttendanceStatus; notes?: string }[];
+      records: {
+        staffId: string;
+        status: StaffAttendanceStatus;
+        notes?: string;
+      }[];
     }) => {
-      const response = await api.post('/hr/attendance/bulk', data);
+      const response = await api.post("/hr/attendance/bulk", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff-attendances'] });
+      queryClient.invalidateQueries({ queryKey: ["staff-attendances"] });
     },
   });
 }
 
-export function useStaffAttendanceSummary(staffId: string, month: number, year: number) {
+export function useStaffAttendanceSummary(
+  staffId: string,
+  month: number,
+  year: number,
+) {
   return useQuery({
-    queryKey: ['staff-attendance-summary', staffId, month, year],
+    queryKey: ["staff-attendance-summary", staffId, month, year],
     queryFn: async () => {
-      const response = await api.get(`/hr/staff/${staffId}/attendance/summary`, {
-        params: { month, year },
-      });
+      const response = await api.get(
+        `/hr/staff/${staffId}/attendance/summary`,
+        {
+          params: { month, year },
+        },
+      );
       return response.data.data;
     },
     enabled: !!staffId,
@@ -893,12 +1045,17 @@ export function usePayrollPeriods(params?: {
   limit?: number;
 }) {
   return useQuery({
-    queryKey: ['payroll-periods', params],
+    queryKey: ["payroll-periods", params],
     queryFn: async () => {
-      const response = await api.get('/payroll/periods', { params });
+      const response = await api.get("/payroll/periods", { params });
       return response.data as {
         data: PayrollPeriod[];
-        meta?: { total: number; page: number; limit: number; totalPages: number };
+        meta?: {
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        };
       };
     },
   });
@@ -906,7 +1063,7 @@ export function usePayrollPeriods(params?: {
 
 export function usePayrollPeriod(id: string) {
   return useQuery({
-    queryKey: ['payroll-period', id],
+    queryKey: ["payroll-period", id],
     queryFn: async () => {
       const response = await api.get(`/payroll/periods/${id}`);
       return response.data.data as PayrollPeriod;
@@ -927,11 +1084,11 @@ export function useCreatePayrollPeriod() {
       endDate: string;
       unitId?: string;
     }) => {
-      const response = await api.post('/payroll/periods', data);
+      const response = await api.post("/payroll/periods", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payroll-periods'] });
+      queryClient.invalidateQueries({ queryKey: ["payroll-periods"] });
     },
   });
 }
@@ -940,13 +1097,19 @@ export function useUpdatePayrollPeriod() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<PayrollPeriod> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<PayrollPeriod>;
+    }) => {
       const response = await api.put(`/payroll/periods/${id}`, data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payroll-periods'] });
-      queryClient.invalidateQueries({ queryKey: ['payroll-period'] });
+      queryClient.invalidateQueries({ queryKey: ["payroll-periods"] });
+      queryClient.invalidateQueries({ queryKey: ["payroll-period"] });
     },
   });
 }
@@ -960,15 +1123,15 @@ export function useClosePayrollPeriod() {
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payroll-periods'] });
-      queryClient.invalidateQueries({ queryKey: ['payroll-period'] });
+      queryClient.invalidateQueries({ queryKey: ["payroll-periods"] });
+      queryClient.invalidateQueries({ queryKey: ["payroll-period"] });
     },
   });
 }
 
 export function usePayrollPeriodSummary(id: string) {
   return useQuery({
-    queryKey: ['payroll-period-summary', id],
+    queryKey: ["payroll-period-summary", id],
     queryFn: async () => {
       const response = await api.get(`/payroll/periods/${id}/summary`);
       return response.data.data as {
@@ -997,12 +1160,17 @@ export function useStaffSalaries(params?: {
   limit?: number;
 }) {
   return useQuery({
-    queryKey: ['staff-salaries', params],
+    queryKey: ["staff-salaries", params],
     queryFn: async () => {
-      const response = await api.get('/payroll/staff-salary', { params });
+      const response = await api.get("/payroll/staff-salary", { params });
       return response.data as {
         data: StaffSalary[];
-        meta?: { total: number; page: number; limit: number; totalPages: number };
+        meta?: {
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        };
       };
     },
   });
@@ -1010,7 +1178,7 @@ export function useStaffSalaries(params?: {
 
 export function useStaffSalary(id: string) {
   return useQuery({
-    queryKey: ['staff-salary', id],
+    queryKey: ["staff-salary", id],
     queryFn: async () => {
       const response = await api.get(`/payroll/staff-salary/${id}`);
       return response.data.data as StaffSalary;
@@ -1021,11 +1189,13 @@ export function useStaffSalary(id: string) {
 
 export function useStaffSalaryByStaffId(staffId: string) {
   return useQuery({
-    queryKey: ['staff-salary-by-staff', staffId],
+    queryKey: ["staff-salary-by-staff", staffId],
     queryFn: async () => {
-      const response = await api.get(`/payroll/staff-salary`, { params: { staffId } });
+      const response = await api.get(`/payroll/staff-salary`, {
+        params: { staffId },
+      });
       const salaries = response.data.data as StaffSalary[];
-      return salaries.find(s => s.isActive) || salaries[0];
+      return salaries.find((s) => s.isActive) || salaries[0];
     },
     enabled: !!staffId,
   });
@@ -1041,11 +1211,11 @@ export function useCreateStaffSalary() {
       effectiveDate: string;
       notes?: string;
     }) => {
-      const response = await api.post('/payroll/staff-salary', data);
+      const response = await api.post("/payroll/staff-salary", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff-salaries'] });
+      queryClient.invalidateQueries({ queryKey: ["staff-salaries"] });
     },
   });
 }
@@ -1054,13 +1224,19 @@ export function useUpdateStaffSalary() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<StaffSalary> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<StaffSalary>;
+    }) => {
       const response = await api.put(`/payroll/staff-salary/${id}`, data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff-salaries'] });
-      queryClient.invalidateQueries({ queryKey: ['staff-salary'] });
+      queryClient.invalidateQueries({ queryKey: ["staff-salaries"] });
+      queryClient.invalidateQueries({ queryKey: ["staff-salary"] });
     },
   });
 }
@@ -1069,19 +1245,26 @@ export function useSetStaffSalaryComponents() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ 
-      staffSalaryId, 
-      components 
-    }: { 
-      staffSalaryId: string; 
-      components: { componentId: string; customAmount?: number; customPercentage?: number }[] 
+    mutationFn: async ({
+      staffSalaryId,
+      components,
+    }: {
+      staffSalaryId: string;
+      components: {
+        componentId: string;
+        customAmount?: number;
+        customPercentage?: number;
+      }[];
     }) => {
-      const response = await api.post(`/payroll/staff-salary/${staffSalaryId}/components`, { components });
+      const response = await api.post(
+        `/payroll/staff-salary/${staffSalaryId}/components`,
+        { components },
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff-salaries'] });
-      queryClient.invalidateQueries({ queryKey: ['staff-salary'] });
+      queryClient.invalidateQueries({ queryKey: ["staff-salaries"] });
+      queryClient.invalidateQueries({ queryKey: ["staff-salary"] });
     },
   });
 }
@@ -1092,7 +1275,7 @@ export function useSetStaffSalaryComponents() {
 
 export function usePayrollSlip(payrollId: string) {
   return useQuery({
-    queryKey: ['payroll-slip', payrollId],
+    queryKey: ["payroll-slip", payrollId],
     queryFn: async () => {
       // Assuming GET /slips/:id returns the slip data
       const response = await api.get(`/payroll/slips/${payrollId}`);
@@ -1122,12 +1305,15 @@ export function useAddPayrollAdjustment() {
         notes?: string;
       };
     }) => {
-      const response = await api.put(`/payroll/slips/${payrollId}/adjust`, data);
+      const response = await api.put(
+        `/payroll/slips/${payrollId}/adjust`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payrolls'] });
-      queryClient.invalidateQueries({ queryKey: ['payroll'] });
+      queryClient.invalidateQueries({ queryKey: ["payrolls"] });
+      queryClient.invalidateQueries({ queryKey: ["payroll"] });
     },
   });
 }

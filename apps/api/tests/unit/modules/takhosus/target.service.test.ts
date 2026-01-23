@@ -37,7 +37,10 @@ describe('TargetService', () => {
 
     it('should create new target if not exists', async () => {
       vi.mocked(prisma.tahfidzTarget.findUnique).mockResolvedValue(null);
-      vi.mocked(prisma.tahfidzTarget.create).mockResolvedValue({ id: 'new-target', ...input } as any);
+      vi.mocked(prisma.tahfidzTarget.create).mockResolvedValue({
+        id: 'new-target',
+        ...input,
+      } as any);
 
       const result = await targetService.createOrUpdate(input);
 
@@ -46,8 +49,13 @@ describe('TargetService', () => {
     });
 
     it('should update target if exists', async () => {
-      vi.mocked(prisma.tahfidzTarget.findUnique).mockResolvedValue({ id: 'existing-target' } as any);
-      vi.mocked(prisma.tahfidzTarget.update).mockResolvedValue({ id: 'existing-target', ...input } as any);
+      vi.mocked(prisma.tahfidzTarget.findUnique).mockResolvedValue({
+        id: 'existing-target',
+      } as any);
+      vi.mocked(prisma.tahfidzTarget.update).mockResolvedValue({
+        id: 'existing-target',
+        ...input,
+      } as any);
 
       const result = await targetService.createOrUpdate(input);
 
@@ -69,12 +77,14 @@ describe('TargetService', () => {
 
       // Mock completed juz count (3 juz completed)
       vi.mocked(prisma.tahfidzRecord.findMany).mockResolvedValue([
-          { juz: 1 }, { juz: 2 }, { juz: 30 }
+        { juz: 1 },
+        { juz: 2 },
+        { juz: 30 },
       ] as any);
 
       // Mock total ayah
       vi.mocked(prisma.tahfidzRecord.aggregate).mockResolvedValue({
-          _sum: { totalAyah: 500 }
+        _sum: { totalAyah: 500 },
       } as any);
 
       const result = await targetService.getProgress('student-1');

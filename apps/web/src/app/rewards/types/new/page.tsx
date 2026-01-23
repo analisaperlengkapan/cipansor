@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -16,25 +22,29 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
-import { useCreateRewardType, REWARD_CATEGORIES, RewardCategory } from '@/hooks/use-rewards';
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
+import {
+  useCreateRewardType,
+  REWARD_CATEGORIES,
+  RewardCategory,
+} from "@/hooks/use-rewards";
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Nama wajib diisi'),
+  name: z.string().min(1, "Nama wajib diisi"),
   description: z.string().optional(),
-  category: z.string().min(1, 'Kategori wajib dipilih'),
-  points: z.coerce.number().min(1, 'Poin minimal 1'),
+  category: z.string().min(1, "Kategori wajib dipilih"),
+  points: z.coerce.number().min(1, "Poin minimal 1"),
   isActive: z.boolean(),
 });
 
@@ -47,9 +57,9 @@ export default function NewRewardTypePage() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      description: '',
-      category: '',
+      name: "",
+      description: "",
+      category: "",
       points: 1,
       isActive: true,
     },
@@ -62,10 +72,10 @@ export default function NewRewardTypePage() {
         category: data.category as RewardCategory,
         description: data.description || undefined,
       });
-      toast.success('Jenis penghargaan berhasil dibuat');
-      router.push('/rewards');
+      toast.success("Jenis penghargaan berhasil dibuat");
+      router.push("/rewards");
     } catch {
-      toast.error('Gagal membuat jenis penghargaan');
+      toast.error("Gagal membuat jenis penghargaan");
     }
   };
 
@@ -79,7 +89,9 @@ export default function NewRewardTypePage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tambah Jenis Penghargaan</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Tambah Jenis Penghargaan
+          </h1>
           <p className="text-muted-foreground">Buat jenis penghargaan baru</p>
         </div>
       </div>
@@ -131,7 +143,10 @@ export default function NewRewardTypePage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Kategori</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih kategori" />
@@ -145,9 +160,7 @@ export default function NewRewardTypePage() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormDescription>
-                        Kategori penghargaan
-                      </FormDescription>
+                      <FormDescription>Kategori penghargaan</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -162,9 +175,7 @@ export default function NewRewardTypePage() {
                       <FormControl>
                         <Input type="number" min={1} {...field} />
                       </FormControl>
-                      <FormDescription>
-                        Poin penghargaan
-                      </FormDescription>
+                      <FormDescription>Poin penghargaan</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -179,7 +190,8 @@ export default function NewRewardTypePage() {
                     <div className="space-y-0.5">
                       <FormLabel className="text-base">Status Aktif</FormLabel>
                       <FormDescription>
-                        Jenis penghargaan yang aktif dapat digunakan untuk pemberian reward
+                        Jenis penghargaan yang aktif dapat digunakan untuk
+                        pemberian reward
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -197,7 +209,7 @@ export default function NewRewardTypePage() {
                   <Link href="/rewards">Batal</Link>
                 </Button>
                 <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+                  {createMutation.isPending ? "Menyimpan..." : "Simpan"}
                 </Button>
               </div>
             </form>

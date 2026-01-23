@@ -45,7 +45,7 @@ export const createDutyTypeSchema = z.object({
   description: z.string().optional(),
   location: z.string().optional(),
   startTime: z.string().optional(), // e.g., "05:00"
-  endTime: z.string().optional(),   // e.g., "06:00"
+  endTime: z.string().optional(), // e.g., "06:00"
   isActive: z.boolean().default(true),
 });
 
@@ -85,10 +85,14 @@ export type CreateRosterInput = z.infer<typeof createRosterSchema>;
 // Bulk create rosters (for weekly schedule)
 export const bulkCreateRostersSchema = z.object({
   dutyTypeId: z.string().uuid(),
-  assignments: z.array(z.object({
-    studentId: z.string().uuid(),
-    dayOfWeek: DayOfWeek,
-  })).min(1),
+  assignments: z
+    .array(
+      z.object({
+        studentId: z.string().uuid(),
+        dayOfWeek: DayOfWeek,
+      })
+    )
+    .min(1),
   startDate: z.string().datetime().or(z.date()),
   endDate: z.string().datetime().or(z.date()),
 });

@@ -109,7 +109,7 @@ export interface DashboardAlert {
   id: string;
   title: string;
   message: string;
-  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  severity: "INFO" | "WARNING" | "CRITICAL";
   timestamp: string;
   unitId?: string;
   unitName?: string;

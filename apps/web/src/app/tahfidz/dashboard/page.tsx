@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useState } from "react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   BookOpen,
   TrendingUp,
@@ -13,27 +13,27 @@ import {
   ArrowLeft,
   Trophy,
   BarChart3,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   Table,
   TableBody,
@@ -41,54 +41,55 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import {
-  useTahfidzDashboard,
-  TAHFIDZ_TYPES,
-} from '@/hooks/use-tahfidz';
-import { useUnits } from '@/hooks/use-units';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useTahfidzDashboard, TAHFIDZ_TYPES } from "@/hooks/use-tahfidz";
+import { useUnits } from "@/hooks/use-units";
+import { cn } from "@/lib/utils";
 
 const MONTHS = [
-  { value: 0, label: 'Januari' },
-  { value: 1, label: 'Februari' },
-  { value: 2, label: 'Maret' },
-  { value: 3, label: 'April' },
-  { value: 4, label: 'Mei' },
-  { value: 5, label: 'Juni' },
-  { value: 6, label: 'Juli' },
-  { value: 7, label: 'Agustus' },
-  { value: 8, label: 'September' },
-  { value: 9, label: 'Oktober' },
-  { value: 10, label: 'November' },
-  { value: 11, label: 'Desember' },
+  { value: 0, label: "Januari" },
+  { value: 1, label: "Februari" },
+  { value: 2, label: "Maret" },
+  { value: 3, label: "April" },
+  { value: 4, label: "Mei" },
+  { value: 5, label: "Juni" },
+  { value: 6, label: "Juli" },
+  { value: 7, label: "Agustus" },
+  { value: 8, label: "September" },
+  { value: 9, label: "Oktober" },
+  { value: 10, label: "November" },
+  { value: 11, label: "Desember" },
 ];
 
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
 export default function TahfidzDashboardPage() {
-  const [unitId, setUnitId] = useState<string>('ALL');
+  const [unitId, setUnitId] = useState<string>("ALL");
   const [year, setYear] = useState<number>(currentYear);
-  const [month, setMonth] = useState<string>('ALL');
+  const [month, setMonth] = useState<string>("ALL");
 
   const { data: unitsData } = useUnits();
   const units = unitsData || [];
 
   const { data: stats, isLoading } = useTahfidzDashboard({
-    unitId: unitId === 'ALL' ? undefined : unitId,
+    unitId: unitId === "ALL" ? undefined : unitId,
     year,
-    month: month === 'ALL' ? undefined : parseInt(month),
+    month: month === "ALL" ? undefined : parseInt(month),
   });
 
   // Calculate max student count for juz progress
   const maxJuzStudentCount = stats?.progressByJuz
-    ? Math.max(...stats.progressByJuz.map(j => j.studentCount), 1)
+    ? Math.max(...stats.progressByJuz.map((j) => j.studentCount), 1)
     : 1;
 
   // Calculate total monthly activity
-  const getMonthTotal = (item: { setoran: number; murajaah: number; tasmi: number }) => {
+  const getMonthTotal = (item: {
+    setoran: number;
+    murajaah: number;
+    tasmi: number;
+  }) => {
     return item.setoran + item.murajaah + item.tasmi;
   };
 
@@ -146,10 +147,7 @@ export default function TahfidzDashboardPage() {
               </SelectContent>
             </Select>
 
-            <Select
-              value={month}
-              onValueChange={setMonth}
-            >
+            <Select value={month} onValueChange={setMonth}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Semua Bulan" />
               </SelectTrigger>
@@ -166,9 +164,9 @@ export default function TahfidzDashboardPage() {
             <Button
               variant="ghost"
               onClick={() => {
-                setUnitId('ALL');
+                setUnitId("ALL");
                 setYear(currentYear);
-                setMonth('ALL');
+                setMonth("ALL");
               }}
             >
               Reset
@@ -183,7 +181,9 @@ export default function TahfidzDashboardPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <BookOpen className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Total Catatan</span>
+              <span className="text-sm text-muted-foreground">
+                Total Catatan
+              </span>
             </div>
             {isLoading ? (
               <Skeleton className="h-8 w-20" />
@@ -196,7 +196,9 @@ export default function TahfidzDashboardPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Santri Aktif</span>
+              <span className="text-sm text-muted-foreground">
+                Santri Aktif
+              </span>
             </div>
             {isLoading ? (
               <Skeleton className="h-8 w-20" />
@@ -209,13 +211,16 @@ export default function TahfidzDashboardPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <Target className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Total Juz Dicapai</span>
+              <span className="text-sm text-muted-foreground">
+                Total Juz Dicapai
+              </span>
             </div>
             {isLoading ? (
               <Skeleton className="h-8 w-20" />
             ) : (
               <p className="text-2xl font-bold">
-                {stats?.progressByJuz?.filter(j => j.completedCount > 0).length || 0}
+                {stats?.progressByJuz?.filter((j) => j.completedCount > 0)
+                  .length || 0}
               </p>
             )}
           </CardContent>
@@ -224,14 +229,21 @@ export default function TahfidzDashboardPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Rata-rata Catatan/Bulan</span>
+              <span className="text-sm text-muted-foreground">
+                Rata-rata Catatan/Bulan
+              </span>
             </div>
             {isLoading ? (
               <Skeleton className="h-8 w-20" />
             ) : (
               <p className="text-2xl font-bold">
                 {stats?.monthlyActivity?.length
-                  ? Math.round(stats.monthlyActivity.reduce((a, b) => a + getMonthTotal(b), 0) / stats.monthlyActivity.length)
+                  ? Math.round(
+                      stats.monthlyActivity.reduce(
+                        (a, b) => a + getMonthTotal(b),
+                        0,
+                      ) / stats.monthlyActivity.length,
+                    )
                   : 0}
               </p>
             )}
@@ -247,7 +259,9 @@ export default function TahfidzDashboardPage() {
               <BarChart3 className="h-5 w-5" />
               Catatan per Tipe
             </CardTitle>
-            <CardDescription>Distribusi catatan berdasarkan tipe aktivitas</CardDescription>
+            <CardDescription>
+              Distribusi catatan berdasarkan tipe aktivitas
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -259,7 +273,9 @@ export default function TahfidzDashboardPage() {
             ) : stats?.recordsByType?.length ? (
               <div className="space-y-4">
                 {stats.recordsByType.map((item) => {
-                  const typeConfig = TAHFIDZ_TYPES.find((t) => t.value === item.type);
+                  const typeConfig = TAHFIDZ_TYPES.find(
+                    (t) => t.value === item.type,
+                  );
                   const total = stats.totalRecords || 1;
                   const percentage = Math.round((item.count / total) * 100);
 
@@ -270,10 +286,14 @@ export default function TahfidzDashboardPage() {
                           <Badge
                             variant="outline"
                             className={cn(
-                              item.type === 'ZIYADAH' && 'bg-green-50 border-green-200 text-green-700',
-                              item.type === 'MUROJAAH' && 'bg-blue-50 border-blue-200 text-blue-700',
-                              item.type === 'TASMI' && 'bg-purple-50 border-purple-200 text-purple-700',
-                              item.type === 'ASSESSMENT' && 'bg-orange-50 border-orange-200 text-orange-700',
+                              item.type === "ZIYADAH" &&
+                                "bg-green-50 border-green-200 text-green-700",
+                              item.type === "MUROJAAH" &&
+                                "bg-blue-50 border-blue-200 text-blue-700",
+                              item.type === "TASMI" &&
+                                "bg-purple-50 border-purple-200 text-purple-700",
+                              item.type === "ASSESSMENT" &&
+                                "bg-orange-50 border-orange-200 text-orange-700",
                             )}
                           >
                             {typeConfig?.label || item.type}
@@ -286,11 +306,11 @@ export default function TahfidzDashboardPage() {
                       <Progress
                         value={percentage}
                         className={cn(
-                          'h-2',
-                          item.type === 'ZIYADAH' && '[&>div]:bg-green-500',
-                          item.type === 'MUROJAAH' && '[&>div]:bg-blue-500',
-                          item.type === 'TASMI' && '[&>div]:bg-purple-500',
-                          item.type === 'ASSESSMENT' && '[&>div]:bg-orange-500',
+                          "h-2",
+                          item.type === "ZIYADAH" && "[&>div]:bg-green-500",
+                          item.type === "MUROJAAH" && "[&>div]:bg-blue-500",
+                          item.type === "TASMI" && "[&>div]:bg-purple-500",
+                          item.type === "ASSESSMENT" && "[&>div]:bg-orange-500",
                         )}
                       />
                     </div>
@@ -298,7 +318,9 @@ export default function TahfidzDashboardPage() {
                 })}
               </div>
             ) : (
-              <p className="text-muted-foreground text-center py-4">Tidak ada data</p>
+              <p className="text-muted-foreground text-center py-4">
+                Tidak ada data
+              </p>
             )}
           </CardContent>
         </Card>
@@ -310,7 +332,9 @@ export default function TahfidzDashboardPage() {
               <Trophy className="h-5 w-5 text-amber-500" />
               Top 10 Santri
             </CardTitle>
-            <CardDescription>Santri dengan total ayat terbanyak</CardDescription>
+            <CardDescription>
+              Santri dengan total ayat terbanyak
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -339,7 +363,9 @@ export default function TahfidzDashboardPage() {
                         ) : idx === 2 ? (
                           <Badge className="bg-amber-700">3</Badge>
                         ) : (
-                          <span className="text-muted-foreground">{idx + 1}</span>
+                          <span className="text-muted-foreground">
+                            {idx + 1}
+                          </span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -353,7 +379,9 @@ export default function TahfidzDashboardPage() {
                 </TableBody>
               </Table>
             ) : (
-              <p className="text-muted-foreground text-center py-4">Tidak ada data</p>
+              <p className="text-muted-foreground text-center py-4">
+                Tidak ada data
+              </p>
             )}
           </CardContent>
         </Card>
@@ -366,7 +394,9 @@ export default function TahfidzDashboardPage() {
             <TrendingUp className="h-5 w-5" />
             Progress per Juz
           </CardTitle>
-          <CardDescription>Capaian hafalan berdasarkan Juz 1-30</CardDescription>
+          <CardDescription>
+            Capaian hafalan berdasarkan Juz 1-30
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -378,30 +408,37 @@ export default function TahfidzDashboardPage() {
           ) : stats?.progressByJuz?.length ? (
             <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-10 gap-2">
               {stats.progressByJuz.map((juz) => {
-                const percentage = Math.min(Math.round((juz.studentCount / maxJuzStudentCount) * 100), 100);
+                const percentage = Math.min(
+                  Math.round((juz.studentCount / maxJuzStudentCount) * 100),
+                  100,
+                );
                 const hasData = juz.studentCount > 0;
 
                 return (
                   <div
                     key={juz.juz}
                     className={cn(
-                      'p-2 rounded-lg border text-center transition-colors',
+                      "p-2 rounded-lg border text-center transition-colors",
                       hasData
-                        ? 'bg-green-50 border-green-200 hover:bg-green-100'
-                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                        ? "bg-green-50 border-green-200 hover:bg-green-100"
+                        : "bg-gray-50 border-gray-200 hover:bg-gray-100",
                     )}
                   >
                     <p className="text-xs text-muted-foreground mb-1">Juz</p>
-                    <p className={cn(
-                      'text-lg font-bold',
-                      hasData ? 'text-green-700' : 'text-gray-400'
-                    )}>
+                    <p
+                      className={cn(
+                        "text-lg font-bold",
+                        hasData ? "text-green-700" : "text-gray-400",
+                      )}
+                    >
                       {juz.juz}
                     </p>
-                    <p className={cn(
-                      'text-xs',
-                      hasData ? 'text-green-600' : 'text-gray-400'
-                    )}>
+                    <p
+                      className={cn(
+                        "text-xs",
+                        hasData ? "text-green-600" : "text-gray-400",
+                      )}
+                    >
                       {juz.studentCount} santri
                     </p>
                     {hasData && (
@@ -417,7 +454,9 @@ export default function TahfidzDashboardPage() {
               })}
             </div>
           ) : (
-            <p className="text-muted-foreground text-center py-8">Tidak ada data progress per juz</p>
+            <p className="text-muted-foreground text-center py-8">
+              Tidak ada data progress per juz
+            </p>
           )}
         </CardContent>
       </Card>
@@ -442,7 +481,10 @@ export default function TahfidzDashboardPage() {
             <div className="flex items-end gap-1 h-40">
               {stats.monthlyActivity.map((item) => {
                 const total = getMonthTotal(item);
-                const maxCount = Math.max(...stats.monthlyActivity!.map((m) => getMonthTotal(m)), 1);
+                const maxCount = Math.max(
+                  ...stats.monthlyActivity!.map((m) => getMonthTotal(m)),
+                  1,
+                );
                 const height = Math.max((total / maxCount) * 100, 5);
 
                 return (
@@ -463,7 +505,9 @@ export default function TahfidzDashboardPage() {
               })}
             </div>
           ) : (
-            <p className="text-muted-foreground text-center py-8">Tidak ada data aktivitas bulanan</p>
+            <p className="text-muted-foreground text-center py-8">
+              Tidak ada data aktivitas bulanan
+            </p>
           )}
         </CardContent>
       </Card>
@@ -497,27 +541,37 @@ export default function TahfidzDashboardPage() {
                 {stats.recentRecords.map((record) => (
                   <TableRow key={record.id}>
                     <TableCell className="text-sm">
-                      {record.recordedAt ? format(new Date(record.recordedAt), 'd MMM yyyy', { locale: localeId }) : '-'}
+                      {record.recordedAt
+                        ? format(new Date(record.recordedAt), "d MMM yyyy", {
+                            locale: localeId,
+                          })
+                        : "-"}
                     </TableCell>
-                    <TableCell className="font-medium">{record.student?.user?.name || '-'}</TableCell>
-                    <TableCell>{record.surahName || '-'}</TableCell>
+                    <TableCell className="font-medium">
+                      {record.student?.user?.name || "-"}
+                    </TableCell>
+                    <TableCell>{record.surahName || "-"}</TableCell>
                     <TableCell>
                       {record.ayahStart} - {record.ayahEnd}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-xs">
-                        {TAHFIDZ_TYPES.find((t) => t.value === record.activityType)?.label || record.activityType}
+                        {TAHFIDZ_TYPES.find(
+                          (t) => t.value === record.activityType,
+                        )?.label || record.activityType}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{record.score ?? '-'}</Badge>
+                      <Badge variant="secondary">{record.score ?? "-"}</Badge>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           ) : (
-            <p className="text-muted-foreground text-center py-8">Tidak ada catatan terbaru</p>
+            <p className="text-muted-foreground text-center py-8">
+              Tidak ada catatan terbaru
+            </p>
           )}
         </CardContent>
       </Card>

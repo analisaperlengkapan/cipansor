@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useState } from "react";
+import Link from "next/link";
 import {
   Plus,
   Search,
@@ -18,34 +18,34 @@ import {
   Download,
   Grid3X3,
   List,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,7 +55,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -63,11 +63,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 
 import {
   useKitabList,
@@ -82,18 +82,18 @@ import {
   type KitabCategory,
   type KitabLevel,
   type KitabKuning,
-} from '@/hooks/use-kitab-progress';
-import { useUnits } from '@/hooks/use-units';
-import { useDebounce } from '@/hooks/use-debounce';
+} from "@/hooks/use-kitab-progress";
+import { useUnits } from "@/hooks/use-units";
+import { useDebounce } from "@/hooks/use-debounce";
 
 export default function KitabProgressPage() {
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState<KitabCategory | 'ALL'>('ALL');
-  const [level, setLevel] = useState<KitabLevel | 'ALL'>('ALL');
-  const [unitId, setUnitId] = useState<string>('ALL');
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState<KitabCategory | "ALL">("ALL");
+  const [level, setLevel] = useState<KitabLevel | "ALL">("ALL");
+  const [unitId, setUnitId] = useState<string>("ALL");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [activeTab, setActiveTab] = useState('kitab');
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [activeTab, setActiveTab] = useState("kitab");
   const [page, setPage] = useState(1);
 
   const debouncedSearch = useDebounce(search, 300);
@@ -101,17 +101,21 @@ export default function KitabProgressPage() {
   const { data: unitsData } = useUnits();
   const units = unitsData || [];
 
-  const { data: kitabData, isLoading, error } = useKitabList({
+  const {
+    data: kitabData,
+    isLoading,
+    error,
+  } = useKitabList({
     search: debouncedSearch || undefined,
-    category: category !== 'ALL' ? category : undefined,
-    level: level !== 'ALL' ? level : undefined,
-    unitId: unitId !== 'ALL' ? unitId : undefined,
+    category: category !== "ALL" ? category : undefined,
+    level: level !== "ALL" ? level : undefined,
+    unitId: unitId !== "ALL" ? unitId : undefined,
     page,
     limit: 12,
   });
 
   const { data: statistics, isLoading: statsLoading } = useKitabStatistics({
-    unitId: unitId !== 'ALL' ? unitId : undefined,
+    unitId: unitId !== "ALL" ? unitId : undefined,
   });
 
   const deleteMutation = useDeleteKitab();
@@ -124,10 +128,10 @@ export default function KitabProgressPage() {
 
     try {
       await deleteMutation.mutateAsync(deleteId);
-      toast.success('Kitab berhasil dihapus');
+      toast.success("Kitab berhasil dihapus");
       setDeleteId(null);
     } catch {
-      toast.error('Gagal menghapus kitab');
+      toast.error("Gagal menghapus kitab");
     }
   };
 
@@ -147,9 +151,9 @@ export default function KitabProgressPage() {
         title="Kitab Kuning"
         description="Kelola pembelajaran dan progres kitab kuning santri"
         action={{
-          label: 'Tambah Kitab',
+          label: "Tambah Kitab",
           icon: <Plus className="h-4 w-4" />,
-          href: '/kitab-progress/new',
+          href: "/kitab-progress/new",
         }}
       />
 
@@ -200,7 +204,9 @@ export default function KitabProgressPage() {
                 {statsLoading ? (
                   <Skeleton className="h-8 w-12" />
                 ) : (
-                  <p className="text-2xl font-bold">{stats.completionRate.toFixed(1)}%</p>
+                  <p className="text-2xl font-bold">
+                    {stats.completionRate.toFixed(1)}%
+                  </p>
                 )}
               </div>
             </div>
@@ -211,12 +217,13 @@ export default function KitabProgressPage() {
             <p className="text-sm text-muted-foreground mb-2">Per Level</p>
             <div className="flex flex-wrap gap-1">
               {KITAB_LEVELS.map((lvl) => (
-                <Badge 
-                  key={lvl} 
-                  variant="secondary" 
+                <Badge
+                  key={lvl}
+                  variant="secondary"
                   className={`text-xs ${KITAB_LEVEL_COLORS[lvl]}`}
                 >
-                  {KITAB_LEVEL_LABELS[lvl].split(' ')[0]}: {stats.byLevel[lvl] || 0}
+                  {KITAB_LEVEL_LABELS[lvl].split(" ")[0]}:{" "}
+                  {stats.byLevel[lvl] || 0}
                 </Badge>
               ))}
             </div>
@@ -255,7 +262,10 @@ export default function KitabProgressPage() {
                     className="pl-10"
                   />
                 </div>
-                <Select value={category} onValueChange={(v) => setCategory(v as typeof category)}>
+                <Select
+                  value={category}
+                  onValueChange={(v) => setCategory(v as typeof category)}
+                >
                   <SelectTrigger className="w-full md:w-40">
                     <SelectValue placeholder="Kategori" />
                   </SelectTrigger>
@@ -268,7 +278,10 @@ export default function KitabProgressPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={level} onValueChange={(v) => setLevel(v as typeof level)}>
+                <Select
+                  value={level}
+                  onValueChange={(v) => setLevel(v as typeof level)}
+                >
                   <SelectTrigger className="w-full md:w-44">
                     <SelectValue placeholder="Level" />
                   </SelectTrigger>
@@ -296,16 +309,16 @@ export default function KitabProgressPage() {
                 </Select>
                 <div className="flex gap-2">
                   <Button
-                    variant={viewMode === 'grid' ? 'default' : 'outline'}
+                    variant={viewMode === "grid" ? "default" : "outline"}
                     size="icon"
-                    onClick={() => setViewMode('grid')}
+                    onClick={() => setViewMode("grid")}
                   >
                     <Grid3X3 className="h-4 w-4" />
                   </Button>
                   <Button
-                    variant={viewMode === 'list' ? 'default' : 'outline'}
+                    variant={viewMode === "list" ? "default" : "outline"}
                     size="icon"
-                    onClick={() => setViewMode('list')}
+                    onClick={() => setViewMode("list")}
                   >
                     <List className="h-4 w-4" />
                   </Button>
@@ -333,7 +346,11 @@ export default function KitabProgressPage() {
             <Card>
               <CardContent className="p-6 text-center">
                 <p className="text-muted-foreground">Gagal memuat data kitab</p>
-                <Button variant="outline" className="mt-2" onClick={() => window.location.reload()}>
+                <Button
+                  variant="outline"
+                  className="mt-2"
+                  onClick={() => window.location.reload()}
+                >
                   Coba Lagi
                 </Button>
               </CardContent>
@@ -344,7 +361,8 @@ export default function KitabProgressPage() {
                 <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-lg font-semibold mb-2">Belum Ada Kitab</h3>
                 <p className="text-muted-foreground mb-4">
-                  Tambahkan kitab kuning pertama untuk memulai tracking progress santri
+                  Tambahkan kitab kuning pertama untuk memulai tracking progress
+                  santri
                 </p>
                 <Button asChild>
                   <Link href="/kitab-progress/new">
@@ -354,16 +372,10 @@ export default function KitabProgressPage() {
                 </Button>
               </CardContent>
             </Card>
-          ) : viewMode === 'grid' ? (
-            <KitabGridView 
-              kitabList={kitabList} 
-              onDelete={setDeleteId} 
-            />
+          ) : viewMode === "grid" ? (
+            <KitabGridView kitabList={kitabList} onDelete={setDeleteId} />
           ) : (
-            <KitabListView 
-              kitabList={kitabList} 
-              onDelete={setDeleteId} 
-            />
+            <KitabListView kitabList={kitabList} onDelete={setDeleteId} />
           )}
 
           {/* Pagination */}
@@ -397,7 +409,9 @@ export default function KitabProgressPage() {
         </TabsContent>
 
         <TabsContent value="progress" className="mt-4">
-          <ProgressTrackingView unitId={unitId !== 'ALL' ? unitId : undefined} />
+          <ProgressTrackingView
+            unitId={unitId !== "ALL" ? unitId : undefined}
+          />
         </TabsContent>
       </Tabs>
 
@@ -407,8 +421,8 @@ export default function KitabProgressPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus Kitab?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Semua data progress santri terkait 
-              kitab ini juga akan ikut terhapus.
+              Tindakan ini tidak dapat dibatalkan. Semua data progress santri
+              terkait kitab ini juga akan ikut terhapus.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -417,7 +431,7 @@ export default function KitabProgressPage() {
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground"
             >
-              {deleteMutation.isPending ? 'Menghapus...' : 'Hapus'}
+              {deleteMutation.isPending ? "Menghapus..." : "Hapus"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -427,11 +441,11 @@ export default function KitabProgressPage() {
 }
 
 // Grid View Component
-function KitabGridView({ 
-  kitabList, 
-  onDelete 
-}: { 
-  kitabList: KitabKuning[]; 
+function KitabGridView({
+  kitabList,
+  onDelete,
+}: {
+  kitabList: KitabKuning[];
   onDelete: (id: string) => void;
 }) {
   return (
@@ -441,7 +455,9 @@ function KitabGridView({
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-2xl">{getCategoryIcon(kitab.category)}</span>
+                <span className="text-2xl">
+                  {getCategoryIcon(kitab.category)}
+                </span>
                 <div>
                   <CardTitle className="text-lg">{kitab.title}</CardTitle>
                   {kitab.author && (
@@ -488,11 +504,9 @@ function KitabGridView({
                   {KITAB_CATEGORY_LABELS[kitab.category]}
                 </Badge>
                 <Badge className={KITAB_LEVEL_COLORS[kitab.level]}>
-                  {KITAB_LEVEL_LABELS[kitab.level].split(' ')[0]}
+                  {KITAB_LEVEL_LABELS[kitab.level].split(" ")[0]}
                 </Badge>
-                {!kitab.isActive && (
-                  <Badge variant="outline">Non-aktif</Badge>
-                )}
+                {!kitab.isActive && <Badge variant="outline">Non-aktif</Badge>}
               </div>
 
               {/* Description */}
@@ -517,12 +531,13 @@ function KitabGridView({
               </div>
 
               {/* Students Learning */}
-              {kitab._count?.progresses !== undefined && kitab._count.progresses > 0 && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Users className="h-3 w-3 text-muted-foreground" />
-                  <span>{kitab._count.progresses} santri mempelajari</span>
-                </div>
-              )}
+              {kitab._count?.progresses !== undefined &&
+                kitab._count.progresses > 0 && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Users className="h-3 w-3 text-muted-foreground" />
+                    <span>{kitab._count.progresses} santri mempelajari</span>
+                  </div>
+                )}
 
               {/* Unit */}
               {kitab.unit && (
@@ -539,11 +554,11 @@ function KitabGridView({
 }
 
 // List View Component
-function KitabListView({ 
-  kitabList, 
-  onDelete 
-}: { 
-  kitabList: KitabKuning[]; 
+function KitabListView({
+  kitabList,
+  onDelete,
+}: {
+  kitabList: KitabKuning[];
   onDelete: (id: string) => void;
 }) {
   return (
@@ -565,11 +580,15 @@ function KitabListView({
             <TableRow key={kitab.id}>
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">{getCategoryIcon(kitab.category)}</span>
+                  <span className="text-xl">
+                    {getCategoryIcon(kitab.category)}
+                  </span>
                   <div>
                     <p className="font-medium">{kitab.title}</p>
                     {kitab.author && (
-                      <p className="text-sm text-muted-foreground">{kitab.author}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {kitab.author}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -581,18 +600,16 @@ function KitabListView({
               </TableCell>
               <TableCell>
                 <Badge className={KITAB_LEVEL_COLORS[kitab.level]}>
-                  {KITAB_LEVEL_LABELS[kitab.level].split(' ')[0]}
+                  {KITAB_LEVEL_LABELS[kitab.level].split(" ")[0]}
                 </Badge>
               </TableCell>
               <TableCell className="text-center">
-                {kitab.totalPages || '-'}
+                {kitab.totalPages || "-"}
               </TableCell>
               <TableCell className="text-center">
                 {kitab._count?.progresses || 0}
               </TableCell>
-              <TableCell>
-                {kitab.unit?.name || '-'}
-              </TableCell>
+              <TableCell>{kitab.unit?.name || "-"}</TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" size="sm" asChild>
@@ -633,11 +650,11 @@ function KitabListView({
 }
 
 // Statistics View Component
-function StatisticsView({ 
-  statistics, 
-  loading 
-}: { 
-  statistics: any; 
+function StatisticsView({
+  statistics,
+  loading,
+}: {
+  statistics: any;
   loading: boolean;
 }) {
   if (loading) {
@@ -710,7 +727,10 @@ function StatisticsView({
                 <div key={lvl}>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="flex items-center gap-2">
-                      <Badge className={KITAB_LEVEL_COLORS[lvl]} variant="secondary">
+                      <Badge
+                        className={KITAB_LEVEL_COLORS[lvl]}
+                        variant="secondary"
+                      >
                         {KITAB_LEVEL_LABELS[lvl]}
                       </Badge>
                     </span>
@@ -727,9 +747,16 @@ function StatisticsView({
               Level Penjelasan:
             </p>
             <ul className="text-xs space-y-1 text-muted-foreground">
-              <li>• <strong>Mubtadi&apos;</strong>: Kitab dasar untuk pemula</li>
-              <li>• <strong>Mutawassith</strong>: Kitab menengah dengan pembahasan lebih dalam</li>
-              <li>• <strong>Mutaqaddim</strong>: Kitab lanjut untuk santri senior</li>
+              <li>
+                • <strong>Mubtadi&apos;</strong>: Kitab dasar untuk pemula
+              </li>
+              <li>
+                • <strong>Mutawassith</strong>: Kitab menengah dengan pembahasan
+                lebih dalam
+              </li>
+              <li>
+                • <strong>Mutaqaddim</strong>: Kitab lanjut untuk santri senior
+              </li>
             </ul>
           </div>
         </CardContent>
@@ -752,31 +779,37 @@ function StatisticsView({
         <CardContent>
           {statistics?.topKitab?.length > 0 ? (
             <div className="space-y-4">
-              {statistics.topKitab.slice(0, 5).map((item: any, index: number) => (
-                <div 
-                  key={item.kitab?.id || index}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl font-bold text-muted-foreground">
-                      #{index + 1}
-                    </span>
-                    <span className="text-xl">{getCategoryIcon(item.kitab?.category)}</span>
-                    <div>
-                      <p className="font-medium">{item.kitab?.title}</p>
+              {statistics.topKitab
+                .slice(0, 5)
+                .map((item: any, index: number) => (
+                  <div
+                    key={item.kitab?.id || index}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl font-bold text-muted-foreground">
+                        #{index + 1}
+                      </span>
+                      <span className="text-xl">
+                        {getCategoryIcon(item.kitab?.category)}
+                      </span>
+                      <div>
+                        <p className="font-medium">{item.kitab?.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {item.kitab?.author}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">
+                        {item.studentCount} santri
+                      </p>
                       <p className="text-sm text-muted-foreground">
-                        {item.kitab?.author}
+                        {item.completedCount} khatam
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold">{item.studentCount} santri</p>
-                    <p className="text-sm text-muted-foreground">
-                      {item.completedCount} khatam
-                    </p>
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-8">
@@ -791,7 +824,7 @@ function StatisticsView({
 
 // Progress Tracking View Component
 function ProgressTrackingView({ unitId }: { unitId?: string }) {
-  const [classFilter, setClassFilter] = useState<string>('ALL');
+  const [classFilter, setClassFilter] = useState<string>("ALL");
 
   return (
     <div className="space-y-4">
@@ -818,7 +851,8 @@ function ProgressTrackingView({ unitId }: { unitId?: string }) {
         </CardHeader>
         <CardContent>
           <p className="text-center text-muted-foreground py-8">
-            Pilih kelas atau santri untuk melihat progress pembelajaran kitab kuning
+            Pilih kelas atau santri untuk melihat progress pembelajaran kitab
+            kuning
           </p>
           <div className="flex justify-center">
             <Button asChild>

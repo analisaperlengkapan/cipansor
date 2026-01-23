@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from "express";
-import { prisma } from "../../lib/prisma";
-import * as service from "./service";
+import { Request, Response, NextFunction } from 'express';
+import { prisma } from '../../lib/prisma';
+import * as service from './service';
 import {
   createStaffAttendanceSchema,
   updateStaffAttendanceSchema,
@@ -8,10 +8,10 @@ import {
   createLeaveSchema,
   updateLeaveSchema,
   approveLeaveSchema,
-} from "./schema";
-import { Errors } from "../../middleware/error";
-import { z } from "zod";
-import { UserRole } from "@prisma/client";
+} from './schema';
+import { Errors } from '../../middleware/error';
+import { z } from 'zod';
+import { UserRole } from '@prisma/client';
 
 // =====================================
 // STAFF ATTENDANCE CONTROLLERS
@@ -31,7 +31,7 @@ export async function getStaffAttendanceById(req: Request, res: Response, next: 
   try {
     const attendance = await service.getStaffAttendanceById(req.params.id);
     if (!attendance) {
-      throw Errors.notFound("Attendance record not found");
+      throw Errors.notFound('Attendance record not found');
     }
     res.json({ success: true, data: attendance });
   } catch (error) {
@@ -86,7 +86,7 @@ export async function getStaffAttendanceSummary(req: Request, res: Response, nex
 export async function deleteStaffAttendance(req: Request, res: Response, next: NextFunction) {
   try {
     await service.deleteStaffAttendance(req.params.id);
-    res.json({ success: true, message: "Attendance record deleted successfully" });
+    res.json({ success: true, message: 'Attendance record deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -102,14 +102,15 @@ export async function getLeaves(req: Request, res: Response, next: NextFunction)
     const user = req.user!;
 
     const { mine, ...otherQuery } = query;
-    const shouldFilterByMe = mine === true || (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.UNIT_ADMIN);
+    const shouldFilterByMe =
+      mine === true || (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.UNIT_ADMIN);
 
     // Apply filtering if explicitly requested or required by role
     if (shouldFilterByMe) {
       // Resolve teacher/staff profile from user ID
       const [teacher, staff] = await Promise.all([
         prisma.teacher.findUnique({ where: { userId: user.sub } }),
-        prisma.staff.findUnique({ where: { userId: user.sub } })
+        prisma.staff.findUnique({ where: { userId: user.sub } }),
       ]);
 
       if (teacher) query.teacherId = teacher.id;
@@ -119,12 +120,12 @@ export async function getLeaves(req: Request, res: Response, next: NextFunction)
         // - For non-admins, strict error.
         // - For admins who just pressed "My Leaves", return empty list instead of error.
         if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.UNIT_ADMIN) {
-          throw Errors.notFound("Employee profile not found");
+          throw Errors.notFound('Employee profile not found');
         } else {
           // Admin with no profile: Force a filter that matches nothing
           // Or we can return empty array immediately.
           // Let's use a dummy ID that won't match to reuse service logic.
-          query.staffId = "00000000-0000-0000-0000-000000000000";
+          query.staffId = '00000000-0000-0000-0000-000000000000';
         }
       }
     } else {
@@ -145,7 +146,7 @@ export async function getLeaveById(req: Request, res: Response, next: NextFuncti
   try {
     const leave = await service.getLeaveById(req.params.id);
     if (!leave) {
-      throw Errors.notFound("Leave request not found");
+      throw Errors.notFound('Leave request not found');
     }
     res.json({ success: true, data: leave });
   } catch (error) {
@@ -162,11 +163,11 @@ export async function createLeave(req: Request, res: Response, next: NextFunctio
     if (!data.staffId && !data.teacherId) {
       if (user.role === UserRole.TEACHER) {
         const teacher = await prisma.teacher.findUnique({ where: { userId: user.sub } });
-        if (!teacher) throw Errors.notFound("Teacher profile not found");
+        if (!teacher) throw Errors.notFound('Teacher profile not found');
         data.teacherId = teacher.id;
       } else if (user.role === UserRole.STAFF) {
         const staff = await prisma.staff.findUnique({ where: { userId: user.sub } });
-        if (!staff) throw Errors.notFound("Staff profile not found");
+        if (!staff) throw Errors.notFound('Staff profile not found');
         data.staffId = staff.id;
       }
     }
@@ -193,7 +194,7 @@ export async function approveLeave(req: Request, res: Response, next: NextFuncti
     const data = approveLeaveSchema.parse(req.body);
     const approverId = req.user?.sub;
     if (!approverId) {
-      throw Errors.unauthorized("User not authenticated");
+      throw Errors.unauthorized('User not authenticated');
     }
     const leave = await service.approveLeave(req.params.id, approverId, data);
     res.json({ success: true, data: leave });
@@ -205,7 +206,7 @@ export async function approveLeave(req: Request, res: Response, next: NextFuncti
 export async function cancelLeave(req: Request, res: Response, next: NextFunction) {
   try {
     const leave = await service.cancelLeave(req.params.id);
-    res.json({ success: true, data: leave, message: "Leave request cancelled" });
+    res.json({ success: true, data: leave, message: 'Leave request cancelled' });
   } catch (error) {
     next(error);
   }
@@ -214,7 +215,7 @@ export async function cancelLeave(req: Request, res: Response, next: NextFunctio
 export async function deleteLeave(req: Request, res: Response, next: NextFunction) {
   try {
     await service.deleteLeave(req.params.id);
-    res.json({ success: true, message: "Leave request deleted successfully" });
+    res.json({ success: true, message: 'Leave request deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -249,7 +250,7 @@ export async function getStaffById(req: Request, res: Response, next: NextFuncti
   try {
     const staff = await service.getStaffById(req.params.id);
     if (!staff) {
-      throw Errors.notFound("Staff not found");
+      throw Errors.notFound('Staff not found');
     }
     res.json({ success: true, data: staff });
   } catch (error) {

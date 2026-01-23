@@ -5,6 +5,7 @@
 **Cipansor** is a comprehensive **Islamic Boarding School (Pesantren) Management System** for Yayasan Pesantren Cipansor, managing 4 educational units (TK Qur'an, SD IT, SMP IT, SMA Qur'an) with 24+ integrated modules. The system emphasizes **tahfidz tracking** (Qur'an memorization) and **multi-unit management** with role-based access.
 
 **Tech Stack:**
+
 - **Backend:** Express 5 + TypeScript + Prisma 5 + PostgreSQL 14+
 - **Frontend:** Next.js 15 (App Router) + React + TypeScript + TailwindCSS + shadcn/ui
 - **Real-time:** Socket.IO 4.7 + Redis 7 (pub/sub + caching)
@@ -28,15 +29,21 @@ All backend modules follow this **exact** pattern in `apps/api/src/modules/[modu
 ```
 
 **Key Rules:**
+
 - Controllers MUST use `async/await` with try-catch blocks that call `next(error)`
 - Services MUST handle all Prisma operations and business logic
 - Routes MUST include Swagger JSDoc annotations (see examples below)
 - All database queries use Prisma Client (`prisma` singleton from `@/lib/prisma`)
 
 **Example Controller Pattern:**
+
 ```typescript
 // dashboard.controller.ts
-export const getDashboardMetrics = async (req: Request, res: Response, next: NextFunction) => {
+export const getDashboardMetrics = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { unitId } = req.query;
     const metrics = await getCurrentDashboardMetrics(unitId as string);
@@ -48,6 +55,7 @@ export const getDashboardMetrics = async (req: Request, res: Response, next: Nex
 ```
 
 **Example Route with Swagger:**
+
 ```typescript
 // dashboard.routes.ts
 /**
@@ -65,7 +73,7 @@ export const getDashboardMetrics = async (req: Request, res: Response, next: Nex
  *       200:
  *         description: Success
  */
-router.get('/metrics', authenticate, getDashboardMetrics);
+router.get("/metrics", authenticate, getDashboardMetrics);
 ```
 
 ### 2. Real-time Architecture (Socket.IO + Redis)
@@ -76,16 +84,17 @@ router.get('/metrics', authenticate, getDashboardMetrics);
 
 ```typescript
 // Publishing events (backend job/service)
-import { publishDashboardMetrics } from '@/lib/realtime';
+import { publishDashboardMetrics } from "@/lib/realtime";
 await publishDashboardMetrics(metrics, unitId); // Redis pub/sub
 
 // Client subscribes (frontend)
-socket.on('dashboard:metrics', (data) => {
-  queryClient.setQueryData(['dashboard', 'metrics'], data);
+socket.on("dashboard:metrics", (data) => {
+  queryClient.setQueryData(["dashboard", "metrics"], data);
 });
 ```
 
-**Critical:** 
+**Critical:**
+
 - All WebSocket connections require JWT authentication (via `auth` query param)
 - Use unit-based rooms: `dashboard:metrics:${unitId}` or `dashboard:metrics` (global)
 - Redis channels use pattern subscriptions: `psubscribe('dashboard:*')`
@@ -118,12 +127,13 @@ await redisPublisher.del(cacheKey);
 ```typescript
 const { metrics, isConnected, reconnectAttempts } = useRealtimeDashboard({
   enabled: true,
-  unitIds: ['unit-1'],
-  onMetricsUpdate: (data) => console.log(data)
+  unitIds: ["unit-1"],
+  onMetricsUpdate: (data) => console.log(data),
 });
 ```
 
 **Key Features:**
+
 - Automatic reconnection with exponential backoff (1s → 30s max)
 - React Query invalidation on real-time updates
 - Toast notifications for connection status
@@ -163,18 +173,20 @@ useQuery(['key'], fetcher, {
 ## Database Patterns
 
 ### Prisma Schema Location
+
 `apps/api/prisma/schema.prisma` (5,747 lines - comprehensive)
 
 ### Multi-tenant Pattern
+
 **CRITICAL:** All queries MUST filter by `unitId` for data isolation
 
 ```typescript
 // CORRECT - Unit-scoped query
 const students = await prisma.student.findMany({
-  where: { 
+  where: {
     unitId: user.unitId, // REQUIRED for multi-tenant
-    deletedAt: null 
-  }
+    deletedAt: null,
+  },
 });
 
 // INCORRECT - Global query (security issue)
@@ -182,29 +194,36 @@ const students = await prisma.student.findMany();
 ```
 
 ### Soft Delete Pattern
+
 All major entities use `deletedAt: DateTime?` for soft deletes
 
 ```typescript
 // Soft delete
 await prisma.student.update({
   where: { id },
-  data: { deletedAt: new Date() }
+  data: { deletedAt: new Date() },
 });
 
 // Always filter soft-deleted records
-where: { deletedAt: null }
+where: {
+  deletedAt: null;
+}
 ```
 
 ### Enums (CRITICAL - Import from Prisma)
+
 ```typescript
 // CORRECT
-import { UserRole, Realm, AttendanceStatus } from '@prisma/client';
+import { UserRole, Realm, AttendanceStatus } from "@prisma/client";
 
 // INCORRECT - Do not redefine enums manually
-enum UserRole { SUPER_ADMIN = 'SUPER_ADMIN' } // ❌
+enum UserRole {
+  SUPER_ADMIN = "SUPER_ADMIN",
+} // ❌
 ```
 
 **Key Enums:**
+
 - `UserRole`: SUPER_ADMIN, UNIT_ADMIN, TEACHER, STAFF, STUDENT, PARENT
 - `Realm`: GLOBAL, YAYASAN, TK_QURAN, SD_IT, SMP_IT, SMA_QURAN
 - `AttendanceStatus`: PRESENT, ABSENT, LATE, EXCUSED, SICK
@@ -272,10 +291,11 @@ pnpm test:e2e:ui       # With UI
 ## Project-Specific Conventions
 
 ### 1. Import Aliases (tsconfig paths)
+
 ```typescript
 // ALWAYS use aliases, never relative paths
-import { prisma } from '@/lib/prisma';        // ✅ Correct
-import { prisma } from '../../../lib/prisma'; // ❌ Wrong
+import { prisma } from "@/lib/prisma"; // ✅ Correct
+import { prisma } from "../../../lib/prisma"; // ❌ Wrong
 
 // Aliases:
 // @/        → apps/api/src/
@@ -283,6 +303,7 @@ import { prisma } from '../../../lib/prisma'; // ❌ Wrong
 ```
 
 ### 2. API Response Format (Standardized)
+
 ```typescript
 // Success (always wrap in 'data')
 { success: true, data: {...}, meta: { page, limit, total } }
@@ -292,30 +313,33 @@ import { prisma } from '../../../lib/prisma'; // ❌ Wrong
 ```
 
 ### 3. Route Registration (apps/api/src/app.ts)
+
 ```typescript
 // MUST register in app.ts after imports
-app.use('/api/your-module', yourModuleRoutes);
+app.use("/api/your-module", yourModuleRoutes);
 
 // Order matters: Auth routes first, then feature routes
 ```
 
 ### 4. Authentication Middleware
+
 ```typescript
-import { authenticate } from '@/middleware/auth';
+import { authenticate } from "@/middleware/auth";
 
 // Protected route
-router.get('/protected', authenticate, controller);
+router.get("/protected", authenticate, controller);
 
 // Public route (no middleware)
-router.get('/public', controller);
+router.get("/public", controller);
 ```
 
 ### 5. Scheduled Jobs (BullMQ)
+
 **Location:** `apps/api/src/jobs/`
 
 ```typescript
 // dashboard-snapshot.job.ts
-export const dashboardSnapshotJob = new CronJob('*/60 * * * * *', async () => {
+export const dashboardSnapshotJob = new CronJob("*/60 * * * * *", async () => {
   const metrics = await getCurrentDashboardMetrics();
   await publishDashboardMetrics(metrics);
 });
@@ -328,28 +352,33 @@ export const dashboardSnapshotJob = new CronJob('*/60 * * * * *', async () => {
 ## Integration Points
 
 ### 1. WebSocket + Redis Pub/Sub
+
 - **Backend publishes:** `publishDashboardMetrics(data, unitId)` → Redis
 - **Redis broadcasts:** Pattern `dashboard:*` to all subscribers
 - **Socket.IO emits:** To room `dashboard:metrics:${unitId}`
 - **Frontend receives:** Via `useRealtimeDashboard()` hook
 
 ### 2. React Query + WebSocket Sync
+
 ```typescript
 // Frontend hook updates React Query cache
-socket.on('dashboard:metrics', (data) => {
-  queryClient.setQueryData(['dashboard', 'metrics'], data);
+socket.on("dashboard:metrics", (data) => {
+  queryClient.setQueryData(["dashboard", "metrics"], data);
 });
 ```
 
 ### 3. PAUD Assessment Flow
+
 **Multi-step process:** Indicator selection → Assessment → Evidence upload → Report generation
 
 **Files:**
+
 - Backend: `apps/api/src/modules/paud-assessment/`
 - Frontend: `apps/web/src/app/paud/assessment/`
 - Schema: Search for `PAUDDevelopmentIndicator` in Prisma
 
 ### 4. Tahfidz Tracking (Core Feature)
+
 **Modules:** Ziyadah (new), Murojaah (review), Simaan (recitation), Tasmi (assessment)
 
 **Backend:** `apps/api/src/modules/tahfidz/`, `apps/api/src/modules/murojaah/`  
@@ -360,36 +389,41 @@ socket.on('dashboard:metrics', (data) => {
 ## Common Pitfalls & Solutions
 
 ### ❌ Problem: WebSocket not connecting
+
 **Solution:** Check JWT token in localStorage, verify Redis is running, check CORS settings
 
 ### ❌ Problem: Prisma type errors after schema change
+
 **Solution:** Run `pnpm db:generate` to regenerate Prisma Client
 
 ### ❌ Problem: Cache not invalidating
+
 **Solution:** Ensure `publishDashboardMetrics()` deletes cache key before publishing
 
 ### ❌ Problem: Multi-tenant data leak
+
 **Solution:** ALWAYS filter by `unitId` in queries (see Multi-tenant Pattern above)
 
 ### ❌ Problem: Error middleware not catching errors
+
 **Solution:** Use `next(error)` in controllers, not `res.status().json()`
 
 ---
 
 ## Key Files Reference
 
-| Purpose | Location |
-|---------|----------|
-| Backend entry point | `apps/api/src/main.ts` |
-| Express app config | `apps/api/src/app.ts` |
-| Prisma schema | `apps/api/prisma/schema.prisma` |
-| WebSocket + Redis | `apps/api/src/lib/realtime.ts` |
-| JWT utilities | `apps/api/src/lib/jwt.ts` |
-| Auth middleware | `apps/api/src/middleware/auth.ts` |
-| Error middleware | `apps/api/src/middleware/error.ts` |
-| Frontend layout | `apps/web/src/app/layout.tsx` |
-| Real-time hook | `apps/web/src/hooks/use-realtime-dashboard.ts` |
-| Error boundaries | `apps/web/src/components/error-boundary.tsx` |
+| Purpose             | Location                                       |
+| ------------------- | ---------------------------------------------- |
+| Backend entry point | `apps/api/src/main.ts`                         |
+| Express app config  | `apps/api/src/app.ts`                          |
+| Prisma schema       | `apps/api/prisma/schema.prisma`                |
+| WebSocket + Redis   | `apps/api/src/lib/realtime.ts`                 |
+| JWT utilities       | `apps/api/src/lib/jwt.ts`                      |
+| Auth middleware     | `apps/api/src/middleware/auth.ts`              |
+| Error middleware    | `apps/api/src/middleware/error.ts`             |
+| Frontend layout     | `apps/web/src/app/layout.tsx`                  |
+| Real-time hook      | `apps/web/src/hooks/use-realtime-dashboard.ts` |
+| Error boundaries    | `apps/web/src/components/error-boundary.tsx`   |
 
 ---
 

@@ -3,7 +3,12 @@ import { authenticate, isAdmin } from '@/middleware/auth';
 import { validate, validateQuery, validateParams } from '@/middleware/error';
 import * as controller from './student.controller';
 import { IdCardController } from './id-card.controller';
-import { createStudentSchema, updateStudentSchema, listStudentsQuerySchema, studentIdParamSchema } from './student.schema';
+import {
+  createStudentSchema,
+  updateStudentSchema,
+  listStudentsQuerySchema,
+  studentIdParamSchema,
+} from './student.schema';
 
 const router = Router();
 
@@ -200,7 +205,13 @@ router.post('/', isAdmin, validate(createStudentSchema), controller.create);
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.put('/:id', isAdmin, validateParams(studentIdParamSchema), validate(updateStudentSchema), controller.update);
+router.put(
+  '/:id',
+  isAdmin,
+  validateParams(studentIdParamSchema),
+  validate(updateStudentSchema),
+  controller.update
+);
 
 /**
  * @swagger

@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useParams } from 'next/navigation';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
   CalendarDays,
@@ -13,20 +13,20 @@ import {
   CheckCircle,
   Circle,
   Loader2,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { useAcademicYear } from '@/hooks/use-academic-years';
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { useAcademicYear } from "@/hooks/use-academic-years";
 
 export default function AcademicYearDetailPage() {
   const params = useParams();
@@ -59,8 +59,9 @@ export default function AcademicYearDetailPage() {
   }
 
   const duration = Math.ceil(
-    (new Date(academicYear.endDate).getTime() - new Date(academicYear.startDate).getTime()) /
-      (1000 * 60 * 60 * 24 * 30)
+    (new Date(academicYear.endDate).getTime() -
+      new Date(academicYear.startDate).getTime()) /
+      (1000 * 60 * 60 * 24 * 30),
   );
 
   return (
@@ -76,9 +77,14 @@ export default function AcademicYearDetailPage() {
             </Button>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold tracking-tight">{academicYear.name}</h1>
+                <h1 className="text-2xl font-bold tracking-tight">
+                  {academicYear.name}
+                </h1>
                 {academicYear.isActive ? (
-                  <Badge variant="default" className="bg-green-100 text-green-800">
+                  <Badge
+                    variant="default"
+                    className="bg-green-100 text-green-800"
+                  >
                     <CheckCircle className="h-3 w-3 mr-1" />
                     Aktif
                   </Badge>
@@ -113,13 +119,17 @@ export default function AcademicYearDetailPage() {
             <CardContent className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Nama</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Nama
+                  </p>
                   <p className="text-lg font-semibold">{academicYear.name}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Status</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Status
+                  </p>
                   <p className="text-lg">
-                    {academicYear.isActive ? 'Aktif' : 'Tidak Aktif'}
+                    {academicYear.isActive ? "Aktif" : "Tidak Aktif"}
                   </p>
                 </div>
               </div>
@@ -129,8 +139,10 @@ export default function AcademicYearDetailPage() {
               <div className="flex items-center gap-3">
                 <Building2 className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Unit Pendidikan</p>
-                  <p>{academicYear.unit?.name || '-'}</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Unit Pendidikan
+                  </p>
+                  <p>{academicYear.unit?.name || "-"}</p>
                 </div>
               </div>
 
@@ -138,15 +150,27 @@ export default function AcademicYearDetailPage() {
                 <div className="flex items-center gap-3">
                   <Calendar className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Tanggal Mulai</p>
-                    <p>{format(new Date(academicYear.startDate), 'd MMMM yyyy', { locale: localeId })}</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Tanggal Mulai
+                    </p>
+                    <p>
+                      {format(new Date(academicYear.startDate), "d MMMM yyyy", {
+                        locale: localeId,
+                      })}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Calendar className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Tanggal Selesai</p>
-                    <p>{format(new Date(academicYear.endDate), 'd MMMM yyyy', { locale: localeId })}</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Tanggal Selesai
+                    </p>
+                    <p>
+                      {format(new Date(academicYear.endDate), "d MMMM yyyy", {
+                        locale: localeId,
+                      })}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -155,15 +179,27 @@ export default function AcademicYearDetailPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Dibuat</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Dibuat
+                  </p>
                   <p className="text-sm">
-                    {format(new Date(academicYear.createdAt), 'd MMMM yyyy HH:mm', { locale: localeId })}
+                    {format(
+                      new Date(academicYear.createdAt),
+                      "d MMMM yyyy HH:mm",
+                      { locale: localeId },
+                    )}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Terakhir Diperbarui</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Terakhir Diperbarui
+                  </p>
                   <p className="text-sm">
-                    {format(new Date(academicYear.updatedAt), 'd MMMM yyyy HH:mm', { locale: localeId })}
+                    {format(
+                      new Date(academicYear.updatedAt),
+                      "d MMMM yyyy HH:mm",
+                      { locale: localeId },
+                    )}
                   </p>
                 </div>
               </div>
@@ -185,11 +221,19 @@ export default function AcademicYearDetailPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Mulai</span>
-                  <span>{format(new Date(academicYear.startDate), 'MMM yyyy', { locale: localeId })}</span>
+                  <span>
+                    {format(new Date(academicYear.startDate), "MMM yyyy", {
+                      locale: localeId,
+                    })}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Selesai</span>
-                  <span>{format(new Date(academicYear.endDate), 'MMM yyyy', { locale: localeId })}</span>
+                  <span>
+                    {format(new Date(academicYear.endDate), "MMM yyyy", {
+                      locale: localeId,
+                    })}
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -200,7 +244,9 @@ export default function AcademicYearDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle>Aksi Cepat</CardTitle>
-            <CardDescription>Kelola data terkait tahun ajaran ini</CardDescription>
+            <CardDescription>
+              Kelola data terkait tahun ajaran ini
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">

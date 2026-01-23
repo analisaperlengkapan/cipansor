@@ -49,11 +49,7 @@ export class ParentController {
     try {
       const parentId = req.user!.sub;
       const { studentId } = req.params;
-      const data = await parentService.getChildAttendance(
-        parentId,
-        studentId,
-        req.query as any
-      );
+      const data = await parentService.getChildAttendance(parentId, studentId, req.query as any);
       res.json({ success: true, data });
     } catch (error) {
       next(error);
@@ -67,11 +63,7 @@ export class ParentController {
     try {
       const parentId = req.user!.sub;
       const { studentId } = req.params;
-      const data = await parentService.getChildTahfidz(
-        parentId,
-        studentId,
-        req.query as any
-      );
+      const data = await parentService.getChildTahfidz(parentId, studentId, req.query as any);
       res.json({ success: true, data });
     } catch (error) {
       next(error);
@@ -85,11 +77,7 @@ export class ParentController {
     try {
       const parentId = req.user!.sub;
       const { studentId } = req.params;
-      const data = await parentService.getChildGrades(
-        parentId,
-        studentId,
-        req.query as any
-      );
+      const data = await parentService.getChildGrades(parentId, studentId, req.query as any);
       res.json({ success: true, data });
     } catch (error) {
       next(error);
@@ -187,11 +175,7 @@ export class ParentController {
     try {
       const parentId = req.user!.sub;
       const { studentId } = req.params;
-      const data = await parentService.createPermitRequest(
-        parentId,
-        studentId,
-        req.body
-      );
+      const data = await parentService.createPermitRequest(parentId, studentId, req.body);
       res.status(201).json({ success: true, data });
     } catch (error) {
       next(error);
@@ -217,10 +201,7 @@ export class ParentController {
   async getNotifications(req: Request, res: Response, next: NextFunction) {
     try {
       const parentId = req.user!.sub;
-      const data = await parentService.getNotifications(
-        parentId,
-        req.query as any
-      );
+      const data = await parentService.getNotifications(parentId, req.query as any);
       res.json({ success: true, ...data });
     } catch (error) {
       next(error);
@@ -234,10 +215,7 @@ export class ParentController {
     try {
       const parentId = req.user!.sub;
       const { notificationId } = req.params;
-      const data = await parentService.markNotificationRead(
-        parentId,
-        notificationId
-      );
+      const data = await parentService.markNotificationRead(parentId, notificationId);
       res.json({ success: true, data });
     } catch (error) {
       next(error);

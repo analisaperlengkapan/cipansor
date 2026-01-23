@@ -1,29 +1,29 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { PageHeader, DataTable } from '@/components/shared';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { PageHeader, DataTable } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useCertificates, DigitalCertificate } from '@/hooks/use-certificate';
-import { ColumnDef } from '@tanstack/react-table';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+} from "@/components/ui/dropdown-menu";
+import { useCertificates, DigitalCertificate } from "@/hooks/use-certificate";
+import { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 import {
   Award,
   Plus,
@@ -37,32 +37,32 @@ import {
   GraduationCap,
   BookOpen,
   Trophy,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const certificateTypeLabels: Record<string, string> = {
-  IJAZAH: 'Ijazah',
-  STTB: 'STTB',
-  TAHFIDZ: 'Sertifikat Tahfidz',
-  SANAD: 'Sanad Hafidz',
-  ACHIEVEMENT: 'Piagam Prestasi',
-  GRADUATION: 'Kelulusan',
-  PARTICIPATION: 'Partisipasi',
-  OTHER: 'Lainnya',
+  IJAZAH: "Ijazah",
+  STTB: "STTB",
+  TAHFIDZ: "Sertifikat Tahfidz",
+  SANAD: "Sanad Hafidz",
+  ACHIEVEMENT: "Piagam Prestasi",
+  GRADUATION: "Kelulusan",
+  PARTICIPATION: "Partisipasi",
+  OTHER: "Lainnya",
 };
 
 const certificateTypeBadgeVariant: Record<
   string,
-  'default' | 'secondary' | 'destructive' | 'outline'
+  "default" | "secondary" | "destructive" | "outline"
 > = {
-  IJAZAH: 'default',
-  STTB: 'default',
-  TAHFIDZ: 'secondary',
-  SANAD: 'secondary',
-  ACHIEVEMENT: 'outline',
-  GRADUATION: 'default',
-  PARTICIPATION: 'outline',
-  OTHER: 'outline',
+  IJAZAH: "default",
+  STTB: "default",
+  TAHFIDZ: "secondary",
+  SANAD: "secondary",
+  ACHIEVEMENT: "outline",
+  GRADUATION: "default",
+  PARTICIPATION: "outline",
+  OTHER: "outline",
 };
 
 const CertificateTypeIcon = ({ type }: { type: string }) => {
@@ -79,59 +79,65 @@ const CertificateTypeIcon = ({ type }: { type: string }) => {
 
 export default function CertificatesPage() {
   const router = useRouter();
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>('ALL');
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("ALL");
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useCertificates({
     page,
     limit: 20,
-    certificateType: typeFilter === 'ALL' ? undefined : typeFilter,
+    certificateType: typeFilter === "ALL" ? undefined : typeFilter,
   });
 
   const columns: ColumnDef<DigitalCertificate>[] = [
     {
-      accessorKey: 'certificateNumber',
-      header: 'No. Sertifikat',
+      accessorKey: "certificateNumber",
+      header: "No. Sertifikat",
       cell: ({ row }) => (
-        <div className="font-mono text-sm">{row.original.certificateNumber}</div>
+        <div className="font-mono text-sm">
+          {row.original.certificateNumber}
+        </div>
       ),
     },
     {
-      accessorKey: 'student',
-      header: 'Santri',
+      accessorKey: "student",
+      header: "Santri",
       cell: ({ row }) => (
         <div>
-          <div className="font-medium">{row.original.student?.name || '-'}</div>
+          <div className="font-medium">{row.original.student?.name || "-"}</div>
           <div className="text-sm text-muted-foreground">
-            {row.original.student?.nis || '-'}
+            {row.original.student?.nis || "-"}
           </div>
         </div>
       ),
     },
     {
-      accessorKey: 'certificateType',
-      header: 'Tipe',
+      accessorKey: "certificateType",
+      header: "Tipe",
       cell: ({ row }) => (
         <Badge
-          variant={certificateTypeBadgeVariant[row.original.certificateType] || 'outline'}
+          variant={
+            certificateTypeBadgeVariant[row.original.certificateType] ||
+            "outline"
+          }
           className="flex items-center gap-1 w-fit"
         >
           <CertificateTypeIcon type={row.original.certificateType} />
-          {certificateTypeLabels[row.original.certificateType] || row.original.certificateType}
+          {certificateTypeLabels[row.original.certificateType] ||
+            row.original.certificateType}
         </Badge>
       ),
     },
     {
-      accessorKey: 'title',
-      header: 'Judul',
+      accessorKey: "title",
+      header: "Judul",
       cell: ({ row }) => (
         <div className="max-w-[200px] truncate">{row.original.title}</div>
       ),
     },
     {
-      accessorKey: 'grade',
-      header: 'Predikat',
+      accessorKey: "grade",
+      header: "Predikat",
       cell: ({ row }) =>
         row.original.grade ? (
           <Badge variant="secondary">{row.original.grade}</Badge>
@@ -140,29 +146,31 @@ export default function CertificatesPage() {
         ),
     },
     {
-      accessorKey: 'issueDate',
-      header: 'Tanggal Terbit',
+      accessorKey: "issueDate",
+      header: "Tanggal Terbit",
       cell: ({ row }) =>
-        format(new Date(row.original.issueDate), 'dd MMM yyyy', { locale: id }),
+        format(new Date(row.original.issueDate), "dd MMM yyyy", { locale: id }),
     },
     {
-      accessorKey: 'isPublic',
-      header: 'Status',
+      accessorKey: "isPublic",
+      header: "Status",
       cell: ({ row }) => (
-        <Badge variant={row.original.isPublic ? 'default' : 'secondary'}>
-          {row.original.isPublic ? 'Publik' : 'Privat'}
+        <Badge variant={row.original.isPublic ? "default" : "secondary"}>
+          {row.original.isPublic ? "Publik" : "Privat"}
         </Badge>
       ),
     },
     {
-      accessorKey: 'downloadCount',
-      header: 'Download',
+      accessorKey: "downloadCount",
+      header: "Download",
       cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.original.downloadCount}x</span>
+        <span className="text-muted-foreground">
+          {row.original.downloadCount}x
+        </span>
       ),
     },
     {
-      id: 'actions',
+      id: "actions",
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -178,14 +186,16 @@ export default function CertificatesPage() {
               Lihat Detail
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => window.open(row.original.verificationUrl, '_blank')}
+              onClick={() =>
+                window.open(row.original.verificationUrl, "_blank")
+              }
             >
               <QrCode className="mr-2 h-4 w-4" />
               Verifikasi
             </DropdownMenuItem>
             {row.original.pdfUrl && (
               <DropdownMenuItem
-                onClick={() => window.open(row.original.pdfUrl!, '_blank')}
+                onClick={() => window.open(row.original.pdfUrl!, "_blank")}
               >
                 <Download className="mr-2 h-4 w-4" />
                 Download PDF
@@ -206,10 +216,11 @@ export default function CertificatesPage() {
   ];
 
   const filteredData =
-    data?.data?.filter((cert) =>
-      cert.student?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      cert.certificateNumber.toLowerCase().includes(search.toLowerCase()) ||
-      cert.title.toLowerCase().includes(search.toLowerCase())
+    data?.data?.filter(
+      (cert) =>
+        cert.student?.name?.toLowerCase().includes(search.toLowerCase()) ||
+        cert.certificateNumber.toLowerCase().includes(search.toLowerCase()) ||
+        cert.title.toLowerCase().includes(search.toLowerCase()),
     ) || [];
 
   return (
@@ -222,7 +233,7 @@ export default function CertificatesPage() {
             icon={Award}
           />
           <Button
-            onClick={() => router.push('/certificates/new')}
+            onClick={() => router.push("/certificates/new")}
             className="transition-all hover:shadow-md hover:-translate-y-0.5"
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -270,7 +281,8 @@ export default function CertificatesPage() {
           <StatCard
             title="Sertifikat Tahfidz"
             value={
-              data?.data?.filter((c) => c.certificateType === 'TAHFIDZ').length || 0
+              data?.data?.filter((c) => c.certificateType === "TAHFIDZ")
+                .length || 0
             }
             icon={<BookOpen className="h-6 w-6 text-emerald-600" />}
             bgColor="bg-emerald-50/50"
@@ -280,7 +292,9 @@ export default function CertificatesPage() {
             title="Ijazah/STTB"
             value={
               data?.data?.filter(
-                (c) => c.certificateType === 'IJAZAH' || c.certificateType === 'STTB'
+                (c) =>
+                  c.certificateType === "IJAZAH" ||
+                  c.certificateType === "STTB",
               ).length || 0
             }
             icon={<GraduationCap className="h-6 w-6 text-indigo-600" />}
@@ -290,8 +304,8 @@ export default function CertificatesPage() {
           <StatCard
             title="Piagam Prestasi"
             value={
-              data?.data?.filter((c) => c.certificateType === 'ACHIEVEMENT').length ||
-              0
+              data?.data?.filter((c) => c.certificateType === "ACHIEVEMENT")
+                .length || 0
             }
             icon={<Trophy className="h-6 w-6 text-amber-600" />}
             bgColor="bg-amber-50/50"
@@ -323,7 +337,9 @@ export default function CertificatesPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage((p) => Math.min(data.meta.totalPages, p + 1))}
+              onClick={() =>
+                setPage((p) => Math.min(data.meta.totalPages, p + 1))
+              }
               disabled={page === data.meta.totalPages}
             >
               Selanjutnya
@@ -349,13 +365,25 @@ function StatCard({
   iconBg: string;
 }) {
   return (
-    <div className={cn("glass-card border-none rounded-xl p-4 transition-all hover:shadow-lg group", bgColor)}>
+    <div
+      className={cn(
+        "glass-card border-none rounded-xl p-4 transition-all hover:shadow-lg group",
+        bgColor,
+      )}
+    >
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider group-hover:text-foreground transition-colors">{title}</p>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider group-hover:text-foreground transition-colors">
+            {title}
+          </p>
           <p className="text-2xl font-bold mt-1">{value}</p>
         </div>
-        <div className={cn("p-2 rounded-lg group-hover:scale-110 transition-transform", iconBg)}>
+        <div
+          className={cn(
+            "p-2 rounded-lg group-hover:scale-110 transition-transform",
+            iconBg,
+          )}
+        >
           {icon}
         </div>
       </div>

@@ -1,10 +1,10 @@
-'use client';
+"use client";
 // Force HMR Rebuild
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useState } from "react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   Plus,
   Search,
@@ -13,10 +13,16 @@ import {
   Trash2,
   Filter,
   Settings,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -24,19 +30,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Pagination } from '@/components/shared/pagination';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Pagination } from "@/components/shared/pagination";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { toast } from "sonner";
 import {
   useViolations,
   useViolationTypes,
@@ -45,7 +51,7 @@ import {
   useViolationSummary,
   VIOLATION_CATEGORIES,
   ViolationCategory,
-} from '@/hooks/use-violations';
+} from "@/hooks/use-violations";
 
 function getCategoryBadge(category: ViolationCategory) {
   const cat = VIOLATION_CATEGORIES.find((c) => c.value === category);
@@ -57,45 +63,50 @@ function getCategoryBadge(category: ViolationCategory) {
 }
 
 export default function ViolationsPage() {
-  const [activeTab, setActiveTab] = useState<'violations' | 'types'>('violations');
+  const [activeTab, setActiveTab] = useState<"violations" | "types">(
+    "violations",
+  );
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   const { data: violationsData, isLoading: violationsLoading } = useViolations({
     page,
     limit: 10,
-    category: categoryFilter !== 'all' ? (categoryFilter as ViolationCategory) : undefined,
+    category:
+      categoryFilter !== "all"
+        ? (categoryFilter as ViolationCategory)
+        : undefined,
   });
 
   const { data: violationTypes, isLoading: typesLoading } = useViolationTypes();
   const { data: summaryData } = useViolationSummary();
-  
+
   const deleteViolationMutation = useDeleteViolation();
   const deleteTypeMutation = useDeleteViolationType();
 
   const handleDeleteViolation = async (id: string) => {
     try {
       await deleteViolationMutation.mutateAsync(id);
-      toast.success('Pelanggaran berhasil dihapus');
+      toast.success("Pelanggaran berhasil dihapus");
     } catch {
-      toast.error('Gagal menghapus pelanggaran');
+      toast.error("Gagal menghapus pelanggaran");
     }
   };
 
   const handleDeleteType = async (id: string) => {
     try {
       await deleteTypeMutation.mutateAsync(id);
-      toast.success('Jenis pelanggaran berhasil dihapus');
+      toast.success("Jenis pelanggaran berhasil dihapus");
     } catch {
-      toast.error('Gagal menghapus jenis pelanggaran');
+      toast.error("Gagal menghapus jenis pelanggaran");
     }
   };
 
   const filteredTypes = violationTypes?.filter(
     (type) =>
       type.name.toLowerCase().includes(search.toLowerCase()) ||
-      (type.description?.toLowerCase().includes(search.toLowerCase()) ?? false)
+      (type.description?.toLowerCase().includes(search.toLowerCase()) ?? false),
   );
 
   return (
@@ -104,7 +115,9 @@ export default function ViolationsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Pelanggaran</h1>
-          <p className="text-muted-foreground">Kelola data pelanggaran santri</p>
+          <p className="text-muted-foreground">
+            Kelola data pelanggaran santri
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
@@ -126,19 +139,27 @@ export default function ViolationsPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Pelanggaran</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Pelanggaran
+            </CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summaryData?.totalViolations || 0}</div>
+            <div className="text-2xl font-bold">
+              {summaryData?.totalViolations || 0}
+            </div>
           </CardContent>
         </Card>
         {VIOLATION_CATEGORIES.map((cat) => {
-          const count = summaryData?.byCategory?.find((c) => c.category === cat.value)?.count || 0;
+          const count =
+            summaryData?.byCategory?.find((c) => c.category === cat.value)
+              ?.count || 0;
           return (
             <Card key={cat.value}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{cat.label}</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  {cat.label}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{count}</div>
@@ -149,7 +170,10 @@ export default function ViolationsPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'violations' | 'types')}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as "violations" | "types")}
+      >
         <TabsList>
           <TabsTrigger value="violations">Data Pelanggaran</TabsTrigger>
           <TabsTrigger value="types">Jenis Pelanggaran</TabsTrigger>
@@ -187,7 +211,9 @@ export default function ViolationsPage() {
               ) : violationsData?.data.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <AlertTriangle className="h-12 w-12 text-muted-foreground" />
-                  <p className="mt-4 text-muted-foreground">Belum ada data pelanggaran</p>
+                  <p className="mt-4 text-muted-foreground">
+                    Belum ada data pelanggaran
+                  </p>
                   <Button asChild className="mt-4">
                     <Link href="/violations/new">Catat Pelanggaran Baru</Link>
                   </Button>
@@ -208,11 +234,15 @@ export default function ViolationsPage() {
                     {violationsData?.data.map((violation) => (
                       <TableRow key={violation.id}>
                         <TableCell>
-                          {format(new Date(violation.date), 'dd MMM yyyy', { locale: localeId })}
+                          {format(new Date(violation.date), "dd MMM yyyy", {
+                            locale: localeId,
+                          })}
                         </TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{violation.student?.name}</p>
+                            <p className="font-medium">
+                              {violation.student?.name}
+                            </p>
                             <p className="text-sm text-muted-foreground">
                               {violation.student?.nis}
                             </p>
@@ -223,7 +253,9 @@ export default function ViolationsPage() {
                           {violation.violationType &&
                             getCategoryBadge(violation.violationType.category)}
                         </TableCell>
-                        <TableCell>{violation.violationType?.points} poin</TableCell>
+                        <TableCell>
+                          {violation.violationType?.points} poin
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button variant="ghost" size="icon" asChild>
@@ -234,7 +266,9 @@ export default function ViolationsPage() {
                             <ConfirmDialog
                               title="Hapus Pelanggaran"
                               description="Apakah Anda yakin ingin menghapus data pelanggaran ini?"
-                              onConfirm={() => handleDeleteViolation(violation.id)}
+                              onConfirm={() =>
+                                handleDeleteViolation(violation.id)
+                              }
                               loading={deleteViolationMutation.isPending}
                             >
                               <Button variant="ghost" size="icon">
@@ -286,9 +320,13 @@ export default function ViolationsPage() {
               ) : filteredTypes?.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <Settings className="h-12 w-12 text-muted-foreground" />
-                  <p className="mt-4 text-muted-foreground">Belum ada jenis pelanggaran</p>
+                  <p className="mt-4 text-muted-foreground">
+                    Belum ada jenis pelanggaran
+                  </p>
                   <Button asChild className="mt-4">
-                    <Link href="/violations/types/new">Tambah Jenis Pelanggaran</Link>
+                    <Link href="/violations/types/new">
+                      Tambah Jenis Pelanggaran
+                    </Link>
                   </Button>
                 </div>
               ) : (
@@ -306,15 +344,19 @@ export default function ViolationsPage() {
                   <TableBody>
                     {filteredTypes?.map((type) => (
                       <TableRow key={type.id}>
-                        <TableCell className="font-medium">{type.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {type.name}
+                        </TableCell>
                         <TableCell className="max-w-[200px] truncate">
-                          {type.description || '-'}
+                          {type.description || "-"}
                         </TableCell>
                         <TableCell>{getCategoryBadge(type.category)}</TableCell>
                         <TableCell>{type.points}</TableCell>
                         <TableCell>
-                          <Badge variant={type.isActive ? 'default' : 'secondary'}>
-                            {type.isActive ? 'Aktif' : 'Nonaktif'}
+                          <Badge
+                            variant={type.isActive ? "default" : "secondary"}
+                          >
+                            {type.isActive ? "Aktif" : "Nonaktif"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">

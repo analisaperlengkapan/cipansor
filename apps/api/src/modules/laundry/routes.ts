@@ -20,23 +20,19 @@ const router = Router();
 // =============================================================================
 
 // GET /api/laundry/pricing - Get all pricing
-router.get(
-  '/pricing',
-  authenticate,
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const unitId = req.user?.unitId;
-      if (!unitId) {
-        return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
-      }
-
-      const pricing = await pricingService.getAll(unitId);
-      return res.json(ApiResponse.success(pricing, 'Berhasil mengambil data harga layanan'));
-    } catch (err) {
-      next(err);
+router.get('/pricing', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const unitId = req.user?.unitId;
+    if (!unitId) {
+      return res.status(400).json(ApiResponse.error('Unit ID tidak ditemukan', 'UNIT_REQUIRED'));
     }
+
+    const pricing = await pricingService.getAll(unitId);
+    return res.json(ApiResponse.success(pricing, 'Berhasil mengambil data harga layanan'));
+  } catch (err) {
+    next(err);
   }
-);
+});
 
 // GET /api/laundry/pricing/:id - Get pricing by ID
 router.get(
@@ -51,7 +47,9 @@ router.get(
 
       const pricing = await pricingService.getById(req.params.id, unitId);
       if (!pricing) {
-        return res.status(404).json(ApiResponse.error('Harga layanan tidak ditemukan', 'NOT_FOUND'));
+        return res
+          .status(404)
+          .json(ApiResponse.error('Harga layanan tidak ditemukan', 'NOT_FOUND'));
       }
 
       return res.json(ApiResponse.success(pricing, 'Berhasil mengambil data harga layanan'));
@@ -140,7 +138,9 @@ router.get(
 
       const parsedQuery = ListTransactionsQuerySchema.parse(req.query);
       const result = await transactionService.getAll(unitId, parsedQuery);
-      return res.json(ApiResponse.success(result.data, 'Berhasil mengambil data transaksi', result.pagination));
+      return res.json(
+        ApiResponse.success(result.data, 'Berhasil mengambil data transaksi', result.pagination)
+      );
     } catch (err) {
       next(err);
     }
@@ -185,7 +185,9 @@ router.get(
       }
 
       const transactions = await transactionService.getReadyForPickup(unitId);
-      return res.json(ApiResponse.success(transactions, 'Berhasil mengambil data laundry siap diambil'));
+      return res.json(
+        ApiResponse.success(transactions, 'Berhasil mengambil data laundry siap diambil')
+      );
     } catch (err) {
       next(err);
     }
@@ -245,11 +247,15 @@ router.post(
       const unitId = req.user?.unitId;
       const userId = req.user?.sub;
       if (!unitId || !userId) {
-        return res.status(400).json(ApiResponse.error('Unit ID atau User ID tidak ditemukan', 'REQUIRED'));
+        return res
+          .status(400)
+          .json(ApiResponse.error('Unit ID atau User ID tidak ditemukan', 'REQUIRED'));
       }
 
       const transaction = await transactionService.create(unitId, userId, req.body);
-      return res.status(201).json(ApiResponse.success(transaction, 'Transaksi laundry berhasil dibuat'));
+      return res
+        .status(201)
+        .json(ApiResponse.success(transaction, 'Transaksi laundry berhasil dibuat'));
     } catch (err) {
       next(err);
     }
@@ -267,7 +273,9 @@ router.patch(
       const unitId = req.user?.unitId;
       const userId = req.user?.sub;
       if (!unitId || !userId) {
-        return res.status(400).json(ApiResponse.error('Unit ID atau User ID tidak ditemukan', 'REQUIRED'));
+        return res
+          .status(400)
+          .json(ApiResponse.error('Unit ID atau User ID tidak ditemukan', 'REQUIRED'));
       }
 
       const transaction = await transactionService.updateStatus(
@@ -294,7 +302,9 @@ router.post(
       const unitId = req.user?.unitId;
       const userId = req.user?.sub;
       if (!unitId || !userId) {
-        return res.status(400).json(ApiResponse.error('Unit ID atau User ID tidak ditemukan', 'REQUIRED'));
+        return res
+          .status(400)
+          .json(ApiResponse.error('Unit ID atau User ID tidak ditemukan', 'REQUIRED'));
       }
 
       const transaction = await transactionService.processPayment(

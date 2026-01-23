@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { PageHeader } from '@/components/shared/page-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { PageHeader } from "@/components/shared/page-header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -14,28 +14,28 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { SearchableSelect } from '@/components/ui/searchable-select';
-import { useStudents } from '@/hooks/use-students';
-import { useTeachers } from '@/hooks/use-teachers';
-import { useCreateSimaan, SIMAAN_TYPES } from '@/hooks/use-simaan';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useStudents } from "@/hooks/use-students";
+import { useTeachers } from "@/hooks/use-teachers";
+import { useCreateSimaan, SIMAAN_TYPES } from "@/hooks/use-simaan";
+import { toast } from "sonner";
 
 const formSchema = z.object({
-  studentId: z.string().min(1, 'Santri harus dipilih'),
-  simaanType: z.string().min(1, 'Jenis simaan harus dipilih'),
-  examDate: z.string().min(1, 'Tanggal ujian harus diisi'),
+  studentId: z.string().min(1, "Santri harus dipilih"),
+  simaanType: z.string().min(1, "Jenis simaan harus dipilih"),
+  examDate: z.string().min(1, "Tanggal ujian harus diisi"),
   juzStart: z.coerce.number().min(1).max(30),
   juzEnd: z.coerce.number().min(1).max(30),
-  examinerId: z.string().min(1, 'Penguji harus dipilih'),
+  examinerId: z.string().min(1, "Penguji harus dipilih"),
   notes: z.string().optional(),
 });
 
@@ -46,38 +46,40 @@ export default function CreateSimaanPage() {
   // Fetch students and teachers for dropdowns
   const { data: studentsData, isLoading: isLoadingStudents } = useStudents({
     page: 1,
-    limit: 100
+    limit: 100,
   });
 
   const { data: teachersData, isLoading: isLoadingTeachers } = useTeachers({
     page: 1,
-    limit: 100
+    limit: 100,
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      studentId: '',
-      simaanType: '',
-      examDate: '',
+      studentId: "",
+      simaanType: "",
+      examDate: "",
       juzStart: 1,
       juzEnd: 1,
-      examinerId: '',
-      notes: '',
+      examinerId: "",
+      notes: "",
     },
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const studentOptions = studentsData?.data?.map((s: any) => ({
-    value: s.id,
-    label: `${s.user?.name} (${s.nis})`,
-  })) || [];
+  const studentOptions =
+    studentsData?.data?.map((s: any) => ({
+      value: s.id,
+      label: `${s.user?.name} (${s.nis})`,
+    })) || [];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const teacherOptions = teachersData?.data?.map((t: any) => ({
-    value: t.id,
-    label: t.user?.name,
-  })) || [];
+  const teacherOptions =
+    teachersData?.data?.map((t: any) => ({
+      value: t.id,
+      label: t.user?.name,
+    })) || [];
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     createSimaan(
@@ -87,14 +89,14 @@ export default function CreateSimaanPage() {
       },
       {
         onSuccess: () => {
-          toast.success('Jadwal simaan berhasil dibuat');
-          router.push('/takhosus/simaan');
+          toast.success("Jadwal simaan berhasil dibuat");
+          router.push("/takhosus/simaan");
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onError: (error: any) => {
-          toast.error(error?.response?.data?.message || 'Gagal membuat jadwal');
+          toast.error(error?.response?.data?.message || "Gagal membuat jadwal");
         },
-      }
+      },
     );
   }
 
@@ -113,7 +115,10 @@ export default function CreateSimaanPage() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
@@ -161,7 +166,10 @@ export default function CreateSimaanPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Jenis Simaan</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih jenis simaan" />
@@ -232,7 +240,7 @@ export default function CreateSimaanPage() {
                     Batal
                   </Button>
                   <Button type="submit" disabled={isPending}>
-                    {isPending ? 'Menyimpan...' : 'Simpan Jadwal'}
+                    {isPending ? "Menyimpan..." : "Simpan Jadwal"}
                   </Button>
                 </div>
               </form>

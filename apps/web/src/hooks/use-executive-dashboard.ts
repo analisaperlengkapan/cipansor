@@ -4,8 +4,8 @@
  * Aggregates data across all educational units
  */
 
-import { useQuery, useQueries } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { useQuery, useQueries } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
 
 // Types
 export interface UnitStats {
@@ -82,7 +82,7 @@ export interface TahfidzSummary {
 
 export interface ExecutiveAlert {
   id: string;
-  type: 'INFO' | 'WARNING' | 'CRITICAL';
+  type: "INFO" | "WARNING" | "CRITICAL";
   message: string;
   unitId?: string;
   unitName?: string;
@@ -110,24 +110,24 @@ export interface ExecutiveStats {
 
 // Unit color mapping
 const UNIT_COLORS: Record<string, string> = {
-  TK_QURAN: '#22c55e',
-  SD_IT: '#3b82f6',
-  SMP_IT: '#f59e0b',
-  SMA_QURAN: '#8b5cf6',
-  PESANTREN: '#ec4899',
+  TK_QURAN: "#22c55e",
+  SD_IT: "#3b82f6",
+  SMP_IT: "#f59e0b",
+  SMA_QURAN: "#8b5cf6",
+  PESANTREN: "#ec4899",
 };
 
 const getUnitColor = (realm: string): string => {
-  return UNIT_COLORS[realm] || '#6b7280';
+  return UNIT_COLORS[realm] || "#6b7280";
 };
 
 const getUnitShortName = (realm: string): string => {
   const names: Record<string, string> = {
-    TK_QURAN: 'TK',
-    SD_IT: 'SDIT',
-    SMP_IT: 'SMPIT',
-    SMA_QURAN: 'SMAQ',
-    PESANTREN: 'Pesantren',
+    TK_QURAN: "TK",
+    SD_IT: "SDIT",
+    SMP_IT: "SMPIT",
+    SMA_QURAN: "SMAQ",
+    PESANTREN: "Pesantren",
   };
   return names[realm] || realm;
 };
@@ -137,10 +137,10 @@ const getUnitShortName = (realm: string): string => {
  */
 export function useExecutiveStats() {
   return useQuery({
-    queryKey: ['executive', 'stats'],
+    queryKey: ["executive", "stats"],
     queryFn: async (): Promise<ExecutiveStats> => {
       // Get overall stats without unit filter (yayasan level)
-      const response = await apiClient.get('/dashboard/stats');
+      const response = await apiClient.get("/dashboard/stats");
       return response.data.data;
     },
     staleTime: 60000, // 1 minute
@@ -154,9 +154,9 @@ export function useExecutiveStats() {
 export function useUnitComparison() {
   // First get all units
   const unitsQuery = useQuery({
-    queryKey: ['units'],
+    queryKey: ["units"],
     queryFn: async () => {
-      const response = await apiClient.get('/units');
+      const response = await apiClient.get("/units");
       return response.data.data || response.data;
     },
     staleTime: 300000, // 5 minutes
@@ -167,16 +167,16 @@ export function useUnitComparison() {
   // Fetch stats for each unit
   const unitStatsQueries = useQueries({
     queries: units.map((unit: any) => ({
-      queryKey: ['dashboard', 'quick-stats', unit.id],
+      queryKey: ["dashboard", "quick-stats", unit.id],
       queryFn: async () => {
-        const response = await apiClient.get('/dashboard/quick-stats', {
-          params: { unitId: unit.id }
+        const response = await apiClient.get("/dashboard/quick-stats", {
+          params: { unitId: unit.id },
         });
         return {
           unitId: unit.id,
           unitName: unit.name,
           realm: unit.realm,
-          ...response.data.data
+          ...response.data.data,
         };
       },
       enabled: !!unit.id,
@@ -185,10 +185,11 @@ export function useUnitComparison() {
   });
 
   const unitStats: UnitStats[] = unitStatsQueries
-    .filter(q => q.data)
-    .map(q => q.data as UnitStats);
+    .filter((q) => q.data)
+    .map((q) => q.data as UnitStats);
 
-  const isLoading = unitsQuery.isLoading || unitStatsQueries.some(q => q.isLoading);
+  const isLoading =
+    unitsQuery.isLoading || unitStatsQueries.some((q) => q.isLoading);
 
   return {
     data: unitStats,
@@ -196,7 +197,7 @@ export function useUnitComparison() {
     isLoading,
     refetch: () => {
       unitsQuery.refetch();
-      unitStatsQueries.forEach(q => q.refetch());
+      unitStatsQueries.forEach((q) => q.refetch());
     },
   };
 }
@@ -206,26 +207,31 @@ export function useUnitComparison() {
  */
 export function useAttendanceByUnit() {
   const { data: units, isLoading: unitsLoading } = useQuery({
-    queryKey: ['units'],
+    queryKey: ["units"],
     queryFn: async () => {
-      const response = await apiClient.get('/units');
+      const response = await apiClient.get("/units");
       return response.data.data || response.data;
     },
   });
 
   const attendanceQueries = useQueries({
     queries: (units || []).map((unit: any) => ({
-      queryKey: ['dashboard', 'attendance', unit.id, 'today'],
+      queryKey: ["dashboard", "attendance", unit.id, "today"],
       queryFn: async () => {
-        const today = new Date().toISOString().split('T')[0];
-        const response = await apiClient.get('/dashboard/attendance', {
-          params: { 
+        const today = new Date().toISOString().split("T")[0];
+        const response = await apiClient.get("/dashboard/attendance", {
+          params: {
             unitId: unit.id,
             startDate: today,
-            endDate: today
-          }
+            endDate: today,
+          },
         });
-        const stats = response.data.data?.[0] || { present: 0, absent: 0, sick: 0, excused: 0 };
+        const stats = response.data.data?.[0] || {
+          present: 0,
+          absent: 0,
+          sick: 0,
+          excused: 0,
+        };
         const total = stats.present + stats.absent + stats.sick + stats.excused;
         return {
           unit: getUnitShortName(unit.realm),
@@ -245,13 +251,13 @@ export function useAttendanceByUnit() {
   });
 
   const data: AttendanceByUnit[] = attendanceQueries
-    .filter(q => q.data)
-    .map(q => q.data as AttendanceByUnit);
+    .filter((q) => q.data)
+    .map((q) => q.data as AttendanceByUnit);
 
   return {
     data,
-    isLoading: unitsLoading || attendanceQueries.some(q => q.isLoading),
-    refetch: () => attendanceQueries.forEach(q => q.refetch()),
+    isLoading: unitsLoading || attendanceQueries.some((q) => q.isLoading),
+    refetch: () => attendanceQueries.forEach((q) => q.refetch()),
   };
 }
 
@@ -260,10 +266,10 @@ export function useAttendanceByUnit() {
  */
 export function useEnrollmentTrends(months: number = 6) {
   return useQuery({
-    queryKey: ['executive', 'enrollment-trends', months],
+    queryKey: ["executive", "enrollment-trends", months],
     queryFn: async (): Promise<EnrollmentTrend[]> => {
       // Get units first
-      const unitsResponse = await apiClient.get('/units');
+      const unitsResponse = await apiClient.get("/units");
       const units = unitsResponse.data.data || unitsResponse.data;
 
       // Get students by unit with creation date for trend analysis
@@ -272,7 +278,7 @@ export function useEnrollmentTrends(months: number = 6) {
 
       for (let i = months - 1; i >= 0; i--) {
         const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const monthName = date.toLocaleString('id-ID', { month: 'short' });
+        const monthName = date.toLocaleString("id-ID", { month: "short" });
 
         const trend: EnrollmentTrend = {
           month: monthName,
@@ -287,18 +293,23 @@ export function useEnrollmentTrends(months: number = 6) {
 
         // For each unit, get cumulative student count up to that month
         for (const unit of units) {
-          const shortName = getUnitShortName(unit.realm) as keyof EnrollmentTrend;
+          const shortName = getUnitShortName(
+            unit.realm,
+          ) as keyof EnrollmentTrend;
           try {
-            const response = await apiClient.get('/students', {
+            const response = await apiClient.get("/students", {
               params: {
                 unitId: unit.id,
-                status: 'ACTIVE',
+                status: "ACTIVE",
                 limit: 1, // We just need the count
-              }
+              },
             });
             // Use meta.total for count
-            const count = response.data.meta?.pagination?.total || response.data.meta?.total || 0;
-            if (shortName in trend && typeof trend[shortName] === 'number') {
+            const count =
+              response.data.meta?.pagination?.total ||
+              response.data.meta?.total ||
+              0;
+            if (shortName in trend && typeof trend[shortName] === "number") {
               (trend as any)[shortName] = count;
             }
           } catch (e) {
@@ -306,7 +317,8 @@ export function useEnrollmentTrends(months: number = 6) {
           }
         }
 
-        trend.total = trend.TK + trend.SDIT + trend.SMPIT + trend.SMAQ + trend.Pesantren;
+        trend.total =
+          trend.TK + trend.SDIT + trend.SMPIT + trend.SMAQ + trend.Pesantren;
         trends.push(trend);
       }
 
@@ -321,10 +333,10 @@ export function useEnrollmentTrends(months: number = 6) {
  */
 export function useFinanceSummary() {
   return useQuery({
-    queryKey: ['executive', 'finance-summary'],
+    queryKey: ["executive", "finance-summary"],
     queryFn: async (): Promise<FinanceSummary> => {
       // Get overall finance stats
-      const response = await apiClient.get('/dashboard/finance');
+      const response = await apiClient.get("/dashboard/finance");
       const data = response.data.data;
 
       const totalBilled = data.totalBilled || 0;
@@ -335,7 +347,8 @@ export function useFinanceSummary() {
         totalBilled,
         totalPaid,
         totalUnpaid,
-        collectionRate: totalBilled > 0 ? Math.round((totalPaid / totalBilled) * 100) : 0,
+        collectionRate:
+          totalBilled > 0 ? Math.round((totalPaid / totalBilled) * 100) : 0,
         monthlyRevenue: data.monthlyRevenue || [],
         byUnit: data.byUnit || [],
       };
@@ -349,9 +362,9 @@ export function useFinanceSummary() {
  */
 export function useTahfidzSummary() {
   return useQuery({
-    queryKey: ['executive', 'tahfidz-summary'],
+    queryKey: ["executive", "tahfidz-summary"],
     queryFn: async (): Promise<TahfidzSummary> => {
-      const response = await apiClient.get('/dashboard/tahfidz');
+      const response = await apiClient.get("/dashboard/tahfidz");
       const data = response.data.data;
 
       return {
@@ -361,7 +374,7 @@ export function useTahfidzSummary() {
         topStudents: (data.topStudents || []).map((s: any) => ({
           id: s.id || s.studentId,
           name: s.name || s.studentName,
-          unitName: s.unitName || 'Unknown',
+          unitName: s.unitName || "Unknown",
           totalJuz: s.totalJuz || s.juzCount || 0,
           totalAyah: s.totalAyah || s.totalAyat || 0,
         })),
@@ -377,18 +390,18 @@ export function useTahfidzSummary() {
  */
 export function useExecutiveAlerts() {
   return useQuery({
-    queryKey: ['executive', 'alerts'],
+    queryKey: ["executive", "alerts"],
     queryFn: async (): Promise<ExecutiveAlert[]> => {
       try {
-        const response = await apiClient.get('/dashboard/metrics');
+        const response = await apiClient.get("/dashboard/metrics");
         const alerts = response.data.data?.alerts || [];
         return alerts.map((alert: any) => ({
           id: alert.id || String(Date.now()),
-          type: alert.severity || alert.type || 'INFO',
+          type: alert.severity || alert.type || "INFO",
           message: alert.message,
           unitId: alert.unitId,
           unitName: alert.unitName,
-          category: alert.metricType || alert.category || 'system',
+          category: alert.metricType || alert.category || "system",
           timestamp: alert.timestamp || new Date().toISOString(),
           isRead: alert.isRead || false,
         }));
@@ -413,9 +426,9 @@ export function useExecutiveDashboard() {
   const tahfidzSummary = useTahfidzSummary();
   const alerts = useExecutiveAlerts();
 
-  const isLoading = 
-    stats.isLoading || 
-    unitComparison.isLoading || 
+  const isLoading =
+    stats.isLoading ||
+    unitComparison.isLoading ||
     attendanceByUnit.isLoading ||
     enrollmentTrends.isLoading;
 

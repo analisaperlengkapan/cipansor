@@ -1,35 +1,35 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowLeft, Users, Check } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
-import { format, addMonths } from 'date-fns';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, Users, Check } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { format, addMonths } from "date-fns";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -37,41 +37,40 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCreateBulkBills, BILL_TYPES, BillType } from "@/hooks/use-finance";
+import { useUnits } from "@/hooks/use-units";
+import { useClasses } from "@/hooks/use-classes";
+import { useStudents } from "@/hooks/use-students";
 import {
-  useCreateBulkBills,
-  BILL_TYPES,
-  BillType,
-} from '@/hooks/use-finance';
-import { useUnits } from '@/hooks/use-units';
-import { useClasses } from '@/hooks/use-classes';
-import { useStudents } from '@/hooks/use-students';
-import { useAcademicYears, useActiveAcademicYear } from '@/hooks/use-academic-years';
+  useAcademicYears,
+  useActiveAcademicYear,
+} from "@/hooks/use-academic-years";
 
 const bulkBillSchema = z.object({
-  academicYearId: z.string().min(1, 'Pilih tahun ajaran'),
-  billType: z.string().min(1, 'Pilih jenis tagihan'),
-  amount: z.coerce.number().min(1, 'Jumlah harus lebih dari 0'),
-  dueDate: z.string().min(1, 'Pilih tanggal jatuh tempo'),
+  academicYearId: z.string().min(1, "Pilih tahun ajaran"),
+  billType: z.string().min(1, "Pilih jenis tagihan"),
+  amount: z.coerce.number().min(1, "Jumlah harus lebih dari 0"),
+  dueDate: z.string().min(1, "Pilih tanggal jatuh tempo"),
   description: z.string().optional(),
 });
 
 type BulkBillFormData = z.infer<typeof bulkBillSchema>;
 
 function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
     minimumFractionDigits: 0,
   }).format(amount);
 }
 
 export default function BulkBillsPage() {
   const router = useRouter();
-  const [unitId, setUnitId] = useState<string>('');
-  const [classId, setClassId] = useState<string>('');
+  const [unitId, setUnitId] = useState<string>("");
+  const [classId, setClassId] = useState<string>("");
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,14 +78,17 @@ export default function BulkBillsPage() {
   const { data: unitsData } = useUnits();
   const units = unitsData || [];
 
-  const { data: classesData } = useClasses({ unitId: unitId || undefined, limit: 100 });
+  const { data: classesData } = useClasses({
+    unitId: unitId || undefined,
+    limit: 100,
+  });
   const classes = classesData?.data || [];
 
   const { data: studentsData, isLoading: studentsLoading } = useStudents({
     unitId: unitId || undefined,
     classId: classId || undefined,
     limit: 500,
-    status: 'ACTIVE',
+    status: "ACTIVE",
   });
   const students = studentsData?.data || [];
 
@@ -104,17 +106,17 @@ export default function BulkBillsPage() {
   } = useForm<BulkBillFormData>({
     resolver: zodResolver(bulkBillSchema),
     defaultValues: {
-      academicYearId: activeYear?.id || '',
-      billType: 'SPP',
+      academicYearId: activeYear?.id || "",
+      billType: "SPP",
       amount: 0,
-      dueDate: format(addMonths(new Date(), 1), 'yyyy-MM-dd'),
-      description: '',
+      dueDate: format(addMonths(new Date(), 1), "yyyy-MM-dd"),
+      description: "",
     },
   });
 
   // Set active year when it's loaded
-  if (activeYear?.id && !watch('academicYearId')) {
-    setValue('academicYearId', activeYear.id);
+  if (activeYear?.id && !watch("academicYearId")) {
+    setValue("academicYearId", activeYear.id);
   }
 
   const handleSelectAll = (checked: boolean) => {
@@ -130,14 +132,16 @@ export default function BulkBillsPage() {
     if (checked) {
       setSelectedStudentIds([...selectedStudentIds, studentId]);
     } else {
-      setSelectedStudentIds(selectedStudentIds.filter((id) => id !== studentId));
+      setSelectedStudentIds(
+        selectedStudentIds.filter((id) => id !== studentId),
+      );
       setSelectAll(false);
     }
   };
 
   const onSubmit = async (data: BulkBillFormData) => {
     if (selectedStudentIds.length === 0) {
-      toast.error('Pilih minimal satu santri');
+      toast.error("Pilih minimal satu santri");
       return;
     }
 
@@ -153,15 +157,15 @@ export default function BulkBillsPage() {
       });
 
       toast.success(`Berhasil membuat ${selectedStudentIds.length} tagihan`);
-      router.push('/finance');
+      router.push("/finance");
     } catch (error) {
-      toast.error('Gagal membuat tagihan');
+      toast.error("Gagal membuat tagihan");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const amount = watch('amount') || 0;
+  const amount = watch("amount") || 0;
   const totalAmount = amount * selectedStudentIds.length;
 
   return (
@@ -194,8 +198,8 @@ export default function BulkBillsPage() {
             <div className="space-y-2">
               <Label htmlFor="academicYearId">Tahun Ajaran</Label>
               <Select
-                value={watch('academicYearId')}
-                onValueChange={(v) => setValue('academicYearId', v)}
+                value={watch("academicYearId")}
+                onValueChange={(v) => setValue("academicYearId", v)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih tahun ajaran" />
@@ -203,21 +207,23 @@ export default function BulkBillsPage() {
                 <SelectContent>
                   {academicYearsData?.data.map((year) => (
                     <SelectItem key={year.id} value={year.id}>
-                      {year.name} {year.isActive && '(Aktif)'}
+                      {year.name} {year.isActive && "(Aktif)"}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {errors.academicYearId && (
-                <p className="text-sm text-destructive">{errors.academicYearId.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.academicYearId.message}
+                </p>
               )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="billType">Jenis Tagihan</Label>
               <Select
-                value={watch('billType')}
-                onValueChange={(v) => setValue('billType', v)}
+                value={watch("billType")}
+                onValueChange={(v) => setValue("billType", v)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih jenis tagihan" />
@@ -231,7 +237,9 @@ export default function BulkBillsPage() {
                 </SelectContent>
               </Select>
               {errors.billType && (
-                <p className="text-sm text-destructive">{errors.billType.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.billType.message}
+                </p>
               )}
             </div>
 
@@ -240,19 +248,23 @@ export default function BulkBillsPage() {
               <Input
                 id="amount"
                 type="number"
-                {...register('amount')}
+                {...register("amount")}
                 placeholder="Masukkan jumlah"
               />
               {errors.amount && (
-                <p className="text-sm text-destructive">{errors.amount.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.amount.message}
+                </p>
               )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="dueDate">Tanggal Jatuh Tempo</Label>
-              <Input id="dueDate" type="date" {...register('dueDate')} />
+              <Input id="dueDate" type="date" {...register("dueDate")} />
               {errors.dueDate && (
-                <p className="text-sm text-destructive">{errors.dueDate.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.dueDate.message}
+                </p>
               )}
             </div>
 
@@ -260,7 +272,7 @@ export default function BulkBillsPage() {
               <Label htmlFor="description">Keterangan</Label>
               <Textarea
                 id="description"
-                {...register('description')}
+                {...register("description")}
                 placeholder="Keterangan tagihan (opsional)"
                 rows={2}
               />
@@ -279,12 +291,15 @@ export default function BulkBillsPage() {
           <CardContent className="space-y-4">
             {/* Filters */}
             <div className="flex flex-wrap gap-4">
-              <Select value={unitId} onValueChange={(v) => {
-                setUnitId(v);
-                setClassId('');
-                setSelectedStudentIds([]);
-                setSelectAll(false);
-              }}>
+              <Select
+                value={unitId}
+                onValueChange={(v) => {
+                  setUnitId(v);
+                  setClassId("");
+                  setSelectedStudentIds([]);
+                  setSelectAll(false);
+                }}
+              >
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Filter Unit" />
                 </SelectTrigger>
@@ -298,8 +313,8 @@ export default function BulkBillsPage() {
                 </SelectContent>
               </Select>
 
-              <Select 
-                value={classId} 
+              <Select
+                value={classId}
                 onValueChange={(v) => {
                   setClassId(v);
                   setSelectedStudentIds([]);
@@ -340,8 +355,8 @@ export default function BulkBillsPage() {
                 <Users className="h-12 w-12 text-muted-foreground" />
                 <p className="mt-2 text-muted-foreground">
                   {unitId || classId
-                    ? 'Tidak ada santri untuk filter yang dipilih'
-                    : 'Pilih unit atau kelas untuk menampilkan santri'}
+                    ? "Tidak ada santri untuk filter yang dipilih"
+                    : "Pilih unit atau kelas untuk menampilkan santri"}
                 </p>
               </div>
             ) : (
@@ -377,9 +392,13 @@ export default function BulkBillsPage() {
                         <TableCell className="font-mono text-sm">
                           {student.nis}
                         </TableCell>
-                        <TableCell className="font-medium">{student.name}</TableCell>
-                        <TableCell>{student.currentClass?.name || '-'}</TableCell>
-                        <TableCell>{student.unit?.name || '-'}</TableCell>
+                        <TableCell className="font-medium">
+                          {student.name}
+                        </TableCell>
+                        <TableCell>
+                          {student.currentClass?.name || "-"}
+                        </TableCell>
+                        <TableCell>{student.unit?.name || "-"}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -396,8 +415,11 @@ export default function BulkBillsPage() {
               <div className="text-center sm:text-left">
                 <p className="text-sm text-muted-foreground">Total Tagihan</p>
                 <p className="text-2xl font-bold">
-                  {selectedStudentIds.length} santri × {formatCurrency(amount)} ={' '}
-                  <span className="text-primary">{formatCurrency(totalAmount)}</span>
+                  {selectedStudentIds.length} santri × {formatCurrency(amount)}{" "}
+                  ={" "}
+                  <span className="text-primary">
+                    {formatCurrency(totalAmount)}
+                  </span>
                 </p>
               </div>
               <div className="flex gap-2">
@@ -409,7 +431,7 @@ export default function BulkBillsPage() {
                   disabled={selectedStudentIds.length === 0 || isSubmitting}
                 >
                   {isSubmitting
-                    ? 'Membuat...'
+                    ? "Membuat..."
                     : `Buat ${selectedStudentIds.length} Tagihan`}
                 </Button>
               </div>

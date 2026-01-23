@@ -23,13 +23,15 @@
 **File:** `/apps/api/src/lib/realtime.ts` line 372
 
 Changed:
+
 ```typescript
-activityType: 'SETORAN' // ❌ Not in enum
+activityType: "SETORAN"; // ❌ Not in enum
 ```
 
 To:
+
 ```typescript
-activityType: 'TASMI' // ✅ Correct enum value
+activityType: "TASMI"; // ✅ Correct enum value
 ```
 
 **Result:** Backend running successfully without Prisma errors.
@@ -43,80 +45,84 @@ activityType: 'TASMI' // ✅ Correct enum value
 **Implementation:**
 
 1. **JWT Import**
+
 ```typescript
-import { verifyToken, JwtPayload } from '@/lib/jwt';
+import { verifyToken, JwtPayload } from "@/lib/jwt";
 ```
 
 2. **Authentication Function** (35 lines)
+
 ```typescript
 async function authenticateSocket(socket: Socket): Promise<JwtPayload | null> {
-    const token = socket.handshake.auth.token;
-    
-    if (!token) {
-        logger.warn('WebSocket connection without token', { socketId: socket.id });
-        return null;
+  const token = socket.handshake.auth.token;
+
+  if (!token) {
+    logger.warn("WebSocket connection without token", { socketId: socket.id });
+    return null;
+  }
+
+  try {
+    const payload = await verifyToken(token);
+
+    if (payload.type !== "access") {
+      logger.warn("Invalid token type for WebSocket", {
+        socketId: socket.id,
+        type: payload.type,
+      });
+      return null;
     }
-    
-    try {
-        const payload = await verifyToken(token);
-        
-        if (payload.type !== 'access') {
-            logger.warn('Invalid token type for WebSocket', { 
-                socketId: socket.id, 
-                type: payload.type 
-            });
-            return null;
-        }
-        
-        return payload;
-    } catch (error) {
-        logger.warn('Invalid WebSocket auth token', { 
-            socketId: socket.id, 
-            error: error instanceof Error ? error.message : 'Unknown error' 
-        });
-        return null;
-    }
+
+    return payload;
+  } catch (error) {
+    logger.warn("Invalid WebSocket auth token", {
+      socketId: socket.id,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+    return null;
+  }
 }
 ```
 
 3. **Updated Connection Handler** (async authentication)
+
 ```typescript
-io.on('connection', async (socket) => {
-    // Authenticate socket
-    const payload = await authenticateSocket(socket);
-    
-    if (!payload) {
-        socket.emit('error', {
-            code: 'UNAUTHORIZED',
-            message: 'Authentication required. Please provide a valid token.'
-        });
-        socket.disconnect(true);
-        return;
-    }
-    
-    // Attach user context
-    socket.data.user = payload;
-    socket.data.userId = payload.userId;
-    socket.data.unitId = payload.unitId;
-    socket.data.role = payload.role;
-    
-    logger.info('Authenticated client connected', {
-        socketId: socket.id,
-        userId: payload.userId,
-        unitId: payload.unitId,
-        role: payload.role
+io.on("connection", async (socket) => {
+  // Authenticate socket
+  const payload = await authenticateSocket(socket);
+
+  if (!payload) {
+    socket.emit("error", {
+      code: "UNAUTHORIZED",
+      message: "Authentication required. Please provide a valid token.",
     });
-    
-    // Auto-join 3 rooms
-    socket.join(`user:${payload.userId}`);
-    socket.join(`unit:${payload.unitId}`);
-    socket.join(`role:${payload.role}`);
-    
-    // ... rest of connection logic
+    socket.disconnect(true);
+    return;
+  }
+
+  // Attach user context
+  socket.data.user = payload;
+  socket.data.userId = payload.userId;
+  socket.data.unitId = payload.unitId;
+  socket.data.role = payload.role;
+
+  logger.info("Authenticated client connected", {
+    socketId: socket.id,
+    userId: payload.userId,
+    unitId: payload.unitId,
+    role: payload.role,
+  });
+
+  // Auto-join 3 rooms
+  socket.join(`user:${payload.userId}`);
+  socket.join(`unit:${payload.unitId}`);
+  socket.join(`role:${payload.role}`);
+
+  // ... rest of connection logic
 });
 ```
 
 **Security Features:**
+
 - ✅ JWT token verification
 - ✅ Token type validation (only 'access' tokens)
 - ✅ Automatic disconnection for invalid/missing tokens
@@ -129,6 +135,7 @@ io.on('connection', async (socket) => {
 ### 3. Unit-Specific Dashboard Metrics (3h)
 
 **Files Modified:**
+
 - `/apps/api/src/lib/realtime.ts`
 - `/apps/api/src/jobs/dashboard-metrics.job.ts`
 
@@ -139,32 +146,34 @@ io.on('connection', async (socket) => {
 Added optional `unitId` parameter with filtering:
 
 ```typescript
-export async function getCurrentDashboardMetrics(unitId?: string): Promise<DashboardMetrics> {
-    // All Prisma queries support unit filtering
-    const totalStudents = await prisma.student.count({
-        where: {
-            ...(unitId ? { unitId } : {}),
-            status: 'ACTIVE'
-        }
-    });
-    
-    const activeStudents = await prisma.student.count({
-        where: {
-            ...(unitId ? { unitId } : {}),
-            status: 'ACTIVE',
-            deletedAt: null
-        }
-    });
-    
-    const totalTeachers = await prisma.user.count({
-        where: {
-            ...(unitId ? { unitId } : {}),
-            role: 'TEACHER',
-            deletedAt: null
-        }
-    });
-    
-    // ... similar for attendance, tahfidz, murojaah queries
+export async function getCurrentDashboardMetrics(
+  unitId?: string,
+): Promise<DashboardMetrics> {
+  // All Prisma queries support unit filtering
+  const totalStudents = await prisma.student.count({
+    where: {
+      ...(unitId ? { unitId } : {}),
+      status: "ACTIVE",
+    },
+  });
+
+  const activeStudents = await prisma.student.count({
+    where: {
+      ...(unitId ? { unitId } : {}),
+      status: "ACTIVE",
+      deletedAt: null,
+    },
+  });
+
+  const totalTeachers = await prisma.user.count({
+    where: {
+      ...(unitId ? { unitId } : {}),
+      role: "TEACHER",
+      deletedAt: null,
+    },
+  });
+
+  // ... similar for attendance, tahfidz, murojaah queries
 }
 ```
 
@@ -173,43 +182,44 @@ export async function getCurrentDashboardMetrics(unitId?: string): Promise<Dashb
 #### 3.2 Added subscribe:unit-dashboard Event
 
 ```typescript
-socket.on('subscribe:unit-dashboard', async (data: { unitId: string }) => {
-    try {
-        const { unitId } = data;
-        
-        // Access control
-        const user = socket.data.user;
-        if (user.unitId !== unitId && user.role !== 'SUPER_ADMIN') {
-            socket.emit('error', {
-                code: 'FORBIDDEN',
-                message: 'You do not have access to this unit\'s dashboard'
-            });
-            return;
-        }
-        
-        // Join unit-specific room
-        socket.join(`dashboard:unit:${unitId}`);
-        
-        // Send unit-specific metrics
-        const metrics = await getCurrentDashboardMetrics(unitId);
-        socket.emit('dashboard:metrics', { metrics, unitId });
-        
-        logger.info('Client subscribed to unit dashboard', {
-            socketId: socket.id,
-            unitId,
-            userId: user.userId
-        });
-    } catch (error) {
-        logger.error('Error subscribing to unit dashboard:', error);
-        socket.emit('error', {
-            code: 'INTERNAL_ERROR',
-            message: 'Failed to subscribe to unit dashboard'
-        });
+socket.on("subscribe:unit-dashboard", async (data: { unitId: string }) => {
+  try {
+    const { unitId } = data;
+
+    // Access control
+    const user = socket.data.user;
+    if (user.unitId !== unitId && user.role !== "SUPER_ADMIN") {
+      socket.emit("error", {
+        code: "FORBIDDEN",
+        message: "You do not have access to this unit's dashboard",
+      });
+      return;
     }
+
+    // Join unit-specific room
+    socket.join(`dashboard:unit:${unitId}`);
+
+    // Send unit-specific metrics
+    const metrics = await getCurrentDashboardMetrics(unitId);
+    socket.emit("dashboard:metrics", { metrics, unitId });
+
+    logger.info("Client subscribed to unit dashboard", {
+      socketId: socket.id,
+      unitId,
+      userId: user.userId,
+    });
+  } catch (error) {
+    logger.error("Error subscribing to unit dashboard:", error);
+    socket.emit("error", {
+      code: "INTERNAL_ERROR",
+      message: "Failed to subscribe to unit dashboard",
+    });
+  }
 });
 ```
 
 **Features:**
+
 - ✅ Access control (user.unitId === unitId OR role === SUPER_ADMIN)
 - ✅ Unit-specific room subscription
 - ✅ Immediate metrics emission on subscription
@@ -223,43 +233,44 @@ Enhanced to calculate per-unit metrics:
 
 ```typescript
 export async function aggregateDashboardMetrics() {
-    try {
-        // Calculate global metrics
-        const globalMetrics = await getCurrentDashboardMetrics();
-        await publishDashboardMetrics(globalMetrics);
-        
-        // Calculate per-unit metrics
-        const activeUnits = await prisma.unit.findMany({
-            where: { deletedAt: null },
-            select: { id: true, name: true }
+  try {
+    // Calculate global metrics
+    const globalMetrics = await getCurrentDashboardMetrics();
+    await publishDashboardMetrics(globalMetrics);
+
+    // Calculate per-unit metrics
+    const activeUnits = await prisma.unit.findMany({
+      where: { deletedAt: null },
+      select: { id: true, name: true },
+    });
+
+    for (const unit of activeUnits) {
+      try {
+        const unitMetrics = await getCurrentDashboardMetrics(unit.id);
+        await publishDashboardMetrics(unitMetrics, unit.id);
+
+        logger.debug("Published unit metrics", {
+          unitId: unit.id,
+          unitName: unit.name,
         });
-        
-        for (const unit of activeUnits) {
-            try {
-                const unitMetrics = await getCurrentDashboardMetrics(unit.id);
-                await publishDashboardMetrics(unitMetrics, unit.id);
-                
-                logger.debug('Published unit metrics', {
-                    unitId: unit.id,
-                    unitName: unit.name
-                });
-            } catch (error) {
-                logger.error('Error calculating metrics for unit', {
-                    unitId: unit.id,
-                    error: error instanceof Error ? error.message : 'Unknown error'
-                });
-                // Continue with other units
-            }
-        }
-        
-        await checkAndPublishAlerts();
-    } catch (error) {
-        logger.error('Dashboard metrics aggregation failed:', error);
+      } catch (error) {
+        logger.error("Error calculating metrics for unit", {
+          unitId: unit.id,
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+        // Continue with other units
+      }
     }
+
+    await checkAndPublishAlerts();
+  } catch (error) {
+    logger.error("Dashboard metrics aggregation failed:", error);
+  }
 }
 ```
 
 **Features:**
+
 - ✅ Calculates global metrics (all units)
 - ✅ Calculates per-unit metrics
 - ✅ Error handling per unit (doesn't stop other units)
@@ -269,42 +280,43 @@ export async function aggregateDashboardMetrics() {
 
 ```typescript
 // Pattern subscription for unit-specific metrics
-subscriber.psubscribe('dashboard:metrics:unit:*', (err) => {
-    if (err) {
-        logger.error('Failed to psubscribe to unit metrics:', err);
-    } else {
-        logger.info('Subscribed to pattern: dashboard:metrics:unit:*');
-    }
+subscriber.psubscribe("dashboard:metrics:unit:*", (err) => {
+  if (err) {
+    logger.error("Failed to psubscribe to unit metrics:", err);
+  } else {
+    logger.info("Subscribed to pattern: dashboard:metrics:unit:*");
+  }
 });
 
 // Handle pattern messages
-subscriber.on('pmessage', (pattern, channel, message) => {
-    try {
-        const metrics = JSON.parse(message) as DashboardMetrics;
-        
-        // Extract unitId from channel (e.g., dashboard:metrics:unit:abc123)
-        const unitId = channel.split(':')[3];
-        
-        if (!unitId) {
-            logger.warn('Invalid unit metrics channel format', { channel });
-            return;
-        }
-        
-        // Broadcast to unit-specific room
-        io.to(`dashboard:unit:${unitId}`).emit('dashboard:metrics', {
-            metrics,
-            unitId,
-            timestamp: new Date().toISOString()
-        });
-        
-        logger.debug('Broadcast unit metrics', { unitId, channel });
-    } catch (error) {
-        logger.error('Error handling unit metrics message:', error);
+subscriber.on("pmessage", (pattern, channel, message) => {
+  try {
+    const metrics = JSON.parse(message) as DashboardMetrics;
+
+    // Extract unitId from channel (e.g., dashboard:metrics:unit:abc123)
+    const unitId = channel.split(":")[3];
+
+    if (!unitId) {
+      logger.warn("Invalid unit metrics channel format", { channel });
+      return;
     }
+
+    // Broadcast to unit-specific room
+    io.to(`dashboard:unit:${unitId}`).emit("dashboard:metrics", {
+      metrics,
+      unitId,
+      timestamp: new Date().toISOString(),
+    });
+
+    logger.debug("Broadcast unit metrics", { unitId, channel });
+  } catch (error) {
+    logger.error("Error handling unit metrics message:", error);
+  }
 });
 ```
 
 **Features:**
+
 - ✅ Pattern matching for `dashboard:metrics:unit:*`
 - ✅ Extracts unitId from channel name
 - ✅ Broadcasts to correct unit room
@@ -314,24 +326,24 @@ subscriber.on('pmessage', (pattern, channel, message) => {
 
 ```typescript
 export async function publishDashboardMetrics(
-    metrics: DashboardMetrics, 
-    unitId?: string
+  metrics: DashboardMetrics,
+  unitId?: string,
 ): Promise<void> {
-    try {
-        const channel = unitId 
-            ? `dashboard:metrics:unit:${unitId}` 
-            : 'dashboard:metrics';
-            
-        await publisher.publish(channel, JSON.stringify(metrics));
-        
-        logger.debug('Published dashboard metrics', { 
-            channel,
-            unitId: unitId || 'global',
-            timestamp: metrics.timestamp 
-        });
-    } catch (error) {
-        logger.error('Failed to publish dashboard metrics:', error);
-    }
+  try {
+    const channel = unitId
+      ? `dashboard:metrics:unit:${unitId}`
+      : "dashboard:metrics";
+
+    await publisher.publish(channel, JSON.stringify(metrics));
+
+    logger.debug("Published dashboard metrics", {
+      channel,
+      unitId: unitId || "global",
+      timestamp: metrics.timestamp,
+    });
+  } catch (error) {
+    logger.error("Failed to publish dashboard metrics:", error);
+  }
 }
 ```
 
@@ -344,10 +356,12 @@ export async function publishDashboardMetrics(
 **Purpose:** Provide REST API for initial page load without waiting for WebSocket connection.
 
 **Files Created:**
+
 1. `/apps/api/src/modules/dashboard/dashboard.controller.ts` (240 lines)
 2. `/apps/api/src/modules/dashboard/dashboard.routes.ts` (170 lines)
 
 **File Modified:**
+
 - `/apps/api/src/app.ts` (added route registration)
 
 #### 4.1 Dashboard Controller
@@ -355,10 +369,12 @@ export async function publishDashboardMetrics(
 **Purpose:** Provide REST API for initial page load without waiting for WebSocket connection.
 
 **Files Created:**
+
 1. `/apps/api/src/modules/dashboard/dashboard.controller.ts` (240 lines)
 2. `/apps/api/src/modules/dashboard/dashboard.routes.ts` (170 lines)
 
 **File Modified:**
+
 - `/apps/api/src/app.ts` (added route registration)
 
 #### 4.1 Dashboard Controller
@@ -366,118 +382,126 @@ export async function publishDashboardMetrics(
 **Main Endpoints:**
 
 ##### GET /api/dashboard/metrics
+
 ```typescript
 export async function getDashboardMetrics(req: Request, res: Response) {
-    try {
-        const { unitId } = req.query;
-        const user = (req as any).user;
-        
-        // Access control
-        if (unitId && user.unitId !== unitId && user.role !== 'SUPER_ADMIN') {
-            return res.status(403).json({
-                success: false,
-                error: {
-                    code: 'FORBIDDEN',
-                    message: 'You do not have access to this unit\'s dashboard'
-                }
-            });
-        }
-        
-        // Get current metrics
-        const current = await getCurrentDashboardMetrics(unitId as string | undefined);
-        
-        // Get recent history (stub - returns current only)
-        const recent = await getRecentMetricsHistory(unitId as string | undefined);
-        
-        // Get active alerts
-        const alerts = await getActiveAlerts(unitId as string | undefined);
-        
-        res.json({
-            success: true,
-            data: {
-                current,
-                recent,
-                alerts
-            }
-        });
-    } catch (error) {
-        logger.error('Error getting dashboard metrics:', error);
-        res.status(500).json({
-            success: false,
-            error: {
-                code: 'INTERNAL_ERROR',
-                message: 'Failed to get dashboard metrics'
-            }
-        });
+  try {
+    const { unitId } = req.query;
+    const user = (req as any).user;
+
+    // Access control
+    if (unitId && user.unitId !== unitId && user.role !== "SUPER_ADMIN") {
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: "FORBIDDEN",
+          message: "You do not have access to this unit's dashboard",
+        },
+      });
     }
+
+    // Get current metrics
+    const current = await getCurrentDashboardMetrics(
+      unitId as string | undefined,
+    );
+
+    // Get recent history (stub - returns current only)
+    const recent = await getRecentMetricsHistory(unitId as string | undefined);
+
+    // Get active alerts
+    const alerts = await getActiveAlerts(unitId as string | undefined);
+
+    res.json({
+      success: true,
+      data: {
+        current,
+        recent,
+        alerts,
+      },
+    });
+  } catch (error) {
+    logger.error("Error getting dashboard metrics:", error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to get dashboard metrics",
+      },
+    });
+  }
 }
 ```
 
 **Features:**
+
 - ✅ Access control (unitId verification)
 - ✅ Returns current + recent + alerts
 - ✅ Multi-tenant support
 - ✅ Error handling
 
 ##### GET /api/dashboard/quick-stats
+
 ```typescript
 export async function getQuickStats(req: Request, res: Response) {
-    try {
-        const { unitId } = req.query;
-        const user = (req as any).user;
-        
-        // Parallel queries for performance
-        const [totalStudents, activeStudents, totalTeachers, todayAttendance] = await Promise.all([
-            prisma.student.count({
-                where: {
-                    ...(unitId ? { unitId: unitId as string } : {}),
-                }
-            }),
-            prisma.student.count({
-                where: {
-                    ...(unitId ? { unitId: unitId as string } : {}),
-                    status: 'ACTIVE',
-                    deletedAt: null
-                }
-            }),
-            prisma.user.count({
-                where: {
-                    ...(unitId ? { unitId: unitId as string } : {}),
-                    role: 'TEACHER',
-                    deletedAt: null
-                }
-            }),
-            getTodayAttendanceCount(unitId as string | undefined)
-        ]);
-        
-        const attendanceRate = activeStudents > 0 
-            ? Math.round((todayAttendance / activeStudents) * 100) 
-            : 0;
-        
-        res.json({
-            success: true,
-            data: {
-                totalStudents,
-                activeStudents,
-                totalTeachers,
-                todayAttendance,
-                attendanceRate
-            }
-        });
-    } catch (error) {
-        logger.error('Error getting quick stats:', error);
-        res.status(500).json({
-            success: false,
-            error: {
-                code: 'INTERNAL_ERROR',
-                message: 'Failed to get quick stats'
-            }
-        });
-    }
+  try {
+    const { unitId } = req.query;
+    const user = (req as any).user;
+
+    // Parallel queries for performance
+    const [totalStudents, activeStudents, totalTeachers, todayAttendance] =
+      await Promise.all([
+        prisma.student.count({
+          where: {
+            ...(unitId ? { unitId: unitId as string } : {}),
+          },
+        }),
+        prisma.student.count({
+          where: {
+            ...(unitId ? { unitId: unitId as string } : {}),
+            status: "ACTIVE",
+            deletedAt: null,
+          },
+        }),
+        prisma.user.count({
+          where: {
+            ...(unitId ? { unitId: unitId as string } : {}),
+            role: "TEACHER",
+            deletedAt: null,
+          },
+        }),
+        getTodayAttendanceCount(unitId as string | undefined),
+      ]);
+
+    const attendanceRate =
+      activeStudents > 0
+        ? Math.round((todayAttendance / activeStudents) * 100)
+        : 0;
+
+    res.json({
+      success: true,
+      data: {
+        totalStudents,
+        activeStudents,
+        totalTeachers,
+        todayAttendance,
+        attendanceRate,
+      },
+    });
+  } catch (error) {
+    logger.error("Error getting quick stats:", error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to get quick stats",
+      },
+    });
+  }
 }
 ```
 
 **Features:**
+
 - ✅ Parallel queries with Promise.all (performance)
 - ✅ Simplified response (5 fields only)
 - ✅ Fast response time (<100ms)
@@ -485,112 +509,117 @@ export async function getQuickStats(req: Request, res: Response) {
 **Helper Functions:**
 
 ##### getActiveAlerts()
+
 ```typescript
 async function getActiveAlerts(unitId?: string): Promise<DashboardAlert[]> {
-    const alerts: DashboardAlert[] = [];
-    
-    // 1. Check attendance rate
-    const todayAttendance = await getTodayAttendanceCount(unitId);
-    const activeStudents = await prisma.student.count({
-        where: {
-            ...(unitId ? { unitId } : {}),
-            status: 'ACTIVE',
-            deletedAt: null
-        }
+  const alerts: DashboardAlert[] = [];
+
+  // 1. Check attendance rate
+  const todayAttendance = await getTodayAttendanceCount(unitId);
+  const activeStudents = await prisma.student.count({
+    where: {
+      ...(unitId ? { unitId } : {}),
+      status: "ACTIVE",
+      deletedAt: null,
+    },
+  });
+
+  const attendanceRate =
+    activeStudents > 0 ? (todayAttendance / activeStudents) * 100 : 0;
+
+  if (attendanceRate < 80) {
+    alerts.push({
+      id: `attendance-low-${Date.now()}`,
+      title: "Tingkat Kehadiran Rendah",
+      message: `Tingkat kehadiran hari ini: ${attendanceRate.toFixed(1)}%. Perlu perhatian khusus.`,
+      severity: attendanceRate < 70 ? "CRITICAL" : "WARNING",
+      timestamp: new Date().toISOString(),
     });
-    
-    const attendanceRate = activeStudents > 0 
-        ? (todayAttendance / activeStudents) * 100 
-        : 0;
-    
-    if (attendanceRate < 80) {
-        alerts.push({
-            id: `attendance-low-${Date.now()}`,
-            title: 'Tingkat Kehadiran Rendah',
-            message: `Tingkat kehadiran hari ini: ${attendanceRate.toFixed(1)}%. Perlu perhatian khusus.`,
-            severity: attendanceRate < 70 ? 'CRITICAL' : 'WARNING',
-            timestamp: new Date().toISOString()
-        });
-    }
-    
-    // 2. Check overdue invoices
-    const overdueInvoices = await prisma.invoice.count({
-        where: {
-            status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] },
-            dueDate: { lt: new Date() },
-            createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
-            ...(unitId ? { student: { unitId } } : {})
-        }
+  }
+
+  // 2. Check overdue invoices
+  const overdueInvoices = await prisma.invoice.count({
+    where: {
+      status: { in: ["PENDING", "PARTIAL", "OVERDUE"] },
+      dueDate: { lt: new Date() },
+      createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+      ...(unitId ? { student: { unitId } } : {}),
+    },
+  });
+
+  if (overdueInvoices > 0) {
+    alerts.push({
+      id: `invoices-overdue-${Date.now()}`,
+      title: "Tagihan Tertunggak",
+      message: `${overdueInvoices} tagihan melewati jatuh tempo dalam 30 hari terakhir.`,
+      severity: overdueInvoices > 10 ? "WARNING" : "INFO",
+      timestamp: new Date().toISOString(),
     });
-    
-    if (overdueInvoices > 0) {
-        alerts.push({
-            id: `invoices-overdue-${Date.now()}`,
-            title: 'Tagihan Tertunggak',
-            message: `${overdueInvoices} tagihan melewati jatuh tempo dalam 30 hari terakhir.`,
-            severity: overdueInvoices > 10 ? 'WARNING' : 'INFO',
-            timestamp: new Date().toISOString()
-        });
-    }
-    
-    // 3. Check murojaah quality
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    const avgMurojaahQuality = await prisma.murojaahRecord.aggregate({
-        where: {
-            ...(unitId ? { student: { unitId } } : {}),
-            createdAt: { gte: sevenDaysAgo }
-        },
-        _avg: { qualityScore: true }
+  }
+
+  // 3. Check murojaah quality
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const avgMurojaahQuality = await prisma.murojaahRecord.aggregate({
+    where: {
+      ...(unitId ? { student: { unitId } } : {}),
+      createdAt: { gte: sevenDaysAgo },
+    },
+    _avg: { qualityScore: true },
+  });
+
+  const avgQuality = avgMurojaahQuality._avg.qualityScore || 0;
+
+  if (avgQuality < 75 && avgQuality > 0) {
+    alerts.push({
+      id: `murojaah-quality-low-${Date.now()}`,
+      title: "Kualitas Murojaah Perlu Ditingkatkan",
+      message: `Rata-rata kualitas murojaah 7 hari terakhir: ${avgQuality.toFixed(1)}. Target: ≥75.`,
+      severity: avgQuality < 65 ? "WARNING" : "INFO",
+      timestamp: new Date().toISOString(),
     });
-    
-    const avgQuality = avgMurojaahQuality._avg.qualityScore || 0;
-    
-    if (avgQuality < 75 && avgQuality > 0) {
-        alerts.push({
-            id: `murojaah-quality-low-${Date.now()}`,
-            title: 'Kualitas Murojaah Perlu Ditingkatkan',
-            message: `Rata-rata kualitas murojaah 7 hari terakhir: ${avgQuality.toFixed(1)}. Target: ≥75.`,
-            severity: avgQuality < 65 ? 'WARNING' : 'INFO',
-            timestamp: new Date().toISOString()
-        });
-    }
-    
-    return alerts;
+  }
+
+  return alerts;
 }
 ```
 
 **Alert Types:**
+
 1. ✅ Low attendance rate (< 80% WARNING, < 70% CRITICAL)
 2. ✅ Overdue invoices (> 10 WARNING, else INFO)
 3. ✅ Low murojaah quality (< 75, past 7 days, < 65 WARNING)
 
 ##### getTodayAttendanceCount()
+
 ```typescript
 async function getTodayAttendanceCount(unitId?: string): Promise<number> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const count = await prisma.attendance.count({
-        where: {
-            ...(unitId ? { student: { unitId } } : {}),
-            date: { gte: today },
-            status: 'PRESENT'
-        }
-    });
-    
-    return count;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const count = await prisma.attendance.count({
+    where: {
+      ...(unitId ? { student: { unitId } } : {}),
+      date: { gte: today },
+      status: "PRESENT",
+    },
+  });
+
+  return count;
 }
 ```
 
 ##### getRecentMetricsHistory()
+
 ```typescript
-async function getRecentMetricsHistory(unitId?: string): Promise<DashboardMetrics[]> {
-    // TODO: Implement proper history from metrics_history table
-    // For now, return current metrics as single history point
-    const current = await getCurrentDashboardMetrics(unitId);
-    return [current];
+async function getRecentMetricsHistory(
+  unitId?: string,
+): Promise<DashboardMetrics[]> {
+  // TODO: Implement proper history from metrics_history table
+  // For now, return current metrics as single history point
+  const current = await getCurrentDashboardMetrics(unitId);
+  return [current];
 }
 ```
 
@@ -601,14 +630,14 @@ async function getRecentMetricsHistory(unitId?: string): Promise<DashboardMetric
 **File:** `/apps/api/src/modules/dashboard/dashboard.routes.ts`
 
 ```typescript
-import { Router } from 'express';
-import { authenticate } from '@/middleware/auth';
-import { getDashboardMetrics, getQuickStats } from './dashboard.controller';
+import { Router } from "express";
+import { authenticate } from "@/middleware/auth";
+import { getDashboardMetrics, getQuickStats } from "./dashboard.controller";
 
 const router = Router();
 
-router.get('/metrics', authenticate, getDashboardMetrics);
-router.get('/quick-stats', authenticate, getQuickStats);
+router.get("/metrics", authenticate, getDashboardMetrics);
+router.get("/quick-stats", authenticate, getQuickStats);
 
 export default router;
 ```
@@ -653,20 +682,22 @@ export default router;
 
 ```typescript
 // Added import
-import dashboardRoutes from '@/modules/dashboard/dashboard.routes';
+import dashboardRoutes from "@/modules/dashboard/dashboard.routes";
 
 // Added route
-apiRouter.use('/dashboard', dashboardRoutes);
+apiRouter.use("/dashboard", dashboardRoutes);
 ```
 
 #### 4.4 Testing
 
 **Test 1: No Auth Token**
+
 ```bash
 curl -X GET http://localhost:3001/api/dashboard/metrics
 ```
 
 **Response:**
+
 ```json
 {
   "success": false,
@@ -676,14 +707,17 @@ curl -X GET http://localhost:3001/api/dashboard/metrics
   }
 }
 ```
+
 ✅ **Expected behavior**
 
 **Test 2: Quick Stats Without Auth**
+
 ```bash
 curl -X GET http://localhost:3001/api/dashboard/quick-stats
 ```
 
 **Response:**
+
 ```json
 {
   "success": false,
@@ -693,6 +727,7 @@ curl -X GET http://localhost:3001/api/dashboard/quick-stats
   }
 }
 ```
+
 ✅ **Expected behavior**
 
 **Next Test:** Test with valid JWT token (requires user login).
@@ -706,18 +741,23 @@ curl -X GET http://localhost:3001/api/dashboard/quick-stats
 **Test Scenarios Executed:** 7
 
 #### 5.1 Authentication Test ✅
+
 ```bash
 curl -X POST http://localhost:3001/api/auth/login \
   -d '{"email":"superadmin@cipansor.id","password":"SuperAdmin123!"}'
 ```
+
 **Result:** Success - JWT token obtained
 
 #### 5.2 Dashboard Quick Stats API ✅
+
 ```bash
 curl -X GET "http://localhost:3001/api/dashboard/quick-stats" \
   -H "Authorization: Bearer $TOKEN"
 ```
+
 **Result:** Success - Returns 5 metrics in ~50ms
+
 ```json
 {
   "totalStudents": 5,
@@ -729,39 +769,51 @@ curl -X GET "http://localhost:3001/api/dashboard/quick-stats" \
 ```
 
 #### 5.3 Dashboard Metrics API ✅
+
 ```bash
 curl -X GET "http://localhost:3001/api/dashboard/metrics" \
   -H "Authorization: Bearer $TOKEN"
 ```
+
 **Result:** Success - Returns current + recent + 1 alert in ~100ms
+
 - Alert detected: 6 overdue invoices
 - Performance: < 150ms (meets requirement)
 
 #### 5.4 Unit-Specific Metrics ✅
+
 ```bash
 curl -X GET "http://localhost:3001/api/dashboard/metrics?unitId=881da1dd-0b46-4f7c-a3ef-7c08275d5b8a" \
   -H "Authorization: Bearer $TOKEN"
 ```
+
 **Result:** Success - Filtering works correctly
+
 - Global: 5 students total
 - Unit-specific: 1 student total ✅
 
 #### 5.5 Murojaah Analytics API ✅
+
 ```bash
 curl -X GET "http://localhost:3001/api/murojaah/analytics/quality-distribution?startDate=2024-01-01&endDate=2024-12-31" \
   -H "Authorization: Bearer $TOKEN"
 ```
+
 **Result:** Success - All 4 analytics endpoints operational
 
 #### 5.6 WebSocket Authentication ✅
+
 **Test Script:** Created `test-websocket.js`
+
 ```javascript
-const socket = io('http://localhost:3001', {
+const socket = io("http://localhost:3001", {
   auth: { token },
-  transports: ['websocket']
+  transports: ["websocket"],
 });
 ```
+
 **Result:** Success
+
 ```
 ✅ Login successful
 ✅ WebSocket connected (Socket ID: Z3lfYo6KoIuLgVmXAAAB)
@@ -769,19 +821,23 @@ const socket = io('http://localhost:3001', {
 ```
 
 #### 5.7 Authorization Check ✅
+
 ```bash
 curl -X GET "http://localhost:3001/api/dashboard/metrics"
 # (no auth header)
 ```
+
 **Result:** Success - Returns 401 UNAUTHORIZED (expected)
 
 **Test Summary:**
+
 - Total Tests: 7
 - Passed: 7
 - Failed: 0
 - Success Rate: 100% ✅
 
 **Performance Metrics:**
+
 - Dashboard Quick Stats: ~50ms
 - Dashboard Metrics: ~100ms
 - Unit-Specific Metrics: ~110ms
@@ -797,6 +853,7 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 ### Sprint 1 Week 1 Status
 
 **Completed Features:**
+
 1. ✅ Real-time Dashboard WebSocket Hook (2h) - Session 1
 2. ✅ Murojaah Analytics Dashboard (12h) - Session 1
 3. ✅ Executive Dashboard (4h) - Session 1
@@ -813,6 +870,7 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 14. ✅ End-to-End Testing (1h) - Session 5
 
 **Time Breakdown:**
+
 - Session 1: 12 hours
 - Session 2: 4 hours
 - Session 3: 2.5 hours
@@ -840,6 +898,7 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 **Current pace:** On track! 🎯
 
 ### P2 - High Priority (Next Week)
+
 5. **Unit Tests for Analytics** (3h)
 6. **Integration Tests** (2h)
 7. **Performance Testing** (2h)
@@ -850,6 +909,7 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 ## 📁 Files Modified/Created
 
 ### Created
+
 1. `/apps/api/src/modules/dashboard/dashboard.controller.ts` (240 lines)
    - getDashboardMetrics() - Main endpoint
    - getQuickStats() - Simplified metrics
@@ -862,6 +922,7 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
    - GET /api/dashboard/quick-stats (with OpenAPI docs)
 
 ### Modified
+
 1. `/apps/api/src/lib/realtime.ts` (210+ lines changed)
    - Added JWT import
    - Fixed enum: `activityType: 'TASMI'`
@@ -887,6 +948,7 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 ## 🧪 Testing Status
 
 ### Completed
+
 - ✅ Backend compilation: Zero errors
 - ✅ Enum fix verification: Dashboard job running successfully
 - ✅ WebSocket authentication: Invalid tokens disconnected
@@ -898,6 +960,7 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 - ✅ Performance validation: All endpoints < 150ms
 
 ### Pending
+
 - ⏳ Frontend UI testing (requires frontend restart)
 - ⏳ WebSocket real-time updates testing (requires job cycle wait)
 - ⏳ Load testing for Redis pub/sub
@@ -909,11 +972,13 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 ## 🐛 Issues Resolved
 
 ### Issue 1: Prisma Enum Validation
+
 **File:** `/apps/api/src/lib/realtime.ts` line 372  
 **Error:** `Invalid value for argument activityType. Expected TahfidzActivityType.`  
 **Fix:** Changed `'SETORAN'` → `'TASMI'`
 
 ### Issue 2: PaymentStatus Enum
+
 **File:** `/apps/api/src/modules/dashboard/dashboard.controller.ts` line 181  
 **Error:** `Type '"UNPAID"' is not assignable to type EnumPaymentStatusFilter`  
 **Fix:** Changed `status: 'UNPAID'` → `status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] }`
@@ -923,6 +988,7 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 ## 📚 Technical Highlights
 
 ### Multi-Tenant Architecture
+
 - **Global Metrics:** Published to `dashboard:metrics`
 - **Unit Metrics:** Published to `dashboard:metrics:unit:{unitId}`
 - **Pattern Subscription:** `psubscribe('dashboard:metrics:unit:*')`
@@ -930,12 +996,14 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 - **Access Control:** Enforced at WebSocket event and REST endpoint levels
 
 ### Performance Optimizations
+
 - **Parallel Queries:** Promise.all in getQuickStats()
 - **Redis Pub/Sub:** Efficient message distribution
 - **Pattern Matching:** Single psubscribe for all units
 - **Caching:** Redis acts as metrics cache (60s TTL via job frequency)
 
 ### Security Features
+
 - **JWT Verification:** WebSocket authentication middleware
 - **Token Type Check:** Only 'access' tokens allowed
 - **Access Control:** Unit-based permissions enforced

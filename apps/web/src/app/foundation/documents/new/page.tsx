@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft, Loader2, Upload } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft, Loader2, Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -16,32 +22,34 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { toast } from "sonner";
 import {
   useCreateFoundationDocument,
   DOCUMENT_TYPE_LABELS,
   type DocumentType,
-} from '@/hooks';
-import { useState } from 'react';
+} from "@/hooks";
+import { useState } from "react";
 
-const documentTypes = Object.entries(DOCUMENT_TYPE_LABELS).map(([value, label]) => ({
-  value,
-  label,
-}));
+const documentTypes = Object.entries(DOCUMENT_TYPE_LABELS).map(
+  ([value, label]) => ({
+    value,
+    label,
+  }),
+);
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Nama dokumen wajib diisi'),
-  type: z.string().min(1, 'Jenis dokumen wajib dipilih'),
+  name: z.string().min(1, "Nama dokumen wajib diisi"),
+  type: z.string().min(1, "Jenis dokumen wajib dipilih"),
   description: z.string().optional(),
   documentNumber: z.string().optional(),
   issuedDate: z.string().optional(),
@@ -58,36 +66,37 @@ export default function NewDocumentPage() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      type: '',
-      description: '',
-      documentNumber: '',
-      issuedDate: '',
-      expiryDate: '',
+      name: "",
+      type: "",
+      description: "",
+      documentNumber: "",
+      issuedDate: "",
+      expiryDate: "",
     },
   });
 
   const onSubmit = async (data: FormData) => {
     if (!file) {
-      toast.error('File dokumen wajib diupload');
+      toast.error("File dokumen wajib diupload");
       return;
     }
 
     try {
       const formData = new FormData();
-      formData.append('name', data.name);
-      formData.append('type', data.type);
-      if (data.description) formData.append('description', data.description);
-      if (data.documentNumber) formData.append('documentNumber', data.documentNumber);
-      if (data.issuedDate) formData.append('issuedDate', data.issuedDate);
-      if (data.expiryDate) formData.append('expiryDate', data.expiryDate);
-      formData.append('file', file);
+      formData.append("name", data.name);
+      formData.append("type", data.type);
+      if (data.description) formData.append("description", data.description);
+      if (data.documentNumber)
+        formData.append("documentNumber", data.documentNumber);
+      if (data.issuedDate) formData.append("issuedDate", data.issuedDate);
+      if (data.expiryDate) formData.append("expiryDate", data.expiryDate);
+      formData.append("file", file);
 
       await createDocument.mutateAsync(formData);
-      toast.success('Dokumen berhasil ditambahkan');
-      router.push('/foundation?tab=documents');
+      toast.success("Dokumen berhasil ditambahkan");
+      router.push("/foundation?tab=documents");
     } catch {
-      toast.error('Gagal menambahkan dokumen');
+      toast.error("Gagal menambahkan dokumen");
     }
   };
 
@@ -123,7 +132,10 @@ export default function NewDocumentPage() {
                     <FormItem>
                       <FormLabel>Nama Dokumen</FormLabel>
                       <FormControl>
-                        <Input placeholder="Akta Pendirian Yayasan" {...field} />
+                        <Input
+                          placeholder="Akta Pendirian Yayasan"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -136,7 +148,10 @@ export default function NewDocumentPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Jenis Dokumen</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih jenis dokumen" />
@@ -264,7 +279,7 @@ export default function NewDocumentPage() {
                             const selectedFile = e.target.files?.[0];
                             if (selectedFile) {
                               if (selectedFile.size > 10 * 1024 * 1024) {
-                                toast.error('Ukuran file maksimal 10MB');
+                                toast.error("Ukuran file maksimal 10MB");
                                 return;
                               }
                               setFile(selectedFile);
@@ -285,7 +300,9 @@ export default function NewDocumentPage() {
               <Link href="/foundation?tab=documents">Batal</Link>
             </Button>
             <Button type="submit" disabled={createDocument.isPending}>
-              {createDocument.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {createDocument.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Simpan
             </Button>
           </div>

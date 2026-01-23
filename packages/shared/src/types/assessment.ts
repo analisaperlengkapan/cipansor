@@ -1,28 +1,28 @@
 export enum ExamType {
-  DAILY_TEST = 'DAILY_TEST',
-  QUIZ = 'QUIZ',
-  MIDTERM = 'MIDTERM',
-  FINAL = 'FINAL',
-  PRACTICAL = 'PRACTICAL',
-  PROJECT = 'PROJECT',
-  TAHFIDZ_TEST = 'TAHFIDZ_TEST'
+  DAILY_TEST = "DAILY_TEST",
+  QUIZ = "QUIZ",
+  MIDTERM = "MIDTERM",
+  FINAL = "FINAL",
+  PRACTICAL = "PRACTICAL",
+  PROJECT = "PROJECT",
+  TAHFIDZ_TEST = "TAHFIDZ_TEST",
 }
 
 export enum ExamStatus {
-  DRAFT = 'DRAFT',
-  SCHEDULED = 'SCHEDULED',
-  ONGOING = 'ONGOING',
-  COMPLETED = 'COMPLETED',
-  GRADED = 'GRADED'
+  DRAFT = "DRAFT",
+  SCHEDULED = "SCHEDULED",
+  ONGOING = "ONGOING",
+  COMPLETED = "COMPLETED",
+  GRADED = "GRADED",
 }
 
 export enum GradeType {
-  EXAM = 'EXAM',
-  ASSIGNMENT = 'ASSIGNMENT',
-  PARTICIPATION = 'PARTICIPATION',
-  ATTENDANCE = 'ATTENDANCE',
-  PROJECT = 'PROJECT',
-  TAHFIDZ = 'TAHFIDZ'
+  EXAM = "EXAM",
+  ASSIGNMENT = "ASSIGNMENT",
+  PARTICIPATION = "PARTICIPATION",
+  ATTENDANCE = "ATTENDANCE",
+  PROJECT = "PROJECT",
+  TAHFIDZ = "TAHFIDZ",
 }
 
 export interface Exam {
@@ -95,7 +95,11 @@ export interface Grade {
   updatedAt: Date | string;
 
   // Relations
-  student?: { id: string; nis: string | null; user?: { id: string; name: string | null } };
+  student?: {
+    id: string;
+    nis: string | null;
+    user?: { id: string; name: string | null };
+  };
   subject?: { id: string; name: string; code: string };
   exam?: { id: string; title: string; type: ExamType };
   gradedBy?: { id: string; name: string | null };
@@ -113,7 +117,7 @@ export interface CreateGradeInput {
   gradedById: string;
 }
 
-export interface UpdateGradeInput extends Partial<CreateGradeInput> { }
+export interface UpdateGradeInput extends Partial<CreateGradeInput> {}
 
 export interface BulkCreateGradesInput {
   examId?: string;
@@ -176,8 +180,18 @@ export interface ReportCard {
   updatedAt: Date | string;
 
   // Relations
-  student?: { id: string; nis: string | null; nisn?: string | null; user?: { id: string; name: string | null } };
-  class?: { id: string; name: string; level: string; teacher?: { id: string; name: string | null } };
+  student?: {
+    id: string;
+    nis: string | null;
+    nisn?: string | null;
+    user?: { id: string; name: string | null };
+  };
+  class?: {
+    id: string;
+    name: string;
+    level: string;
+    teacher?: { id: string; name: string | null };
+  };
   academicYear?: { id: string; name: string };
   details?: ReportCardDetail[];
   subjects?: ReportCardDetail[];

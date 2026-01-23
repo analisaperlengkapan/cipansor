@@ -1,19 +1,34 @@
-'use client';
+"use client";
 
-import { useState, useMemo, Suspense } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { format, addDays } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
-import { ArrowLeft, BookOpen, Search, User, Calendar, Clock, Save, Loader2 } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
+import { useState, useMemo, Suspense } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { format, addDays } from "date-fns";
+import { id as localeId } from "date-fns/locale";
+import {
+  ArrowLeft,
+  BookOpen,
+  Search,
+  User,
+  Calendar,
+  Clock,
+  Save,
+  Loader2,
+} from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Form,
   FormControl,
@@ -22,7 +37,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Command,
   CommandEmpty,
@@ -30,22 +45,28 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command';
+} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { toast } from 'sonner';
-import { useBooks, useCreateBorrow, BOOK_CATEGORIES, Book, BookCategory } from '@/hooks/use-library';
-import { useStudents, Student } from '@/hooks/use-students';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/popover";
+import { toast } from "sonner";
+import {
+  useBooks,
+  useCreateBorrow,
+  BOOK_CATEGORIES,
+  Book,
+  BookCategory,
+} from "@/hooks/use-library";
+import { useStudents, Student } from "@/hooks/use-students";
+import { cn } from "@/lib/utils";
 
 const borrowSchema = z.object({
-  bookId: z.string().min(1, 'Pilih buku yang akan dipinjam'),
-  studentId: z.string().min(1, 'Pilih peminjam'),
-  borrowDate: z.string().min(1, 'Tanggal pinjam wajib diisi'),
-  dueDate: z.string().min(1, 'Tanggal jatuh tempo wajib diisi'),
+  bookId: z.string().min(1, "Pilih buku yang akan dipinjam"),
+  studentId: z.string().min(1, "Pilih peminjam"),
+  borrowDate: z.string().min(1, "Tanggal pinjam wajib diisi"),
+  dueDate: z.string().min(1, "Tanggal jatuh tempo wajib diisi"),
   notes: z.string().optional(),
 });
 
@@ -58,15 +79,21 @@ function getCategoryLabel(category: BookCategory) {
 function BorrowBookContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const preselectedBookId = searchParams.get('bookId');
+  const preselectedBookId = searchParams.get("bookId");
 
   const [bookSearchOpen, setBookSearchOpen] = useState(false);
   const [studentSearchOpen, setStudentSearchOpen] = useState(false);
-  const [bookSearch, setBookSearch] = useState('');
-  const [studentSearch, setStudentSearch] = useState('');
+  const [bookSearch, setBookSearch] = useState("");
+  const [studentSearch, setStudentSearch] = useState("");
 
-  const { data: booksData } = useBooks({ limit: 100, search: bookSearch || undefined });
-  const { data: studentsData } = useStudents({ limit: 100, search: studentSearch || undefined });
+  const { data: booksData } = useBooks({
+    limit: 100,
+    search: bookSearch || undefined,
+  });
+  const { data: studentsData } = useStudents({
+    limit: 100,
+    search: studentSearch || undefined,
+  });
   const createBorrowMutation = useCreateBorrow();
 
   const availableBooks = useMemo(() => {
@@ -76,16 +103,16 @@ function BorrowBookContent() {
   const form = useForm<BorrowFormData>({
     resolver: zodResolver(borrowSchema),
     defaultValues: {
-      bookId: preselectedBookId || '',
-      studentId: '',
-      borrowDate: format(new Date(), 'yyyy-MM-dd'),
-      dueDate: format(addDays(new Date(), 14), 'yyyy-MM-dd'), // Default 14 days loan
-      notes: '',
+      bookId: preselectedBookId || "",
+      studentId: "",
+      borrowDate: format(new Date(), "yyyy-MM-dd"),
+      dueDate: format(addDays(new Date(), 14), "yyyy-MM-dd"), // Default 14 days loan
+      notes: "",
     },
   });
 
-  const selectedBookId = form.watch('bookId');
-  const selectedStudentId = form.watch('studentId');
+  const selectedBookId = form.watch("bookId");
+  const selectedStudentId = form.watch("studentId");
 
   const selectedBook = useMemo(() => {
     return booksData?.data.find((b) => b.id === selectedBookId);
@@ -104,10 +131,10 @@ function BorrowBookContent() {
         dueDate: data.dueDate,
         notes: data.notes || undefined,
       });
-      toast.success('Peminjaman berhasil dicatat');
-      router.push('/library');
+      toast.success("Peminjaman berhasil dicatat");
+      router.push("/library");
     } catch {
-      toast.error('Gagal mencatat peminjaman');
+      toast.error("Gagal mencatat peminjaman");
     }
   };
 
@@ -122,7 +149,9 @@ function BorrowBookContent() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Pinjam Buku</h1>
-          <p className="text-muted-foreground">Catat peminjaman buku oleh siswa</p>
+          <p className="text-muted-foreground">
+            Catat peminjaman buku oleh siswa
+          </p>
         </div>
       </div>
 
@@ -138,7 +167,9 @@ function BorrowBookContent() {
                     <BookOpen className="h-5 w-5" />
                     Pilih Buku
                   </CardTitle>
-                  <CardDescription>Cari dan pilih buku yang akan dipinjam</CardDescription>
+                  <CardDescription>
+                    Cari dan pilih buku yang akan dipinjam
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <FormField
@@ -147,26 +178,34 @@ function BorrowBookContent() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Buku *</FormLabel>
-                        <Popover open={bookSearchOpen} onOpenChange={setBookSearchOpen}>
+                        <Popover
+                          open={bookSearchOpen}
+                          onOpenChange={setBookSearchOpen}
+                        >
                           <PopoverTrigger asChild>
                             <FormControl>
                               <Button
                                 variant="outline"
                                 role="combobox"
                                 className={cn(
-                                  'w-full justify-between',
-                                  !field.value && 'text-muted-foreground'
+                                  "w-full justify-between",
+                                  !field.value && "text-muted-foreground",
                                 )}
                               >
                                 {selectedBook ? (
                                   <div className="flex items-center gap-2 overflow-hidden">
-                                    <span className="truncate">{selectedBook.title}</span>
-                                    <Badge variant="outline" className="shrink-0">
+                                    <span className="truncate">
+                                      {selectedBook.title}
+                                    </span>
+                                    <Badge
+                                      variant="outline"
+                                      className="shrink-0"
+                                    >
                                       {selectedBook.availableQuantity} tersedia
                                     </Badge>
                                   </div>
                                 ) : (
-                                  'Cari buku...'
+                                  "Cari buku..."
                                 )}
                                 <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
@@ -180,21 +219,26 @@ function BorrowBookContent() {
                                 onValueChange={setBookSearch}
                               />
                               <CommandList>
-                                <CommandEmpty>Buku tidak ditemukan</CommandEmpty>
+                                <CommandEmpty>
+                                  Buku tidak ditemukan
+                                </CommandEmpty>
                                 <CommandGroup>
                                   {availableBooks.map((book) => (
                                     <CommandItem
                                       key={book.id}
                                       value={book.id}
                                       onSelect={() => {
-                                        form.setValue('bookId', book.id);
+                                        form.setValue("bookId", book.id);
                                         setBookSearchOpen(false);
                                       }}
                                     >
                                       <div className="flex flex-col flex-1">
-                                        <span className="font-medium">{book.title}</span>
+                                        <span className="font-medium">
+                                          {book.title}
+                                        </span>
                                         <span className="text-sm text-muted-foreground">
-                                          {book.author} · {getCategoryLabel(book.category)}
+                                          {book.author} ·{" "}
+                                          {getCategoryLabel(book.category)}
                                         </span>
                                       </div>
                                       <Badge variant="outline">
@@ -220,11 +264,17 @@ function BorrowBookContent() {
                         </div>
                         <div className="flex-1">
                           <p className="font-semibold">{selectedBook.title}</p>
-                          <p className="text-sm text-muted-foreground">{selectedBook.author}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {selectedBook.author}
+                          </p>
                           <div className="flex gap-2 mt-2">
-                            <Badge variant="outline">{getCategoryLabel(selectedBook.category)}</Badge>
+                            <Badge variant="outline">
+                              {getCategoryLabel(selectedBook.category)}
+                            </Badge>
                             {selectedBook.isbn && (
-                              <Badge variant="secondary">ISBN: {selectedBook.isbn}</Badge>
+                              <Badge variant="secondary">
+                                ISBN: {selectedBook.isbn}
+                              </Badge>
                             )}
                           </div>
                         </div>
@@ -241,7 +291,9 @@ function BorrowBookContent() {
                     <User className="h-5 w-5" />
                     Pilih Peminjam
                   </CardTitle>
-                  <CardDescription>Cari dan pilih siswa yang meminjam</CardDescription>
+                  <CardDescription>
+                    Cari dan pilih siswa yang meminjam
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <FormField
@@ -250,26 +302,34 @@ function BorrowBookContent() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Siswa *</FormLabel>
-                        <Popover open={studentSearchOpen} onOpenChange={setStudentSearchOpen}>
+                        <Popover
+                          open={studentSearchOpen}
+                          onOpenChange={setStudentSearchOpen}
+                        >
                           <PopoverTrigger asChild>
                             <FormControl>
                               <Button
                                 variant="outline"
                                 role="combobox"
                                 className={cn(
-                                  'w-full justify-between',
-                                  !field.value && 'text-muted-foreground'
+                                  "w-full justify-between",
+                                  !field.value && "text-muted-foreground",
                                 )}
                               >
                                 {selectedStudent ? (
                                   <div className="flex items-center gap-2 overflow-hidden">
-                                    <span className="truncate">{selectedStudent.name}</span>
-                                    <Badge variant="secondary" className="shrink-0">
+                                    <span className="truncate">
+                                      {selectedStudent.name}
+                                    </span>
+                                    <Badge
+                                      variant="secondary"
+                                      className="shrink-0"
+                                    >
                                       {selectedStudent.nis}
                                     </Badge>
                                   </div>
                                 ) : (
-                                  'Cari siswa...'
+                                  "Cari siswa..."
                                 )}
                                 <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
@@ -283,25 +343,36 @@ function BorrowBookContent() {
                                 onValueChange={setStudentSearch}
                               />
                               <CommandList>
-                                <CommandEmpty>Siswa tidak ditemukan</CommandEmpty>
+                                <CommandEmpty>
+                                  Siswa tidak ditemukan
+                                </CommandEmpty>
                                 <CommandGroup>
-                                  {studentsData?.data?.map((student: Student) => (
-                                    <CommandItem
-                                      key={student.id}
-                                      value={student.id}
-                                      onSelect={() => {
-                                        form.setValue('studentId', student.id);
-                                        setStudentSearchOpen(false);
-                                      }}
-                                    >
-                                      <div className="flex flex-col flex-1">
-                                        <span className="font-medium">{student.name}</span>
-                                        <span className="text-sm text-muted-foreground">
-                                          NIS: {student.nis} · {student.currentClass?.name || 'Tanpa Kelas'}
-                                        </span>
-                                      </div>
-                                    </CommandItem>
-                                  ))}
+                                  {studentsData?.data?.map(
+                                    (student: Student) => (
+                                      <CommandItem
+                                        key={student.id}
+                                        value={student.id}
+                                        onSelect={() => {
+                                          form.setValue(
+                                            "studentId",
+                                            student.id,
+                                          );
+                                          setStudentSearchOpen(false);
+                                        }}
+                                      >
+                                        <div className="flex flex-col flex-1">
+                                          <span className="font-medium">
+                                            {student.name}
+                                          </span>
+                                          <span className="text-sm text-muted-foreground">
+                                            NIS: {student.nis} ·{" "}
+                                            {student.currentClass?.name ||
+                                              "Tanpa Kelas"}
+                                          </span>
+                                        </div>
+                                      </CommandItem>
+                                    ),
+                                  )}
                                 </CommandGroup>
                               </CommandList>
                             </Command>
@@ -319,9 +390,13 @@ function BorrowBookContent() {
                           {selectedStudent.name.charAt(0)}
                         </div>
                         <div className="flex-1">
-                          <p className="font-semibold">{selectedStudent.name}</p>
+                          <p className="font-semibold">
+                            {selectedStudent.name}
+                          </p>
                           <p className="text-sm text-muted-foreground">
-                            NIS: {selectedStudent.nis} · {selectedStudent.currentClass?.name || 'Tanpa Kelas'}
+                            NIS: {selectedStudent.nis} ·{" "}
+                            {selectedStudent.currentClass?.name ||
+                              "Tanpa Kelas"}
                           </p>
                         </div>
                       </div>
@@ -334,7 +409,9 @@ function BorrowBookContent() {
               <Card>
                 <CardHeader>
                   <CardTitle>Catatan</CardTitle>
-                  <CardDescription>Tambahkan catatan untuk peminjaman ini (opsional)</CardDescription>
+                  <CardDescription>
+                    Tambahkan catatan untuk peminjaman ini (opsional)
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <FormField
@@ -401,7 +478,9 @@ function BorrowBookContent() {
 
                   {/* Quick Duration Buttons */}
                   <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Durasi cepat:</p>
+                    <p className="text-sm text-muted-foreground">
+                      Durasi cepat:
+                    </p>
                     <div className="flex flex-wrap gap-2">
                       {[7, 14, 21, 30].map((days) => (
                         <Button
@@ -410,12 +489,12 @@ function BorrowBookContent() {
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const borrowDate = form.getValues('borrowDate');
+                            const borrowDate = form.getValues("borrowDate");
                             const newDueDate = format(
                               addDays(new Date(borrowDate), days),
-                              'yyyy-MM-dd'
+                              "yyyy-MM-dd",
                             );
-                            form.setValue('dueDate', newDueDate);
+                            form.setValue("dueDate", newDueDate);
                           }}
                         >
                           {days} hari
@@ -439,29 +518,41 @@ function BorrowBookContent() {
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Buku:</span>
                       <span className="font-medium text-right truncate max-w-[150px]">
-                        {selectedBook?.title || '-'}
+                        {selectedBook?.title || "-"}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Peminjam:</span>
                       <span className="font-medium">
-                        {selectedStudent?.name || '-'}
+                        {selectedStudent?.name || "-"}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Tanggal Pinjam:</span>
+                      <span className="text-muted-foreground">
+                        Tanggal Pinjam:
+                      </span>
                       <span className="font-medium">
-                        {form.watch('borrowDate')
-                          ? format(new Date(form.watch('borrowDate')), 'dd MMM yyyy', { locale: localeId })
-                          : '-'}
+                        {form.watch("borrowDate")
+                          ? format(
+                              new Date(form.watch("borrowDate")),
+                              "dd MMM yyyy",
+                              { locale: localeId },
+                            )
+                          : "-"}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Jatuh Tempo:</span>
+                      <span className="text-muted-foreground">
+                        Jatuh Tempo:
+                      </span>
                       <span className="font-medium">
-                        {form.watch('dueDate')
-                          ? format(new Date(form.watch('dueDate')), 'dd MMM yyyy', { locale: localeId })
-                          : '-'}
+                        {form.watch("dueDate")
+                          ? format(
+                              new Date(form.watch("dueDate")),
+                              "dd MMM yyyy",
+                              { locale: localeId },
+                            )
+                          : "-"}
                       </span>
                     </div>
                   </div>
@@ -469,7 +560,11 @@ function BorrowBookContent() {
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={createBorrowMutation.isPending || !selectedBook || !selectedStudent}
+                    disabled={
+                      createBorrowMutation.isPending ||
+                      !selectedBook ||
+                      !selectedStudent
+                    }
                   >
                     {createBorrowMutation.isPending ? (
                       <>
@@ -495,11 +590,13 @@ function BorrowBookContent() {
 
 export default function BorrowBookPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
       <BorrowBookContent />
     </Suspense>
   );

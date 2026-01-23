@@ -86,7 +86,7 @@ describe('Class Controller', () => {
       await controller.getEnrollments(req as Request, res as Response, next);
 
       // Wait for async handler to catch error
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(next).toHaveBeenCalledWith(error);
     });

@@ -75,7 +75,13 @@ router.get(
 // GET /duty-roster/student/:studentId - Get student duty history
 router.get(
   '/student/:studentId',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.PARENT),
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.TEACHER,
+    UserRole.STUDENT,
+    UserRole.PARENT
+  ),
   dutyRosterController.getStudentHistory.bind(dutyRosterController)
 );
 

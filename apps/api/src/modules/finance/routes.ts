@@ -1,10 +1,10 @@
-import { Router } from "express";
-import { UserRole } from "@prisma/client";
-import * as controller from "./controller";
-import { bosController } from "./bos.controller";
-import * as accountingController from "./accounting.controller";
-import { authenticate, authorize } from "../../middleware/auth";
-import { validate, validateQuery } from "../../middleware/error";
+import { Router } from 'express';
+import { UserRole } from '@prisma/client';
+import * as controller from './controller';
+import { bosController } from './bos.controller';
+import * as accountingController from './accounting.controller';
+import { authenticate, authorize } from '../../middleware/auth';
+import { validate, validateQuery } from '../../middleware/error';
 import {
   queryPaymentTypeSchema,
   queryInvoiceSchema,
@@ -15,7 +15,7 @@ import {
   createJournalSchema,
   queryJournalSchema,
   queryReportSchema,
-} from "./schema";
+} from './schema';
 
 const router = Router();
 
@@ -52,7 +52,12 @@ router.use(authenticate);
  *       200:
  *         description: List of payment types
  */
-router.get("/payment-types", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), validateQuery(queryPaymentTypeSchema), controller.getPaymentTypes);
+router.get(
+  '/payment-types',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  validateQuery(queryPaymentTypeSchema),
+  controller.getPaymentTypes
+);
 
 /**
  * @swagger
@@ -86,7 +91,11 @@ router.get("/payment-types", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN
  *       201:
  *         description: Payment type created
  */
-router.post("/payment-types", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.createPaymentType);
+router.post(
+  '/payment-types',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.createPaymentType
+);
 
 /**
  * @swagger
@@ -108,7 +117,11 @@ router.post("/payment-types", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMI
  *       404:
  *         description: Payment type not found
  */
-router.get("/payment-types/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.getPaymentTypeById);
+router.get(
+  '/payment-types/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.getPaymentTypeById
+);
 
 /**
  * @swagger
@@ -134,7 +147,11 @@ router.get("/payment-types/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_A
  *       200:
  *         description: Payment type updated
  */
-router.put("/payment-types/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.updatePaymentType);
+router.put(
+  '/payment-types/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.updatePaymentType
+);
 
 /**
  * @swagger
@@ -154,7 +171,11 @@ router.put("/payment-types/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_A
  *       204:
  *         description: Payment type deleted
  */
-router.delete("/payment-types/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deletePaymentType);
+router.delete(
+  '/payment-types/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.deletePaymentType
+);
 
 // ==================== INVOICES ====================
 
@@ -188,7 +209,12 @@ router.delete("/payment-types/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNI
  *       200:
  *         description: List of invoices
  */
-router.get("/invoices", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), validateQuery(queryInvoiceSchema), controller.getInvoices);
+router.get(
+  '/invoices',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  validateQuery(queryInvoiceSchema),
+  controller.getInvoices
+);
 
 /**
  * @swagger
@@ -229,7 +255,11 @@ router.get("/invoices", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, Use
  *       201:
  *         description: Invoice created
  */
-router.post("/invoices", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.createInvoice);
+router.post(
+  '/invoices',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.createInvoice
+);
 
 /**
  * @swagger
@@ -251,7 +281,11 @@ router.post("/invoices", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, Us
  *       404:
  *         description: Invoice not found
  */
-router.get("/invoices/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF, UserRole.PARENT), controller.getInvoiceById);
+router.get(
+  '/invoices/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF, UserRole.PARENT),
+  controller.getInvoiceById
+);
 
 /**
  * @swagger
@@ -271,7 +305,11 @@ router.get("/invoices/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN,
  *       200:
  *         description: Invoice updated
  */
-router.put("/invoices/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.updateInvoice);
+router.put(
+  '/invoices/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.updateInvoice
+);
 
 /**
  * @swagger
@@ -291,7 +329,11 @@ router.put("/invoices/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN)
  *       204:
  *         description: Invoice deleted
  */
-router.delete("/invoices/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.deleteInvoice);
+router.delete(
+  '/invoices/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.deleteInvoice
+);
 
 // ==================== PAYMENTS ====================
 
@@ -325,7 +367,12 @@ router.delete("/invoices/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADM
  *       200:
  *         description: List of payments
  */
-router.get("/payments", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), validateQuery(queryPaymentSchema), controller.getPayments);
+router.get(
+  '/payments',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  validateQuery(queryPaymentSchema),
+  controller.getPayments
+);
 
 /**
  * @swagger
@@ -361,7 +408,11 @@ router.get("/payments", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, Use
  *       201:
  *         description: Payment created
  */
-router.post("/payments", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.createPayment);
+router.post(
+  '/payments',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.createPayment
+);
 
 /**
  * @swagger
@@ -383,7 +434,11 @@ router.post("/payments", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, Us
  *       404:
  *         description: Payment not found
  */
-router.get("/payments/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF, UserRole.PARENT), controller.getPaymentById);
+router.get(
+  '/payments/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF, UserRole.PARENT),
+  controller.getPaymentById
+);
 
 // ==================== ANALYTICS ====================
 
@@ -405,7 +460,11 @@ router.get("/payments/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN,
  *       200:
  *         description: Student finance summary (total paid, outstanding, invoices)
  */
-router.get("/student/:studentId/summary", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF, UserRole.PARENT), controller.getStudentFinanceSummary);
+router.get(
+  '/student/:studentId/summary',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF, UserRole.PARENT),
+  controller.getStudentFinanceSummary
+);
 
 /**
  * @swagger
@@ -425,7 +484,11 @@ router.get("/student/:studentId/summary", authorize(UserRole.SUPER_ADMIN, UserRo
  *       200:
  *         description: Unit finance statistics (revenue, collection rate, etc.)
  */
-router.get("/unit/:unitId/stats", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.getUnitFinanceStats);
+router.get(
+  '/unit/:unitId/stats',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.getUnitFinanceStats
+);
 
 // ==================== SPP MATRIX ====================
 
@@ -458,7 +521,11 @@ router.get("/unit/:unitId/stats", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_
  *       200:
  *         description: SPP matrix with payment status per student per month
  */
-router.get("/spp-matrix", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), controller.getSppMatrix);
+router.get(
+  '/spp-matrix',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  controller.getSppMatrix
+);
 
 /**
  * @swagger
@@ -497,7 +564,11 @@ router.get("/spp-matrix", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, U
  *       201:
  *         description: Bulk invoices generated
  */
-router.post("/spp-matrix/generate", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.generateBulkSppInvoices);
+router.post(
+  '/spp-matrix/generate',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.generateBulkSppInvoices
+);
 
 // ==================== BOS MANAGEMENT ====================
 
@@ -513,7 +584,11 @@ router.post("/spp-matrix/generate", authorize(UserRole.SUPER_ADMIN, UserRole.UNI
  *       200:
  *         description: List of BOS components (8 komponen)
  */
-router.get("/bos/components", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), bosController.getComponents);
+router.get(
+  '/bos/components',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  bosController.getComponents
+);
 
 /**
  * @swagger
@@ -542,7 +617,11 @@ router.get("/bos/components", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMI
  *       200:
  *         description: BOS summary with component breakdown
  */
-router.get("/bos/summary", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), bosController.getSummary);
+router.get(
+  '/bos/summary',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  bosController.getSummary
+);
 
 /**
  * @swagger
@@ -586,7 +665,11 @@ router.get("/bos/summary", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
  *       201:
  *         description: BOS allocation created
  */
-router.post("/bos/allocations", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), bosController.createAllocation);
+router.post(
+  '/bos/allocations',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  bosController.createAllocation
+);
 
 /**
  * @swagger
@@ -629,7 +712,11 @@ router.post("/bos/allocations", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_AD
  *       201:
  *         description: BOS expense recorded
  */
-router.post("/bos/expenses", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), bosController.recordExpense);
+router.post(
+  '/bos/expenses',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  bosController.recordExpense
+);
 
 /**
  * @swagger
@@ -654,7 +741,11 @@ router.post("/bos/expenses", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN
  *       200:
  *         description: BOS transparency report for public display
  */
-router.get("/bos/transparency/:unitId/:year", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), bosController.getTransparencyReport);
+router.get(
+  '/bos/transparency/:unitId/:year',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  bosController.getTransparencyReport
+);
 
 /**
  * @swagger
@@ -685,7 +776,11 @@ router.get("/bos/transparency/:unitId/:year", authorize(UserRole.SUPER_ADMIN, Us
  *       200:
  *         description: BOS quarterly report
  */
-router.get("/bos/quarterly/:unitId/:year/:quarter", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), bosController.getQuarterlyReport);
+router.get(
+  '/bos/quarterly/:unitId/:year/:quarter',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  bosController.getQuarterlyReport
+);
 
 /**
  * @swagger
@@ -710,7 +805,11 @@ router.get("/bos/quarterly/:unitId/:year/:quarter", authorize(UserRole.SUPER_ADM
  *       200:
  *         description: BOS validation result
  */
-router.get("/bos/validate/:unitId/:year", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), bosController.validateUsage);
+router.get(
+  '/bos/validate/:unitId/:year',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  bosController.validateUsage
+);
 
 // ==================== ACCOUNTING ====================
 
@@ -721,7 +820,12 @@ router.get("/bos/validate/:unitId/:year", authorize(UserRole.SUPER_ADMIN, UserRo
  *     summary: List chart of accounts
  *     tags: [Finance - Accounting]
  */
-router.get("/accounting/accounts", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), validateQuery(queryAccountSchema), accountingController.getAccounts);
+router.get(
+  '/accounting/accounts',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  validateQuery(queryAccountSchema),
+  accountingController.getAccounts
+);
 
 /**
  * @swagger
@@ -730,7 +834,12 @@ router.get("/accounting/accounts", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT
  *     summary: Create account
  *     tags: [Finance - Accounting]
  */
-router.post("/accounting/accounts", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), validate(createAccountSchema), accountingController.createAccount);
+router.post(
+  '/accounting/accounts',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validate(createAccountSchema),
+  accountingController.createAccount
+);
 
 /**
  * @swagger
@@ -739,7 +848,12 @@ router.post("/accounting/accounts", authorize(UserRole.SUPER_ADMIN, UserRole.UNI
  *     summary: Update account
  *     tags: [Finance - Accounting]
  */
-router.put("/accounting/accounts/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), validate(updateAccountSchema), accountingController.updateAccount);
+router.put(
+  '/accounting/accounts/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validate(updateAccountSchema),
+  accountingController.updateAccount
+);
 
 /**
  * @swagger
@@ -748,7 +862,11 @@ router.put("/accounting/accounts/:id", authorize(UserRole.SUPER_ADMIN, UserRole.
  *     summary: Get account details
  *     tags: [Finance - Accounting]
  */
-router.get("/accounting/accounts/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), accountingController.getAccountById);
+router.get(
+  '/accounting/accounts/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  accountingController.getAccountById
+);
 
 /**
  * @swagger
@@ -757,7 +875,11 @@ router.get("/accounting/accounts/:id", authorize(UserRole.SUPER_ADMIN, UserRole.
  *     summary: Delete account
  *     tags: [Finance - Accounting]
  */
-router.delete("/accounting/accounts/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), accountingController.deleteAccount);
+router.delete(
+  '/accounting/accounts/:id',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  accountingController.deleteAccount
+);
 
 // ==================== JOURNALS ====================
 
@@ -768,7 +890,12 @@ router.delete("/accounting/accounts/:id", authorize(UserRole.SUPER_ADMIN, UserRo
  *     summary: Get journal entries (General Ledger)
  *     tags: [Finance - Accounting]
  */
-router.get("/accounting/journals", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), validateQuery(queryJournalSchema), accountingController.getJournals);
+router.get(
+  '/accounting/journals',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  validateQuery(queryJournalSchema),
+  accountingController.getJournals
+);
 
 /**
  * @swagger
@@ -777,7 +904,12 @@ router.get("/accounting/journals", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT
  *     summary: Create manual journal entry
  *     tags: [Finance - Accounting]
  */
-router.post("/accounting/journals", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), validate(createJournalSchema), accountingController.createJournal);
+router.post(
+  '/accounting/journals',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  validate(createJournalSchema),
+  accountingController.createJournal
+);
 
 // ==================== REPORTS ====================
 
@@ -788,7 +920,12 @@ router.post("/accounting/journals", authorize(UserRole.SUPER_ADMIN, UserRole.UNI
  *     summary: Get Trial Balance report
  *     tags: [Finance - Accounting]
  */
-router.get("/accounting/reports/trial-balance", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), validateQuery(queryReportSchema), accountingController.getTrialBalance);
+router.get(
+  '/accounting/reports/trial-balance',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  validateQuery(queryReportSchema),
+  accountingController.getTrialBalance
+);
 
 /**
  * @swagger
@@ -797,7 +934,12 @@ router.get("/accounting/reports/trial-balance", authorize(UserRole.SUPER_ADMIN, 
  *     summary: Get Balance Sheet report
  *     tags: [Finance - Accounting]
  */
-router.get("/accounting/reports/balance-sheet", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), validateQuery(queryReportSchema), accountingController.getBalanceSheet);
+router.get(
+  '/accounting/reports/balance-sheet',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  validateQuery(queryReportSchema),
+  accountingController.getBalanceSheet
+);
 
 /**
  * @swagger
@@ -806,6 +948,11 @@ router.get("/accounting/reports/balance-sheet", authorize(UserRole.SUPER_ADMIN, 
  *     summary: Get Income Statement report
  *     tags: [Finance - Accounting]
  */
-router.get("/accounting/reports/income-statement", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF), validateQuery(queryReportSchema), accountingController.getIncomeStatement);
+router.get(
+  '/accounting/reports/income-statement',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  validateQuery(queryReportSchema),
+  accountingController.getIncomeStatement
+);
 
 export default router;

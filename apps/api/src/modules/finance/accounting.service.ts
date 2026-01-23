@@ -1,5 +1,5 @@
-import { prisma } from "../../lib/prisma";
-import { Prisma, AccountCode, JournalReferenceType } from "@prisma/client";
+import { prisma } from '../../lib/prisma';
+import { Prisma, AccountCode, JournalReferenceType } from '@prisma/client';
 
 // =====================================
 // COA (CHART OF ACCOUNTS) SERVICE
@@ -30,15 +30,18 @@ export async function createAccount(data: {
   });
 }
 
-export async function updateAccount(id: string, data: {
-  code?: string;
-  name?: string;
-  type?: string;
-  normalBalance?: string;
-  parentId?: string;
-  cashFlowCategory?: string;
-  isActive?: boolean;
-}) {
+export async function updateAccount(
+  id: string,
+  data: {
+    code?: string;
+    name?: string;
+    type?: string;
+    normalBalance?: string;
+    parentId?: string;
+    cashFlowCategory?: string;
+    isActive?: boolean;
+  }
+) {
   return prisma.accountCode.update({
     where: { id },
     data,
@@ -48,25 +51,21 @@ export async function updateAccount(id: string, data: {
   });
 }
 
-export async function getAccounts(query: {
-  search?: string;
-  type?: string;
-  isActive?: boolean;
-}) {
+export async function getAccounts(query: { search?: string; type?: string; isActive?: boolean }) {
   const where: Prisma.AccountCodeWhereInput = {
     ...(query.isActive !== undefined && { isActive: query.isActive }),
     ...(query.type && { type: query.type }),
     ...(query.search && {
       OR: [
-        { code: { contains: query.search, mode: "insensitive" } },
-        { name: { contains: query.search, mode: "insensitive" } },
+        { code: { contains: query.search, mode: 'insensitive' } },
+        { name: { contains: query.search, mode: 'insensitive' } },
       ],
     }),
   };
 
   const accounts = await prisma.accountCode.findMany({
     where,
-    orderBy: { code: "asc" },
+    orderBy: { code: 'asc' },
     include: {
       parent: { select: { id: true, name: true, code: true } },
     },
@@ -92,7 +91,7 @@ export async function deleteAccount(id: string) {
   });
 
   if (journalCount > 0) {
-    throw new Error("Cannot delete account with existing journal entries.");
+    throw new Error('Cannot delete account with existing journal entries.');
   }
 
   // Check for children
@@ -101,7 +100,7 @@ export async function deleteAccount(id: string) {
   });
 
   if (childrenCount > 0) {
-    throw new Error("Cannot delete account with child accounts.");
+    throw new Error('Cannot delete account with child accounts.');
   }
 
   return prisma.accountCode.delete({
@@ -129,7 +128,8 @@ export async function createManualJournal(data: {
     const totalDebit = data.entries.reduce((sum, e) => sum + e.debit, 0);
     const totalCredit = data.entries.reduce((sum, e) => sum + e.credit, 0);
 
-    if (Math.abs(totalDebit - totalCredit) > 0.01) { // Floating point tolerance
+    if (Math.abs(totalDebit - totalCredit) > 0.01) {
+      // Floating point tolerance
       throw new Error(`Journal is not balanced. Debit: ${totalDebit}, Credit: ${totalCredit}`);
     }
 
@@ -146,7 +146,7 @@ export async function createManualJournal(data: {
           debit: new Prisma.Decimal(entry.debit),
           credit: new Prisma.Decimal(entry.credit),
           reference: referenceId,
-          referenceType: "MANUAL", // Using string literal as fallback if Enum not exported
+          referenceType: 'MANUAL', // Using string literal as fallback if Enum not exported
           createdById: data.createdById,
         },
       });
@@ -171,12 +171,14 @@ export async function getJournals(query: {
   const where: Prisma.JournalEntryWhereInput = {
     ...(unitId && { unitId }),
     ...(accountId && { accountId }),
-    ...(startDate || endDate ? {
-      date: {
-        ...(startDate && { gte: startDate }),
-        ...(endDate && { lte: endDate }),
-      }
-    } : {}),
+    ...(startDate || endDate
+      ? {
+          date: {
+            ...(startDate && { gte: startDate }),
+            ...(endDate && { lte: endDate }),
+          },
+        }
+      : {}),
   };
 
   const [data, total] = await Promise.all([
@@ -186,7 +188,7 @@ export async function getJournals(query: {
         account: { select: { code: true, name: true } },
         createdBy: { select: { name: true } },
       },
-      orderBy: { date: "desc" },
+      orderBy: { date: 'desc' },
       skip,
       take: limit,
     }),
@@ -212,17 +214,19 @@ export async function getTrialBalance(query: {
 
   const where: Prisma.JournalEntryWhereInput = {
     ...(unitId && { unitId }),
-    ...(startDate || endDate ? {
-      date: {
-        ...(startDate && { gte: startDate }),
-        ...(endDate && { lte: endDate }),
-      }
-    } : {}),
+    ...(startDate || endDate
+      ? {
+          date: {
+            ...(startDate && { gte: startDate }),
+            ...(endDate && { lte: endDate }),
+          },
+        }
+      : {}),
   };
 
   // Group by accountId
   const aggregations = await prisma.journalEntry.groupBy({
-    by: ["accountId"],
+    by: ['accountId'],
     where,
     _sum: {
       debit: true,
@@ -232,7 +236,7 @@ export async function getTrialBalance(query: {
 
   // Fetch account details
   const accounts = await prisma.accountCode.findMany({
-    orderBy: { code: "asc" },
+    orderBy: { code: 'asc' },
   });
 
   // Map results
@@ -243,7 +247,7 @@ export async function getTrialBalance(query: {
 
     // Calculate net balance based on normal balance
     let balance = 0;
-    if (acc.normalBalance === "DEBIT") {
+    if (acc.normalBalance === 'DEBIT') {
       balance = totalDebit - totalCredit;
     } else {
       balance = totalCredit - totalDebit;
@@ -265,10 +269,7 @@ export async function getTrialBalance(query: {
   return result;
 }
 
-export async function getBalanceSheet(query: {
-  unitId?: string;
-  endDate: Date;
-}) {
+export async function getBalanceSheet(query: { unitId?: string; endDate: Date }) {
   // Balance sheet is "As of Date", so we need all transactions up to endDate
   const trialBalance = await getTrialBalance({
     unitId: query.unitId,
@@ -276,14 +277,14 @@ export async function getBalanceSheet(query: {
   });
 
   // Filter for Asset, Liability, Equity
-  const assets = trialBalance.filter((i) => i.type === "ASSET");
-  const liabilities = trialBalance.filter((i) => i.type === "LIABILITY");
-  const equity = trialBalance.filter((i) => i.type === "EQUITY");
+  const assets = trialBalance.filter((i) => i.type === 'ASSET');
+  const liabilities = trialBalance.filter((i) => i.type === 'LIABILITY');
+  const equity = trialBalance.filter((i) => i.type === 'EQUITY');
 
   // Calculate Net Income (Retained Earnings) from Revenue - Expense
   // This is a simplified calculation. Real systems might close periods.
-  const revenues = trialBalance.filter((i) => i.type === "REVENUE");
-  const expenses = trialBalance.filter((i) => i.type === "EXPENSE");
+  const revenues = trialBalance.filter((i) => i.type === 'REVENUE');
+  const expenses = trialBalance.filter((i) => i.type === 'EXPENSE');
 
   const totalRevenue = revenues.reduce((sum, i) => sum + i.credit - i.debit, 0); // Rev is Credit normal
   const totalExpense = expenses.reduce((sum, i) => sum + i.debit - i.credit, 0); // Exp is Debit normal
@@ -311,8 +312,8 @@ export async function getIncomeStatement(query: {
     endDate: query.endDate,
   });
 
-  const revenues = trialBalance.filter((i) => i.type === "REVENUE");
-  const expenses = trialBalance.filter((i) => i.type === "EXPENSE");
+  const revenues = trialBalance.filter((i) => i.type === 'REVENUE');
+  const expenses = trialBalance.filter((i) => i.type === 'EXPENSE');
 
   return {
     revenues,

@@ -25,11 +25,15 @@ export const createAttendanceSchema = z.object({
 export const bulkAttendanceSchema = z.object({
   classId: z.string().uuid('Invalid class ID'),
   date: z.coerce.date(),
-  records: z.array(z.object({
-    studentId: z.string().uuid('Invalid student ID'),
-    status: z.nativeEnum(AttendanceStatus),
-    notes: z.string().max(500).optional(),
-  })).min(1, 'At least one record is required'),
+  records: z
+    .array(
+      z.object({
+        studentId: z.string().uuid('Invalid student ID'),
+        status: z.nativeEnum(AttendanceStatus),
+        notes: z.string().max(500).optional(),
+      })
+    )
+    .min(1, 'At least one record is required'),
 });
 
 // Update attendance

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useState } from "react";
+import Link from "next/link";
 import {
   Target,
   Plus,
@@ -10,31 +10,31 @@ import {
   ArrowLeft,
   Settings,
   Wand2,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { Button } from '@/components/ui/button';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   useIbadahTargets,
   useDeleteIbadahTarget,
@@ -46,13 +46,13 @@ import {
   getTargetTypeLabel,
   getTargetUnitLabel,
   type IbadahCategory,
-} from '@/hooks/use-ibadah';
-import { useUnits } from '@/hooks/use-units';
-import { cn } from '@/lib/utils';
+} from "@/hooks/use-ibadah";
+import { useUnits } from "@/hooks/use-units";
+import { cn } from "@/lib/utils";
 
 export default function IbadahTargetsPage() {
-  const [selectedUnit, setSelectedUnit] = useState<string>('');
-  const [category, setCategory] = useState<string>('');
+  const [selectedUnit, setSelectedUnit] = useState<string>("");
+  const [category, setCategory] = useState<string>("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [seedingUnit, setSeedingUnit] = useState<string | null>(null);
 
@@ -75,10 +75,10 @@ export default function IbadahTargetsPage() {
     if (!deleteId) return;
     try {
       await deleteTarget.mutateAsync(deleteId);
-      toast.success('Target berhasil dihapus');
+      toast.success("Target berhasil dihapus");
       setDeleteId(null);
     } catch {
-      toast.error('Gagal menghapus target');
+      toast.error("Gagal menghapus target");
     }
   };
 
@@ -88,9 +88,9 @@ export default function IbadahTargetsPage() {
         id,
         data: { isActive: !isActive },
       });
-      toast.success(isActive ? 'Target dinonaktifkan' : 'Target diaktifkan');
+      toast.success(isActive ? "Target dinonaktifkan" : "Target diaktifkan");
     } catch {
-      toast.error('Gagal mengubah status target');
+      toast.error("Gagal mengubah status target");
     }
   };
 
@@ -101,17 +101,20 @@ export default function IbadahTargetsPage() {
       toast.success(`${result.length} target default berhasil ditambahkan`);
       setSeedingUnit(null);
     } catch {
-      toast.error('Gagal menambah target default');
+      toast.error("Gagal menambah target default");
     }
   };
 
   // Group targets by category
-  const groupedTargets = targets.reduce((acc, target) => {
-    const key = target.category;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(target);
-    return acc;
-  }, {} as Record<string, typeof targets>);
+  const groupedTargets = targets.reduce(
+    (acc, target) => {
+      const key = target.category;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(target);
+      return acc;
+    },
+    {} as Record<string, typeof targets>,
+  );
 
   return (
     <MainLayout>
@@ -119,9 +122,9 @@ export default function IbadahTargetsPage() {
         title="Kelola Target Ibadah"
         description="Atur target ibadah harian untuk santri"
         action={{
-          label: 'Tambah Target',
+          label: "Tambah Target",
           icon: <Plus className="h-4 w-4" />,
-          href: '/ibadah/targets/new',
+          href: "/ibadah/targets/new",
         }}
       />
 
@@ -216,7 +219,10 @@ export default function IbadahTargetsPage() {
                 </Link>
               </Button>
               {selectedUnit && (
-                <Button variant="outline" onClick={() => setSeedingUnit(selectedUnit)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setSeedingUnit(selectedUnit)}
+                >
                   <Wand2 className="h-4 w-4 mr-2" />
                   Gunakan Target Default
                 </Button>
@@ -226,114 +232,131 @@ export default function IbadahTargetsPage() {
         </Card>
       ) : (
         <div className="space-y-6">
-          {Object.entries(groupedTargets).map(([categoryKey, categoryTargets]) => {
-            const categoryInfo = getCategoryInfo(categoryKey as IbadahCategory);
-            return (
-              <Card key={categoryKey}>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">{categoryInfo.icon}</span>
-                    <div>
-                      <CardTitle>{categoryInfo.label}</CardTitle>
-                      <CardDescription className="font-arabic">
-                        {categoryInfo.labelAr}
-                      </CardDescription>
+          {Object.entries(groupedTargets).map(
+            ([categoryKey, categoryTargets]) => {
+              const categoryInfo = getCategoryInfo(
+                categoryKey as IbadahCategory,
+              );
+              return (
+                <Card key={categoryKey}>
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{categoryInfo.icon}</span>
+                      <div>
+                        <CardTitle>{categoryInfo.label}</CardTitle>
+                        <CardDescription className="font-arabic">
+                          {categoryInfo.labelAr}
+                        </CardDescription>
+                      </div>
+                      <Badge variant="secondary" className="ml-auto">
+                        {categoryTargets.length} target
+                      </Badge>
                     </div>
-                    <Badge variant="secondary" className="ml-auto">
-                      {categoryTargets.length} target
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {categoryTargets
-                    .sort((a, b) => a.sortOrder - b.sortOrder)
-                    .map((target) => (
-                      <div
-                        key={target.id}
-                        className={cn(
-                          'p-4 rounded-lg border',
-                          target.isActive
-                            ? 'bg-card'
-                            : 'bg-muted/50 opacity-60'
-                        )}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-medium">{target.name}</h4>
-                              {target.nameAr && (
-                                <span className="text-sm text-muted-foreground font-arabic">
-                                  ({target.nameAr})
-                                </span>
-                              )}
-                              {target.isOptional && (
-                                <Badge variant="outline" className="text-xs">
-                                  Opsional
-                                </Badge>
-                              )}
-                              {!target.isActive && (
-                                <Badge variant="secondary" className="text-xs">
-                                  Nonaktif
-                                </Badge>
-                              )}
-                            </div>
-                            {target.description && (
-                              <p className="text-sm text-muted-foreground mb-2">
-                                {target.description}
-                              </p>
-                            )}
-                            <div className="flex flex-wrap gap-4 text-sm">
-                              <span>
-                                <strong>Target:</strong> {target.targetCount}{' '}
-                                {getTargetUnitLabel(target.targetUnit).toLowerCase()}
-                              </span>
-                              <span>
-                                <strong>Tipe:</strong> {getTargetTypeLabel(target.targetType)}
-                              </span>
-                              <span className="text-yellow-600">
-                                <strong>Poin:</strong> {target.points}
-                                {target.bonusPoints > 0 && (
-                                  <span className="text-green-600">
-                                    {' '}(+{target.bonusPoints} bonus)
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {categoryTargets
+                      .sort((a, b) => a.sortOrder - b.sortOrder)
+                      .map((target) => (
+                        <div
+                          key={target.id}
+                          className={cn(
+                            "p-4 rounded-lg border",
+                            target.isActive
+                              ? "bg-card"
+                              : "bg-muted/50 opacity-60",
+                          )}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-medium">{target.name}</h4>
+                                {target.nameAr && (
+                                  <span className="text-sm text-muted-foreground font-arabic">
+                                    ({target.nameAr})
                                   </span>
                                 )}
-                              </span>
-                              <span>
-                                <strong>Unit:</strong> {target.unit?.name || '-'}
-                              </span>
+                                {target.isOptional && (
+                                  <Badge variant="outline" className="text-xs">
+                                    Opsional
+                                  </Badge>
+                                )}
+                                {!target.isActive && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    Nonaktif
+                                  </Badge>
+                                )}
+                              </div>
+                              {target.description && (
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  {target.description}
+                                </p>
+                              )}
+                              <div className="flex flex-wrap gap-4 text-sm">
+                                <span>
+                                  <strong>Target:</strong> {target.targetCount}{" "}
+                                  {getTargetUnitLabel(
+                                    target.targetUnit,
+                                  ).toLowerCase()}
+                                </span>
+                                <span>
+                                  <strong>Tipe:</strong>{" "}
+                                  {getTargetTypeLabel(target.targetType)}
+                                </span>
+                                <span className="text-yellow-600">
+                                  <strong>Poin:</strong> {target.points}
+                                  {target.bonusPoints > 0 && (
+                                    <span className="text-green-600">
+                                      {" "}
+                                      (+{target.bonusPoints} bonus)
+                                    </span>
+                                  )}
+                                </span>
+                                <span>
+                                  <strong>Unit:</strong>{" "}
+                                  {target.unit?.name || "-"}
+                                </span>
+                              </div>
                             </div>
-                          </div>
 
-                          <div className="flex items-center gap-2">
                             <div className="flex items-center gap-2">
-                              <Switch
-                                checked={target.isActive}
-                                onCheckedChange={() =>
-                                  handleToggleActive(target.id, target.isActive)
-                                }
-                              />
-                              <Label className="text-xs">Aktif</Label>
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={target.isActive}
+                                  onCheckedChange={() =>
+                                    handleToggleActive(
+                                      target.id,
+                                      target.isActive,
+                                    )
+                                  }
+                                />
+                                <Label className="text-xs">Aktif</Label>
+                              </div>
+                              <Button variant="ghost" size="icon" asChild>
+                                <Link
+                                  href={`/ibadah/targets/${target.id}/edit`}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDeleteId(target.id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
                             </div>
-                            <Button variant="ghost" size="icon" asChild>
-                              <Link href={`/ibadah/targets/${target.id}/edit`}>
-                                <Pencil className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setDeleteId(target.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                </CardContent>
-              </Card>
-            );
-          })}
+                      ))}
+                  </CardContent>
+                </Card>
+              );
+            },
+          )}
         </div>
       )}
 

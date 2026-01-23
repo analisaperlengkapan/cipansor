@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from "express";
-import * as service from "./service";
+import { Request, Response, NextFunction } from 'express';
+import * as service from './service';
 import {
   createAdmissionPeriodSchema,
   updateAdmissionPeriodSchema,
@@ -9,9 +9,9 @@ import {
   updateRegistrantStatusSchema,
   createRegistrantDocumentSchema,
   verifyDocumentSchema,
-} from "./schema";
-import { Errors } from "../../middleware/error";
-import { z } from "zod";
+} from './schema';
+import { Errors } from '../../middleware/error';
+import { z } from 'zod';
 
 // =====================================
 // ADMISSION PERIOD CONTROLLERS
@@ -31,7 +31,7 @@ export async function getAdmissionPeriodById(req: Request, res: Response, next: 
   try {
     const period = await service.getAdmissionPeriodById(req.params.id);
     if (!period) {
-      throw Errors.notFound("Admission period not found");
+      throw Errors.notFound('Admission period not found');
     }
     res.json({ success: true, data: period });
   } catch (error) {
@@ -62,7 +62,7 @@ export async function updateAdmissionPeriod(req: Request, res: Response, next: N
 export async function deleteAdmissionPeriod(req: Request, res: Response, next: NextFunction) {
   try {
     await service.deleteAdmissionPeriod(req.params.id);
-    res.json({ success: true, message: "Admission period deleted successfully" });
+    res.json({ success: true, message: 'Admission period deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -72,7 +72,7 @@ export async function getAdmissionPeriodStats(req: Request, res: Response, next:
   try {
     const stats = await service.getAdmissionPeriodStats(req.params.id);
     if (!stats) {
-      throw Errors.notFound("Admission period not found");
+      throw Errors.notFound('Admission period not found');
     }
     res.json({ success: true, data: stats });
   } catch (error) {
@@ -98,7 +98,7 @@ export async function getRegistrantById(req: Request, res: Response, next: NextF
   try {
     const registrant = await service.getRegistrantById(req.params.id);
     if (!registrant) {
-      throw Errors.notFound("Registrant not found");
+      throw Errors.notFound('Registrant not found');
     }
     res.json({ success: true, data: registrant });
   } catch (error) {
@@ -161,10 +161,10 @@ export async function enrollRegistrant(req: Request, res: Response, next: NextFu
       classId: data.classId,
       roomId: data.roomId,
     });
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       data: result,
-      message: "Registrant enrolled successfully" 
+      message: 'Registrant enrolled successfully',
     });
   } catch (error) {
     next(error);
@@ -174,7 +174,7 @@ export async function enrollRegistrant(req: Request, res: Response, next: NextFu
 export async function deleteRegistrant(req: Request, res: Response, next: NextFunction) {
   try {
     await service.deleteRegistrant(req.params.id);
-    res.json({ success: true, message: "Registrant deleted successfully" });
+    res.json({ success: true, message: 'Registrant deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -219,7 +219,7 @@ export async function verifyDocument(req: Request, res: Response, next: NextFunc
 export async function deleteRegistrantDocument(req: Request, res: Response, next: NextFunction) {
   try {
     await service.deleteRegistrantDocument(req.params.id);
-    res.json({ success: true, message: "Document deleted successfully" });
+    res.json({ success: true, message: 'Document deleted successfully' });
   } catch (error) {
     next(error);
   }

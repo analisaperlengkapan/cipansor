@@ -4,11 +4,11 @@ import { generateTokenPair, getExpirationDate } from '@/lib/jwt';
 import { prisma } from '@/lib/prisma';
 import { config } from '@/config';
 import type { Realm } from '@prisma/client';
-import type { 
-  GetRolesQuery, 
-  AssignRoleInput, 
+import type {
+  GetRolesQuery,
+  AssignRoleInput,
   SwitchRoleInput,
-  SetPrimaryRoleInput 
+  SetPrimaryRoleInput,
 } from './roles.schema';
 
 export class RolesController {
@@ -114,9 +114,9 @@ export class RolesController {
     try {
       const userId = req.user!.sub;
       const input = req.body as SwitchRoleInput;
-      
+
       const result = await rolesService.switchRole(userId, input.roleAssignmentId);
-      
+
       // Generate new tokens with the new active role
       const tokens = generateTokenPair({
         sub: result.user.id,

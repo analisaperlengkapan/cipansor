@@ -3,11 +3,7 @@ import waveController from './ppdb-wave.controller';
 import { authenticate, authorize } from '@/middleware/auth';
 import { validate } from '@/middleware/validate';
 import { UserRole } from '@prisma/client';
-import {
-  createWaveSchema,
-  updateWaveSchema,
-  assignWaveSchema,
-} from './ppdb-wave.schema';
+import { createWaveSchema, updateWaveSchema, assignWaveSchema } from './ppdb-wave.schema';
 
 const router = Router();
 
@@ -101,11 +97,7 @@ router.put(
  * @desc Delete wave
  * @access Private - Admin only
  */
-router.delete(
-  '/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
-  waveController.delete
-);
+router.delete('/:id', authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), waveController.delete);
 
 /**
  * @route POST /api/ppdb-wave/assign

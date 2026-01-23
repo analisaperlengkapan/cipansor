@@ -4,15 +4,21 @@
  */
 
 // Core exports (use auth fixture as primary test/expect)
-export { test, expect, testUsers, loginAsUser, logout } from './fixtures/auth.fixture';
-export type { AuthUser } from './fixtures/auth.fixture';
+export {
+  test,
+  expect,
+  testUsers,
+  loginAsUser,
+  logout,
+} from "./fixtures/auth.fixture";
+export type { AuthUser } from "./fixtures/auth.fixture";
 
 // API Mocking (aliased to avoid conflict)
-export { test as apiTest, APIMocker } from './fixtures/api.fixture';
-export type { MockAPIResponse } from './fixtures/api.fixture';
+export { test as apiTest, APIMocker } from "./fixtures/api.fixture";
+export type { MockAPIResponse } from "./fixtures/api.fixture";
 
 // Helpers
-export * from './helpers/page-helpers';
+export * from "./helpers/page-helpers";
 
 // Page Objects
-export * from './page-objects';
+export * from "./page-objects";

@@ -1,20 +1,26 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { 
-  BarChart3, 
+} from "@/components/ui/select";
+import {
+  BarChart3,
   TrendingUp,
   Calendar,
   Clock,
@@ -25,14 +31,14 @@ import {
   Heart,
   Users,
   Building,
-} from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+} from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   LineChart,
   Line,
@@ -40,32 +46,32 @@ import {
   Pie,
   Cell,
   Legend,
-} from 'recharts';
+} from "recharts";
 
 // Mock statistics data
 const weeklyData = [
-  { day: 'Sen', sholat: 95, sunnah: 70, tilawah: 85 },
-  { day: 'Sel', sholat: 100, sunnah: 65, tilawah: 90 },
-  { day: 'Rab', sholat: 90, sunnah: 80, tilawah: 75 },
-  { day: 'Kam', sholat: 100, sunnah: 75, tilawah: 80 },
-  { day: 'Jum', sholat: 100, sunnah: 85, tilawah: 95 },
-  { day: 'Sab', sholat: 85, sunnah: 60, tilawah: 70 },
-  { day: 'Min', sholat: 80, sunnah: 50, tilawah: 65 },
+  { day: "Sen", sholat: 95, sunnah: 70, tilawah: 85 },
+  { day: "Sel", sholat: 100, sunnah: 65, tilawah: 90 },
+  { day: "Rab", sholat: 90, sunnah: 80, tilawah: 75 },
+  { day: "Kam", sholat: 100, sunnah: 75, tilawah: 80 },
+  { day: "Jum", sholat: 100, sunnah: 85, tilawah: 95 },
+  { day: "Sab", sholat: 85, sunnah: 60, tilawah: 70 },
+  { day: "Min", sholat: 80, sunnah: 50, tilawah: 65 },
 ];
 
 const sholatDistribution = [
-  { name: 'Subuh', value: 85, color: '#22c55e' },
-  { name: 'Dzuhur', value: 95, color: '#f59e0b' },
-  { name: 'Ashar', value: 92, color: '#f97316' },
-  { name: 'Maghrib', value: 98, color: '#ef4444' },
-  { name: 'Isya', value: 96, color: '#6366f1' },
+  { name: "Subuh", value: 85, color: "#22c55e" },
+  { name: "Dzuhur", value: 95, color: "#f59e0b" },
+  { name: "Ashar", value: 92, color: "#f97316" },
+  { name: "Maghrib", value: 98, color: "#ef4444" },
+  { name: "Isya", value: 96, color: "#6366f1" },
 ];
 
 const monthlyTrend = [
-  { week: 'Minggu 1', score: 75 },
-  { week: 'Minggu 2', score: 82 },
-  { week: 'Minggu 3', score: 78 },
-  { week: 'Minggu 4', score: 88 },
+  { week: "Minggu 1", score: 75 },
+  { week: "Minggu 2", score: 82 },
+  { week: "Minggu 3", score: 78 },
+  { week: "Minggu 4", score: 88 },
 ];
 
 const summaryStats = {
@@ -81,11 +87,19 @@ const summaryStats = {
 };
 
 export default function IbadahStatisticsPage() {
-  const [period, setPeriod] = useState('month');
-  const [viewType, setViewType] = useState('personal');
+  const [period, setPeriod] = useState("month");
+  const [viewType, setViewType] = useState("personal");
 
   return (
-    <MainLayout allowedRoles={['STUDENT', 'TEACHER', 'SUPER_ADMIN', 'UNIT_ADMIN', 'PARENT']}>
+    <MainLayout
+      allowedRoles={[
+        "STUDENT",
+        "TEACHER",
+        "SUPER_ADMIN",
+        "UNIT_ADMIN",
+        "PARENT",
+      ]}
+    >
       <div className="space-y-6">
         <PageHeader
           title="Statistik Ibadah"
@@ -158,8 +172,12 @@ export default function IbadahStatisticsPage() {
                   <BarChart3 className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Skor Rata-rata</p>
-                  <p className="text-2xl font-bold">{summaryStats.averageScore}%</p>
+                  <p className="text-sm text-muted-foreground">
+                    Skor Rata-rata
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {summaryStats.averageScore}%
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -172,8 +190,12 @@ export default function IbadahStatisticsPage() {
                   <TrendingUp className="h-6 w-6 text-orange-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Streak Saat Ini</p>
-                  <p className="text-2xl font-bold">{summaryStats.streak} hari</p>
+                  <p className="text-sm text-muted-foreground">
+                    Streak Saat Ini
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {summaryStats.streak} hari
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -186,8 +208,12 @@ export default function IbadahStatisticsPage() {
                   <Star className="h-6 w-6 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Streak Terbaik</p>
-                  <p className="text-2xl font-bold">{summaryStats.bestStreak} hari</p>
+                  <p className="text-sm text-muted-foreground">
+                    Streak Terbaik
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {summaryStats.bestStreak} hari
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -259,10 +285,30 @@ export default function IbadahStatisticsPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {[
-              { label: 'Sholat Wajib', value: summaryStats.sholatWajib, icon: Sun, color: 'bg-green-500' },
-              { label: 'Sholat Sunnah', value: summaryStats.sholatSunnah, icon: Moon, color: 'bg-amber-500' },
-              { label: 'Tilawah Al-Quran', value: summaryStats.tilawah, icon: BookOpen, color: 'bg-blue-500' },
-              { label: 'Dzikir Pagi/Petang', value: summaryStats.dzikir, icon: Heart, color: 'bg-purple-500' },
+              {
+                label: "Sholat Wajib",
+                value: summaryStats.sholatWajib,
+                icon: Sun,
+                color: "bg-green-500",
+              },
+              {
+                label: "Sholat Sunnah",
+                value: summaryStats.sholatSunnah,
+                icon: Moon,
+                color: "bg-amber-500",
+              },
+              {
+                label: "Tilawah Al-Quran",
+                value: summaryStats.tilawah,
+                icon: BookOpen,
+                color: "bg-blue-500",
+              },
+              {
+                label: "Dzikir Pagi/Petang",
+                value: summaryStats.dzikir,
+                icon: Heart,
+                color: "bg-purple-500",
+              },
             ].map((item) => (
               <div key={item.label} className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -272,7 +318,10 @@ export default function IbadahStatisticsPage() {
                   </div>
                   <span className="font-bold">{item.value}%</span>
                 </div>
-                <Progress value={item.value} className={`h-3 [&>div]:${item.color}`} />
+                <Progress
+                  value={item.value}
+                  className={`h-3 [&>div]:${item.color}`}
+                />
               </div>
             ))}
           </CardContent>

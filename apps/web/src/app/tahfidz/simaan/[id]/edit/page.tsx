@@ -1,16 +1,22 @@
-'use client';
+"use client";
 
-import { use, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { use, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -19,22 +25,26 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from 'sonner';
-import { useSimaanExam, useUpdateSimaan } from '@/hooks/use-simaan';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { useSimaanExam, useUpdateSimaan } from "@/hooks/use-simaan";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
   BookOpen,
@@ -42,14 +52,14 @@ import {
   Save,
   Loader2,
   AlertTriangle,
-} from 'lucide-react';
+} from "lucide-react";
 
 const formSchema = z.object({
   examDate: z.date({
-    required_error: 'Tanggal ujian wajib diisi',
+    required_error: "Tanggal ujian wajib diisi",
   }),
-  examType: z.enum(['JUZ_30', 'JUZ_PILIHAN', 'FULL_QURAN', 'CUSTOM'], {
-    required_error: 'Tipe ujian wajib dipilih',
+  examType: z.enum(["JUZ_30", "JUZ_PILIHAN", "FULL_QURAN", "CUSTOM"], {
+    required_error: "Tipe ujian wajib dipilih",
   }),
   startSurah: z.string().optional(),
   startAyat: z.coerce.number().min(1).optional(),
@@ -58,12 +68,18 @@ const formSchema = z.object({
   totalJuz: z.coerce.number().min(1).max(30).optional(),
   location: z.string().optional(),
   notes: z.string().optional(),
-  status: z.enum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+  status: z
+    .enum(["SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"])
+    .optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function EditSimaanPage({ params }: { params: Promise<{ id: string }> }) {
+export default function EditSimaanPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const resolvedParams = use(params);
   const router = useRouter();
 
@@ -73,12 +89,12 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      examType: 'JUZ_30',
+      examType: "JUZ_30",
       startAyat: 1,
     },
   });
 
-  const selectedType = form.watch('examType');
+  const selectedType = form.watch("examType");
 
   // Populate form when data is loaded
   useEffect(() => {
@@ -86,13 +102,13 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
       form.reset({
         examDate: new Date(exam.examDate),
         examType: exam.examType as any,
-        startSurah: exam.startSurah || '',
+        startSurah: exam.startSurah || "",
         startAyat: exam.startAyat || 1,
-        endSurah: exam.endSurah || '',
+        endSurah: exam.endSurah || "",
         endAyat: exam.endAyat || undefined,
         totalJuz: exam.totalJuz || undefined,
-        location: exam.location || '',
-        notes: exam.notes || '',
+        location: exam.location || "",
+        notes: exam.notes || "",
         status: exam.status as any,
       });
     }
@@ -115,10 +131,10 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
           status: data.status,
         },
       });
-      toast.success('Data ujian simaan berhasil diperbarui');
+      toast.success("Data ujian simaan berhasil diperbarui");
       router.push(`/tahfidz/simaan/${resolvedParams.id}`);
     } catch {
-      toast.error('Gagal memperbarui data ujian simaan');
+      toast.error("Gagal memperbarui data ujian simaan");
     }
   };
 
@@ -139,8 +155,13 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
         <div className="text-center py-12">
           <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
           <h2 className="mt-4 text-lg font-semibold">Data Tidak Ditemukan</h2>
-          <p className="text-muted-foreground">Data ujian simaan tidak ditemukan</p>
-          <Button className="mt-4" onClick={() => router.push('/tahfidz/simaan')}>
+          <p className="text-muted-foreground">
+            Data ujian simaan tidak ditemukan
+          </p>
+          <Button
+            className="mt-4"
+            onClick={() => router.push("/tahfidz/simaan")}
+          >
             Kembali ke Daftar
           </Button>
         </div>
@@ -149,7 +170,7 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
   }
 
   // Check if editable
-  if (exam.status !== 'SCHEDULED' && exam.status !== 'IN_PROGRESS') {
+  if (exam.status !== "SCHEDULED" && exam.status !== "IN_PROGRESS") {
     return (
       <MainLayout>
         <div className="text-center py-12">
@@ -158,7 +179,10 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
           <p className="text-muted-foreground">
             Ujian simaan yang sudah selesai atau dibatalkan tidak dapat diedit
           </p>
-          <Button className="mt-4" onClick={() => router.push(`/tahfidz/simaan/${resolvedParams.id}`)}>
+          <Button
+            className="mt-4"
+            onClick={() => router.push(`/tahfidz/simaan/${resolvedParams.id}`)}
+          >
             Kembali ke Detail
           </Button>
         </div>
@@ -180,7 +204,7 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
           </Button>
           <PageHeader
             title="Edit Ujian Simaan"
-            description={`Santri: ${exam.student?.user?.name || 'N/A'}`}
+            description={`Santri: ${exam.student?.user?.name || "N/A"}`}
             icon={BookOpen}
           />
         </div>
@@ -207,12 +231,14 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
                               <Button
                                 variant="outline"
                                 className={cn(
-                                  'w-full pl-3 text-left font-normal',
-                                  !field.value && 'text-muted-foreground'
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground",
                                 )}
                               >
                                 {field.value ? (
-                                  format(field.value, 'EEEE, dd MMMM yyyy', { locale: id })
+                                  format(field.value, "EEEE, dd MMMM yyyy", {
+                                    locale: id,
+                                  })
                                 ) : (
                                   <span>Pilih tanggal</span>
                                 )}
@@ -241,16 +267,25 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tipe Ujian *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih tipe ujian" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="JUZ_30">Juz 30 (Juz &apos;Amma)</SelectItem>
-                            <SelectItem value="JUZ_PILIHAN">Juz Pilihan</SelectItem>
-                            <SelectItem value="FULL_QURAN">30 Juz (Full Quran)</SelectItem>
+                            <SelectItem value="JUZ_30">
+                              Juz 30 (Juz &apos;Amma)
+                            </SelectItem>
+                            <SelectItem value="JUZ_PILIHAN">
+                              Juz Pilihan
+                            </SelectItem>
+                            <SelectItem value="FULL_QURAN">
+                              30 Juz (Full Quran)
+                            </SelectItem>
                             <SelectItem value="CUSTOM">Custom</SelectItem>
                           </SelectContent>
                         </Select>
@@ -266,7 +301,10 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Status</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih status" />
@@ -274,8 +312,12 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="SCHEDULED">Terjadwal</SelectItem>
-                            <SelectItem value="IN_PROGRESS">Sedang Berlangsung</SelectItem>
-                            <SelectItem value="CANCELLED">Dibatalkan</SelectItem>
+                            <SelectItem value="IN_PROGRESS">
+                              Sedang Berlangsung
+                            </SelectItem>
+                            <SelectItem value="CANCELLED">
+                              Dibatalkan
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -291,7 +333,10 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
                       <FormItem>
                         <FormLabel>Lokasi</FormLabel>
                         <FormControl>
-                          <Input placeholder="Contoh: Masjid Al-Hikmah" {...field} />
+                          <Input
+                            placeholder="Contoh: Masjid Al-Hikmah"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -300,7 +345,8 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
                 </div>
 
                 {/* Conditional Fields based on exam type */}
-                {(selectedType === 'JUZ_PILIHAN' || selectedType === 'CUSTOM') && (
+                {(selectedType === "JUZ_PILIHAN" ||
+                  selectedType === "CUSTOM") && (
                   <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                     <FormField
                       control={form.control}
@@ -360,7 +406,7 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
                   </div>
                 )}
 
-                {selectedType === 'JUZ_PILIHAN' && (
+                {selectedType === "JUZ_PILIHAN" && (
                   <FormField
                     control={form.control}
                     name="totalJuz"
@@ -370,7 +416,9 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
                         <FormControl>
                           <Input type="number" min={1} max={30} {...field} />
                         </FormControl>
-                        <FormDescription>Jumlah juz yang akan diujikan</FormDescription>
+                        <FormDescription>
+                          Jumlah juz yang akan diujikan
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -403,7 +451,9 @@ export default function EditSimaanPage({ params }: { params: Promise<{ id: strin
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.push(`/tahfidz/simaan/${resolvedParams.id}`)}
+                onClick={() =>
+                  router.push(`/tahfidz/simaan/${resolvedParams.id}`)
+                }
               >
                 Batal
               </Button>

@@ -1,8 +1,17 @@
-import { Student } from './models';
+import { Student } from "./models";
 
-export type TahfidzActivityType = 'ZIYADAH' | 'MUROJAAH' | 'TASMI' | 'ASSESSMENT';
+export type TahfidzActivityType =
+  | "ZIYADAH"
+  | "MUROJAAH"
+  | "TASMI"
+  | "ASSESSMENT";
 
-export type TahfidzGrade = 'MUMTAZ' | 'JAYYID_JIDDAN' | 'JAYYID' | 'MAQBUL' | 'RASIB';
+export type TahfidzGrade =
+  | "MUMTAZ"
+  | "JAYYID_JIDDAN"
+  | "JAYYID"
+  | "MAQBUL"
+  | "RASIB";
 
 export interface TahfidzRecord {
   id: string;
@@ -148,7 +157,7 @@ export interface DigitalCertificate {
   student?: Student;
 }
 
-export type QuranSurahStatus = 'MEMORIZED' | 'IN_PROGRESS' | 'NOT_STARTED';
+export type QuranSurahStatus = "MEMORIZED" | "IN_PROGRESS" | "NOT_STARTED";
 
 export interface QuranSurahProgress {
   surahNumber: number;

@@ -76,7 +76,11 @@ export default function CreateManualJournalPage() {
     setRows(newRows);
   };
 
-  const handleRowChange = (index: number, field: keyof JournalRow, value: string | number) => {
+  const handleRowChange = (
+    index: number,
+    field: keyof JournalRow,
+    value: string | number,
+  ) => {
     const newRows = [...rows];
     // @ts-expect-error - value type depends on field but Typescript needs discriminated union which is overkill here
     newRows[index] = { ...newRows[index], [field]: value };
@@ -101,7 +105,7 @@ export default function CreateManualJournalPage() {
       return;
     }
 
-    const invalidRow = rows.find(r => !r.accountId);
+    const invalidRow = rows.find((r) => !r.accountId);
     if (invalidRow) {
       toast.error("Semua baris harus memiliki akun");
       return;
@@ -113,18 +117,19 @@ export default function CreateManualJournalPage() {
         unitId,
         date,
         description,
-        items: rows.map(r => ({
+        items: rows.map((r) => ({
           accountId: r.accountId,
           description: r.description,
           debit: r.debit,
           credit: r.credit,
-          reference: r.reference
-        }))
+          reference: r.reference,
+        })),
       });
       toast.success("Jurnal berhasil disimpan");
       router.push("/finance/accounting?tab=journal-entries");
     } catch (error) {
-      const message = (error as any).response?.data?.message || "Gagal menyimpan jurnal";
+      const message =
+        (error as any).response?.data?.message || "Gagal menyimpan jurnal";
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -210,7 +215,9 @@ export default function CreateManualJournalPage() {
                       <TableCell>
                         <Select
                           value={row.accountId}
-                          onValueChange={(val) => handleRowChange(index, "accountId", val)}
+                          onValueChange={(val) =>
+                            handleRowChange(index, "accountId", val)
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih Akun" />
@@ -218,7 +225,9 @@ export default function CreateManualJournalPage() {
                           <SelectContent>
                             {accounts?.data.map((acc) => (
                               <SelectItem key={acc.id} value={acc.id}>
-                                <span className="font-mono mr-2">{acc.code}</span>
+                                <span className="font-mono mr-2">
+                                  {acc.code}
+                                </span>
                                 {acc.name}
                               </SelectItem>
                             ))}
@@ -228,7 +237,13 @@ export default function CreateManualJournalPage() {
                       <TableCell>
                         <Input
                           value={row.description}
-                          onChange={(e) => handleRowChange(index, "description", e.target.value)}
+                          onChange={(e) =>
+                            handleRowChange(
+                              index,
+                              "description",
+                              e.target.value,
+                            )
+                          }
                           placeholder={description || "Keterangan baris..."}
                         />
                       </TableCell>
@@ -276,15 +291,21 @@ export default function CreateManualJournalPage() {
             <div className="flex justify-end mt-4 space-x-8 text-sm">
               <div className="flex flex-col items-end">
                 <span className="text-muted-foreground">Total Debit</span>
-                <span className="font-bold text-lg">{formatCurrency(totalDebit)}</span>
+                <span className="font-bold text-lg">
+                  {formatCurrency(totalDebit)}
+                </span>
               </div>
               <div className="flex flex-col items-end">
                 <span className="text-muted-foreground">Total Kredit</span>
-                <span className="font-bold text-lg">{formatCurrency(totalCredit)}</span>
+                <span className="font-bold text-lg">
+                  {formatCurrency(totalCredit)}
+                </span>
               </div>
               <div className="flex flex-col items-end border-l pl-8">
                 <span className="text-muted-foreground">Balance</span>
-                <span className={`font-bold text-lg ${isBalanced ? 'text-green-600' : 'text-red-600'}`}>
+                <span
+                  className={`font-bold text-lg ${isBalanced ? "text-green-600" : "text-red-600"}`}
+                >
                   {isBalanced ? "Seimbang" : "Tidak Seimbang"}
                 </span>
               </div>

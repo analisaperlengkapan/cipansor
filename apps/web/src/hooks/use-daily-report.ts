@@ -1,17 +1,28 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import type {
   CreateDailyReportInput,
   UpdateDailyReportInput,
   BulkCreateDailyReportsInput,
   DailyReport,
-} from '@cipansor/shared';
+} from "@cipansor/shared";
 
 // Re-export types
-export type { DailyReport, CreateDailyReportInput, UpdateDailyReportInput, BulkCreateDailyReportsInput };
+export type {
+  DailyReport,
+  CreateDailyReportInput,
+  UpdateDailyReportInput,
+  BulkCreateDailyReportsInput,
+};
 
 // Re-export specific enums or types that might be needed by consumers
-export type DailyMood = 'HAPPY' | 'NEUTRAL' | 'SAD' | 'TIRED' | 'EXCITED' | 'SICK';
+export type DailyMood =
+  | "HAPPY"
+  | "NEUTRAL"
+  | "SAD"
+  | "TIRED"
+  | "EXCITED"
+  | "SICK";
 
 interface DailyReportListResponse {
   data: DailyReport[];
@@ -85,14 +96,17 @@ interface ClassDailySummaryQuery {
 
 // API Functions
 const dailyReportKeys = {
-  all: ['daily-reports'] as const,
-  lists: () => [...dailyReportKeys.all, 'list'] as const,
-  list: (filters: DailyReportListQuery) => [...dailyReportKeys.lists(), filters] as const,
-  details: () => [...dailyReportKeys.all, 'detail'] as const,
+  all: ["daily-reports"] as const,
+  lists: () => [...dailyReportKeys.all, "list"] as const,
+  list: (filters: DailyReportListQuery) =>
+    [...dailyReportKeys.lists(), filters] as const,
+  details: () => [...dailyReportKeys.all, "detail"] as const,
   detail: (id: string) => [...dailyReportKeys.details(), id] as const,
-  summaries: () => [...dailyReportKeys.all, 'summary'] as const,
-  studentSummary: (filters: StudentDailySummaryQuery) => [...dailyReportKeys.summaries(), 'student', filters] as const,
-  classSummary: (filters: ClassDailySummaryQuery) => [...dailyReportKeys.summaries(), 'class', filters] as const,
+  summaries: () => [...dailyReportKeys.all, "summary"] as const,
+  studentSummary: (filters: StudentDailySummaryQuery) =>
+    [...dailyReportKeys.summaries(), "student", filters] as const,
+  classSummary: (filters: ClassDailySummaryQuery) =>
+    [...dailyReportKeys.summaries(), "class", filters] as const,
 };
 
 // Hooks
@@ -101,7 +115,9 @@ export function useDailyReportList(query: DailyReportListQuery) {
   return useQuery({
     queryKey: dailyReportKeys.list(query),
     queryFn: async () => {
-      const { data } = await api.get<DailyReportListResponse>('/daily-report', { params: query });
+      const { data } = await api.get<DailyReportListResponse>("/daily-report", {
+        params: query,
+      });
       return data;
     },
   });
@@ -110,16 +126,28 @@ export function useDailyReportList(query: DailyReportListQuery) {
 export function useAddDailyReportPhoto() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ reportId, file }: { reportId: string; file: File }) => {
+    mutationFn: async ({
+      reportId,
+      file,
+    }: {
+      reportId: string;
+      file: File;
+    }) => {
       const formData = new FormData();
-      formData.append('file', file);
-      const { data } = await api.post(`/daily-report/${reportId}/photos`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      formData.append("file", file);
+      const { data } = await api.post(
+        `/daily-report/${reportId}/photos`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
       return data;
     },
     onSuccess: (_, { reportId }) => {
-      queryClient.invalidateQueries({ queryKey: dailyReportKeys.detail(reportId) });
+      queryClient.invalidateQueries({
+        queryKey: dailyReportKeys.detail(reportId),
+      });
     },
   });
 }
@@ -131,7 +159,9 @@ export function useDailyReport(id: string) {
   return useQuery({
     queryKey: dailyReportKeys.detail(id),
     queryFn: async () => {
-      const { data } = await api.get<DailyReportResponse>(`/daily-report/${id}`);
+      const { data } = await api.get<DailyReportResponse>(
+        `/daily-report/${id}`,
+      );
       return data.data;
     },
     enabled: !!id,
@@ -151,7 +181,10 @@ export function useStudentDailySummary(query: StudentDailySummaryQuery) {
   return useQuery({
     queryKey: dailyReportKeys.studentSummary(query),
     queryFn: async () => {
-      const { data } = await api.get<StudentDailySummaryResponse>('/daily-report/summary/student', { params: query });
+      const { data } = await api.get<StudentDailySummaryResponse>(
+        "/daily-report/summary/student",
+        { params: query },
+      );
       return data.data;
     },
     enabled: !!query.studentId && !!query.academicYearId,
@@ -162,7 +195,9 @@ export function useClassDailySummary(query: ClassDailySummaryQuery) {
   return useQuery({
     queryKey: dailyReportKeys.classSummary(query),
     queryFn: async () => {
-      const { data } = await api.get('/daily-report/summary/class', { params: query });
+      const { data } = await api.get("/daily-report/summary/class", {
+        params: query,
+      });
       return data.data;
     },
     enabled: !!query.unitId && !!query.academicYearId,
@@ -174,7 +209,10 @@ export function useCreateDailyReport() {
 
   return useMutation({
     mutationFn: async (input: CreateDailyReportInput) => {
-      const { data } = await api.post<DailyReportResponse>('/daily-report', input);
+      const { data } = await api.post<DailyReportResponse>(
+        "/daily-report",
+        input,
+      );
       return data.data;
     },
     onSuccess: () => {
@@ -189,7 +227,7 @@ export function useBulkCreateDailyReport() {
 
   return useMutation({
     mutationFn: async (input: BulkCreateDailyReportsInput) => {
-      const { data } = await api.post('/daily-report/bulk', input);
+      const { data } = await api.post("/daily-report/bulk", input);
       return data.data;
     },
     onSuccess: () => {
@@ -206,8 +244,17 @@ export function useUpdateDailyReport() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateDailyReportInput }) => {
-      const { data: res } = await api.put<DailyReportResponse>(`/daily-report/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdateDailyReportInput;
+    }) => {
+      const { data: res } = await api.put<DailyReportResponse>(
+        `/daily-report/${id}`,
+        data,
+      );
       return res.data;
     },
     onSuccess: (_, { id }) => {
@@ -235,7 +282,13 @@ export function useDeleteDailyReport() {
 export function useAddParentNotes() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { parentFeedback: string; isConfirmed: boolean } }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { parentFeedback: string; isConfirmed: boolean };
+    }) => {
       const { data: res } = await api.post(`/daily-report/${id}/confirm`, data);
       return res.data;
     },

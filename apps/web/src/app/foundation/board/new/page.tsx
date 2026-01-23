@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -16,20 +22,20 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from 'sonner';
-import { useCreateFoundationBoardMember } from '@/hooks';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
+import { useCreateFoundationBoardMember } from "@/hooks";
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Nama wajib diisi'),
-  position: z.string().min(1, 'Jabatan wajib diisi'),
+  name: z.string().min(1, "Nama wajib diisi"),
+  position: z.string().min(1, "Jabatan wajib diisi"),
   phone: z.string().optional(),
-  email: z.string().email('Email tidak valid').optional().or(z.literal('')),
+  email: z.string().email("Email tidak valid").optional().or(z.literal("")),
   address: z.string().optional(),
-  startDate: z.string().min(1, 'Tanggal mulai jabatan wajib diisi'),
+  startDate: z.string().min(1, "Tanggal mulai jabatan wajib diisi"),
   endDate: z.string().optional(),
   isActive: z.boolean(),
   bio: z.string().optional(),
@@ -44,15 +50,15 @@ export default function NewBoardMemberPage() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      position: '',
-      phone: '',
-      email: '',
-      address: '',
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: '',
+      name: "",
+      position: "",
+      phone: "",
+      email: "",
+      address: "",
+      startDate: new Date().toISOString().split("T")[0],
+      endDate: "",
       isActive: true,
-      bio: '',
+      bio: "",
     },
   });
 
@@ -66,10 +72,10 @@ export default function NewBoardMemberPage() {
         endDate: data.endDate || undefined,
         bio: data.bio || undefined,
       });
-      toast.success('Pengurus berhasil ditambahkan');
-      router.push('/foundation?tab=board');
+      toast.success("Pengurus berhasil ditambahkan");
+      router.push("/foundation?tab=board");
     } catch {
-      toast.error('Gagal menambahkan pengurus');
+      toast.error("Gagal menambahkan pengurus");
     }
   };
 
@@ -84,7 +90,9 @@ export default function NewBoardMemberPage() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Tambah Pengurus</h1>
-          <p className="text-muted-foreground">Tambah anggota pengurus yayasan baru</p>
+          <p className="text-muted-foreground">
+            Tambah anggota pengurus yayasan baru
+          </p>
         </div>
       </div>
 
@@ -147,7 +155,11 @@ export default function NewBoardMemberPage() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="email@example.com" {...field} />
+                        <Input
+                          type="email"
+                          placeholder="email@example.com"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -161,7 +173,11 @@ export default function NewBoardMemberPage() {
                     <FormItem>
                       <FormLabel>Alamat</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Alamat lengkap..." rows={2} {...field} />
+                        <Textarea
+                          placeholder="Alamat lengkap..."
+                          rows={2}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -254,7 +270,9 @@ export default function NewBoardMemberPage() {
               <Link href="/foundation?tab=board">Batal</Link>
             </Button>
             <Button type="submit" disabled={createMember.isPending}>
-              {createMember.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {createMember.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Simpan
             </Button>
           </div>

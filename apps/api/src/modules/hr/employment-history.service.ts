@@ -1,8 +1,17 @@
-import { prisma } from "../../lib/prisma";
-import { EmploymentAction } from "@prisma/client";
+import { prisma } from '../../lib/prisma';
+import { EmploymentAction } from '@prisma/client';
 
 export const employmentHistoryService = {
-  async create(data: { userId: string; action: EmploymentAction; previousPosition?: string; newPosition: string; previousDepartment?: string; newDepartment?: string; effectiveDate: Date; notes?: string }) {
+  async create(data: {
+    userId: string;
+    action: EmploymentAction;
+    previousPosition?: string;
+    newPosition: string;
+    previousDepartment?: string;
+    newDepartment?: string;
+    effectiveDate: Date;
+    notes?: string;
+  }) {
     return prisma.employmentHistory.create({
       data: {
         userId: data.userId,
@@ -22,5 +31,5 @@ export const employmentHistoryService = {
       where: { userId },
       orderBy: { effectiveDate: 'desc' },
     });
-  }
+  },
 };

@@ -1,17 +1,23 @@
-'use client';
+"use client";
 
-import { use, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, BookOpen } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+import { use, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Save, BookOpen } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Form,
   FormControl,
@@ -20,41 +26,45 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { toast } from "sonner";
 import {
   useSubject,
   useUpdateSubject,
   SUBJECT_TYPES,
   SUBJECT_TYPE_LABELS,
   SubjectType,
-} from '@/hooks/use-curriculum';
-import { useUnits } from '@/hooks/use-units';
+} from "@/hooks/use-curriculum";
+import { useUnits } from "@/hooks/use-units";
 
 const subjectSchema = z.object({
-  code: z.string().min(1, 'Kode mata pelajaran wajib diisi'),
-  name: z.string().min(1, 'Nama mata pelajaran wajib diisi'),
+  code: z.string().min(1, "Kode mata pelajaran wajib diisi"),
+  name: z.string().min(1, "Nama mata pelajaran wajib diisi"),
   description: z.string().optional(),
-  type: z.enum(['REQUIRED', 'ELECTIVE', 'EXTRACURRICULAR'] as const, {
-    required_error: 'Tipe mata pelajaran wajib dipilih',
+  type: z.enum(["REQUIRED", "ELECTIVE", "EXTRACURRICULAR"] as const, {
+    required_error: "Tipe mata pelajaran wajib dipilih",
   }),
-  credits: z.coerce.number().min(1, 'Minimal 1 SKS'),
-  hoursPerWeek: z.coerce.number().min(1, 'Minimal 1 jam per minggu'),
+  credits: z.coerce.number().min(1, "Minimal 1 SKS"),
+  hoursPerWeek: z.coerce.number().min(1, "Minimal 1 jam per minggu"),
   passingScore: z.coerce.number().min(0).max(100).optional(),
-  unitId: z.string().min(1, 'Unit wajib dipilih'),
+  unitId: z.string().min(1, "Unit wajib dipilih"),
   isActive: z.boolean(),
 });
 
 type SubjectFormData = z.infer<typeof subjectSchema>;
 
-export default function EditSubjectPage({ params }: { params: Promise<{ id: string }> }) {
+export default function EditSubjectPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const router = useRouter();
   const { data: subject, isLoading } = useSubject(id);
@@ -64,14 +74,14 @@ export default function EditSubjectPage({ params }: { params: Promise<{ id: stri
   const form = useForm<SubjectFormData>({
     resolver: zodResolver(subjectSchema),
     defaultValues: {
-      code: '',
-      name: '',
-      description: '',
+      code: "",
+      name: "",
+      description: "",
       type: undefined,
       credits: 2,
       hoursPerWeek: 2,
       passingScore: 70,
-      unitId: '',
+      unitId: "",
       isActive: true,
     },
   });
@@ -81,7 +91,7 @@ export default function EditSubjectPage({ params }: { params: Promise<{ id: stri
       form.reset({
         code: subject.code,
         name: subject.name,
-        description: subject.description || '',
+        description: subject.description || "",
         type: subject.type,
         credits: subject.credits,
         hoursPerWeek: subject.hoursPerWeek,
@@ -108,10 +118,10 @@ export default function EditSubjectPage({ params }: { params: Promise<{ id: stri
           isActive: data.isActive,
         },
       });
-      toast.success('Mata pelajaran berhasil diperbarui');
+      toast.success("Mata pelajaran berhasil diperbarui");
       router.push(`/curriculum/subjects/${id}`);
     } catch {
-      toast.error('Gagal memperbarui mata pelajaran');
+      toast.error("Gagal memperbarui mata pelajaran");
     }
   };
 
@@ -127,7 +137,9 @@ export default function EditSubjectPage({ params }: { params: Promise<{ id: stri
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <BookOpen className="h-12 w-12 text-muted-foreground" />
-        <p className="mt-4 text-muted-foreground">Mata pelajaran tidak ditemukan</p>
+        <p className="mt-4 text-muted-foreground">
+          Mata pelajaran tidak ditemukan
+        </p>
         <Button asChild className="mt-4">
           <Link href="/curriculum">Kembali ke Kurikulum</Link>
         </Button>
@@ -145,7 +157,9 @@ export default function EditSubjectPage({ params }: { params: Promise<{ id: stri
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Edit Mata Pelajaran</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Edit Mata Pelajaran
+          </h1>
           <p className="text-muted-foreground">{subject.name}</p>
         </div>
       </div>
@@ -170,7 +184,9 @@ export default function EditSubjectPage({ params }: { params: Promise<{ id: stri
                         <FormControl>
                           <Input placeholder="MAT001" {...field} />
                         </FormControl>
-                        <FormDescription>Kode unik mata pelajaran</FormDescription>
+                        <FormDescription>
+                          Kode unik mata pelajaran
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -216,7 +232,10 @@ export default function EditSubjectPage({ params }: { params: Promise<{ id: stri
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Unit *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih unit" />
@@ -241,7 +260,10 @@ export default function EditSubjectPage({ params }: { params: Promise<{ id: stri
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tipe *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih tipe" />
@@ -271,7 +293,9 @@ export default function EditSubjectPage({ params }: { params: Promise<{ id: stri
                         <FormControl>
                           <Input type="number" min={1} {...field} />
                         </FormControl>
-                        <FormDescription>Satuan Kredit Semester</FormDescription>
+                        <FormDescription>
+                          Satuan Kredit Semester
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -286,7 +310,9 @@ export default function EditSubjectPage({ params }: { params: Promise<{ id: stri
                         <FormControl>
                           <Input type="number" min={1} {...field} />
                         </FormControl>
-                        <FormDescription>Jumlah jam pelajaran per minggu</FormDescription>
+                        <FormDescription>
+                          Jumlah jam pelajaran per minggu
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -301,7 +327,9 @@ export default function EditSubjectPage({ params }: { params: Promise<{ id: stri
                         <FormControl>
                           <Input type="number" min={0} max={100} {...field} />
                         </FormControl>
-                        <FormDescription>Nilai minimal kelulusan (default 70)</FormDescription>
+                        <FormDescription>
+                          Nilai minimal kelulusan (default 70)
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -347,27 +375,29 @@ export default function EditSubjectPage({ params }: { params: Promise<{ id: stri
                 <CardContent className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Kode</span>
-                    <span className="font-mono">{form.watch('code') || '-'}</span>
+                    <span className="font-mono">
+                      {form.watch("code") || "-"}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Nama</span>
-                    <span>{form.watch('name') || '-'}</span>
+                    <span>{form.watch("name") || "-"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Tipe</span>
                     <span>
-                      {form.watch('type')
-                        ? SUBJECT_TYPE_LABELS[form.watch('type')]
-                        : '-'}
+                      {form.watch("type")
+                        ? SUBJECT_TYPE_LABELS[form.watch("type")]
+                        : "-"}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">SKS</span>
-                    <span>{form.watch('credits')}</span>
+                    <span>{form.watch("credits")}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Jam/Minggu</span>
-                    <span>{form.watch('hoursPerWeek')}</span>
+                    <span>{form.watch("hoursPerWeek")}</span>
                   </div>
                 </CardContent>
               </Card>

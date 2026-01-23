@@ -6,7 +6,8 @@ export const getSuppliers = async (req: Request, res: Response, next: NextFuncti
   try {
     const search = req.query.search as string;
     const category = req.query.category as string;
-    const isActive = req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined;
+    const isActive =
+      req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined;
 
     const suppliers = await suppliersService.findAll(search, category, isActive);
     res.json({ data: suppliers });

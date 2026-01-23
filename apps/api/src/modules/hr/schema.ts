@@ -1,18 +1,27 @@
-import { z } from "zod";
-import { LeaveType, LeaveStatus, StaffAttendanceStatus, UserRole, Gender, EmploymentStatus } from "@prisma/client";
+import { z } from 'zod';
+import {
+  LeaveType,
+  LeaveStatus,
+  StaffAttendanceStatus,
+  UserRole,
+  Gender,
+  EmploymentStatus,
+} from '@prisma/client';
 
 // Staff Attendance schemas
-export const createStaffAttendanceSchema = z.object({
-  staffId: z.string().uuid().optional(),
-  teacherId: z.string().uuid().optional(),
-  date: z.string().datetime(),
-  status: z.nativeEnum(StaffAttendanceStatus).default(StaffAttendanceStatus.PRESENT),
-  checkIn: z.string().datetime().optional(),
-  checkOut: z.string().datetime().optional(),
-  notes: z.string().optional(),
-}).refine(data => data.staffId || data.teacherId, {
-  message: "Either staffId or teacherId must be provided",
-});
+export const createStaffAttendanceSchema = z
+  .object({
+    staffId: z.string().uuid().optional(),
+    teacherId: z.string().uuid().optional(),
+    date: z.string().datetime(),
+    status: z.nativeEnum(StaffAttendanceStatus).default(StaffAttendanceStatus.PRESENT),
+    checkIn: z.string().datetime().optional(),
+    checkOut: z.string().datetime().optional(),
+    notes: z.string().optional(),
+  })
+  .refine((data) => data.staffId || data.teacherId, {
+    message: 'Either staffId or teacherId must be provided',
+  });
 
 export const updateStaffAttendanceSchema = z.object({
   status: z.nativeEnum(StaffAttendanceStatus).optional(),
@@ -23,16 +32,20 @@ export const updateStaffAttendanceSchema = z.object({
 
 export const bulkAttendanceSchema = z.object({
   date: z.string().datetime(),
-  records: z.array(z.object({
-    staffId: z.string().uuid().optional(),
-    teacherId: z.string().uuid().optional(),
-    status: z.nativeEnum(StaffAttendanceStatus),
-    checkIn: z.string().datetime().optional(),
-    checkOut: z.string().datetime().optional(),
-    notes: z.string().optional(),
-  })).refine(records => records.every(r => r.staffId || r.teacherId), {
-    message: "Each record must have either staffId or teacherId",
-  }),
+  records: z
+    .array(
+      z.object({
+        staffId: z.string().uuid().optional(),
+        teacherId: z.string().uuid().optional(),
+        status: z.nativeEnum(StaffAttendanceStatus),
+        checkIn: z.string().datetime().optional(),
+        checkOut: z.string().datetime().optional(),
+        notes: z.string().optional(),
+      })
+    )
+    .refine((records) => records.every((r) => r.staffId || r.teacherId), {
+      message: 'Each record must have either staffId or teacherId',
+    }),
 });
 
 export const queryStaffAttendanceSchema = z.object({
@@ -78,7 +91,10 @@ export const queryLeaveSchema = z.object({
   status: z.nativeEnum(LeaveStatus).optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
-  mine: z.string().optional().transform(val => val === 'true'),
+  mine: z
+    .string()
+    .optional()
+    .transform((val) => val === 'true'),
 });
 
 // Staff/Employee Management Schemas

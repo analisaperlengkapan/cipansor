@@ -51,7 +51,9 @@ export class UnifiedRaportController {
         parseInt(semester as string, 10)
       );
 
-      return res.json(ApiResponse.success(result, 'Unified Raport print data retrieved successfully'));
+      return res.json(
+        ApiResponse.success(result, 'Unified Raport print data retrieved successfully')
+      );
     } catch (error) {
       next(error);
     }

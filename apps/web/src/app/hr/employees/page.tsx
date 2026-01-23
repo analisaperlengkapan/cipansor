@@ -20,7 +20,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Loader2, MoreHorizontal, Edit, Trash, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Loader2,
+  MoreHorizontal,
+  Edit,
+  Trash,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -50,7 +59,9 @@ export default function EmployeesPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
-  const [roleFilter, setRoleFilter] = useState<"ALL" | "TEACHER" | "STAFF">("ALL");
+  const [roleFilter, setRoleFilter] = useState<"ALL" | "TEACHER" | "STAFF">(
+    "ALL",
+  );
   const [unitFilter, setUnitFilter] = useState<string>("ALL");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -69,7 +80,9 @@ export default function EmployeesPage() {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      toast.success("Success", { description: "Employee deleted successfully" });
+      toast.success("Success", {
+        description: "Employee deleted successfully",
+      });
       setDeleteId(null);
     } catch (error) {
       toast.error("Error", { description: "Failed to delete employee" });
@@ -122,10 +135,7 @@ export default function EmployeesPage() {
                 <SelectItem value="STAFF">Tendik (Staff)</SelectItem>
               </SelectContent>
             </Select>
-            <Select
-              value={unitFilter}
-              onValueChange={setUnitFilter}
-            >
+            <Select value={unitFilter} onValueChange={setUnitFilter}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by Unit" />
               </SelectTrigger>
@@ -161,13 +171,19 @@ export default function EmployeesPage() {
                   </TableRow>
                 ) : isError ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-destructive py-8">
+                    <TableCell
+                      colSpan={6}
+                      className="text-center text-destructive py-8"
+                    >
                       Failed to load employees
                     </TableCell>
                   </TableRow>
                 ) : data?.data?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={6}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       No employees found.
                     </TableCell>
                   </TableRow>
@@ -176,7 +192,9 @@ export default function EmployeesPage() {
                     <TableRow key={employee.id}>
                       <TableCell>
                         <div className="font-medium">{employee.fullName}</div>
-                        <div className="text-sm text-muted-foreground">{employee.email}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {employee.email}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {/*
@@ -187,16 +205,28 @@ export default function EmployeesPage() {
                            or I'll cast it to any to avoid build errors.
                         */}
                         {(employee as any).role === "TEACHER" ? (
-                           <div className="flex flex-col">
-                             <span>NIP: {(employee as any).teacher?.nip || "-"}</span>
-                             <span className="text-xs text-muted-foreground">NUPTK: {(employee as any).teacher?.nuptk || "-"}</span>
-                           </div>
+                          <div className="flex flex-col">
+                            <span>
+                              NIP: {(employee as any).teacher?.nip || "-"}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              NUPTK: {(employee as any).teacher?.nuptk || "-"}
+                            </span>
+                          </div>
                         ) : (
-                          <span>NIP: {(employee as any).staff?.nip || "-"}</span>
+                          <span>
+                            NIP: {(employee as any).staff?.nip || "-"}
+                          </span>
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={(employee as any).role === "TEACHER" ? "default" : "secondary"}>
+                        <Badge
+                          variant={
+                            (employee as any).role === "TEACHER"
+                              ? "default"
+                              : "secondary"
+                          }
+                        >
                           {(employee as any).role}
                         </Badge>
                         {(employee as any).role === "STAFF" && (
@@ -207,7 +237,13 @@ export default function EmployeesPage() {
                       </TableCell>
                       <TableCell>{employee.unit?.name}</TableCell>
                       <TableCell>
-                        <Badge variant={employee.status === 'ACTIVE' ? "outline" : "destructive"}>
+                        <Badge
+                          variant={
+                            employee.status === "ACTIVE"
+                              ? "outline"
+                              : "destructive"
+                          }
+                        >
                           {employee.status}
                         </Badge>
                       </TableCell>
@@ -221,7 +257,11 @@ export default function EmployeesPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => router.push(`/hr/employees/${employee.id}/edit`)}>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                router.push(`/hr/employees/${employee.id}/edit`)
+                              }
+                            >
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
@@ -245,7 +285,8 @@ export default function EmployeesPage() {
           {data?.meta && (
             <div className="flex items-center justify-end space-x-2 py-4">
               <div className="flex-1 text-sm text-muted-foreground">
-                Page {data.meta.page} of {data.meta.totalPages} ({data.meta.total} records)
+                Page {data.meta.page} of {data.meta.totalPages} (
+                {data.meta.total} records)
               </div>
               <div className="space-x-2">
                 <Button
@@ -272,18 +313,24 @@ export default function EmployeesPage() {
         </CardContent>
       </Card>
 
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+      <AlertDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the employee
-              and remove their data from our servers.
+              This action cannot be undone. This will permanently delete the
+              employee and remove their data from our servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground"
+            >
               {deleteMutation.isPending ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>

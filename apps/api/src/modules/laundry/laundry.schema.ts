@@ -5,13 +5,13 @@ import { z } from 'zod';
 // =============================================================================
 
 export const LAUNDRY_STATUS = [
-  'RECEIVED',    // Diterima
-  'WASHING',     // Sedang dicuci
-  'DRYING',      // Sedang dikeringkan
-  'IRONING',     // Sedang disetrika
-  'READY',       // Siap diambil
-  'DELIVERED',   // Sudah diambil
-  'CANCELLED',   // Dibatalkan
+  'RECEIVED', // Diterima
+  'WASHING', // Sedang dicuci
+  'DRYING', // Sedang dikeringkan
+  'IRONING', // Sedang disetrika
+  'READY', // Siap diambil
+  'DELIVERED', // Sudah diambil
+  'CANCELLED', // Dibatalkan
 ] as const;
 
 export const PAYMENT_STATUS = ['UNPAID', 'PAID', 'REFUNDED'] as const;
@@ -80,9 +80,9 @@ export const ListTransactionsQuerySchema = z.object({
 // TYPE EXPORTS
 // =============================================================================
 
-export type LaundryStatus = typeof LAUNDRY_STATUS[number];
-export type PaymentStatus = typeof PAYMENT_STATUS[number];
-export type PaymentMethod = typeof PAYMENT_METHOD[number];
+export type LaundryStatus = (typeof LAUNDRY_STATUS)[number];
+export type PaymentStatus = (typeof PAYMENT_STATUS)[number];
+export type PaymentMethod = (typeof PAYMENT_METHOD)[number];
 export type CreatePricingInput = z.infer<typeof CreatePricingSchema>;
 export type UpdatePricingInput = z.infer<typeof UpdatePricingSchema>;
 export type CreateTransactionInput = z.infer<typeof CreateTransactionSchema>;

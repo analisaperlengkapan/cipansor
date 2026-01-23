@@ -1,59 +1,59 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 // Types
-export type RegistrationStatus = 
-  | 'DRAFT'
-  | 'SUBMITTED'
-  | 'DOCUMENT_REVIEW'
-  | 'TEST_SCHEDULED'
-  | 'TEST_COMPLETED'
-  | 'INTERVIEW_SCHEDULED'
-  | 'INTERVIEW_COMPLETED'
-  | 'ACCEPTED'
-  | 'REJECTED'
-  | 'ENROLLED';
+export type RegistrationStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "DOCUMENT_REVIEW"
+  | "TEST_SCHEDULED"
+  | "TEST_COMPLETED"
+  | "INTERVIEW_SCHEDULED"
+  | "INTERVIEW_COMPLETED"
+  | "ACCEPTED"
+  | "REJECTED"
+  | "ENROLLED";
 
 export const REGISTRATION_STATUSES: RegistrationStatus[] = [
-  'DRAFT',
-  'SUBMITTED',
-  'DOCUMENT_REVIEW',
-  'TEST_SCHEDULED',
-  'TEST_COMPLETED',
-  'INTERVIEW_SCHEDULED',
-  'INTERVIEW_COMPLETED',
-  'ACCEPTED',
-  'REJECTED',
-  'ENROLLED',
+  "DRAFT",
+  "SUBMITTED",
+  "DOCUMENT_REVIEW",
+  "TEST_SCHEDULED",
+  "TEST_COMPLETED",
+  "INTERVIEW_SCHEDULED",
+  "INTERVIEW_COMPLETED",
+  "ACCEPTED",
+  "REJECTED",
+  "ENROLLED",
 ];
 
 export const REGISTRATION_STATUS_LABELS: Record<RegistrationStatus, string> = {
-  DRAFT: 'Draft',
-  SUBMITTED: 'Diajukan',
-  DOCUMENT_REVIEW: 'Review Dokumen',
-  TEST_SCHEDULED: 'Tes Dijadwalkan',
-  TEST_COMPLETED: 'Tes Selesai',
-  INTERVIEW_SCHEDULED: 'Wawancara Dijadwalkan',
-  INTERVIEW_COMPLETED: 'Wawancara Selesai',
-  ACCEPTED: 'Diterima',
-  REJECTED: 'Ditolak',
-  ENROLLED: 'Terdaftar',
+  DRAFT: "Draft",
+  SUBMITTED: "Diajukan",
+  DOCUMENT_REVIEW: "Review Dokumen",
+  TEST_SCHEDULED: "Tes Dijadwalkan",
+  TEST_COMPLETED: "Tes Selesai",
+  INTERVIEW_SCHEDULED: "Wawancara Dijadwalkan",
+  INTERVIEW_COMPLETED: "Wawancara Selesai",
+  ACCEPTED: "Diterima",
+  REJECTED: "Ditolak",
+  ENROLLED: "Terdaftar",
 };
 
 export const REGISTRATION_STATUS_COLORS: Record<RegistrationStatus, string> = {
-  DRAFT: 'bg-gray-100 text-gray-800',
-  SUBMITTED: 'bg-blue-100 text-blue-800',
-  DOCUMENT_REVIEW: 'bg-yellow-100 text-yellow-800',
-  TEST_SCHEDULED: 'bg-purple-100 text-purple-800',
-  TEST_COMPLETED: 'bg-purple-100 text-purple-800',
-  INTERVIEW_SCHEDULED: 'bg-indigo-100 text-indigo-800',
-  INTERVIEW_COMPLETED: 'bg-indigo-100 text-indigo-800',
-  ACCEPTED: 'bg-green-100 text-green-800',
-  REJECTED: 'bg-red-100 text-red-800',
-  ENROLLED: 'bg-emerald-100 text-emerald-800',
+  DRAFT: "bg-gray-100 text-gray-800",
+  SUBMITTED: "bg-blue-100 text-blue-800",
+  DOCUMENT_REVIEW: "bg-yellow-100 text-yellow-800",
+  TEST_SCHEDULED: "bg-purple-100 text-purple-800",
+  TEST_COMPLETED: "bg-purple-100 text-purple-800",
+  INTERVIEW_SCHEDULED: "bg-indigo-100 text-indigo-800",
+  INTERVIEW_COMPLETED: "bg-indigo-100 text-indigo-800",
+  ACCEPTED: "bg-green-100 text-green-800",
+  REJECTED: "bg-red-100 text-red-800",
+  ENROLLED: "bg-emerald-100 text-emerald-800",
 };
 
-export type Gender = 'MALE' | 'FEMALE';
+export type Gender = "MALE" | "FEMALE";
 
 export interface RegistrationPeriod {
   id: string;
@@ -85,7 +85,7 @@ export interface Registration {
     name: string;
   };
   status: RegistrationStatus;
-  
+
   // Student info
   fullName: string;
   nickname?: string;
@@ -94,12 +94,12 @@ export interface Registration {
   birthDate: string;
   nationalId?: string;
   familyCardNumber?: string;
-  
+
   // Previous school
   previousSchool?: string;
   previousSchoolAddress?: string;
   graduationYear?: number;
-  
+
   // Parent info
   fatherName: string;
   fatherOccupation?: string;
@@ -108,7 +108,7 @@ export interface Registration {
   motherName: string;
   motherOccupation?: string;
   motherPhone?: string;
-  
+
   // Address
   address: string;
   village: string;
@@ -116,18 +116,18 @@ export interface Registration {
   city: string;
   province: string;
   postalCode?: string;
-  
+
   // Quran ability
   quranAbility?: string;
   memorizedJuz?: number;
-  
+
   // Documents
   photoUrl?: string;
   birthCertificateUrl?: string;
   familyCardUrl?: string;
   diplomaUrl?: string;
   healthCertificateUrl?: string;
-  
+
   // Test & Interview
   testScore?: number;
   testDate?: string;
@@ -135,14 +135,14 @@ export interface Registration {
   interviewDate?: string;
   interviewNotes?: string;
   interviewScore?: number;
-  
+
   // Decision
   acceptedAt?: string;
   rejectedAt?: string;
   rejectionReason?: string;
   enrolledAt?: string;
   studentId?: string;
-  
+
   // Marketing
   source?: string;
   campaignId?: string;
@@ -167,11 +167,14 @@ export interface RegistrationStats {
 }
 
 // Period queries
-export function useRegistrationPeriods(params?: { isActive?: boolean; academicYearId?: string }) {
+export function useRegistrationPeriods(params?: {
+  isActive?: boolean;
+  academicYearId?: string;
+}) {
   return useQuery({
-    queryKey: ['registration-periods', params],
+    queryKey: ["registration-periods", params],
     queryFn: async () => {
-      const response = await api.get('/psb/periods', { params });
+      const response = await api.get("/psb/periods", { params });
       return response.data.data as RegistrationPeriod[];
     },
   });
@@ -179,7 +182,7 @@ export function useRegistrationPeriods(params?: { isActive?: boolean; academicYe
 
 export function useRegistrationPeriod(id: string) {
   return useQuery({
-    queryKey: ['registration-period', id],
+    queryKey: ["registration-period", id],
     queryFn: async () => {
       const response = await api.get(`/psb/periods/${id}`);
       return response.data.data as RegistrationPeriod;
@@ -190,9 +193,9 @@ export function useRegistrationPeriod(id: string) {
 
 export function useActivePeriod() {
   return useQuery({
-    queryKey: ['active-registration-period'],
+    queryKey: ["active-registration-period"],
     queryFn: async () => {
-      const response = await api.get('/psb/periods/active');
+      const response = await api.get("/psb/periods/active");
       return response.data.data as RegistrationPeriod;
     },
   });
@@ -203,11 +206,11 @@ export function useCreateRegistrationPeriod() {
 
   return useMutation({
     mutationFn: async (data: Partial<RegistrationPeriod>) => {
-      const response = await api.post('/psb/periods', data);
+      const response = await api.post("/psb/periods", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['registration-periods'] });
+      queryClient.invalidateQueries({ queryKey: ["registration-periods"] });
     },
   });
 }
@@ -216,12 +219,18 @@ export function useUpdateRegistrationPeriod() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<RegistrationPeriod> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<RegistrationPeriod>;
+    }) => {
       const response = await api.put(`/psb/periods/${id}`, data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['registration-periods'] });
+      queryClient.invalidateQueries({ queryKey: ["registration-periods"] });
     },
   });
 }
@@ -234,7 +243,7 @@ export function useDeleteRegistrationPeriod() {
       await api.delete(`/psb/periods/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['registration-periods'] });
+      queryClient.invalidateQueries({ queryKey: ["registration-periods"] });
     },
   });
 }
@@ -248,12 +257,17 @@ export function useRegistrations(params?: {
   limit?: number;
 }) {
   return useQuery({
-    queryKey: ['registrations', params],
+    queryKey: ["registrations", params],
     queryFn: async () => {
-      const response = await api.get('/psb/registrations', { params });
+      const response = await api.get("/psb/registrations", { params });
       return response.data as {
         data: Registration[];
-        meta: { total: number; page: number; limit: number; totalPages: number };
+        meta: {
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        };
       };
     },
   });
@@ -261,7 +275,7 @@ export function useRegistrations(params?: {
 
 export function useRegistration(id: string) {
   return useQuery({
-    queryKey: ['registration', id],
+    queryKey: ["registration", id],
     queryFn: async () => {
       const response = await api.get(`/psb/registrations/${id}`);
       return response.data.data as Registration;
@@ -272,9 +286,9 @@ export function useRegistration(id: string) {
 
 export function useRegistrationStats(periodId?: string) {
   return useQuery({
-    queryKey: ['registration-stats', periodId],
+    queryKey: ["registration-stats", periodId],
     queryFn: async () => {
-      const response = await api.get('/psb/registrations/stats', {
+      const response = await api.get("/psb/registrations/stats", {
         params: { periodId },
       });
       return response.data.data as RegistrationStats;
@@ -287,14 +301,14 @@ export function useCreateRegistration() {
 
   return useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await api.post('/psb/registrations', data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const response = await api.post("/psb/registrations", data, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['registrations'] });
-      queryClient.invalidateQueries({ queryKey: ['registration-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["registration-stats"] });
     },
   });
 }
@@ -305,14 +319,14 @@ export function useUpdateRegistration() {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: FormData }) => {
       const response = await api.put(`/psb/registrations/${id}`, data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { "Content-Type": "multipart/form-data" },
       });
       return response.data.data;
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['registrations'] });
-      queryClient.invalidateQueries({ queryKey: ['registration', id] });
-      queryClient.invalidateQueries({ queryKey: ['registration-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["registration", id] });
+      queryClient.invalidateQueries({ queryKey: ["registration-stats"] });
     },
   });
 }
@@ -337,9 +351,9 @@ export function useUpdateRegistrationStatus() {
       return response.data.data;
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['registrations'] });
-      queryClient.invalidateQueries({ queryKey: ['registration', id] });
-      queryClient.invalidateQueries({ queryKey: ['registration-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["registration", id] });
+      queryClient.invalidateQueries({ queryKey: ["registration-stats"] });
     },
   });
 }
@@ -357,15 +371,18 @@ export function useScheduleTest() {
       testDate: string;
       notes?: string;
     }) => {
-      const response = await api.post(`/psb/registrations/${id}/schedule-test`, {
-        testDate,
-        notes,
-      });
+      const response = await api.post(
+        `/psb/registrations/${id}/schedule-test`,
+        {
+          testDate,
+          notes,
+        },
+      );
       return response.data.data;
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['registrations'] });
-      queryClient.invalidateQueries({ queryKey: ['registration', id] });
+      queryClient.invalidateQueries({ queryKey: ["registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["registration", id] });
     },
   });
 }
@@ -390,8 +407,8 @@ export function useRecordTestResult() {
       return response.data.data;
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['registrations'] });
-      queryClient.invalidateQueries({ queryKey: ['registration', id] });
+      queryClient.invalidateQueries({ queryKey: ["registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["registration", id] });
     },
   });
 }
@@ -409,15 +426,18 @@ export function useScheduleInterview() {
       interviewDate: string;
       notes?: string;
     }) => {
-      const response = await api.post(`/psb/registrations/${id}/schedule-interview`, {
-        interviewDate,
-        notes,
-      });
+      const response = await api.post(
+        `/psb/registrations/${id}/schedule-interview`,
+        {
+          interviewDate,
+          notes,
+        },
+      );
       return response.data.data;
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['registrations'] });
-      queryClient.invalidateQueries({ queryKey: ['registration', id] });
+      queryClient.invalidateQueries({ queryKey: ["registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["registration", id] });
     },
   });
 }
@@ -435,15 +455,18 @@ export function useRecordInterviewResult() {
       score: number;
       notes?: string;
     }) => {
-      const response = await api.post(`/psb/registrations/${id}/interview-result`, {
-        score,
-        notes,
-      });
+      const response = await api.post(
+        `/psb/registrations/${id}/interview-result`,
+        {
+          score,
+          notes,
+        },
+      );
       return response.data.data;
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['registrations'] });
-      queryClient.invalidateQueries({ queryKey: ['registration', id] });
+      queryClient.invalidateQueries({ queryKey: ["registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["registration", id] });
     },
   });
 }
@@ -453,13 +476,15 @@ export function useAcceptRegistration() {
 
   return useMutation({
     mutationFn: async ({ id, notes }: { id: string; notes?: string }) => {
-      const response = await api.post(`/psb/registrations/${id}/accept`, { notes });
+      const response = await api.post(`/psb/registrations/${id}/accept`, {
+        notes,
+      });
       return response.data.data;
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['registrations'] });
-      queryClient.invalidateQueries({ queryKey: ['registration', id] });
-      queryClient.invalidateQueries({ queryKey: ['registration-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["registration", id] });
+      queryClient.invalidateQueries({ queryKey: ["registration-stats"] });
     },
   });
 }
@@ -469,13 +494,15 @@ export function useRejectRegistration() {
 
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const response = await api.post(`/psb/registrations/${id}/reject`, { reason });
+      const response = await api.post(`/psb/registrations/${id}/reject`, {
+        reason,
+      });
       return response.data.data;
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['registrations'] });
-      queryClient.invalidateQueries({ queryKey: ['registration', id] });
-      queryClient.invalidateQueries({ queryKey: ['registration-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["registration", id] });
+      queryClient.invalidateQueries({ queryKey: ["registration-stats"] });
     },
   });
 }
@@ -500,10 +527,10 @@ export function useEnrollRegistration() {
       return response.data.data;
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['registrations'] });
-      queryClient.invalidateQueries({ queryKey: ['registration', id] });
-      queryClient.invalidateQueries({ queryKey: ['registration-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ["registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["registration", id] });
+      queryClient.invalidateQueries({ queryKey: ["registration-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["students"] });
     },
   });
 }
@@ -516,8 +543,8 @@ export function useDeleteRegistration() {
       await api.delete(`/psb/registrations/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['registrations'] });
-      queryClient.invalidateQueries({ queryKey: ['registration-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["registration-stats"] });
     },
   });
 }

@@ -1,133 +1,182 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  Check, 
-  X, 
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  Check,
+  X,
   AlertCircle,
   Clock,
   Save,
   Users,
   Calendar,
   Download,
-  Loader2
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
+  Loader2,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
-import { AttendanceStatus } from '@cipansor/shared';
-import { 
-  useMyHomeroomClass, 
-  useHomeroomClassAttendance, 
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { AttendanceStatus } from "@cipansor/shared";
+import {
+  useMyHomeroomClass,
+  useHomeroomClassAttendance,
   useSubmitQuickAttendance,
-  HomeroomStudent 
-} from '@/hooks/use-homeroom';
+  HomeroomStudent,
+} from "@/hooks/use-homeroom";
 
 // Types
 interface StudentAttendance {
   studentId: string;
   nis: string;
   name: string;
-  gender: 'MALE' | 'FEMALE';
+  gender: "MALE" | "FEMALE";
   status: AttendanceStatus;
   notes: string;
   arrivalTime?: string;
 }
 
-const STATUS_CONFIG: Record<AttendanceStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  [AttendanceStatus.PRESENT]: { label: 'Hadir', color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400', icon: <Check className="h-4 w-4" /> },
-  [AttendanceStatus.LATE]: { label: 'Terlambat', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400', icon: <Clock className="h-4 w-4" /> },
-  [AttendanceStatus.SICK]: { label: 'Sakit', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400', icon: <AlertCircle className="h-4 w-4" /> },
-  [AttendanceStatus.EXCUSED]: { label: 'Izin', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400', icon: <AlertCircle className="h-4 w-4" /> },
-  [AttendanceStatus.ABSENT]: { label: 'Alpha', color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400', icon: <X className="h-4 w-4" /> },
+const STATUS_CONFIG: Record<
+  AttendanceStatus,
+  { label: string; color: string; icon: React.ReactNode }
+> = {
+  [AttendanceStatus.PRESENT]: {
+    label: "Hadir",
+    color:
+      "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+    icon: <Check className="h-4 w-4" />,
+  },
+  [AttendanceStatus.LATE]: {
+    label: "Terlambat",
+    color:
+      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
+    icon: <Clock className="h-4 w-4" />,
+  },
+  [AttendanceStatus.SICK]: {
+    label: "Sakit",
+    color: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+    icon: <AlertCircle className="h-4 w-4" />,
+  },
+  [AttendanceStatus.EXCUSED]: {
+    label: "Izin",
+    color:
+      "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
+    icon: <AlertCircle className="h-4 w-4" />,
+  },
+  [AttendanceStatus.ABSENT]: {
+    label: "Alpha",
+    color: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
+    icon: <X className="h-4 w-4" />,
+  },
 };
 
 export default function QuickAttendancePage() {
   const router = useRouter();
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(today);
   const [attendances, setAttendances] = useState<StudentAttendance[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [additionalNotes, setAdditionalNotes] = useState('');
-  
+  const [additionalNotes, setAdditionalNotes] = useState("");
+
   // Get homeroom class data
-  const { data: homeroomClass, isLoading: isLoadingClass } = useMyHomeroomClass();
-  
+  const { data: homeroomClass, isLoading: isLoadingClass } =
+    useMyHomeroomClass();
+
   // Get existing attendance data for the selected date
-  const { data: existingAttendance, isLoading: isLoadingAttendance } = useHomeroomClassAttendance(
-    homeroomClass?.id, 
-    selectedDate
-  );
-  
+  const { data: existingAttendance, isLoading: isLoadingAttendance } =
+    useHomeroomClassAttendance(homeroomClass?.id, selectedDate);
+
   // Submit mutation
   const submitAttendance = useSubmitQuickAttendance();
-  
+
   // Initialize attendances from class students
   useEffect(() => {
     if (homeroomClass?.students && attendances.length === 0) {
       // Initialize all students with PRESENT status by default
-      const initialAttendances: StudentAttendance[] = homeroomClass.students.map((student: HomeroomStudent) => ({
-        studentId: student.id,
-        nis: student.nis,
-        name: student.name,
-        gender: student.gender,
-        status: AttendanceStatus.PRESENT,
-        notes: ''
-      }));
+      const initialAttendances: StudentAttendance[] =
+        homeroomClass.students.map((student: HomeroomStudent) => ({
+          studentId: student.id,
+          nis: student.nis,
+          name: student.name,
+          gender: student.gender,
+          status: AttendanceStatus.PRESENT,
+          notes: "",
+        }));
       setAttendances(initialAttendances);
     }
   }, [homeroomClass?.students, attendances.length]);
-  
+
   // Update from existing attendance if available
   useEffect(() => {
-    if (existingAttendance?.attendances && existingAttendance.attendances.length > 0) {
-      const updatedAttendances: StudentAttendance[] = existingAttendance.attendances.map(att => ({
-        studentId: att.studentId,
-        nis: att.student?.nis || '',
-        name: att.student?.name || '',
-        gender: att.student?.gender || 'MALE',
-        status: att.status,
-        notes: att.notes || '',
-        arrivalTime: att.arrivalTime || undefined
-      }));
+    if (
+      existingAttendance?.attendances &&
+      existingAttendance.attendances.length > 0
+    ) {
+      const updatedAttendances: StudentAttendance[] =
+        existingAttendance.attendances.map((att) => ({
+          studentId: att.studentId,
+          nis: att.student?.nis || "",
+          name: att.student?.name || "",
+          gender: att.student?.gender || "MALE",
+          status: att.status,
+          notes: att.notes || "",
+          arrivalTime: att.arrivalTime || undefined,
+        }));
       setAttendances(updatedAttendances);
     }
   }, [existingAttendance]);
 
-  const updateAttendance = (studentId: string, field: keyof StudentAttendance, value: string) => {
-    setAttendances(prev => prev.map(a => 
-      a.studentId === studentId ? { ...a, [field]: value } : a
-    ));
+  const updateAttendance = (
+    studentId: string,
+    field: keyof StudentAttendance,
+    value: string,
+  ) => {
+    setAttendances((prev) =>
+      prev.map((a) =>
+        a.studentId === studentId ? { ...a, [field]: value } : a,
+      ),
+    );
   };
 
   const setAllPresent = () => {
-    setAttendances(prev => prev.map(a => ({ ...a, status: AttendanceStatus.PRESENT })));
-    toast.success('Semua siswa diset hadir');
+    setAttendances((prev) =>
+      prev.map((a) => ({ ...a, status: AttendanceStatus.PRESENT })),
+    );
+    toast.success("Semua siswa diset hadir");
   };
 
   const getSummary = () => {
     return {
-      present: attendances.filter(a => a.status === AttendanceStatus.PRESENT).length,
-      late: attendances.filter(a => a.status === AttendanceStatus.LATE).length,
-      sick: attendances.filter(a => a.status === AttendanceStatus.SICK).length,
-      excused: attendances.filter(a => a.status === AttendanceStatus.EXCUSED).length,
-      absent: attendances.filter(a => a.status === AttendanceStatus.ABSENT).length,
+      present: attendances.filter((a) => a.status === AttendanceStatus.PRESENT)
+        .length,
+      late: attendances.filter((a) => a.status === AttendanceStatus.LATE)
+        .length,
+      sick: attendances.filter((a) => a.status === AttendanceStatus.SICK)
+        .length,
+      excused: attendances.filter((a) => a.status === AttendanceStatus.EXCUSED)
+        .length,
+      absent: attendances.filter((a) => a.status === AttendanceStatus.ABSENT)
+        .length,
       total: attendances.length,
     };
   };
@@ -136,39 +185,39 @@ export default function QuickAttendancePage() {
 
   const handleSubmit = async () => {
     if (!homeroomClass?.id) {
-      toast.error('Kelas tidak ditemukan');
+      toast.error("Kelas tidak ditemukan");
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       await submitAttendance.mutateAsync({
         classId: homeroomClass.id,
         data: {
           date: selectedDate,
-          attendances: attendances.map(a => ({
+          attendances: attendances.map((a) => ({
             studentId: a.studentId,
             status: a.status,
             notes: a.notes || undefined,
-            arrivalTime: a.arrivalTime
-          }))
-        }
+            arrivalTime: a.arrivalTime,
+          })),
+        },
       });
-      
-      toast.success('Absensi berhasil disimpan');
-      router.push('/homeroom');
+
+      toast.success("Absensi berhasil disimpan");
+      router.push("/homeroom");
     } catch (error) {
-      toast.error('Gagal menyimpan absensi');
+      toast.error("Gagal menyimpan absensi");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleExport = () => {
-    toast.success('Data absensi akan diunduh');
+    toast.success("Data absensi akan diunduh");
   };
-  
+
   // Loading state
   if (isLoadingClass) {
     return (
@@ -188,7 +237,7 @@ export default function QuickAttendancePage() {
       </div>
     );
   }
-  
+
   // No class found
   if (!homeroomClass) {
     return (
@@ -223,7 +272,10 @@ export default function QuickAttendancePage() {
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold">Absensi Cepat</h1>
-          <p className="text-muted-foreground">{homeroomClass.name} - {homeroomClass.unit?.name || 'Pesantren Cipansor'}</p>
+          <p className="text-muted-foreground">
+            {homeroomClass.name} -{" "}
+            {homeroomClass.unit?.name || "Pesantren Cipansor"}
+          </p>
         </div>
         <Button variant="outline" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" />
@@ -314,8 +366,8 @@ export default function QuickAttendancePage() {
 
             {/* Student Rows */}
             {attendances.map((student, index) => (
-              <div 
-                key={student.studentId} 
+              <div
+                key={student.studentId}
                 className="grid grid-cols-12 gap-2 py-2 px-3 items-center border rounded-lg hover:bg-muted/50 transition-colors"
               >
                 <div className="col-span-1 text-sm text-muted-foreground">
@@ -327,7 +379,13 @@ export default function QuickAttendancePage() {
                 <div className="col-span-3">
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarFallback className={student.gender === 'MALE' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}>
+                      <AvatarFallback
+                        className={
+                          student.gender === "MALE"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-pink-100 text-pink-700"
+                        }
+                      >
                         {student.name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
@@ -337,12 +395,16 @@ export default function QuickAttendancePage() {
                 <div className="col-span-3">
                   <Select
                     value={student.status}
-                    onValueChange={(value) => updateAttendance(student.studentId, 'status', value)}
+                    onValueChange={(value) =>
+                      updateAttendance(student.studentId, "status", value)
+                    }
                   >
                     <SelectTrigger className="h-9">
                       <SelectValue>
                         <div className="flex items-center gap-2">
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_CONFIG[student.status].color}`}>
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_CONFIG[student.status].color}`}
+                          >
                             {STATUS_CONFIG[student.status].label}
                           </span>
                         </div>
@@ -364,7 +426,13 @@ export default function QuickAttendancePage() {
                   <Input
                     placeholder="Tambah keterangan..."
                     value={student.notes}
-                    onChange={(e) => updateAttendance(student.studentId, 'notes', e.target.value)}
+                    onChange={(e) =>
+                      updateAttendance(
+                        student.studentId,
+                        "notes",
+                        e.target.value,
+                      )
+                    }
                     className="h-9 text-sm"
                   />
                 </div>

@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft, Search, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft, Search, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -16,36 +22,31 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import {
   useViolation,
   useUpdateViolation,
   useViolationTypes,
   VIOLATION_CATEGORIES,
-} from '@/hooks/use-violations';
-import { useStudents } from '@/hooks/use-students';
+} from "@/hooks/use-violations";
+import { useStudents } from "@/hooks/use-students";
 
 const formSchema = z.object({
-  studentId: z.string().min(1, 'Santri wajib dipilih'),
-  violationTypeId: z.string().min(1, 'Jenis pelanggaran wajib dipilih'),
-  date: z.string().min(1, 'Tanggal wajib diisi'),
+  studentId: z.string().min(1, "Santri wajib dipilih"),
+  violationTypeId: z.string().min(1, "Jenis pelanggaran wajib dipilih"),
+  date: z.string().min(1, "Tanggal wajib diisi"),
   description: z.string().optional(),
   witness: z.string().optional(),
   actionTaken: z.string().optional(),
@@ -57,7 +58,7 @@ export default function EditViolationPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<{
     id: string;
     name: string;
@@ -76,12 +77,12 @@ export default function EditViolationPage() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      studentId: '',
-      violationTypeId: '',
-      date: '',
-      description: '',
-      witness: '',
-      actionTaken: '',
+      studentId: "",
+      violationTypeId: "",
+      date: "",
+      description: "",
+      witness: "",
+      actionTaken: "",
     },
   });
 
@@ -90,10 +91,10 @@ export default function EditViolationPage() {
       form.reset({
         studentId: violation.studentId,
         violationTypeId: violation.violationTypeId,
-        date: violation.date.split('T')[0],
-        description: violation.description || '',
-        witness: violation.witness || '',
-        actionTaken: violation.actionTaken || '',
+        date: violation.date.split("T")[0],
+        description: violation.description || "",
+        witness: violation.witness || "",
+        actionTaken: violation.actionTaken || "",
       });
       if (violation.student) {
         setSelectedStudent({
@@ -116,21 +117,25 @@ export default function EditViolationPage() {
           actionTaken: data.actionTaken || undefined,
         },
       });
-      toast.success('Pelanggaran berhasil diperbarui');
+      toast.success("Pelanggaran berhasil diperbarui");
       router.push(`/violations/${id}`);
     } catch {
-      toast.error('Gagal memperbarui pelanggaran');
+      toast.error("Gagal memperbarui pelanggaran");
     }
   };
 
-  const handleSelectStudent = (student: { id: string; name: string; nis: string }) => {
+  const handleSelectStudent = (student: {
+    id: string;
+    name: string;
+    nis: string;
+  }) => {
     setSelectedStudent(student);
-    form.setValue('studentId', student.id);
-    setSearch('');
+    form.setValue("studentId", student.id);
+    setSearch("");
   };
 
   const selectedType = violationTypes?.find(
-    (t) => t.id === form.watch('violationTypeId')
+    (t) => t.id === form.watch("violationTypeId"),
   );
 
   if (isLoading) {
@@ -144,7 +149,9 @@ export default function EditViolationPage() {
   if (!violation) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">Data pelanggaran tidak ditemukan</p>
+        <p className="text-muted-foreground">
+          Data pelanggaran tidak ditemukan
+        </p>
         <Button variant="link" asChild>
           <Link href="/violations">Kembali ke daftar</Link>
         </Button>
@@ -162,8 +169,12 @@ export default function EditViolationPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Edit Pelanggaran</h1>
-          <p className="text-muted-foreground">Perbarui data pelanggaran santri</p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Edit Pelanggaran
+          </h1>
+          <p className="text-muted-foreground">
+            Perbarui data pelanggaran santri
+          </p>
         </div>
       </div>
 
@@ -174,21 +185,25 @@ export default function EditViolationPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Pilih Santri</CardTitle>
-                <CardDescription>Santri yang melakukan pelanggaran</CardDescription>
+                <CardDescription>
+                  Santri yang melakukan pelanggaran
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {selectedStudent ? (
                   <div className="flex items-center justify-between rounded-lg border p-4">
                     <div>
                       <p className="font-medium">{selectedStudent.name}</p>
-                      <p className="text-sm text-muted-foreground">{selectedStudent.nis}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedStudent.nis}
+                      </p>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
                         setSelectedStudent(null);
-                        form.setValue('studentId', '');
+                        form.setValue("studentId", "");
                       }}
                     >
                       Ganti
@@ -232,7 +247,9 @@ export default function EditViolationPage() {
                                   }
                                 >
                                   <TableCell>{student.nis}</TableCell>
-                                  <TableCell className="font-medium">{student.name}</TableCell>
+                                  <TableCell className="font-medium">
+                                    {student.name}
+                                  </TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>
@@ -264,7 +281,10 @@ export default function EditViolationPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Jenis Pelanggaran</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih jenis pelanggaran" />
@@ -278,8 +298,9 @@ export default function EditViolationPage() {
                                 <Badge
                                   variant="outline"
                                   className={
-                                    VIOLATION_CATEGORIES.find((c) => c.value === type.category)
-                                      ?.color
+                                    VIOLATION_CATEGORIES.find(
+                                      (c) => c.value === type.category,
+                                    )?.color
                                   }
                                 >
                                   {type.points} poin
@@ -297,20 +318,31 @@ export default function EditViolationPage() {
                 {selectedType && (
                   <div className="rounded-lg border bg-muted/50 p-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Kategori:</span>
+                      <span className="text-sm text-muted-foreground">
+                        Kategori:
+                      </span>
                       <Badge
                         variant="outline"
                         className={
-                          VIOLATION_CATEGORIES.find((c) => c.value === selectedType.category)
-                            ?.color
+                          VIOLATION_CATEGORIES.find(
+                            (c) => c.value === selectedType.category,
+                          )?.color
                         }
                       >
-                        {VIOLATION_CATEGORIES.find((c) => c.value === selectedType.category)?.label}
+                        {
+                          VIOLATION_CATEGORIES.find(
+                            (c) => c.value === selectedType.category,
+                          )?.label
+                        }
                       </Badge>
                     </div>
                     <div className="mt-2 flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Poin:</span>
-                      <span className="font-semibold">{selectedType.points}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Poin:
+                      </span>
+                      <span className="font-semibold">
+                        {selectedType.points}
+                      </span>
                     </div>
                     {selectedType.description && (
                       <p className="mt-2 text-sm text-muted-foreground">
@@ -359,7 +391,10 @@ export default function EditViolationPage() {
                     <FormItem>
                       <FormLabel>Saksi (Opsional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nama saksi yang melihat" {...field} />
+                        <Input
+                          placeholder="Nama saksi yang melihat"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -393,7 +428,7 @@ export default function EditViolationPage() {
               <Link href={`/violations/${id}`}>Batal</Link>
             </Button>
             <Button type="submit" disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
+              {updateMutation.isPending ? "Menyimpan..." : "Simpan Perubahan"}
             </Button>
           </div>
         </form>

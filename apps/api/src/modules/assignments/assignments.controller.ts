@@ -5,7 +5,7 @@ import {
   CreateAssignmentRequest,
   UpdateAssignmentRequest,
   SubmitAssignmentRequest,
-  GradeSubmissionRequest
+  GradeSubmissionRequest,
 } from '@cipansor/shared';
 
 export const assignmentsController = {
@@ -26,7 +26,7 @@ export const assignmentsController = {
     const user = (req as any).user;
 
     if (user.role === 'STUDENT' && user.student?.id) {
-        query.studentId = user.student.id;
+      query.studentId = user.student.id;
     }
 
     const result = await assignmentsService.findAll(query);
@@ -58,7 +58,7 @@ export const assignmentsController = {
     const user = (req as any).user;
 
     if (user.role === 'STUDENT' && user.student?.id) {
-        input.studentId = user.student.id;
+      input.studentId = user.student.id;
     }
 
     const submission = await assignmentsService.submit(id, input);
@@ -76,5 +76,5 @@ export const assignmentsController = {
     const input: GradeSubmissionRequest = req.body;
     const submission = await assignmentsService.grade(id, studentId, input);
     res.json({ success: true, data: submission });
-  })
+  }),
 };

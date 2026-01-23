@@ -1,23 +1,26 @@
-'use client';
+"use client";
 
-import { useParams, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
+import { useParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import { useTKReport, useUpdateTKReport } from "@/hooks/use-tk-report";
 import {
-  useTKReport,
-  useUpdateTKReport,
-} from '@/hooks/use-tk-report';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Form,
   FormControl,
@@ -26,7 +29,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   ArrowLeft,
   Save,
@@ -35,12 +38,12 @@ import {
   Calendar,
   Clock,
   BookOpen,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
 const SEMESTER_LABELS = {
-  GANJIL: 'Ganjil',
-  GENAP: 'Genap',
+  GANJIL: "Ganjil",
+  GENAP: "Genap",
 };
 
 const editReportSchema = z.object({
@@ -73,14 +76,14 @@ export default function EditTKReportPage() {
   const form = useForm<EditReportFormData>({
     resolver: zodResolver(editReportSchema),
     defaultValues: {
-      narrativeNAM: '',
-      narrativeFM: '',
-      narrativeKOG: '',
-      narrativeBHS: '',
-      narrativeSE: '',
-      narrativeSNI: '',
-      overallStrengths: '',
-      parentRecommendations: '',
+      narrativeNAM: "",
+      narrativeFM: "",
+      narrativeKOG: "",
+      narrativeBHS: "",
+      narrativeSE: "",
+      narrativeSNI: "",
+      overallStrengths: "",
+      parentRecommendations: "",
       height: null,
       weight: null,
       presentDays: 0,
@@ -94,14 +97,14 @@ export default function EditTKReportPage() {
   useEffect(() => {
     if (report) {
       form.reset({
-        narrativeNAM: report.narrativeNAM || '',
-        narrativeFM: report.narrativeFM || '',
-        narrativeKOG: report.narrativeKOG || '',
-        narrativeBHS: report.narrativeBHS || '',
-        narrativeSE: report.narrativeSE || '',
-        narrativeSNI: report.narrativeSNI || '',
-        overallStrengths: report.overallStrengths || '',
-        parentRecommendations: report.parentRecommendations || '',
+        narrativeNAM: report.narrativeNAM || "",
+        narrativeFM: report.narrativeFM || "",
+        narrativeKOG: report.narrativeKOG || "",
+        narrativeBHS: report.narrativeBHS || "",
+        narrativeSE: report.narrativeSE || "",
+        narrativeSNI: report.narrativeSNI || "",
+        overallStrengths: report.overallStrengths || "",
+        parentRecommendations: report.parentRecommendations || "",
         height: report.height,
         weight: report.weight,
         presentDays: report.presentDays || 0,
@@ -133,10 +136,10 @@ export default function EditTKReportPage() {
           totalDays: data.totalDays,
         },
       });
-      toast.success('Raport berhasil diperbarui');
+      toast.success("Raport berhasil diperbarui");
       router.push(`/paud/reports/${reportId}`);
     } catch {
-      toast.error('Gagal memperbarui raport');
+      toast.error("Gagal memperbarui raport");
     }
   };
 
@@ -160,22 +163,28 @@ export default function EditTKReportPage() {
           <p className="text-muted-foreground mb-4">
             Raport yang Anda cari tidak ada atau telah dihapus.
           </p>
-          <Button onClick={() => router.push('/paud/reports')}>Kembali ke Daftar</Button>
+          <Button onClick={() => router.push("/paud/reports")}>
+            Kembali ke Daftar
+          </Button>
         </div>
       </MainLayout>
     );
   }
 
-  if (report.status !== 'DRAFT') {
+  if (report.status !== "DRAFT") {
     return (
       <MainLayout>
         <div className="flex flex-col items-center justify-center py-16">
           <AlertCircle className="h-16 w-16 text-yellow-500 mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Raport Tidak Dapat Diedit</h2>
+          <h2 className="text-xl font-semibold mb-2">
+            Raport Tidak Dapat Diedit
+          </h2>
           <p className="text-muted-foreground mb-4">
             Raport yang sudah difinalisasi atau dicetak tidak dapat diedit.
           </p>
-          <Button onClick={() => router.push(`/paud/reports/${reportId}`)}>Lihat Detail</Button>
+          <Button onClick={() => router.push(`/paud/reports/${reportId}`)}>
+            Lihat Detail
+          </Button>
         </div>
       </MainLayout>
     );
@@ -186,7 +195,7 @@ export default function EditTKReportPage() {
       <div className="space-y-6">
         <PageHeader
           title="Edit Raport"
-          description={`${report.student?.user?.name || '-'} - ${report.academicYear?.name || '-'} - Semester ${SEMESTER_LABELS[report.semester]}`}
+          description={`${report.student?.user?.name || "-"} - ${report.academicYear?.name || "-"} - Semester ${SEMESTER_LABELS[report.semester]}`}
           actions={
             <Button variant="outline" onClick={() => router.back()}>
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -211,9 +220,15 @@ export default function EditTKReportPage() {
                 </div>
               )}
               <div>
-                <h3 className="font-semibold text-lg">{report.student?.user?.name || '-'}</h3>
-                <p className="text-muted-foreground">NIS: {report.student?.nis || '-'}</p>
-                <p className="text-muted-foreground">{report.student?.enrollments?.[0]?.class?.name || '-'}</p>
+                <h3 className="font-semibold text-lg">
+                  {report.student?.user?.name || "-"}
+                </h3>
+                <p className="text-muted-foreground">
+                  NIS: {report.student?.nis || "-"}
+                </p>
+                <p className="text-muted-foreground">
+                  {report.student?.enrollments?.[0]?.class?.name || "-"}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -294,7 +309,8 @@ export default function EditTKReportPage() {
                       📚 Literasi & STEAM
                     </CardTitle>
                     <CardDescription>
-                      Narasi perkembangan bahasa, literasi, sains, teknologi, seni, dan matematika
+                      Narasi perkembangan bahasa, literasi, sains, teknologi,
+                      seni, dan matematika
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -400,7 +416,9 @@ export default function EditTKReportPage() {
                               <Input
                                 type="number"
                                 {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                onChange={(e) =>
+                                  field.onChange(parseInt(e.target.value) || 0)
+                                }
                               />
                             </FormControl>
                             <FormMessage />
@@ -418,7 +436,9 @@ export default function EditTKReportPage() {
                               <Input
                                 type="number"
                                 {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                onChange={(e) =>
+                                  field.onChange(parseInt(e.target.value) || 0)
+                                }
                               />
                             </FormControl>
                             <FormMessage />
@@ -436,7 +456,9 @@ export default function EditTKReportPage() {
                               <Input
                                 type="number"
                                 {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                onChange={(e) =>
+                                  field.onChange(parseInt(e.target.value) || 0)
+                                }
                               />
                             </FormControl>
                             <FormMessage />
@@ -456,7 +478,9 @@ export default function EditTKReportPage() {
                               <Input
                                 type="number"
                                 {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                onChange={(e) =>
+                                  field.onChange(parseInt(e.target.value) || 0)
+                                }
                               />
                             </FormControl>
                             <FormMessage />
@@ -490,9 +514,13 @@ export default function EditTKReportPage() {
                                 type="number"
                                 step="0.1"
                                 placeholder="Contoh: 105.5"
-                                value={field.value ?? ''}
+                                value={field.value ?? ""}
                                 onChange={(e) =>
-                                  field.onChange(e.target.value ? parseFloat(e.target.value) : null)
+                                  field.onChange(
+                                    e.target.value
+                                      ? parseFloat(e.target.value)
+                                      : null,
+                                  )
                                 }
                               />
                             </FormControl>
@@ -512,9 +540,13 @@ export default function EditTKReportPage() {
                                 type="number"
                                 step="0.1"
                                 placeholder="Contoh: 18.5"
-                                value={field.value ?? ''}
+                                value={field.value ?? ""}
                                 onChange={(e) =>
-                                  field.onChange(e.target.value ? parseFloat(e.target.value) : null)
+                                  field.onChange(
+                                    e.target.value
+                                      ? parseFloat(e.target.value)
+                                      : null,
+                                  )
                                 }
                               />
                             </FormControl>
@@ -530,7 +562,11 @@ export default function EditTKReportPage() {
 
             {/* Submit Button */}
             <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => router.back()}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+              >
                 Batal
               </Button>
               <Button type="submit" disabled={updateMutation.isPending}>

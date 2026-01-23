@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useLeaveRequests, useCancelLeaveRequest, useApproveLeaveRequest, LEAVE_TYPE_LABELS, LEAVE_STATUS_LABELS } from "@/hooks/use-hr";
+import {
+  useLeaveRequests,
+  useCancelLeaveRequest,
+  useApproveLeaveRequest,
+  LEAVE_TYPE_LABELS,
+  LEAVE_STATUS_LABELS,
+} from "@/hooks/use-hr";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -73,13 +79,25 @@ export default function LeavesPage() {
     }
   };
 
-  const renderTable = (leaves: any[], isLoading: boolean, showActions: boolean) => {
+  const renderTable = (
+    leaves: any[],
+    isLoading: boolean,
+    showActions: boolean,
+  ) => {
     if (isLoading) {
-      return <div className="flex justify-center py-8"><Loader2 className="animate-spin" /></div>;
+      return (
+        <div className="flex justify-center py-8">
+          <Loader2 className="animate-spin" />
+        </div>
+      );
     }
 
     if (leaves.length === 0) {
-      return <div className="text-center py-8 text-muted-foreground">No leave requests found.</div>;
+      return (
+        <div className="text-center py-8 text-muted-foreground">
+          No leave requests found.
+        </div>
+      );
     }
 
     return (
@@ -101,14 +119,22 @@ export default function LeavesPage() {
               <TableRow key={leave.id}>
                 <TableCell>
                   <div className="font-medium">
-                    {leave.staff?.user?.name || leave.teacher?.user?.name || "Unknown"}
+                    {leave.staff?.user?.name ||
+                      leave.teacher?.user?.name ||
+                      "Unknown"}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {leave.staff ? "Staff" : "Teacher"}
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline">{LEAVE_TYPE_LABELS[leave.type as keyof typeof LEAVE_TYPE_LABELS]}</Badge>
+                  <Badge variant="outline">
+                    {
+                      LEAVE_TYPE_LABELS[
+                        leave.type as keyof typeof LEAVE_TYPE_LABELS
+                      ]
+                    }
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">
@@ -117,7 +143,10 @@ export default function LeavesPage() {
                   </div>
                 </TableCell>
                 <TableCell>{leave.totalDays} Days</TableCell>
-                <TableCell className="max-w-[200px] truncate" title={leave.reason}>
+                <TableCell
+                  className="max-w-[200px] truncate"
+                  title={leave.reason}
+                >
                   {leave.reason}
                 </TableCell>
                 <TableCell>
@@ -126,29 +155,47 @@ export default function LeavesPage() {
                       leave.status === "APPROVED"
                         ? "default"
                         : leave.status === "REJECTED"
-                        ? "destructive"
-                        : leave.status === "CANCELLED"
-                        ? "secondary"
-                        : "outline"
+                          ? "destructive"
+                          : leave.status === "CANCELLED"
+                            ? "secondary"
+                            : "outline"
                     }
                   >
-                    {LEAVE_STATUS_LABELS[leave.status as keyof typeof LEAVE_STATUS_LABELS]}
+                    {
+                      LEAVE_STATUS_LABELS[
+                        leave.status as keyof typeof LEAVE_STATUS_LABELS
+                      ]
+                    }
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   {showActions && leave.status === "PENDING" && isAdmin ? (
                     <div className="flex justify-end gap-2">
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleApprove(leave.id)}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleApprove(leave.id)}
+                      >
                         <Check className="h-4 w-4 text-green-600" />
                       </Button>
                       {/* Reject logic needs dialog for reason, simplified here */}
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleCancel(leave.id)}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleCancel(leave.id)}
+                      >
                         <X className="h-4 w-4 text-red-600" />
                       </Button>
                     </div>
                   ) : (
                     leave.status === "PENDING" && (
-                      <Button size="sm" variant="ghost" onClick={() => handleCancel(leave.id)}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleCancel(leave.id)}
+                      >
                         Cancel
                       </Button>
                     )
@@ -186,7 +233,7 @@ export default function LeavesPage() {
                 <CardTitle>My Leave History</CardTitle>
               </CardHeader>
               <CardContent>
-                 {renderTable(myLeavesData?.data || [], myLoading, false)}
+                {renderTable(myLeavesData?.data || [], myLoading, false)}
               </CardContent>
             </Card>
           </TabsContent>

@@ -5,30 +5,25 @@ import { z } from 'zod';
 // ======================
 
 export const NoteCategory = z.enum([
-  'ACADEMIC',           // Catatan akademik
-  'BEHAVIOR',           // Catatan perilaku
-  'ATTENDANCE',         // Catatan kehadiran
-  'ACHIEVEMENT',        // Pencapaian/prestasi
-  'CONCERN',            // Kekhawatiran/masalah
-  'HEALTH',             // Kesehatan
-  'SOCIAL',             // Sosial/pergaulan
-  'SPIRITUAL',          // Keagamaan (pesantren)
+  'ACADEMIC', // Catatan akademik
+  'BEHAVIOR', // Catatan perilaku
+  'ATTENDANCE', // Catatan kehadiran
+  'ACHIEVEMENT', // Pencapaian/prestasi
+  'CONCERN', // Kekhawatiran/masalah
+  'HEALTH', // Kesehatan
+  'SOCIAL', // Sosial/pergaulan
+  'SPIRITUAL', // Keagamaan (pesantren)
   'PARENT_COMMUNICATION', // Komunikasi dengan wali
-  'GENERAL',            // Umum
+  'GENERAL', // Umum
 ]);
 
-export const NotePriority = z.enum([
-  'LOW',
-  'MEDIUM',
-  'HIGH',
-  'URGENT',
-]);
+export const NotePriority = z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']);
 
 export const NoteVisibility = z.enum([
-  'HOMEROOM_ONLY',      // Hanya wali kelas
-  'TEACHERS',           // Semua guru
-  'STAFF',              // Staff sekolah
-  'PARENTS',            // Bisa dilihat wali murid
+  'HOMEROOM_ONLY', // Hanya wali kelas
+  'TEACHERS', // Semua guru
+  'STAFF', // Staff sekolah
+  'PARENTS', // Bisa dilihat wali murid
 ]);
 
 // ======================

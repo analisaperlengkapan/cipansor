@@ -9,15 +9,15 @@ export const createGuestBookSchema = z.object({
     phone: z.string().optional(),
     visitorCount: z.number().int().min(1).default(1),
     vehicleNumber: z.string().optional(),
-    notes: z.string().optional()
-  })
+    notes: z.string().optional(),
+  }),
 });
 
 export const updateGuestBookSchema = z.object({
   body: z.object({
     checkOut: z.string().datetime().optional(),
-    notes: z.string().optional()
-  })
+    notes: z.string().optional(),
+  }),
 });
 
 export const createStudentVisitSchema = z.object({
@@ -26,16 +26,16 @@ export const createStudentVisitSchema = z.object({
     visitorName: z.string().min(1, 'Visitor name is required'),
     relation: z.string().min(1, 'Relation is required'),
     purpose: z.string().optional(),
-    notes: z.string().optional()
-  })
+    notes: z.string().optional(),
+  }),
 });
 
 export const updateStudentVisitSchema = z.object({
   body: z.object({
     checkOut: z.string().datetime().optional(),
     status: z.nativeEnum(VisitStatus).optional(),
-    notes: z.string().optional()
-  })
+    notes: z.string().optional(),
+  }),
 });
 
 export const createStudentPackageSchema = z.object({
@@ -45,16 +45,16 @@ export const createStudentPackageSchema = z.object({
     senderPhone: z.string().optional(),
     description: z.string().optional(),
     photoUrl: z.string().optional(),
-    notes: z.string().optional()
-  })
+    notes: z.string().optional(),
+  }),
 });
 
 export const updateStudentPackageSchema = z.object({
   body: z.object({
     status: z.nativeEnum(PackageStatus).optional(),
     deliveredTo: z.string().optional(),
-    notes: z.string().optional()
-  })
+    notes: z.string().optional(),
+  }),
 });
 
 export type CreateGuestBookInput = z.infer<typeof createGuestBookSchema>['body'];

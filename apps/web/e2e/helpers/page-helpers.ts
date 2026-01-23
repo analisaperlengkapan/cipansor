@@ -1,5 +1,5 @@
-import type { Page, Locator } from '@playwright/test';
-import { expect } from '@playwright/test';
+import type { Page, Locator } from "@playwright/test";
+import { expect } from "@playwright/test";
 
 /**
  * Page Helper Utilities
@@ -18,14 +18,14 @@ export async function waitForLoadingComplete(page: Page, timeout = 15000) {
  * Wait for toast notification
  */
 export async function waitForToast(
-  page: Page, 
+  page: Page,
   message?: string | RegExp,
-  type: 'success' | 'error' | 'info' = 'success'
+  type: "success" | "error" | "info" = "success",
 ) {
-  const toast = message 
-    ? page.getByRole('status').filter({ hasText: message })
-    : page.getByRole('status');
-    
+  const toast = message
+    ? page.getByRole("status").filter({ hasText: message })
+    : page.getByRole("status");
+
   await expect(toast).toBeVisible({ timeout: 5000 });
   return toast;
 }
@@ -35,7 +35,7 @@ export async function waitForToast(
  */
 export async function fillForm(page: Page, fields: Record<string, string>) {
   for (const [label, value] of Object.entries(fields)) {
-    const input = page.getByLabel(new RegExp(label, 'i'));
+    const input = page.getByLabel(new RegExp(label, "i"));
     await input.fill(value);
   }
 }
@@ -44,16 +44,19 @@ export async function fillForm(page: Page, fields: Record<string, string>) {
  * Select from shadcn/ui Select (combobox)
  */
 export async function selectOption(
-  page: Page, 
-  triggerText: string | RegExp, 
-  optionText: string | RegExp
+  page: Page,
+  triggerText: string | RegExp,
+  optionText: string | RegExp,
 ) {
   // Click the combobox trigger
-  const trigger = page.locator('button[role="combobox"]').filter({ hasText: triggerText }).first();
+  const trigger = page
+    .locator('button[role="combobox"]')
+    .filter({ hasText: triggerText })
+    .first();
   await trigger.click();
-  
+
   // Select the option
-  const option = page.getByRole('option', { name: optionText });
+  const option = page.getByRole("option", { name: optionText });
   await option.click();
 }
 
@@ -63,15 +66,15 @@ export async function selectOption(
 export async function clickTableRow(
   page: Page,
   identifier: number | string | RegExp,
-  tableSelector = 'table'
+  tableSelector = "table",
 ) {
   const table = page.locator(tableSelector);
-  
-  if (typeof identifier === 'number') {
-    const row = table.locator('tbody tr').nth(identifier);
+
+  if (typeof identifier === "number") {
+    const row = table.locator("tbody tr").nth(identifier);
     await row.click();
   } else {
-    const row = table.locator('tbody tr').filter({ hasText: identifier });
+    const row = table.locator("tbody tr").filter({ hasText: identifier });
     await row.first().click();
   }
 }
@@ -82,19 +85,19 @@ export async function clickTableRow(
 export async function waitForAPICall(
   page: Page,
   urlPattern: string | RegExp,
-  timeout = 10000
+  timeout = 10000,
 ): Promise<any> {
   const response = await page.waitForResponse(
     (resp) => {
       const url = resp.url();
-      if (typeof urlPattern === 'string') {
+      if (typeof urlPattern === "string") {
         return url.includes(urlPattern);
       }
       return urlPattern.test(url);
     },
-    { timeout }
+    { timeout },
   );
-  
+
   return response.json();
 }
 
@@ -103,7 +106,7 @@ export async function waitForAPICall(
  */
 export async function navigateTo(page: Page, path: string) {
   await page.goto(path);
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState("networkidle");
   await waitForLoadingComplete(page);
 }
 
@@ -124,10 +127,10 @@ export async function hasData(locator: Locator): Promise<boolean> {
  * Take screenshot with timestamp
  */
 export async function takeScreenshot(page: Page, name: string) {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  await page.screenshot({ 
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  await page.screenshot({
     path: `test-results/screenshots/${name}-${timestamp}.png`,
-    fullPage: true 
+    fullPage: true,
   });
 }
 
@@ -136,17 +139,17 @@ export async function takeScreenshot(page: Page, name: string) {
  */
 export async function checkNoConsoleErrors(page: Page) {
   const errors: string[] = [];
-  
-  page.on('console', (msg) => {
-    if (msg.type() === 'error') {
+
+  page.on("console", (msg) => {
+    if (msg.type() === "error") {
       errors.push(msg.text());
     }
   });
-  
-  page.on('pageerror', (error) => {
+
+  page.on("pageerror", (error) => {
     errors.push(error.message);
   });
-  
+
   return {
     getErrors: () => errors,
     hasErrors: () => errors.length > 0,
@@ -156,30 +159,38 @@ export async function checkNoConsoleErrors(page: Page) {
 /**
  * Wait for WebSocket connection
  */
-export async function waitForWebSocket(page: Page, timeout = 10000): Promise<void> {
-  await page.waitForFunction(
-    () => {
-      // @ts-ignore
-      return window.__wsConnected === true;
-    },
-    { timeout }
-  ).catch(() => {
-    console.warn('WebSocket connection not detected, continuing anyway...');
-  });
+export async function waitForWebSocket(
+  page: Page,
+  timeout = 10000,
+): Promise<void> {
+  await page
+    .waitForFunction(
+      () => {
+        // @ts-ignore
+        return window.__wsConnected === true;
+      },
+      { timeout },
+    )
+    .catch(() => {
+      console.warn("WebSocket connection not detected, continuing anyway...");
+    });
 }
 
 /**
  * Get table data as array
  */
-export async function getTableData(page: Page, tableSelector = 'table'): Promise<string[][]> {
+export async function getTableData(
+  page: Page,
+  tableSelector = "table",
+): Promise<string[][]> {
   const table = page.locator(tableSelector);
-  const rows = await table.locator('tbody tr').all();
-  
+  const rows = await table.locator("tbody tr").all();
+
   const data: string[][] = [];
   for (const row of rows) {
-    const cells = await row.locator('td').allTextContents();
+    const cells = await row.locator("td").allTextContents();
     data.push(cells);
   }
-  
+
   return data;
 }

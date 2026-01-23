@@ -1,20 +1,26 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -22,7 +28,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   AlertCircle,
   CheckCircle2,
@@ -35,12 +41,12 @@ import {
   RefreshCw,
   FileText,
   Shield,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { useAuthStore } from '@/stores/auth';
-import { useUnits } from '@/hooks/use-units';
-import { useQuery } from '@tanstack/react-query';
-import api from '@/lib/api';
+} from "lucide-react";
+import { toast } from "sonner";
+import { useAuthStore } from "@/stores/auth";
+import { useUnits } from "@/hooks/use-units";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 interface EmisSummary {
   students: {
@@ -66,7 +72,7 @@ interface EmisSummary {
 
 interface ValidationIssue {
   type: string;
-  severity: 'error' | 'warning';
+  severity: "error" | "warning";
   message: string;
   count: number;
 }
@@ -82,9 +88,9 @@ interface ValidationResult {
 // Hook for EMIS summary
 function useEmisSummary(unitId: string | null) {
   return useQuery<EmisSummary>({
-    queryKey: ['emis-summary', unitId],
+    queryKey: ["emis-summary", unitId],
     queryFn: async () => {
-      if (!unitId) throw new Error('Unit ID required');
+      if (!unitId) throw new Error("Unit ID required");
       const response = await api.get(`/emis/summary/${unitId}`);
       return response.data.data;
     },
@@ -95,9 +101,9 @@ function useEmisSummary(unitId: string | null) {
 // Hook for EMIS validation
 function useEmisValidation(unitId: string | null) {
   return useQuery<ValidationResult>({
-    queryKey: ['emis-validation', unitId],
+    queryKey: ["emis-validation", unitId],
     queryFn: async () => {
-      if (!unitId) throw new Error('Unit ID required');
+      if (!unitId) throw new Error("Unit ID required");
       const response = await api.get(`/emis/validate/${unitId}`);
       return response.data.data;
     },
@@ -107,36 +113,48 @@ function useEmisValidation(unitId: string | null) {
 
 export default function EmisPage() {
   const { user } = useAuthStore();
-  const [selectedUnitId, setSelectedUnitId] = useState<string>(user?.unitId || '');
+  const [selectedUnitId, setSelectedUnitId] = useState<string>(
+    user?.unitId || "",
+  );
   const [exportingType, setExportingType] = useState<string | null>(null);
 
   const { data: units } = useUnits();
-  const { data: summary, isLoading: loadingSummary, refetch: refetchSummary } = useEmisSummary(selectedUnitId);
-  const { data: validation, isLoading: loadingValidation, refetch: refetchValidation } = useEmisValidation(selectedUnitId);
+  const {
+    data: summary,
+    isLoading: loadingSummary,
+    refetch: refetchSummary,
+  } = useEmisSummary(selectedUnitId);
+  const {
+    data: validation,
+    isLoading: loadingValidation,
+    refetch: refetchValidation,
+  } = useEmisValidation(selectedUnitId);
 
-  const handleExport = async (type: 'students' | 'teachers' | 'institution') => {
+  const handleExport = async (
+    type: "students" | "teachers" | "institution",
+  ) => {
     if (!selectedUnitId) {
-      toast.error('Pilih unit terlebih dahulu');
+      toast.error("Pilih unit terlebih dahulu");
       return;
     }
 
     setExportingType(type);
     try {
-      let endpoint = '';
-      let filename = '';
+      let endpoint = "";
+      let filename = "";
 
       switch (type) {
-        case 'students':
+        case "students":
           endpoint = `/emis/export/students?unitId=${selectedUnitId}`;
-          filename = 'emis_data_siswa.json';
+          filename = "emis_data_siswa.json";
           break;
-        case 'teachers':
+        case "teachers":
           endpoint = `/emis/export/teachers?unitId=${selectedUnitId}`;
-          filename = 'emis_data_guru.json';
+          filename = "emis_data_guru.json";
           break;
-        case 'institution':
+        case "institution":
           endpoint = `/emis/export/institution/${selectedUnitId}`;
-          filename = 'emis_data_lembaga.json';
+          filename = "emis_data_lembaga.json";
           break;
       }
 
@@ -144,9 +162,11 @@ export default function EmisPage() {
       const data = response.data.data;
 
       // Create downloadable JSON file
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = filename;
       document.body.appendChild(a);
@@ -165,19 +185,19 @@ export default function EmisPage() {
   const handleRefresh = () => {
     refetchSummary();
     refetchValidation();
-    toast.success('Data EMIS berhasil diperbarui');
+    toast.success("Data EMIS berhasil diperbarui");
   };
 
   const getReadinessColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 80) return "text-green-600";
+    if (score >= 60) return "text-yellow-600";
+    return "text-red-600";
   };
 
   const getReadinessLabel = (score: number) => {
-    if (score >= 80) return 'Siap';
-    if (score >= 60) return 'Hampir Siap';
-    return 'Belum Siap';
+    if (score >= 80) return "Siap";
+    if (score >= 60) return "Hampir Siap";
+    return "Belum Siap";
   };
 
   return (
@@ -187,8 +207,8 @@ export default function EmisPage() {
           title="EMIS Kemenag"
           description="Export data sesuai format Education Management Information System (EMIS) Kementerian Agama"
           breadcrumbs={[
-            { label: 'Dashboard', href: '/dashboard' },
-            { label: 'EMIS Kemenag' },
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "EMIS Kemenag" },
           ]}
         />
 
@@ -214,11 +234,13 @@ export default function EmisPage() {
                 <SelectValue placeholder="Pilih unit..." />
               </SelectTrigger>
               <SelectContent>
-                {units?.map((unit: { id: string; name: string; type: string }) => (
-                  <SelectItem key={unit.id} value={unit.id}>
-                    {unit.name} ({unit.type})
-                  </SelectItem>
-                ))}
+                {units?.map(
+                  (unit: { id: string; name: string; type: string }) => (
+                    <SelectItem key={unit.id} value={unit.id}>
+                      {unit.name} ({unit.type})
+                    </SelectItem>
+                  ),
+                )}
               </SelectContent>
             </Select>
           </CardContent>
@@ -245,16 +267,22 @@ export default function EmisPage() {
                 <CardContent>
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
-                      <Progress 
-                        value={summary?.readinessScore || 0} 
+                      <Progress
+                        value={summary?.readinessScore || 0}
                         className="h-4"
                       />
                     </div>
-                    <div className={`text-2xl font-bold ${getReadinessColor(summary?.readinessScore || 0)}`}>
+                    <div
+                      className={`text-2xl font-bold ${getReadinessColor(summary?.readinessScore || 0)}`}
+                    >
                       {summary?.readinessScore || 0}%
                     </div>
-                    <Badge 
-                      variant={summary?.readinessScore && summary.readinessScore >= 80 ? 'default' : 'secondary'}
+                    <Badge
+                      variant={
+                        summary?.readinessScore && summary.readinessScore >= 80
+                          ? "default"
+                          : "secondary"
+                      }
                     >
                       {getReadinessLabel(summary?.readinessScore || 0)}
                     </Badge>
@@ -267,21 +295,28 @@ export default function EmisPage() {
                 {/* Students Card */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Siswa</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Total Siswa
+                    </CardTitle>
                     <GraduationCap className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{summary?.students.active || 0}</div>
+                    <div className="text-2xl font-bold">
+                      {summary?.students.active || 0}
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      {summary?.students.male || 0} L / {summary?.students.female || 0} P
+                      {summary?.students.male || 0} L /{" "}
+                      {summary?.students.female || 0} P
                     </p>
                     <div className="mt-2">
                       <div className="flex items-center justify-between text-xs">
                         <span>NISN Lengkap</span>
-                        <span className="font-medium">{summary?.students.nisnCompletionRate || 0}%</span>
+                        <span className="font-medium">
+                          {summary?.students.nisnCompletionRate || 0}%
+                        </span>
                       </div>
-                      <Progress 
-                        value={summary?.students.nisnCompletionRate || 0} 
+                      <Progress
+                        value={summary?.students.nisnCompletionRate || 0}
                         className="h-1 mt-1"
                       />
                     </div>
@@ -291,21 +326,27 @@ export default function EmisPage() {
                 {/* Teachers Card */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Guru</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Total Guru
+                    </CardTitle>
                     <Users className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{summary?.teachers.total || 0}</div>
+                    <div className="text-2xl font-bold">
+                      {summary?.teachers.total || 0}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {summary?.teachers.certified || 0} tersertifikasi
                     </p>
                     <div className="mt-2">
                       <div className="flex items-center justify-between text-xs">
                         <span>NUPTK Lengkap</span>
-                        <span className="font-medium">{summary?.teachers.nuptkCompletionRate || 0}%</span>
+                        <span className="font-medium">
+                          {summary?.teachers.nuptkCompletionRate || 0}%
+                        </span>
                       </div>
-                      <Progress 
-                        value={summary?.teachers.nuptkCompletionRate || 0} 
+                      <Progress
+                        value={summary?.teachers.nuptkCompletionRate || 0}
                         className="h-1 mt-1"
                       />
                     </div>
@@ -315,11 +356,15 @@ export default function EmisPage() {
                 {/* Classes Card */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Kelas</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Total Kelas
+                    </CardTitle>
                     <Building2 className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{summary?.classes.total || 0}</div>
+                    <div className="text-2xl font-bold">
+                      {summary?.classes.total || 0}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       Tahun ajaran aktif
                     </p>
@@ -329,13 +374,18 @@ export default function EmisPage() {
                 {/* Issues Card */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Masalah Data</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Masalah Data
+                    </CardTitle>
                     <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{validation?.totalIssues || 0}</div>
+                    <div className="text-2xl font-bold">
+                      {validation?.totalIssues || 0}
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      {validation?.errorCount || 0} error, {validation?.warningCount || 0} warning
+                      {validation?.errorCount || 0} error,{" "}
+                      {validation?.warningCount || 0} warning
                     </p>
                   </CardContent>
                 </Card>
@@ -358,12 +408,14 @@ export default function EmisPage() {
                       </CardTitle>
                       <CardDescription>
                         {validation?.isReady
-                          ? 'Data siap untuk export EMIS'
-                          : 'Terdapat masalah yang perlu diperbaiki sebelum export'}
+                          ? "Data siap untuk export EMIS"
+                          : "Terdapat masalah yang perlu diperbaiki sebelum export"}
                       </CardDescription>
                     </div>
-                    <Badge variant={validation?.isReady ? 'default' : 'destructive'}>
-                      {validation?.isReady ? 'Siap' : 'Belum Siap'}
+                    <Badge
+                      variant={validation?.isReady ? "default" : "destructive"}
+                    >
+                      {validation?.isReady ? "Siap" : "Belum Siap"}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -390,9 +442,15 @@ export default function EmisPage() {
                             </TableCell>
                             <TableCell>
                               <Badge
-                                variant={issue.severity === 'error' ? 'destructive' : 'secondary'}
+                                variant={
+                                  issue.severity === "error"
+                                    ? "destructive"
+                                    : "secondary"
+                                }
                               >
-                                {issue.severity === 'error' ? 'Error' : 'Warning'}
+                                {issue.severity === "error"
+                                  ? "Error"
+                                  : "Warning"}
                               </Badge>
                             </TableCell>
                           </TableRow>
@@ -402,7 +460,9 @@ export default function EmisPage() {
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-green-600" />
-                      <p>Tidak ada masalah ditemukan. Data siap untuk export.</p>
+                      <p>
+                        Tidak ada masalah ditemukan. Data siap untuk export.
+                      </p>
                     </div>
                   )}
                 </CardContent>
@@ -412,38 +472,54 @@ export default function EmisPage() {
               {validation?.issues && validation.issues.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Rekomendasi Perbaikan</CardTitle>
+                    <CardTitle className="text-lg">
+                      Rekomendasi Perbaikan
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {validation.issues.some(i => i.type === 'student_nisn') && (
+                    {validation.issues.some(
+                      (i) => i.type === "student_nisn",
+                    ) && (
                       <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
                         <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
                         <div>
-                          <p className="font-medium">NISN Siswa Belum Lengkap</p>
+                          <p className="font-medium">
+                            NISN Siswa Belum Lengkap
+                          </p>
                           <p className="text-sm text-muted-foreground">
-                            Lengkapi NISN siswa di menu <strong>Siswa → Edit Siswa</strong>. NISN bisa diperoleh dari Dapodik atau verval NISN.
+                            Lengkapi NISN siswa di menu{" "}
+                            <strong>Siswa → Edit Siswa</strong>. NISN bisa
+                            diperoleh dari Dapodik atau verval NISN.
                           </p>
                         </div>
                       </div>
                     )}
-                    {validation.issues.some(i => i.type === 'teacher_nuptk') && (
+                    {validation.issues.some(
+                      (i) => i.type === "teacher_nuptk",
+                    ) && (
                       <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
                         <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
                         <div>
-                          <p className="font-medium">NUPTK Guru Belum Lengkap</p>
+                          <p className="font-medium">
+                            NUPTK Guru Belum Lengkap
+                          </p>
                           <p className="text-sm text-muted-foreground">
-                            Lengkapi NUPTK guru di menu <strong>SDM → Edit Guru</strong>. NUPTK bisa diperoleh dari GTK Kemendikbud.
+                            Lengkapi NUPTK guru di menu{" "}
+                            <strong>SDM → Edit Guru</strong>. NUPTK bisa
+                            diperoleh dari GTK Kemendikbud.
                           </p>
                         </div>
                       </div>
                     )}
-                    {validation.issues.some(i => i.type === 'unit_npsn') && (
+                    {validation.issues.some((i) => i.type === "unit_npsn") && (
                       <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
                         <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
                         <div>
                           <p className="font-medium">NPSN Unit Belum Terisi</p>
                           <p className="text-sm text-muted-foreground">
-                            Lengkapi NPSN unit di menu <strong>Pengaturan → Unit</strong>. NPSN bisa diperoleh dari Dapodik.
+                            Lengkapi NPSN unit di menu{" "}
+                            <strong>Pengaturan → Unit</strong>. NPSN bisa
+                            diperoleh dari Dapodik.
                           </p>
                         </div>
                       </div>
@@ -464,23 +540,27 @@ export default function EmisPage() {
                       Data Siswa
                     </CardTitle>
                     <CardDescription>
-                      Export data siswa sesuai format EMIS (NISN, biodata, kelas)
+                      Export data siswa sesuai format EMIS (NISN, biodata,
+                      kelas)
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="text-sm">
-                        <p><strong>{summary?.students.active || 0}</strong> siswa aktif</p>
+                        <p>
+                          <strong>{summary?.students.active || 0}</strong> siswa
+                          aktif
+                        </p>
                         <p className="text-muted-foreground">
                           {summary?.students.withNisn || 0} memiliki NISN
                         </p>
                       </div>
                       <Button
                         className="w-full"
-                        onClick={() => handleExport('students')}
-                        disabled={exportingType === 'students'}
+                        onClick={() => handleExport("students")}
+                        disabled={exportingType === "students"}
                       >
-                        {exportingType === 'students' ? (
+                        {exportingType === "students" ? (
                           <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                         ) : (
                           <Download className="h-4 w-4 mr-2" />
@@ -505,17 +585,19 @@ export default function EmisPage() {
                   <CardContent>
                     <div className="space-y-4">
                       <div className="text-sm">
-                        <p><strong>{summary?.teachers.total || 0}</strong> guru</p>
+                        <p>
+                          <strong>{summary?.teachers.total || 0}</strong> guru
+                        </p>
                         <p className="text-muted-foreground">
                           {summary?.teachers.withNuptk || 0} memiliki NUPTK
                         </p>
                       </div>
                       <Button
                         className="w-full"
-                        onClick={() => handleExport('teachers')}
-                        disabled={exportingType === 'teachers'}
+                        onClick={() => handleExport("teachers")}
+                        disabled={exportingType === "teachers"}
                       >
-                        {exportingType === 'teachers' ? (
+                        {exportingType === "teachers" ? (
                           <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                         ) : (
                           <Download className="h-4 w-4 mr-2" />
@@ -540,17 +622,19 @@ export default function EmisPage() {
                   <CardContent>
                     <div className="space-y-4">
                       <div className="text-sm">
-                        <p><strong>Profil Lengkap</strong></p>
+                        <p>
+                          <strong>Profil Lengkap</strong>
+                        </p>
                         <p className="text-muted-foreground">
                           Data lembaga dan yayasan
                         </p>
                       </div>
                       <Button
                         className="w-full"
-                        onClick={() => handleExport('institution')}
-                        disabled={exportingType === 'institution'}
+                        onClick={() => handleExport("institution")}
+                        disabled={exportingType === "institution"}
                       >
-                        {exportingType === 'institution' ? (
+                        {exportingType === "institution" ? (
                           <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                         ) : (
                           <Download className="h-4 w-4 mr-2" />

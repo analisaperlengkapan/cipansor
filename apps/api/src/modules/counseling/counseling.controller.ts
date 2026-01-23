@@ -1,13 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
 import { counselingService } from './counseling.service';
-import { CounselingStatus, CounselingCategory, CounselingPriority, ReferralType } from '@prisma/client';
+import {
+  CounselingStatus,
+  CounselingCategory,
+  CounselingPriority,
+  ReferralType,
+} from '@prisma/client';
 import { ApiResponse } from '@cipansor/shared'; // Imported from shared
 import {
   CounselingSession,
   CounselingNote,
   CounselingReferral,
   CounselingStats,
-  CounselingListParams
+  CounselingListParams,
 } from '@cipansor/shared';
 
 export class CounselingController {
@@ -33,7 +38,11 @@ export class CounselingController {
     }
   }
 
-  async getSessionById(req: Request, res: Response<ApiResponse<CounselingSession>>, next: NextFunction) {
+  async getSessionById(
+    req: Request,
+    res: Response<ApiResponse<CounselingSession>>,
+    next: NextFunction
+  ) {
     try {
       const { sessionId } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
@@ -44,7 +53,11 @@ export class CounselingController {
     }
   }
 
-  async createSession(req: Request, res: Response<ApiResponse<CounselingSession>>, next: NextFunction) {
+  async createSession(
+    req: Request,
+    res: Response<ApiResponse<CounselingSession>>,
+    next: NextFunction
+  ) {
     try {
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const session = await counselingService.createSession(req.body, user);
@@ -54,7 +67,11 @@ export class CounselingController {
     }
   }
 
-  async updateSession(req: Request, res: Response<ApiResponse<CounselingSession>>, next: NextFunction) {
+  async updateSession(
+    req: Request,
+    res: Response<ApiResponse<CounselingSession>>,
+    next: NextFunction
+  ) {
     try {
       const { sessionId } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
@@ -109,7 +126,11 @@ export class CounselingController {
     }
   }
 
-  async addReferral(req: Request, res: Response<ApiResponse<CounselingReferral>>, next: NextFunction) {
+  async addReferral(
+    req: Request,
+    res: Response<ApiResponse<CounselingReferral>>,
+    next: NextFunction
+  ) {
     try {
       const { sessionId } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
@@ -120,7 +141,11 @@ export class CounselingController {
     }
   }
 
-  async updateReferral(req: Request, res: Response<ApiResponse<CounselingReferral>>, next: NextFunction) {
+  async updateReferral(
+    req: Request,
+    res: Response<ApiResponse<CounselingReferral>>,
+    next: NextFunction
+  ) {
     try {
       const { referralId } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
@@ -142,7 +167,11 @@ export class CounselingController {
     }
   }
 
-  async getStudentHistory(req: Request, res: Response<ApiResponse<CounselingSession[]>>, next: NextFunction) {
+  async getStudentHistory(
+    req: Request,
+    res: Response<ApiResponse<CounselingSession[]>>,
+    next: NextFunction
+  ) {
     try {
       const { studentId } = req.params;
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
@@ -153,7 +182,11 @@ export class CounselingController {
     }
   }
 
-  async getMySessions(req: Request, res: Response<ApiResponse<CounselingSession[]>>, next: NextFunction) {
+  async getMySessions(
+    req: Request,
+    res: Response<ApiResponse<CounselingSession[]>>,
+    next: NextFunction
+  ) {
     try {
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const sessions = await counselingService.getCounselorSessions(user);
@@ -163,7 +196,11 @@ export class CounselingController {
     }
   }
 
-  async getStatistics(req: Request, res: Response<ApiResponse<CounselingStats>>, next: NextFunction) {
+  async getStatistics(
+    req: Request,
+    res: Response<ApiResponse<CounselingStats>>,
+    next: NextFunction
+  ) {
     try {
       const user = { sub: req.user!.sub, role: req.user!.role, unitId: req.user!.unitId };
       const stats = await counselingService.getStatistics(user);

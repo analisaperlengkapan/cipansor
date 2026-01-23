@@ -1,16 +1,22 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Form,
   FormControl,
@@ -19,22 +25,26 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { toast } from 'sonner';
-import { useCreateCertificate } from '@/hooks/use-certificate';
-import { useStudents } from '@/hooks/use-students';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { toast } from "sonner";
+import { useCreateCertificate } from "@/hooks/use-certificate";
+import { useStudents } from "@/hooks/use-students";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
   Award,
@@ -43,21 +53,21 @@ import {
   Loader2,
   User,
   FileText,
-} from 'lucide-react';
+} from "lucide-react";
 
 const formSchema = z.object({
-  studentId: z.string().min(1, 'Santri wajib dipilih'),
-  certificateType: z.string().min(1, 'Tipe sertifikat wajib dipilih'),
-  title: z.string().min(3, 'Judul minimal 3 karakter'),
-  description: z.string().optional().default(''),
-  grade: z.string().optional().default(''),
-  rank: z.string().optional().default(''),
+  studentId: z.string().min(1, "Santri wajib dipilih"),
+  certificateType: z.string().min(1, "Tipe sertifikat wajib dipilih"),
+  title: z.string().min(3, "Judul minimal 3 karakter"),
+  description: z.string().optional().default(""),
+  grade: z.string().optional().default(""),
+  rank: z.string().optional().default(""),
   issueDate: z.date({
-    required_error: 'Tanggal terbit wajib diisi',
+    required_error: "Tanggal terbit wajib diisi",
   }),
-  signatoryName: z.string().min(3, 'Nama penandatangan wajib diisi'),
-  signatoryTitle: z.string().min(3, 'Jabatan penandatangan wajib diisi'),
-  signatureUrl: z.string().optional().default(''),
+  signatoryName: z.string().min(3, "Nama penandatangan wajib diisi"),
+  signatoryTitle: z.string().min(3, "Jabatan penandatangan wajib diisi"),
+  signatureUrl: z.string().optional().default(""),
   isPublic: z.boolean().default(false),
 });
 
@@ -66,27 +76,29 @@ type FormData = z.infer<typeof formSchema>;
 export default function NewCertificatePage() {
   const router = useRouter();
 
-  const { data: studentsData, isLoading: isLoadingStudents } = useStudents({ limit: 1000 });
+  const { data: studentsData, isLoading: isLoadingStudents } = useStudents({
+    limit: 1000,
+  });
   const createMutation = useCreateCertificate();
 
   const form = useForm<any>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      studentId: '',
-      certificateType: '',
-      title: '',
-      description: '',
-      grade: '',
-      rank: '',
-      signatoryName: '',
-      signatoryTitle: '',
-      signatureUrl: '',
+      studentId: "",
+      certificateType: "",
+      title: "",
+      description: "",
+      grade: "",
+      rank: "",
+      signatoryName: "",
+      signatoryTitle: "",
+      signatureUrl: "",
       isPublic: false,
       issueDate: new Date(),
     },
   });
 
-  const selectedType = form.watch('certificateType');
+  const selectedType = form.watch("certificateType");
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -103,26 +115,26 @@ export default function NewCertificatePage() {
         signatureUrl: data.signatureUrl || undefined,
         isPublic: data.isPublic,
       });
-      toast.success('Sertifikat berhasil dibuat');
-      router.push('/certificates');
+      toast.success("Sertifikat berhasil dibuat");
+      router.push("/certificates");
     } catch {
-      toast.error('Gagal membuat sertifikat');
+      toast.error("Gagal membuat sertifikat");
     }
   };
 
   // Auto-generate title based on type
   const handleTypeChange = (type: string) => {
     const titles: Record<string, string> = {
-      IJAZAH: 'Ijazah Pendidikan',
-      STTB: 'Surat Tanda Tamat Belajar',
-      TAHFIDZ: 'Sertifikat Tahfidz Al-Quran',
-      SANAD: 'Sanad Hafidz Al-Quran',
-      ACHIEVEMENT: 'Piagam Penghargaan',
-      GRADUATION: 'Sertifikat Kelulusan',
-      PARTICIPATION: 'Sertifikat Partisipasi',
+      IJAZAH: "Ijazah Pendidikan",
+      STTB: "Surat Tanda Tamat Belajar",
+      TAHFIDZ: "Sertifikat Tahfidz Al-Quran",
+      SANAD: "Sanad Hafidz Al-Quran",
+      ACHIEVEMENT: "Piagam Penghargaan",
+      GRADUATION: "Sertifikat Kelulusan",
+      PARTICIPATION: "Sertifikat Partisipasi",
     };
-    if (titles[type] && !form.getValues('title')) {
-      form.setValue('title', titles[type]);
+    if (titles[type] && !form.getValues("title")) {
+      form.setValue("title", titles[type]);
     }
   };
 
@@ -131,7 +143,11 @@ export default function NewCertificatePage() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push('/certificates')}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push("/certificates")}
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <PageHeader
@@ -142,7 +158,10 @@ export default function NewCertificatePage() {
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6">
+          <form
+            onSubmit={form.handleSubmit(onSubmit as any)}
+            className="space-y-6"
+          >
             {/* Student Selection */}
             <Card>
               <CardHeader>
@@ -150,7 +169,9 @@ export default function NewCertificatePage() {
                   <User className="h-5 w-5" />
                   Penerima Sertifikat
                 </CardTitle>
-                <CardDescription>Pilih santri yang akan menerima sertifikat</CardDescription>
+                <CardDescription>
+                  Pilih santri yang akan menerima sertifikat
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <FormField
@@ -159,7 +180,10 @@ export default function NewCertificatePage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Santri *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih santri" />
@@ -173,7 +197,8 @@ export default function NewCertificatePage() {
                           ) : (
                             studentsData?.data?.map((student: any) => (
                               <SelectItem key={student.id} value={student.id}>
-                                {student.name || student.user?.name} - {student.nis}
+                                {student.name || student.user?.name} -{" "}
+                                {student.nis}
                               </SelectItem>
                             ))
                           )}
@@ -218,11 +243,19 @@ export default function NewCertificatePage() {
                           <SelectContent>
                             <SelectItem value="IJAZAH">Ijazah</SelectItem>
                             <SelectItem value="STTB">STTB</SelectItem>
-                            <SelectItem value="TAHFIDZ">Sertifikat Tahfidz</SelectItem>
+                            <SelectItem value="TAHFIDZ">
+                              Sertifikat Tahfidz
+                            </SelectItem>
                             <SelectItem value="SANAD">Sanad Hafidz</SelectItem>
-                            <SelectItem value="ACHIEVEMENT">Piagam Prestasi</SelectItem>
-                            <SelectItem value="GRADUATION">Kelulusan</SelectItem>
-                            <SelectItem value="PARTICIPATION">Partisipasi</SelectItem>
+                            <SelectItem value="ACHIEVEMENT">
+                              Piagam Prestasi
+                            </SelectItem>
+                            <SelectItem value="GRADUATION">
+                              Kelulusan
+                            </SelectItem>
+                            <SelectItem value="PARTICIPATION">
+                              Partisipasi
+                            </SelectItem>
                             <SelectItem value="OTHER">Lainnya</SelectItem>
                           </SelectContent>
                         </Select>
@@ -244,12 +277,14 @@ export default function NewCertificatePage() {
                               <Button
                                 variant="outline"
                                 className={cn(
-                                  'w-full pl-3 text-left font-normal',
-                                  !field.value && 'text-muted-foreground'
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground",
                                 )}
                               >
                                 {field.value ? (
-                                  format(field.value, 'dd MMMM yyyy', { locale: id })
+                                  format(field.value, "dd MMMM yyyy", {
+                                    locale: id,
+                                  })
                                 ) : (
                                   <span>Pilih tanggal</span>
                                 )}
@@ -281,7 +316,10 @@ export default function NewCertificatePage() {
                     <FormItem>
                       <FormLabel>Judul Sertifikat *</FormLabel>
                       <FormControl>
-                        <Input placeholder="Contoh: Sertifikat Tahfidz Al-Quran 30 Juz" {...field} />
+                        <Input
+                          placeholder="Contoh: Sertifikat Tahfidz Al-Quran 30 Juz"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -315,17 +353,28 @@ export default function NewCertificatePage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Predikat/Nilai</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih predikat" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Mumtaz">Mumtaz (Istimewa)</SelectItem>
-                            <SelectItem value="Jayyid Jiddan">Jayyid Jiddan (Sangat Baik)</SelectItem>
-                            <SelectItem value="Jayyid">Jayyid (Baik)</SelectItem>
-                            <SelectItem value="Maqbul">Maqbul (Cukup)</SelectItem>
+                            <SelectItem value="Mumtaz">
+                              Mumtaz (Istimewa)
+                            </SelectItem>
+                            <SelectItem value="Jayyid Jiddan">
+                              Jayyid Jiddan (Sangat Baik)
+                            </SelectItem>
+                            <SelectItem value="Jayyid">
+                              Jayyid (Baik)
+                            </SelectItem>
+                            <SelectItem value="Maqbul">
+                              Maqbul (Cukup)
+                            </SelectItem>
                             <SelectItem value="A">A</SelectItem>
                             <SelectItem value="B">B</SelectItem>
                             <SelectItem value="C">C</SelectItem>
@@ -344,9 +393,16 @@ export default function NewCertificatePage() {
                       <FormItem>
                         <FormLabel>Peringkat</FormLabel>
                         <FormControl>
-                          <Input type="number" min={1} placeholder="Opsional" {...field} />
+                          <Input
+                            type="number"
+                            min={1}
+                            placeholder="Opsional"
+                            {...field}
+                          />
                         </FormControl>
-                        <FormDescription>Kosongkan jika tidak ada peringkat</FormDescription>
+                        <FormDescription>
+                          Kosongkan jika tidak ada peringkat
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -359,7 +415,9 @@ export default function NewCertificatePage() {
             <Card>
               <CardHeader>
                 <CardTitle>Penandatangan</CardTitle>
-                <CardDescription>Informasi pejabat yang menandatangani sertifikat</CardDescription>
+                <CardDescription>
+                  Informasi pejabat yang menandatangani sertifikat
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid gap-6 md:grid-cols-2">
@@ -370,7 +428,10 @@ export default function NewCertificatePage() {
                       <FormItem>
                         <FormLabel>Nama Penandatangan *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Contoh: Dr. H. Ahmad Fauzi, Lc., M.A." {...field} />
+                          <Input
+                            placeholder="Contoh: Dr. H. Ahmad Fauzi, Lc., M.A."
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -384,7 +445,10 @@ export default function NewCertificatePage() {
                       <FormItem>
                         <FormLabel>Jabatan *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Contoh: Direktur Pesantren" {...field} />
+                          <Input
+                            placeholder="Contoh: Direktur Pesantren"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -402,7 +466,8 @@ export default function NewCertificatePage() {
                         <Input placeholder="https://..." {...field} />
                       </FormControl>
                       <FormDescription>
-                        URL gambar tanda tangan (opsional, format PNG transparan)
+                        URL gambar tanda tangan (opsional, format PNG
+                        transparan)
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -423,13 +488,19 @@ export default function NewCertificatePage() {
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                       <div className="space-y-0.5">
-                        <FormLabel className="text-base">Sertifikat Publik</FormLabel>
+                        <FormLabel className="text-base">
+                          Sertifikat Publik
+                        </FormLabel>
                         <FormDescription>
-                          Jika aktif, sertifikat dapat diakses dan diverifikasi oleh publik
+                          Jika aktif, sertifikat dapat diakses dan diverifikasi
+                          oleh publik
                         </FormDescription>
                       </div>
                       <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
                       </FormControl>
                     </FormItem>
                   )}
@@ -439,7 +510,11 @@ export default function NewCertificatePage() {
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => router.push('/certificates')}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push("/certificates")}
+              >
                 Batal
               </Button>
               <Button type="submit" disabled={createMutation.isPending}>

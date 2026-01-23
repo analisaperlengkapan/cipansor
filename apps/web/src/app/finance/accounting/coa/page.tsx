@@ -5,7 +5,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
-import { useAccounts, useCreateAccount, useUpdateAccount, useDeleteAccount, AccountCode } from "@/hooks/use-accounting";
+import {
+  useAccounts,
+  useCreateAccount,
+  useUpdateAccount,
+  useDeleteAccount,
+  AccountCode,
+} from "@/hooks/use-accounting";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -63,7 +69,9 @@ export default function ChartOfAccountsPage() {
   const deleteAccount = useDeleteAccount();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [editingAccount, setEditingAccount] = useState<AccountCode | null>(null);
+  const [editingAccount, setEditingAccount] = useState<AccountCode | null>(
+    null,
+  );
 
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
@@ -136,7 +144,9 @@ export default function ChartOfAccountsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Chart of Accounts</h2>
+          <h2 className="text-3xl font-bold tracking-tight">
+            Chart of Accounts
+          </h2>
           <p className="text-muted-foreground">
             Manage your financial accounts and hierarchy.
           </p>
@@ -149,13 +159,18 @@ export default function ChartOfAccountsPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>{editingAccount ? "Edit Account" : "Add Account"}</DialogTitle>
+              <DialogTitle>
+                {editingAccount ? "Edit Account" : "Add Account"}
+              </DialogTitle>
               <DialogDescription>
                 Configure the account details below.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -176,7 +191,10 @@ export default function ChartOfAccountsPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select type" />
@@ -217,7 +235,10 @@ export default function ChartOfAccountsPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Normal Balance</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select balance" />
@@ -238,7 +259,10 @@ export default function ChartOfAccountsPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Parent Account</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Optional" />
@@ -246,11 +270,13 @@ export default function ChartOfAccountsPage() {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="root">None (Root)</SelectItem>
-                            {accounts?.filter(a => a.id !== editingAccount?.id).map((acc) => (
-                              <SelectItem key={acc.id} value={acc.id}>
-                                {acc.code} - {acc.name}
-                              </SelectItem>
-                            ))}
+                            {accounts
+                              ?.filter((a) => a.id !== editingAccount?.id)
+                              .map((acc) => (
+                                <SelectItem key={acc.id} value={acc.id}>
+                                  {acc.code} - {acc.name}
+                                </SelectItem>
+                              ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -323,7 +349,9 @@ export default function ChartOfAccountsPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={account.isActive ? "secondary" : "destructive"}>
+                    <Badge
+                      variant={account.isActive ? "secondary" : "destructive"}
+                    >
                       {account.isActive ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>

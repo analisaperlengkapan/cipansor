@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
   Calendar,
@@ -21,23 +21,23 @@ import {
   BookOpen,
   Volume2,
   MessageCircle,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,7 +48,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 
 import {
   useMuhadatsahDetail,
@@ -57,43 +57,48 @@ import {
   getStatusColor,
   getGradeColor,
   getLanguageLabel,
-} from '@/hooks/use-muhadatsah';
+} from "@/hooks/use-muhadatsah";
 
 // Scoring components for Muhadatsah
 const SCORING_COMPONENTS = [
   {
-    key: 'fluencyScore',
-    label: 'Kelancaran (Fluency)',
-    description: 'Kemampuan berbicara dengan lancar tanpa terlalu banyak jeda',
+    key: "fluencyScore",
+    label: "Kelancaran (Fluency)",
+    description: "Kemampuan berbicara dengan lancar tanpa terlalu banyak jeda",
     icon: MessageCircle,
   },
   {
-    key: 'grammarScore',
-    label: 'Tata Bahasa (Grammar)',
-    description: 'Ketepatan penggunaan struktur kalimat dan kaidah bahasa',
+    key: "grammarScore",
+    label: "Tata Bahasa (Grammar)",
+    description: "Ketepatan penggunaan struktur kalimat dan kaidah bahasa",
     icon: BookOpen,
   },
   {
-    key: 'vocabularyScore',
-    label: 'Kosa Kata (Vocabulary)',
-    description: 'Penggunaan kosa kata yang tepat dan beragam',
+    key: "vocabularyScore",
+    label: "Kosa Kata (Vocabulary)",
+    description: "Penggunaan kosa kata yang tepat dan beragam",
     icon: FileText,
   },
   {
-    key: 'pronunciationScore',
-    label: 'Pengucapan (Pronunciation)',
-    description: 'Kejelasan dan ketepatan pengucapan kata',
+    key: "pronunciationScore",
+    label: "Pengucapan (Pronunciation)",
+    description: "Kejelasan dan ketepatan pengucapan kata",
     icon: Volume2,
   },
 ];
 
 // Grade mapping
 const GRADE_INFO = [
-  { grade: 'A', label: 'Mumtaz', range: '86-100', color: 'text-green-600' },
-  { grade: 'B', label: 'Jayyid Jiddan', range: '71-85', color: 'text-blue-600' },
-  { grade: 'C', label: 'Jayyid', range: '56-70', color: 'text-yellow-600' },
-  { grade: 'D', label: 'Maqbul', range: '41-55', color: 'text-orange-600' },
-  { grade: 'E', label: 'Rasib', range: '0-40', color: 'text-red-600' },
+  { grade: "A", label: "Mumtaz", range: "86-100", color: "text-green-600" },
+  {
+    grade: "B",
+    label: "Jayyid Jiddan",
+    range: "71-85",
+    color: "text-blue-600",
+  },
+  { grade: "C", label: "Jayyid", range: "56-70", color: "text-yellow-600" },
+  { grade: "D", label: "Maqbul", range: "41-55", color: "text-orange-600" },
+  { grade: "E", label: "Rasib", range: "0-40", color: "text-red-600" },
 ];
 
 export default function MuhadatsahDetailPage() {
@@ -109,10 +114,10 @@ export default function MuhadatsahDetailPage() {
   const handleDelete = async () => {
     try {
       await deleteMuhadatsah.mutateAsync(id);
-      toast.success('Data muhadatsah berhasil dihapus');
-      router.push('/muhadatsah');
+      toast.success("Data muhadatsah berhasil dihapus");
+      router.push("/muhadatsah");
     } catch {
-      toast.error('Gagal menghapus data');
+      toast.error("Gagal menghapus data");
     }
   };
 
@@ -120,10 +125,10 @@ export default function MuhadatsahDetailPage() {
   const handleCancel = async () => {
     try {
       await cancelMuhadatsah.mutateAsync(id);
-      toast.success('Jadwal muhadatsah dibatalkan');
+      toast.success("Jadwal muhadatsah dibatalkan");
       router.refresh();
     } catch {
-      toast.error('Gagal membatalkan jadwal');
+      toast.error("Gagal membatalkan jadwal");
     }
   };
 
@@ -167,8 +172,8 @@ export default function MuhadatsahDetailPage() {
     );
   }
 
-  const isScheduled = muhadatsah.status === 'SCHEDULED';
-  const isCompleted = muhadatsah.status === 'COMPLETED';
+  const isScheduled = muhadatsah.status === "SCHEDULED";
+  const isCompleted = muhadatsah.status === "COMPLETED";
 
   return (
     <MainLayout>
@@ -185,9 +190,9 @@ export default function MuhadatsahDetailPage() {
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-2xl font-bold">Detail Muhadatsah</h1>
               <Badge className={getStatusColor(muhadatsah.status)}>
-                {muhadatsah.status === 'SCHEDULED' && 'Terjadwal'}
-                {muhadatsah.status === 'COMPLETED' && 'Selesai'}
-                {muhadatsah.status === 'CANCELLED' && 'Dibatalkan'}
+                {muhadatsah.status === "SCHEDULED" && "Terjadwal"}
+                {muhadatsah.status === "COMPLETED" && "Selesai"}
+                {muhadatsah.status === "CANCELLED" && "Dibatalkan"}
               </Badge>
             </div>
             <p className="text-muted-foreground">
@@ -233,11 +238,17 @@ export default function MuhadatsahDetailPage() {
                   <div className="flex items-center gap-3 mb-3">
                     <Avatar className="h-12 w-12">
                       <AvatarFallback>
-                        {muhadatsah.student?.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+                        {muhadatsah.student?.name
+                          ?.split(" ")
+                          .map((n: string) => n[0])
+                          .join("")
+                          .slice(0, 2)}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-semibold">{muhadatsah.student?.name}</p>
+                      <p className="font-semibold">
+                        {muhadatsah.student?.name}
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         {muhadatsah.student?.nis}
                       </p>
@@ -245,19 +256,23 @@ export default function MuhadatsahDetailPage() {
                   </div>
                   <div className="space-y-1 text-sm">
                     <p>
-                      <span className="text-muted-foreground">Kelas:</span>{' '}
-                      {muhadatsah.student?.class?.name || '-'}
+                      <span className="text-muted-foreground">Kelas:</span>{" "}
+                      {muhadatsah.student?.class?.name || "-"}
                     </p>
                     <p>
-                      <span className="text-muted-foreground">Unit:</span>{' '}
-                      {muhadatsah.unit?.name || '-'}
+                      <span className="text-muted-foreground">Unit:</span>{" "}
+                      {muhadatsah.unit?.name || "-"}
                     </p>
                   </div>
                   {isCompleted && muhadatsah.totalScore && (
                     <div className="mt-3 pt-3 border-t">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Nilai:</span>
-                        <Badge className={getGradeColor(muhadatsah.grade || '')}>
+                        <span className="text-sm text-muted-foreground">
+                          Nilai:
+                        </span>
+                        <Badge
+                          className={getGradeColor(muhadatsah.grade || "")}
+                        >
                           {muhadatsah.totalScore} - {muhadatsah.grade}
                         </Badge>
                       </div>
@@ -272,11 +287,17 @@ export default function MuhadatsahDetailPage() {
                       <div className="flex items-center gap-3 mb-3">
                         <Avatar className="h-12 w-12">
                           <AvatarFallback>
-                            {muhadatsah.partner?.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+                            {muhadatsah.partner?.name
+                              ?.split(" ")
+                              .map((n: string) => n[0])
+                              .join("")
+                              .slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-semibold">{muhadatsah.partner?.name}</p>
+                          <p className="font-semibold">
+                            {muhadatsah.partner?.name}
+                          </p>
                           <p className="text-sm text-muted-foreground">
                             {muhadatsah.partner?.nis}
                           </p>
@@ -284,8 +305,8 @@ export default function MuhadatsahDetailPage() {
                       </div>
                       <div className="space-y-1 text-sm">
                         <p>
-                          <span className="text-muted-foreground">Unit:</span>{' '}
-                          {muhadatsah.unit?.name || '-'}
+                          <span className="text-muted-foreground">Unit:</span>{" "}
+                          {muhadatsah.unit?.name || "-"}
                         </p>
                       </div>
                     </>
@@ -310,38 +331,54 @@ export default function MuhadatsahDetailPage() {
                 </CardTitle>
                 {muhadatsah.evaluatedAt && (
                   <CardDescription>
-                    Dinilai pada{' '}
-                    {format(new Date(muhadatsah.evaluatedAt), 'dd MMMM yyyy HH:mm', {
-                      locale: localeId,
-                    })}
+                    Dinilai pada{" "}
+                    {format(
+                      new Date(muhadatsah.evaluatedAt),
+                      "dd MMMM yyyy HH:mm",
+                      {
+                        locale: localeId,
+                      },
+                    )}
                   </CardDescription>
                 )}
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Overall Score */}
                 <div className="text-center p-6 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-2">Nilai Total</p>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Nilai Total
+                  </p>
                   <div className="flex items-center justify-center gap-4">
-                    <span className="text-5xl font-bold">{muhadatsah.totalScore}</span>
-                    <Badge className={`text-lg ${getGradeColor(muhadatsah.grade || '')}`}>
+                    <span className="text-5xl font-bold">
+                      {muhadatsah.totalScore}
+                    </span>
+                    <Badge
+                      className={`text-lg ${getGradeColor(muhadatsah.grade || "")}`}
+                    >
                       {muhadatsah.grade}
                     </Badge>
                   </div>
                   <p className="mt-2 text-muted-foreground">
-                    {muhadatsah.grade === 'A' && 'Mumtaz (Istimewa)'}
-                    {muhadatsah.grade === 'B' && 'Jayyid Jiddan (Sangat Baik)'}
-                    {muhadatsah.grade === 'C' && 'Jayyid (Baik)'}
-                    {muhadatsah.grade === 'D' && 'Maqbul (Cukup)'}
-                    {muhadatsah.grade === 'E' && 'Rasib (Perlu Peningkatan)'}
+                    {muhadatsah.grade === "A" && "Mumtaz (Istimewa)"}
+                    {muhadatsah.grade === "B" && "Jayyid Jiddan (Sangat Baik)"}
+                    {muhadatsah.grade === "C" && "Jayyid (Baik)"}
+                    {muhadatsah.grade === "D" && "Maqbul (Cukup)"}
+                    {muhadatsah.grade === "E" && "Rasib (Perlu Peningkatan)"}
                   </p>
                 </div>
 
                 {/* Component Scores */}
                 <div className="grid gap-4 md:grid-cols-2">
                   {SCORING_COMPONENTS.map((component) => {
-                    const score = muhadatsah[component.key as keyof typeof muhadatsah] as number || 0;
+                    const score =
+                      (muhadatsah[
+                        component.key as keyof typeof muhadatsah
+                      ] as number) || 0;
                     return (
-                      <div key={component.key} className="p-4 border rounded-lg">
+                      <div
+                        key={component.key}
+                        className="p-4 border rounded-lg"
+                      >
                         <div className="flex items-center gap-2 mb-2">
                           <component.icon className="h-4 w-4 text-primary" />
                           <span className="font-medium">{component.label}</span>
@@ -395,9 +432,15 @@ export default function MuhadatsahDetailPage() {
               <div className="grid grid-cols-5 gap-2 text-center text-sm">
                 {GRADE_INFO.map((grade) => (
                   <div key={grade.grade} className="p-2 bg-muted rounded">
-                    <span className={`font-bold ${grade.color}`}>{grade.grade}</span>
-                    <p className="text-xs text-muted-foreground mt-1">{grade.label}</p>
-                    <p className="text-xs text-muted-foreground">{grade.range}</p>
+                    <span className={`font-bold ${grade.color}`}>
+                      {grade.grade}
+                    </span>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {grade.label}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {grade.range}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -420,7 +463,9 @@ export default function MuhadatsahDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Bahasa</p>
-                  <p className="font-medium">{getLanguageLabel(muhadatsah.language)}</p>
+                  <p className="font-medium">
+                    {getLanguageLabel(muhadatsah.language)}
+                  </p>
                 </div>
               </div>
 
@@ -434,9 +479,13 @@ export default function MuhadatsahDetailPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Tanggal</p>
                   <p className="font-medium">
-                    {format(new Date(muhadatsah.scheduledAt), 'EEEE, dd MMMM yyyy', {
-                      locale: localeId,
-                    })}
+                    {format(
+                      new Date(muhadatsah.scheduledAt),
+                      "EEEE, dd MMMM yyyy",
+                      {
+                        locale: localeId,
+                      },
+                    )}
                   </p>
                 </div>
               </div>
@@ -451,7 +500,9 @@ export default function MuhadatsahDetailPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Waktu</p>
                   <p className="font-medium">
-                    {format(new Date(muhadatsah.scheduledAt), 'HH:mm', { locale: localeId })}
+                    {format(new Date(muhadatsah.scheduledAt), "HH:mm", {
+                      locale: localeId,
+                    })}
                   </p>
                 </div>
               </div>
@@ -465,7 +516,9 @@ export default function MuhadatsahDetailPage() {
                       <FileText className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Tema Percakapan</p>
+                      <p className="text-sm text-muted-foreground">
+                        Tema Percakapan
+                      </p>
                       <p className="font-medium">{muhadatsah.topic}</p>
                     </div>
                   </div>
@@ -503,14 +556,19 @@ export default function MuhadatsahDetailPage() {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Batalkan Muhadatsah?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          Batalkan Muhadatsah?
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          Jadwal muhadatsah ini akan dibatalkan. Apakah Anda yakin?
+                          Jadwal muhadatsah ini akan dibatalkan. Apakah Anda
+                          yakin?
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Tidak</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleCancel}>Ya, Batalkan</AlertDialogAction>
+                        <AlertDialogAction onClick={handleCancel}>
+                          Ya, Batalkan
+                        </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
@@ -537,12 +595,16 @@ export default function MuhadatsahDetailPage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Hapus Muhadatsah?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Data muhadatsah ini akan dihapus permanen dan tidak dapat dikembalikan.
+                      Data muhadatsah ini akan dihapus permanen dan tidak dapat
+                      dikembalikan.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Batal</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} className="bg-destructive">
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      className="bg-destructive"
+                    >
                       Hapus
                     </AlertDialogAction>
                   </AlertDialogFooter>

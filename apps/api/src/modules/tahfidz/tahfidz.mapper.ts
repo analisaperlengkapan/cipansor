@@ -33,25 +33,33 @@ export class TahfidzMapper {
       recordedById: record.recordedById,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
-      student: record.student ? {
-        ...record.student,
-        user: record.student.user ? {
-          id: record.student.user.id,
-          name: record.student.user.name,
-        } : undefined,
-        unit: record.student.unit ? {
-          id: record.student.unit.id,
-          name: record.student.unit.name,
-        } : undefined,
-      } : undefined,
-      recordedBy: record.recordedBy ? {
-        id: record.recordedBy.id,
-        name: record.recordedBy.name,
-      } : undefined,
+      student: record.student
+        ? {
+            ...record.student,
+            user: record.student.user
+              ? {
+                  id: record.student.user.id,
+                  name: record.student.user.name,
+                }
+              : undefined,
+            unit: record.student.unit
+              ? {
+                  id: record.student.unit.id,
+                  name: record.student.unit.name,
+                }
+              : undefined,
+          }
+        : undefined,
+      recordedBy: record.recordedBy
+        ? {
+            id: record.recordedBy.id,
+            name: record.recordedBy.name,
+          }
+        : undefined,
     };
   }
 
   static toSharedRecords(records: any[]): TahfidzRecord[] {
-    return records.map(r => this.toSharedRecord(r));
+    return records.map((r) => this.toSharedRecord(r));
   }
 }

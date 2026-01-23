@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
   Edit,
@@ -21,25 +21,20 @@ import {
   ClipboardCheck,
   Award,
   User,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,7 +44,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -57,13 +52,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -71,11 +66,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
-import { toast } from 'sonner';
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 
 import {
   useExtracurricular,
@@ -88,7 +83,7 @@ import {
   getLevelConfig,
   formatSchedule,
   DAY_NAMES,
-} from '@/hooks/use-extracurricular';
+} from "@/hooks/use-extracurricular";
 
 export default function ExtracurricularDetailPage() {
   const params = useParams();
@@ -96,15 +91,21 @@ export default function ExtracurricularDetailPage() {
   const id = params.id as string;
 
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [rejectDialog, setRejectDialog] = useState<{ open: boolean; enrollmentId: string | null }>({
+  const [rejectDialog, setRejectDialog] = useState<{
+    open: boolean;
+    enrollmentId: string | null;
+  }>({
     open: false,
     enrollmentId: null,
   });
-  const [rejectReason, setRejectReason] = useState('');
+  const [rejectReason, setRejectReason] = useState("");
 
   const { data: extracurricular, isLoading } = useExtracurricular(id);
-  const { data: enrollments = [], isLoading: enrollmentsLoading } = useExtracurricularEnrollments(id);
-  const { data: achievements = [] } = useExtracurricularAchievements({ extracurricularId: id });
+  const { data: enrollments = [], isLoading: enrollmentsLoading } =
+    useExtracurricularEnrollments(id);
+  const { data: achievements = [] } = useExtracurricularAchievements({
+    extracurricularId: id,
+  });
 
   const deleteMutation = useDeleteExtracurricular();
   const approveMutation = useApproveEnrollment();
@@ -113,19 +114,22 @@ export default function ExtracurricularDetailPage() {
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(id);
-      toast.success('Ekstrakurikuler berhasil dihapus');
-      router.push('/extracurricular');
+      toast.success("Ekstrakurikuler berhasil dihapus");
+      router.push("/extracurricular");
     } catch {
-      toast.error('Gagal menghapus ekstrakurikuler');
+      toast.error("Gagal menghapus ekstrakurikuler");
     }
   };
 
   const handleApprove = async (enrollmentId: string) => {
     try {
-      await approveMutation.mutateAsync({ enrollmentId, extracurricularId: id });
-      toast.success('Pendaftaran disetujui');
+      await approveMutation.mutateAsync({
+        enrollmentId,
+        extracurricularId: id,
+      });
+      toast.success("Pendaftaran disetujui");
     } catch {
-      toast.error('Gagal menyetujui pendaftaran');
+      toast.error("Gagal menyetujui pendaftaran");
     }
   };
 
@@ -137,11 +141,11 @@ export default function ExtracurricularDetailPage() {
         extracurricularId: id,
         reason: rejectReason,
       });
-      toast.success('Pendaftaran ditolak');
+      toast.success("Pendaftaran ditolak");
       setRejectDialog({ open: false, enrollmentId: null });
-      setRejectReason('');
+      setRejectReason("");
     } catch {
-      toast.error('Gagal menolak pendaftaran');
+      toast.error("Gagal menolak pendaftaran");
     }
   };
 
@@ -161,7 +165,9 @@ export default function ExtracurricularDetailPage() {
       <MainLayout>
         <Card>
           <CardContent className="p-6 text-center">
-            <p className="text-muted-foreground">Ekstrakurikuler tidak ditemukan</p>
+            <p className="text-muted-foreground">
+              Ekstrakurikuler tidak ditemukan
+            </p>
             <Button asChild className="mt-4">
               <Link href="/extracurricular">Kembali</Link>
             </Button>
@@ -176,8 +182,10 @@ export default function ExtracurricularDetailPage() {
     ? (extracurricular.currentMembers / extracurricular.maxMembers) * 100
     : 0;
 
-  const pendingEnrollments = enrollments.filter((e) => e.status === 'PENDING');
-  const approvedEnrollments = enrollments.filter((e) => e.status === 'APPROVED');
+  const pendingEnrollments = enrollments.filter((e) => e.status === "PENDING");
+  const approvedEnrollments = enrollments.filter(
+    (e) => e.status === "APPROVED",
+  );
 
   return (
     <MainLayout>
@@ -186,7 +194,7 @@ export default function ExtracurricularDetailPage() {
         description={extracurricular.code}
         backHref="/extracurricular"
         action={{
-          label: 'Edit',
+          label: "Edit",
           icon: <Edit className="h-4 w-4" />,
           href: `/extracurricular/${id}/edit`,
         }}
@@ -220,7 +228,8 @@ export default function ExtracurricularDetailPage() {
                     <p className="text-sm text-muted-foreground">Anggota</p>
                     <p className="text-xl font-bold">
                       {extracurricular.currentMembers}
-                      {extracurricular.maxMembers && ` / ${extracurricular.maxMembers}`}
+                      {extracurricular.maxMembers &&
+                        ` / ${extracurricular.maxMembers}`}
                     </p>
                   </div>
                 </div>
@@ -237,7 +246,9 @@ export default function ExtracurricularDetailPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Jadwal</p>
-                    <p className="text-xl font-bold">{extracurricular.schedules?.length || 0}x/minggu</p>
+                    <p className="text-xl font-bold">
+                      {extracurricular.schedules?.length || 0}x/minggu
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -262,8 +273,12 @@ export default function ExtracurricularDetailPage() {
                     <Calendar className="h-4 w-4 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Tahun Ajaran</p>
-                    <p className="text-lg font-medium truncate">{extracurricular.academicYear?.name || '-'}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Tahun Ajaran
+                    </p>
+                    <p className="text-lg font-medium truncate">
+                      {extracurricular.academicYear?.name || "-"}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -280,9 +295,20 @@ export default function ExtracurricularDetailPage() {
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">{catConfig?.icon}</span>
                   <div>
-                    <Badge className={catConfig?.color}>{catConfig?.label}</Badge>
-                    <Badge variant={extracurricular.status === 'ACTIVE' ? 'default' : 'secondary'} className="ml-2">
-                      {extracurricular.status === 'ACTIVE' ? 'Aktif' : 'Tidak Aktif'}
+                    <Badge className={catConfig?.color}>
+                      {catConfig?.label}
+                    </Badge>
+                    <Badge
+                      variant={
+                        extracurricular.status === "ACTIVE"
+                          ? "default"
+                          : "secondary"
+                      }
+                      className="ml-2"
+                    >
+                      {extracurricular.status === "ACTIVE"
+                        ? "Aktif"
+                        : "Tidak Aktif"}
                     </Badge>
                   </div>
                 </div>
@@ -297,11 +323,17 @@ export default function ExtracurricularDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Unit</p>
-                    <p className="font-medium">{extracurricular.unit?.name || '-'}</p>
+                    <p className="font-medium">
+                      {extracurricular.unit?.name || "-"}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Pembina</p>
-                    <p className="font-medium">{extracurricular.coach?.name || extracurricular.coachName || '-'}</p>
+                    <p className="font-medium">
+                      {extracurricular.coach?.name ||
+                        extracurricular.coachName ||
+                        "-"}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -312,15 +344,21 @@ export default function ExtracurricularDetailPage() {
                 <CardTitle>Jadwal Kegiatan</CardTitle>
               </CardHeader>
               <CardContent>
-                {extracurricular.schedules && extracurricular.schedules.length > 0 ? (
+                {extracurricular.schedules &&
+                extracurricular.schedules.length > 0 ? (
                   <div className="space-y-3">
                     {extracurricular.schedules.map((schedule, idx) => (
-                      <div key={idx} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                      <div
+                        key={idx}
+                        className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                      >
                         <div className="p-2 bg-background rounded-lg">
                           <Calendar className="h-4 w-4" />
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium">{DAY_NAMES[schedule.dayOfWeek]}</p>
+                          <p className="font-medium">
+                            {DAY_NAMES[schedule.dayOfWeek]}
+                          </p>
                           <p className="text-sm text-muted-foreground">
                             {schedule.startTime} - {schedule.endTime}
                           </p>
@@ -347,7 +385,9 @@ export default function ExtracurricularDetailPage() {
           <Card className="border-destructive">
             <CardHeader>
               <CardTitle className="text-destructive">Zona Berbahaya</CardTitle>
-              <CardDescription>Tindakan di bawah ini tidak dapat dibatalkan</CardDescription>
+              <CardDescription>
+                Tindakan di bawah ini tidak dapat dibatalkan
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
@@ -365,7 +405,9 @@ export default function ExtracurricularDetailPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   Pendaftaran Menunggu
-                  <Badge variant="destructive">{pendingEnrollments.length}</Badge>
+                  <Badge variant="destructive">
+                    {pendingEnrollments.length}
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -383,9 +425,19 @@ export default function ExtracurricularDetailPage() {
                     {pendingEnrollments.map((enrollment) => (
                       <TableRow key={enrollment.id}>
                         <TableCell>{enrollment.student?.nis}</TableCell>
-                        <TableCell className="font-medium">{enrollment.student?.name}</TableCell>
-                        <TableCell>{enrollment.student?.currentClass?.name || '-'}</TableCell>
-                        <TableCell>{format(new Date(enrollment.enrolledAt), 'dd MMM yyyy', { locale: localeId })}</TableCell>
+                        <TableCell className="font-medium">
+                          {enrollment.student?.name}
+                        </TableCell>
+                        <TableCell>
+                          {enrollment.student?.currentClass?.name || "-"}
+                        </TableCell>
+                        <TableCell>
+                          {format(
+                            new Date(enrollment.enrolledAt),
+                            "dd MMM yyyy",
+                            { locale: localeId },
+                          )}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Button
@@ -400,7 +452,12 @@ export default function ExtracurricularDetailPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setRejectDialog({ open: true, enrollmentId: enrollment.id })}
+                              onClick={() =>
+                                setRejectDialog({
+                                  open: true,
+                                  enrollmentId: enrollment.id,
+                                })
+                              }
                             >
                               <X className="h-3 w-3 mr-1" />
                               Tolak
@@ -419,7 +476,9 @@ export default function ExtracurricularDetailPage() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Daftar Anggota ({approvedEnrollments.length})</CardTitle>
+                <CardTitle>
+                  Daftar Anggota ({approvedEnrollments.length})
+                </CardTitle>
                 <Button size="sm">
                   <Plus className="h-4 w-4 mr-1" />
                   Tambah Anggota
@@ -453,9 +512,21 @@ export default function ExtracurricularDetailPage() {
                     {approvedEnrollments.map((enrollment) => (
                       <TableRow key={enrollment.id}>
                         <TableCell>{enrollment.student?.nis}</TableCell>
-                        <TableCell className="font-medium">{enrollment.student?.name}</TableCell>
-                        <TableCell>{enrollment.student?.currentClass?.name || '-'}</TableCell>
-                        <TableCell>{format(new Date(enrollment.approvedAt || enrollment.enrolledAt), 'dd MMM yyyy', { locale: localeId })}</TableCell>
+                        <TableCell className="font-medium">
+                          {enrollment.student?.name}
+                        </TableCell>
+                        <TableCell>
+                          {enrollment.student?.currentClass?.name || "-"}
+                        </TableCell>
+                        <TableCell>
+                          {format(
+                            new Date(
+                              enrollment.approvedAt || enrollment.enrolledAt,
+                            ),
+                            "dd MMM yyyy",
+                            { locale: localeId },
+                          )}
+                        </TableCell>
                         <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -499,7 +570,9 @@ export default function ExtracurricularDetailPage() {
               <div className="text-center py-12 text-muted-foreground">
                 <ClipboardCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>Fitur absensi akan segera tersedia</p>
-                <p className="text-sm">Rekam kehadiran anggota setiap kegiatan</p>
+                <p className="text-sm">
+                  Rekam kehadiran anggota setiap kegiatan
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -528,26 +601,45 @@ export default function ExtracurricularDetailPage() {
                   {achievements.map((achievement) => {
                     const levelConfig = getLevelConfig(achievement.level);
                     return (
-                      <div key={achievement.id} className="flex items-start gap-4 p-4 border rounded-lg">
+                      <div
+                        key={achievement.id}
+                        className="flex items-start gap-4 p-4 border rounded-lg"
+                      >
                         <div className="p-2 bg-amber-100 rounded-lg">
                           <Award className="h-6 w-6 text-amber-600" />
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <h4 className="font-semibold">{achievement.title}</h4>
-                            <Badge className={levelConfig?.color}>{levelConfig?.label}</Badge>
+                            <h4 className="font-semibold">
+                              {achievement.title}
+                            </h4>
+                            <Badge className={levelConfig?.color}>
+                              {levelConfig?.label}
+                            </Badge>
                             {achievement.rank && (
-                              <Badge variant="outline">{achievement.rank}</Badge>
+                              <Badge variant="outline">
+                                {achievement.rank}
+                              </Badge>
                             )}
                           </div>
                           {achievement.description && (
-                            <p className="text-sm text-muted-foreground mt-1">{achievement.description}</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {achievement.description}
+                            </p>
                           )}
                           <p className="text-xs text-muted-foreground mt-2">
-                            {format(new Date(achievement.date), 'dd MMMM yyyy', { locale: localeId })}
-                            {achievement.participants && achievement.participants.length > 0 && (
-                              <> • {achievement.participants.length} peserta</>
+                            {format(
+                              new Date(achievement.date),
+                              "dd MMMM yyyy",
+                              { locale: localeId },
                             )}
+                            {achievement.participants &&
+                              achievement.participants.length > 0 && (
+                                <>
+                                  {" "}
+                                  • {achievement.participants.length} peserta
+                                </>
+                              )}
                           </p>
                         </div>
                       </div>
@@ -566,7 +658,8 @@ export default function ExtracurricularDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus Ekstrakurikuler?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Semua data anggota, absensi, dan prestasi akan ikut terhapus.
+              Tindakan ini tidak dapat dibatalkan. Semua data anggota, absensi,
+              dan prestasi akan ikut terhapus.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -575,14 +668,17 @@ export default function ExtracurricularDetailPage() {
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground"
             >
-              {deleteMutation.isPending ? 'Menghapus...' : 'Hapus'}
+              {deleteMutation.isPending ? "Menghapus..." : "Hapus"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* Reject Dialog */}
-      <Dialog open={rejectDialog.open} onOpenChange={(open) => setRejectDialog({ open, enrollmentId: null })}>
+      <Dialog
+        open={rejectDialog.open}
+        onOpenChange={(open) => setRejectDialog({ open, enrollmentId: null })}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Tolak Pendaftaran</DialogTitle>
@@ -596,11 +692,20 @@ export default function ExtracurricularDetailPage() {
             onChange={(e) => setRejectReason(e.target.value)}
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDialog({ open: false, enrollmentId: null })}>
+            <Button
+              variant="outline"
+              onClick={() =>
+                setRejectDialog({ open: false, enrollmentId: null })
+              }
+            >
               Batal
             </Button>
-            <Button variant="destructive" onClick={handleReject} disabled={rejectMutation.isPending}>
-              {rejectMutation.isPending ? 'Menolak...' : 'Tolak'}
+            <Button
+              variant="destructive"
+              onClick={handleReject}
+              disabled={rejectMutation.isPending}
+            >
+              {rejectMutation.isPending ? "Menolak..." : "Tolak"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,17 +1,37 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
-import { formatCurrency } from '@/lib/utils';
-import { Budget } from '@cipansor/shared';
-import { Loader2, Plus, Pencil } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { formatCurrency } from "@/lib/utils";
+import { Budget } from "@cipansor/shared";
+import { Loader2, Plus, Pencil } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
@@ -19,54 +39,54 @@ import { Progress } from "@/components/ui/progress";
 // Helper Hooks
 const useBudgets = (unitId: string, academicYearId: string) => {
   return useQuery({
-    queryKey: ['budgets', unitId, academicYearId],
+    queryKey: ["budgets", unitId, academicYearId],
     queryFn: async () => {
       const res = await api.get(`/finance-enhancement/budgets`, {
-        params: { unitId, academicYearId }
+        params: { unitId, academicYearId },
       });
       return res.data.data;
     },
-    enabled: !!unitId && !!academicYearId
+    enabled: !!unitId && !!academicYearId,
   });
 };
 
 const useUnits = () => {
   return useQuery({
-    queryKey: ['units'],
+    queryKey: ["units"],
     queryFn: async () => {
-      const res = await api.get('/units');
+      const res = await api.get("/units");
       return res.data.data;
-    }
+    },
   });
 };
 
 const useAcademicYears = () => {
   return useQuery({
-    queryKey: ['academic-years'],
+    queryKey: ["academic-years"],
     queryFn: async () => {
-      const res = await api.get('/academic-years');
+      const res = await api.get("/academic-years");
       return res.data.data;
-    }
+    },
   });
 };
 
 const useExpenseAccounts = () => {
   return useQuery({
-    queryKey: ['accounts', 'EXPENSE'],
+    queryKey: ["accounts", "EXPENSE"],
     queryFn: async () => {
-      const res = await api.get('/finance-enhancement/account-codes', {
-        params: { type: 'EXPENSE', limit: 100 }
+      const res = await api.get("/finance-enhancement/account-codes", {
+        params: { type: "EXPENSE", limit: 100 },
       });
       return res.data.data;
-    }
+    },
   });
 };
 
 const useCreateBudget = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => api.post('/finance-enhancement/budgets', data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['budgets'] })
+    mutationFn: (data: any) => api.post("/finance-enhancement/budgets", data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["budgets"] }),
   });
 };
 
@@ -75,14 +95,21 @@ export default function BudgetingPage() {
   const { data: years } = useAcademicYears();
   const { data: accounts } = useExpenseAccounts();
 
-  const [selectedUnitId, setSelectedUnitId] = useState<string>('');
-  const [selectedYearId, setSelectedYearId] = useState<string>('');
+  const [selectedUnitId, setSelectedUnitId] = useState<string>("");
+  const [selectedYearId, setSelectedYearId] = useState<string>("");
 
-  const { data: budgets, isLoading } = useBudgets(selectedUnitId, selectedYearId);
+  const { data: budgets, isLoading } = useBudgets(
+    selectedUnitId,
+    selectedYearId,
+  );
   const createBudget = useCreateBudget();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({ accountId: '', amount: 0, notes: '' });
+  const [formData, setFormData] = useState({
+    accountId: "",
+    amount: 0,
+    notes: "",
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,11 +117,11 @@ export default function BudgetingPage() {
       await createBudget.mutateAsync({
         unitId: selectedUnitId,
         academicYearId: selectedYearId,
-        ...formData
+        ...formData,
       });
       toast.success("Success", { description: "Budget created successfully" });
       setIsDialogOpen(false);
-      setFormData({ accountId: '', amount: 0, notes: '' });
+      setFormData({ accountId: "", amount: 0, notes: "" });
     } catch (error: any) {
       toast.error("Error", {
         description: error.response?.data?.message || "Failed to create budget",
@@ -106,8 +133,12 @@ export default function BudgetingPage() {
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Anggaran (Budgeting)</h1>
-          <p className="text-muted-foreground">Kelola anggaran pengeluaran per tahun ajaran.</p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Anggaran (Budgeting)
+          </h1>
+          <p className="text-muted-foreground">
+            Kelola anggaran pengeluaran per tahun ajaran.
+          </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -124,7 +155,9 @@ export default function BudgetingPage() {
                 <Label>Akun Beban (Expense)</Label>
                 <Select
                   value={formData.accountId}
-                  onValueChange={val => setFormData({...formData, accountId: val})}
+                  onValueChange={(val) =>
+                    setFormData({ ...formData, accountId: val })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih Akun" />
@@ -143,18 +176,28 @@ export default function BudgetingPage() {
                 <Input
                   type="number"
                   value={formData.amount}
-                  onChange={e => setFormData({...formData, amount: parseFloat(e.target.value)})}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      amount: parseFloat(e.target.value),
+                    })
+                  }
                 />
               </div>
               <div className="space-y-2">
                 <Label>Catatan</Label>
                 <Input
                   value={formData.notes}
-                  onChange={e => setFormData({...formData, notes: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notes: e.target.value })
+                  }
                 />
               </div>
               <DialogFooter>
-                <Button type="submit" disabled={!formData.accountId || formData.amount <= 0}>
+                <Button
+                  type="submit"
+                  disabled={!formData.accountId || formData.amount <= 0}
+                >
                   Simpan
                 </Button>
               </DialogFooter>
@@ -170,7 +213,9 @@ export default function BudgetingPage() {
           </SelectTrigger>
           <SelectContent>
             {units?.map((unit: any) => (
-              <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
+              <SelectItem key={unit.id} value={unit.id}>
+                {unit.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -181,7 +226,9 @@ export default function BudgetingPage() {
           </SelectTrigger>
           <SelectContent>
             {years?.map((year: any) => (
-              <SelectItem key={year.id} value={year.id}>{year.name}</SelectItem>
+              <SelectItem key={year.id} value={year.id}>
+                {year.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -193,7 +240,9 @@ export default function BudgetingPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>
+            <div className="flex justify-center p-8">
+              <Loader2 className="animate-spin" />
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -209,15 +258,26 @@ export default function BudgetingPage() {
               </TableHeader>
               <TableBody>
                 {budgets?.map((budget: Budget) => {
-                  const percentage = budget.amount > 0 ? (budget.usedAmount / budget.amount) * 100 : 0;
+                  const percentage =
+                    budget.amount > 0
+                      ? (budget.usedAmount / budget.amount) * 100
+                      : 0;
                   const isOverBudget = percentage > 100;
 
                   return (
                     <TableRow key={budget.id}>
-                      <TableCell className="font-mono">{budget.account?.code}</TableCell>
-                      <TableCell className="font-medium">{budget.account?.name}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(budget.amount)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(budget.usedAmount)}</TableCell>
+                      <TableCell className="font-mono">
+                        {budget.account?.code}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {budget.account?.name}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(budget.amount)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(budget.usedAmount)}
+                      </TableCell>
                       <TableCell className="text-right font-bold text-muted-foreground">
                         {formatCurrency(budget.amount - budget.usedAmount)}
                       </TableCell>
@@ -234,14 +294,19 @@ export default function BudgetingPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm"><Pencil className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="sm">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );
                 })}
                 {!budgets?.length && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={7}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       Belum ada data anggaran.
                     </TableCell>
                   </TableRow>

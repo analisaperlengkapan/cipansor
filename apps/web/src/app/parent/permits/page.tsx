@@ -1,18 +1,38 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { api } from '@/lib/api';
-import { toast } from 'sonner';
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
 import {
   FileText,
   Plus,
@@ -22,7 +42,7 @@ import {
   Calendar,
   LogOut,
   QrCode,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface Child {
   id: string;
@@ -54,38 +74,40 @@ interface Permit {
 
 export default function PermitsPage() {
   const searchParams = useSearchParams();
-  const selectedStudentId = searchParams.get('studentId');
+  const selectedStudentId = searchParams.get("studentId");
 
   const [loading, setLoading] = useState(true);
   const [children, setChildren] = useState<Child[]>([]);
-  const [selectedChild, setSelectedChild] = useState<string>('');
+  const [selectedChild, setSelectedChild] = useState<string>("");
   const [permits, setPermits] = useState<Permit[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
-    type: '',
-    reason: '',
-    startDate: '',
-    endDate: '',
+    type: "",
+    reason: "",
+    startDate: "",
+    endDate: "",
   });
 
   useEffect(() => {
     const fetchChildren = async () => {
       try {
-        const res = await api.get('/parent/children');
+        const res = await api.get("/parent/children");
         const childrenData = res.data.data || [];
         setChildren(childrenData);
-        
+
         if (childrenData.length > 0) {
-          const defaultChild = selectedStudentId 
-            ? childrenData.find((c: Child) => c.student.id === selectedStudentId)?.student.id
+          const defaultChild = selectedStudentId
+            ? childrenData.find(
+                (c: Child) => c.student.id === selectedStudentId,
+              )?.student.id
             : childrenData[0].student.id;
           setSelectedChild(defaultChild || childrenData[0].student.id);
         }
       } catch (err) {
-        console.error('Failed to fetch children:', err);
+        console.error("Failed to fetch children:", err);
       }
     };
 
@@ -101,7 +123,7 @@ export default function PermitsPage() {
         const res = await api.get(`/parent/children/${selectedChild}/permits`);
         setPermits(res.data.data || []);
       } catch (err) {
-        console.error('Failed to fetch permits:', err);
+        console.error("Failed to fetch permits:", err);
       } finally {
         setLoading(false);
       }
@@ -117,15 +139,17 @@ export default function PermitsPage() {
     setSubmitting(true);
     try {
       await api.post(`/parent/children/${selectedChild}/permits`, formData);
-      toast.success('Pengajuan izin berhasil dikirim');
+      toast.success("Pengajuan izin berhasil dikirim");
       setDialogOpen(false);
-      setFormData({ type: '', reason: '', startDate: '', endDate: '' });
-      
+      setFormData({ type: "", reason: "", startDate: "", endDate: "" });
+
       // Refresh permits list
       const res = await api.get(`/parent/children/${selectedChild}/permits`);
       setPermits(res.data.data || []);
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || 'Gagal mengajukan izin');
+      toast.error(
+        err.response?.data?.error?.message || "Gagal mengajukan izin",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -133,21 +157,45 @@ export default function PermitsPage() {
 
   const getStatusBadge = (permit: Permit) => {
     if (permit.returnedAt) {
-      return <Badge className="bg-blue-500"><CheckCircle className="h-3 w-3 mr-1" /> Selesai (Kembali)</Badge>;
+      return (
+        <Badge className="bg-blue-500">
+          <CheckCircle className="h-3 w-3 mr-1" /> Selesai (Kembali)
+        </Badge>
+      );
     }
     if (permit.departedAt) {
-      return <Badge className="bg-orange-500 animate-pulse"><LogOut className="h-3 w-3 mr-1" /> Sedang Keluar</Badge>;
+      return (
+        <Badge className="bg-orange-500 animate-pulse">
+          <LogOut className="h-3 w-3 mr-1" /> Sedang Keluar
+        </Badge>
+      );
     }
 
     switch (permit.status) {
-      case 'APPROVED':
-        return <Badge className="bg-green-500"><CheckCircle className="h-3 w-3 mr-1" /> Disetujui</Badge>;
-      case 'REJECTED':
-        return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" /> Ditolak</Badge>;
-      case 'PENDING':
-        return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" /> Menunggu</Badge>;
-      case 'COMPLETED':
-        return <Badge className="bg-blue-500"><CheckCircle className="h-3 w-3 mr-1" /> Selesai</Badge>;
+      case "APPROVED":
+        return (
+          <Badge className="bg-green-500">
+            <CheckCircle className="h-3 w-3 mr-1" /> Disetujui
+          </Badge>
+        );
+      case "REJECTED":
+        return (
+          <Badge variant="destructive">
+            <XCircle className="h-3 w-3 mr-1" /> Ditolak
+          </Badge>
+        );
+      case "PENDING":
+        return (
+          <Badge variant="secondary">
+            <Clock className="h-3 w-3 mr-1" /> Menunggu
+          </Badge>
+        );
+      case "COMPLETED":
+        return (
+          <Badge className="bg-blue-500">
+            <CheckCircle className="h-3 w-3 mr-1" /> Selesai
+          </Badge>
+        );
       default:
         return <Badge variant="secondary">{permit.status}</Badge>;
     }
@@ -155,15 +203,17 @@ export default function PermitsPage() {
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      SICK: 'Sakit',
-      FAMILY: 'Keperluan Keluarga',
-      PERSONAL: 'Keperluan Pribadi',
-      OTHER: 'Lainnya',
+      SICK: "Sakit",
+      FAMILY: "Keperluan Keluarga",
+      PERSONAL: "Keperluan Pribadi",
+      OTHER: "Lainnya",
     };
     return labels[type] || type;
   };
 
-  const selectedChildData = children.find(c => c.student.id === selectedChild);
+  const selectedChildData = children.find(
+    (c) => c.student.id === selectedChild,
+  );
 
   return (
     <div className="space-y-6">
@@ -189,7 +239,7 @@ export default function PermitsPage() {
               </SelectContent>
             </Select>
           )}
-          
+
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
@@ -208,17 +258,23 @@ export default function PermitsPage() {
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="type">Jenis Izin</Label>
-                    <Select 
-                      value={formData.type} 
-                      onValueChange={(value) => setFormData({ ...formData, type: value })}
+                    <Select
+                      value={formData.type}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, type: value })
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih jenis izin" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="SICK">Sakit</SelectItem>
-                        <SelectItem value="FAMILY">Keperluan Keluarga</SelectItem>
-                        <SelectItem value="PERSONAL">Keperluan Pribadi</SelectItem>
+                        <SelectItem value="FAMILY">
+                          Keperluan Keluarga
+                        </SelectItem>
+                        <SelectItem value="PERSONAL">
+                          Keperluan Pribadi
+                        </SelectItem>
                         <SelectItem value="OTHER">Lainnya</SelectItem>
                       </SelectContent>
                     </Select>
@@ -231,8 +287,13 @@ export default function PermitsPage() {
                         id="startDate"
                         type="date"
                         value={formData.startDate}
-                        onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                        min={new Date().toISOString().split('T')[0]}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            startDate: e.target.value,
+                          })
+                        }
+                        min={new Date().toISOString().split("T")[0]}
                         required
                       />
                     </div>
@@ -242,8 +303,13 @@ export default function PermitsPage() {
                         id="endDate"
                         type="date"
                         value={formData.endDate}
-                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                        min={formData.startDate || new Date().toISOString().split('T')[0]}
+                        onChange={(e) =>
+                          setFormData({ ...formData, endDate: e.target.value })
+                        }
+                        min={
+                          formData.startDate ||
+                          new Date().toISOString().split("T")[0]
+                        }
                         required
                       />
                     </div>
@@ -255,7 +321,9 @@ export default function PermitsPage() {
                       id="reason"
                       placeholder="Jelaskan alasan izin..."
                       value={formData.reason}
-                      onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, reason: e.target.value })
+                      }
                       rows={4}
                       required
                     />
@@ -263,11 +331,18 @@ export default function PermitsPage() {
                 </div>
 
                 <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDialogOpen(false)}
+                  >
                     Batal
                   </Button>
-                  <Button type="submit" disabled={submitting || !formData.type || !formData.reason}>
-                    {submitting ? 'Mengirim...' : 'Kirim Pengajuan'}
+                  <Button
+                    type="submit"
+                    disabled={submitting || !formData.type || !formData.reason}
+                  >
+                    {submitting ? "Mengirim..." : "Kirim Pengajuan"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -305,7 +380,9 @@ export default function PermitsPage() {
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium">{getTypeLabel(permit.type)}</p>
+                        <p className="font-medium">
+                          {getTypeLabel(permit.type)}
+                        </p>
                         {getStatusBadge(permit)}
                       </div>
                       {permit.code && (
@@ -322,34 +399,45 @@ export default function PermitsPage() {
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
                         <span>
-                          {new Date(permit.startDate).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })}
-                          {' - '}
-                          {new Date(permit.endDate).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })}
+                          {new Date(permit.startDate).toLocaleDateString(
+                            "id-ID",
+                            {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            },
+                          )}
+                          {" - "}
+                          {new Date(permit.endDate).toLocaleDateString(
+                            "id-ID",
+                            {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            },
+                          )}
                         </span>
                       </div>
                     </div>
                   </div>
                   <div className="text-right text-sm">
                     <p className="text-muted-foreground">
-                      Diajukan: {new Date(permit.createdAt).toLocaleDateString('id-ID')}
+                      Diajukan:{" "}
+                      {new Date(permit.createdAt).toLocaleDateString("id-ID")}
                     </p>
                     {permit.approvedBy && (
                       <p className="text-muted-foreground mt-1">
-                        {permit.status === 'APPROVED' ? 'Disetujui' : 'Ditolak'} oleh:{' '}
-                        <span className="font-medium">{permit.approvedBy.name}</span>
+                        {permit.status === "APPROVED" ? "Disetujui" : "Ditolak"}{" "}
+                        oleh:{" "}
+                        <span className="font-medium">
+                          {permit.approvedBy.name}
+                        </span>
                       </p>
                     )}
                     {permit.notes && (
                       <p className="mt-2 text-sm">
-                        <span className="text-muted-foreground">Catatan:</span> {permit.notes}
+                        <span className="text-muted-foreground">Catatan:</span>{" "}
+                        {permit.notes}
                       </p>
                     )}
                   </div>

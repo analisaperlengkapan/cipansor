@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useAuthStore } from '@/stores/auth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { api } from '@/lib/api';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { useAuthStore } from "@/stores/auth";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/lib/api";
+import Link from "next/link";
 import {
   Users,
   GraduationCap,
@@ -20,7 +26,7 @@ import {
   Bell,
   Wallet,
   MessageSquare,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface Child {
   id: string;
@@ -105,14 +111,14 @@ export default function ParentDashboardPage() {
         setLoading(true);
         // Fetch children list and dashboard summary
         const [childrenRes, dashboardRes] = await Promise.all([
-          api.get('/parent/children'),
-          api.get('/parent/dashboard'),
+          api.get("/parent/children"),
+          api.get("/parent/dashboard"),
         ]);
         setChildren(childrenRes.data.data || []);
         setDashboard(dashboardRes.data.data || null);
       } catch (err: any) {
-        console.error('Failed to fetch parent data:', err);
-        setError(err.response?.data?.error?.message || 'Gagal memuat data');
+        console.error("Failed to fetch parent data:", err);
+        setError(err.response?.data?.error?.message || "Gagal memuat data");
       } finally {
         setLoading(false);
       }
@@ -152,9 +158,9 @@ export default function ParentDashboardPage() {
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
       minimumFractionDigits: 0,
     }).format(amount);
   };
@@ -165,7 +171,7 @@ export default function ParentDashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Selamat Datang, {user?.name?.split(' ')[0]}!
+            Selamat Datang, {user?.name?.split(" ")[0]}!
           </h1>
           <p className="text-muted-foreground">
             Portal Orang Tua - Pantau perkembangan anak Anda
@@ -185,7 +191,7 @@ export default function ParentDashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {children.map((child) => {
           const summary = dashboard?.children.find(
-            (c) => c.studentId === child.student.id
+            (c) => c.studentId === child.student.id,
           );
 
           return (
@@ -196,12 +202,16 @@ export default function ParentDashboardPage() {
                     {child.student.name.charAt(0)}
                   </div>
                   <div className="flex-1">
-                    <CardTitle className="text-lg">{child.student.name}</CardTitle>
+                    <CardTitle className="text-lg">
+                      {child.student.name}
+                    </CardTitle>
                     <CardDescription>
                       <div className="flex flex-wrap gap-2 mt-1">
                         <Badge variant="secondary">{child.student.nis}</Badge>
                         {child.student.class && (
-                          <Badge variant="outline">{child.student.class.name}</Badge>
+                          <Badge variant="outline">
+                            {child.student.class.name}
+                          </Badge>
                         )}
                       </div>
                     </CardDescription>
@@ -214,8 +224,14 @@ export default function ParentDashboardPage() {
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span>
-                      Kehadiran:{' '}
-                      <strong className={(summary?.recentAttendance?.percentage ?? 0) >= 80 ? 'text-green-600' : 'text-red-600'}>
+                      Kehadiran:{" "}
+                      <strong
+                        className={
+                          (summary?.recentAttendance?.percentage ?? 0) >= 80
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }
+                      >
                         {summary?.recentAttendance?.percentage ?? 0}%
                       </strong>
                     </span>
@@ -225,8 +241,10 @@ export default function ParentDashboardPage() {
                   <div className="flex items-center gap-2">
                     <BookOpen className="h-4 w-4 text-muted-foreground" />
                     <span>
-                      Tahfidz:{' '}
-                      <strong>{summary?.latestTahfidz?.totalJuz || 0} Juz</strong>
+                      Tahfidz:{" "}
+                      <strong>
+                        {summary?.latestTahfidz?.totalJuz || 0} Juz
+                      </strong>
                     </span>
                   </div>
 
@@ -234,8 +252,14 @@ export default function ParentDashboardPage() {
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                     <span>
-                      Pelanggaran:{' '}
-                      <strong className={summary?.pendingViolations ? 'text-red-600' : 'text-green-600'}>
+                      Pelanggaran:{" "}
+                      <strong
+                        className={
+                          summary?.pendingViolations
+                            ? "text-red-600"
+                            : "text-green-600"
+                        }
+                      >
                         {summary?.pendingViolations || 0}
                       </strong>
                     </span>
@@ -245,26 +269,29 @@ export default function ParentDashboardPage() {
                   <div className="flex items-center gap-2">
                     <Award className="h-4 w-4 text-muted-foreground" />
                     <span>
-                      Penghargaan:{' '}
-                      <strong className="text-green-600">{summary?.unreadRewards || 0}</strong>
+                      Penghargaan:{" "}
+                      <strong className="text-green-600">
+                        {summary?.unreadRewards || 0}
+                      </strong>
                     </span>
                   </div>
                 </div>
 
                 {/* Pending Payments */}
-                {summary?.pendingPayments && summary.pendingPayments.count > 0 && (
-                  <div className="mt-4 p-3 rounded-lg bg-yellow-50 border border-yellow-200">
-                    <div className="flex items-center gap-2 text-yellow-700">
-                      <Receipt className="h-4 w-4" />
-                      <span className="font-medium">
-                        {summary.pendingPayments.count} tagihan belum lunas
-                      </span>
+                {summary?.pendingPayments &&
+                  summary.pendingPayments.count > 0 && (
+                    <div className="mt-4 p-3 rounded-lg bg-yellow-50 border border-yellow-200">
+                      <div className="flex items-center gap-2 text-yellow-700">
+                        <Receipt className="h-4 w-4" />
+                        <span className="font-medium">
+                          {summary.pendingPayments.count} tagihan belum lunas
+                        </span>
+                      </div>
+                      <p className="text-sm text-yellow-600 mt-1">
+                        Total: {formatCurrency(summary.pendingPayments.total)}
+                      </p>
                     </div>
-                    <p className="text-sm text-yellow-600 mt-1">
-                      Total: {formatCurrency(summary.pendingPayments.total)}
-                    </p>
-                  </div>
-                )}
+                  )}
 
                 {/* Wallet Balance */}
                 {summary?.wallet && (
@@ -280,7 +307,10 @@ export default function ParentDashboardPage() {
                     </div>
                     {summary.wallet.lastTransaction && (
                       <p className="text-xs text-blue-600 mt-1">
-                        Transaksi terakhir: {summary.wallet.lastTransaction.type === 'TOP_UP' ? '+' : '-'}
+                        Transaksi terakhir:{" "}
+                        {summary.wallet.lastTransaction.type === "TOP_UP"
+                          ? "+"
+                          : "-"}
                         {formatCurrency(summary.wallet.lastTransaction.amount)}
                       </p>
                     )}
@@ -289,7 +319,10 @@ export default function ParentDashboardPage() {
 
                 {/* View Details Button */}
                 <div className="mt-4 flex gap-2">
-                  <Link href={`/parent/children?id=${child.student.id}`} className="flex-1">
+                  <Link
+                    href={`/parent/children?id=${child.student.id}`}
+                    className="flex-1"
+                  >
                     <Button variant="outline" className="w-full">
                       Lihat Detail
                     </Button>
@@ -307,7 +340,8 @@ export default function ParentDashboardPage() {
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium">Belum ada data anak</h3>
               <p className="text-muted-foreground mt-2">
-                Silakan hubungi admin sekolah untuk menghubungkan akun Anda dengan data anak.
+                Silakan hubungi admin sekolah untuk menghubungkan akun Anda
+                dengan data anak.
               </p>
             </CardContent>
           </Card>
@@ -315,50 +349,56 @@ export default function ParentDashboardPage() {
       </div>
 
       {/* Recent Announcements */}
-      {dashboard?.recentAnnouncements && dashboard.recentAnnouncements.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Pengumuman Terbaru
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {dashboard.recentAnnouncements.slice(0, 3).map((announcement) => (
-                <div
-                  key={announcement.id}
-                  className="flex items-start gap-4 p-4 rounded-lg border"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium">{announcement.title}</h4>
-                      {announcement.priority === 'HIGH' && (
-                        <Badge variant="destructive">Penting</Badge>
-                      )}
+      {dashboard?.recentAnnouncements &&
+        dashboard.recentAnnouncements.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                Pengumuman Terbaru
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {dashboard.recentAnnouncements
+                  .slice(0, 3)
+                  .map((announcement) => (
+                    <div
+                      key={announcement.id}
+                      className="flex items-start gap-4 p-4 rounded-lg border"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium">{announcement.title}</h4>
+                          {announcement.priority === "HIGH" && (
+                            <Badge variant="destructive">Penting</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                          {announcement.content}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {new Date(announcement.createdAt).toLocaleDateString(
+                            "id-ID",
+                            {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            },
+                          )}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                      {announcement.content}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {new Date(announcement.createdAt).toLocaleDateString('id-ID', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                      })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <Link href="/parent/announcements">
-              <Button variant="link" className="mt-4 p-0">
-                Lihat Semua Pengumuman →
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      )}
+                  ))}
+              </div>
+              <Link href="/parent/announcements">
+                <Button variant="link" className="mt-4 p-0">
+                  Lihat Semua Pengumuman →
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
 
       {/* Quick Actions */}
       <Card>

@@ -31,10 +31,10 @@ vi.mock('../../src/lib/prisma', () => ({
       createMany: vi.fn(),
     },
     setting: {
-        findUnique: vi.fn(),
-        upsert: vi.fn(),
-        update: vi.fn(),
-    }
+      findUnique: vi.fn(),
+      upsert: vi.fn(),
+      update: vi.fn(),
+    },
   },
 }));
 
@@ -62,13 +62,13 @@ describe('Scheduler Service Performance', () => {
 
     // Mock create with delay to simulate DB latency
     vi.mocked(prisma.notification.create).mockImplementation(async () => {
-      await new Promise(resolve => setTimeout(resolve, 5)); // 5ms latency per insert
+      await new Promise((resolve) => setTimeout(resolve, 5)); // 5ms latency per insert
       return {} as any;
     });
 
     // Mock createMany with delay
     vi.mocked(prisma.notification.createMany).mockImplementation(async () => {
-      await new Promise(resolve => setTimeout(resolve, 20)); // 20ms latency for bulk insert
+      await new Promise((resolve) => setTimeout(resolve, 20)); // 20ms latency for bulk insert
       return { count: studentCount } as any;
     });
 
@@ -88,6 +88,5 @@ describe('Scheduler Service Performance', () => {
 
     console.log(`prisma.notification.create called: ${createCalls} times`);
     console.log(`prisma.notification.createMany called: ${createManyCalls} times`);
-
   });
 });

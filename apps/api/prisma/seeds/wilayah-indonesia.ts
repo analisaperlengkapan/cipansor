@@ -357,7 +357,9 @@ export async function seedWilayahIndonesia() {
   console.log(`   ✅ ${villageData.length} Kelurahan/Desa created`);
 
   console.log('🌍 Wilayah Indonesia seeding completed!');
-  console.log(`   Total: ${provinsiData.length} Provinsi, ${regencyData.length} Kabupaten/Kota, ${districtData.length} Kecamatan, ${villageData.length} Kelurahan`);
+  console.log(
+    `   Total: ${provinsiData.length} Provinsi, ${regencyData.length} Kabupaten/Kota, ${districtData.length} Kecamatan, ${villageData.length} Kelurahan`
+  );
 
   return {
     provinceMap,

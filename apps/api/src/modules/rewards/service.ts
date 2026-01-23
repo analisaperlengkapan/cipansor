@@ -1,5 +1,5 @@
-import { prisma } from "../../lib/prisma";
-import { CreateRewardDto, UpdateRewardDto, QueryRewardDto } from "./schema";
+import { prisma } from '../../lib/prisma';
+import { CreateRewardDto, UpdateRewardDto, QueryRewardDto } from './schema';
 
 export async function createReward(data: CreateRewardDto, givenById: string) {
   return prisma.reward.create({
@@ -25,7 +25,7 @@ export async function getRewards(query: QueryRewardDto) {
 
   const where = {
     ...(studentId && { studentId }),
-    ...(category && { category: { contains: category, mode: "insensitive" as const } }),
+    ...(category && { category: { contains: category, mode: 'insensitive' as const } }),
     ...(startDate || endDate
       ? {
           givenAt: {
@@ -48,7 +48,7 @@ export async function getRewards(query: QueryRewardDto) {
         },
         givenBy: { select: { id: true, name: true } },
       },
-      orderBy: { givenAt: "desc" },
+      orderBy: { givenAt: 'desc' },
       skip,
       take: limit,
     }),
@@ -114,18 +114,18 @@ export async function getStudentRewardPoints(studentId: string) {
 export async function getStudentRewardSummary(studentId: string) {
   const rewards = await prisma.reward.findMany({
     where: { studentId },
-    orderBy: { givenAt: "desc" },
+    orderBy: { givenAt: 'desc' },
     take: 10,
   });
 
   const totalPoints = await getStudentRewardPoints(studentId);
 
   const byCategory = await prisma.reward.groupBy({
-    by: ["category"],
+    by: ['category'],
     where: { studentId },
     _count: true,
     _sum: { points: true },
-    orderBy: { _count: { category: "desc" } },
+    orderBy: { _count: { category: 'desc' } },
   });
 
   return {
@@ -159,9 +159,9 @@ export async function getStudentPointBalance(studentId: string) {
 
 export async function getRewardCategories() {
   const categories = await prisma.reward.groupBy({
-    by: ["category"],
+    by: ['category'],
     _count: true,
-    orderBy: { _count: { category: "desc" } },
+    orderBy: { _count: { category: 'desc' } },
   });
   return categories.map((c) => c.category);
 }
@@ -170,10 +170,10 @@ export async function getTopStudentsByPoints(unitId?: string, limit = 10) {
   const where = unitId ? { student: { unitId } } : {};
 
   const rewards = await prisma.reward.groupBy({
-    by: ["studentId"],
+    by: ['studentId'],
     where,
     _sum: { points: true },
-    orderBy: { _sum: { points: "desc" } },
+    orderBy: { _sum: { points: 'desc' } },
     take: limit,
   });
 

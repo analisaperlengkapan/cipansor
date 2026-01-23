@@ -13,7 +13,8 @@ export class CalendarController {
         month: req.query.month ? parseInt(req.query.month as string) : undefined,
         year: req.query.year ? parseInt(req.query.year as string) : undefined,
         search: req.query.search as string | undefined,
-        isPublic: req.query.isPublic === 'true' ? true : req.query.isPublic === 'false' ? false : undefined,
+        isPublic:
+          req.query.isPublic === 'true' ? true : req.query.isPublic === 'false' ? false : undefined,
         page: parseInt(req.query.page as string) || 1,
         limit: parseInt(req.query.limit as string) || 50,
       };

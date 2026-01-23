@@ -1,8 +1,8 @@
-import { prisma } from "../../lib/prisma";
-import { PaymentStatus, Prisma, NotificationType } from "@prisma/client";
-import * as notificationService from "../notifications/service";
-import { eventBus } from "@/lib/event-bus";
-import { AccountType, JournalReferenceType } from "@cipansor/shared";
+import { prisma } from '../../lib/prisma';
+import { PaymentStatus, Prisma, NotificationType } from '@prisma/client';
+import * as notificationService from '../notifications/service';
+import { eventBus } from '@/lib/event-bus';
+import { AccountType, JournalReferenceType } from '@cipansor/shared';
 import {
   CreatePaymentTypeDto,
   UpdatePaymentTypeDto,
@@ -12,7 +12,7 @@ import {
   QueryInvoiceDto,
   CreatePaymentDto,
   QueryPaymentDto,
-} from "./schema";
+} from './schema';
 
 // =====================================
 // PAYMENT TYPE SERVICE
@@ -45,8 +45,8 @@ export async function getPaymentTypes(query: QueryPaymentTypeDto) {
     ...(isRecurring !== undefined && { isRecurring }),
     ...(search && {
       OR: [
-        { name: { contains: search, mode: "insensitive" as const } },
-        { code: { contains: search, mode: "insensitive" as const } },
+        { name: { contains: search, mode: 'insensitive' as const } },
+        { code: { contains: search, mode: 'insensitive' as const } },
       ],
     }),
   };
@@ -55,7 +55,7 @@ export async function getPaymentTypes(query: QueryPaymentTypeDto) {
     prisma.paymentType.findMany({
       where,
       include: { unit: { select: { id: true, name: true } } },
-      orderBy: { name: "asc" },
+      orderBy: { name: 'asc' },
       skip,
       take: limit,
     }),
@@ -101,22 +101,22 @@ export async function deletePaymentType(id: string) {
 
 async function generateInvoiceNumber(unitId?: string): Promise<string> {
   const year = new Date().getFullYear();
-  const month = String(new Date().getMonth() + 1).padStart(2, "0");
-  
+  const month = String(new Date().getMonth() + 1).padStart(2, '0');
+
   const lastInvoice = await prisma.invoice.findFirst({
     where: {
       invoiceNumber: { startsWith: `INV-${year}${month}` },
     },
-    orderBy: { invoiceNumber: "desc" },
+    orderBy: { invoiceNumber: 'desc' },
   });
 
   let sequence = 1;
   if (lastInvoice) {
-    const lastSeq = parseInt(lastInvoice.invoiceNumber.split("-")[2]);
+    const lastSeq = parseInt(lastInvoice.invoiceNumber.split('-')[2]);
     sequence = lastSeq + 1;
   }
 
-  return `INV-${year}${month}-${String(sequence).padStart(5, "0")}`;
+  return `INV-${year}${month}-${String(sequence).padStart(5, '0')}`;
 }
 
 export async function createInvoice(data: CreateInvoiceDto) {
@@ -149,7 +149,7 @@ export async function createInvoice(data: CreateInvoiceDto) {
       });
       break;
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         retries--;
         if (retries === 0) throw error;
         continue;
@@ -160,18 +160,18 @@ export async function createInvoice(data: CreateInvoiceDto) {
 
   if (invoice) {
     try {
-      const formatter = new Intl.NumberFormat("id-ID", {
-        style: "currency",
-        currency: "IDR",
+      const formatter = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
         minimumFractionDigits: 0,
       });
 
       await notificationService.createNotification({
         userId: invoice.student.user.id,
-        title: "Tagihan Baru",
+        title: 'Tagihan Baru',
         message: `Tagihan baru ${invoice.paymentType.name} sebesar ${formatter.format(
           invoice.amount.toNumber()
-        )} telah dibuat. Jatuh tempo: ${new Date(invoice.dueDate).toLocaleDateString("id-ID")}`,
+        )} telah dibuat. Jatuh tempo: ${new Date(invoice.dueDate).toLocaleDateString('id-ID')}`,
         type: NotificationType.PAYMENT,
         link: `/finance/bills/${invoice.id}`,
         priority: 'HIGH',
@@ -179,7 +179,7 @@ export async function createInvoice(data: CreateInvoiceDto) {
         recipientType: 'INDIVIDUAL',
       });
     } catch (error) {
-      console.error("Failed to send notification:", error);
+      console.error('Failed to send notification:', error);
       // Don't fail the request if notification fails
     }
   }
@@ -222,7 +222,7 @@ export async function getInvoices(query: QueryInvoiceDto) {
         paymentType: { select: { id: true, name: true, code: true } },
         _count: { select: { payments: true } },
       },
-      orderBy: { dueDate: "asc" },
+      orderBy: { dueDate: 'asc' },
       skip,
       take: limit,
     }),
@@ -247,7 +247,7 @@ export async function getInvoiceById(id: string) {
       },
       paymentType: { select: { id: true, name: true, code: true, amount: true } },
       payments: {
-        orderBy: { paidAt: "desc" },
+        orderBy: { paidAt: 'desc' },
       },
     },
   });
@@ -293,14 +293,14 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
         student: {
           include: {
             user: { select: { name: true } }, // Fetch user name for description
-          }
+          },
         },
-        paymentType: { select: { id: true, name: true, accountId: true } }
-      }
+        paymentType: { select: { id: true, name: true, accountId: true } },
+      },
     });
 
     if (!invoice) {
-      throw new Error("Invoice not found");
+      throw new Error('Invoice not found');
     }
 
     const { invoiceId, ...paymentData } = data;
@@ -354,16 +354,27 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
       // Look up by Name (more robust than code potentially) or standard codes
       let assetAccount = await tx.accountCode.findFirst({
         where: {
-          name: { contains: ['BANK_TRANSFER', 'VIRTUAL_ACCOUNT', 'QRIS', 'EWALLET'].includes(payment.method) ? 'Bank' : 'Kas', mode: 'insensitive' },
+          name: {
+            contains: ['BANK_TRANSFER', 'VIRTUAL_ACCOUNT', 'QRIS', 'EWALLET'].includes(
+              payment.method
+            )
+              ? 'Bank'
+              : 'Kas',
+            mode: 'insensitive',
+          },
           type: AccountType.ASSET,
-          isActive: true
-        }
+          isActive: true,
+        },
       });
 
       // Fallback to strict code check if name lookup fails
       if (!assetAccount) {
-          const code = ['BANK_TRANSFER', 'VIRTUAL_ACCOUNT', 'QRIS', 'EWALLET'].includes(payment.method) ? '1102' : '1101';
-          assetAccount = await tx.accountCode.findFirst({ where: { code } });
+        const code = ['BANK_TRANSFER', 'VIRTUAL_ACCOUNT', 'QRIS', 'EWALLET'].includes(
+          payment.method
+        )
+          ? '1102'
+          : '1101';
+        assetAccount = await tx.accountCode.findFirst({ where: { code } });
       }
 
       if (assetAccount) {
@@ -380,8 +391,8 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
             credit: 0,
             reference: payment.id,
             referenceType: JournalReferenceType.PAYMENT,
-            createdById: userId
-          }
+            createdById: userId,
+          },
         });
 
         // Credit Entry (Revenue increases)
@@ -395,12 +406,14 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
             credit: payment.amount,
             reference: payment.id,
             referenceType: JournalReferenceType.PAYMENT,
-            createdById: userId
-          }
+            createdById: userId,
+          },
         });
       } else {
-          // If no account found, we must throw error to maintain integrity
-          console.warn(`Accounting Integration: No Asset Account found for method ${payment.method} in unit ${invoice.student.unitId}`);
+        // If no account found, we must throw error to maintain integrity
+        console.warn(
+          `Accounting Integration: No Asset Account found for method ${payment.method} in unit ${invoice.student.unitId}`
+        );
       }
     }
 
@@ -409,15 +422,15 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
 
   // Send notification after transaction commits
   try {
-    const formatter = new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
+    const formatter = new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
       minimumFractionDigits: 0,
     });
 
     await notificationService.createNotification({
       userId: payment.invoice.student.user.id,
-      title: "Pembayaran Berhasil",
+      title: 'Pembayaran Berhasil',
       message: `Pembayaran untuk tagihan ${payment.invoice.paymentType.name} sebesar ${formatter.format(
         payment.amount.toNumber()
       )} telah diterima.`,
@@ -428,7 +441,7 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
       recipientType: 'INDIVIDUAL',
     });
   } catch (error) {
-    console.error("Failed to send payment notification:", error);
+    console.error('Failed to send payment notification:', error);
   }
 
   // Emit event for cross-module integration (dashboard real-time updates)
@@ -436,7 +449,7 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
     // We need to fetch student unit info for the event
     const studentWithUnit = await prisma.student.findUnique({
       where: { id: payment.invoice.studentId },
-      include: { unit: { select: { id: true, name: true } } }
+      include: { unit: { select: { id: true, name: true } } },
     });
 
     if (studentWithUnit) {
@@ -450,11 +463,11 @@ export async function createPayment(data: CreatePaymentDto, userId: string = 'SY
         amount: payment.amount.toNumber(),
         paymentMethod: payment.method,
         paidAt: payment.paidAt || new Date(),
-        processedById: 'SYSTEM'
+        processedById: 'SYSTEM',
       });
     }
   } catch (error) {
-    console.error("Failed to emit payment event:", error);
+    console.error('Failed to emit payment event:', error);
   }
 
   return payment;
@@ -492,7 +505,7 @@ export async function getPayments(query: QueryPaymentDto) {
           },
         },
       },
-      orderBy: { paidAt: "desc" },
+      orderBy: { paidAt: 'desc' },
       skip,
       take: limit,
     }),
@@ -538,7 +551,7 @@ export async function getStudentFinanceSummary(studentId: string) {
   const total = invoices.reduce((sum, inv) => sum.add(inv.amount), new Prisma.Decimal(0));
   const paid = invoices.reduce((sum, inv) => sum.add(inv.paidAmount), new Prisma.Decimal(0));
   const pending = total.sub(paid);
-  
+
   const overdue = invoices.filter(
     (inv) =>
       (inv.status === PaymentStatus.PENDING || inv.status === PaymentStatus.PARTIAL) &&
@@ -576,7 +589,7 @@ export async function getUnitFinanceStats(unitId: string, month?: string) {
   const pending = total.sub(collected);
 
   const byStatus = await prisma.invoice.groupBy({
-    by: ["status"],
+    by: ['status'],
     where: { student: { unitId }, ...dateFilter },
     _count: true,
     _sum: { amount: true },
@@ -651,7 +664,7 @@ export async function getSppMatrix(query: SppMatrixQuery) {
   });
 
   // Get SPP payment type (recurring monthly)
-  const sppPaymentType = paymentTypeId 
+  const sppPaymentType = paymentTypeId
     ? await prisma.paymentType.findUnique({ where: { id: paymentTypeId } })
     : await prisma.paymentType.findFirst({
         where: {
@@ -667,15 +680,25 @@ export async function getSppMatrix(query: SppMatrixQuery) {
 
   // Define months for the year
   const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year, 11, 31, 23, 59, 59);
 
   // Get all invoices for these students for the year
-  const studentIds = students.map(s => s.id);
+  const studentIds = students.map((s) => s.id);
   const invoices = await prisma.invoice.findMany({
     where: {
       studentId: { in: studentIds },
@@ -692,8 +715,8 @@ export async function getSppMatrix(query: SppMatrixQuery) {
 
   // Build matrix data
   const now = new Date();
-  const matrixData: StudentSppRow[] = students.map(student => {
-    const studentInvoices = invoices.filter(inv => inv.studentId === student.id);
+  const matrixData: StudentSppRow[] = students.map((student) => {
+    const studentInvoices = invoices.filter((inv) => inv.studentId === student.id);
     const monthsData: StudentSppRow['months'] = {};
 
     let totalAmount = 0;
@@ -701,7 +724,7 @@ export async function getSppMatrix(query: SppMatrixQuery) {
 
     months.forEach((monthName, index) => {
       const monthDate = new Date(year, index, 10); // Due date is 10th of each month
-      const invoice = studentInvoices.find(inv => {
+      const invoice = studentInvoices.find((inv) => {
         const invMonth = new Date(inv.dueDate).getMonth();
         return invMonth === index;
       });
@@ -709,7 +732,7 @@ export async function getSppMatrix(query: SppMatrixQuery) {
       if (invoice) {
         const isPastDue = new Date(invoice.dueDate) < now;
         let status: 'PAID' | 'PARTIAL' | 'PENDING' | 'OVERDUE' = invoice.status as any;
-        
+
         if ((status === 'PENDING' || status === 'PARTIAL') && isPastDue) {
           status = 'OVERDUE';
         }
@@ -759,8 +782,8 @@ export async function getSppMatrix(query: SppMatrixQuery) {
   summary.totalOutstanding = summary.totalBilled - summary.totalPaid;
 
   // Count statuses
-  matrixData.forEach(student => {
-    Object.values(student.months).forEach(month => {
+  matrixData.forEach((student) => {
+    Object.values(student.months).forEach((month) => {
       if (month.status === 'PAID') summary.paidCount++;
       else if (month.status === 'PARTIAL') summary.partialCount++;
       else if (month.status === 'PENDING') summary.pendingCount++;
@@ -794,7 +817,7 @@ export async function generateBulkSppInvoices(data: {
   });
 
   if (!paymentType) {
-    throw new Error("Payment type not found");
+    throw new Error('Payment type not found');
   }
 
   // Get students
@@ -810,8 +833,22 @@ export async function generateBulkSppInvoices(data: {
   });
 
   const dueDate = new Date(year, month, dueDay);
-  const period = `${['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
-                     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][month]} ${year}`;
+  const period = `${
+    [
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ][month]
+  } ${year}`;
 
   const createdInvoices = [];
 

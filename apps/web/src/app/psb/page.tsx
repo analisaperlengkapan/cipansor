@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -14,14 +20,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   useRegistrations,
   useRegistrationStats,
@@ -30,7 +36,7 @@ import {
   REGISTRATION_STATUS_LABELS,
   REGISTRATION_STATUS_COLORS,
   type RegistrationStatus,
-} from '@/hooks';
+} from "@/hooks";
 import {
   UserPlus,
   Search,
@@ -43,21 +49,23 @@ import {
   Clock,
   FileText,
   Loader2,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import Link from 'next/link';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import Link from "next/link";
 
 export default function PSBPage() {
-  const [activeTab, setActiveTab] = useState('registrations');
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<RegistrationStatus | 'ALL'>('ALL');
-  const [periodFilter, setPeriodFilter] = useState<string>('ALL');
+  const [activeTab, setActiveTab] = useState("registrations");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<RegistrationStatus | "ALL">(
+    "ALL",
+  );
+  const [periodFilter, setPeriodFilter] = useState<string>("ALL");
 
   const { data: registrationsData, isLoading } = useRegistrations({
     search: search || undefined,
-    status: statusFilter !== 'ALL' ? statusFilter : undefined,
-    periodId: (periodFilter && periodFilter !== 'ALL') ? periodFilter : undefined,
+    status: statusFilter !== "ALL" ? statusFilter : undefined,
+    periodId: periodFilter && periodFilter !== "ALL" ? periodFilter : undefined,
   });
   const { data: stats } = useRegistrationStats(periodFilter || undefined);
   const { data: periods } = useRegistrationPeriods();
@@ -103,7 +111,9 @@ export default function PSBPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Pendaftar</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Pendaftar
+              </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -127,7 +137,9 @@ export default function PSBPage() {
                   (stats?.byStatus?.INTERVIEW_SCHEDULED ?? 0) +
                   (stats?.byStatus?.INTERVIEW_COMPLETED ?? 0)}
               </div>
-              <p className="text-xs text-muted-foreground">Dalam proses seleksi</p>
+              <p className="text-xs text-muted-foreground">
+                Dalam proses seleksi
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -151,7 +163,9 @@ export default function PSBPage() {
               <div className="text-2xl font-bold text-emerald-600">
                 {stats?.enrolled ?? 0}
               </div>
-              <p className="text-xs text-muted-foreground">Sudah daftar ulang</p>
+              <p className="text-xs text-muted-foreground">
+                Sudah daftar ulang
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -163,7 +177,9 @@ export default function PSBPage() {
               <div className="text-2xl font-bold text-red-600">
                 {stats?.byStatus?.REJECTED ?? 0}
               </div>
-              <p className="text-xs text-muted-foreground">Tidak memenuhi syarat</p>
+              <p className="text-xs text-muted-foreground">
+                Tidak memenuhi syarat
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -209,7 +225,9 @@ export default function PSBPage() {
                   </Select>
                   <Select
                     value={statusFilter}
-                    onValueChange={(v) => setStatusFilter(v as RegistrationStatus | 'ALL')}
+                    onValueChange={(v) =>
+                      setStatusFilter(v as RegistrationStatus | "ALL")
+                    }
                   >
                     <SelectTrigger className="w-full md:w-[180px]">
                       <SelectValue placeholder="Semua Status" />
@@ -263,12 +281,14 @@ export default function PSBPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {reg.gender === 'MALE' ? 'Laki-laki' : 'Perempuan'}
+                          {reg.gender === "MALE" ? "Laki-laki" : "Perempuan"}
                         </TableCell>
-                        <TableCell>{reg.previousSchool || '-'}</TableCell>
+                        <TableCell>{reg.previousSchool || "-"}</TableCell>
                         <TableCell>{getStatusBadge(reg.status)}</TableCell>
                         <TableCell>
-                          {format(new Date(reg.createdAt), 'd MMM yyyy', { locale: id })}
+                          {format(new Date(reg.createdAt), "d MMM yyyy", {
+                            locale: id,
+                          })}
                         </TableCell>
                         <TableCell className="text-right">
                           <Button variant="ghost" size="icon" asChild>
@@ -281,7 +301,10 @@ export default function PSBPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={7}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         Belum ada data pendaftaran
                       </TableCell>
                     </TableRow>
@@ -305,7 +328,7 @@ export default function PSBPage() {
                 <CardContent>
                   <div className="space-y-2">
                     {registrations
-                      .filter((r) => r.status === 'DOCUMENT_REVIEW')
+                      .filter((r) => r.status === "DOCUMENT_REVIEW")
                       .slice(0, 3)
                       .map((reg) => (
                         <Link
@@ -336,7 +359,7 @@ export default function PSBPage() {
                   <CardTitle className="text-sm">Jadwal Tes</CardTitle>
                   <CardDescription>
                     {(stats?.byStatus?.TEST_SCHEDULED ?? 0) +
-                      (stats?.byStatus?.TEST_COMPLETED ?? 0)}{' '}
+                      (stats?.byStatus?.TEST_COMPLETED ?? 0)}{" "}
                     pendaftar
                   </CardDescription>
                 </CardHeader>
@@ -345,8 +368,8 @@ export default function PSBPage() {
                     {registrations
                       .filter(
                         (r) =>
-                          r.status === 'TEST_SCHEDULED' ||
-                          r.status === 'TEST_COMPLETED'
+                          r.status === "TEST_SCHEDULED" ||
+                          r.status === "TEST_COMPLETED",
                       )
                       .slice(0, 3)
                       .map((reg) => (
@@ -358,10 +381,10 @@ export default function PSBPage() {
                           <p className="text-sm font-medium">{reg.fullName}</p>
                           <p className="text-xs text-muted-foreground">
                             {reg.testDate
-                              ? format(new Date(reg.testDate), 'd MMM yyyy', {
+                              ? format(new Date(reg.testDate), "d MMM yyyy", {
                                   locale: id,
                                 })
-                              : 'Belum dijadwalkan'}
+                              : "Belum dijadwalkan"}
                           </p>
                         </Link>
                       ))}
@@ -375,7 +398,7 @@ export default function PSBPage() {
                   <CardTitle className="text-sm">Jadwal Wawancara</CardTitle>
                   <CardDescription>
                     {(stats?.byStatus?.INTERVIEW_SCHEDULED ?? 0) +
-                      (stats?.byStatus?.INTERVIEW_COMPLETED ?? 0)}{' '}
+                      (stats?.byStatus?.INTERVIEW_COMPLETED ?? 0)}{" "}
                     pendaftar
                   </CardDescription>
                 </CardHeader>
@@ -384,8 +407,8 @@ export default function PSBPage() {
                     {registrations
                       .filter(
                         (r) =>
-                          r.status === 'INTERVIEW_SCHEDULED' ||
-                          r.status === 'INTERVIEW_COMPLETED'
+                          r.status === "INTERVIEW_SCHEDULED" ||
+                          r.status === "INTERVIEW_COMPLETED",
                       )
                       .slice(0, 3)
                       .map((reg) => (
@@ -397,10 +420,14 @@ export default function PSBPage() {
                           <p className="text-sm font-medium">{reg.fullName}</p>
                           <p className="text-xs text-muted-foreground">
                             {reg.interviewDate
-                              ? format(new Date(reg.interviewDate), 'd MMM yyyy', {
-                                  locale: id,
-                                })
-                              : 'Belum dijadwalkan'}
+                              ? format(
+                                  new Date(reg.interviewDate),
+                                  "d MMM yyyy",
+                                  {
+                                    locale: id,
+                                  },
+                                )
+                              : "Belum dijadwalkan"}
                           </p>
                         </Link>
                       ))}
@@ -419,7 +446,7 @@ export default function PSBPage() {
                 <CardContent>
                   <div className="space-y-2">
                     {registrations
-                      .filter((r) => r.status === 'INTERVIEW_COMPLETED')
+                      .filter((r) => r.status === "INTERVIEW_COMPLETED")
                       .slice(0, 3)
                       .map((reg) => (
                         <Link
@@ -429,7 +456,8 @@ export default function PSBPage() {
                         >
                           <p className="text-sm font-medium">{reg.fullName}</p>
                           <p className="text-xs text-muted-foreground">
-                            Nilai: {reg.testScore ?? '-'} / {reg.interviewScore ?? '-'}
+                            Nilai: {reg.testScore ?? "-"} /{" "}
+                            {reg.interviewScore ?? "-"}
                           </p>
                         </Link>
                       ))}

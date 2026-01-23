@@ -22,7 +22,8 @@ const indicators: IndicatorSeed[] = [
     aspect: 'NAM',
     code: 'NAM-01',
     name: 'Mengenal Tuhan melalui ciptaan-Nya',
-    description: 'Anak menunjukkan ketertarikan ketika dikenalkan dengan ciptaan Tuhan seperti hewan, tumbuhan, matahari, bulan',
+    description:
+      'Anak menunjukkan ketertarikan ketika dikenalkan dengan ciptaan Tuhan seperti hewan, tumbuhan, matahari, bulan',
     ageGroupMin: 24,
     ageGroupMax: 36,
     orderNumber: 1,
@@ -204,7 +205,8 @@ const indicators: IndicatorSeed[] = [
     aspect: 'FM',
     code: 'FM-10',
     name: 'Koordinasi mata dan tangan',
-    description: 'Anak memiliki koordinasi mata-tangan yang baik untuk kegiatan seperti menangkap bola',
+    description:
+      'Anak memiliki koordinasi mata-tangan yang baik untuk kegiatan seperti menangkap bola',
     ageGroupMin: 60,
     ageGroupMax: 72,
     orderNumber: 10,
@@ -512,7 +514,8 @@ const indicators: IndicatorSeed[] = [
     aspect: 'SNI',
     code: 'SNI-01',
     name: 'Mencoret-coret',
-    description: 'Anak menunjukkan ketertarikan dalam mencoret-coret dengan krayon atau pensil warna',
+    description:
+      'Anak menunjukkan ketertarikan dalam mencoret-coret dengan krayon atau pensil warna',
     ageGroupMin: 24,
     ageGroupMax: 36,
     orderNumber: 1,
@@ -632,11 +635,11 @@ export async function seedPAUDIndicators() {
   }
 
   console.log(`✅ Created/Updated ${indicators.length} PAUD Development Indicators`);
-  
+
   // Log summary by aspect
   const aspects = ['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI'];
   for (const aspect of aspects) {
-    const count = indicators.filter(i => i.aspect === aspect).length;
+    const count = indicators.filter((i) => i.aspect === aspect).length;
     console.log(`   - ${aspect}: ${count} indicators`);
   }
 }

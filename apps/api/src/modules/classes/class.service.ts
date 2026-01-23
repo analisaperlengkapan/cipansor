@@ -11,7 +11,7 @@ import {
   EnrollStudentInput,
   EnrollmentStatus,
   Gender,
-  ListClassesQuery
+  ListClassesQuery,
 } from '@cipansor/shared';
 
 // Helper to safely cast DB status to EnrollmentStatus
@@ -27,25 +27,23 @@ function toEnrollmentStatus(status: string): EnrollmentStatus {
 }
 
 // Helper to map Prisma result to ClassEnrollment
-function mapToClassEnrollment(
-  data: {
+function mapToClassEnrollment(data: {
+  id: string;
+  studentId: string;
+  classId: string;
+  status: string; // Prisma type usually string or Enum
+  createdAt: Date;
+  student: {
     id: string;
-    studentId: string;
-    classId: string;
-    status: string; // Prisma type usually string or Enum
-    createdAt: Date;
-    student: {
+    nis: string;
+    gender: string; // Prisma Gender Enum is usually uppercase
+    user: {
       id: string;
-      nis: string;
-      gender: string; // Prisma Gender Enum is usually uppercase
-      user: {
-        id: string;
-        name: string;
-        email?: string | null;
-      };
+      name: string;
+      email?: string | null;
     };
-  }
-): ClassEnrollment {
+  };
+}): ClassEnrollment {
   return {
     id: data.id,
     studentId: data.studentId,
@@ -60,8 +58,8 @@ function mapToClassEnrollment(
       user: {
         id: data.student.user.id,
         name: data.student.user.name,
-      }
-    }
+      },
+    },
   };
 }
 
@@ -129,17 +127,19 @@ export class ClassService {
       prisma.class.count({ where }),
     ]);
 
-    const mappedClasses = classes.map(c => ({
+    const mappedClasses = classes.map((c) => ({
       ...c,
       grade: parseInt(c.level) || 0,
       studentCount: c._count.enrollments,
-      homeroomTeacher: c.homeroomTeacher ? {
-          id: c.homeroomTeacher.id,
-          user: c.homeroomTeacher.user
-      } : null,
+      homeroomTeacher: c.homeroomTeacher
+        ? {
+            id: c.homeroomTeacher.id,
+            user: c.homeroomTeacher.user,
+          }
+        : null,
       unit: {
-          id: c.unit.id,
-          name: c.unit.name
+        id: c.unit.id,
+        name: c.unit.name,
       },
     })) as unknown as Class[];
 
@@ -180,9 +180,9 @@ export class ClassService {
           },
         },
         _count: {
-            select: {
-              enrollments: true,
-            },
+          select: {
+            enrollments: true,
+          },
         },
       },
     });
@@ -192,17 +192,19 @@ export class ClassService {
     }
 
     return {
-        ...classData,
-        grade: parseInt(classData.level) || 0,
-        studentCount: classData._count.enrollments,
-        homeroomTeacher: classData.homeroomTeacher ? {
+      ...classData,
+      grade: parseInt(classData.level) || 0,
+      studentCount: classData._count.enrollments,
+      homeroomTeacher: classData.homeroomTeacher
+        ? {
             id: classData.homeroomTeacher.id,
-            user: classData.homeroomTeacher.user
-        } : null,
-        unit: {
-            id: classData.unit.id,
-            name: classData.unit.name
-        },
+            user: classData.homeroomTeacher.user,
+          }
+        : null,
+      unit: {
+        id: classData.unit.id,
+        name: classData.unit.name,
+      },
     } as unknown as Class;
   }
 
@@ -319,7 +321,7 @@ export class ClassService {
     if (input.level !== undefined) updateData.level = input.level;
     if (input.capacity !== undefined) updateData.capacity = input.capacity;
     if (input.homeroomTeacherId !== undefined) {
-      updateData.homeroomTeacher = input.homeroomTeacherId 
+      updateData.homeroomTeacher = input.homeroomTeacherId
         ? { connect: { id: input.homeroomTeacherId } }
         : { disconnect: true };
     }

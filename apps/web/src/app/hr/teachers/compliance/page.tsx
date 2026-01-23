@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Users,
   FileCheck,
@@ -16,32 +16,32 @@ import {
   Award,
   BarChart3,
   GraduationCap,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { ColumnDef } from '@tanstack/react-table';
+} from "lucide-react";
+import { toast } from "sonner";
+import { ColumnDef } from "@tanstack/react-table";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { DataTable } from '@/components/shared/data-table';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { DataTable } from "@/components/shared/data-table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import {
   Table,
   TableBody,
@@ -49,9 +49,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 
-import { useUnits } from '@/hooks/use-units';
+import { useUnits } from "@/hooks/use-units";
 import {
   useTeacherComplianceList,
   useTeacherComplianceReport,
@@ -59,16 +59,16 @@ import {
   useCertificationReport,
   TeacherComplianceData,
   CERTIFICATION_STATUS,
-} from '@/hooks/use-teacher-compliance';
+} from "@/hooks/use-teacher-compliance";
 
 const REQUIRED_FIELDS = [
-  { key: 'nik', label: 'NIK' },
-  { key: 'noKK', label: 'No. KK' },
-  { key: 'nuptk', label: 'NUPTK' },
-  { key: 'address', label: 'Alamat' },
-  { key: 'villageId', label: 'Wilayah' },
-  { key: 'highestEducation', label: 'Pendidikan' },
-  { key: 'certificationStatus', label: 'Status Sertifikasi' },
+  { key: "nik", label: "NIK" },
+  { key: "noKK", label: "No. KK" },
+  { key: "nuptk", label: "NUPTK" },
+  { key: "address", label: "Alamat" },
+  { key: "villageId", label: "Wilayah" },
+  { key: "highestEducation", label: "Pendidikan" },
+  { key: "certificationStatus", label: "Status Sertifikasi" },
 ];
 
 function calculateCompleteness(teacher: TeacherComplianceData): number {
@@ -82,84 +82,97 @@ function calculateCompleteness(teacher: TeacherComplianceData): number {
 }
 
 function getMissingFields(teacher: TeacherComplianceData): string[] {
-  return REQUIRED_FIELDS
-    .filter(({ key }) => !teacher[key as keyof TeacherComplianceData])
-    .map(({ label }) => label);
+  return REQUIRED_FIELDS.filter(
+    ({ key }) => !teacher[key as keyof TeacherComplianceData],
+  ).map(({ label }) => label);
 }
 
 export default function TeacherCompliancePage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('list');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUnit, setSelectedUnit] = useState<string>('');
-  
+  const [activeTab, setActiveTab] = useState("list");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedUnit, setSelectedUnit] = useState<string>("");
+
   // Data hooks
   const { data: units } = useUnits();
-  const { data: teachers, isLoading: loadingTeachers } = useTeacherComplianceList({
-    search: searchQuery,
-    unitId: selectedUnit || undefined,
-  });
-  const { data: completenessReport, isLoading: loadingReport } = useTeacherComplianceReport(selectedUnit || undefined);
-  const { data: simtunReport, isLoading: loadingSimtun } = useSimtunReadyReport(selectedUnit || undefined);
-  const { data: certificationReport, isLoading: loadingCert } = useCertificationReport(selectedUnit || undefined);
-  
+  const { data: teachers, isLoading: loadingTeachers } =
+    useTeacherComplianceList({
+      search: searchQuery,
+      unitId: selectedUnit || undefined,
+    });
+  const { data: completenessReport, isLoading: loadingReport } =
+    useTeacherComplianceReport(selectedUnit || undefined);
+  const { data: simtunReport, isLoading: loadingSimtun } = useSimtunReadyReport(
+    selectedUnit || undefined,
+  );
+  const { data: certificationReport, isLoading: loadingCert } =
+    useCertificationReport(selectedUnit || undefined);
+
   // Teacher columns
   const teacherColumns: ColumnDef<TeacherComplianceData>[] = [
     {
-      accessorKey: 'user.name',
-      header: 'Nama Guru',
+      accessorKey: "user.name",
+      header: "Nama Guru",
       cell: ({ row }) => (
         <div>
           <div className="font-medium">{row.original.user?.name}</div>
-          <div className="text-sm text-muted-foreground">{row.original.nip || '-'}</div>
+          <div className="text-sm text-muted-foreground">
+            {row.original.nip || "-"}
+          </div>
         </div>
       ),
     },
     {
-      accessorKey: 'nuptk',
-      header: 'NUPTK',
+      accessorKey: "nuptk",
+      header: "NUPTK",
       cell: ({ row }) => (
-        <span className={row.getValue('nuptk') ? '' : 'text-red-500'}>
-          {row.getValue('nuptk') || 'Belum diisi'}
+        <span className={row.getValue("nuptk") ? "" : "text-red-500"}>
+          {row.getValue("nuptk") || "Belum diisi"}
         </span>
       ),
     },
     {
-      accessorKey: 'nik',
-      header: 'NIK',
+      accessorKey: "nik",
+      header: "NIK",
       cell: ({ row }) => (
-        <span className={row.getValue('nik') ? '' : 'text-red-500'}>
-          {row.getValue('nik') || 'Belum diisi'}
+        <span className={row.getValue("nik") ? "" : "text-red-500"}>
+          {row.getValue("nik") || "Belum diisi"}
         </span>
       ),
     },
     {
-      accessorKey: 'certificationStatus',
-      header: 'Sertifikasi',
+      accessorKey: "certificationStatus",
+      header: "Sertifikasi",
       cell: ({ row }) => {
-        const status = row.getValue('certificationStatus') as string;
-        const label = CERTIFICATION_STATUS.find(s => s.value === status)?.label || 'Belum diisi';
+        const status = row.getValue("certificationStatus") as string;
+        const label =
+          CERTIFICATION_STATUS.find((s) => s.value === status)?.label ||
+          "Belum diisi";
         const colorMap: Record<string, string> = {
-          'SUDAH_SERTIFIKASI': 'bg-green-100 text-green-800',
-          'DALAM_PROSES': 'bg-yellow-100 text-yellow-800',
-          'BELUM_SERTIFIKASI': 'bg-gray-100 text-gray-800',
+          SUDAH_SERTIFIKASI: "bg-green-100 text-green-800",
+          DALAM_PROSES: "bg-yellow-100 text-yellow-800",
+          BELUM_SERTIFIKASI: "bg-gray-100 text-gray-800",
         };
         return (
-          <Badge className={colorMap[status] || 'bg-gray-100 text-gray-800'}>
+          <Badge className={colorMap[status] || "bg-gray-100 text-gray-800"}>
             {label}
           </Badge>
         );
       },
     },
     {
-      id: 'completeness',
-      header: 'Kelengkapan',
+      id: "completeness",
+      header: "Kelengkapan",
       cell: ({ row }) => {
         const completeness = calculateCompleteness(row.original);
         return (
           <div className="flex items-center gap-2">
             <Progress value={completeness} className="w-16 h-2" />
-            <span className={completeness === 100 ? 'text-green-600' : 'text-orange-600'}>
+            <span
+              className={
+                completeness === 100 ? "text-green-600" : "text-orange-600"
+              }
+            >
               {completeness}%
             </span>
           </div>
@@ -167,41 +180,41 @@ export default function TeacherCompliancePage() {
       },
     },
     {
-      id: 'simtunReady',
-      header: 'Simtun Ready',
+      id: "simtunReady",
+      header: "Simtun Ready",
       cell: ({ row }) => {
         const missing = getMissingFields(row.original);
         const isReady = missing.length === 0;
         return (
-          <Badge variant={isReady ? 'default' : 'destructive'}>
+          <Badge variant={isReady ? "default" : "destructive"}>
             {isReady ? (
-              <><CheckCircle className="h-3 w-3 mr-1" /> Siap</>
+              <>
+                <CheckCircle className="h-3 w-3 mr-1" /> Siap
+              </>
             ) : (
-              <><XCircle className="h-3 w-3 mr-1" /> {missing.length} Field</>
+              <>
+                <XCircle className="h-3 w-3 mr-1" /> {missing.length} Field
+              </>
             )}
           </Badge>
         );
       },
     },
     {
-      id: 'unit',
-      header: 'Unit',
+      id: "unit",
+      header: "Unit",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.original.unit?.name || '-'}
+          {row.original.unit?.name || "-"}
         </span>
       ),
     },
     {
-      id: 'actions',
-      header: '',
+      id: "actions",
+      header: "",
       cell: ({ row }) => (
         <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            asChild
-          >
+          <Button variant="ghost" size="sm" asChild>
             <Link href={`/hr/teachers/compliance/${row.original.id}`}>
               <Pencil className="h-4 w-4" />
             </Link>
@@ -210,43 +223,49 @@ export default function TeacherCompliancePage() {
       ),
     },
   ];
-  
+
   // Calculate local stats if API report not available
-  const localStats = teachers ? {
-    total: teachers.length,
-    complete: teachers.filter(t => calculateCompleteness(t) === 100).length,
-    incomplete: teachers.filter(t => calculateCompleteness(t) < 100).length,
-    certified: teachers.filter(t => t.certificationStatus === 'SUDAH_SERTIFIKASI').length,
-  } : { total: 0, complete: 0, incomplete: 0, certified: 0 };
-  
+  const localStats = teachers
+    ? {
+        total: teachers.length,
+        complete: teachers.filter((t) => calculateCompleteness(t) === 100)
+          .length,
+        incomplete: teachers.filter((t) => calculateCompleteness(t) < 100)
+          .length,
+        certified: teachers.filter(
+          (t) => t.certificationStatus === "SUDAH_SERTIFIKASI",
+        ).length,
+      }
+    : { total: 0, complete: 0, incomplete: 0, certified: 0 };
+
   const stats = [
     {
-      title: 'Total Guru',
+      title: "Total Guru",
       value: completenessReport?.totalTeachers || localStats.total,
       icon: Users,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      color: "text-blue-600",
+      bgColor: "bg-blue-100",
     },
     {
-      title: 'Data Lengkap',
+      title: "Data Lengkap",
       value: completenessReport?.complete || localStats.complete,
       icon: CheckCircle,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
+      color: "text-green-600",
+      bgColor: "bg-green-100",
     },
     {
-      title: 'Sudah Sertifikasi',
+      title: "Sudah Sertifikasi",
       value: certificationReport?.certified || localStats.certified,
       icon: Award,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      color: "text-purple-600",
+      bgColor: "bg-purple-100",
     },
     {
-      title: 'Siap Simtun',
+      title: "Siap Simtun",
       value: simtunReport?.ready || 0,
       icon: FileCheck,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100',
+      color: "text-orange-600",
+      bgColor: "bg-orange-100",
     },
   ];
 
@@ -256,10 +275,10 @@ export default function TeacherCompliancePage() {
         title="Kelengkapan Data Guru"
         description="Kelola data kepatuhan guru untuk Simtun dan kebutuhan administrasi Indonesia"
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'SDM', href: '/hr' },
-          { label: 'Guru', href: '/hr/teachers' },
-          { label: 'Kelengkapan Data' },
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "SDM", href: "/hr" },
+          { label: "Guru", href: "/hr/teachers" },
+          { label: "Kelengkapan Data" },
         ]}
       />
 
@@ -342,7 +361,7 @@ export default function TeacherCompliancePage() {
                 Sertifikasi
               </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="list">
               <DataTable
                 columns={teacherColumns}
@@ -350,34 +369,40 @@ export default function TeacherCompliancePage() {
                 isLoading={loadingTeachers}
               />
             </TabsContent>
-            
+
             <TabsContent value="report">
               <div className="space-y-6">
                 {/* Completion Rate */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Tingkat Kelengkapan Data</CardTitle>
+                    <CardTitle className="text-lg">
+                      Tingkat Kelengkapan Data
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center gap-4 mb-4">
-                      <Progress 
-                        value={completenessReport?.completionRate || 0} 
-                        className="flex-1 h-4" 
+                      <Progress
+                        value={completenessReport?.completionRate || 0}
+                        className="flex-1 h-4"
                       />
                       <span className="text-2xl font-bold">
                         {completenessReport?.completionRate?.toFixed(1) || 0}%
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {completenessReport?.complete || 0} dari {completenessReport?.totalTeachers || 0} guru memiliki data lengkap
+                      {completenessReport?.complete || 0} dari{" "}
+                      {completenessReport?.totalTeachers || 0} guru memiliki
+                      data lengkap
                     </p>
                   </CardContent>
                 </Card>
-                
+
                 {/* Missing Fields Breakdown */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Field yang Belum Lengkap</CardTitle>
+                    <CardTitle className="text-lg">
+                      Field yang Belum Lengkap
+                    </CardTitle>
                     <CardDescription>
                       Rincian field yang masih kosong per guru
                     </CardDescription>
@@ -395,27 +420,41 @@ export default function TeacherCompliancePage() {
                       <TableBody>
                         {completenessReport?.missingFields?.map((field) => (
                           <TableRow key={field.field}>
-                            <TableCell className="font-medium">{field.field}</TableCell>
+                            <TableCell className="font-medium">
+                              {field.field}
+                            </TableCell>
                             <TableCell>{field.count} guru</TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <Progress value={100 - field.percentage} className="w-16 h-2" />
-                                <span>{(100 - field.percentage).toFixed(1)}% terisi</span>
+                                <Progress
+                                  value={100 - field.percentage}
+                                  className="w-16 h-2"
+                                />
+                                <span>
+                                  {(100 - field.percentage).toFixed(1)}% terisi
+                                </span>
                               </div>
                             </TableCell>
                             <TableCell>
                               {field.percentage === 0 ? (
                                 <Badge variant="default">Lengkap</Badge>
                               ) : field.percentage < 20 ? (
-                                <Badge variant="secondary">Hampir Lengkap</Badge>
+                                <Badge variant="secondary">
+                                  Hampir Lengkap
+                                </Badge>
                               ) : (
-                                <Badge variant="destructive">Perlu Perhatian</Badge>
+                                <Badge variant="destructive">
+                                  Perlu Perhatian
+                                </Badge>
                               )}
                             </TableCell>
                           </TableRow>
                         )) || (
                           <TableRow>
-                            <TableCell colSpan={4} className="text-center text-muted-foreground">
+                            <TableCell
+                              colSpan={4}
+                              className="text-center text-muted-foreground"
+                            >
                               Memuat data...
                             </TableCell>
                           </TableRow>
@@ -426,19 +465,21 @@ export default function TeacherCompliancePage() {
                 </Card>
               </div>
             </TabsContent>
-            
+
             <TabsContent value="simtun">
               <div className="space-y-6">
                 {/* Simtun Readiness */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Kesiapan Data Simtun</CardTitle>
+                    <CardTitle className="text-lg">
+                      Kesiapan Data Simtun
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center gap-4 mb-4">
-                      <Progress 
-                        value={simtunReport?.readyPercentage || 0} 
-                        className="flex-1 h-4" 
+                      <Progress
+                        value={simtunReport?.readyPercentage || 0}
+                        className="flex-1 h-4"
                       />
                       <span className="text-2xl font-bold">
                         {simtunReport?.readyPercentage?.toFixed(1) || 0}%
@@ -447,21 +488,27 @@ export default function TeacherCompliancePage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex items-center gap-2">
                         <CheckCircle className="h-5 w-5 text-green-500" />
-                        <span>{simtunReport?.ready || 0} guru siap sinkronisasi</span>
+                        <span>
+                          {simtunReport?.ready || 0} guru siap sinkronisasi
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <XCircle className="h-5 w-5 text-red-500" />
-                        <span>{simtunReport?.notReady || 0} guru perlu dilengkapi</span>
+                        <span>
+                          {simtunReport?.notReady || 0} guru perlu dilengkapi
+                        </span>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 {/* Teachers Not Ready */}
                 {simtunReport?.issues && simtunReport.issues.length > 0 && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">Guru dengan Data Belum Lengkap</CardTitle>
+                      <CardTitle className="text-lg">
+                        Guru dengan Data Belum Lengkap
+                      </CardTitle>
                       <CardDescription>
                         Guru yang belum memenuhi persyaratan minimum Simtun
                       </CardDescription>
@@ -479,12 +526,18 @@ export default function TeacherCompliancePage() {
                         <TableBody>
                           {simtunReport.issues.slice(0, 10).map((issue) => (
                             <TableRow key={issue.teacherId}>
-                              <TableCell className="font-medium">{issue.teacherName}</TableCell>
-                              <TableCell>{issue.nip || '-'}</TableCell>
+                              <TableCell className="font-medium">
+                                {issue.teacherName}
+                              </TableCell>
+                              <TableCell>{issue.nip || "-"}</TableCell>
                               <TableCell>
                                 <div className="flex flex-wrap gap-1">
                                   {issue.missingFields.map((field) => (
-                                    <Badge key={field} variant="outline" className="text-xs">
+                                    <Badge
+                                      key={field}
+                                      variant="outline"
+                                      className="text-xs"
+                                    >
                                       {field}
                                     </Badge>
                                   ))}
@@ -492,7 +545,9 @@ export default function TeacherCompliancePage() {
                               </TableCell>
                               <TableCell>
                                 <Button variant="ghost" size="sm" asChild>
-                                  <Link href={`/hr/teachers/compliance/${issue.teacherId}`}>
+                                  <Link
+                                    href={`/hr/teachers/compliance/${issue.teacherId}`}
+                                  >
                                     <Pencil className="h-4 w-4" />
                                   </Link>
                                 </Button>
@@ -511,7 +566,7 @@ export default function TeacherCompliancePage() {
                 )}
               </div>
             </TabsContent>
-            
+
             <TabsContent value="certification">
               <div className="space-y-6">
                 {/* Certification Overview */}
@@ -523,10 +578,17 @@ export default function TeacherCompliancePage() {
                           <Award className="h-5 w-5 text-green-600" />
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Sudah Sertifikasi</p>
-                          <p className="text-2xl font-bold">{certificationReport?.certified || 0}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Sudah Sertifikasi
+                          </p>
+                          <p className="text-2xl font-bold">
+                            {certificationReport?.certified || 0}
+                          </p>
                           <p className="text-xs text-muted-foreground">
-                            {certificationReport?.certifiedPercentage?.toFixed(1) || 0}% dari total
+                            {certificationReport?.certifiedPercentage?.toFixed(
+                              1,
+                            ) || 0}
+                            % dari total
                           </p>
                         </div>
                       </div>
@@ -539,8 +601,12 @@ export default function TeacherCompliancePage() {
                           <GraduationCap className="h-5 w-5 text-yellow-600" />
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Dalam Proses</p>
-                          <p className="text-2xl font-bold">{certificationReport?.inProcess || 0}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Dalam Proses
+                          </p>
+                          <p className="text-2xl font-bold">
+                            {certificationReport?.inProcess || 0}
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -552,47 +618,62 @@ export default function TeacherCompliancePage() {
                           <AlertTriangle className="h-5 w-5 text-gray-600" />
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Belum Sertifikasi</p>
-                          <p className="text-2xl font-bold">{certificationReport?.notCertified || 0}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Belum Sertifikasi
+                          </p>
+                          <p className="text-2xl font-bold">
+                            {certificationReport?.notCertified || 0}
+                          </p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 </div>
-                
+
                 {/* Certification by Year */}
-                {certificationReport?.byYear && certificationReport.byYear.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Sertifikasi per Tahun</CardTitle>
-                      <CardDescription>
-                        Distribusi guru bersertifikat berdasarkan tahun sertifikasi
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Tahun</TableHead>
-                            <TableHead>Jumlah Guru</TableHead>
-                            <TableHead>Persentase</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {certificationReport.byYear.map((item) => (
-                            <TableRow key={item.year}>
-                              <TableCell className="font-medium">{item.year}</TableCell>
-                              <TableCell>{item.count} guru</TableCell>
-                              <TableCell>
-                                {((item.count / (certificationReport.certified || 1)) * 100).toFixed(1)}%
-                              </TableCell>
+                {certificationReport?.byYear &&
+                  certificationReport.byYear.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">
+                          Sertifikasi per Tahun
+                        </CardTitle>
+                        <CardDescription>
+                          Distribusi guru bersertifikat berdasarkan tahun
+                          sertifikasi
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Tahun</TableHead>
+                              <TableHead>Jumlah Guru</TableHead>
+                              <TableHead>Persentase</TableHead>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
-                )}
+                          </TableHeader>
+                          <TableBody>
+                            {certificationReport.byYear.map((item) => (
+                              <TableRow key={item.year}>
+                                <TableCell className="font-medium">
+                                  {item.year}
+                                </TableCell>
+                                <TableCell>{item.count} guru</TableCell>
+                                <TableCell>
+                                  {(
+                                    (item.count /
+                                      (certificationReport.certified || 1)) *
+                                    100
+                                  ).toFixed(1)}
+                                  %
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  )}
               </div>
             </TabsContent>
           </Tabs>

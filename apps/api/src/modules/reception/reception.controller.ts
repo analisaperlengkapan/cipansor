@@ -1,12 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as ReceptionService from './reception.service';
 import { ApiResponse } from '@cipansor/shared';
-import {
-  ReceptionStats,
-  GuestBook,
-  StudentVisit,
-  StudentPackage
-} from '@cipansor/shared';
+import { ReceptionStats, GuestBook, StudentVisit, StudentPackage } from '@cipansor/shared';
 import { Errors } from '../../middleware/error';
 
 // --- Stats ---

@@ -3,8 +3,8 @@
  * Custom React hooks for fetching murojaah analytics data
  */
 
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
 
 // ============================================
 // Types
@@ -62,45 +62,62 @@ interface AnalyticsQuery {
 // API Functions
 // ============================================
 
-async function fetchQualityDistribution(params: AnalyticsQuery): Promise<QualityDistribution> {
+async function fetchQualityDistribution(
+  params: AnalyticsQuery,
+): Promise<QualityDistribution> {
   const searchParams = new URLSearchParams();
-  if (params.dateFrom) searchParams.append('dateFrom', params.dateFrom);
-  if (params.dateTo) searchParams.append('dateTo', params.dateTo);
-  if (params.halaqohId) searchParams.append('halaqohId', params.halaqohId);
-  if (params.murojaahType) searchParams.append('murojaahType', params.murojaahType);
+  if (params.dateFrom) searchParams.append("dateFrom", params.dateFrom);
+  if (params.dateTo) searchParams.append("dateTo", params.dateTo);
+  if (params.halaqohId) searchParams.append("halaqohId", params.halaqohId);
+  if (params.murojaahType)
+    searchParams.append("murojaahType", params.murojaahType);
 
-  const response = await apiClient.get(`/murojaah/analytics/quality-distribution?${searchParams}`);
+  const response = await apiClient.get(
+    `/murojaah/analytics/quality-distribution?${searchParams}`,
+  );
   return response.data.data;
 }
 
-async function fetchMistakePatterns(params: AnalyticsQuery): Promise<MistakePatterns> {
+async function fetchMistakePatterns(
+  params: AnalyticsQuery,
+): Promise<MistakePatterns> {
   const searchParams = new URLSearchParams();
-  if (params.dateFrom) searchParams.append('dateFrom', params.dateFrom);
-  if (params.dateTo) searchParams.append('dateTo', params.dateTo);
-  if (params.halaqohId) searchParams.append('halaqohId', params.halaqohId);
+  if (params.dateFrom) searchParams.append("dateFrom", params.dateFrom);
+  if (params.dateTo) searchParams.append("dateTo", params.dateTo);
+  if (params.halaqohId) searchParams.append("halaqohId", params.halaqohId);
 
-  const response = await apiClient.get(`/murojaah/analytics/mistake-patterns?${searchParams}`);
+  const response = await apiClient.get(
+    `/murojaah/analytics/mistake-patterns?${searchParams}`,
+  );
   return response.data.data;
 }
 
-async function fetchConsistencyScore(params: AnalyticsQuery): Promise<ConsistencyScore> {
+async function fetchConsistencyScore(
+  params: AnalyticsQuery,
+): Promise<ConsistencyScore> {
   const searchParams = new URLSearchParams();
-  if (params.dateFrom) searchParams.append('dateFrom', params.dateFrom);
-  if (params.dateTo) searchParams.append('dateTo', params.dateTo);
-  if (params.halaqohId) searchParams.append('halaqohId', params.halaqohId);
+  if (params.dateFrom) searchParams.append("dateFrom", params.dateFrom);
+  if (params.dateTo) searchParams.append("dateTo", params.dateTo);
+  if (params.halaqohId) searchParams.append("halaqohId", params.halaqohId);
 
-  const response = await apiClient.get(`/murojaah/analytics/consistency-score?${searchParams}`);
+  const response = await apiClient.get(
+    `/murojaah/analytics/consistency-score?${searchParams}`,
+  );
   return response.data.data;
 }
 
-async function fetchTopPerformers(params: AnalyticsQuery): Promise<TopPerformersResponse> {
+async function fetchTopPerformers(
+  params: AnalyticsQuery,
+): Promise<TopPerformersResponse> {
   const searchParams = new URLSearchParams();
-  if (params.dateFrom) searchParams.append('dateFrom', params.dateFrom);
-  if (params.dateTo) searchParams.append('dateTo', params.dateTo);
-  if (params.halaqohId) searchParams.append('halaqohId', params.halaqohId);
-  if (params.limit) searchParams.append('limit', params.limit.toString());
+  if (params.dateFrom) searchParams.append("dateFrom", params.dateFrom);
+  if (params.dateTo) searchParams.append("dateTo", params.dateTo);
+  if (params.halaqohId) searchParams.append("halaqohId", params.halaqohId);
+  if (params.limit) searchParams.append("limit", params.limit.toString());
 
-  const response = await apiClient.get(`/murojaah/analytics/top-performers?${searchParams}`);
+  const response = await apiClient.get(
+    `/murojaah/analytics/top-performers?${searchParams}`,
+  );
   return response.data.data;
 }
 
@@ -111,7 +128,8 @@ async function fetchTopPerformers(params: AnalyticsQuery): Promise<TopPerformers
 // Retry configuration for all analytics queries
 const retryConfig = {
   retry: 3,
-  retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+  retryDelay: (attemptIndex: number) =>
+    Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
 };
 
 /**
@@ -119,7 +137,7 @@ const retryConfig = {
  */
 export function useQualityDistribution(params: AnalyticsQuery = {}) {
   return useQuery({
-    queryKey: ['murojaah', 'analytics', 'quality-distribution', params],
+    queryKey: ["murojaah", "analytics", "quality-distribution", params],
     queryFn: () => fetchQualityDistribution(params),
     staleTime: 5 * 60 * 1000, // 5 minutes
     ...retryConfig,
@@ -131,7 +149,7 @@ export function useQualityDistribution(params: AnalyticsQuery = {}) {
  */
 export function useMistakePatterns(params: AnalyticsQuery = {}) {
   return useQuery({
-    queryKey: ['murojaah', 'analytics', 'mistake-patterns', params],
+    queryKey: ["murojaah", "analytics", "mistake-patterns", params],
     queryFn: () => fetchMistakePatterns(params),
     staleTime: 5 * 60 * 1000,
     ...retryConfig,
@@ -143,7 +161,7 @@ export function useMistakePatterns(params: AnalyticsQuery = {}) {
  */
 export function useConsistencyScore(params: AnalyticsQuery = {}) {
   return useQuery({
-    queryKey: ['murojaah', 'analytics', 'consistency-score', params],
+    queryKey: ["murojaah", "analytics", "consistency-score", params],
     queryFn: () => fetchConsistencyScore(params),
     staleTime: 5 * 60 * 1000,
     ...retryConfig,
@@ -155,7 +173,7 @@ export function useConsistencyScore(params: AnalyticsQuery = {}) {
  */
 export function useTopPerformers(params: AnalyticsQuery = {}) {
   return useQuery({
-    queryKey: ['murojaah', 'analytics', 'top-performers', params],
+    queryKey: ["murojaah", "analytics", "top-performers", params],
     queryFn: () => fetchTopPerformers(params),
     staleTime: 5 * 60 * 1000,
     ...retryConfig,
@@ -176,7 +194,15 @@ export function useMurojaahAnalytics(params: AnalyticsQuery = {}) {
     mistakePatterns: mistakes,
     consistencyScore: consistency,
     topPerformers,
-    isLoading: qualityDist.isLoading || mistakes.isLoading || consistency.isLoading || topPerformers.isLoading,
-    isError: qualityDist.isError || mistakes.isError || consistency.isError || topPerformers.isError,
+    isLoading:
+      qualityDist.isLoading ||
+      mistakes.isLoading ||
+      consistency.isLoading ||
+      topPerformers.isLoading,
+    isError:
+      qualityDist.isError ||
+      mistakes.isError ||
+      consistency.isError ||
+      topPerformers.isError,
   };
 }

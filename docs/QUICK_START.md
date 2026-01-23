@@ -9,7 +9,7 @@
 
 ### ✅ Ready to Use Today
 
-1. **Real-time Dashboard Hook** 
+1. **Real-time Dashboard Hook**
    - Location: `/apps/web/src/hooks/use-realtime-dashboard.ts`
    - Status: ✅ Complete, needs backend WebSocket server
 
@@ -30,6 +30,7 @@
 ## 🏃 Getting Started
 
 ### Prerequisites
+
 ```bash
 # Ensure you have:
 - Node.js 20+
@@ -39,6 +40,7 @@
 ```
 
 ### Clone & Setup
+
 ```bash
 # If not already cloned
 git clone <repo-url>
@@ -57,6 +59,7 @@ cp apps/web/.env.example apps/web/.env.local
 ### Run Development Servers
 
 **Terminal 1 - Backend API:**
+
 ```bash
 cd apps/api
 pnpm dev
@@ -66,6 +69,7 @@ pnpm dev
 ```
 
 **Terminal 2 - Frontend:**
+
 ```bash
 cd apps/web
 pnpm dev
@@ -74,6 +78,7 @@ pnpm dev
 ```
 
 **Terminal 3 - Redis (for real-time features):**
+
 ```bash
 # Using Docker
 docker run -d -p 6379:6379 redis:7-alpine
@@ -87,6 +92,7 @@ redis-server
 ## 🎯 Testing New Features
 
 ### 1. Test Murojaah Analytics
+
 ```bash
 # Navigate to:
 http://localhost:3000/tahfidz/murojaah/analytics
@@ -103,6 +109,7 @@ http://localhost:3000/tahfidz/murojaah/analytics
 **Expected:** Page loads with mock data, all charts render correctly
 
 ### 2. Test Executive Dashboard
+
 ```bash
 # Navigate to:
 http://localhost:3000/dashboard/executive
@@ -119,6 +126,7 @@ http://localhost:3000/dashboard/executive
 **Expected:** Page loads, shows connection error (normal - backend WebSocket not yet implemented)
 
 ### 3. Test PAUD Radar Chart
+
 ```bash
 # Navigate to any student progress page:
 http://localhost:3000/paud/assessment/student/[studentId]/progress
@@ -142,6 +150,7 @@ http://localhost:3000/paud/assessment/student/[studentId]/progress
 **Goal:** Enable real-time dashboard updates
 
 **Steps:**
+
 ```bash
 cd apps/api
 
@@ -153,24 +162,25 @@ pnpm add socket.io ioredis
 ```
 
 **Implementation:**
+
 ```typescript
 // apps/api/src/lib/websocket.ts
-import { Server as HTTPServer } from 'http';
-import { Server as SocketServer } from 'socket.io';
-import { createClient } from 'redis';
-import { verifyJWT } from './jwt';
+import { Server as HTTPServer } from "http";
+import { Server as SocketServer } from "socket.io";
+import { createClient } from "redis";
+import { verifyJWT } from "./jwt";
 
 export function setupWebSocket(httpServer: HTTPServer) {
   const io = new SocketServer(httpServer, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+      origin: process.env.FRONTEND_URL || "http://localhost:3000",
       credentials: true,
     },
   });
 
   // Redis for pub/sub
   const redis = createClient({
-    url: process.env.REDIS_URL || 'redis://localhost:6379',
+    url: process.env.REDIS_URL || "redis://localhost:6379",
   });
   await redis.connect();
 
@@ -182,31 +192,31 @@ export function setupWebSocket(httpServer: HTTPServer) {
       socket.data.user = user;
       next();
     } catch (error) {
-      next(new Error('Authentication failed'));
+      next(new Error("Authentication failed"));
     }
   });
 
   // Connection handler
-  io.on('connection', (socket) => {
-    console.log('Client connected:', socket.data.user.id);
+  io.on("connection", (socket) => {
+    console.log("Client connected:", socket.data.user.id);
 
-    socket.on('dashboard:subscribe', ({ unitIds, metrics }) => {
+    socket.on("dashboard:subscribe", ({ unitIds, metrics }) => {
       // Join rooms based on subscription
       unitIds.forEach((id: string) => socket.join(`unit:${id}`));
     });
 
-    socket.on('disconnect', () => {
-      console.log('Client disconnected');
+    socket.on("disconnect", () => {
+      console.log("Client disconnected");
     });
   });
 
   // Redis subscriber for broadcasting
   const subscriber = redis.duplicate();
   await subscriber.connect();
-  
-  await subscriber.subscribe('dashboard:metrics:update', (message) => {
+
+  await subscriber.subscribe("dashboard:metrics:update", (message) => {
     const data = JSON.parse(message);
-    io.to('yayasan:dashboard').emit('metrics:update', data);
+    io.to("yayasan:dashboard").emit("metrics:update", data);
   });
 
   return io;
@@ -214,9 +224,10 @@ export function setupWebSocket(httpServer: HTTPServer) {
 ```
 
 **Update main.ts:**
+
 ```typescript
 // apps/api/src/main.ts
-import { setupWebSocket } from './lib/websocket';
+import { setupWebSocket } from "./lib/websocket";
 
 // After app.listen
 const server = app.listen(PORT);
@@ -226,6 +237,7 @@ console.log(`WebSocket server ready on port ${PORT}`);
 ```
 
 **Test:**
+
 ```bash
 # Restart backend
 pnpm dev
@@ -242,6 +254,7 @@ pnpm dev
 **File to edit:** `/apps/web/src/app/paud/assessment/student/[studentId]/page.tsx`
 
 **Steps:**
+
 ```typescript
 // 1. Import component
 import { PAUDRadarChart } from '@/components/paud';
@@ -254,7 +267,7 @@ import { PAUDRadarChart } from '@/components/paud';
       data={summary?.aspects || {}}
       studentName={student?.user?.name}
     />
-    
+
     {/* Existing cards */}
     {ASPECT_ORDER.map((aspect) => (
       // ... existing aspect cards
@@ -264,6 +277,7 @@ import { PAUDRadarChart } from '@/components/paud';
 ```
 
 **Test:**
+
 ```bash
 # Navigate to student progress page
 # Verify radar chart displays with correct colors
@@ -276,40 +290,43 @@ import { PAUDRadarChart } from '@/components/paud';
 **Goal:** Replace mock data with real API
 
 **Backend endpoints needed:**
+
 ```typescript
 // apps/api/src/modules/murojaah/murojaah.routes.ts
 
-router.get('/analytics/quality-distribution', async (req, res) => {
+router.get("/analytics/quality-distribution", async (req, res) => {
   // Calculate quality distribution from MurojaahRecord
   // Return: { excellent, good, fair, poor }
 });
 
-router.get('/analytics/mistake-patterns', async (req, res) => {
+router.get("/analytics/mistake-patterns", async (req, res) => {
   // Aggregate mistake types and counts
   // Return: [{ type, count, trend }]
 });
 
-router.get('/analytics/consistency-score', async (req, res) => {
+router.get("/analytics/consistency-score", async (req, res) => {
   // Calculate daily quality trend
   // Return: [{ date, avgQuality, records }]
 });
 
-router.get('/analytics/top-performers', async (req, res) => {
+router.get("/analytics/top-performers", async (req, res) => {
   // Get top students by quality & consistency
   // Return: [{ rank, name, avgQuality, consistency, totalRecords }]
 });
 ```
 
 **Frontend update:**
+
 ```typescript
 // apps/web/src/hooks/use-murojaah-analytics.ts
-import { useQuery } from '@tanstack/react-query';
-import api from '@/lib/api';
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 export function useMurojaahQualityDistribution(params: FilterParams) {
   return useQuery({
-    queryKey: ['murojaah-quality-distribution', params],
-    queryFn: () => api.get('/murojaah/analytics/quality-distribution', { params }),
+    queryKey: ["murojaah-quality-distribution", params],
+    queryFn: () =>
+      api.get("/murojaah/analytics/quality-distribution", { params }),
   });
 }
 
@@ -317,6 +334,7 @@ export function useMurojaahQualityDistribution(params: FilterParams) {
 ```
 
 **Update page:**
+
 ```typescript
 // apps/web/src/app/tahfidz/murojaah/analytics/page.tsx
 const { data: qualityData } = useMurojaahQualityDistribution({
@@ -331,6 +349,7 @@ const { data: qualityData } = useMurojaahQualityDistribution({
 ## 📊 Implementation Checklist
 
 ### Week 1-2 (Sprint 1)
+
 - [x] Real-time dashboard hook
 - [x] Murojaah analytics dashboard (frontend)
 - [x] Executive dashboard (frontend)
@@ -341,6 +360,7 @@ const { data: qualityData } = useMurojaahQualityDistribution({
 - [ ] Metric aggregation background job
 
 ### Week 3-4 (Sprint 2)
+
 - [ ] Simaan exam scheduling UI
 - [ ] Sanad certificate generation
 - [ ] PAUD report PDF export
@@ -351,18 +371,21 @@ const { data: qualityData } = useMurojaahQualityDistribution({
 ## 🐛 Known Issues & Workarounds
 
 ### Issue 1: WebSocket Connection Failed
+
 **Symptom:** Executive dashboard shows "Terputus" (disconnected)  
 **Cause:** Backend WebSocket server not implemented yet  
 **Workaround:** Normal behavior, ignore for now  
 **Fix:** Implement Priority 1 task above
 
 ### Issue 2: Murojaah Charts Empty
+
 **Symptom:** Charts show but with mock data  
 **Cause:** API endpoints not connected  
 **Workaround:** Mock data displays correctly  
 **Fix:** Implement Priority 3 task above
 
 ### Issue 3: Radar Chart Not Visible
+
 **Symptom:** Student dashboard doesn't show radar chart  
 **Cause:** Component not yet integrated  
 **Workaround:** Component exists and works in isolation  
@@ -373,6 +396,7 @@ const { data: qualityData } = useMurojaahQualityDistribution({
 ## 📚 Documentation References
 
 ### Planning Documents
+
 - `docs/planning/requirements.md` - Full requirements
 - `docs/planning/database-design.md` - Database schema
 - `docs/planning/backend-design.md` - API specifications
@@ -381,6 +405,7 @@ const { data: qualityData } = useMurojaahQualityDistribution({
 - `docs/planning/IMPLEMENTATION_LOG.md` - Progress log
 
 ### Code References
+
 - `apps/api/src/modules/` - Backend modules (62 modules)
 - `apps/web/src/app/` - Frontend pages (60+ pages)
 - `apps/web/src/hooks/` - React hooks & API calls
@@ -391,6 +416,7 @@ const { data: qualityData } = useMurojaahQualityDistribution({
 ## 🆘 Getting Help
 
 ### If Build Fails
+
 ```bash
 # Clear cache and reinstall
 pnpm clean
@@ -404,6 +430,7 @@ pnpm prisma generate
 ```
 
 ### If Tests Fail
+
 ```bash
 # Run tests with verbose output
 cd apps/api
@@ -414,6 +441,7 @@ pnpm test -- --verbose
 ```
 
 ### Common Commands
+
 ```bash
 # Backend
 pnpm --filter api dev          # Dev server
@@ -437,6 +465,7 @@ pnpm test                       # Test all
 ## 🎯 Success Criteria
 
 ### Sprint 1 Success Metrics
+
 - ✅ 3 new pages created
 - ✅ 1 reusable component created
 - ✅ 1 custom hook created
@@ -445,6 +474,7 @@ pnpm test                       # Test all
 - ⏳ Radar chart integrated
 
 ### Quality Gates
+
 - All TypeScript types properly defined ✅
 - No ESLint errors ✅
 - Components properly tested ⏳

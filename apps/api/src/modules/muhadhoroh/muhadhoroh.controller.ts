@@ -84,7 +84,7 @@ export class MuhadhorohController {
 
   async getUpcoming(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = req.query.unitId as string || req.user!.unitId || '';
+      const unitId = (req.query.unitId as string) || req.user!.unitId || '';
       const limit = parseInt(req.query.limit as string) || 10;
       const result = await muhadhorohService.getUpcoming(unitId, limit);
       res.json({ success: true, data: result });
@@ -106,7 +106,7 @@ export class MuhadhorohController {
 
   async getStatistics(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = req.query.unitId as string || req.user!.unitId || '';
+      const unitId = (req.query.unitId as string) || req.user!.unitId || '';
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
       const result = await muhadhorohService.getStatistics(unitId, startDate, endDate);
@@ -118,7 +118,7 @@ export class MuhadhorohController {
 
   async getTopPerformers(req: Request, res: Response, next: NextFunction) {
     try {
-      const unitId = req.query.unitId as string || req.user!.unitId || '';
+      const unitId = (req.query.unitId as string) || req.user!.unitId || '';
       const limit = parseInt(req.query.limit as string) || 10;
       const result = await muhadhorohService.getTopPerformers(unitId, limit);
       res.json({ success: true, data: result });

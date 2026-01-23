@@ -1,6 +1,11 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { PaginatedResponse, ApiResponse } from '@/lib/api';
-import type { Class, CreateClassInput, UpdateClassInput, ClassEnrollment } from '@cipansor/shared';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { PaginatedResponse, ApiResponse } from "@/lib/api";
+import type {
+  Class,
+  CreateClassInput,
+  UpdateClassInput,
+  ClassEnrollment,
+} from "@cipansor/shared";
 
 export interface ClassListParams {
   page?: number;
@@ -17,10 +22,12 @@ export interface ClassListParams {
 
 export function useClasses(params: ClassListParams = {}) {
   return useQuery({
-    queryKey: ['classes', params],
+    queryKey: ["classes", params],
     queryFn: async () => {
       // The API returns PaginatedResponse<Class> where Class is the shared type
-      const response = await api.get<PaginatedResponse<Class>>('/classes', { params });
+      const response = await api.get<PaginatedResponse<Class>>("/classes", {
+        params,
+      });
       return response.data;
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
@@ -29,7 +36,7 @@ export function useClasses(params: ClassListParams = {}) {
 
 export function useClass(id: string) {
   return useQuery({
-    queryKey: ['classes', id],
+    queryKey: ["classes", id],
     queryFn: async () => {
       const response = await api.get<ApiResponse<Class>>(`/classes/${id}`);
       return response.data.data;
@@ -40,9 +47,11 @@ export function useClass(id: string) {
 
 export function useClassEnrollments(classId: string) {
   return useQuery({
-    queryKey: ['classes', classId, 'enrollments'],
+    queryKey: ["classes", classId, "enrollments"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<ClassEnrollment[]>>(`/classes/${classId}/enrollments`);
+      const response = await api.get<ApiResponse<ClassEnrollment[]>>(
+        `/classes/${classId}/enrollments`,
+      );
       return response.data.data;
     },
     enabled: !!classId,
@@ -54,11 +63,11 @@ export function useCreateClass() {
 
   return useMutation({
     mutationFn: async (data: CreateClassInput) => {
-      const response = await api.post<ApiResponse<Class>>('/classes', data);
+      const response = await api.post<ApiResponse<Class>>("/classes", data);
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      queryClient.invalidateQueries({ queryKey: ["classes"] });
     },
   });
 }
@@ -67,13 +76,22 @@ export function useUpdateClass() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateClassInput }) => {
-      const response = await api.put<ApiResponse<Class>>(`/classes/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdateClassInput;
+    }) => {
+      const response = await api.put<ApiResponse<Class>>(
+        `/classes/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['classes'] });
-      queryClient.invalidateQueries({ queryKey: ['classes', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["classes"] });
+      queryClient.invalidateQueries({ queryKey: ["classes", variables.id] });
     },
   });
 }
@@ -86,7 +104,7 @@ export function useDeleteClass() {
       await api.delete(`/classes/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      queryClient.invalidateQueries({ queryKey: ["classes"] });
     },
   });
 }
@@ -95,15 +113,26 @@ export function useEnrollStudent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ classId, studentId }: { classId: string; studentId: string }) => {
+    mutationFn: async ({
+      classId,
+      studentId,
+    }: {
+      classId: string;
+      studentId: string;
+    }) => {
       // The API expects { studentId } as body.
-      const response = await api.post<ApiResponse<ClassEnrollment>>(`/classes/${classId}/enrollments`, {
-        studentId,
-      });
+      const response = await api.post<ApiResponse<ClassEnrollment>>(
+        `/classes/${classId}/enrollments`,
+        {
+          studentId,
+        },
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['classes', variables.classId, 'enrollments'] });
+      queryClient.invalidateQueries({
+        queryKey: ["classes", variables.classId, "enrollments"],
+      });
     },
   });
 }
@@ -112,11 +141,19 @@ export function useUnenrollStudent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ classId, studentId }: { classId: string; studentId: string }) => {
+    mutationFn: async ({
+      classId,
+      studentId,
+    }: {
+      classId: string;
+      studentId: string;
+    }) => {
       await api.delete(`/classes/${classId}/enrollments/${studentId}`);
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['classes', variables.classId, 'enrollments'] });
+      queryClient.invalidateQueries({
+        queryKey: ["classes", variables.classId, "enrollments"],
+      });
     },
   });
 }

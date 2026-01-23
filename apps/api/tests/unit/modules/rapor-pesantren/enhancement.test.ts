@@ -80,9 +80,42 @@ describe('Rapor Pesantren Enhancements', () => {
       ];
 
       const mockRapors = [
-        { studentId: 's1', overallScore: 85, id: 'r1', tahfidzData: {}, ibadahData: {}, muhadhorohData: {}, muhadatsahData: {}, kitabProgressData: {}, akhlakData: {}, attendanceData: {} },
-        { studentId: 's2', overallScore: 92, id: 'r2', tahfidzData: {}, ibadahData: {}, muhadhorohData: {}, muhadatsahData: {}, kitabProgressData: {}, akhlakData: {}, attendanceData: {} },
-        { studentId: 's3', overallScore: 78, id: 'r3', tahfidzData: {}, ibadahData: {}, muhadhorohData: {}, muhadatsahData: {}, kitabProgressData: {}, akhlakData: {}, attendanceData: {} },
+        {
+          studentId: 's1',
+          overallScore: 85,
+          id: 'r1',
+          tahfidzData: {},
+          ibadahData: {},
+          muhadhorohData: {},
+          muhadatsahData: {},
+          kitabProgressData: {},
+          akhlakData: {},
+          attendanceData: {},
+        },
+        {
+          studentId: 's2',
+          overallScore: 92,
+          id: 'r2',
+          tahfidzData: {},
+          ibadahData: {},
+          muhadhorohData: {},
+          muhadatsahData: {},
+          kitabProgressData: {},
+          akhlakData: {},
+          attendanceData: {},
+        },
+        {
+          studentId: 's3',
+          overallScore: 78,
+          id: 'r3',
+          tahfidzData: {},
+          ibadahData: {},
+          muhadhorohData: {},
+          muhadatsahData: {},
+          kitabProgressData: {},
+          akhlakData: {},
+          attendanceData: {},
+        },
       ];
 
       // @ts-ignore
@@ -101,15 +134,15 @@ describe('Rapor Pesantren Enhancements', () => {
       expect(result).toHaveLength(3);
 
       // Bob (92) should be Rank 1
-      const bob = result.find(r => r.studentName === 'Bob');
+      const bob = result.find((r) => r.studentName === 'Bob');
       expect(bob?.rank).toBe(1);
 
       // Alice (85) should be Rank 2
-      const alice = result.find(r => r.studentName === 'Alice');
+      const alice = result.find((r) => r.studentName === 'Alice');
       expect(alice?.rank).toBe(2);
 
       // Charlie (78) should be Rank 3
-      const charlie = result.find(r => r.studentName === 'Charlie');
+      const charlie = result.find((r) => r.studentName === 'Charlie');
       expect(charlie?.rank).toBe(3);
     });
   });
@@ -122,9 +155,7 @@ describe('Rapor Pesantren Enhancements', () => {
         semester: 1,
         student: {
           user: { name: 'Alice' },
-          parents: [
-            { parent: { id: 'p1', email: 'parent@test.com' } },
-          ],
+          parents: [{ parent: { id: 'p1', email: 'parent@test.com' } }],
         },
         academicYear: { name: '2024/2025' },
       };
@@ -134,17 +165,21 @@ describe('Rapor Pesantren Enhancements', () => {
 
       await updateRaporPesantren('r1', { status: 'PUBLISHED' });
 
-      expect(prismaMock.raporPesantren.update).toHaveBeenCalledWith(expect.objectContaining({
-        where: { id: 'r1' },
-        data: expect.objectContaining({ status: 'PUBLISHED' }),
-      }));
+      expect(prismaMock.raporPesantren.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'r1' },
+          data: expect.objectContaining({ status: 'PUBLISHED' }),
+        })
+      );
 
       expect(notificationMock.createNotification).toHaveBeenCalledTimes(1);
-      expect(notificationMock.createNotification).toHaveBeenCalledWith(expect.objectContaining({
-        userId: 'p1',
-        title: 'Rapor Pesantren Diterbitkan',
-        data: expect.objectContaining({ raporId: 'r1' }),
-      }));
+      expect(notificationMock.createNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'p1',
+          title: 'Rapor Pesantren Diterbitkan',
+          data: expect.objectContaining({ raporId: 'r1' }),
+        })
+      );
     });
 
     it('should NOT send notifications when status is DRAFT', async () => {
@@ -153,10 +188,8 @@ describe('Rapor Pesantren Enhancements', () => {
         studentId: 's1',
         status: 'DRAFT',
         student: {
-            user: { name: 'Alice' },
-            parents: [
-              { parent: { id: 'p1', email: 'parent@test.com' } },
-            ],
+          user: { name: 'Alice' },
+          parents: [{ parent: { id: 'p1', email: 'parent@test.com' } }],
         },
         academicYear: { name: '2024/2025' },
       };

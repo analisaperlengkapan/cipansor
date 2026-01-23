@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from '@/lib/prisma';
 import {
   CreateAlumniInput,
   UpdateAlumniInput,
@@ -16,8 +16,8 @@ import {
   EventQueryInput,
   RegisterEventInput,
   UpdateAttendeeStatusInput,
-} from "./schema";
-import { Prisma } from "@prisma/client";
+} from './schema';
+import { Prisma } from '@prisma/client';
 
 // ==================== ALUMNI ====================
 
@@ -32,9 +32,9 @@ export async function getAlumni(query: AlumniQueryInput) {
     ...(status && { status }),
     ...(search && {
       OR: [
-        { name: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
-        { registrationNo: { contains: search, mode: "insensitive" } },
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { registrationNo: { contains: search, mode: 'insensitive' } },
       ],
     }),
   };
@@ -47,7 +47,7 @@ export async function getAlumni(query: AlumniQueryInput) {
         student: { select: { id: true, nis: true } },
         _count: { select: { careers: true, educations: true, donations: true } },
       },
-      orderBy: { graduationYear: "desc" },
+      orderBy: { graduationYear: 'desc' },
       skip,
       take: limit,
     }),
@@ -101,24 +101,24 @@ export async function getTracerStudyStats(unitId?: string) {
       },
     }),
     prisma.alumniEducation.groupBy({
-      by: ["institution"],
+      by: ['institution'],
       where: { alumni: where },
       _count: { institution: true },
-      orderBy: { _count: { institution: "desc" } },
+      orderBy: { _count: { institution: 'desc' } },
       take: 5,
     }),
     prisma.alumniEducation.groupBy({
-      by: ["field"],
+      by: ['field'],
       where: { alumni: where },
       _count: { field: true },
-      orderBy: { _count: { field: "desc" } },
+      orderBy: { _count: { field: 'desc' } },
       take: 5,
     }),
     prisma.alumniCareer.groupBy({
-      by: ["industry"],
+      by: ['industry'],
       where: { alumni: where, industry: { not: null } },
       _count: { industry: true },
-      orderBy: { _count: { industry: "desc" } },
+      orderBy: { _count: { industry: 'desc' } },
       take: 5,
     }),
   ]);
@@ -158,12 +158,12 @@ export async function getAlumniById(id: string) {
     include: {
       unit: { select: { id: true, name: true, type: true } },
       student: { select: { id: true, nis: true, nisn: true } },
-      careers: { orderBy: { startDate: "desc" } },
-      educations: { orderBy: { startYear: "desc" } },
-      donations: { orderBy: { donatedAt: "desc" }, take: 10 },
+      careers: { orderBy: { startDate: 'desc' } },
+      educations: { orderBy: { startYear: 'desc' } },
+      donations: { orderBy: { donatedAt: 'desc' }, take: 10 },
       eventAttendances: {
         include: { event: { select: { id: true, name: true, eventDate: true } } },
-        orderBy: { registeredAt: "desc" },
+        orderBy: { registeredAt: 'desc' },
         take: 10,
       },
     },
@@ -176,7 +176,7 @@ export async function createAlumni(data: CreateAlumniInput) {
   const count = await prisma.alumni.count({
     where: { graduationYear: year },
   });
-  const registrationNo = `ALM-${year}-${String(count + 1).padStart(4, "0")}`;
+  const registrationNo = `ALM-${year}-${String(count + 1).padStart(4, '0')}`;
 
   return prisma.alumni.create({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -220,7 +220,7 @@ export async function convertFromStudent(studentId: string, data: ConvertFromStu
   });
 
   if (!student) {
-    throw new Error("Student not found");
+    throw new Error('Student not found');
   }
 
   // Generate registration number
@@ -228,7 +228,7 @@ export async function convertFromStudent(studentId: string, data: ConvertFromStu
   const count = await prisma.alumni.count({
     where: { graduationYear: year },
   });
-  const registrationNo = `ALM-${year}-${String(count + 1).padStart(4, "0")}`;
+  const registrationNo = `ALM-${year}-${String(count + 1).padStart(4, '0')}`;
 
   // Create alumni record and update student status
   const [alumni] = await prisma.$transaction([
@@ -259,7 +259,7 @@ export async function convertFromStudent(studentId: string, data: ConvertFromStu
     prisma.student.update({
       where: { id: studentId },
       data: {
-        status: "alumni",
+        status: 'alumni',
         graduateYear: year,
       },
     }),
@@ -273,7 +273,7 @@ export async function convertFromStudent(studentId: string, data: ConvertFromStu
 export async function getCareersByAlumni(alumniId: string) {
   return prisma.alumniCareer.findMany({
     where: { alumniId },
-    orderBy: { startDate: "desc" },
+    orderBy: { startDate: 'desc' },
   });
 }
 
@@ -299,7 +299,7 @@ export async function createCareer(alumniId: string, data: CreateCareerInput) {
 
 export async function updateCareer(id: string, data: UpdateCareerInput) {
   const career = await prisma.alumniCareer.findUnique({ where: { id } });
-  if (!career) throw new Error("Career not found");
+  if (!career) throw new Error('Career not found');
 
   // If setting as current, unset others
   if (data.isCurrent) {
@@ -328,7 +328,7 @@ export async function deleteCareer(id: string) {
 export async function getEducationsByAlumni(alumniId: string) {
   return prisma.alumniEducation.findMany({
     where: { alumniId },
-    orderBy: { startYear: "desc" },
+    orderBy: { startYear: 'desc' },
   });
 }
 
@@ -363,12 +363,13 @@ export async function getDonations(query: DonationQueryInput) {
     ...(alumniId && { alumniId }),
     ...(unitId && { unitId }),
     ...(type && { type }),
-    ...(startDate && endDate && {
-      donatedAt: {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      },
-    }),
+    ...(startDate &&
+      endDate && {
+        donatedAt: {
+          gte: new Date(startDate),
+          lte: new Date(endDate),
+        },
+      }),
   };
 
   const [data, total, stats] = await Promise.all([
@@ -376,7 +377,7 @@ export async function getDonations(query: DonationQueryInput) {
       where,
       skip,
       take: limit,
-      orderBy: { donatedAt: "desc" },
+      orderBy: { donatedAt: 'desc' },
       include: {
         alumni: { select: { id: true, name: true, registrationNo: true } },
         unit: { select: { id: true, name: true } },
@@ -384,7 +385,7 @@ export async function getDonations(query: DonationQueryInput) {
     }),
     prisma.alumniDonation.count({ where }),
     prisma.alumniDonation.aggregate({
-      where: { ...where, type: "MONETARY" },
+      where: { ...where, type: 'MONETARY' },
       _sum: { amount: true },
       _count: true,
     }),
@@ -393,9 +394,7 @@ export async function getDonations(query: DonationQueryInput) {
   // Apply anonymity - isAnonymous is on donation, not alumni
   const processedData = data.map((d) => ({
     ...d,
-    alumni: d.isAnonymous
-      ? { id: d.alumni.id, name: "Anonim", registrationNo: null }
-      : d.alumni,
+    alumni: d.isAnonymous ? { id: d.alumni.id, name: 'Anonim', registrationNo: null } : d.alumni,
   }));
 
   return {
@@ -419,7 +418,7 @@ export async function createDonation(alumniId: string, data: CreateDonationInput
   const count = await prisma.alumniDonation.count({
     where: { donatedAt: { gte: new Date(`${year}-01-01`) } },
   });
-  const receiptNo = data.receiptNo || `DON-${year}-${String(count + 1).padStart(5, "0")}`;
+  const receiptNo = data.receiptNo || `DON-${year}-${String(count + 1).padStart(5, '0')}`;
 
   return prisma.alumniDonation.create({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -467,12 +466,13 @@ export async function getEvents(query: EventQueryInput) {
     ...(unitId && { unitId }),
     ...(type && { type }),
     ...(status && { status }),
-    ...(startDate && endDate && {
-      eventDate: {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      },
-    }),
+    ...(startDate &&
+      endDate && {
+        eventDate: {
+          gte: new Date(startDate),
+          lte: new Date(endDate),
+        },
+      }),
   };
 
   const [data, total] = await Promise.all([
@@ -482,7 +482,7 @@ export async function getEvents(query: EventQueryInput) {
         unit: { select: { id: true, name: true } },
         _count: { select: { attendees: true } },
       },
-      orderBy: { eventDate: "desc" },
+      orderBy: { eventDate: 'desc' },
       skip,
       take: limit,
     }),
@@ -509,7 +509,7 @@ export async function getEventById(id: string) {
         include: {
           alumni: { select: { id: true, name: true, registrationNo: true, graduationYear: true } },
         },
-        orderBy: { registeredAt: "desc" },
+        orderBy: { registeredAt: 'desc' },
       },
     },
   });
@@ -560,7 +560,7 @@ export async function registerForEvent(eventId: string, data: RegisterEventInput
   });
 
   if (existing) {
-    throw new Error("Alumni already registered for this event");
+    throw new Error('Alumni already registered for this event');
   }
 
   return prisma.alumniEventAttendee.create({
@@ -582,9 +582,9 @@ export async function updateAttendeeStatus(id: string, data: UpdateAttendeeStatu
     status: data.status,
   };
 
-  if (data.status === "confirmed") {
+  if (data.status === 'confirmed') {
     updateData.confirmedAt = new Date();
-  } else if (data.status === "attended") {
+  } else if (data.status === 'attended') {
     updateData.attendedAt = new Date();
   }
 
@@ -613,19 +613,19 @@ export async function getAlumniStats(unitId?: string) {
   const [totalAlumni, byStatus, byYear, donationStats] = await Promise.all([
     prisma.alumni.count({ where }),
     prisma.alumni.groupBy({
-      by: ["status"],
+      by: ['status'],
       where,
       _count: true,
     }),
     prisma.alumni.groupBy({
-      by: ["graduationYear"],
+      by: ['graduationYear'],
       where,
       _count: true,
-      orderBy: { graduationYear: "desc" },
+      orderBy: { graduationYear: 'desc' },
       take: 10,
     }),
     prisma.alumniDonation.aggregate({
-      where: { ...(unitId && { unitId }), type: "MONETARY" },
+      where: { ...(unitId && { unitId }), type: 'MONETARY' },
       _sum: { amount: true },
       _count: true,
     }),

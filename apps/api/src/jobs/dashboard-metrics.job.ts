@@ -4,11 +4,11 @@
  */
 
 import { logger } from '@/lib/logger';
-import { 
-  getCurrentDashboardMetrics, 
+import {
+  getCurrentDashboardMetrics,
   publishDashboardMetrics,
   publishDashboardAlert,
-  DashboardAlert 
+  DashboardAlert,
 } from '@/lib/realtime';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
@@ -27,20 +27,20 @@ export async function aggregateDashboardMetrics(): Promise<void> {
 
     // Save global history
     try {
-        await prisma.dashboardHistory.create({
-            data: {
-                metrics: globalMetrics as unknown as Prisma.InputJsonValue,
-                unitId: null
-            }
-        });
+      await prisma.dashboardHistory.create({
+        data: {
+          metrics: globalMetrics as unknown as Prisma.InputJsonValue,
+          unitId: null,
+        },
+      });
     } catch (histError) {
-        logger.error('Error saving global metrics history:', histError);
+      logger.error('Error saving global metrics history:', histError);
     }
 
     // Get all active units
     const units = await prisma.unit.findMany({
       where: { deletedAt: null },
-      select: { id: true, name: true }
+      select: { id: true, name: true },
     });
 
     // Calculate and publish metrics for each unit
@@ -48,23 +48,23 @@ export async function aggregateDashboardMetrics(): Promise<void> {
       try {
         const unitMetrics = await getCurrentDashboardMetrics(unit.id);
         await publishDashboardMetrics(unitMetrics, unit.id);
-        
+
         // Save unit history
         await prisma.dashboardHistory.create({
-            data: {
-                metrics: unitMetrics as unknown as Prisma.InputJsonValue,
-                unitId: unit.id
-            }
+          data: {
+            metrics: unitMetrics as unknown as Prisma.InputJsonValue,
+            unitId: unit.id,
+          },
         });
 
-        logger.debug('Unit metrics published', { 
-          unitId: unit.id, 
-          unitName: unit.name 
+        logger.debug('Unit metrics published', {
+          unitId: unit.id,
+          unitName: unit.name,
         });
       } catch (error) {
-        logger.error('Error calculating unit metrics', { 
-          unitId: unit.id, 
-          error 
+        logger.error('Error calculating unit metrics', {
+          unitId: unit.id,
+          error,
         });
       }
     }
@@ -74,7 +74,7 @@ export async function aggregateDashboardMetrics(): Promise<void> {
 
     logger.info('Dashboard metrics aggregated and published successfully', {
       globalMetrics: true,
-      unitCount: units.length
+      unitCount: units.length,
     });
   } catch (error) {
     logger.error('Error aggregating dashboard metrics:', error);
@@ -91,19 +91,17 @@ async function checkAndPublishAlerts(): Promise<void> {
     today.setHours(0, 0, 0, 0);
 
     const totalActiveStudents = await prisma.student.count({
-      where: { status: 'ACTIVE' }
+      where: { status: 'ACTIVE' },
     });
 
     const todayPresent = await prisma.attendance.count({
       where: {
         date: { gte: today },
-        status: 'PRESENT'
-      }
+        status: 'PRESENT',
+      },
     });
 
-    const attendanceRate = totalActiveStudents > 0 
-      ? (todayPresent / totalActiveStudents) * 100 
-      : 0;
+    const attendanceRate = totalActiveStudents > 0 ? (todayPresent / totalActiveStudents) * 100 : 0;
 
     // Alert if attendance rate is below 80%
     if (attendanceRate < 80 && attendanceRate > 0) {
@@ -112,22 +110,22 @@ async function checkAndPublishAlerts(): Promise<void> {
         title: 'Tingkat Kehadiran Rendah',
         message: `Tingkat kehadiran hari ini: ${attendanceRate.toFixed(1)}%. Perlu perhatian khusus.`,
         severity: attendanceRate < 70 ? 'CRITICAL' : 'WARNING',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
       await publishDashboardAlert(alert);
     }
 
     // Check for units with low attendance
     const units = await prisma.unit.findMany({
-      where: { deletedAt: null }
+      where: { deletedAt: null },
     });
 
     for (const unit of units) {
       const unitActiveStudents = await prisma.student.count({
-        where: { 
+        where: {
           unitId: unit.id,
-          status: 'ACTIVE'
-        }
+          status: 'ACTIVE',
+        },
       });
 
       const unitPresent = await prisma.attendance.count({
@@ -135,14 +133,13 @@ async function checkAndPublishAlerts(): Promise<void> {
           date: { gte: today },
           status: 'PRESENT',
           student: {
-            unitId: unit.id
-          }
-        }
+            unitId: unit.id,
+          },
+        },
       });
 
-      const unitAttendanceRate = unitActiveStudents > 0
-        ? (unitPresent / unitActiveStudents) * 100
-        : 0;
+      const unitAttendanceRate =
+        unitActiveStudents > 0 ? (unitPresent / unitActiveStudents) * 100 : 0;
 
       if (unitAttendanceRate < 75 && unitAttendanceRate > 0) {
         const alert: DashboardAlert = {
@@ -152,7 +149,7 @@ async function checkAndPublishAlerts(): Promise<void> {
           severity: unitAttendanceRate < 65 ? 'CRITICAL' : 'WARNING',
           timestamp: new Date().toISOString(),
           unitId: unit.id,
-          unitName: unit.name
+          unitName: unit.name,
         };
         await publishDashboardAlert(alert);
       }
@@ -162,8 +159,8 @@ async function checkAndPublishAlerts(): Promise<void> {
     const lowQualityCount = await prisma.murojaahRecord.count({
       where: {
         qualityScore: { lt: 50 }, // Less than 50 (Poor quality)
-        createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } // Last 7 days
-      }
+        createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }, // Last 7 days
+      },
     });
 
     if (lowQualityCount > 10) {
@@ -172,7 +169,7 @@ async function checkAndPublishAlerts(): Promise<void> {
         title: 'Banyak Murojaah Berkualitas Rendah',
         message: `${lowQualityCount} catatan murojaah dengan kualitas rendah dalam 7 hari terakhir`,
         severity: 'INFO',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
       await publishDashboardAlert(alert);
     }
@@ -181,8 +178,8 @@ async function checkAndPublishAlerts(): Promise<void> {
     const overdueInvoices = await prisma.invoice.count({
       where: {
         status: 'PENDING',
-        dueDate: { lt: new Date() }
-      }
+        dueDate: { lt: new Date() },
+      },
     });
 
     if (overdueInvoices > 50) {
@@ -191,11 +188,10 @@ async function checkAndPublishAlerts(): Promise<void> {
         title: 'Banyak Tagihan Terlambat',
         message: `${overdueInvoices} tagihan melewati jatuh tempo`,
         severity: overdueInvoices > 100 ? 'CRITICAL' : 'WARNING',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
       await publishDashboardAlert(alert);
     }
-
   } catch (error) {
     logger.error('Error checking alerts:', error);
   }

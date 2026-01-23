@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { usePayrollPeriods, useCreatePayrollPeriod, useGeneratePayrollSlips, PAYROLL_PERIOD_STATUS_LABELS } from "@/hooks/use-hr";
+import {
+  usePayrollPeriods,
+  useCreatePayrollPeriod,
+  useGeneratePayrollSlips,
+  PAYROLL_PERIOD_STATUS_LABELS,
+} from "@/hooks/use-hr";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -78,7 +83,10 @@ export default function PayrollPage() {
                   </TableRow>
                 ) : data?.data?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={7}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       No payroll periods found.
                     </TableCell>
                   </TableRow>
@@ -89,22 +97,33 @@ export default function PayrollPage() {
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => router.push(`/hr/payroll/${period.id}`)}
                     >
-                      <TableCell className="font-medium">{period.name}</TableCell>
-                      <TableCell>{period.month}/{period.year}</TableCell>
+                      <TableCell className="font-medium">
+                        {period.name}
+                      </TableCell>
+                      <TableCell>
+                        {period.month}/{period.year}
+                      </TableCell>
                       <TableCell>
                         <div className="text-xs text-muted-foreground">
-                          {format(new Date(period.startDate), "MMM d")} - {format(new Date(period.endDate), "MMM d, yyyy")}
+                          {format(new Date(period.startDate), "MMM d")} -{" "}
+                          {format(new Date(period.endDate), "MMM d, yyyy")}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={period.status === "CLOSED" ? "secondary" : "default"}>
-                          {PAYROLL_PERIOD_STATUS_LABELS[period.status as keyof typeof PAYROLL_PERIOD_STATUS_LABELS]}
+                        <Badge
+                          variant={
+                            period.status === "CLOSED" ? "secondary" : "default"
+                          }
+                        >
+                          {
+                            PAYROLL_PERIOD_STATUS_LABELS[
+                              period.status as keyof typeof PAYROLL_PERIOD_STATUS_LABELS
+                            ]
+                          }
                         </Badge>
                       </TableCell>
                       <TableCell>{period._count?.payrolls || 0}</TableCell>
-                      <TableCell>
-                        -
-                      </TableCell>
+                      <TableCell>-</TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="sm">
                           View <ArrowRight className="ml-2 h-4 w-4" />
@@ -135,10 +154,14 @@ function GeneratePayrollDialog() {
   const handleCreate = async () => {
     try {
       const res: any = await createPeriodMutation.mutateAsync({
-        name: `Payroll ${new Date(0, parseInt(month) - 1).toLocaleString('default', { month: 'long' })} ${year}`,
+        name: `Payroll ${new Date(0, parseInt(month) - 1).toLocaleString("default", { month: "long" })} ${year}`,
         month: parseInt(month),
         year: parseInt(year),
-        startDate: new Date(parseInt(year), parseInt(month) - 1, 1).toISOString(),
+        startDate: new Date(
+          parseInt(year),
+          parseInt(month) - 1,
+          1,
+        ).toISOString(),
         endDate: new Date(parseInt(year), parseInt(month), 0).toISOString(),
       });
       setPeriodId(res.id);
@@ -159,7 +182,7 @@ function GeneratePayrollDialog() {
     try {
       await generateSlipsMutation.mutateAsync({
         periodId: id,
-        overwrite: true // Default to true for new generation
+        overwrite: true, // Default to true for new generation
       });
       toast.success("Payroll slips generated successfully");
       setOpen(false);
@@ -181,7 +204,8 @@ function GeneratePayrollDialog() {
         <DialogHeader>
           <DialogTitle>Generate Payroll</DialogTitle>
           <DialogDescription>
-            Create a new payroll period and generate slips for all eligible employees.
+            Create a new payroll period and generate slips for all eligible
+            employees.
           </DialogDescription>
         </DialogHeader>
 
@@ -197,7 +221,9 @@ function GeneratePayrollDialog() {
                   <SelectContent>
                     {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                       <SelectItem key={m} value={String(m)}>
-                        {new Date(0, m - 1).toLocaleString('default', { month: 'long' })}
+                        {new Date(0, m - 1).toLocaleString("default", {
+                          month: "long",
+                        })}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -229,7 +255,10 @@ function GeneratePayrollDialog() {
 
         <DialogFooter>
           {step === "CREATE" && (
-            <Button onClick={handleCreate} disabled={createPeriodMutation.isPending}>
+            <Button
+              onClick={handleCreate}
+              disabled={createPeriodMutation.isPending}
+            >
               {createPeriodMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

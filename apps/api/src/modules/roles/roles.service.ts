@@ -8,7 +8,7 @@ export class RolesService {
    */
   async getAllRoles(realm?: Realm) {
     const where = realm ? { realm, isActive: true } : { isActive: true };
-    
+
     return prisma.role.findMany({
       where,
       orderBy: [{ realm: 'asc' }, { code: 'asc' }],
@@ -65,12 +65,7 @@ export class RolesService {
   /**
    * Assign role to user
    */
-  async assignRoleToUser(
-    userId: string,
-    roleId: string,
-    unitId?: string,
-    isPrimary = false
-  ) {
+  async assignRoleToUser(userId: string, roleId: string, unitId?: string, isPrimary = false) {
     // Check if user exists
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {

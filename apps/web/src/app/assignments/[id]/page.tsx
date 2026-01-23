@@ -1,71 +1,80 @@
-'use client';
+"use client";
 
-import { useParams } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
+import { useParams } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
 import {
   useAssignment,
   useAssignmentSubmissions,
   useSubmitAssignment,
-  useGradeSubmission
-} from '@/hooks/use-assignments';
-import { SubmissionList } from '@/components/assignments/submission-list';
-import { SubmissionForm } from '@/components/assignments/submission-form';
-import { useAuthStore } from '@/stores/auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
-import { toast } from 'sonner';
+  useGradeSubmission,
+} from "@/hooks/use-assignments";
+import { SubmissionList } from "@/components/assignments/submission-list";
+import { SubmissionForm } from "@/components/assignments/submission-form";
+import { useAuthStore } from "@/stores/auth";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { toast } from "sonner";
 
 export default function AssignmentDetailPage() {
   const { id } = useParams();
   const { user } = useAuthStore();
   const { data: assignment, isLoading } = useAssignment(id as string);
 
-  const isTeacher = user?.role === 'TEACHER' || user?.role === 'SUPER_ADMIN' || user?.role === 'UNIT_ADMIN';
-  const isStudent = user?.role === 'STUDENT';
+  const isTeacher =
+    user?.role === "TEACHER" ||
+    user?.role === "SUPER_ADMIN" ||
+    user?.role === "UNIT_ADMIN";
+  const isStudent = user?.role === "STUDENT";
 
   // Teacher hooks
-  const { data: submissions, isLoading: isLoadingSubmissions } = useAssignmentSubmissions(id as string);
+  const { data: submissions, isLoading: isLoadingSubmissions } =
+    useAssignmentSubmissions(id as string);
   const gradeMutation = useGradeSubmission();
 
   // Student hooks
   const submitMutation = useSubmitAssignment();
 
   // Find student's submission
-  const studentSubmission = isStudent && submissions
-    ? submissions.find(s => s.studentId === user?.student?.id)
-    : null;
+  const studentSubmission =
+    isStudent && submissions
+      ? submissions.find((s) => s.studentId === user?.student?.id)
+      : null;
 
-  const handleGrade = async (studentId: string, grade: number, feedback?: string) => {
+  const handleGrade = async (
+    studentId: string,
+    grade: number,
+    feedback?: string,
+  ) => {
     try {
       await gradeMutation.mutateAsync({
         assignmentId: id as string,
         studentId,
-        data: { grade, feedback }
+        data: { grade, feedback },
       });
-      toast.success('Graded successfully');
+      toast.success("Graded successfully");
     } catch {
-      toast.error('Failed to grade');
+      toast.error("Failed to grade");
     }
   };
 
   const handleSubmit = async (data: any) => {
     try {
       if (!user?.student?.id) {
-        toast.error('Student ID not found');
+        toast.error("Student ID not found");
         return;
       }
       await submitMutation.mutateAsync({
         id: id as string,
         data: {
           studentId: user.student.id,
-          content: data.content
-        }
+          content: data.content,
+        },
       });
-      toast.success('Submitted successfully');
+      toast.success("Submitted successfully");
     } catch {
-      toast.error('Failed to submit');
+      toast.error("Failed to submit");
     }
   };
 
@@ -73,7 +82,9 @@ export default function AssignmentDetailPage() {
   if (!assignment) return <div>Assignment not found</div>;
 
   return (
-    <MainLayout allowedRoles={['TEACHER', 'STUDENT', 'SUPER_ADMIN', 'UNIT_ADMIN']}>
+    <MainLayout
+      allowedRoles={["TEACHER", "STUDENT", "SUPER_ADMIN", "UNIT_ADMIN"]}
+    >
       <div className="space-y-6">
         <PageHeader
           title={assignment.title}
@@ -87,13 +98,15 @@ export default function AssignmentDetailPage() {
               <div>
                 <CardTitle className="text-xl">{assignment.title}</CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Subject: {assignment.subject?.name} | Class: {assignment.class?.name}
+                  Subject: {assignment.subject?.name} | Class:{" "}
+                  {assignment.class?.name}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-2">
                 <Badge variant="outline">{assignment.type}</Badge>
                 <span className="text-sm text-red-600">
-                  Due: {format(new Date(assignment.dueDate), 'dd MMM yyyy HH:mm')}
+                  Due:{" "}
+                  {format(new Date(assignment.dueDate), "dd MMM yyyy HH:mm")}
                 </span>
               </div>
             </div>

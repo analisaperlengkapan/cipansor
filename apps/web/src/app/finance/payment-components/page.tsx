@@ -40,7 +40,7 @@ import {
   usePaymentComponents,
   useCreatePaymentComponent,
   type PaymentComponent,
-  PaymentCategory
+  PaymentCategory,
 } from "@/hooks/use-finance-enhancement";
 import { useUnits } from "@/hooks/use-units";
 
@@ -66,12 +66,18 @@ function formatCurrency(amount: number): string {
 
 export default function PaymentComponentsPage() {
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<PaymentCategory | "ALL">("ALL");
+  const [categoryFilter, setCategoryFilter] = useState<PaymentCategory | "ALL">(
+    "ALL",
+  );
   const [selectedUnitId, setSelectedUnitId] = useState<string | "ALL">("ALL");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const { data: unitsData } = useUnits();
-  const { data: componentsData, isLoading, refetch } = usePaymentComponents({
+  const {
+    data: componentsData,
+    isLoading,
+    refetch,
+  } = usePaymentComponents({
     category: categoryFilter === "ALL" ? undefined : categoryFilter,
     unitId: selectedUnitId === "ALL" ? undefined : selectedUnitId,
     limit: 100,
@@ -93,14 +99,16 @@ export default function PaymentComponentsPage() {
         description: formData.get("description") as string,
         category: formData.get("category") as PaymentCategory,
         amount,
-        unitId: formData.get("unitId") as string || undefined,
+        unitId: (formData.get("unitId") as string) || undefined,
         isActive: true,
       });
       toast.success("Komponen pembayaran berhasil ditambahkan");
       setIsAddDialogOpen(false);
       refetch();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal menambahkan komponen");
+      toast.error(
+        error.response?.data?.message || "Gagal menambahkan komponen",
+      );
     }
   };
 
@@ -122,7 +130,12 @@ export default function PaymentComponentsPage() {
               className="pl-10"
             />
           </div>
-          <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as PaymentCategory | "ALL")}>
+          <Select
+            value={categoryFilter}
+            onValueChange={(v) =>
+              setCategoryFilter(v as PaymentCategory | "ALL")
+            }
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter Kategori" />
             </SelectTrigger>
@@ -167,7 +180,12 @@ export default function PaymentComponentsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="code">Kode</Label>
-                      <Input id="code" name="code" placeholder="SPP-SD" required />
+                      <Input
+                        id="code"
+                        name="code"
+                        placeholder="SPP-SD"
+                        required
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="category">Kategori</Label>
@@ -176,22 +194,35 @@ export default function PaymentComponentsPage() {
                           <SelectValue placeholder="Pilih kategori" />
                         </SelectTrigger>
                         <SelectContent>
-                          {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                            <SelectItem key={key} value={key}>
-                              {label}
-                            </SelectItem>
-                          ))}
+                          {Object.entries(CATEGORY_LABELS).map(
+                            ([key, label]) => (
+                              <SelectItem key={key} value={key}>
+                                {label}
+                              </SelectItem>
+                            ),
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="name">Nama Komponen</Label>
-                    <Input id="name" name="name" placeholder="SPP Bulanan SD" required />
+                    <Input
+                      id="name"
+                      name="name"
+                      placeholder="SPP Bulanan SD"
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="amount">Nominal (Rp)</Label>
-                    <Input id="amount" name="amount" type="number" min="0" required />
+                    <Input
+                      id="amount"
+                      name="amount"
+                      type="number"
+                      min="0"
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="unitId">Unit (Opsional)</Label>
@@ -211,15 +242,19 @@ export default function PaymentComponentsPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="description">Deskripsi</Label>
-                    <Textarea 
-                      id="description" 
-                      name="description" 
+                    <Textarea
+                      id="description"
+                      name="description"
                       placeholder="Keterangan tambahan..."
                     />
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsAddDialogOpen(false)}
+                  >
                     Batal
                   </Button>
                   <Button type="submit" disabled={createComponent.isPending}>
@@ -254,14 +289,19 @@ export default function PaymentComponentsPage() {
                   </TableRow>
                 ) : componentsData?.data.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={6}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       Belum ada komponen pembayaran
                     </TableCell>
                   </TableRow>
                 ) : (
                   componentsData?.data.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-mono font-medium">{item.code}</TableCell>
+                      <TableCell className="font-mono font-medium">
+                        {item.code}
+                      </TableCell>
                       <TableCell>
                         <div className="font-medium">{item.name}</div>
                         {item.description && (
@@ -272,7 +312,8 @@ export default function PaymentComponentsPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {CATEGORY_LABELS[item.category as PaymentCategory] || item.category}
+                          {CATEGORY_LABELS[item.category as PaymentCategory] ||
+                            item.category}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -281,14 +322,18 @@ export default function PaymentComponentsPage() {
                             {item.unit.name}
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground text-sm">Semua Unit</span>
+                          <span className="text-muted-foreground text-sm">
+                            Semua Unit
+                          </span>
                         )}
                       </TableCell>
                       <TableCell className="text-right font-mono font-bold">
                         {formatCurrency(item.amount)}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={item.isActive ? "default" : "secondary"}>
+                        <Badge
+                          variant={item.isActive ? "default" : "secondary"}
+                        >
                           {item.isActive ? "Aktif" : "Nonaktif"}
                         </Badge>
                       </TableCell>

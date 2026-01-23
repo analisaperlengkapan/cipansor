@@ -120,12 +120,13 @@ export const transactionService = {
       ...(query.studentId && { studentId: query.studentId }),
       ...(query.status && { status: query.status }),
       ...(query.paymentStatus && { paymentStatus: query.paymentStatus }),
-      ...(query.startDate && query.endDate && {
-        createdAt: {
-          gte: new Date(query.startDate),
-          lte: new Date(query.endDate + 'T23:59:59.999Z'),
-        },
-      }),
+      ...(query.startDate &&
+        query.endDate && {
+          createdAt: {
+            gte: new Date(query.startDate),
+            lte: new Date(query.endDate + 'T23:59:59.999Z'),
+          },
+        }),
     };
 
     const [transactions, total] = await Promise.all([
@@ -246,7 +247,9 @@ export const transactionService = {
         }
 
         if (wallet.balance.lessThan(total)) {
-          throw new Error(`Saldo wallet tidak mencukupi (saldo: Rp ${wallet.balance.toNumber().toLocaleString('id-ID')})`);
+          throw new Error(
+            `Saldo wallet tidak mencukupi (saldo: Rp ${wallet.balance.toNumber().toLocaleString('id-ID')})`
+          );
         }
 
         // Deduct wallet balance
@@ -285,13 +288,15 @@ export const transactionService = {
           estimatedAt,
           notes: data.notes,
           receivedBy: { connect: { id: userId } },
-          items: data.items ? {
-            create: data.items.map(item => ({
-              itemType: item.itemType,
-              quantity: item.quantity,
-              notes: item.notes,
-            })),
-          } : undefined,
+          items: data.items
+            ? {
+                create: data.items.map((item) => ({
+                  itemType: item.itemType,
+                  quantity: item.quantity,
+                  notes: item.notes,
+                })),
+              }
+            : undefined,
           statusLogs: {
             create: {
               fromStatus: null,
@@ -372,7 +377,11 @@ export const transactionService = {
       }
 
       // Handle cancellation refund
-      if (data.status === 'CANCELLED' && transaction.paymentStatus === 'PAID' && transaction.walletId) {
+      if (
+        data.status === 'CANCELLED' &&
+        transaction.paymentStatus === 'PAID' &&
+        transaction.walletId
+      ) {
         const wallet = await tx.santriWallet.findUnique({
           where: { id: transaction.walletId },
         });
@@ -459,7 +468,9 @@ export const transactionService = {
         }
 
         if (wallet.balance.lessThan(transaction.total)) {
-          throw new Error(`Saldo wallet tidak mencukupi (saldo: Rp ${wallet.balance.toNumber().toLocaleString('id-ID')})`);
+          throw new Error(
+            `Saldo wallet tidak mencukupi (saldo: Rp ${wallet.balance.toNumber().toLocaleString('id-ID')})`
+          );
         }
 
         // Deduct wallet balance
@@ -505,16 +516,19 @@ export const transactionService = {
   },
 
   async getStats(unitId: string, startDate?: string, endDate?: string) {
-    const dateFilter = startDate && endDate ? {
-      createdAt: {
-        gte: new Date(startDate),
-        lte: new Date(endDate + 'T23:59:59.999Z'),
-      },
-    } : {
-      createdAt: {
-        gte: new Date(new Date().setHours(0, 0, 0, 0)),
-      },
-    };
+    const dateFilter =
+      startDate && endDate
+        ? {
+            createdAt: {
+              gte: new Date(startDate),
+              lte: new Date(endDate + 'T23:59:59.999Z'),
+            },
+          }
+        : {
+            createdAt: {
+              gte: new Date(new Date().setHours(0, 0, 0, 0)),
+            },
+          };
 
     const [periodStats, statusBreakdown, pendingPayments, pendingPickup] = await Promise.all([
       prisma.laundryTransaction.aggregate({
@@ -547,7 +561,7 @@ export const transactionService = {
         pendingPayments,
         pendingPickup,
       },
-      statusBreakdown: statusBreakdown.map(s => ({
+      statusBreakdown: statusBreakdown.map((s) => ({
         status: s.status,
         count: s._count.id,
       })),

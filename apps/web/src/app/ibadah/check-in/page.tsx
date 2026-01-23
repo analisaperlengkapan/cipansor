@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   Sparkles,
   Calendar as CalendarIcon,
@@ -14,39 +14,39 @@ import {
   ArrowLeft,
   Save,
   Loader2,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Button } from '@/components/ui/button';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
+} from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Slider } from '@/components/ui/slider';
+} from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Slider } from "@/components/ui/slider";
 import {
   useIbadahTargets,
   useDailyCheckIn,
@@ -54,10 +54,10 @@ import {
   IBADAH_CATEGORIES,
   getCategoryInfo,
   type IbadahTarget,
-} from '@/hooks/use-ibadah';
-import { useUnits } from '@/hooks/use-units';
-import { useStudents } from '@/hooks/use-students';
-import { cn } from '@/lib/utils';
+} from "@/hooks/use-ibadah";
+import { useUnits } from "@/hooks/use-units";
+import { useStudents } from "@/hooks/use-students";
+import { cn } from "@/lib/utils";
 
 interface CheckInItem {
   targetId: string;
@@ -69,8 +69,8 @@ interface CheckInItem {
 
 export default function IbadahCheckInPage() {
   const router = useRouter();
-  const [selectedUnit, setSelectedUnit] = useState<string>('');
-  const [selectedStudent, setSelectedStudent] = useState<string>('');
+  const [selectedUnit, setSelectedUnit] = useState<string>("");
+  const [selectedStudent, setSelectedStudent] = useState<string>("");
   const [date, setDate] = useState<Date>(new Date());
   const [checkIns, setCheckIns] = useState<Map<string, CheckInItem>>(new Map());
 
@@ -93,7 +93,7 @@ export default function IbadahCheckInPage() {
   // Check existing records for this date
   const { data: existingRecords } = useIbadahRecords({
     studentId: selectedStudent || undefined,
-    date: format(date, 'yyyy-MM-dd'),
+    date: format(date, "yyyy-MM-dd"),
     limit: 100,
   });
 
@@ -118,15 +118,15 @@ export default function IbadahCheckInPage() {
       targets.forEach((target) => {
         // Check if there's an existing record for this target
         const existingRecord = existingRecords?.data?.find(
-          (r) => r.targetId === target.id
+          (r) => r.targetId === target.id,
         );
-        
+
         initial.set(target.id, {
           targetId: target.id,
           isCompleted: existingRecord?.isCompleted || false,
           actualCount: existingRecord?.actualCount || 0,
           actualMinutes: existingRecord?.actualMinutes,
-          notes: existingRecord?.notes || '',
+          notes: existingRecord?.notes || "",
         });
       });
       setCheckIns(initial);
@@ -138,11 +138,15 @@ export default function IbadahCheckInPage() {
     if (!current) return;
 
     const isCompleted = !current.isCompleted;
-    setCheckIns(new Map(checkIns.set(targetId, {
-      ...current,
-      isCompleted,
-      actualCount: isCompleted ? target.targetCount : 0,
-    })));
+    setCheckIns(
+      new Map(
+        checkIns.set(targetId, {
+          ...current,
+          isCompleted,
+          actualCount: isCompleted ? target.targetCount : 0,
+        }),
+      ),
+    );
   };
 
   const handleCountChange = (targetId: string, count: number) => {
@@ -150,35 +154,43 @@ export default function IbadahCheckInPage() {
     if (!current) return;
 
     const target = targets.find((t) => t.id === targetId);
-    setCheckIns(new Map(checkIns.set(targetId, {
-      ...current,
-      actualCount: count,
-      isCompleted: target ? count >= target.targetCount : count > 0,
-    })));
+    setCheckIns(
+      new Map(
+        checkIns.set(targetId, {
+          ...current,
+          actualCount: count,
+          isCompleted: target ? count >= target.targetCount : count > 0,
+        }),
+      ),
+    );
   };
 
   const handleNotesChange = (targetId: string, notes: string) => {
     const current = checkIns.get(targetId);
     if (!current) return;
 
-    setCheckIns(new Map(checkIns.set(targetId, {
-      ...current,
-      notes,
-    })));
+    setCheckIns(
+      new Map(
+        checkIns.set(targetId, {
+          ...current,
+          notes,
+        }),
+      ),
+    );
   };
 
   const handleSubmit = async () => {
     if (!selectedStudent || !selectedUnit) {
-      toast.error('Pilih santri terlebih dahulu');
+      toast.error("Pilih santri terlebih dahulu");
       return;
     }
 
     const checkInsArray = Array.from(checkIns.values()).filter(
-      (item) => item.isCompleted || item.actualCount > 0
+      (item) => item.isCompleted || item.actualCount > 0,
     );
 
     if (checkInsArray.length === 0) {
-      toast.error('Minimal satu ibadah harus dicatat');
+      toast.error("Minimal satu ibadah harus dicatat");
       return;
     }
 
@@ -186,27 +198,32 @@ export default function IbadahCheckInPage() {
       const result = await dailyCheckIn.mutateAsync({
         studentId: selectedStudent,
         unitId: selectedUnit,
-        date: format(date, 'yyyy-MM-dd'),
+        date: format(date, "yyyy-MM-dd"),
         checkIns: checkInsArray,
       });
 
       toast.success(
-        `Check-in berhasil! Total ${result.totalPointsToday} poin hari ini. Streak: ${result.streak} hari 🔥`
+        `Check-in berhasil! Total ${result.totalPointsToday} poin hari ini. Streak: ${result.streak} hari 🔥`,
       );
-      router.push('/ibadah');
+      router.push("/ibadah");
     } catch {
-      toast.error('Gagal menyimpan check-in');
+      toast.error("Gagal menyimpan check-in");
     }
   };
 
   // Calculate stats
-  const completedCount = Array.from(checkIns.values()).filter((c) => c.isCompleted).length;
+  const completedCount = Array.from(checkIns.values()).filter(
+    (c) => c.isCompleted,
+  ).length;
   const totalTargets = targets.length;
-  const totalPoints = Array.from(checkIns.entries()).reduce((sum, [targetId, item]) => {
-    if (!item.isCompleted) return sum;
-    const target = targets.find((t) => t.id === targetId);
-    return sum + (target?.points || 0);
-  }, 0);
+  const totalPoints = Array.from(checkIns.entries()).reduce(
+    (sum, [targetId, item]) => {
+      if (!item.isCompleted) return sum;
+      const target = targets.find((t) => t.id === targetId);
+      return sum + (target?.points || 0);
+    },
+    0,
+  );
 
   return (
     <MainLayout>
@@ -231,11 +248,14 @@ export default function IbadahCheckInPage() {
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <Label>Unit</Label>
-              <Select value={selectedUnit} onValueChange={(v) => {
-                setSelectedUnit(v);
-                setSelectedStudent('');
-                setCheckIns(new Map());
-              }}>
+              <Select
+                value={selectedUnit}
+                onValueChange={(v) => {
+                  setSelectedUnit(v);
+                  setSelectedStudent("");
+                  setCheckIns(new Map());
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih Unit" />
                 </SelectTrigger>
@@ -251,8 +271,8 @@ export default function IbadahCheckInPage() {
 
             <div className="space-y-2">
               <Label>Santri</Label>
-              <Select 
-                value={selectedStudent} 
+              <Select
+                value={selectedStudent}
                 onValueChange={setSelectedStudent}
                 disabled={!selectedUnit}
               >
@@ -275,7 +295,7 @@ export default function IbadahCheckInPage() {
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-start">
                     <CalendarIcon className="h-4 w-4 mr-2" />
-                    {format(date, 'EEEE, dd MMMM yyyy', { locale: localeId })}
+                    {format(date, "EEEE, dd MMMM yyyy", { locale: localeId })}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -315,7 +335,9 @@ export default function IbadahCheckInPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Poin</p>
-                  <p className="text-2xl font-bold text-yellow-600">{totalPoints}</p>
+                  <p className="text-2xl font-bold text-yellow-600">
+                    {totalPoints}
+                  </p>
                 </div>
                 <Star className="h-8 w-8 text-yellow-500" />
               </div>
@@ -328,7 +350,10 @@ export default function IbadahCheckInPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Progress</p>
                   <p className="text-2xl font-bold text-orange-600">
-                    {totalTargets > 0 ? Math.round((completedCount / totalTargets) * 100) : 0}%
+                    {totalTargets > 0
+                      ? Math.round((completedCount / totalTargets) * 100)
+                      : 0}
+                    %
                   </p>
                 </div>
                 <Flame className="h-8 w-8 text-orange-500" />
@@ -341,133 +366,144 @@ export default function IbadahCheckInPage() {
       {/* Check-in Items by Category */}
       {selectedStudent && (
         <div className="space-y-6">
-          {targetsLoading ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i}>
-                <CardHeader>
-                  <Skeleton className="h-6 w-32" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {Array.from({ length: 3 }).map((_, j) => (
-                    <Skeleton key={j} className="h-16 w-full" />
-                  ))}
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            IBADAH_CATEGORIES.map((category) => {
-              const categoryTargets = targetsByCategory.get(category.value) || [];
-              if (categoryTargets.length === 0) return null;
-
-              return (
-                <Card key={category.value}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">{category.icon}</span>
-                      <div>
-                        <CardTitle className="text-lg">{category.label}</CardTitle>
-                        <CardDescription className="font-arabic">{category.labelAr}</CardDescription>
-                      </div>
-                    </div>
+          {targetsLoading
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i}>
+                  <CardHeader>
+                    <Skeleton className="h-6 w-32" />
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {categoryTargets.map((target) => {
-                      const checkIn = checkIns.get(target.id);
-                      const progress = checkIn
-                        ? (checkIn.actualCount / target.targetCount) * 100
-                        : 0;
-
-                      return (
-                        <div
-                          key={target.id}
-                          className={cn(
-                            'p-4 rounded-lg border transition-all',
-                            checkIn?.isCompleted
-                              ? 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800'
-                              : 'bg-card hover:border-primary/50'
-                          )}
-                        >
-                          <div className="flex items-start gap-4">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleComplete(target.id, target)}
-                              className="mt-1"
-                            >
-                              {checkIn?.isCompleted ? (
-                                <CheckCircle className="h-6 w-6 text-green-500" />
-                              ) : (
-                                <Circle className="h-6 w-6 text-muted-foreground hover:text-primary" />
-                              )}
-                            </button>
-
-                            <div className="flex-1 space-y-3">
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <h4 className="font-medium">{target.name}</h4>
-                                  {target.nameAr && (
-                                    <p className="text-sm text-muted-foreground font-arabic">
-                                      {target.nameAr}
-                                    </p>
-                                  )}
-                                  {target.description && (
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                      {target.description}
-                                    </p>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Star className="h-4 w-4 text-yellow-500" />
-                                  <span className="font-medium">{target.points}</span>
-                                </div>
-                              </div>
-
-                              {/* Progress Slider */}
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                  <span>
-                                    {checkIn?.actualCount || 0} / {target.targetCount} {target.targetUnit.toLowerCase()}
-                                  </span>
-                                  <span className="text-muted-foreground">
-                                    {Math.round(progress)}%
-                                  </span>
-                                </div>
-                                <Slider
-                                  value={[checkIn?.actualCount || 0]}
-                                  max={target.targetCount}
-                                  step={1}
-                                  onValueChange={([value]) =>
-                                    handleCountChange(target.id, value)
-                                  }
-                                  className="w-full"
-                                />
-                              </div>
-
-                              {/* Notes */}
-                              <Input
-                                placeholder="Catatan (opsional)"
-                                value={checkIn?.notes || ''}
-                                onChange={(e) =>
-                                  handleNotesChange(target.id, e.target.value)
-                                }
-                                className="text-sm"
-                              />
-
-                              {/* Optional badge */}
-                              {target.isOptional && (
-                                <Badge variant="outline" className="text-xs">
-                                  Opsional
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {Array.from({ length: 3 }).map((_, j) => (
+                      <Skeleton key={j} className="h-16 w-full" />
+                    ))}
                   </CardContent>
                 </Card>
-              );
-            })
-          )}
+              ))
+            : IBADAH_CATEGORIES.map((category) => {
+                const categoryTargets =
+                  targetsByCategory.get(category.value) || [];
+                if (categoryTargets.length === 0) return null;
+
+                return (
+                  <Card key={category.value}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">{category.icon}</span>
+                        <div>
+                          <CardTitle className="text-lg">
+                            {category.label}
+                          </CardTitle>
+                          <CardDescription className="font-arabic">
+                            {category.labelAr}
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {categoryTargets.map((target) => {
+                        const checkIn = checkIns.get(target.id);
+                        const progress = checkIn
+                          ? (checkIn.actualCount / target.targetCount) * 100
+                          : 0;
+
+                        return (
+                          <div
+                            key={target.id}
+                            className={cn(
+                              "p-4 rounded-lg border transition-all",
+                              checkIn?.isCompleted
+                                ? "bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800"
+                                : "bg-card hover:border-primary/50",
+                            )}
+                          >
+                            <div className="flex items-start gap-4">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleToggleComplete(target.id, target)
+                                }
+                                className="mt-1"
+                              >
+                                {checkIn?.isCompleted ? (
+                                  <CheckCircle className="h-6 w-6 text-green-500" />
+                                ) : (
+                                  <Circle className="h-6 w-6 text-muted-foreground hover:text-primary" />
+                                )}
+                              </button>
+
+                              <div className="flex-1 space-y-3">
+                                <div className="flex items-start justify-between">
+                                  <div>
+                                    <h4 className="font-medium">
+                                      {target.name}
+                                    </h4>
+                                    {target.nameAr && (
+                                      <p className="text-sm text-muted-foreground font-arabic">
+                                        {target.nameAr}
+                                      </p>
+                                    )}
+                                    {target.description && (
+                                      <p className="text-sm text-muted-foreground mt-1">
+                                        {target.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Star className="h-4 w-4 text-yellow-500" />
+                                    <span className="font-medium">
+                                      {target.points}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Progress Slider */}
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between text-sm">
+                                    <span>
+                                      {checkIn?.actualCount || 0} /{" "}
+                                      {target.targetCount}{" "}
+                                      {target.targetUnit.toLowerCase()}
+                                    </span>
+                                    <span className="text-muted-foreground">
+                                      {Math.round(progress)}%
+                                    </span>
+                                  </div>
+                                  <Slider
+                                    value={[checkIn?.actualCount || 0]}
+                                    max={target.targetCount}
+                                    step={1}
+                                    onValueChange={([value]) =>
+                                      handleCountChange(target.id, value)
+                                    }
+                                    className="w-full"
+                                  />
+                                </div>
+
+                                {/* Notes */}
+                                <Input
+                                  placeholder="Catatan (opsional)"
+                                  value={checkIn?.notes || ""}
+                                  onChange={(e) =>
+                                    handleNotesChange(target.id, e.target.value)
+                                  }
+                                  className="text-sm"
+                                />
+
+                                {/* Optional badge */}
+                                {target.isOptional && (
+                                  <Badge variant="outline" className="text-xs">
+                                    Opsional
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
+                );
+              })}
 
           {/* Submit Button */}
           <div className="flex justify-end gap-4 pt-4">

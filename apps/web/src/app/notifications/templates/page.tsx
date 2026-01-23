@@ -1,18 +1,24 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -20,7 +26,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,14 +37,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   useNotificationTemplates,
   useDeleteNotificationTemplate,
   NOTIFICATION_TYPES,
   NOTIFICATION_TYPE_LABELS,
   type NotificationType,
-} from '@/hooks';
+} from "@/hooks";
 import {
   ArrowLeft,
   Plus,
@@ -49,12 +55,12 @@ import {
   Bell,
   MessageSquare,
   Loader2,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
 export default function TemplatesPage() {
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<NotificationType | 'ALL'>('ALL');
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<NotificationType | "ALL">("ALL");
 
   const { data: templates, isLoading } = useNotificationTemplates();
   const deleteTemplate = useDeleteNotificationTemplate();
@@ -64,16 +70,16 @@ export default function TemplatesPage() {
       !search ||
       template.name.toLowerCase().includes(search.toLowerCase()) ||
       template.titleTemplate.toLowerCase().includes(search.toLowerCase());
-    const matchesType = typeFilter === 'ALL' || template.type === typeFilter;
+    const matchesType = typeFilter === "ALL" || template.type === typeFilter;
     return matchesSearch && matchesType;
   });
 
   const handleDelete = async (id: string) => {
     try {
       await deleteTemplate.mutateAsync(id);
-      toast.success('Template berhasil dihapus');
+      toast.success("Template berhasil dihapus");
     } catch {
-      toast.error('Gagal menghapus template');
+      toast.error("Gagal menghapus template");
     }
   };
 
@@ -88,8 +94,12 @@ export default function TemplatesPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Template Notifikasi</h1>
-            <p className="text-muted-foreground">Kelola template pesan otomatis</p>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Template Notifikasi
+            </h1>
+            <p className="text-muted-foreground">
+              Kelola template pesan otomatis
+            </p>
           </div>
         </div>
         <Button asChild>
@@ -115,7 +125,9 @@ export default function TemplatesPage() {
             </div>
             <Select
               value={typeFilter}
-              onValueChange={(v) => setTypeFilter(v as NotificationType | 'ALL')}
+              onValueChange={(v) =>
+                setTypeFilter(v as NotificationType | "ALL")
+              }
             >
               <SelectTrigger className="w-full md:w-[180px]">
                 <SelectValue placeholder="Semua Tipe" />
@@ -169,10 +181,20 @@ export default function TemplatesPage() {
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {template.channels.map((channel: string) => (
-                        <Badge key={channel} variant="outline" className="text-xs">
-                          {channel === 'EMAIL' && <Mail className="mr-1 h-3 w-3" />}
-                          {channel === 'IN_APP' && <Bell className="mr-1 h-3 w-3" />}
-                          {channel === 'WHATSAPP' && <MessageSquare className="mr-1 h-3 w-3" />}
+                        <Badge
+                          key={channel}
+                          variant="outline"
+                          className="text-xs"
+                        >
+                          {channel === "EMAIL" && (
+                            <Mail className="mr-1 h-3 w-3" />
+                          )}
+                          {channel === "IN_APP" && (
+                            <Bell className="mr-1 h-3 w-3" />
+                          )}
+                          {channel === "WHATSAPP" && (
+                            <MessageSquare className="mr-1 h-3 w-3" />
+                          )}
                           {channel}
                         </Badge>
                       ))}
@@ -181,20 +203,24 @@ export default function TemplatesPage() {
                   <TableCell>
                     <span className="text-sm text-muted-foreground">
                       {template.variables.length > 0
-                        ? template.variables.slice(0, 2).join(', ') +
-                          (template.variables.length > 2 ? '...' : '')
-                        : '-'}
+                        ? template.variables.slice(0, 2).join(", ") +
+                          (template.variables.length > 2 ? "..." : "")
+                        : "-"}
                     </span>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={template.isActive ? 'default' : 'secondary'}>
-                      {template.isActive ? 'Aktif' : 'Nonaktif'}
+                    <Badge
+                      variant={template.isActive ? "default" : "secondary"}
+                    >
+                      {template.isActive ? "Aktif" : "Nonaktif"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="icon" asChild>
-                        <Link href={`/notifications/templates/${template.id}/edit`}>
+                        <Link
+                          href={`/notifications/templates/${template.id}/edit`}
+                        >
                           <Edit className="h-4 w-4" />
                         </Link>
                       </Button>
@@ -213,7 +239,9 @@ export default function TemplatesPage() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Batal</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(template.id)}>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(template.id)}
+                            >
                               Hapus
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -225,7 +253,10 @@ export default function TemplatesPage() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell
+                  colSpan={7}
+                  className="text-center py-8 text-muted-foreground"
+                >
                   Belum ada template notifikasi
                 </TableCell>
               </TableRow>

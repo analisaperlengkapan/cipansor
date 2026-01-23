@@ -3,7 +3,7 @@
  * Debounces a value for search inputs
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from "react";
 
 export function useDebounce<T>(value: T, delay = 300): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -28,7 +28,7 @@ export function useDebounce<T>(value: T, delay = 300): T {
 
 export function useDebounceCallback<T extends (...args: unknown[]) => void>(
   callback: T,
-  delay = 300
+  delay = 300,
 ): (...args: Parameters<T>) => void {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -41,6 +41,6 @@ export function useDebounceCallback<T extends (...args: unknown[]) => void>(
         callback(...args);
       }, delay);
     },
-    [callback, delay]
+    [callback, delay],
   );
 }

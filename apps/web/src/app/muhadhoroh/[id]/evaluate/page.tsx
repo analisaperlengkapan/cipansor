@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { use, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { use, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
   Star,
@@ -17,33 +17,33 @@ import {
   Save,
   Clock,
   User,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Slider } from '@/components/ui/slider';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 import {
   useMuhadhorohDetail,
   useEvaluateMuhadhoroh,
   getLanguageLabel,
   getGradeColor,
-} from '@/hooks/use-muhadhoroh';
+} from "@/hooks/use-muhadhoroh";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -56,29 +56,35 @@ const evaluateSchema = z.object({
   languageScore: z.number().min(0).max(100),
   duration: z.number().min(1).max(60).optional(),
   feedback: z.string().max(2000).optional(),
-  videoUrl: z.string().url().optional().or(z.literal('')),
+  videoUrl: z.string().url().optional().or(z.literal("")),
 });
 
 type EvaluateFormData = z.infer<typeof evaluateSchema>;
 
 // Helper to calculate grade
 function calculateGrade(totalScore: number): string {
-  if (totalScore >= 86) return 'A';
-  if (totalScore >= 71) return 'B';
-  if (totalScore >= 56) return 'C';
-  if (totalScore >= 41) return 'D';
-  return 'E';
+  if (totalScore >= 86) return "A";
+  if (totalScore >= 71) return "B";
+  if (totalScore >= 56) return "C";
+  if (totalScore >= 41) return "D";
+  return "E";
 }
 
 // Helper to get grade label in Indonesian (pesantren style)
 function getGradeLabel(grade: string): string {
   switch (grade) {
-    case 'A': return 'Mumtaz (Sangat Baik)';
-    case 'B': return 'Jayyid Jiddan (Baik Sekali)';
-    case 'C': return 'Jayyid (Baik)';
-    case 'D': return 'Maqbul (Cukup)';
-    case 'E': return 'Rasib (Kurang)';
-    default: return grade;
+    case "A":
+      return "Mumtaz (Sangat Baik)";
+    case "B":
+      return "Jayyid Jiddan (Baik Sekali)";
+    case "C":
+      return "Jayyid (Baik)";
+    case "D":
+      return "Maqbul (Cukup)";
+    case "E":
+      return "Rasib (Kurang)";
+    default:
+      return grade;
   }
 }
 
@@ -103,18 +109,20 @@ export default function EvaluateMuhadhorohPage({ params }: PageProps) {
       deliveryScore: muhadhoroh?.deliveryScore || 75,
       languageScore: muhadhoroh?.languageScore || 75,
       duration: muhadhoroh?.duration || 5,
-      feedback: muhadhoroh?.feedback || '',
-      videoUrl: muhadhoroh?.videoUrl || '',
+      feedback: muhadhoroh?.feedback || "",
+      videoUrl: muhadhoroh?.videoUrl || "",
     },
   });
 
-  const contentScore = watch('contentScore') || 75;
-  const deliveryScore = watch('deliveryScore') || 75;
-  const languageScore = watch('languageScore') || 75;
-  const duration = watch('duration') || 5;
+  const contentScore = watch("contentScore") || 75;
+  const deliveryScore = watch("deliveryScore") || 75;
+  const languageScore = watch("languageScore") || 75;
+  const duration = watch("duration") || 5;
 
   // Calculate total and grade
-  const totalScore = Math.round((contentScore + deliveryScore + languageScore) / 3);
+  const totalScore = Math.round(
+    (contentScore + deliveryScore + languageScore) / 3,
+  );
   const grade = calculateGrade(totalScore);
 
   const onSubmit = async (data: EvaluateFormData) => {
@@ -130,10 +138,10 @@ export default function EvaluateMuhadhorohPage({ params }: PageProps) {
           videoUrl: data.videoUrl || undefined,
         },
       });
-      toast.success('Penilaian berhasil disimpan');
+      toast.success("Penilaian berhasil disimpan");
       router.push(`/muhadhoroh/${id}`);
     } catch {
-      toast.error('Gagal menyimpan penilaian');
+      toast.error("Gagal menyimpan penilaian");
     }
   };
 
@@ -180,7 +188,9 @@ export default function EvaluateMuhadhorohPage({ params }: PageProps) {
         </Button>
         <div className="flex items-center gap-3 mb-2">
           <Award className="h-8 w-8 text-yellow-500" />
-          <h1 className="text-2xl font-bold tracking-tight">Penilaian Muhadhoroh</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Penilaian Muhadhoroh
+          </h1>
         </div>
         <p className="text-muted-foreground">
           Berikan penilaian untuk penampilan muhadhoroh santri
@@ -203,23 +213,33 @@ export default function EvaluateMuhadhorohPage({ params }: PageProps) {
                 <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
                   <Avatar className="h-14 w-14">
                     <AvatarFallback className="text-lg">
-                      {muhadhoroh.student?.name?.split(' ').map(n => n[0]).join('') || '?'}
+                      {muhadhoroh.student?.name
+                        ?.split(" ")
+                        .map((n) => n[0])
+                        .join("") || "?"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold">{muhadhoroh.student?.name}</h3>
+                    <h3 className="text-lg font-semibold">
+                      {muhadhoroh.student?.name}
+                    </h3>
                     <p className="text-sm text-muted-foreground">
-                      NIS: {muhadhoroh.student?.nis} • {muhadhoroh.student?.class?.name}
+                      NIS: {muhadhoroh.student?.nis} •{" "}
+                      {muhadhoroh.student?.class?.name}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <Badge variant="outline">
-                        {muhadhoroh.language === 'Indonesian' && '🇮🇩'}
-                        {muhadhoroh.language === 'Arabic' && '🕌'}
-                        {muhadhoroh.language === 'English' && '🇬🇧'}
-                        {' '}{getLanguageLabel(muhadhoroh.language)}
+                        {muhadhoroh.language === "Indonesian" && "🇮🇩"}
+                        {muhadhoroh.language === "Arabic" && "🕌"}
+                        {muhadhoroh.language === "English" && "🇬🇧"}{" "}
+                        {getLanguageLabel(muhadhoroh.language)}
                       </Badge>
                       <span className="text-sm text-muted-foreground">
-                        {format(new Date(muhadhoroh.scheduledAt), 'dd MMM yyyy', { locale: localeId })}
+                        {format(
+                          new Date(muhadhoroh.scheduledAt),
+                          "dd MMM yyyy",
+                          { locale: localeId },
+                        )}
                       </span>
                     </div>
                   </div>
@@ -240,7 +260,8 @@ export default function EvaluateMuhadhorohPage({ params }: PageProps) {
                   Komponen Penilaian
                 </CardTitle>
                 <CardDescription>
-                  Geser slider untuk memberikan nilai pada setiap komponen (0-100)
+                  Geser slider untuk memberikan nilai pada setiap komponen
+                  (0-100)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-8">
@@ -248,9 +269,12 @@ export default function EvaluateMuhadhorohPage({ params }: PageProps) {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <div>
-                      <Label className="text-base font-medium">Konten / Isi Materi</Label>
+                      <Label className="text-base font-medium">
+                        Konten / Isi Materi
+                      </Label>
                       <p className="text-sm text-muted-foreground">
-                        Kualitas materi, kedalaman pembahasan, relevansi dengan topik
+                        Kualitas materi, kedalaman pembahasan, relevansi dengan
+                        topik
                       </p>
                     </div>
                     <div className="text-right">
@@ -260,7 +284,7 @@ export default function EvaluateMuhadhorohPage({ params }: PageProps) {
                   </div>
                   <Slider
                     value={[contentScore]}
-                    onValueChange={([value]) => setValue('contentScore', value)}
+                    onValueChange={([value]) => setValue("contentScore", value)}
                     max={100}
                     step={1}
                     className="w-full"
@@ -280,19 +304,26 @@ export default function EvaluateMuhadhorohPage({ params }: PageProps) {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <div>
-                      <Label className="text-base font-medium">Penyampaian / Delivery</Label>
+                      <Label className="text-base font-medium">
+                        Penyampaian / Delivery
+                      </Label>
                       <p className="text-sm text-muted-foreground">
-                        Cara berbicara, intonasi, gestur, kontak mata, kepercayaan diri
+                        Cara berbicara, intonasi, gestur, kontak mata,
+                        kepercayaan diri
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className="text-3xl font-bold">{deliveryScore}</span>
+                      <span className="text-3xl font-bold">
+                        {deliveryScore}
+                      </span>
                       <span className="text-muted-foreground">/100</span>
                     </div>
                   </div>
                   <Slider
                     value={[deliveryScore]}
-                    onValueChange={([value]) => setValue('deliveryScore', value)}
+                    onValueChange={([value]) =>
+                      setValue("deliveryScore", value)
+                    }
                     max={100}
                     step={1}
                     className="w-full"
@@ -312,19 +343,25 @@ export default function EvaluateMuhadhorohPage({ params }: PageProps) {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <div>
-                      <Label className="text-base font-medium">Penggunaan Bahasa</Label>
+                      <Label className="text-base font-medium">
+                        Penggunaan Bahasa
+                      </Label>
                       <p className="text-sm text-muted-foreground">
                         Tata bahasa, kosa kata, pengucapan/pelafalan, kelancaran
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className="text-3xl font-bold">{languageScore}</span>
+                      <span className="text-3xl font-bold">
+                        {languageScore}
+                      </span>
                       <span className="text-muted-foreground">/100</span>
                     </div>
                   </div>
                   <Slider
                     value={[languageScore]}
-                    onValueChange={([value]) => setValue('languageScore', value)}
+                    onValueChange={([value]) =>
+                      setValue("languageScore", value)
+                    }
                     max={100}
                     step={1}
                     className="w-full"
@@ -355,7 +392,7 @@ export default function EvaluateMuhadhorohPage({ params }: PageProps) {
                   <div className="flex items-center gap-4">
                     <Slider
                       value={[duration]}
-                      onValueChange={([value]) => setValue('duration', value)}
+                      onValueChange={([value]) => setValue("duration", value)}
                       max={30}
                       min={1}
                       step={1}
@@ -366,7 +403,8 @@ export default function EvaluateMuhadhorohPage({ params }: PageProps) {
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Durasi ideal: 5-7 menit untuk pemula, 7-10 menit untuk tingkat lanjut
+                    Durasi ideal: 5-7 menit untuk pemula, 7-10 menit untuk
+                    tingkat lanjut
                   </p>
                 </div>
 
@@ -379,10 +417,12 @@ export default function EvaluateMuhadhorohPage({ params }: PageProps) {
                   <Input
                     id="videoUrl"
                     placeholder="https://youtube.com/... atau https://drive.google.com/..."
-                    {...register('videoUrl')}
+                    {...register("videoUrl")}
                   />
                   {errors.videoUrl && (
-                    <p className="text-sm text-destructive">{errors.videoUrl.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.videoUrl.message}
+                    </p>
                   )}
                 </div>
 
@@ -395,11 +435,12 @@ export default function EvaluateMuhadhorohPage({ params }: PageProps) {
                   <Textarea
                     id="feedback"
                     placeholder="Berikan masukan konstruktif untuk perbaikan santri..."
-                    {...register('feedback')}
+                    {...register("feedback")}
                     className="min-h-[120px]"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Tips: Berikan apresiasi terlebih dahulu, lalu sampaikan saran perbaikan dengan bahasa yang memotivasi
+                    Tips: Berikan apresiasi terlebih dahulu, lalu sampaikan
+                    saran perbaikan dengan bahasa yang memotivasi
                   </p>
                 </div>
               </CardContent>
@@ -418,11 +459,15 @@ export default function EvaluateMuhadhorohPage({ params }: PageProps) {
               <CardContent className="space-y-6">
                 {/* Total Score Display */}
                 <div className="text-center p-6 bg-linear-to-br from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
-                  <p className="text-sm text-muted-foreground mb-2">Nilai Total</p>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Nilai Total
+                  </p>
                   <div className="text-5xl font-bold text-yellow-600 mb-2">
                     {totalScore}
                   </div>
-                  <Badge className={`${getGradeColor(grade)} text-lg px-4 py-1`}>
+                  <Badge
+                    className={`${getGradeColor(grade)} text-lg px-4 py-1`}
+                  >
                     {grade}
                   </Badge>
                   <p className="text-sm text-muted-foreground mt-2">
@@ -460,7 +505,7 @@ export default function EvaluateMuhadhorohPage({ params }: PageProps) {
                     className="w-full"
                     disabled={isSubmitting || evaluateMutation.isPending}
                   >
-                    {(isSubmitting || evaluateMutation.isPending) ? (
+                    {isSubmitting || evaluateMutation.isPending ? (
                       <>
                         <span className="animate-spin mr-2">⏳</span>
                         Menyimpan...
@@ -493,35 +538,35 @@ export default function EvaluateMuhadhorohPage({ params }: PageProps) {
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Badge className={getGradeColor('A')}>A</Badge>
+                      <Badge className={getGradeColor("A")}>A</Badge>
                       <span>Mumtaz</span>
                     </div>
                     <span className="text-muted-foreground">86-100</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Badge className={getGradeColor('B')}>B</Badge>
+                      <Badge className={getGradeColor("B")}>B</Badge>
                       <span>Jayyid Jiddan</span>
                     </div>
                     <span className="text-muted-foreground">71-85</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Badge className={getGradeColor('C')}>C</Badge>
+                      <Badge className={getGradeColor("C")}>C</Badge>
                       <span>Jayyid</span>
                     </div>
                     <span className="text-muted-foreground">56-70</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Badge className={getGradeColor('D')}>D</Badge>
+                      <Badge className={getGradeColor("D")}>D</Badge>
                       <span>Maqbul</span>
                     </div>
                     <span className="text-muted-foreground">41-55</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Badge className={getGradeColor('E')}>E</Badge>
+                      <Badge className={getGradeColor("E")}>E</Badge>
                       <span>Rasib</span>
                     </div>
                     <span className="text-muted-foreground">0-40</span>

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { use, useState } from 'react';
-import Link from 'next/link';
+import { use, useState } from "react";
+import Link from "next/link";
 import {
   ArrowLeft,
   Building2,
@@ -13,12 +13,18 @@ import {
   Trash2,
   UserPlus,
   UserMinus,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -26,7 +32,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -34,11 +40,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { toast } from 'sonner';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { toast } from "sonner";
 import {
   useDormitory,
   useDormitoryRooms,
@@ -47,7 +53,7 @@ import {
   useRoomAssignments,
   useUnassignRoom,
   Room,
-} from '@/hooks/use-dormitory';
+} from "@/hooks/use-dormitory";
 
 export default function DormitoryDetailPage({
   params,
@@ -61,13 +67,13 @@ export default function DormitoryDetailPage({
   const [unassignId, setUnassignId] = useState<string | null>(null);
 
   // New room form state
-  const [newRoomName, setNewRoomName] = useState('');
+  const [newRoomName, setNewRoomName] = useState("");
   const [newRoomFloor, setNewRoomFloor] = useState(1);
   const [newRoomCapacity, setNewRoomCapacity] = useState(4);
 
   const { data: dormitory, isLoading } = useDormitory(id);
   const { data: rooms, isLoading: roomsLoading } = useDormitoryRooms(id);
-  const { data: assignments } = useRoomAssignments(selectedRoom?.id || '');
+  const { data: assignments } = useRoomAssignments(selectedRoom?.id || "");
 
   const createRoomMutation = useCreateRoom();
   const deleteRoomMutation = useDeleteRoom();
@@ -75,7 +81,7 @@ export default function DormitoryDetailPage({
 
   const handleAddRoom = async () => {
     if (!newRoomName) {
-      toast.error('Nama kamar wajib diisi');
+      toast.error("Nama kamar wajib diisi");
       return;
     }
 
@@ -86,13 +92,13 @@ export default function DormitoryDetailPage({
         capacity: newRoomCapacity,
         dormitoryId: id,
       });
-      toast.success('Kamar berhasil ditambahkan');
+      toast.success("Kamar berhasil ditambahkan");
       setShowAddRoom(false);
-      setNewRoomName('');
+      setNewRoomName("");
       setNewRoomFloor(1);
       setNewRoomCapacity(4);
     } catch {
-      toast.error('Gagal menambahkan kamar');
+      toast.error("Gagal menambahkan kamar");
     }
   };
 
@@ -100,13 +106,13 @@ export default function DormitoryDetailPage({
     if (!deleteRoomId) return;
     try {
       await deleteRoomMutation.mutateAsync(deleteRoomId);
-      toast.success('Kamar berhasil dihapus');
+      toast.success("Kamar berhasil dihapus");
       setDeleteRoomId(null);
       if (selectedRoom?.id === deleteRoomId) {
         setSelectedRoom(null);
       }
     } catch {
-      toast.error('Gagal menghapus kamar');
+      toast.error("Gagal menghapus kamar");
     }
   };
 
@@ -114,10 +120,10 @@ export default function DormitoryDetailPage({
     if (!unassignId) return;
     try {
       await unassignMutation.mutateAsync(unassignId);
-      toast.success('Santri berhasil dikeluarkan dari kamar');
+      toast.success("Santri berhasil dikeluarkan dari kamar");
       setUnassignId(null);
     } catch {
-      toast.error('Gagal mengeluarkan santri dari kamar');
+      toast.error("Gagal mengeluarkan santri dari kamar");
     }
   };
 
@@ -168,17 +174,21 @@ export default function DormitoryDetailPage({
           </Button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold tracking-tight">{dormitory.name}</h1>
+              <h1 className="text-3xl font-bold tracking-tight">
+                {dormitory.name}
+              </h1>
               <Badge
                 className={
-                  dormitory.type === 'MALE'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-pink-100 text-pink-800'
+                  dormitory.type === "MALE"
+                    ? "bg-blue-100 text-blue-800"
+                    : "bg-pink-100 text-pink-800"
                 }
               >
-                {dormitory.type === 'MALE' ? 'Putra' : 'Putri'}
+                {dormitory.type === "MALE" ? "Putra" : "Putri"}
               </Badge>
-              {!dormitory.isActive && <Badge variant="secondary">Tidak Aktif</Badge>}
+              {!dormitory.isActive && (
+                <Badge variant="secondary">Tidak Aktif</Badge>
+              )}
             </div>
             <p className="text-muted-foreground">{dormitory.code}</p>
           </div>
@@ -195,7 +205,9 @@ export default function DormitoryDetailPage({
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Kapasitas</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Kapasitas
+            </CardTitle>
             <Bed className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -210,8 +222,12 @@ export default function DormitoryDetailPage({
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dormitory.currentOccupancy || 0}</div>
-            <p className="text-xs text-muted-foreground">{occupancyPercent}% kapasitas</p>
+            <div className="text-2xl font-bold">
+              {dormitory.currentOccupancy || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {occupancyPercent}% kapasitas
+            </p>
           </CardContent>
         </Card>
 
@@ -248,19 +264,25 @@ export default function DormitoryDetailPage({
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div>
             <p className="text-sm font-medium text-muted-foreground">Unit</p>
-            <p>{dormitory.unit?.name || '-'}</p>
+            <p>{dormitory.unit?.name || "-"}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Pengasuh</p>
-            <p>{dormitory.supervisor?.name || '-'}</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              Pengasuh
+            </p>
+            <p>{dormitory.supervisor?.name || "-"}</p>
           </div>
           <div className="sm:col-span-2">
-            <p className="text-sm font-medium text-muted-foreground">Deskripsi</p>
-            <p>{dormitory.description || '-'}</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              Deskripsi
+            </p>
+            <p>{dormitory.description || "-"}</p>
           </div>
           <div className="sm:col-span-2">
-            <p className="text-sm font-medium text-muted-foreground">Fasilitas</p>
-            <p>{dormitory.facilities || '-'}</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              Fasilitas
+            </p>
+            <p>{dormitory.facilities || "-"}</p>
           </div>
         </CardContent>
       </Card>
@@ -304,7 +326,9 @@ export default function DormitoryDetailPage({
                       type="number"
                       min={1}
                       value={newRoomFloor}
-                      onChange={(e) => setNewRoomFloor(parseInt(e.target.value) || 1)}
+                      onChange={(e) =>
+                        setNewRoomFloor(parseInt(e.target.value) || 1)
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -314,16 +338,24 @@ export default function DormitoryDetailPage({
                       type="number"
                       min={1}
                       value={newRoomCapacity}
-                      onChange={(e) => setNewRoomCapacity(parseInt(e.target.value) || 1)}
+                      onChange={(e) =>
+                        setNewRoomCapacity(parseInt(e.target.value) || 1)
+                      }
                     />
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setShowAddRoom(false)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAddRoom(false)}
+                  >
                     Batal
                   </Button>
-                  <Button onClick={handleAddRoom} disabled={createRoomMutation.isPending}>
-                    {createRoomMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+                  <Button
+                    onClick={handleAddRoom}
+                    disabled={createRoomMutation.isPending}
+                  >
+                    {createRoomMutation.isPending ? "Menyimpan..." : "Simpan"}
                   </Button>
                 </div>
               </div>
@@ -341,7 +373,9 @@ export default function DormitoryDetailPage({
               ) : rooms?.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <DoorOpen className="h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-4 text-lg font-semibold">Belum ada kamar</h3>
+                  <h3 className="mt-4 text-lg font-semibold">
+                    Belum ada kamar
+                  </h3>
                   <p className="text-muted-foreground">
                     Tambahkan kamar untuk mulai mengelola penghuni
                   </p>
@@ -361,7 +395,9 @@ export default function DormitoryDetailPage({
                   <TableBody>
                     {rooms?.map((room) => (
                       <TableRow key={room.id}>
-                        <TableCell className="font-medium">{room.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {room.name}
+                        </TableCell>
                         <TableCell>{room.floor}</TableCell>
                         <TableCell>{room.capacity}</TableCell>
                         <TableCell>{room.currentOccupancy || 0}</TableCell>
@@ -406,7 +442,7 @@ export default function DormitoryDetailPage({
           <Card>
             <CardHeader>
               <CardTitle>
-                {selectedRoom ? `Penghuni ${selectedRoom.name}` : 'Pilih Kamar'}
+                {selectedRoom ? `Penghuni ${selectedRoom.name}` : "Pilih Kamar"}
               </CardTitle>
               <CardDescription>
                 {selectedRoom
@@ -419,7 +455,9 @@ export default function DormitoryDetailPage({
                 <div className="space-y-4">
                   <div className="flex justify-end">
                     <Button size="sm" asChild>
-                      <Link href={`/dormitories/${id}/rooms/${selectedRoom.id}/assign`}>
+                      <Link
+                        href={`/dormitories/${id}/rooms/${selectedRoom.id}/assign`}
+                      >
                         <UserPlus className="mr-2 h-4 w-4" />
                         Tambah Penghuni
                       </Link>
@@ -428,7 +466,9 @@ export default function DormitoryDetailPage({
                   {assignments?.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-8">
                       <Users className="h-8 w-8 text-muted-foreground" />
-                      <p className="mt-2 text-muted-foreground">Belum ada penghuni di kamar ini</p>
+                      <p className="mt-2 text-muted-foreground">
+                        Belum ada penghuni di kamar ini
+                      </p>
                     </div>
                   ) : (
                     <Table>
@@ -448,7 +488,9 @@ export default function DormitoryDetailPage({
                               {assignment.student?.name}
                             </TableCell>
                             <TableCell>
-                              {new Date(assignment.startDate).toLocaleDateString('id-ID')}
+                              {new Date(
+                                assignment.startDate,
+                              ).toLocaleDateString("id-ID")}
                             </TableCell>
                             <TableCell className="text-right">
                               <Button
@@ -470,7 +512,8 @@ export default function DormitoryDetailPage({
                 <div className="flex flex-col items-center justify-center py-12">
                   <DoorOpen className="h-12 w-12 text-muted-foreground" />
                   <p className="mt-4 text-muted-foreground">
-                    Pilih kamar dari tab &quot;Daftar Kamar&quot; untuk melihat penghuni
+                    Pilih kamar dari tab &quot;Daftar Kamar&quot; untuk melihat
+                    penghuni
                   </p>
                 </div>
               )}

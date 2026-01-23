@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { use } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { use } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   ArrowLeft,
   Edit,
@@ -18,11 +18,17 @@ import {
   Calendar,
   Hash,
   Building,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -30,10 +36,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Separator } from '@/components/ui/separator';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { toast } from 'sonner';
+} from "@/components/ui/table";
+import { Separator } from "@/components/ui/separator";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { toast } from "sonner";
 import {
   useBook,
   useBorrows,
@@ -44,7 +50,7 @@ import {
   BORROW_STATUSES,
   BookCategory,
   BorrowStatus,
-} from '@/hooks/use-library';
+} from "@/hooks/use-library";
 
 function getCategoryLabel(category: BookCategory) {
   return BOOK_CATEGORIES.find((c) => c.value === category)?.label || category;
@@ -59,7 +65,11 @@ function getStatusBadge(status: BorrowStatus) {
   );
 }
 
-export default function BookDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function BookDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const router = useRouter();
 
@@ -72,10 +82,10 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
   const handleDelete = async () => {
     try {
       await deleteBookMutation.mutateAsync(id);
-      toast.success('Buku berhasil dihapus');
-      router.push('/library');
+      toast.success("Buku berhasil dihapus");
+      router.push("/library");
     } catch {
-      toast.error('Gagal menghapus buku');
+      toast.error("Gagal menghapus buku");
     }
   };
 
@@ -83,20 +93,20 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
     try {
       await returnMutation.mutateAsync({
         id: borrowId,
-        returnDate: new Date().toISOString().split('T')[0],
+        returnDate: new Date().toISOString().split("T")[0],
       });
-      toast.success('Buku berhasil dikembalikan');
+      toast.success("Buku berhasil dikembalikan");
     } catch {
-      toast.error('Gagal mengembalikan buku');
+      toast.error("Gagal mengembalikan buku");
     }
   };
 
   const handleMarkLost = async (borrowId: string) => {
     try {
       await markLostMutation.mutateAsync(borrowId);
-      toast.success('Buku ditandai sebagai hilang');
+      toast.success("Buku ditandai sebagai hilang");
     } catch {
-      toast.error('Gagal menandai buku sebagai hilang');
+      toast.error("Gagal menandai buku sebagai hilang");
     }
   };
 
@@ -120,8 +130,14 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  const activeBorrows = borrowsData?.data.filter((b) => b.status === 'BORROWED' || b.status === 'OVERDUE') || [];
-  const historyBorrows = borrowsData?.data.filter((b) => b.status === 'RETURNED' || b.status === 'LOST') || [];
+  const activeBorrows =
+    borrowsData?.data.filter(
+      (b) => b.status === "BORROWED" || b.status === "OVERDUE",
+    ) || [];
+  const historyBorrows =
+    borrowsData?.data.filter(
+      (b) => b.status === "RETURNED" || b.status === "LOST",
+    ) || [];
 
   return (
     <div className="space-y-6">
@@ -238,20 +254,30 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-4 rounded-lg bg-muted">
                   <p className="text-3xl font-bold">{book.quantity}</p>
-                  <p className="text-sm text-muted-foreground">Total Eksemplar</p>
+                  <p className="text-sm text-muted-foreground">
+                    Total Eksemplar
+                  </p>
                 </div>
                 <div className="text-center p-4 rounded-lg bg-muted">
-                  <p className={`text-3xl font-bold ${book.availableQuantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <p
+                    className={`text-3xl font-bold ${book.availableQuantity > 0 ? "text-green-600" : "text-red-600"}`}
+                  >
                     {book.availableQuantity}
                   </p>
                   <p className="text-sm text-muted-foreground">Tersedia</p>
                 </div>
               </div>
               <div className="mt-4">
-                <Button asChild className="w-full" disabled={book.availableQuantity === 0}>
+                <Button
+                  asChild
+                  className="w-full"
+                  disabled={book.availableQuantity === 0}
+                >
                   <Link href={`/library/borrow?bookId=${id}`}>
                     <Clock className="mr-2 h-4 w-4" />
-                    {book.availableQuantity > 0 ? 'Pinjamkan Buku Ini' : 'Stok Habis'}
+                    {book.availableQuantity > 0
+                      ? "Pinjamkan Buku Ini"
+                      : "Stok Habis"}
                   </Link>
                 </Button>
               </div>
@@ -281,7 +307,9 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
                   {activeBorrows.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-8">
                       <Clock className="h-12 w-12 text-muted-foreground" />
-                      <p className="mt-4 text-muted-foreground">Tidak ada peminjaman aktif</p>
+                      <p className="mt-4 text-muted-foreground">
+                        Tidak ada peminjaman aktif
+                      </p>
                     </div>
                   ) : (
                     <Table>
@@ -299,19 +327,30 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
                           <TableRow key={borrow.id}>
                             <TableCell>
                               <div>
-                                <p className="font-medium">{borrow.student?.name}</p>
+                                <p className="font-medium">
+                                  {borrow.student?.name}
+                                </p>
                                 <p className="text-sm text-muted-foreground">
-                                  {borrow.student?.nis} - {borrow.student?.class?.name}
+                                  {borrow.student?.nis} -{" "}
+                                  {borrow.student?.class?.name}
                                 </p>
                               </div>
                             </TableCell>
                             <TableCell>
-                              {format(new Date(borrow.borrowDate), 'dd MMM yyyy', { locale: localeId })}
+                              {format(
+                                new Date(borrow.borrowDate),
+                                "dd MMM yyyy",
+                                { locale: localeId },
+                              )}
                             </TableCell>
                             <TableCell>
-                              {format(new Date(borrow.dueDate), 'dd MMM yyyy', { locale: localeId })}
+                              {format(new Date(borrow.dueDate), "dd MMM yyyy", {
+                                locale: localeId,
+                              })}
                             </TableCell>
-                            <TableCell>{getStatusBadge(borrow.status)}</TableCell>
+                            <TableCell>
+                              {getStatusBadge(borrow.status)}
+                            </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
                                 <Button
@@ -347,7 +386,9 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
                   {historyBorrows.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-8">
                       <BookOpen className="h-12 w-12 text-muted-foreground" />
-                      <p className="mt-4 text-muted-foreground">Belum ada riwayat peminjaman</p>
+                      <p className="mt-4 text-muted-foreground">
+                        Belum ada riwayat peminjaman
+                      </p>
                     </div>
                   ) : (
                     <Table>
@@ -364,21 +405,33 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
                           <TableRow key={borrow.id}>
                             <TableCell>
                               <div>
-                                <p className="font-medium">{borrow.student?.name}</p>
+                                <p className="font-medium">
+                                  {borrow.student?.name}
+                                </p>
                                 <p className="text-sm text-muted-foreground">
                                   {borrow.student?.nis}
                                 </p>
                               </div>
                             </TableCell>
                             <TableCell>
-                              {format(new Date(borrow.borrowDate), 'dd MMM yyyy', { locale: localeId })}
+                              {format(
+                                new Date(borrow.borrowDate),
+                                "dd MMM yyyy",
+                                { locale: localeId },
+                              )}
                             </TableCell>
                             <TableCell>
                               {borrow.returnDate
-                                ? format(new Date(borrow.returnDate), 'dd MMM yyyy', { locale: localeId })
-                                : '-'}
+                                ? format(
+                                    new Date(borrow.returnDate),
+                                    "dd MMM yyyy",
+                                    { locale: localeId },
+                                  )
+                                : "-"}
                             </TableCell>
-                            <TableCell>{getStatusBadge(borrow.status)}</TableCell>
+                            <TableCell>
+                              {getStatusBadge(borrow.status)}
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -396,7 +449,9 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
                 <CardTitle>Deskripsi</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground whitespace-pre-wrap">{book.description}</p>
+                <p className="text-muted-foreground whitespace-pre-wrap">
+                  {book.description}
+                </p>
               </CardContent>
             </Card>
           )}

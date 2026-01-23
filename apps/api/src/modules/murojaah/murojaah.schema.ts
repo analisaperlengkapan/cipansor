@@ -35,32 +35,39 @@ export const listMurojaahQuerySchema = z.object({
 // Murojaah Record Create/Update Schemas
 // ============================================
 
-export const createMurojaahSchema = z.object({
-  studentId: z.string().uuid(),
-  enrollmentId: z.string().uuid().optional().nullable(),
-  halaqohId: z.string().uuid().optional().nullable(),
-  murojaahType: MurojaahTypeEnum,
-  murojaahDate: z.string().datetime(),
-  juzStart: z.number().int().min(1).max(30),
-  juzEnd: z.number().int().min(1).max(30),
-  pagesReviewed: z.number().int().min(1).max(620),
-  durationMinutes: z.number().int().min(1).max(480),
-  qualityScore: z.number().int().min(0).max(100),
-  fluencyLevel: z.number().int().min(1).max(5).default(3),
-  tajwidScore: z.number().int().min(0).max(100).optional().nullable(),
-  notes: z.string().max(2000).optional().nullable(),
-  improvementAreas: z.string().max(1000).optional().nullable(),
-  mistakes: z.array(z.object({
-    mistakeType: TahfidzMistakeTypeEnum,
-    juz: z.number().int().min(1).max(30),
-    surahNumber: z.number().int().min(1).max(114),
-    ayahNumber: z.number().int().min(1).optional().nullable(),
-    description: z.string().max(500).optional().nullable(),
-  })).optional().default([]),
-}).refine((data) => data.juzEnd >= data.juzStart, {
-  message: 'juzEnd must be greater than or equal to juzStart',
-  path: ['juzEnd'],
-});
+export const createMurojaahSchema = z
+  .object({
+    studentId: z.string().uuid(),
+    enrollmentId: z.string().uuid().optional().nullable(),
+    halaqohId: z.string().uuid().optional().nullable(),
+    murojaahType: MurojaahTypeEnum,
+    murojaahDate: z.string().datetime(),
+    juzStart: z.number().int().min(1).max(30),
+    juzEnd: z.number().int().min(1).max(30),
+    pagesReviewed: z.number().int().min(1).max(620),
+    durationMinutes: z.number().int().min(1).max(480),
+    qualityScore: z.number().int().min(0).max(100),
+    fluencyLevel: z.number().int().min(1).max(5).default(3),
+    tajwidScore: z.number().int().min(0).max(100).optional().nullable(),
+    notes: z.string().max(2000).optional().nullable(),
+    improvementAreas: z.string().max(1000).optional().nullable(),
+    mistakes: z
+      .array(
+        z.object({
+          mistakeType: TahfidzMistakeTypeEnum,
+          juz: z.number().int().min(1).max(30),
+          surahNumber: z.number().int().min(1).max(114),
+          ayahNumber: z.number().int().min(1).optional().nullable(),
+          description: z.string().max(500).optional().nullable(),
+        })
+      )
+      .optional()
+      .default([]),
+  })
+  .refine((data) => data.juzEnd >= data.juzStart, {
+    message: 'juzEnd must be greater than or equal to juzStart',
+    path: ['juzEnd'],
+  });
 
 export const updateMurojaahSchema = z.object({
   murojaahType: MurojaahTypeEnum.optional(),

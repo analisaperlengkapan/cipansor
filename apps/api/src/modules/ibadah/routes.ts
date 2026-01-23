@@ -77,14 +77,20 @@ router.get('/targets/:id', authenticate, async (req, res, next) => {
  *     security:
  *       - bearerAuth: []
  */
-router.post('/targets', authenticate, isTeacherOrAbove, validate(createTargetSchema), async (req, res, next) => {
-  try {
-    const target = await service.createTarget(req.body);
-    res.status(201).json(ApiResponse.success(target, 'Target created successfully'));
-  } catch (error) {
-    next(error);
+router.post(
+  '/targets',
+  authenticate,
+  isTeacherOrAbove,
+  validate(createTargetSchema),
+  async (req, res, next) => {
+    try {
+      const target = await service.createTarget(req.body);
+      res.status(201).json(ApiResponse.success(target, 'Target created successfully'));
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 /**
  * @swagger
@@ -95,14 +101,20 @@ router.post('/targets', authenticate, isTeacherOrAbove, validate(createTargetSch
  *     security:
  *       - bearerAuth: []
  */
-router.put('/targets/:id', authenticate, isTeacherOrAbove, validate(updateTargetSchema), async (req, res, next) => {
-  try {
-    const target = await service.updateTarget(req.params.id, req.body);
-    res.json(ApiResponse.success(target, 'Target updated successfully'));
-  } catch (error) {
-    next(error);
+router.put(
+  '/targets/:id',
+  authenticate,
+  isTeacherOrAbove,
+  validate(updateTargetSchema),
+  async (req, res, next) => {
+    try {
+      const target = await service.updateTarget(req.params.id, req.body);
+      res.json(ApiResponse.success(target, 'Target updated successfully'));
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 /**
  * @swagger
@@ -113,14 +125,19 @@ router.put('/targets/:id', authenticate, isTeacherOrAbove, validate(updateTarget
  *     security:
  *       - bearerAuth: []
  */
-router.delete('/targets/:id', authenticate, authorize('SUPER_ADMIN', 'UNIT_ADMIN'), async (req, res, next) => {
-  try {
-    await service.deleteTarget(req.params.id);
-    res.json(ApiResponse.success(null, 'Target deleted successfully'));
-  } catch (error) {
-    next(error);
+router.delete(
+  '/targets/:id',
+  authenticate,
+  authorize('SUPER_ADMIN', 'UNIT_ADMIN'),
+  async (req, res, next) => {
+    try {
+      await service.deleteTarget(req.params.id);
+      res.json(ApiResponse.success(null, 'Target deleted successfully'));
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 /**
  * @swagger
@@ -131,14 +148,19 @@ router.delete('/targets/:id', authenticate, authorize('SUPER_ADMIN', 'UNIT_ADMIN
  *     security:
  *       - bearerAuth: []
  */
-router.post('/targets/seed/:unitId', authenticate, authorize('SUPER_ADMIN', 'UNIT_ADMIN'), async (req, res, next) => {
-  try {
-    const targets = await service.seedDefaultTargets(req.params.unitId);
-    res.status(201).json(ApiResponse.success(targets, 'Default targets seeded successfully'));
-  } catch (error) {
-    next(error);
+router.post(
+  '/targets/seed/:unitId',
+  authenticate,
+  authorize('SUPER_ADMIN', 'UNIT_ADMIN'),
+  async (req, res, next) => {
+    try {
+      const targets = await service.seedDefaultTargets(req.params.unitId);
+      res.status(201).json(ApiResponse.success(targets, 'Default targets seeded successfully'));
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 // ======================
 // RECORD ROUTES
@@ -247,14 +269,19 @@ router.delete('/records/:id', authenticate, isTeacherOrAbove, async (req, res, n
  *     security:
  *       - bearerAuth: []
  */
-router.post('/records/bulk', authenticate, validate(bulkCreateRecordsSchema), async (req, res, next) => {
-  try {
-    const records = await service.bulkCreateRecords(req.body);
-    res.status(201).json(ApiResponse.success(records, 'Records created successfully'));
-  } catch (error) {
-    next(error);
+router.post(
+  '/records/bulk',
+  authenticate,
+  validate(bulkCreateRecordsSchema),
+  async (req, res, next) => {
+    try {
+      const records = await service.bulkCreateRecords(req.body);
+      res.status(201).json(ApiResponse.success(records, 'Records created successfully'));
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 /**
  * @swagger
@@ -265,14 +292,20 @@ router.post('/records/bulk', authenticate, validate(bulkCreateRecordsSchema), as
  *     security:
  *       - bearerAuth: []
  */
-router.post('/records/verify', authenticate, isTeacherOrAbove, validate(verifyRecordSchema), async (req, res, next) => {
-  try {
-    const result = await service.verifyRecords(req.user!.sub, req.body);
-    res.json(ApiResponse.success(result, 'Records verified successfully'));
-  } catch (error) {
-    next(error);
+router.post(
+  '/records/verify',
+  authenticate,
+  isTeacherOrAbove,
+  validate(verifyRecordSchema),
+  async (req, res, next) => {
+    try {
+      const result = await service.verifyRecords(req.user!.sub, req.body);
+      res.json(ApiResponse.success(result, 'Records verified successfully'));
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 // ======================
 // DAILY CHECK-IN
@@ -433,14 +466,20 @@ router.get('/events/:id', authenticate, async (req, res, next) => {
  *     security:
  *       - bearerAuth: []
  */
-router.post('/events', authenticate, isTeacherOrAbove, validate(createIslamicEventSchema), async (req, res, next) => {
-  try {
-    const event = await service.createIslamicEvent(req.body);
-    res.status(201).json(ApiResponse.success(event, 'Event created successfully'));
-  } catch (error) {
-    next(error);
+router.post(
+  '/events',
+  authenticate,
+  isTeacherOrAbove,
+  validate(createIslamicEventSchema),
+  async (req, res, next) => {
+    try {
+      const event = await service.createIslamicEvent(req.body);
+      res.status(201).json(ApiResponse.success(event, 'Event created successfully'));
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 /**
  * @swagger
@@ -451,14 +490,20 @@ router.post('/events', authenticate, isTeacherOrAbove, validate(createIslamicEve
  *     security:
  *       - bearerAuth: []
  */
-router.put('/events/:id', authenticate, isTeacherOrAbove, validate(updateIslamicEventSchema), async (req, res, next) => {
-  try {
-    const event = await service.updateIslamicEvent(req.params.id, req.body);
-    res.json(ApiResponse.success(event, 'Event updated successfully'));
-  } catch (error) {
-    next(error);
+router.put(
+  '/events/:id',
+  authenticate,
+  isTeacherOrAbove,
+  validate(updateIslamicEventSchema),
+  async (req, res, next) => {
+    try {
+      const event = await service.updateIslamicEvent(req.params.id, req.body);
+      res.json(ApiResponse.success(event, 'Event updated successfully'));
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 /**
  * @swagger
@@ -469,13 +514,18 @@ router.put('/events/:id', authenticate, isTeacherOrAbove, validate(updateIslamic
  *     security:
  *       - bearerAuth: []
  */
-router.delete('/events/:id', authenticate, authorize('SUPER_ADMIN', 'UNIT_ADMIN'), async (req, res, next) => {
-  try {
-    await service.deleteIslamicEvent(req.params.id);
-    res.json(ApiResponse.success(null, 'Event deleted successfully'));
-  } catch (error) {
-    next(error);
+router.delete(
+  '/events/:id',
+  authenticate,
+  authorize('SUPER_ADMIN', 'UNIT_ADMIN'),
+  async (req, res, next) => {
+    try {
+      await service.deleteIslamicEvent(req.params.id);
+      res.json(ApiResponse.success(null, 'Event deleted successfully'));
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 export default router;

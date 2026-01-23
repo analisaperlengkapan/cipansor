@@ -1,23 +1,35 @@
-'use client';
+"use client";
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { MarketingCampaign, CreateCampaignInput } from '@cipansor/shared';
-import { useCreateCampaign, useUpdateCampaign } from '@/hooks/use-marketing';
-import { useEffect } from 'react';
-import { toast } from 'sonner';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { MarketingCampaign, CreateCampaignInput } from "@cipansor/shared";
+import { useCreateCampaign, useUpdateCampaign } from "@/hooks/use-marketing";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 const schema = z.object({
-  name: z.string().min(1, 'Nama wajib diisi'),
-  code: z.string().min(1, 'Kode wajib diisi'),
+  name: z.string().min(1, "Nama wajib diisi"),
+  code: z.string().min(1, "Kode wajib diisi"),
   description: z.string().optional(),
-  startDate: z.string().min(1, 'Tanggal mulai wajib diisi'),
+  startDate: z.string().min(1, "Tanggal mulai wajib diisi"),
   endDate: z.string().optional(),
   budget: z.coerce.number().optional(),
 });
@@ -28,18 +40,22 @@ interface CampaignFormDialogProps {
   campaign?: MarketingCampaign | null;
 }
 
-export function CampaignFormDialog({ open, onOpenChange, campaign }: CampaignFormDialogProps) {
+export function CampaignFormDialog({
+  open,
+  onOpenChange,
+  campaign,
+}: CampaignFormDialogProps) {
   const createMutation = useCreateCampaign();
   const updateMutation = useUpdateCampaign();
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: '',
-      code: '',
-      description: '',
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: '',
+      name: "",
+      code: "",
+      description: "",
+      startDate: new Date().toISOString().split("T")[0],
+      endDate: "",
       budget: 0,
     },
   });
@@ -49,18 +65,20 @@ export function CampaignFormDialog({ open, onOpenChange, campaign }: CampaignFor
       form.reset({
         name: campaign.name,
         code: campaign.code,
-        description: campaign.description || '',
-        startDate: new Date(campaign.startDate).toISOString().split('T')[0],
-        endDate: campaign.endDate ? new Date(campaign.endDate).toISOString().split('T')[0] : '',
+        description: campaign.description || "",
+        startDate: new Date(campaign.startDate).toISOString().split("T")[0],
+        endDate: campaign.endDate
+          ? new Date(campaign.endDate).toISOString().split("T")[0]
+          : "",
         budget: Number(campaign.budget) || 0,
       });
     } else {
       form.reset({
-        name: '',
-        code: '',
-        description: '',
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: '',
+        name: "",
+        code: "",
+        description: "",
+        startDate: new Date().toISOString().split("T")[0],
+        endDate: "",
         budget: 0,
       });
     }
@@ -71,19 +89,21 @@ export function CampaignFormDialog({ open, onOpenChange, campaign }: CampaignFor
       const payload: CreateCampaignInput = {
         ...values,
         startDate: new Date(values.startDate).toISOString(),
-        endDate: values.endDate ? new Date(values.endDate).toISOString() : undefined,
+        endDate: values.endDate
+          ? new Date(values.endDate).toISOString()
+          : undefined,
       };
 
       if (campaign) {
         await updateMutation.mutateAsync({ id: campaign.id, data: payload });
-        toast.success('Kampanye berhasil diperbarui');
+        toast.success("Kampanye berhasil diperbarui");
       } else {
         await createMutation.mutateAsync(payload);
-        toast.success('Kampanye berhasil dibuat');
+        toast.success("Kampanye berhasil dibuat");
       }
       onOpenChange(false);
     } catch (error) {
-      toast.error('Gagal menyimpan kampanye');
+      toast.error("Gagal menyimpan kampanye");
     }
   };
 
@@ -91,7 +111,9 @@ export function CampaignFormDialog({ open, onOpenChange, campaign }: CampaignFor
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{campaign ? 'Edit Kampanye' : 'Buat Kampanye Baru'}</DialogTitle>
+          <DialogTitle>
+            {campaign ? "Edit Kampanye" : "Buat Kampanye Baru"}
+          </DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -178,10 +200,17 @@ export function CampaignFormDialog({ open, onOpenChange, campaign }: CampaignFor
               )}
             />
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
                 Batal
               </Button>
-              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+              <Button
+                type="submit"
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
                 Simpan
               </Button>
             </div>

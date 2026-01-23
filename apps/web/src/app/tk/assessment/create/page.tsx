@@ -1,50 +1,86 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/auth';
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Save, Loader2, Info } from 'lucide-react';
-import { toast } from 'sonner';
-import { useClasses } from '@/hooks/use-classes';
-import { useStudents } from '@/hooks/use-students';
-import { useActiveAcademicYear } from '@/hooks/use-academic-years';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/stores/auth";
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, Save, Loader2, Info } from "lucide-react";
+import { toast } from "sonner";
+import { useClasses } from "@/hooks/use-classes";
+import { useStudents } from "@/hooks/use-students";
+import { useActiveAcademicYear } from "@/hooks/use-academic-years";
 import {
   useTKIndicators,
   useCreateClassAssessment,
   ASPECT_LABELS,
   TKAspect,
-  TKAchievementLevel
-} from '@/hooks/use-tk-assessment';
-import { format } from 'date-fns';
+  TKAchievementLevel,
+} from "@/hooks/use-tk-assessment";
+import { format } from "date-fns";
 
 const ACHIEVEMENT_LEVELS = [
-  { value: 'BB', label: 'BB', desc: 'Belum Berkembang', color: 'bg-red-100 text-red-800' },
-  { value: 'MB', label: 'MB', desc: 'Mulai Berkembang', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'BSH', label: 'BSH', desc: 'Berkembang Sesuai Harapan', color: 'bg-blue-100 text-blue-800' },
-  { value: 'BSB', label: 'BSB', desc: 'Berkembang Sangat Baik', color: 'bg-green-100 text-green-800' },
+  {
+    value: "BB",
+    label: "BB",
+    desc: "Belum Berkembang",
+    color: "bg-red-100 text-red-800",
+  },
+  {
+    value: "MB",
+    label: "MB",
+    desc: "Mulai Berkembang",
+    color: "bg-yellow-100 text-yellow-800",
+  },
+  {
+    value: "BSH",
+    label: "BSH",
+    desc: "Berkembang Sesuai Harapan",
+    color: "bg-blue-100 text-blue-800",
+  },
+  {
+    value: "BSB",
+    label: "BSB",
+    desc: "Berkembang Sangat Baik",
+    color: "bg-green-100 text-green-800",
+  },
 ];
 
 export default function TKAssessmentCreatePage() {
   const router = useRouter();
   const { user } = useAuthStore();
 
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
-  const [selectedAspect, setSelectedAspect] = useState<TKAspect>('NAM');
-  const [selectedIndicatorId, setSelectedIndicatorId] = useState<string>('');
-  const [assessmentDate, setAssessmentDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
+  const [selectedAspect, setSelectedAspect] = useState<TKAspect>("NAM");
+  const [selectedIndicatorId, setSelectedIndicatorId] = useState<string>("");
+  const [assessmentDate, setAssessmentDate] = useState<string>(
+    format(new Date(), "yyyy-MM-dd"),
+  );
 
   // Local state: studentId -> { achievementLevel, notes }
-  const [assessments, setAssessments] = useState<Record<string, { level: string; notes: string }>>({});
+  const [assessments, setAssessments] = useState<
+    Record<string, { level: string; notes: string }>
+  >({});
 
   // Data Fetching
   const { data: classes } = useClasses({ unitId: user?.unitId });
@@ -52,14 +88,14 @@ export default function TKAssessmentCreatePage() {
     classId: selectedClassId || undefined,
     unitId: user?.unitId,
     limit: 100,
-    status: 'active',
+    status: "active",
   });
 
   const { data: activeYear } = useActiveAcademicYear();
 
   const { data: indicators, isLoading: isLoadingIndicators } = useTKIndicators({
     aspect: selectedAspect,
-    isActive: true
+    isActive: true,
   });
 
   const createMutation = useCreateClassAssessment();
@@ -69,57 +105,62 @@ export default function TKAssessmentCreatePage() {
     setAssessments({});
   }, [selectedClassId, selectedAspect, selectedIndicatorId]);
 
-  const updateAssessment = (studentId: string, field: 'level' | 'notes', value: string) => {
-    setAssessments(prev => ({
+  const updateAssessment = (
+    studentId: string,
+    field: "level" | "notes",
+    value: string,
+  ) => {
+    setAssessments((prev) => ({
       ...prev,
       [studentId]: {
         ...prev[studentId],
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
   const handleLevelSelect = (studentId: string, level: string) => {
-    updateAssessment(studentId, 'level', level);
+    updateAssessment(studentId, "level", level);
   };
 
   const handleSave = async () => {
     if (!selectedClassId || !selectedIndicatorId) {
-        toast.error('Mohon pilih kelas dan indikator');
-        return;
+      toast.error("Mohon pilih kelas dan indikator");
+      return;
     }
 
-    const validEntries = Object.entries(assessments).filter(([_, val]) => val.level);
+    const validEntries = Object.entries(assessments).filter(
+      ([_, val]) => val.level,
+    );
     if (validEntries.length === 0) {
-        toast.error('Belum ada penilaian yang diisi');
-        return;
+      toast.error("Belum ada penilaian yang diisi");
+      return;
     }
 
     try {
-        await createMutation.mutateAsync({
-            classId: selectedClassId,
-            unitId: user?.unitId || '',
-            academicYearId: user?.academicYearId || activeYear?.id || '',
-            semester: activeYear?.semester || 'GANJIL',
-            periodType: 'HARIAN',
-            periodDate: assessmentDate,
-            aspect: selectedAspect,
-            indicatorId: selectedIndicatorId,
-            assessments: validEntries.map(([studentId, data]) => ({
-                studentId,
-                achievementLevel: data.level as TKAchievementLevel,
-                teacherNotes: data.notes,
-            }))
-        });
+      await createMutation.mutateAsync({
+        classId: selectedClassId,
+        unitId: user?.unitId || "",
+        academicYearId: user?.academicYearId || activeYear?.id || "",
+        semester: activeYear?.semester || "GANJIL",
+        periodType: "HARIAN",
+        periodDate: assessmentDate,
+        aspect: selectedAspect,
+        indicatorId: selectedIndicatorId,
+        assessments: validEntries.map(([studentId, data]) => ({
+          studentId,
+          achievementLevel: data.level as TKAchievementLevel,
+          teacherNotes: data.notes,
+        })),
+      });
 
-        toast.success(`Berhasil menyimpan ${validEntries.length} penilaian`);
+      toast.success(`Berhasil menyimpan ${validEntries.length} penilaian`);
 
-        setAssessments({});
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
+      setAssessments({});
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
-        toast.error('Gagal menyimpan penilaian');
-        console.error(error);
+      toast.error("Gagal menyimpan penilaian");
+      console.error(error);
     }
   };
 
@@ -142,7 +183,10 @@ export default function TKAssessmentCreatePage() {
           <CardContent className="pt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
               <Label>Kelas</Label>
-              <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+              <Select
+                value={selectedClassId}
+                onValueChange={setSelectedClassId}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih Kelas" />
                 </SelectTrigger>
@@ -168,10 +212,13 @@ export default function TKAssessmentCreatePage() {
         </Card>
 
         {/* Aspects Tabs */}
-        <Tabs value={selectedAspect} onValueChange={(v) => {
+        <Tabs
+          value={selectedAspect}
+          onValueChange={(v) => {
             setSelectedAspect(v as TKAspect);
-            setSelectedIndicatorId('');
-        }}>
+            setSelectedIndicatorId("");
+          }}
+        >
           <TabsList className="w-full justify-start overflow-x-auto h-auto p-1 flex-wrap">
             {Object.entries(ASPECT_LABELS).map(([key, label]) => (
               <TabsTrigger key={key} value={key} className="mb-1">
@@ -183,88 +230,135 @@ export default function TKAssessmentCreatePage() {
 
         {/* Indicator Selection */}
         {selectedAspect && (
-            <div className="space-y-2">
-                <Label>Indikator Penilaian</Label>
-                <Select value={selectedIndicatorId} onValueChange={setSelectedIndicatorId}>
-                    <SelectTrigger className="w-full h-auto py-2">
-                        <SelectValue placeholder={isLoadingIndicators ? "Memuat indikator..." : "Pilih Indikator"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {indicators?.map((ind) => (
-                            <SelectItem key={ind.id} value={ind.id} className="whitespace-normal">
-                                <span className="font-semibold mr-2">{ind.code}:</span>
-                                {ind.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                {selectedIndicatorId && (
-                    <p className="text-sm text-muted-foreground bg-muted p-2 rounded">
-                        {indicators?.find(i => i.id === selectedIndicatorId)?.description}
-                    </p>
-                )}
-            </div>
+          <div className="space-y-2">
+            <Label>Indikator Penilaian</Label>
+            <Select
+              value={selectedIndicatorId}
+              onValueChange={setSelectedIndicatorId}
+            >
+              <SelectTrigger className="w-full h-auto py-2">
+                <SelectValue
+                  placeholder={
+                    isLoadingIndicators
+                      ? "Memuat indikator..."
+                      : "Pilih Indikator"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {indicators?.map((ind) => (
+                  <SelectItem
+                    key={ind.id}
+                    value={ind.id}
+                    className="whitespace-normal"
+                  >
+                    <span className="font-semibold mr-2">{ind.code}:</span>
+                    {ind.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedIndicatorId && (
+              <p className="text-sm text-muted-foreground bg-muted p-2 rounded">
+                {
+                  indicators?.find((i) => i.id === selectedIndicatorId)
+                    ?.description
+                }
+              </p>
+            )}
+          </div>
         )}
 
         {/* Students List */}
         {selectedClassId && selectedIndicatorId && students?.data && (
-            <div className="grid gap-4">
-                {students.data.map((student) => {
-                    const assessment = assessments[student.id] || { level: '', notes: '' };
+          <div className="grid gap-4">
+            {students.data.map((student) => {
+              const assessment = assessments[student.id] || {
+                level: "",
+                notes: "",
+              };
 
-                    return (
-                        <Card key={student.id} className={assessment.level ? 'border-primary/50 bg-accent/5' : ''}>
-                            <CardContent className="pt-6">
-                                <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                                    <div className="min-w-[200px]">
-                                        <h4 className="font-semibold">{student.name}</h4>
-                                        <p className="text-sm text-muted-foreground">{student.nis}</p>
-                                    </div>
+              return (
+                <Card
+                  key={student.id}
+                  className={
+                    assessment.level ? "border-primary/50 bg-accent/5" : ""
+                  }
+                >
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                      <div className="min-w-[200px]">
+                        <h4 className="font-semibold">{student.name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {student.nis}
+                        </p>
+                      </div>
 
-                                    <div className="flex flex-col gap-3 w-full md:w-auto">
-                                        <RadioGroup
-                                            value={assessment.level}
-                                            onValueChange={(val) => handleLevelSelect(student.id, val)}
-                                            className="flex flex-wrap gap-2"
-                                        >
-                                            {ACHIEVEMENT_LEVELS.map((lvl) => (
-                                                <div key={lvl.value} className="flex items-center space-x-2">
-                                                    <RadioGroupItem value={lvl.value} id={`${student.id}-${lvl.value}`} className="peer sr-only" />
-                                                    <Label
-                                                        htmlFor={`${student.id}-${lvl.value}`}
-                                                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-2 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer w-16 text-center ${assessment.level === lvl.value ? lvl.color + ' border-current' : ''}`}
-                                                    >
-                                                        <span className="font-bold">{lvl.label}</span>
-                                                    </Label>
-                                                </div>
-                                            ))}
-                                        </RadioGroup>
+                      <div className="flex flex-col gap-3 w-full md:w-auto">
+                        <RadioGroup
+                          value={assessment.level}
+                          onValueChange={(val) =>
+                            handleLevelSelect(student.id, val)
+                          }
+                          className="flex flex-wrap gap-2"
+                        >
+                          {ACHIEVEMENT_LEVELS.map((lvl) => (
+                            <div
+                              key={lvl.value}
+                              className="flex items-center space-x-2"
+                            >
+                              <RadioGroupItem
+                                value={lvl.value}
+                                id={`${student.id}-${lvl.value}`}
+                                className="peer sr-only"
+                              />
+                              <Label
+                                htmlFor={`${student.id}-${lvl.value}`}
+                                className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-2 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer w-16 text-center ${assessment.level === lvl.value ? lvl.color + " border-current" : ""}`}
+                              >
+                                <span className="font-bold">{lvl.label}</span>
+                              </Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
 
-                                        <Input
-                                            placeholder="Catatan (opsional)"
-                                            value={assessment.notes}
-                                            onChange={(e) => updateAssessment(student.id, 'notes', e.target.value)}
-                                            className="text-sm"
-                                        />
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    );
-                })}
-            </div>
+                        <Input
+                          placeholder="Catatan (opsional)"
+                          value={assessment.notes}
+                          onChange={(e) =>
+                            updateAssessment(
+                              student.id,
+                              "notes",
+                              e.target.value,
+                            )
+                          }
+                          className="text-sm"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         )}
 
         {/* Submit Button */}
         <div className="fixed bottom-6 right-6">
-            <Button size="lg" className="shadow-xl" onClick={handleSave} disabled={createMutation.isPending}>
-                {createMutation.isPending ? (
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                ) : (
-                    <Save className="mr-2 h-5 w-5" />
-                )}
-                Simpan Penilaian ({Object.values(assessments).filter(a => a.level).length})
-            </Button>
+          <Button
+            size="lg"
+            className="shadow-xl"
+            onClick={handleSave}
+            disabled={createMutation.isPending}
+          >
+            {createMutation.isPending ? (
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-5 w-5" />
+            )}
+            Simpan Penilaian (
+            {Object.values(assessments).filter((a) => a.level).length})
+          </Button>
         </div>
       </div>
     </MainLayout>

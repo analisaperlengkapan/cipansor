@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { toast } from "sonner";
 
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -26,51 +26,53 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import {
   useCreateSimaan,
   useUpdateSimaan,
   SIMAAN_TYPES,
   SIMAAN_GRADES,
   SimaanExam,
-} from '@/hooks/use-simaan';
-import { useUsers } from '@/hooks/use-users';
+} from "@/hooks/use-simaan";
+import { useUsers } from "@/hooks/use-users";
 
-const formSchema = z.object({
-  simaanType: z.string(),
-  examDate: z.date(),
-  sessionNumber: z.coerce.number().min(1).default(1),
-  totalSessions: z.coerce.number().min(1).default(1),
-  juzStart: z.coerce.number().min(1).max(30),
-  juzEnd: z.coerce.number().min(1).max(30),
-  overallScore: z.coerce.number().min(0).max(100).optional(),
-  tajwidScore: z.coerce.number().min(0).max(100).optional(),
-  fashohaScore: z.coerce.number().min(0).max(100).optional(),
-  tartilScore: z.coerce.number().min(0).max(100).optional(),
-  grade: z.string().optional(),
-  passed: z.boolean().default(false),
-  notes: z.string().optional(),
-  recommendations: z.string().optional(),
-}).refine((data) => data.juzEnd >= data.juzStart, {
-  message: 'Juz Akhir harus lebih besar atau sama dengan Juz Awal',
-  path: ['juzEnd'],
-});
+const formSchema = z
+  .object({
+    simaanType: z.string(),
+    examDate: z.date(),
+    sessionNumber: z.coerce.number().min(1).default(1),
+    totalSessions: z.coerce.number().min(1).default(1),
+    juzStart: z.coerce.number().min(1).max(30),
+    juzEnd: z.coerce.number().min(1).max(30),
+    overallScore: z.coerce.number().min(0).max(100).optional(),
+    tajwidScore: z.coerce.number().min(0).max(100).optional(),
+    fashohaScore: z.coerce.number().min(0).max(100).optional(),
+    tartilScore: z.coerce.number().min(0).max(100).optional(),
+    grade: z.string().optional(),
+    passed: z.boolean().default(false),
+    notes: z.string().optional(),
+    recommendations: z.string().optional(),
+  })
+  .refine((data) => data.juzEnd >= data.juzStart, {
+    message: "Juz Akhir harus lebih besar atau sama dengan Juz Awal",
+    path: ["juzEnd"],
+  });
 
 interface SimaanFormDialogProps {
   open?: boolean;
@@ -92,7 +94,7 @@ export function SimaanFormDialog({
   trigger,
 }: SimaanFormDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
-  const isControlled = typeof open !== 'undefined';
+  const isControlled = typeof open !== "undefined";
   const isOpen = isControlled ? open : internalOpen;
   const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
 
@@ -100,13 +102,15 @@ export function SimaanFormDialog({
   const updateSimaan = useUpdateSimaan();
 
   // Fetch teachers for examiners (reserved for future examiner selection implementation)
-  useUsers({ role: 'TEACHER', limit: 100 });
+  useUsers({ role: "TEACHER", limit: 100 });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      simaanType: initialData?.simaanType || 'ONE_JUZ',
-      examDate: initialData?.examDate ? new Date(initialData.examDate) : new Date(),
+      simaanType: initialData?.simaanType || "ONE_JUZ",
+      examDate: initialData?.examDate
+        ? new Date(initialData.examDate)
+        : new Date(),
       sessionNumber: initialData?.sessionNumber || 1,
       totalSessions: initialData?.totalSessions || 1,
       juzStart: initialData?.juzStart || 1,
@@ -115,10 +119,10 @@ export function SimaanFormDialog({
       tajwidScore: initialData?.tajwidScore,
       fashohaScore: initialData?.fashohaScore,
       tartilScore: initialData?.tartilScore,
-      grade: initialData?.grade || '',
+      grade: initialData?.grade || "",
       passed: initialData?.passed || false,
-      notes: initialData?.notes || '',
-      recommendations: initialData?.recommendations || '',
+      notes: initialData?.notes || "",
+      recommendations: initialData?.recommendations || "",
     },
   });
 
@@ -132,7 +136,7 @@ export function SimaanFormDialog({
             examDate: values.examDate.toISOString(),
           },
         });
-        toast.success('Data simaan berhasil diperbarui');
+        toast.success("Data simaan berhasil diperbarui");
       } else {
         await createSimaan.mutateAsync({
           studentId,
@@ -141,13 +145,13 @@ export function SimaanFormDialog({
           ...values,
           examDate: values.examDate.toISOString(),
         });
-        toast.success('Jadwal simaan berhasil dibuat');
+        toast.success("Jadwal simaan berhasil dibuat");
       }
       setIsOpen?.(false);
       form.reset();
     } catch (error: unknown) {
       const err = error as Error;
-      toast.error(err.message || 'Terjadi kesalahan');
+      toast.error(err.message || "Terjadi kesalahan");
     }
   };
 
@@ -157,7 +161,7 @@ export function SimaanFormDialog({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {initialData ? 'Edit Simaan' : 'Jadwalkan Simaan / Ujian'}
+            {initialData ? "Edit Simaan" : "Jadwalkan Simaan / Ujian"}
           </DialogTitle>
           <DialogDescription>
             Atur jadwal dan detail ujian hafalan santri.
@@ -173,7 +177,10 @@ export function SimaanFormDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Jenis Ujian</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Pilih jenis" />
@@ -202,14 +209,14 @@ export function SimaanFormDialog({
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
-                            variant={'outline'}
+                            variant={"outline"}
                             className={cn(
-                              'w-full pl-3 text-left font-normal',
-                              !field.value && 'text-muted-foreground'
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground",
                             )}
                           >
                             {field.value ? (
-                              format(field.value, 'PPP')
+                              format(field.value, "PPP")
                             ) : (
                               <span>Pilih tanggal</span>
                             )}
@@ -289,7 +296,9 @@ export function SimaanFormDialog({
 
             {/* Scoring Section - Can be filled later or now */}
             <div className="border rounded-md p-4 bg-muted/10 space-y-4">
-              <h3 className="font-medium text-sm">Penilaian (Opsional saat penjadwalan)</h3>
+              <h3 className="font-medium text-sm">
+                Penilaian (Opsional saat penjadwalan)
+              </h3>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <FormField
@@ -301,10 +310,17 @@ export function SimaanFormDialog({
                       <FormControl>
                         <Input
                           type="number"
-                          min={0} max={100}
+                          min={0}
+                          max={100}
                           {...field}
-                          value={field.value || ''}
-                          onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                          value={field.value || ""}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value
+                                ? parseFloat(e.target.value)
+                                : undefined,
+                            )
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -320,10 +336,17 @@ export function SimaanFormDialog({
                       <FormControl>
                         <Input
                           type="number"
-                          min={0} max={100}
+                          min={0}
+                          max={100}
                           {...field}
-                          value={field.value || ''}
-                          onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                          value={field.value || ""}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value
+                                ? parseFloat(e.target.value)
+                                : undefined,
+                            )
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -339,10 +362,17 @@ export function SimaanFormDialog({
                       <FormControl>
                         <Input
                           type="number"
-                          min={0} max={100}
+                          min={0}
+                          max={100}
                           {...field}
-                          value={field.value || ''}
-                          onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                          value={field.value || ""}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value
+                                ? parseFloat(e.target.value)
+                                : undefined,
+                            )
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -355,7 +385,10 @@ export function SimaanFormDialog({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Predikat</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || undefined}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || undefined}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="-" />
@@ -389,9 +422,7 @@ export function SimaanFormDialog({
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Lulus Ujian
-                      </FormLabel>
+                      <FormLabel>Lulus Ujian</FormLabel>
                       <FormDescription>
                         Centang jika santri dinyatakan lulus ujian ini.
                       </FormDescription>
@@ -422,7 +453,10 @@ export function SimaanFormDialog({
                   <FormItem>
                     <FormLabel>Rekomendasi</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Rekomendasi penguji..." {...field} />
+                      <Textarea
+                        placeholder="Rekomendasi penguji..."
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -431,11 +465,20 @@ export function SimaanFormDialog({
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsOpen?.(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsOpen?.(false)}
+              >
                 Batal
               </Button>
-              <Button type="submit" disabled={createSimaan.isPending || updateSimaan.isPending}>
-                {createSimaan.isPending || updateSimaan.isPending ? 'Menyimpan...' : 'Simpan'}
+              <Button
+                type="submit"
+                disabled={createSimaan.isPending || updateSimaan.isPending}
+              >
+                {createSimaan.isPending || updateSimaan.isPending
+                  ? "Menyimpan..."
+                  : "Simpan"}
               </Button>
             </DialogFooter>
           </form>

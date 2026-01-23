@@ -2,11 +2,11 @@ import { z } from 'zod';
 
 // Transaction types
 export const TRANSACTION_TYPES = ['TOPUP', 'PURCHASE', 'REFUND', 'TRANSFER'] as const;
-export type TransactionType = typeof TRANSACTION_TYPES[number];
+export type TransactionType = (typeof TRANSACTION_TYPES)[number];
 
 // Reference types
 export const REFERENCE_TYPES = ['CANTEEN', 'LAUNDRY', 'TRANSFER', 'OTHER'] as const;
-export type ReferenceType = typeof REFERENCE_TYPES[number];
+export type ReferenceType = (typeof REFERENCE_TYPES)[number];
 
 // List wallets query
 export const listWalletsQuerySchema = z.object({

@@ -100,7 +100,8 @@ export default function MenusPage() {
 
   // Queries
   const { data: menus = [], isLoading } = useMealMenus({
-    mealType: mealTypeFilter !== "all" ? (mealTypeFilter as MealType) : undefined,
+    mealType:
+      mealTypeFilter !== "all" ? (mealTypeFilter as MealType) : undefined,
     unitId: unitFilter !== "all" ? unitFilter : undefined,
   });
   const { data: units = [] } = useUnits();
@@ -111,7 +112,7 @@ export default function MenusPage() {
     (menu) =>
       menu.name?.toLowerCase().includes(search.toLowerCase()) ||
       menu.mainDish?.toLowerCase().includes(search.toLowerCase()) ||
-      menu.sideDish?.toLowerCase().includes(search.toLowerCase())
+      menu.sideDish?.toLowerCase().includes(search.toLowerCase()),
   );
 
   // Handle delete
@@ -171,7 +172,10 @@ export default function MenusPage() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Select value={mealTypeFilter} onValueChange={setMealTypeFilter}>
+                <Select
+                  value={mealTypeFilter}
+                  onValueChange={setMealTypeFilter}
+                >
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Tipe Makan" />
                   </SelectTrigger>

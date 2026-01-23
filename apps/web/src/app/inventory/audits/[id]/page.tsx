@@ -1,24 +1,53 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowLeft, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
-import { useAssetAudit, useUpdateAuditItem, useCompleteAudit, AssetCondition, AssetStatus } from '@/hooks/use-inventory';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import {
+  useAssetAudit,
+  useUpdateAuditItem,
+  useCompleteAudit,
+  AssetCondition,
+  AssetStatus,
+} from "@/hooks/use-inventory";
 
 // Need to import types or define them if not exported from hook
-import { AssetAuditItem } from '@cipansor/shared';
+import { AssetAuditItem } from "@cipansor/shared";
 
-export default function AuditDetailPage({ params }: { params: { id: string } }) {
+export default function AuditDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const router = useRouter();
   const auditId = params.id;
   const { data: audit, isLoading } = useAssetAudit(auditId);
@@ -27,7 +56,7 @@ export default function AuditDetailPage({ params }: { params: { id: string } }) 
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<AssetAuditItem | null>(null);
-  const [scanInput, setScanInput] = useState('');
+  const [scanInput, setScanInput] = useState("");
 
   const handleMatch = async (item: AssetAuditItem) => {
     try {
@@ -38,33 +67,35 @@ export default function AuditDetailPage({ params }: { params: { id: string } }) 
           actualStatus: item.systemStatus,
           condition: item.condition,
           notes: item.notes || undefined,
-        }
+        },
       });
-      toast.success('Item diverifikasi (Match)');
+      toast.success("Item diverifikasi (Match)");
     } catch {
-      toast.error('Gagal update item');
+      toast.error("Gagal update item");
     }
   };
 
   const handleScan = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       const code = scanInput.trim();
       if (!code) return;
 
       // Case insensitive search
-      const item = audit?.items?.find(i => i.asset?.code.toLowerCase() === code.toLowerCase());
+      const item = audit?.items?.find(
+        (i) => i.asset?.code.toLowerCase() === code.toLowerCase(),
+      );
 
       if (item) {
         if (item.isMatch) {
-          toast.info('Item sudah terverifikasi sebelumnya');
+          toast.info("Item sudah terverifikasi sebelumnya");
         } else {
           await handleMatch(item);
           toast.success(`Item ditemukan: ${item.asset?.name}`);
         }
-        setScanInput('');
+        setScanInput("");
       } else {
-        toast.error('Item tidak ditemukan dalam audit ini');
+        toast.error("Item tidak ditemukan dalam audit ini");
       }
     }
   };
@@ -83,33 +114,33 @@ export default function AuditDetailPage({ params }: { params: { id: string } }) 
         itemId: selectedItem.id,
         data: {
           isMatch: false,
-          actualStatus: formData.get('actualStatus') as string,
-          condition: formData.get('condition') as AssetCondition,
-          notes: formData.get('notes') as string,
-        }
+          actualStatus: formData.get("actualStatus") as string,
+          condition: formData.get("condition") as AssetCondition,
+          notes: formData.get("notes") as string,
+        },
       });
-      toast.success('Item diperbarui (Mismatch)');
+      toast.success("Item diperbarui (Mismatch)");
       setIsEditOpen(false);
     } catch {
-      toast.error('Gagal update item');
+      toast.error("Gagal update item");
     }
   };
 
   const handleComplete = async () => {
     try {
       await completeAuditMutation.mutateAsync(auditId);
-      toast.success('Audit selesai');
+      toast.success("Audit selesai");
     } catch {
-      toast.error('Gagal menyelesaikan audit');
+      toast.error("Gagal menyelesaikan audit");
     }
   };
 
   const formatDate = (dateString?: string | Date | null) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
     });
   };
 
@@ -132,7 +163,7 @@ export default function AuditDetailPage({ params }: { params: { id: string } }) 
     );
   }
 
-  const isCompleted = audit.status === 'COMPLETED';
+  const isCompleted = audit.status === "COMPLETED";
 
   return (
     <div className="space-y-6">
@@ -144,18 +175,25 @@ export default function AuditDetailPage({ params }: { params: { id: string } }) 
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Detail Stock Opname</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Detail Stock Opname
+            </h1>
             <div className="flex items-center gap-2 text-muted-foreground">
               <span>{audit.unit?.name}</span>
               <span>•</span>
               <span>{formatDate(audit.date)}</span>
               <span>•</span>
-              <Badge variant={isCompleted ? 'default' : 'outline'}>{audit.status}</Badge>
+              <Badge variant={isCompleted ? "default" : "outline"}>
+                {audit.status}
+              </Badge>
             </div>
           </div>
         </div>
         {!isCompleted && (
-          <Button onClick={handleComplete} disabled={completeAuditMutation.isPending}>
+          <Button
+            onClick={handleComplete}
+            disabled={completeAuditMutation.isPending}
+          >
             Selesaikan Audit
           </Button>
         )}
@@ -202,12 +240,14 @@ export default function AuditDetailPage({ params }: { params: { id: string } }) 
             <TableBody>
               {audit.items?.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-mono">{item.asset?.code}</TableCell>
+                  <TableCell className="font-mono">
+                    {item.asset?.code}
+                  </TableCell>
                   <TableCell>{item.asset?.name}</TableCell>
-                  <TableCell>{item.asset?.location || '-'}</TableCell>
+                  <TableCell>{item.asset?.location || "-"}</TableCell>
                   <TableCell>{item.systemStatus}</TableCell>
                   <TableCell>
-                    {item.actualStatus === 'UNKNOWN' ? (
+                    {item.actualStatus === "UNKNOWN" ? (
                       <span className="text-muted-foreground">-</span>
                     ) : (
                       <Badge variant="outline">{item.actualStatus}</Badge>
@@ -216,7 +256,12 @@ export default function AuditDetailPage({ params }: { params: { id: string } }) 
                   <TableCell>{item.condition}</TableCell>
                   <TableCell>
                     {item.isMatch ? (
-                      <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100">Match</Badge>
+                      <Badge
+                        variant="secondary"
+                        className="bg-green-100 text-green-800 hover:bg-green-100"
+                      >
+                        Match
+                      </Badge>
                     ) : (
                       <Badge variant="destructive">Mismatch</Badge>
                     )}
@@ -261,14 +306,29 @@ export default function AuditDetailPage({ params }: { params: { id: string } }) 
             <form onSubmit={handleSaveEdit} className="space-y-4">
               <div className="space-y-2">
                 <Label>Aset</Label>
-                <div className="font-medium">{selectedItem.asset?.name} ({selectedItem.asset?.code})</div>
+                <div className="font-medium">
+                  {selectedItem.asset?.name} ({selectedItem.asset?.code})
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Status Fisik</Label>
-                <Select name="actualStatus" defaultValue={selectedItem.actualStatus === 'UNKNOWN' ? AssetStatus.ACTIVE : selectedItem.actualStatus}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  name="actualStatus"
+                  defaultValue={
+                    selectedItem.actualStatus === "UNKNOWN"
+                      ? AssetStatus.ACTIVE
+                      : selectedItem.actualStatus
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {Object.values(AssetStatus).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    {Object.values(AssetStatus).map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
                     <SelectItem value="MISSING">MISSING</SelectItem>
                   </SelectContent>
                 </Select>
@@ -276,18 +336,29 @@ export default function AuditDetailPage({ params }: { params: { id: string } }) 
               <div className="space-y-2">
                 <Label>Kondisi</Label>
                 <Select name="condition" defaultValue={selectedItem.condition}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {Object.values(AssetCondition).map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {Object.values(AssetCondition).map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Catatan</Label>
-                <Textarea name="notes" defaultValue={selectedItem.notes || ''} />
+                <Textarea
+                  name="notes"
+                  defaultValue={selectedItem.notes || ""}
+                />
               </div>
               <DialogFooter>
-                <Button type="submit" disabled={updateItemMutation.isPending}>Simpan Perubahan</Button>
+                <Button type="submit" disabled={updateItemMutation.isPending}>
+                  Simpan Perubahan
+                </Button>
               </DialogFooter>
             </form>
           )}

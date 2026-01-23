@@ -61,17 +61,17 @@ describe('Broadcast Notification Performance', () => {
 
     // Mock WhatsApp to have a small delay to simulate I/O
     (whatsAppService.sendMessage as any).mockImplementation(async () => {
-      await new Promise(resolve => setTimeout(resolve, 2)); // 2ms delay
+      await new Promise((resolve) => setTimeout(resolve, 2)); // 2ms delay
       return { success: true };
     });
 
     // Mock sendBulk
     (whatsAppService.sendBulk as any).mockImplementation(async (recipients: any[]) => {
-       // Simulate bulk sending
-       for (const r of recipients) {
-         await new Promise(resolve => setTimeout(resolve, 2));
-       }
-       return { success: recipients.length, failed: 0, results: [] };
+      // Simulate bulk sending
+      for (const r of recipients) {
+        await new Promise((resolve) => setTimeout(resolve, 2));
+      }
+      return { success: recipients.length, failed: 0, results: [] };
     });
   });
 

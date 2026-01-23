@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useState } from "react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   BookOpen,
   Users,
@@ -15,21 +15,21 @@ import {
   Pencil,
   Trash2,
   LayoutDashboard,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { PageHeader } from '@/components/shared/page-header';
-import { Pagination } from '@/components/shared/pagination';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { Button } from '@/components/ui/button';
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/shared/page-header";
+import { Pagination } from "@/components/shared/pagination";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -37,15 +37,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useHalaqohs,
   useDeleteHalaqoh,
@@ -55,32 +50,35 @@ import {
   TAKHOSUS_STATUSES,
   HALAQOH_DAYS,
   TakhosusStatus,
-} from '@/hooks/use-takhosus';
-import { useUnits } from '@/hooks/use-units';
-import { Progress } from '@/components/ui/progress';
-import { TakhosusDashboard } from '@/components/takhosus/takhosus-dashboard';
-import { useTakhosusDashboard } from '@/hooks/use-takhosus-details';
-import { MurojaahList } from '@/components/takhosus/murojaah/murojaah-list';
-import { SimaanList } from '@/components/takhosus/simaan/simaan-list';
+} from "@/hooks/use-takhosus";
+import { useUnits } from "@/hooks/use-units";
+import { Progress } from "@/components/ui/progress";
+import { TakhosusDashboard } from "@/components/takhosus/takhosus-dashboard";
+import { useTakhosusDashboard } from "@/hooks/use-takhosus-details";
+import { MurojaahList } from "@/components/takhosus/murojaah/murojaah-list";
+import { SimaanList } from "@/components/takhosus/simaan/simaan-list";
 
 export default function TakhosusPage() {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  
+  const [activeTab, setActiveTab] = useState("dashboard");
+
   // Murojaah & Simaan state
-  const [murojaahUnitFilter, setMurojaahUnitFilter] = useState<string>('');
-  const [simaanUnitFilter, setSimaanUnitFilter] = useState<string>('');
+  const [murojaahUnitFilter, setMurojaahUnitFilter] = useState<string>("");
+  const [simaanUnitFilter, setSimaanUnitFilter] = useState<string>("");
 
   // Halaqoh state
   const [halaqohPage, setHalaqohPage] = useState(1);
   const [halaqohPageSize, setHalaqohPageSize] = useState(10);
-  const [halaqohUnitFilter, setHalaqohUnitFilter] = useState<string>('');
+  const [halaqohUnitFilter, setHalaqohUnitFilter] = useState<string>("");
   const [deleteHalaqohId, setDeleteHalaqohId] = useState<string | null>(null);
-  
+
   // Enrollment state
   const [enrollmentPage, setEnrollmentPage] = useState(1);
   const [enrollmentPageSize, setEnrollmentPageSize] = useState(10);
-  const [enrollmentStatusFilter, setEnrollmentStatusFilter] = useState<string>('');
-  const [deleteEnrollmentId, setDeleteEnrollmentId] = useState<string | null>(null);
+  const [enrollmentStatusFilter, setEnrollmentStatusFilter] =
+    useState<string>("");
+  const [deleteEnrollmentId, setDeleteEnrollmentId] = useState<string | null>(
+    null,
+  );
 
   // Data fetching
   const { data: units } = useUnits();
@@ -91,21 +89,24 @@ export default function TakhosusPage() {
     unitId: halaqohUnitFilter || undefined,
   });
 
-  const { data: enrollmentData, isLoading: enrollmentLoading } = useEnrollments({
-    page: enrollmentPage,
-    limit: enrollmentPageSize,
-    status: (enrollmentStatusFilter as TakhosusStatus) || undefined,
-  });
+  const { data: enrollmentData, isLoading: enrollmentLoading } = useEnrollments(
+    {
+      page: enrollmentPage,
+      limit: enrollmentPageSize,
+      status: (enrollmentStatusFilter as TakhosusStatus) || undefined,
+    },
+  );
 
   const { data: stats } = useEnrollmentStats();
-  const { data: dashboardStats, isLoading: statsLoading } = useTakhosusDashboard(halaqohUnitFilter || undefined);
+  const { data: dashboardStats, isLoading: statsLoading } =
+    useTakhosusDashboard(halaqohUnitFilter || undefined);
 
   const deleteHalaqoh = useDeleteHalaqoh();
   const deleteEnrollment = useDeleteEnrollment();
 
   const halaqohs = halaqohData?.data || [];
   const halaqohPagination = halaqohData?.meta;
-  
+
   const enrollments = enrollmentData?.data || [];
   const enrollmentPagination = enrollmentData?.meta;
 
@@ -113,10 +114,11 @@ export default function TakhosusPage() {
     if (!deleteHalaqohId) return;
     try {
       await deleteHalaqoh.mutateAsync(deleteHalaqohId);
-      toast.success('Halaqoh berhasil dihapus');
+      toast.success("Halaqoh berhasil dihapus");
       setDeleteHalaqohId(null);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal menghapus halaqoh';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal menghapus halaqoh";
       toast.error(errorMessage);
     }
   };
@@ -125,10 +127,11 @@ export default function TakhosusPage() {
     if (!deleteEnrollmentId) return;
     try {
       await deleteEnrollment.mutateAsync(deleteEnrollmentId);
-      toast.success('Pendaftaran berhasil dihapus');
+      toast.success("Pendaftaran berhasil dihapus");
       setDeleteEnrollmentId(null);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal menghapus pendaftaran';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal menghapus pendaftaran";
       toast.error(errorMessage);
     }
   };
@@ -145,7 +148,7 @@ export default function TakhosusPage() {
   const getDayLabels = (days: string[]) => {
     return days
       .map((d) => HALAQOH_DAYS.find((day) => day.value === d)?.label || d)
-      .join(', ');
+      .join(", ");
   };
 
   return (
@@ -161,7 +164,9 @@ export default function TakhosusPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Total Santri</span>
+              <span className="text-sm text-muted-foreground">
+                Total Santri
+              </span>
             </div>
             <p className="text-2xl font-bold">{stats?.total || 0}</p>
           </CardContent>
@@ -172,7 +177,9 @@ export default function TakhosusPage() {
               <div className="h-3 w-3 rounded-full bg-green-500" />
               <span className="text-sm text-muted-foreground">Aktif</span>
             </div>
-            <p className="text-2xl font-bold text-green-600">{stats?.active || 0}</p>
+            <p className="text-2xl font-bold text-green-600">
+              {stats?.active || 0}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -181,16 +188,22 @@ export default function TakhosusPage() {
               <GraduationCap className="h-4 w-4 text-blue-500" />
               <span className="text-sm text-muted-foreground">Selesai</span>
             </div>
-            <p className="text-2xl font-bold text-blue-600">{stats?.completed || 0}</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {stats?.completed || 0}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Medal className="h-4 w-4 text-purple-500" />
-              <span className="text-sm text-muted-foreground">Rata-rata Progress</span>
+              <span className="text-sm text-muted-foreground">
+                Rata-rata Progress
+              </span>
             </div>
-            <p className="text-2xl font-bold text-purple-600">{stats?.averageProgress || 0}%</p>
+            <p className="text-2xl font-bold text-purple-600">
+              {stats?.averageProgress || 0}%
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -199,8 +212,8 @@ export default function TakhosusPage() {
         <div className="flex items-center justify-between mb-4">
           <TabsList>
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
-                <LayoutDashboard className="h-4 w-4" />
-                Dashboard
+              <LayoutDashboard className="h-4 w-4" />
+              Dashboard
             </TabsTrigger>
             <TabsTrigger value="halaqoh" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
@@ -221,7 +234,7 @@ export default function TakhosusPage() {
           </TabsList>
 
           <div className="flex gap-2">
-            {activeTab === 'halaqoh' && (
+            {activeTab === "halaqoh" && (
               <Button asChild>
                 <Link href="/takhosus/halaqoh/new">
                   <Plus className="h-4 w-4 mr-2" />
@@ -229,7 +242,7 @@ export default function TakhosusPage() {
                 </Link>
               </Button>
             )}
-            {activeTab === 'enrollment' && (
+            {activeTab === "enrollment" && (
               <Button asChild>
                 <Link href="/takhosus/enrollment/new">
                   <Plus className="h-4 w-4 mr-2" />
@@ -242,7 +255,7 @@ export default function TakhosusPage() {
 
         {/* Dashboard Tab */}
         <TabsContent value="dashboard">
-             <TakhosusDashboard stats={dashboardStats} isLoading={statsLoading} />
+          <TakhosusDashboard stats={dashboardStats} isLoading={statsLoading} />
         </TabsContent>
 
         {/* Murojaah Tab */}
@@ -256,7 +269,10 @@ export default function TakhosusPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-4">
-                <Select value={murojaahUnitFilter} onValueChange={setMurojaahUnitFilter}>
+                <Select
+                  value={murojaahUnitFilter}
+                  onValueChange={setMurojaahUnitFilter}
+                >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Semua Unit" />
                   </SelectTrigger>
@@ -269,7 +285,10 @@ export default function TakhosusPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button variant="ghost" onClick={() => setMurojaahUnitFilter('')}>
+                <Button
+                  variant="ghost"
+                  onClick={() => setMurojaahUnitFilter("")}
+                >
                   Reset
                 </Button>
               </div>
@@ -294,7 +313,10 @@ export default function TakhosusPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-4">
-                <Select value={simaanUnitFilter} onValueChange={setSimaanUnitFilter}>
+                <Select
+                  value={simaanUnitFilter}
+                  onValueChange={setSimaanUnitFilter}
+                >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Semua Unit" />
                   </SelectTrigger>
@@ -307,7 +329,7 @@ export default function TakhosusPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button variant="ghost" onClick={() => setSimaanUnitFilter('')}>
+                <Button variant="ghost" onClick={() => setSimaanUnitFilter("")}>
                   Reset
                 </Button>
               </div>
@@ -332,7 +354,10 @@ export default function TakhosusPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-4">
-                <Select value={halaqohUnitFilter} onValueChange={setHalaqohUnitFilter}>
+                <Select
+                  value={halaqohUnitFilter}
+                  onValueChange={setHalaqohUnitFilter}
+                >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Semua Unit" />
                   </SelectTrigger>
@@ -345,7 +370,10 @@ export default function TakhosusPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button variant="ghost" onClick={() => setHalaqohUnitFilter('')}>
+                <Button
+                  variant="ghost"
+                  onClick={() => setHalaqohUnitFilter("")}
+                >
                   Reset
                 </Button>
               </div>
@@ -381,29 +409,41 @@ export default function TakhosusPage() {
                     <TableRow>
                       <TableCell colSpan={9} className="text-center py-8">
                         <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-muted-foreground">Tidak ada data halaqoh</p>
+                        <p className="text-muted-foreground">
+                          Tidak ada data halaqoh
+                        </p>
                       </TableCell>
                     </TableRow>
                   ) : (
                     halaqohs.map((halaqoh) => (
                       <TableRow key={halaqoh.id}>
-                        <TableCell className="font-mono">{halaqoh.code}</TableCell>
-                        <TableCell className="font-medium">{halaqoh.name}</TableCell>
-                        <TableCell>{halaqoh.teacher?.name || '-'}</TableCell>
-                        <TableCell>{halaqoh.unit?.name || '-'}</TableCell>
+                        <TableCell className="font-mono">
+                          {halaqoh.code}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {halaqoh.name}
+                        </TableCell>
+                        <TableCell>{halaqoh.teacher?.name || "-"}</TableCell>
+                        <TableCell>{halaqoh.unit?.name || "-"}</TableCell>
                         <TableCell>Level {halaqoh.level}</TableCell>
                         <TableCell>
                           <div className="text-sm">
                             <p>{getDayLabels(halaqoh.scheduleDay)}</p>
                             {halaqoh.scheduleTime && (
-                              <p className="text-muted-foreground">{halaqoh.scheduleTime}</p>
+                              <p className="text-muted-foreground">
+                                {halaqoh.scheduleTime}
+                              </p>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>{halaqoh.studentCount || 0}/{halaqoh.maxStudents}</TableCell>
                         <TableCell>
-                          <Badge variant={halaqoh.isActive ? 'default' : 'secondary'}>
-                            {halaqoh.isActive ? 'Aktif' : 'Nonaktif'}
+                          {halaqoh.studentCount || 0}/{halaqoh.maxStudents}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={halaqoh.isActive ? "default" : "secondary"}
+                          >
+                            {halaqoh.isActive ? "Aktif" : "Nonaktif"}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -414,7 +454,9 @@ export default function TakhosusPage() {
                               </Link>
                             </Button>
                             <Button variant="ghost" size="sm" asChild>
-                              <Link href={`/takhosus/halaqoh/${halaqoh.id}/edit`}>
+                              <Link
+                                href={`/takhosus/halaqoh/${halaqoh.id}/edit`}
+                              >
                                 <Pencil className="h-4 w-4" />
                               </Link>
                             </Button>
@@ -464,7 +506,10 @@ export default function TakhosusPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-4">
-                <Select value={enrollmentStatusFilter} onValueChange={setEnrollmentStatusFilter}>
+                <Select
+                  value={enrollmentStatusFilter}
+                  onValueChange={setEnrollmentStatusFilter}
+                >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Semua Status" />
                   </SelectTrigger>
@@ -477,7 +522,10 @@ export default function TakhosusPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button variant="ghost" onClick={() => setEnrollmentStatusFilter('')}>
+                <Button
+                  variant="ghost"
+                  onClick={() => setEnrollmentStatusFilter("")}
+                >
                   Reset
                 </Button>
               </div>
@@ -512,7 +560,9 @@ export default function TakhosusPage() {
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8">
                         <Users className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-muted-foreground">Tidak ada data pendaftaran</p>
+                        <p className="text-muted-foreground">
+                          Tidak ada data pendaftaran
+                        </p>
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -520,47 +570,69 @@ export default function TakhosusPage() {
                       <TableRow key={enrollment.id}>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{enrollment.student?.user.name || '-'}</p>
+                            <p className="font-medium">
+                              {enrollment.student?.user.name || "-"}
+                            </p>
                             <p className="text-sm text-muted-foreground">
-                              {enrollment.student?.unit?.name || '-'}
+                              {enrollment.student?.unit?.name || "-"}
                             </p>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{enrollment.halaqoh?.name || '-'}</Badge>
+                          <Badge variant="outline">
+                            {enrollment.halaqoh?.name || "-"}
+                          </Badge>
                         </TableCell>
                         <TableCell>{enrollment.targetJuz} Juz</TableCell>
                         <TableCell>
                           <div className="space-y-1 w-32">
-                            <Progress value={enrollment.progressPercentage || 0} className="h-2" />
+                            <Progress
+                              value={enrollment.progressPercentage || 0}
+                              className="h-2"
+                            />
                             <p className="text-xs text-muted-foreground">
-                              {enrollment.completedJuz}/{enrollment.targetJuz} Juz ({enrollment.progressPercentage || 0}%)
+                              {enrollment.completedJuz}/{enrollment.targetJuz}{" "}
+                              Juz ({enrollment.progressPercentage || 0}%)
                             </p>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary">{enrollment.sanadCount || 0} Sanad</Badge>
+                          <Badge variant="secondary">
+                            {enrollment.sanadCount || 0} Sanad
+                          </Badge>
                         </TableCell>
                         <TableCell>
-                          {format(new Date(enrollment.enrolledAt), 'd MMM yyyy', { locale: localeId })}
+                          {format(
+                            new Date(enrollment.enrolledAt),
+                            "d MMM yyyy",
+                            { locale: localeId },
+                          )}
                         </TableCell>
-                        <TableCell>{getStatusBadge(enrollment.status)}</TableCell>
+                        <TableCell>
+                          {getStatusBadge(enrollment.status)}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Button variant="ghost" size="sm" asChild>
-                              <Link href={`/takhosus/enrollment/${enrollment.id}`}>
+                              <Link
+                                href={`/takhosus/enrollment/${enrollment.id}`}
+                              >
                                 <Eye className="h-4 w-4" />
                               </Link>
                             </Button>
                             <Button variant="ghost" size="sm" asChild>
-                              <Link href={`/takhosus/enrollment/${enrollment.id}/edit`}>
+                              <Link
+                                href={`/takhosus/enrollment/${enrollment.id}/edit`}
+                              >
                                 <Pencil className="h-4 w-4" />
                               </Link>
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => setDeleteEnrollmentId(enrollment.id)}
+                              onClick={() =>
+                                setDeleteEnrollmentId(enrollment.id)
+                              }
                               className="text-destructive hover:text-destructive"
                             >
                               <Trash2 className="h-4 w-4" />

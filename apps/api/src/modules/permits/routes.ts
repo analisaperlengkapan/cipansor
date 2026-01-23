@@ -1,9 +1,9 @@
-import { Router } from "express";
-import { UserRole } from "@prisma/client";
-import * as controller from "./controller";
-import { authenticate, authorize } from "../../middleware/auth";
-import { validateQuery } from "../../middleware/error";
-import { queryPermitSchema } from "./schema";
+import { Router } from 'express';
+import { UserRole } from '@prisma/client';
+import * as controller from './controller';
+import { authenticate, authorize } from '../../middleware/auth';
+import { validateQuery } from '../../middleware/error';
+import { queryPermitSchema } from './schema';
 
 const router = Router();
 
@@ -27,7 +27,11 @@ router.use(authenticate);
  *       200:
  *         description: Permit details
  */
-router.get("/code/:code", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.getPermitByCode);
+router.get(
+  '/code/:code',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  controller.getPermitByCode
+);
 
 /**
  * @swagger
@@ -64,7 +68,12 @@ router.get("/code/:code", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, U
  *       200:
  *         description: List of permits
  */
-router.get("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), validateQuery(queryPermitSchema), controller.getPermits);
+router.get(
+  '/',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  validateQuery(queryPermitSchema),
+  controller.getPermits
+);
 
 /**
  * @swagger
@@ -78,7 +87,11 @@ router.get("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TE
  *       200:
  *         description: Permit statistics (pending, approved, by type, etc.)
  */
-router.get("/stats", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.getPermitStats);
+router.get(
+  '/stats',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.getPermitStats
+);
 
 /**
  * @swagger
@@ -120,7 +133,11 @@ router.get("/stats", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), contr
  *       201:
  *         description: Permit created
  */
-router.post("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.PARENT), controller.createPermit);
+router.post(
+  '/',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.PARENT),
+  controller.createPermit
+);
 
 /**
  * @swagger
@@ -140,7 +157,11 @@ router.post("/", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.T
  *       200:
  *         description: Student's active permit (if any)
  */
-router.get("/student/:studentId/active", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.PARENT), controller.getStudentActivePermit);
+router.get(
+  '/student/:studentId/active',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.PARENT),
+  controller.getStudentActivePermit
+);
 
 /**
  * @swagger
@@ -162,7 +183,17 @@ router.get("/student/:studentId/active", authorize(UserRole.SUPER_ADMIN, UserRol
  *       404:
  *         description: Permit not found
  */
-router.get("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.PARENT, UserRole.STAFF), controller.getPermitById);
+router.get(
+  '/:id',
+  authorize(
+    UserRole.SUPER_ADMIN,
+    UserRole.UNIT_ADMIN,
+    UserRole.TEACHER,
+    UserRole.PARENT,
+    UserRole.STAFF
+  ),
+  controller.getPermitById
+);
 
 /**
  * @swagger
@@ -196,7 +227,11 @@ router.get("/:id", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole
  *       200:
  *         description: Permit status updated
  */
-router.put("/:id/status", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), controller.updatePermitStatus);
+router.put(
+  '/:id/status',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  controller.updatePermitStatus
+);
 
 /**
  * @swagger
@@ -227,7 +262,11 @@ router.put("/:id/status", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN), 
  *       200:
  *         description: Student marked as returned
  */
-router.put("/:id/return", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.markReturned);
+router.put(
+  '/:id/return',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  controller.markReturned
+);
 
 /**
  * @swagger
@@ -247,6 +286,10 @@ router.put("/:id/return", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, U
  *       200:
  *         description: Student marked as departed
  */
-router.post("/:id/depart", authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF), controller.markDeparted);
+router.post(
+  '/:id/depart',
+  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.TEACHER, UserRole.STAFF),
+  controller.markDeparted
+);
 
 export default router;

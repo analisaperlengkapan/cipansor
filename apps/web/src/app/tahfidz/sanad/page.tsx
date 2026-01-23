@@ -1,30 +1,30 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { PageHeader, DataTable } from '@/components/shared';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { PageHeader, DataTable } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useSanadRecords, SanadRecord } from '@/hooks/use-takhosus';
-import { ColumnDef } from '@tanstack/react-table';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+} from "@/components/ui/dropdown-menu";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSanadRecords, SanadRecord } from "@/hooks/use-takhosus";
+import { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 import {
   BookOpen,
   Plus,
@@ -35,26 +35,26 @@ import {
   Award,
   CheckCircle,
   Calendar,
-} from 'lucide-react';
+} from "lucide-react";
 
 const gradeLabels: Record<string, string> = {
-  Mumtaz: 'Mumtaz (Istimewa)',
-  'Jayyid Jiddan': 'Jayyid Jiddan (Sangat Baik)',
-  Jayyid: 'Jayyid (Baik)',
-  Maqbul: 'Maqbul (Cukup)',
+  Mumtaz: "Mumtaz (Istimewa)",
+  "Jayyid Jiddan": "Jayyid Jiddan (Sangat Baik)",
+  Jayyid: "Jayyid (Baik)",
+  Maqbul: "Maqbul (Cukup)",
 };
 
-const gradeBadgeVariant: Record<string, 'default' | 'secondary' | 'outline'> = {
-  Mumtaz: 'default',
-  'Jayyid Jiddan': 'default',
-  Jayyid: 'secondary',
-  Maqbul: 'outline',
+const gradeBadgeVariant: Record<string, "default" | "secondary" | "outline"> = {
+  Mumtaz: "default",
+  "Jayyid Jiddan": "default",
+  Jayyid: "secondary",
+  Maqbul: "outline",
 };
 
 export default function SanadPage() {
   const router = useRouter();
-  const [search, setSearch] = useState('');
-  const [juzFilter, setJuzFilter] = useState<string>('');
+  const [search, setSearch] = useState("");
+  const [juzFilter, setJuzFilter] = useState<string>("");
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useSanadRecords({
@@ -65,18 +65,21 @@ export default function SanadPage() {
 
   const columns: ColumnDef<SanadRecord>[] = [
     {
-      accessorKey: 'enrollment.student.name',
-      header: 'Santri',
-      cell: ({ row }) => row.original.enrollment?.student?.name || row.original.enrollment?.student?.user?.name || '-',
+      accessorKey: "enrollment.student.name",
+      header: "Santri",
+      cell: ({ row }) =>
+        row.original.enrollment?.student?.name ||
+        row.original.enrollment?.student?.user?.name ||
+        "-",
     },
     {
-      accessorKey: 'nis',
-      header: 'NIS',
-      cell: ({ row }) => row.original.enrollment?.student?.nis || '-',
+      accessorKey: "nis",
+      header: "NIS",
+      cell: ({ row }) => row.original.enrollment?.student?.nis || "-",
     },
     {
-      accessorKey: 'juz',
-      header: 'Juz',
+      accessorKey: "juz",
+      header: "Juz",
       cell: ({ row }) => (
         <Badge variant="outline" className="font-mono">
           Juz {row.original.juz}
@@ -84,33 +87,38 @@ export default function SanadPage() {
       ),
     },
     {
-      accessorKey: 'teacher.name',
-      header: 'Pensahih',
-      cell: ({ row }) => row.original.teacher?.name || '-',
+      accessorKey: "teacher.name",
+      header: "Pensahih",
+      cell: ({ row }) => row.original.teacher?.name || "-",
     },
     {
-      accessorKey: 'nip',
-      header: 'NIP',
-      cell: ({ row }) => row.original.teacher?.nip || '-',
+      accessorKey: "nip",
+      header: "NIP",
+      cell: ({ row }) => row.original.teacher?.nip || "-",
     },
     {
-      accessorKey: 'surahRange',
-      header: 'Surah',
+      accessorKey: "surahRange",
+      header: "Surah",
       cell: ({ row }) => {
         const { surahStart, surahEnd } = row.original;
-        if (!surahStart) return <span className="text-muted-foreground">-</span>;
+        if (!surahStart)
+          return <span className="text-muted-foreground">-</span>;
         if (surahStart === surahEnd || !surahEnd) {
           return <span>Surah {surahStart}</span>;
         }
-        return <span>Surah {surahStart} - {surahEnd}</span>;
+        return (
+          <span>
+            Surah {surahStart} - {surahEnd}
+          </span>
+        );
       },
     },
     {
-      accessorKey: 'grade',
-      header: 'Predikat',
+      accessorKey: "grade",
+      header: "Predikat",
       cell: ({ row }) =>
         row.original.grade ? (
-          <Badge variant={gradeBadgeVariant[row.original.grade] || 'outline'}>
+          <Badge variant={gradeBadgeVariant[row.original.grade] || "outline"}>
             {row.original.grade}
           </Badge>
         ) : (
@@ -118,13 +126,15 @@ export default function SanadPage() {
         ),
     },
     {
-      accessorKey: 'certifiedAt',
-      header: 'Tanggal Pengesahan',
+      accessorKey: "certifiedAt",
+      header: "Tanggal Pengesahan",
       cell: ({ row }) =>
-        format(new Date(row.original.certifiedAt), 'dd MMM yyyy', { locale: id }),
+        format(new Date(row.original.certifiedAt), "dd MMM yyyy", {
+          locale: id,
+        }),
     },
     {
-      id: 'actions',
+      id: "actions",
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -140,7 +150,9 @@ export default function SanadPage() {
               Lihat Detail
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => router.push(`/tahfidz/sanad/${row.original.id}/edit`)}
+              onClick={() =>
+                router.push(`/tahfidz/sanad/${row.original.id}/edit`)
+              }
             >
               <Edit className="mr-2 h-4 w-4" />
               Edit
@@ -152,15 +164,22 @@ export default function SanadPage() {
   ];
 
   // Filter by search
-  const filteredData = data?.data?.filter((record: SanadRecord) =>
-    record.enrollment?.student?.name?.toLowerCase().includes(search.toLowerCase()) ||
-    record.enrollment?.student?.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
-    record.teacher?.name?.toLowerCase().includes(search.toLowerCase())
-  ) || [];
+  const filteredData =
+    data?.data?.filter(
+      (record: SanadRecord) =>
+        record.enrollment?.student?.name
+          ?.toLowerCase()
+          .includes(search.toLowerCase()) ||
+        record.enrollment?.student?.user?.name
+          ?.toLowerCase()
+          .includes(search.toLowerCase()) ||
+        record.teacher?.name?.toLowerCase().includes(search.toLowerCase()),
+    ) || [];
 
   // Calculate stats
   const totalRecords = data?.meta?.total || 0;
-  const completedJuz = new Set(data?.data?.map((r: SanadRecord) => r.juz) || []).size;
+  const completedJuz = new Set(data?.data?.map((r: SanadRecord) => r.juz) || [])
+    .size;
 
   return (
     <MainLayout>
@@ -171,7 +190,7 @@ export default function SanadPage() {
             description="Daftar pengesahan hafalan (sanad) santri"
             icon={BookOpen}
           />
-          <Button onClick={() => router.push('/tahfidz/sanad/new')}>
+          <Button onClick={() => router.push("/tahfidz/sanad/new")}>
             <Plus className="mr-2 h-4 w-4" />
             Tambah Sanad
           </Button>
@@ -216,7 +235,8 @@ export default function SanadPage() {
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-yellow-500" />
                 <span className="text-2xl font-bold">
-                  {data?.data?.filter((r: SanadRecord) => r.grade === 'Mumtaz').length || 0}
+                  {data?.data?.filter((r: SanadRecord) => r.grade === "Mumtaz")
+                    .length || 0}
                 </span>
               </div>
             </CardContent>
@@ -234,8 +254,10 @@ export default function SanadPage() {
                   {data?.data?.filter((r: SanadRecord) => {
                     const certDate = new Date(r.certifiedAt);
                     const now = new Date();
-                    return certDate.getMonth() === now.getMonth() &&
-                      certDate.getFullYear() === now.getFullYear();
+                    return (
+                      certDate.getMonth() === now.getMonth() &&
+                      certDate.getFullYear() === now.getFullYear()
+                    );
                   }).length || 0}
                 </span>
               </div>
@@ -270,7 +292,11 @@ export default function SanadPage() {
         </div>
 
         {/* Data Table */}
-        <DataTable columns={columns} data={filteredData} isLoading={isLoading} />
+        <DataTable
+          columns={columns}
+          data={filteredData}
+          isLoading={isLoading}
+        />
 
         {/* Pagination */}
         {data?.meta && data.meta.totalPages > 1 && (
@@ -289,7 +315,9 @@ export default function SanadPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage((p) => Math.min(data.meta.totalPages, p + 1))}
+              onClick={() =>
+                setPage((p) => Math.min(data.meta.totalPages, p + 1))
+              }
               disabled={page === data.meta.totalPages}
             >
               Selanjutnya

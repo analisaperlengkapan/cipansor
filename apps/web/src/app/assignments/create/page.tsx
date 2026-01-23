@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { AssignmentForm } from '@/components/assignments/assignment-form';
-import { useCreateAssignment } from '@/hooks/use-assignments';
-import { useSubjects } from '@/hooks/use-curriculum';
-import { useClasses } from '@/hooks/use-classes';
-import { useAuthStore } from '@/stores/auth';
-import { useActiveAcademicYear } from '@/hooks/use-academic-years';
-import { toast } from 'sonner';
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import { AssignmentForm } from "@/components/assignments/assignment-form";
+import { useCreateAssignment } from "@/hooks/use-assignments";
+import { useSubjects } from "@/hooks/use-curriculum";
+import { useClasses } from "@/hooks/use-classes";
+import { useAuthStore } from "@/stores/auth";
+import { useActiveAcademicYear } from "@/hooks/use-academic-years";
+import { toast } from "sonner";
 
 export default function CreateAssignmentPage() {
   const router = useRouter();
@@ -17,12 +17,15 @@ export default function CreateAssignmentPage() {
   const createMutation = useCreateAssignment();
 
   const { data: activeAcademicYear } = useActiveAcademicYear(user?.unitId);
-  const { data: classesData } = useClasses({ unitId: user?.unitId, academicYearId: activeAcademicYear?.id });
+  const { data: classesData } = useClasses({
+    unitId: user?.unitId,
+    academicYearId: activeAcademicYear?.id,
+  });
   const { data: subjectsData } = useSubjects({ unitId: user?.unitId });
 
   const handleSubmit = async (data: any) => {
     if (!activeAcademicYear?.id) {
-      toast.error('No active academic year found');
+      toast.error("No active academic year found");
       return;
     }
 
@@ -33,15 +36,15 @@ export default function CreateAssignmentPage() {
         academicYearId: activeAcademicYear.id,
         teacherId: user?.teacher?.id,
       });
-      toast.success('Assignment created');
-      router.push('/assignments');
+      toast.success("Assignment created");
+      router.push("/assignments");
     } catch (error) {
-      toast.error('Failed to create assignment');
+      toast.error("Failed to create assignment");
     }
   };
 
   return (
-    <MainLayout allowedRoles={['TEACHER', 'SUPER_ADMIN', 'UNIT_ADMIN']}>
+    <MainLayout allowedRoles={["TEACHER", "SUPER_ADMIN", "UNIT_ADMIN"]}>
       <div className="max-w-2xl mx-auto space-y-6">
         <PageHeader
           title="Create Assignment"

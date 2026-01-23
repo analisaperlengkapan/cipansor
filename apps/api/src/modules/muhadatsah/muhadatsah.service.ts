@@ -58,7 +58,18 @@ export class MuhadatsahService {
   // ==================
 
   async list(query: ListMuhadatsahQuery, currentUser: AuthenticatedUser) {
-    const { page, limit, unitId, studentId, partnerId, evaluatorId, status, language, startDate, endDate } = query;
+    const {
+      page,
+      limit,
+      unitId,
+      studentId,
+      partnerId,
+      evaluatorId,
+      status,
+      language,
+      startDate,
+      endDate,
+    } = query;
     const skip = (page - 1) * limit;
 
     const where: Prisma.MuhadatsahWhereInput = {};
@@ -126,7 +137,7 @@ export class MuhadatsahService {
     ]);
 
     return {
-      data: records.map(r => ({
+      data: records.map((r) => ({
         ...r,
         student: {
           id: r.student.id,
@@ -134,15 +145,19 @@ export class MuhadatsahService {
           name: r.student.user.name,
           class: r.student.enrollments[0]?.class || null,
         },
-        partner: r.partner ? {
-          id: r.partner.id,
-          nis: r.partner.nis,
-          name: r.partner.user.name,
-        } : null,
-        evaluator: r.evaluator ? {
-          id: r.evaluator.id,
-          name: r.evaluator.user.name,
-        } : null,
+        partner: r.partner
+          ? {
+              id: r.partner.id,
+              nis: r.partner.nis,
+              name: r.partner.user.name,
+            }
+          : null,
+        evaluator: r.evaluator
+          ? {
+              id: r.evaluator.id,
+              name: r.evaluator.user.name,
+            }
+          : null,
       })),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
@@ -189,15 +204,19 @@ export class MuhadatsahService {
         email: record.student.user.email,
         class: record.student.enrollments[0]?.class || null,
       },
-      partner: record.partner ? {
-        id: record.partner.id,
-        nis: record.partner.nis,
-        name: record.partner.user.name,
-      } : null,
-      evaluator: record.evaluator ? {
-        id: record.evaluator.id,
-        name: record.evaluator.user.name,
-      } : null,
+      partner: record.partner
+        ? {
+            id: record.partner.id,
+            nis: record.partner.nis,
+            name: record.partner.user.name,
+          }
+        : null,
+      evaluator: record.evaluator
+        ? {
+            id: record.evaluator.id,
+            name: record.evaluator.user.name,
+          }
+        : null,
     };
   }
 
@@ -281,7 +300,8 @@ export class MuhadatsahService {
 
     // Calculate total score and grade
     const totalScore = Math.round(
-      (input.fluencyScore + input.grammarScore + input.vocabularyScore + input.pronunciationScore) / 4
+      (input.fluencyScore + input.grammarScore + input.vocabularyScore + input.pronunciationScore) /
+        4
     );
     const grade = this.calculateGrade(totalScore);
 
@@ -355,28 +375,27 @@ export class MuhadatsahService {
       },
     });
 
-    return records.map(r => ({
+    return records.map((r) => ({
       ...r,
       student: {
         id: r.student.id,
         nis: r.student.nis,
         name: r.student.user.name,
       },
-      partner: r.partner ? {
-        id: r.partner.id,
-        nis: r.partner.nis,
-        name: r.partner.user.name,
-      } : null,
+      partner: r.partner
+        ? {
+            id: r.partner.id,
+            nis: r.partner.nis,
+            name: r.partner.user.name,
+          }
+        : null,
     }));
   }
 
   async getStudentHistory(studentId: string, limit: number = 20) {
     const records = await prisma.muhadatsah.findMany({
-      where: { 
-        OR: [
-          { studentId },
-          { partnerId: studentId }
-        ]
+      where: {
+        OR: [{ studentId }, { partnerId: studentId }],
       },
       take: limit,
       orderBy: { scheduledAt: 'desc' },
@@ -426,8 +445,8 @@ export class MuhadatsahService {
 
     return {
       total,
-      byStatus: byStatus.map(s => ({ status: s.status, count: s._count.status })),
-      byLanguage: byLanguage.map(l => ({ language: l.language, count: l._count.language })),
+      byStatus: byStatus.map((s) => ({ status: s.status, count: s._count.status })),
+      byLanguage: byLanguage.map((l) => ({ language: l.language, count: l._count.language })),
       averages: {
         fluency: avgScores._avg.fluencyScore || 0,
         grammar: avgScores._avg.grammarScore || 0,
@@ -458,7 +477,7 @@ export class MuhadatsahService {
       take: limit,
     });
 
-    const studentIds = performers.map(p => p.studentId);
+    const studentIds = performers.map((p) => p.studentId);
     const students = await prisma.student.findMany({
       where: { id: { in: studentIds } },
       include: {
@@ -471,9 +490,9 @@ export class MuhadatsahService {
       },
     });
 
-    const studentMap = new Map(students.map(s => [s.id, s]));
+    const studentMap = new Map(students.map((s) => [s.id, s]));
 
-    return performers.map(p => {
+    return performers.map((p) => {
       const student = studentMap.get(p.studentId);
       return {
         studentId: p.studentId,
@@ -507,7 +526,7 @@ export class MuhadatsahService {
     });
 
     const scheduledStudentIds = new Set<string>();
-    scheduledThisWeek.forEach(s => {
+    scheduledThisWeek.forEach((s) => {
       scheduledStudentIds.add(s.studentId);
       if (s.partnerId) scheduledStudentIds.add(s.partnerId);
     });
@@ -529,7 +548,7 @@ export class MuhadatsahService {
       },
     });
 
-    return availableStudents.map(s => ({
+    return availableStudents.map((s) => ({
       id: s.id,
       nis: s.nis,
       name: s.user.name,

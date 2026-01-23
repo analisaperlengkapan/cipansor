@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
+import { useState, useMemo } from "react";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
 import {
   useClassProgressSummary,
   ASPECT_LABELS,
@@ -10,22 +10,28 @@ import {
   ACHIEVEMENT_COLORS,
   TKAspect,
   TKAchievementLevel,
-} from '@/hooks/use-tk-assessment';
-import { useClasses } from '@/hooks/use-classes';
-import { useAcademicYears } from '@/hooks/use-academic-years';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+} from "@/hooks/use-tk-assessment";
+import { useClasses } from "@/hooks/use-classes";
+import { useAcademicYears } from "@/hooks/use-academic-years";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { useAuthStore } from '@/stores/auth';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { useAuthStore } from "@/stores/auth";
+import { cn } from "@/lib/utils";
 import {
   BarChart3,
   TrendingUp,
@@ -36,7 +42,7 @@ import {
   MessageCircle,
   Smile,
   Palette,
-} from 'lucide-react';
+} from "lucide-react";
 
 // Aspect icons mapping
 const ASPECT_ICONS: Record<TKAspect, React.ElementType> = {
@@ -50,12 +56,12 @@ const ASPECT_ICONS: Record<TKAspect, React.ElementType> = {
 
 // Aspect colors for charts
 const ASPECT_CHART_COLORS: Record<TKAspect, string> = {
-  NAM: 'from-rose-500 to-pink-500',
-  FM: 'from-blue-500 to-cyan-500',
-  KOG: 'from-purple-500 to-violet-500',
-  BHS: 'from-emerald-500 to-green-500',
-  SE: 'from-amber-500 to-orange-500',
-  SNI: 'from-fuchsia-500 to-pink-500',
+  NAM: "from-rose-500 to-pink-500",
+  FM: "from-blue-500 to-cyan-500",
+  KOG: "from-purple-500 to-violet-500",
+  BHS: "from-emerald-500 to-green-500",
+  SE: "from-amber-500 to-orange-500",
+  SNI: "from-fuchsia-500 to-pink-500",
 };
 
 interface AspectSummary {
@@ -67,21 +73,21 @@ interface AspectSummary {
 
 export default function TKProgressDashboardPage() {
   const { user } = useAuthStore();
-  const [selectedClass, setSelectedClass] = useState<string>('');
-  const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>('');
+  const [selectedClass, setSelectedClass] = useState<string>("");
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>("");
 
   const { data: classes } = useClasses({ unitId: user?.unitId });
   const { data: academicYears } = useAcademicYears();
   const { data: progressData, isLoading } = useClassProgressSummary(
     selectedClass,
-    selectedAcademicYear
+    selectedAcademicYear,
   );
 
   // Calculate aspect summaries from progress data
   const aspectSummaries = useMemo<AspectSummary[]>(() => {
     if (!progressData || !Array.isArray(progressData)) return [];
 
-    const aspects: TKAspect[] = ['NAM', 'FM', 'KOG', 'BHS', 'SE', 'SNI'];
+    const aspects: TKAspect[] = ["NAM", "FM", "KOG", "BHS", "SE", "SNI"];
 
     return aspects.map((aspect) => {
       const distribution: Record<TKAchievementLevel, number> = {
@@ -128,13 +134,13 @@ export default function TKProgressDashboardPage() {
       aspectSummaries.length > 0
         ? Math.round(
             aspectSummaries.reduce((sum, a) => sum + a.averageScore, 0) /
-              aspectSummaries.length
+              aspectSummaries.length,
           )
         : 0;
 
     // Find best and needs attention aspects
     const sortedAspects = [...aspectSummaries].sort(
-      (a, b) => b.averageScore - a.averageScore
+      (a, b) => b.averageScore - a.averageScore,
     );
     const bestAspect = sortedAspects[0];
     const needsAttention = sortedAspects[sortedAspects.length - 1];
@@ -148,7 +154,7 @@ export default function TKProgressDashboardPage() {
   }, [progressData, aspectSummaries]);
 
   return (
-    <MainLayout allowedRoles={['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']}>
+    <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN", "TEACHER"]}>
       <div className="space-y-6">
         <PageHeader
           title="Dashboard Perkembangan TK"
@@ -237,7 +243,7 @@ export default function TKProgressDashboardPage() {
                   <div className="text-lg font-bold">
                     {classStats.bestAspect
                       ? ASPECT_LABELS[classStats.bestAspect.aspect]
-                      : '-'}
+                      : "-"}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {classStats.bestAspect?.averageScore || 0}% rata-rata
@@ -256,7 +262,7 @@ export default function TKProgressDashboardPage() {
                   <div className="text-lg font-bold">
                     {classStats.needsAttention
                       ? ASPECT_LABELS[classStats.needsAttention.aspect]
-                      : '-'}
+                      : "-"}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {classStats.needsAttention?.averageScore || 0}% rata-rata
@@ -283,8 +289,8 @@ export default function TKProgressDashboardPage() {
                       >
                         <CardHeader
                           className={cn(
-                            'bg-gradient-to-r text-white',
-                            ASPECT_CHART_COLORS[summary.aspect]
+                            "bg-gradient-to-r text-white",
+                            ASPECT_CHART_COLORS[summary.aspect],
                           )}
                         >
                           <div className="flex items-center gap-3">
@@ -320,15 +326,15 @@ export default function TKProgressDashboardPage() {
                             {(
                               Object.entries(summary.distribution) as [
                                 TKAchievementLevel,
-                                number
+                                number,
                               ][]
                             ).map(([level, count]) => (
                               <div key={level}>
                                 <Badge
                                   variant="outline"
                                   className={cn(
-                                    'w-full justify-center',
-                                    ACHIEVEMENT_COLORS[level]
+                                    "w-full justify-center",
+                                    ACHIEVEMENT_COLORS[level],
                                   )}
                                 >
                                   {count}
@@ -375,7 +381,8 @@ export default function TKProgressDashboardPage() {
                                   className="bg-red-400 flex items-center justify-center text-xs text-white"
                                   style={{
                                     width: `${
-                                      (summary.distribution.BB / summary.total) *
+                                      (summary.distribution.BB /
+                                        summary.total) *
                                       100
                                     }%`,
                                   }}
@@ -387,7 +394,8 @@ export default function TKProgressDashboardPage() {
                                   className="bg-yellow-400 flex items-center justify-center text-xs"
                                   style={{
                                     width: `${
-                                      (summary.distribution.MB / summary.total) *
+                                      (summary.distribution.MB /
+                                        summary.total) *
                                       100
                                     }%`,
                                   }}
@@ -439,9 +447,7 @@ export default function TKProgressDashboardPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 bg-yellow-400 rounded" />
-                          <span className="text-sm">
-                            MB (Mulai Berkembang)
-                          </span>
+                          <span className="text-sm">MB (Mulai Berkembang)</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 bg-blue-400 rounded" />

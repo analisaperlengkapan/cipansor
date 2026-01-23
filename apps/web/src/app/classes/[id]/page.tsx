@@ -1,32 +1,45 @@
-'use client';
+"use client";
 
-import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout';
-import { PageHeader, ConfirmDialog, DataTable } from '@/components/shared';
-import { useClass, useClassEnrollments, useUnenrollStudent } from '@/hooks/use-classes';
-import { ClassEnrollment } from '@cipansor/shared';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { MainLayout } from "@/components/layout";
+import { PageHeader, ConfirmDialog, DataTable } from "@/components/shared";
+import {
+  useClass,
+  useClassEnrollments,
+  useUnenrollStudent,
+} from "@/hooks/use-classes";
+import { ClassEnrollment } from "@cipansor/shared";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ColumnDef } from '@tanstack/react-table';
-import { format } from 'date-fns';
-import { ArrowLeft, Pencil, Users, Calendar, Building2, User, Trash2 } from 'lucide-react';
-import Link from 'next/link';
-import { toast } from 'sonner';
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
+import {
+  ArrowLeft,
+  Pencil,
+  Users,
+  Calendar,
+  Building2,
+  User,
+  Trash2,
+} from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
 
 export default function ClassDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { data: classData, isLoading } = useClass(params.id as string);
-  const { data: enrollments, isLoading: enrollmentsLoading } = useClassEnrollments(params.id as string);
+  const { data: enrollments, isLoading: enrollmentsLoading } =
+    useClassEnrollments(params.id as string);
   const unenrollMutation = useUnenrollStudent();
   const [unenrollId, setUnenrollId] = useState<string | null>(null);
 
@@ -37,44 +50,52 @@ export default function ClassDetailPage() {
         classId: params.id as string,
         studentId: unenrollId,
       });
-      toast.success('Student unenrolled successfully');
+      toast.success("Student unenrolled successfully");
       setUnenrollId(null);
     } catch {
-      toast.error('Failed to unenroll student');
+      toast.error("Failed to unenroll student");
     }
   };
 
   const enrollmentColumns: ColumnDef<ClassEnrollment>[] = [
     {
-      accessorKey: 'student.nis',
-      header: 'NIS',
+      accessorKey: "student.nis",
+      header: "NIS",
       cell: ({ row }) => (
-        <span className="font-mono text-sm">{row.original.student?.nis || '-'}</span>
+        <span className="font-mono text-sm">
+          {row.original.student?.nis || "-"}
+        </span>
       ),
     },
     {
-      accessorKey: 'student.user.name',
-      header: 'Name',
+      accessorKey: "student.user.name",
+      header: "Name",
       cell: ({ row }) => (
         <div>
-          <p className="font-medium">{row.original.student?.user?.name || row.original.student?.name}</p>
+          <p className="font-medium">
+            {row.original.student?.user?.name || row.original.student?.name}
+          </p>
           <p className="text-xs text-muted-foreground">
-            {row.original.student?.gender === 'MALE' ? 'Laki-laki' : row.original.student?.gender === 'FEMALE' ? 'Perempuan' : '-'}
+            {row.original.student?.gender === "MALE"
+              ? "Laki-laki"
+              : row.original.student?.gender === "FEMALE"
+                ? "Perempuan"
+                : "-"}
           </p>
         </div>
       ),
     },
     {
-      accessorKey: 'enrolledAt',
-      header: 'Enrolled At',
+      accessorKey: "enrolledAt",
+      header: "Enrolled At",
       cell: ({ row }) => (
         <span className="text-sm">
-          {format(new Date(row.original.enrolledAt), 'dd MMM yyyy')}
+          {format(new Date(row.original.enrolledAt), "dd MMM yyyy")}
         </span>
       ),
     },
     {
-      id: 'actions',
+      id: "actions",
       cell: ({ row }) => (
         <Button
           variant="ghost"
@@ -104,7 +125,7 @@ export default function ClassDetailPage() {
       <MainLayout>
         <div className="flex h-64 flex-col items-center justify-center gap-4">
           <p className="text-muted-foreground">Class not found</p>
-          <Button variant="outline" onClick={() => router.push('/classes')}>
+          <Button variant="outline" onClick={() => router.push("/classes")}>
             Back to Classes
           </Button>
         </div>
@@ -113,7 +134,7 @@ export default function ClassDetailPage() {
   }
 
   return (
-    <MainLayout allowedRoles={['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']}>
+    <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN", "TEACHER"]}>
       <div className="space-y-6">
         <PageHeader
           title={classData.name}
@@ -162,10 +183,15 @@ export default function ClassDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <InfoRow label="Year" value={classData.academicYear?.name || '-'} />
+                  <InfoRow
+                    label="Year"
+                    value={classData.academicYear?.name || "-"}
+                  />
                   <InfoRow
                     label="Status"
-                    value={classData.academicYear?.isActive ? 'Active' : 'Inactive'}
+                    value={
+                      classData.academicYear?.isActive ? "Active" : "Inactive"
+                    }
                   />
                 </CardContent>
               </Card>
@@ -178,7 +204,10 @@ export default function ClassDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <InfoRow label="Unit Name" value={classData.unit?.name || '-'} />
+                  <InfoRow
+                    label="Unit Name"
+                    value={classData.unit?.name || "-"}
+                  />
                 </CardContent>
               </Card>
 
@@ -191,7 +220,8 @@ export default function ClassDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm">
-                    {classData.homeroomTeacher?.user.name || 'No homeroom teacher assigned'}
+                    {classData.homeroomTeacher?.user.name ||
+                      "No homeroom teacher assigned"}
                   </p>
                 </CardContent>
               </Card>
@@ -202,14 +232,18 @@ export default function ClassDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Enrolled Students</CardTitle>
-                <CardDescription>Students currently enrolled in this class</CardDescription>
+                <CardDescription>
+                  Students currently enrolled in this class
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <DataTable
                   columns={enrollmentColumns}
                   data={enrollments || []}
                   isLoading={enrollmentsLoading}
-                  onRowClick={(row) => router.push(`/students/${row.studentId}`)}
+                  onRowClick={(row) =>
+                    router.push(`/students/${row.studentId}`)
+                  }
                 />
               </CardContent>
             </Card>
@@ -222,7 +256,9 @@ export default function ClassDetailPage() {
                 <CardDescription>Weekly class schedule</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Schedule will be displayed here...</p>
+                <p className="text-muted-foreground">
+                  Schedule will be displayed here...
+                </p>
               </CardContent>
             </Card>
           </TabsContent>

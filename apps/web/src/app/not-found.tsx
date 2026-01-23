@@ -3,10 +3,16 @@
  * Displays when a route doesn't exist
  */
 
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileQuestion, Home, ArrowLeft } from 'lucide-react';
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { FileQuestion, Home, ArrowLeft } from "lucide-react";
 
 export default function NotFound() {
   return (
@@ -16,9 +22,12 @@ export default function NotFound() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
             <FileQuestion className="h-8 w-8 text-muted-foreground" />
           </div>
-          <CardTitle className="text-xl">404 - Halaman Tidak Ditemukan</CardTitle>
+          <CardTitle className="text-xl">
+            404 - Halaman Tidak Ditemukan
+          </CardTitle>
           <CardDescription>
-            Maaf, halaman yang Anda cari tidak dapat ditemukan. Mungkin telah dipindahkan atau tidak ada.
+            Maaf, halaman yang Anda cari tidak dapat ditemukan. Mungkin telah
+            dipindahkan atau tidak ada.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -37,7 +46,8 @@ export default function NotFound() {
             </Button>
           </div>
           <p className="text-center text-sm text-muted-foreground">
-            Jika Anda merasa ini adalah kesalahan, silakan hubungi administrator.
+            Jika Anda merasa ini adalah kesalahan, silakan hubungi
+            administrator.
           </p>
         </CardContent>
       </Card>

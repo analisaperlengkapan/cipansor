@@ -83,7 +83,7 @@ describe('StudentService', () => {
       const mockViolationStats = { _sum: { points: 15 } };
       const mockInvoiceStats = {
         _sum: { amount: 150000, paidAmount: 0 },
-        _count: { id: 2 }
+        _count: { id: 2 },
       };
 
       // Ensure mock implementations return promises
@@ -105,7 +105,9 @@ describe('StudentService', () => {
     it('should throw error if student not found', async () => {
       vi.mocked(prisma.student.findFirst).mockResolvedValue(null);
 
-      await expect(studentService.findById('invalid-id')).rejects.toThrow(Errors.notFound('Student'));
+      await expect(studentService.findById('invalid-id')).rejects.toThrow(
+        Errors.notFound('Student')
+      );
     });
   });
 });

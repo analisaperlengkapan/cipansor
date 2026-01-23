@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
-import { useAuthStore } from '@/stores/auth';
-import { useActiveAcademicYear } from './use-academic-years';
+import { useQuery } from "@tanstack/react-query";
+import api, { ApiResponse, PaginatedResponse } from "@/lib/api";
+import { useAuthStore } from "@/stores/auth";
+import { useActiveAcademicYear } from "./use-academic-years";
 
 // ============================================
 // TYPES
@@ -71,7 +71,7 @@ export interface PAUDNarrativeReport {
   academicYearId: string;
   semester: string;
   periodType: string;
-  status: 'DRAFT' | 'FINALIZED';
+  status: "DRAFT" | "FINALIZED";
   finalizedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -95,56 +95,82 @@ export interface DailyReportSummary {
 export function usePAUDDashboardStats() {
   const { user } = useAuthStore();
   const { data: activeYear } = useActiveAcademicYear();
-  
+
   // Find TK_QURAN unit ID from user's available units or use current unit
   const tkUnitId = user?.unitId;
 
   return useQuery({
-    queryKey: ['paud-dashboard-stats', tkUnitId, activeYear?.id],
+    queryKey: ["paud-dashboard-stats", tkUnitId, activeYear?.id],
     queryFn: async (): Promise<PAUDDashboardStats> => {
       // Fetch multiple metrics in parallel
-      const [studentsRes, assessmentsRes, reportsRes, narrativeRes] = await Promise.all([
-        api.get<ApiResponse<{ total: number }>>('/students', { 
-          params: { 
-            unitId: tkUnitId,
-            status: 'ACTIVE',
-            limit: 1 
-          } 
-        }).catch(() => ({ data: { data: { total: 0 } } })),
-        
-        api.get<PaginatedResponse<unknown>>('/paud-assessment/assessments', {
-          params: {
-            unitId: tkUnitId,
-            academicYearId: activeYear?.id,
-            startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-            endDate: new Date().toISOString().split('T')[0],
-            limit: 1
-          }
-        }).catch(() => ({ data: { meta: { pagination: { total: 0 } } } })),
-        
-        api.get<PaginatedResponse<unknown>>('/daily-report', {
-          params: {
-            unitId: tkUnitId,
-            startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-            endDate: new Date().toISOString().split('T')[0],
-            limit: 1
-          }
-        }).catch(() => ({ data: { meta: { pagination: { total: 0 } } } })),
-        
-        api.get<PaginatedResponse<PAUDNarrativeReport>>('/paud-assessment/narrative-reports', {
-          params: {
-            unitId: tkUnitId,
-            academicYearId: activeYear?.id,
-            status: 'DRAFT',
-            limit: 1
-          }
-        }).catch(() => ({ data: { meta: { pagination: { total: 0 } } } })),
-      ]);
+      const [studentsRes, assessmentsRes, reportsRes, narrativeRes] =
+        await Promise.all([
+          api
+            .get<ApiResponse<{ total: number }>>("/students", {
+              params: {
+                unitId: tkUnitId,
+                status: "ACTIVE",
+                limit: 1,
+              },
+            })
+            .catch(() => ({ data: { data: { total: 0 } } })),
+
+          api
+            .get<PaginatedResponse<unknown>>("/paud-assessment/assessments", {
+              params: {
+                unitId: tkUnitId,
+                academicYearId: activeYear?.id,
+                startDate: new Date(
+                  new Date().getFullYear(),
+                  new Date().getMonth(),
+                  1,
+                )
+                  .toISOString()
+                  .split("T")[0],
+                endDate: new Date().toISOString().split("T")[0],
+                limit: 1,
+              },
+            })
+            .catch(() => ({ data: { meta: { pagination: { total: 0 } } } })),
+
+          api
+            .get<PaginatedResponse<unknown>>("/daily-report", {
+              params: {
+                unitId: tkUnitId,
+                startDate: new Date(
+                  new Date().getFullYear(),
+                  new Date().getMonth(),
+                  1,
+                )
+                  .toISOString()
+                  .split("T")[0],
+                endDate: new Date().toISOString().split("T")[0],
+                limit: 1,
+              },
+            })
+            .catch(() => ({ data: { meta: { pagination: { total: 0 } } } })),
+
+          api
+            .get<PaginatedResponse<PAUDNarrativeReport>>(
+              "/paud-assessment/narrative-reports",
+              {
+                params: {
+                  unitId: tkUnitId,
+                  academicYearId: activeYear?.id,
+                  status: "DRAFT",
+                  limit: 1,
+                },
+              },
+            )
+            .catch(() => ({ data: { meta: { pagination: { total: 0 } } } })),
+        ]);
 
       return {
         totalStudents: (studentsRes.data as any)?.meta?.pagination?.total || 0,
-        assessmentsThisMonth: (assessmentsRes.data as any)?.meta?.pagination?.total || 0,
-        dailyReportsThisMonth: (reportsRes.data as any)?.meta?.pagination?.total || 0,
+        assessmentsThisMonth:
+          (assessmentsRes.data as any)?.meta?.pagination?.total || 0,
+        dailyReportsThisMonth:
+          (reportsRes.data as any)?.meta?.pagination?.total || 0,
         activeReports: (narrativeRes.data as any)?.meta?.pagination?.total || 0,
       };
     },
@@ -157,13 +183,20 @@ export function usePAUDDashboardStats() {
 /**
  * Fetch class/unit summary for PAUD assessments
  */
-export function usePAUDClassSummary(unitId?: string, academicYearId?: string, semester?: string) {
+export function usePAUDClassSummary(
+  unitId?: string,
+  academicYearId?: string,
+  semester?: string,
+) {
   return useQuery({
-    queryKey: ['paud-class-summary', unitId, academicYearId, semester],
+    queryKey: ["paud-class-summary", unitId, academicYearId, semester],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<ClassSummary>>('/paud-assessment/summary/class', {
-        params: { unitId, academicYearId, semester }
-      });
+      const response = await api.get<ApiResponse<ClassSummary>>(
+        "/paud-assessment/summary/class",
+        {
+          params: { unitId, academicYearId, semester },
+        },
+      );
       return response.data.data;
     },
     enabled: !!unitId && !!academicYearId,
@@ -174,13 +207,20 @@ export function usePAUDClassSummary(unitId?: string, academicYearId?: string, se
 /**
  * Fetch student assessment summary
  */
-export function usePAUDStudentSummary(studentId?: string, academicYearId?: string, semester?: string) {
+export function usePAUDStudentSummary(
+  studentId?: string,
+  academicYearId?: string,
+  semester?: string,
+) {
   return useQuery({
-    queryKey: ['paud-student-summary', studentId, academicYearId, semester],
+    queryKey: ["paud-student-summary", studentId, academicYearId, semester],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<StudentAssessmentSummary>>('/paud-assessment/summary/student', {
-        params: { studentId, academicYearId, semester }
-      });
+      const response = await api.get<ApiResponse<StudentAssessmentSummary>>(
+        "/paud-assessment/summary/student",
+        {
+          params: { studentId, academicYearId, semester },
+        },
+      );
       return response.data.data;
     },
     enabled: !!studentId && !!academicYearId,
@@ -196,23 +236,25 @@ export function usePAUDRecentAssessments(limit: number = 5) {
   const { data: activeYear } = useActiveAcademicYear();
 
   return useQuery({
-    queryKey: ['paud-recent-assessments', user?.unitId, activeYear?.id, limit],
+    queryKey: ["paud-recent-assessments", user?.unitId, activeYear?.id, limit],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<{
-        id: string;
-        student: { name: string };
-        indicator: { code: string; name: string; aspect: string };
-        achievementLevel: string;
-        assessmentDate: string;
-        notes?: string;
-      }>>('/paud-assessment/assessments', {
+      const response = await api.get<
+        PaginatedResponse<{
+          id: string;
+          student: { name: string };
+          indicator: { code: string; name: string; aspect: string };
+          achievementLevel: string;
+          assessmentDate: string;
+          notes?: string;
+        }>
+      >("/paud-assessment/assessments", {
         params: {
           unitId: user?.unitId,
           academicYearId: activeYear?.id,
           limit,
-          sortBy: 'assessmentDate',
-          sortOrder: 'desc',
-        }
+          sortBy: "assessmentDate",
+          sortOrder: "desc",
+        },
       });
       return response.data.data;
     },
@@ -228,23 +270,25 @@ export function usePAUDRecentDailyReports(limit: number = 5) {
   const { user } = useAuthStore();
 
   return useQuery({
-    queryKey: ['paud-recent-daily-reports', user?.unitId, limit],
+    queryKey: ["paud-recent-daily-reports", user?.unitId, limit],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<{
-        id: string;
-        date: string;
-        student: { name: string };
-        teacher?: { name: string };
-        activities: string[];
-        mood?: string;
-        healthNotes?: string;
-      }>>('/daily-report', {
+      const response = await api.get<
+        PaginatedResponse<{
+          id: string;
+          date: string;
+          student: { name: string };
+          teacher?: { name: string };
+          activities: string[];
+          mood?: string;
+          healthNotes?: string;
+        }>
+      >("/daily-report", {
         params: {
           unitId: user?.unitId,
           limit,
-          sortBy: 'date',
-          sortOrder: 'desc',
-        }
+          sortBy: "date",
+          sortOrder: "desc",
+        },
       });
       return response.data.data;
     },
@@ -265,8 +309,10 @@ export function usePAUDDashboard() {
     stats: stats.data,
     recentAssessments: recentAssessments.data,
     recentReports: recentReports.data,
-    isLoading: stats.isLoading || recentAssessments.isLoading || recentReports.isLoading,
-    isError: stats.isError || recentAssessments.isError || recentReports.isError,
+    isLoading:
+      stats.isLoading || recentAssessments.isLoading || recentReports.isLoading,
+    isError:
+      stats.isError || recentAssessments.isError || recentReports.isError,
     refetch: () => {
       stats.refetch();
       recentAssessments.refetch();
@@ -280,26 +326,26 @@ export function usePAUDDashboard() {
 // ============================================
 
 export const ASPECT_LABELS: Record<string, string> = {
-  NAM: 'Nilai Agama & Moral',
-  FM: 'Fisik Motorik',
-  KOG: 'Kognitif',
-  BHS: 'Bahasa',
-  SE: 'Sosial Emosional',
-  SNI: 'Seni',
+  NAM: "Nilai Agama & Moral",
+  FM: "Fisik Motorik",
+  KOG: "Kognitif",
+  BHS: "Bahasa",
+  SE: "Sosial Emosional",
+  SNI: "Seni",
 };
 
 export const ACHIEVEMENT_LABELS: Record<string, string> = {
-  BB: 'Belum Berkembang',
-  MB: 'Mulai Berkembang',
-  BSH: 'Berkembang Sesuai Harapan',
-  BSB: 'Berkembang Sangat Baik',
+  BB: "Belum Berkembang",
+  MB: "Mulai Berkembang",
+  BSH: "Berkembang Sesuai Harapan",
+  BSB: "Berkembang Sangat Baik",
 };
 
 export const ACHIEVEMENT_COLORS: Record<string, string> = {
-  BB: 'bg-red-100 text-red-800',
-  MB: 'bg-yellow-100 text-yellow-800',
-  BSH: 'bg-blue-100 text-blue-800',
-  BSB: 'bg-green-100 text-green-800',
+  BB: "bg-red-100 text-red-800",
+  MB: "bg-yellow-100 text-yellow-800",
+  BSH: "bg-blue-100 text-blue-800",
+  BSB: "bg-green-100 text-green-800",
 };
 
 export function getAspectLabel(aspect: string): string {
@@ -311,5 +357,5 @@ export function getAchievementLabel(level: string): string {
 }
 
 export function getAchievementColor(level: string): string {
-  return ACHIEVEMENT_COLORS[level] || 'bg-gray-100 text-gray-800';
+  return ACHIEVEMENT_COLORS[level] || "bg-gray-100 text-gray-800";
 }

@@ -1,34 +1,39 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ColumnDef } from '@tanstack/react-table';
-import { MainLayout } from '@/components/layout';
-import { PageHeader, DataTable, SearchInput, ConfirmDialog } from '@/components/shared';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ColumnDef } from "@tanstack/react-table";
+import { MainLayout } from "@/components/layout";
+import {
+  PageHeader,
+  DataTable,
+  SearchInput,
+  ConfirmDialog,
+} from "@/components/shared";
 import {
   useTKReports,
   useDeleteTKReport,
   TKNarrativeReport,
   ReportStatus,
-} from '@/hooks/use-tk-report';
-import { useAcademicYears } from '@/hooks/use-academic-years';
-import { useClasses } from '@/hooks/use-classes';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+} from "@/hooks/use-tk-report";
+import { useAcademicYears } from "@/hooks/use-academic-years";
+import { useClasses } from "@/hooks/use-classes";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   MoreHorizontal,
   Eye,
@@ -39,28 +44,28 @@ import {
   CheckCircle,
   Printer,
   Sparkles,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { useAuthStore } from '@/stores/auth';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { toast } from "sonner";
+import { useAuthStore } from "@/stores/auth";
+import { cn } from "@/lib/utils";
 
 const STATUS_LABELS: Record<ReportStatus, string> = {
-  DRAFT: 'Draft',
-  FINALIZED: 'Final',
-  PRINTED: 'Tercetak',
+  DRAFT: "Draft",
+  FINALIZED: "Final",
+  PRINTED: "Tercetak",
 };
 
 const STATUS_COLORS: Record<ReportStatus, string> = {
-  DRAFT: 'bg-yellow-100 text-yellow-800',
-  FINALIZED: 'bg-blue-100 text-blue-800',
-  PRINTED: 'bg-green-100 text-green-800',
+  DRAFT: "bg-yellow-100 text-yellow-800",
+  FINALIZED: "bg-blue-100 text-blue-800",
+  PRINTED: "bg-green-100 text-green-800",
 };
 
 const SEMESTER_LABELS = {
-  GANJIL: 'Ganjil',
-  GENAP: 'Genap',
+  GANJIL: "Ganjil",
+  GENAP: "Genap",
 };
 
 export default function TKReportListPage() {
@@ -68,11 +73,11 @@ export default function TKReportListPage() {
   const { user } = useAuthStore();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [semesterFilter, setSemesterFilter] = useState<string>('');
-  const [classFilter, setClassFilter] = useState<string>('');
-  const [academicYearFilter, setAcademicYearFilter] = useState<string>('');
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [semesterFilter, setSemesterFilter] = useState<string>("");
+  const [classFilter, setClassFilter] = useState<string>("");
+  const [academicYearFilter, setAcademicYearFilter] = useState<string>("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: academicYears } = useAcademicYears();
@@ -82,11 +87,11 @@ export default function TKReportListPage() {
     page,
     limit: pageSize,
     search: search || undefined,
-    status: statusFilter as ReportStatus || undefined,
-    semester: semesterFilter as 'GANJIL' | 'GENAP' || undefined,
+    status: (statusFilter as ReportStatus) || undefined,
+    semester: (semesterFilter as "GANJIL" | "GENAP") || undefined,
     classId: classFilter || undefined,
     academicYearId: academicYearFilter || undefined,
-    unitId: user?.role !== 'SUPER_ADMIN' ? user?.unitId : undefined,
+    unitId: user?.role !== "SUPER_ADMIN" ? user?.unitId : undefined,
   });
 
   const deleteMutation = useDeleteTKReport();
@@ -95,17 +100,17 @@ export default function TKReportListPage() {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      toast.success('Raport berhasil dihapus');
+      toast.success("Raport berhasil dihapus");
       setDeleteId(null);
     } catch {
-      toast.error('Gagal menghapus raport');
+      toast.error("Gagal menghapus raport");
     }
   };
 
   const columns: ColumnDef<TKNarrativeReport>[] = [
     {
-      accessorKey: 'student',
-      header: 'Siswa',
+      accessorKey: "student",
+      header: "Siswa",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           {row.original.student?.photoUrl ? (
@@ -117,23 +122,29 @@ export default function TKReportListPage() {
           ) : (
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
               <span className="text-xs font-medium">
-                {row.original.student?.user?.name?.[0] || '?'}
+                {row.original.student?.user?.name?.[0] || "?"}
               </span>
             </div>
           )}
           <div>
-            <p className="font-medium">{row.original.student?.user?.name || '-'}</p>
-            <p className="text-xs text-muted-foreground">{row.original.student?.nis}</p>
+            <p className="font-medium">
+              {row.original.student?.user?.name || "-"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {row.original.student?.nis}
+            </p>
           </div>
         </div>
       ),
     },
     {
-      accessorKey: 'academicYear',
-      header: 'Tahun Ajaran',
+      accessorKey: "academicYear",
+      header: "Tahun Ajaran",
       cell: ({ row }) => (
         <div>
-          <p className="font-medium">{row.original.academicYear?.name || '-'}</p>
+          <p className="font-medium">
+            {row.original.academicYear?.name || "-"}
+          </p>
           <p className="text-xs text-muted-foreground">
             Semester {SEMESTER_LABELS[row.original.semester]}
           </p>
@@ -141,35 +152,42 @@ export default function TKReportListPage() {
       ),
     },
     {
-      accessorKey: 'status',
-      header: 'Status',
+      accessorKey: "status",
+      header: "Status",
       cell: ({ row }) => (
-        <Badge className={cn('font-normal', STATUS_COLORS[row.original.status])}>
+        <Badge
+          className={cn("font-normal", STATUS_COLORS[row.original.status])}
+        >
           {STATUS_LABELS[row.original.status]}
         </Badge>
       ),
     },
     {
-      accessorKey: 'attendance',
-      header: 'Kehadiran',
+      accessorKey: "attendance",
+      header: "Kehadiran",
       cell: ({ row }) => (
         <div className="text-sm">
           <span className="font-medium">{row.original.presentDays}</span>
-          <span className="text-muted-foreground"> / {row.original.totalDays} hari</span>
+          <span className="text-muted-foreground">
+            {" "}
+            / {row.original.totalDays} hari
+          </span>
         </div>
       ),
     },
     {
-      accessorKey: 'createdAt',
-      header: 'Dibuat',
+      accessorKey: "createdAt",
+      header: "Dibuat",
       cell: ({ row }) => (
         <span className="text-sm">
-          {format(new Date(row.original.createdAt), 'dd MMM yyyy', { locale: idLocale })}
+          {format(new Date(row.original.createdAt), "dd MMM yyyy", {
+            locale: idLocale,
+          })}
         </span>
       ),
     },
     {
-      id: 'actions',
+      id: "actions",
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -178,24 +196,32 @@ export default function TKReportListPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => router.push(`/paud/reports/${row.original.id}`)}>
+            <DropdownMenuItem
+              onClick={() => router.push(`/paud/reports/${row.original.id}`)}
+            >
               <Eye className="mr-2 h-4 w-4" />
               Lihat Detail
             </DropdownMenuItem>
-            {row.original.status === 'DRAFT' && (
-              <DropdownMenuItem onClick={() => router.push(`/paud/reports/${row.original.id}/edit`)}>
+            {row.original.status === "DRAFT" && (
+              <DropdownMenuItem
+                onClick={() =>
+                  router.push(`/paud/reports/${row.original.id}/edit`)
+                }
+              >
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
               </DropdownMenuItem>
             )}
             <DropdownMenuItem
-              onClick={() => window.open(`/api/paud-report/${row.original.id}/pdf`, '_blank')}
+              onClick={() =>
+                window.open(`/api/paud-report/${row.original.id}/pdf`, "_blank")
+              }
             >
               <FileText className="mr-2 h-4 w-4" />
               Download PDF
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            {row.original.status === 'DRAFT' && (
+            {row.original.status === "DRAFT" && (
               <DropdownMenuItem
                 className="text-destructive"
                 onClick={() => setDeleteId(row.original.id)}
@@ -220,14 +246,14 @@ export default function TKReportListPage() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => router.push('/paud/reports/generate')}
+                onClick={() => router.push("/paud/reports/generate")}
                 className="transition-all hover:shadow-md hover:-translate-y-0.5 group"
               >
                 <Sparkles className="mr-2 h-4 w-4 transition-transform group-hover:rotate-12 group-hover:scale-110" />
                 Generate Raport
               </Button>
               <Button
-                onClick={() => router.push('/paud/reports/new')}
+                onClick={() => router.push("/paud/reports/new")}
                 className="transition-all hover:shadow-md hover:-translate-y-0.5"
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -245,7 +271,10 @@ export default function TKReportListPage() {
             onChange={setSearch}
           />
 
-          <Select value={academicYearFilter} onValueChange={setAcademicYearFilter}>
+          <Select
+            value={academicYearFilter}
+            onValueChange={setAcademicYearFilter}
+          >
             <SelectTrigger className="bg-background/50 backdrop-blur-sm border-muted-foreground/20">
               <SelectValue placeholder="Semua Tahun Ajaran" />
             </SelectTrigger>

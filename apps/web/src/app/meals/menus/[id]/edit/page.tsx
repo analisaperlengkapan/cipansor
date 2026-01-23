@@ -372,7 +372,7 @@ export default function EditMenuPage() {
                                     variant="outline"
                                     className={cn(
                                       "w-full pl-3 text-left font-normal",
-                                      !field.value && "text-muted-foreground"
+                                      !field.value && "text-muted-foreground",
                                     )}
                                   >
                                     {field.value ? (
@@ -632,9 +632,7 @@ export default function EditMenuPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Unit Pendidikan</CardTitle>
-                    <CardDescription>
-                      Pilih unit untuk menu ini
-                    </CardDescription>
+                    <CardDescription>Pilih unit untuk menu ini</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <FormField

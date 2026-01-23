@@ -1,4 +1,4 @@
-import InboxPage from '../inbox/page';
+import InboxPage from "../inbox/page";
 
 export default function OutboxPage() {
   // Reuse inbox but we could force direction prop if we refactored InboxPage to accept props

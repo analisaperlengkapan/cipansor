@@ -1,28 +1,34 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
 
 // Enums
 export const MUROJAAH_TYPES = [
-  { value: 'DAILY', label: 'Harian (Yaumiyah)' },
-  { value: 'WEEKLY', label: 'Mingguan (Usbuiyah)' },
-  { value: 'MONTHLY', label: 'Bulanan (Syahriyah)' },
-  { value: 'EXAM_PREP', label: 'Persiapan Ujian' },
+  { value: "DAILY", label: "Harian (Yaumiyah)" },
+  { value: "WEEKLY", label: "Mingguan (Usbuiyah)" },
+  { value: "MONTHLY", label: "Bulanan (Syahriyah)" },
+  { value: "EXAM_PREP", label: "Persiapan Ujian" },
 ] as const;
 
 export const MISTAKE_TYPES = [
-  { value: 'LAHN_JALI', label: 'Lahin Jali (Berat)' },
-  { value: 'LAHN_KHAFI', label: 'Lahin Khafi (Ringan)' },
-  { value: 'GHUNNAH', label: 'Ghunnah' },
-  { value: 'MAD', label: 'Mad' },
-  { value: 'WAQF', label: 'Waqf' },
-  { value: 'IBTIDA', label: 'Ibtida' },
+  { value: "LAHN_JALI", label: "Lahin Jali (Berat)" },
+  { value: "LAHN_KHAFI", label: "Lahin Khafi (Ringan)" },
+  { value: "GHUNNAH", label: "Ghunnah" },
+  { value: "MAD", label: "Mad" },
+  { value: "WAQF", label: "Waqf" },
+  { value: "IBTIDA", label: "Ibtida" },
 ] as const;
 
 // Types matching Backend Schema
 export interface MurojaahMistake {
   id: string;
   murojaahId: string;
-  mistakeType: 'LAHN_JALI' | 'LAHN_KHAFI' | 'GHUNNAH' | 'MAD' | 'WAQF' | 'IBTIDA';
+  mistakeType:
+    | "LAHN_JALI"
+    | "LAHN_KHAFI"
+    | "GHUNNAH"
+    | "MAD"
+    | "WAQF"
+    | "IBTIDA";
   juz: number;
   surahNumber: number;
   ayahNumber?: number;
@@ -36,7 +42,7 @@ export interface MurojaahRecord {
   enrollmentId?: string;
   halaqohId?: string;
   recordedById: string;
-  murojaahType: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'EXAM_PREP';
+  murojaahType: "DAILY" | "WEEKLY" | "MONTHLY" | "EXAM_PREP";
   murojaahDate: string; // ISO Date
   juzStart: number;
   juzEnd: number;
@@ -106,7 +112,9 @@ export interface CreateMurojaahData {
   }>;
 }
 
-export type UpdateMurojaahData = Partial<Omit<CreateMurojaahData, 'studentId' | 'mistakes'>>;
+export type UpdateMurojaahData = Partial<
+  Omit<CreateMurojaahData, "studentId" | "mistakes">
+>;
 
 export interface StudentMurojaahSummary {
   student: {
@@ -139,13 +147,16 @@ export interface StudentMurojaahSummary {
 
 // Query Keys
 export const murojaahKeys = {
-  all: ['murojaah'] as const,
-  lists: () => [...murojaahKeys.all, 'list'] as const,
-  list: (filters: MurojaahFilters) => [...murojaahKeys.lists(), filters] as const,
-  details: () => [...murojaahKeys.all, 'detail'] as const,
+  all: ["murojaah"] as const,
+  lists: () => [...murojaahKeys.all, "list"] as const,
+  list: (filters: MurojaahFilters) =>
+    [...murojaahKeys.lists(), filters] as const,
+  details: () => [...murojaahKeys.all, "detail"] as const,
   detail: (id: string) => [...murojaahKeys.details(), id] as const,
-  summary: (studentId: string) => [...murojaahKeys.all, 'summary', studentId] as const,
-  schedule: (studentId: string) => [...murojaahKeys.all, 'schedule', studentId] as const,
+  summary: (studentId: string) =>
+    [...murojaahKeys.all, "summary", studentId] as const,
+  schedule: (studentId: string) =>
+    [...murojaahKeys.all, "schedule", studentId] as const,
 };
 
 // Hooks
@@ -156,7 +167,7 @@ export function useMurojaahRecords(filters: MurojaahFilters = {}) {
     queryFn: async () => {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
+        if (value !== undefined && value !== null && value !== "") {
           params.append(key, String(value));
         }
       });
@@ -182,7 +193,7 @@ export function useCreateMurojaah() {
 
   return useMutation({
     mutationFn: async (data: CreateMurojaahData) => {
-      const response = await apiClient.post('/murojaah', data);
+      const response = await apiClient.post("/murojaah", data);
       return response.data;
     },
     onSuccess: () => {
@@ -195,7 +206,13 @@ export function useUpdateMurojaah() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateMurojaahData }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdateMurojaahData;
+    }) => {
       const response = await apiClient.put(`/murojaah/${id}`, data);
       return response.data;
     },
@@ -220,7 +237,10 @@ export function useDeleteMurojaah() {
   });
 }
 
-export function useStudentMurojaahSummary(studentId: string, filters?: { startDate?: string; endDate?: string; murojaahType?: string }) {
+export function useStudentMurojaahSummary(
+  studentId: string,
+  filters?: { startDate?: string; endDate?: string; murojaahType?: string },
+) {
   return useQuery({
     queryKey: [...murojaahKeys.summary(studentId), filters],
     queryFn: async () => {
@@ -230,7 +250,9 @@ export function useStudentMurojaahSummary(studentId: string, filters?: { startDa
           if (value) params.append(key, String(value));
         });
       }
-      const response = await apiClient.get(`/murojaah/student/${studentId}/summary?${params.toString()}`);
+      const response = await apiClient.get(
+        `/murojaah/student/${studentId}/summary?${params.toString()}`,
+      );
       return response.data.data as StudentMurojaahSummary;
     },
     enabled: !!studentId,
@@ -241,7 +263,9 @@ export function useMurojaahSchedule(studentId: string) {
   return useQuery({
     queryKey: murojaahKeys.schedule(studentId),
     queryFn: async () => {
-      const response = await apiClient.get(`/murojaah/schedule?studentId=${studentId}`);
+      const response = await apiClient.get(
+        `/murojaah/schedule?studentId=${studentId}`,
+      );
       return response.data.data;
     },
     enabled: !!studentId,

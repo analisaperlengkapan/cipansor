@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -16,7 +22,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +31,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,7 +42,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   useFoundation,
   useUpdateFoundation,
@@ -47,7 +53,7 @@ import {
   useFinancialSummary,
   DOCUMENT_TYPE_LABELS,
   type DocumentType,
-} from '@/hooks';
+} from "@/hooks";
 import {
   BarChart,
   Bar,
@@ -60,7 +66,7 @@ import {
   PieChart,
   Pie,
   Cell,
-} from 'recharts';
+} from "recharts";
 import {
   Building2,
   FileText,
@@ -81,15 +87,15 @@ import {
   DollarSign,
   TrendingUp,
   TrendingDown,
-} from 'lucide-react';
-import { format, isPast, isBefore, addMonths } from 'date-fns';
-import { id } from 'date-fns/locale';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { format, isPast, isBefore, addMonths } from "date-fns";
+import { id } from "date-fns/locale";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 export default function FoundationPage() {
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState("info");
   const [isEditing, setIsEditing] = useState(false);
 
   const { data: foundation, isLoading } = useFoundation();
@@ -100,12 +106,19 @@ export default function FoundationPage() {
   const deleteDocument = useDeleteFoundationDocument();
   const deleteBoardMember = useDeleteFoundationBoardMember();
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+  const COLORS = [
+    "#0088FE",
+    "#00C49F",
+    "#FFBB28",
+    "#FF8042",
+    "#8884d8",
+    "#82ca9d",
+  ];
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
@@ -119,28 +132,28 @@ export default function FoundationPage() {
   const onSubmit = async (data: any) => {
     try {
       await updateFoundation.mutateAsync(data);
-      toast.success('Data yayasan berhasil diperbarui');
+      toast.success("Data yayasan berhasil diperbarui");
       setIsEditing(false);
     } catch {
-      toast.error('Gagal memperbarui data yayasan');
+      toast.error("Gagal memperbarui data yayasan");
     }
   };
 
   const handleDeleteDocument = async (id: string) => {
     try {
       await deleteDocument.mutateAsync(id);
-      toast.success('Dokumen berhasil dihapus');
+      toast.success("Dokumen berhasil dihapus");
     } catch {
-      toast.error('Gagal menghapus dokumen');
+      toast.error("Gagal menghapus dokumen");
     }
   };
 
   const handleDeleteBoardMember = async (id: string) => {
     try {
       await deleteBoardMember.mutateAsync(id);
-      toast.success('Anggota pengurus berhasil dihapus');
+      toast.success("Anggota pengurus berhasil dihapus");
     } catch {
-      toast.error('Gagal menghapus anggota pengurus');
+      toast.error("Gagal menghapus anggota pengurus");
     }
   };
 
@@ -148,12 +161,20 @@ export default function FoundationPage() {
     if (!expiryDate) return null;
     const expiry = new Date(expiryDate);
     if (isPast(expiry)) {
-      return { status: 'expired', label: 'Kadaluarsa', variant: 'destructive' as const };
+      return {
+        status: "expired",
+        label: "Kadaluarsa",
+        variant: "destructive" as const,
+      };
     }
     if (isBefore(expiry, addMonths(new Date(), 3))) {
-      return { status: 'expiring', label: 'Segera Habis', variant: 'secondary' as const };
+      return {
+        status: "expiring",
+        label: "Segera Habis",
+        variant: "secondary" as const,
+      };
     }
-    return { status: 'valid', label: 'Aktif', variant: 'default' as const };
+    return { status: "valid", label: "Aktif", variant: "default" as const };
   };
 
   if (isLoading) {
@@ -208,7 +229,7 @@ export default function FoundationPage() {
                   <CardDescription>Informasi dasar yayasan</CardDescription>
                 </div>
                 <Button
-                  variant={isEditing ? 'outline' : 'default'}
+                  variant={isEditing ? "outline" : "default"}
                   onClick={() => {
                     if (isEditing) {
                       reset(foundation || {});
@@ -216,7 +237,13 @@ export default function FoundationPage() {
                     setIsEditing(!isEditing);
                   }}
                 >
-                  {isEditing ? 'Batal' : <><Edit className="mr-2 h-4 w-4" /> Edit</>}
+                  {isEditing ? (
+                    "Batal"
+                  ) : (
+                    <>
+                      <Edit className="mr-2 h-4 w-4" /> Edit
+                    </>
+                  )}
                 </Button>
               </CardHeader>
               <CardContent>
@@ -225,66 +252,82 @@ export default function FoundationPage() {
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="name">Nama Yayasan</Label>
-                        <Input id="name" {...register('name')} />
+                        <Input id="name" {...register("name")} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="legalName">Nama Badan Hukum</Label>
-                        <Input id="legalName" {...register('legalName')} />
+                        <Input id="legalName" {...register("legalName")} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="registrationNumber">Nomor Akta</Label>
-                        <Input id="registrationNumber" {...register('registrationNumber')} />
+                        <Input
+                          id="registrationNumber"
+                          {...register("registrationNumber")}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="taxId">NPWP</Label>
-                        <Input id="taxId" {...register('taxId')} />
+                        <Input id="taxId" {...register("taxId")} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="phone">Telepon</Label>
-                        <Input id="phone" {...register('phone')} />
+                        <Input id="phone" {...register("phone")} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" {...register('email')} />
+                        <Input id="email" type="email" {...register("email")} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="website">Website</Label>
-                        <Input id="website" {...register('website')} />
+                        <Input id="website" {...register("website")} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="foundedDate">Tanggal Berdiri</Label>
-                        <Input id="foundedDate" type="date" {...register('foundedDate')} />
+                        <Input
+                          id="foundedDate"
+                          type="date"
+                          {...register("foundedDate")}
+                        />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="address">Alamat</Label>
-                      <Textarea id="address" {...register('address')} />
+                      <Textarea id="address" {...register("address")} />
                     </div>
                     <div className="grid gap-4 md:grid-cols-3">
                       <div className="space-y-2">
                         <Label htmlFor="city">Kota</Label>
-                        <Input id="city" {...register('city')} />
+                        <Input id="city" {...register("city")} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="province">Provinsi</Label>
-                        <Input id="province" {...register('province')} />
+                        <Input id="province" {...register("province")} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="postalCode">Kode Pos</Label>
-                        <Input id="postalCode" {...register('postalCode')} />
+                        <Input id="postalCode" {...register("postalCode")} />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="vision">Visi</Label>
-                      <Textarea id="vision" {...register('vision')} />
+                      <Textarea id="vision" {...register("vision")} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="mission">Misi</Label>
-                      <Textarea id="mission" {...register('mission')} rows={4} />
+                      <Textarea
+                        id="mission"
+                        {...register("mission")}
+                        rows={4}
+                      />
                     </div>
                     <div className="flex justify-end">
-                      <Button type="submit" disabled={updateFoundation.isPending}>
-                        {updateFoundation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      <Button
+                        type="submit"
+                        disabled={updateFoundation.isPending}
+                      >
+                        {updateFoundation.isPending && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
                         <Save className="mr-2 h-4 w-4" />
                         Simpan
                       </Button>
@@ -298,18 +341,26 @@ export default function FoundationPage() {
                         <Building2 className="h-12 w-12 text-muted-foreground" />
                       </div>
                       <div className="flex-1">
-                        <h2 className="text-2xl font-bold">{foundation?.name || '-'}</h2>
-                        <p className="text-muted-foreground">{foundation?.legalName || '-'}</p>
+                        <h2 className="text-2xl font-bold">
+                          {foundation?.name || "-"}
+                        </h2>
+                        <p className="text-muted-foreground">
+                          {foundation?.legalName || "-"}
+                        </p>
                         <div className="mt-2 flex flex-wrap gap-4 text-sm">
                           <span className="flex items-center gap-1">
                             <FileText className="h-4 w-4" />
-                            {foundation?.registrationNumber || '-'}
+                            {foundation?.registrationNumber || "-"}
                           </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
                             {foundation?.foundedDate
-                              ? format(new Date(foundation.foundedDate), 'd MMMM yyyy', { locale: id })
-                              : '-'}
+                              ? format(
+                                  new Date(foundation.foundedDate),
+                                  "d MMMM yyyy",
+                                  { locale: id },
+                                )
+                              : "-"}
                           </span>
                         </div>
                       </div>
@@ -322,16 +373,21 @@ export default function FoundationPage() {
                         <div className="space-y-2 text-sm">
                           <p className="flex items-center gap-2">
                             <Phone className="h-4 w-4 text-muted-foreground" />
-                            {foundation?.phone || '-'}
+                            {foundation?.phone || "-"}
                           </p>
                           <p className="flex items-center gap-2">
                             <Mail className="h-4 w-4 text-muted-foreground" />
-                            {foundation?.email || '-'}
+                            {foundation?.email || "-"}
                           </p>
                           {foundation?.website && (
                             <p className="flex items-center gap-2">
                               <Globe className="h-4 w-4 text-muted-foreground" />
-                              <a href={foundation.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                              <a
+                                href={foundation.website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                              >
                                 {foundation.website}
                               </a>
                             </p>
@@ -343,9 +399,10 @@ export default function FoundationPage() {
                         <p className="flex items-start gap-2 text-sm">
                           <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
                           <span>
-                            {foundation?.address || '-'}
+                            {foundation?.address || "-"}
                             <br />
-                            {foundation?.city}, {foundation?.province} {foundation?.postalCode}
+                            {foundation?.city}, {foundation?.province}{" "}
+                            {foundation?.postalCode}
                           </span>
                         </p>
                       </div>
@@ -357,13 +414,17 @@ export default function FoundationPage() {
                         {foundation?.vision && (
                           <div className="space-y-2">
                             <h3 className="font-semibold">Visi</h3>
-                            <p className="text-sm text-muted-foreground">{foundation.vision}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {foundation.vision}
+                            </p>
                           </div>
                         )}
                         {foundation?.mission && (
                           <div className="space-y-2">
                             <h3 className="font-semibold">Misi</h3>
-                            <p className="text-sm text-muted-foreground whitespace-pre-line">{foundation.mission}</p>
+                            <p className="text-sm text-muted-foreground whitespace-pre-line">
+                              {foundation.mission}
+                            </p>
                           </div>
                         )}
                       </div>
@@ -392,16 +453,19 @@ export default function FoundationPage() {
             </div>
 
             {/* Expiring Documents Alert */}
-            {documents?.filter(d => {
+            {documents?.filter((d) => {
               const status = getDocumentStatus(d.expiryDate);
-              return status?.status === 'expired' || status?.status === 'expiring';
+              return (
+                status?.status === "expired" || status?.status === "expiring"
+              );
             }).length ? (
               <Card className="border-yellow-500">
                 <CardContent className="py-4">
                   <div className="flex items-center gap-2 text-yellow-600">
                     <AlertTriangle className="h-5 w-5" />
                     <span className="font-medium">
-                      Terdapat dokumen yang kadaluarsa atau akan segera habis masa berlakunya
+                      Terdapat dokumen yang kadaluarsa atau akan segera habis
+                      masa berlakunya
                     </span>
                   </div>
                 </CardContent>
@@ -425,16 +489,24 @@ export default function FoundationPage() {
                       const status = getDocumentStatus(doc.expiryDate);
                       return (
                         <TableRow key={doc.id}>
-                          <TableCell className="font-medium">{doc.name}</TableCell>
-                          <TableCell>{DOCUMENT_TYPE_LABELS[doc.type as DocumentType]}</TableCell>
+                          <TableCell className="font-medium">
+                            {doc.name}
+                          </TableCell>
+                          <TableCell>
+                            {DOCUMENT_TYPE_LABELS[doc.type as DocumentType]}
+                          </TableCell>
                           <TableCell>
                             {doc.expiryDate
-                              ? format(new Date(doc.expiryDate), 'd MMM yyyy', { locale: id })
-                              : '-'}
+                              ? format(new Date(doc.expiryDate), "d MMM yyyy", {
+                                  locale: id,
+                                })
+                              : "-"}
                           </TableCell>
                           <TableCell>
                             {status ? (
-                              <Badge variant={status.variant}>{status.label}</Badge>
+                              <Badge variant={status.variant}>
+                                {status.label}
+                              </Badge>
                             ) : (
                               <Badge variant="secondary">Permanen</Badge>
                             )}
@@ -442,7 +514,11 @@ export default function FoundationPage() {
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button variant="ghost" size="icon" asChild>
-                                <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
+                                <a
+                                  href={doc.fileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
                                   <Eye className="h-4 w-4" />
                                 </a>
                               </Button>
@@ -452,7 +528,9 @@ export default function FoundationPage() {
                                 </a>
                               </Button>
                               <Button variant="ghost" size="icon" asChild>
-                                <Link href={`/foundation/documents/${doc.id}/edit`}>
+                                <Link
+                                  href={`/foundation/documents/${doc.id}/edit`}
+                                >
                                   <Edit className="h-4 w-4" />
                                 </Link>
                               </Button>
@@ -464,14 +542,21 @@ export default function FoundationPage() {
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Hapus Dokumen?</AlertDialogTitle>
+                                    <AlertDialogTitle>
+                                      Hapus Dokumen?
+                                    </AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Tindakan ini tidak dapat dibatalkan. Dokumen akan dihapus secara permanen.
+                                      Tindakan ini tidak dapat dibatalkan.
+                                      Dokumen akan dihapus secara permanen.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Batal</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteDocument(doc.id)}>
+                                    <AlertDialogAction
+                                      onClick={() =>
+                                        handleDeleteDocument(doc.id)
+                                      }
+                                    >
                                       Hapus
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
@@ -484,7 +569,10 @@ export default function FoundationPage() {
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={5}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         Belum ada dokumen
                       </TableCell>
                     </TableRow>
@@ -522,7 +610,9 @@ export default function FoundationPage() {
                         </div>
                         <div className="flex-1">
                           <h3 className="font-semibold">{member.name}</h3>
-                          <p className="text-sm text-muted-foreground">{member.position}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {member.position}
+                          </p>
                           <div className="mt-2 space-y-1 text-sm">
                             {member.phone && (
                               <p className="flex items-center gap-1 text-muted-foreground">
@@ -538,11 +628,18 @@ export default function FoundationPage() {
                             )}
                           </div>
                           <div className="mt-2 flex items-center gap-2">
-                            <Badge variant={member.isActive ? 'default' : 'secondary'}>
-                              {member.isActive ? 'Aktif' : 'Non-Aktif'}
+                            <Badge
+                              variant={
+                                member.isActive ? "default" : "secondary"
+                              }
+                            >
+                              {member.isActive ? "Aktif" : "Non-Aktif"}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
-                              Sejak {format(new Date(member.startDate), 'MMM yyyy', { locale: id })}
+                              Sejak{" "}
+                              {format(new Date(member.startDate), "MMM yyyy", {
+                                locale: id,
+                              })}
                             </span>
                           </div>
                         </div>
@@ -561,14 +658,20 @@ export default function FoundationPage() {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Hapus Pengurus?</AlertDialogTitle>
+                              <AlertDialogTitle>
+                                Hapus Pengurus?
+                              </AlertDialogTitle>
                               <AlertDialogDescription>
                                 Tindakan ini tidak dapat dibatalkan.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Batal</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteBoardMember(member.id)}>
+                              <AlertDialogAction
+                                onClick={() =>
+                                  handleDeleteBoardMember(member.id)
+                                }
+                              >
                                 Hapus
                               </AlertDialogAction>
                             </AlertDialogFooter>
@@ -601,40 +704,60 @@ export default function FoundationPage() {
             <div className="grid gap-4 md:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pemasukan Bulan Ini</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Pemasukan Bulan Ini
+                  </CardTitle>
                   <TrendingUp className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600">
-                    {formatCurrency((financialSummary as any)?.currentMonth?.revenue || 0)}
+                    {formatCurrency(
+                      (financialSummary as any)?.currentMonth?.revenue || 0,
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Bulan lalu: {formatCurrency((financialSummary as any)?.lastMonth?.revenue || 0)}
+                    Bulan lalu:{" "}
+                    {formatCurrency(
+                      (financialSummary as any)?.lastMonth?.revenue || 0,
+                    )}
                   </p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pengeluaran Bulan Ini</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Pengeluaran Bulan Ini
+                  </CardTitle>
                   <TrendingDown className="h-4 w-4 text-red-500" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-red-600">
-                    {formatCurrency((financialSummary as any)?.currentMonth?.expense || 0)}
+                    {formatCurrency(
+                      (financialSummary as any)?.currentMonth?.expense || 0,
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Bulan lalu: {formatCurrency((financialSummary as any)?.lastMonth?.expense || 0)}
+                    Bulan lalu:{" "}
+                    {formatCurrency(
+                      (financialSummary as any)?.lastMonth?.expense || 0,
+                    )}
                   </p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Saldo Bersih</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Saldo Bersih
+                  </CardTitle>
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-2xl font-bold ${((financialSummary as any)?.currentMonth?.net || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatCurrency((financialSummary as any)?.currentMonth?.net || 0)}
+                  <div
+                    className={`text-2xl font-bold ${((financialSummary as any)?.currentMonth?.net || 0) >= 0 ? "text-green-600" : "text-red-600"}`}
+                  >
+                    {formatCurrency(
+                      (financialSummary as any)?.currentMonth?.net || 0,
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Selisih pemasukan dan pengeluaran
@@ -649,7 +772,9 @@ export default function FoundationPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Komposisi Pengeluaran</CardTitle>
-                  <CardDescription>Distribusi pengeluaran berdasarkan kategori</CardDescription>
+                  <CardDescription>
+                    Distribusi pengeluaran berdasarkan kategori
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[300px]">
@@ -666,14 +791,26 @@ export default function FoundationPage() {
                             dataKey="value"
                             nameKey="name"
                           >
-                            {(financialSummary as any).expenseComposition.map((entry: { name: string; value: number }, index: number) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
+                            {(financialSummary as any).expenseComposition.map(
+                              (
+                                entry: { name: string; value: number },
+                                index: number,
+                              ) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={COLORS[index % COLORS.length]}
+                                />
+                              ),
+                            )}
                           </Pie>
                           <Tooltip
                             formatter={(value: number) => formatCurrency(value)}
                           />
-                          <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+                          <Legend
+                            layout="horizontal"
+                            verticalAlign="bottom"
+                            align="center"
+                          />
                         </PieChart>
                       </ResponsiveContainer>
                     ) : (
@@ -689,25 +826,49 @@ export default function FoundationPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Pemasukan vs Pengeluaran per Unit</CardTitle>
-                  <CardDescription>Perbandingan keuangan per unit pendidikan</CardDescription>
+                  <CardDescription>
+                    Perbandingan keuangan per unit pendidikan
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[300px]">
                     {(financialSummary as any)?.byUnit?.length ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={(financialSummary as any).byUnit}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                          <XAxis dataKey="unitName" fontSize={12} tickLine={false} axisLine={false} />
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            vertical={false}
+                          />
+                          <XAxis
+                            dataKey="unitName"
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                          />
                           <YAxis
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
-                            tickFormatter={(value) => `${(value / 1000000).toFixed(0)}jt`}
+                            tickFormatter={(value) =>
+                              `${(value / 1000000).toFixed(0)}jt`
+                            }
                           />
-                          <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                          <Tooltip
+                            formatter={(value: number) => formatCurrency(value)}
+                          />
                           <Legend />
-                          <Bar dataKey="revenue" name="Pemasukan" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                          <Bar dataKey="expense" name="Pengeluaran" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                          <Bar
+                            dataKey="revenue"
+                            name="Pemasukan"
+                            fill="#22c55e"
+                            radius={[4, 4, 0, 0]}
+                          />
+                          <Bar
+                            dataKey="expense"
+                            name="Pengeluaran"
+                            fill="#ef4444"
+                            radius={[4, 4, 0, 0]}
+                          />
                         </BarChart>
                       </ResponsiveContainer>
                     ) : (
@@ -724,7 +885,9 @@ export default function FoundationPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Rincian per Unit</CardTitle>
-                <CardDescription>Ringkasan keuangan berdasarkan unit pendidikan</CardDescription>
+                <CardDescription>
+                  Ringkasan keuangan berdasarkan unit pendidikan
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -740,7 +903,9 @@ export default function FoundationPage() {
                     {(financialSummary as any)?.units?.length ? (
                       (financialSummary as any).units.map((unit: any) => (
                         <TableRow key={unit.unitId}>
-                          <TableCell className="font-medium">{unit.unitName}</TableCell>
+                          <TableCell className="font-medium">
+                            {unit.unitName}
+                          </TableCell>
                           <TableCell className="text-right text-green-600">
                             {formatCurrency(unit.revenue)}
                           </TableCell>
@@ -754,7 +919,10 @@ export default function FoundationPage() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        <TableCell
+                          colSpan={4}
+                          className="text-center py-8 text-muted-foreground"
+                        >
                           Belum ada data transaksi
                         </TableCell>
                       </TableRow>

@@ -1,16 +1,22 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   BookOpen,
   Users,
@@ -21,84 +27,85 @@ import {
   RefreshCw,
   Star,
   Smile,
-} from 'lucide-react';
-import Link from 'next/link';
+} from "lucide-react";
+import Link from "next/link";
 import {
   usePAUDDashboard,
   getAchievementLabel,
   getAchievementColor,
-} from '@/hooks/use-paud-dashboard';
-import { id as localeId } from 'date-fns/locale';
+} from "@/hooks/use-paud-dashboard";
+import { id as localeId } from "date-fns/locale";
 
 export default function TKPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('overview');
-  
-  const { stats, recentAssessments, recentReports, isLoading, refetch } = usePAUDDashboard();
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const { stats, recentAssessments, recentReports, isLoading, refetch } =
+    usePAUDDashboard();
 
   const menuItems = [
     {
-      title: 'Laporan Harian',
-      description: 'Input mood, makan, dan ibadah harian',
+      title: "Laporan Harian",
+      description: "Input mood, makan, dan ibadah harian",
       icon: Calendar,
-      href: '/tk/daily-reports/create',
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      href: "/tk/daily-reports/create",
+      color: "text-green-600",
+      bgColor: "bg-green-50",
     },
     {
-      title: 'Penilaian TK',
-      description: 'Input penilaian indikator perkembangan',
+      title: "Penilaian TK",
+      description: "Input penilaian indikator perkembangan",
       icon: ClipboardCheck,
-      href: '/tk/assessment',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      href: "/tk/assessment",
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
     },
     {
-      title: 'Tahfidz Tracker',
-      description: 'Pantau hafalan Quran siswa',
+      title: "Tahfidz Tracker",
+      description: "Pantau hafalan Quran siswa",
       icon: BookOpen,
-      href: '/academic/tahfidz',
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-50',
+      href: "/academic/tahfidz",
+      color: "text-amber-600",
+      bgColor: "bg-amber-50",
     },
     {
-      title: 'Data Siswa',
-      description: 'Manajemen data siswa TK',
+      title: "Data Siswa",
+      description: "Manajemen data siswa TK",
       icon: Users,
-      href: '/students?unit=TK_QURAN',
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
+      href: "/students?unit=TK_QURAN",
+      color: "text-orange-600",
+      bgColor: "bg-orange-50",
     },
   ];
 
   const statsConfig = [
     {
-      title: 'Total Siswa',
+      title: "Total Siswa",
       value: stats?.totalStudents ?? 0,
       icon: Users,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
     },
     {
-      title: 'Penilaian Bulan Ini',
+      title: "Penilaian Bulan Ini",
       value: stats?.assessmentsThisMonth ?? 0,
       icon: ClipboardCheck,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      color: "text-green-600",
+      bgColor: "bg-green-50",
     },
     {
-      title: 'Laporan Harian',
+      title: "Laporan Harian",
       value: stats?.dailyReportsThisMonth ?? 0,
       icon: Calendar,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
+      color: "text-purple-600",
+      bgColor: "bg-purple-50",
     },
     {
-      title: 'Rapor Aktif',
+      title: "Rapor Aktif",
       value: stats?.activeReports ?? 0,
       icon: FileText,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
+      color: "text-orange-600",
+      bgColor: "bg-orange-50",
     },
   ];
 
@@ -108,13 +115,22 @@ export default function TKPage() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">TK Qur'an Dashboard</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              TK Qur'an Dashboard
+            </h1>
             <p className="text-muted-foreground">
               Sistem Manajemen Informasi TK Qur'an
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isLoading}
+          >
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+            />
             Refresh
           </Button>
         </div>
@@ -182,85 +198,120 @@ export default function TKPage() {
 
             {/* Recent Activity */}
             <div className="grid gap-6 lg:grid-cols-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Activity className="h-5 w-5" />
-                            Laporan Harian Terbaru
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ScrollArea className="h-[300px]">
-                            <div className="space-y-3">
-                                {isLoading ? (
-                                    Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)
-                                ) : recentReports && recentReports.length > 0 ? (
-                                    recentReports.map((report) => (
-                                        <div key={report.id} className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50">
-                                            <div className="bg-green-100 p-2 rounded-full">
-                                                <Smile className="h-4 w-4 text-green-600" />
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-sm">{report.student?.name}</p>
-                                                <p className="text-xs text-muted-foreground">{format(new Date(report.date), 'dd MMM yyyy', { locale: localeId })}</p>
-                                                {report.mood && <Badge variant="outline" className="mt-1 text-[10px]">{report.mood}</Badge>}
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p className="text-center text-sm text-muted-foreground py-8">Belum ada laporan harian.</p>
-                                )}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Laporan Harian Terbaru
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[300px]">
+                    <div className="space-y-3">
+                      {isLoading ? (
+                        Array.from({ length: 3 }).map((_, i) => (
+                          <Skeleton key={i} className="h-16 w-full" />
+                        ))
+                      ) : recentReports && recentReports.length > 0 ? (
+                        recentReports.map((report) => (
+                          <div
+                            key={report.id}
+                            className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50"
+                          >
+                            <div className="bg-green-100 p-2 rounded-full">
+                              <Smile className="h-4 w-4 text-green-600" />
                             </div>
-                        </ScrollArea>
-                    </CardContent>
-                </Card>
+                            <div>
+                              <p className="font-medium text-sm">
+                                {report.student?.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(report.date), "dd MMM yyyy", {
+                                  locale: localeId,
+                                })}
+                              </p>
+                              {report.mood && (
+                                <Badge
+                                  variant="outline"
+                                  className="mt-1 text-[10px]"
+                                >
+                                  {report.mood}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-center text-sm text-muted-foreground py-8">
+                          Belum ada laporan harian.
+                        </p>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Star className="h-5 w-5" />
-                            Penilaian Terbaru
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ScrollArea className="h-[300px]">
-                            <div className="space-y-3">
-                                {isLoading ? (
-                                    Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)
-                                ) : recentAssessments && recentAssessments.length > 0 ? (
-                                    recentAssessments.map((assessment) => (
-                                        <div key={assessment.id} className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50">
-                                            <div className="bg-blue-100 p-2 rounded-full">
-                                                <ClipboardCheck className="h-4 w-4 text-blue-600" />
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-sm">{assessment.student?.name}</p>
-                                                <p className="text-xs text-muted-foreground">{assessment.indicator?.name}</p>
-                                                <Badge className={`mt-1 text-[10px] ${getAchievementColor(assessment.achievementLevel)}`}>
-                                                    {assessment.achievementLevel}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p className="text-center text-sm text-muted-foreground py-8">Belum ada penilaian.</p>
-                                )}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Star className="h-5 w-5" />
+                    Penilaian Terbaru
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[300px]">
+                    <div className="space-y-3">
+                      {isLoading ? (
+                        Array.from({ length: 3 }).map((_, i) => (
+                          <Skeleton key={i} className="h-16 w-full" />
+                        ))
+                      ) : recentAssessments && recentAssessments.length > 0 ? (
+                        recentAssessments.map((assessment) => (
+                          <div
+                            key={assessment.id}
+                            className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50"
+                          >
+                            <div className="bg-blue-100 p-2 rounded-full">
+                              <ClipboardCheck className="h-4 w-4 text-blue-600" />
                             </div>
-                        </ScrollArea>
-                    </CardContent>
-                </Card>
+                            <div>
+                              <p className="font-medium text-sm">
+                                {assessment.student?.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {assessment.indicator?.name}
+                              </p>
+                              <Badge
+                                className={`mt-1 text-[10px] ${getAchievementColor(assessment.achievementLevel)}`}
+                              >
+                                {assessment.achievementLevel}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-center text-sm text-muted-foreground py-8">
+                          Belum ada penilaian.
+                        </p>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
           <TabsContent value="activities">
             <Card>
-                <CardHeader>
-                    <CardTitle>Semua Aktivitas</CardTitle>
-                    <CardDescription>Log lengkap aktivitas sistem.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground">Fitur log aktivitas lengkap akan segera hadir.</p>
-                </CardContent>
+              <CardHeader>
+                <CardTitle>Semua Aktivitas</CardTitle>
+                <CardDescription>Log lengkap aktivitas sistem.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Fitur log aktivitas lengkap akan segera hadir.
+                </p>
+              </CardContent>
             </Card>
           </TabsContent>
         </Tabs>

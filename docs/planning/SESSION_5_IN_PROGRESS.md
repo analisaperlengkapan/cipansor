@@ -19,18 +19,21 @@
 ### 1. Fixed Dashboard Metrics Enum Error
 
 **Problem:** Dashboard metrics job failing with Prisma validation error
+
 ```
 Invalid value for argument `activityType`. Expected TahfidzActivityType.
 activityType: "SETORAN" // ❌ Not in enum
 ```
 
 **Solution:** Updated enum value to match Prisma schema
+
 ```typescript
 // apps/api/src/lib/realtime.ts line 372
 activityType: 'TASMI', // ✅ Correct enum value (Setoran hafalan)
 ```
 
 **Enum Values from Schema:**
+
 - `ZIYADAH` - Hafalan baru
 - `MUROJAAH` - Mengulang hafalan
 - `TASMI` - Setoran hafalan ✅
@@ -48,16 +51,16 @@ Currently, WebSocket connections accept any client without authentication. From 
 
 ```typescript
 // apps/api/src/lib/realtime.ts lines 60-70
-io.on('connection', async (socket) => {
-    logger.info('Client connected', { socketId: socket.id });
-    const token = socket.handshake.auth.token;
-    
-    if (token) {
-        logger.debug('Auth token received', { socketId: socket.id });
-        // TODO: Verify token and attach user context ⚠️
-    }
-    
-    // ... rest of connection logic
+io.on("connection", async (socket) => {
+  logger.info("Client connected", { socketId: socket.id });
+  const token = socket.handshake.auth.token;
+
+  if (token) {
+    logger.debug("Auth token received", { socketId: socket.id });
+    // TODO: Verify token and attach user context ⚠️
+  }
+
+  // ... rest of connection logic
 });
 ```
 
@@ -66,6 +69,7 @@ io.on('connection', async (socket) => {
 ### Requirements
 
 From `backend-design.md` Section 4:
+
 - JWT token verification for WebSocket connections
 - User context attached to socket
 - Invalid tokens should disconnect
@@ -76,6 +80,7 @@ From `backend-design.md` Section 4:
 **File:** `/home/clouduser/cipansor/apps/api/src/lib/realtime.ts`
 
 **Tasks:**
+
 1. ✅ Import JWT verification utility
 2. ⏳ Create authentication middleware function
 3. ⏳ Verify token in connection handler
@@ -88,59 +93,59 @@ From `backend-design.md` Section 4:
 
 ```typescript
 // Step 1: Import JWT utility
-import { verifyToken } from '../lib/jwt';
+import { verifyToken } from "../lib/jwt";
 
 // Step 2: Create auth middleware
 async function authenticateSocket(socket: Socket): Promise<User | null> {
-    const token = socket.handshake.auth.token;
-    
-    if (!token) {
-        return null;
-    }
-    
-    try {
-        const payload = await verifyToken(token);
-        return payload.user;
-    } catch (error) {
-        logger.warn('Invalid WebSocket auth token', { error });
-        return null;
-    }
+  const token = socket.handshake.auth.token;
+
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const payload = await verifyToken(token);
+    return payload.user;
+  } catch (error) {
+    logger.warn("Invalid WebSocket auth token", { error });
+    return null;
+  }
 }
 
 // Step 3: Apply in connection handler
-io.on('connection', async (socket) => {
-    const user = await authenticateSocket(socket);
-    
-    if (!user) {
-        socket.emit('error', {
-            code: 'UNAUTHORIZED',
-            message: 'Authentication required'
-        });
-        socket.disconnect(true);
-        return;
-    }
-    
-    // Attach user context
-    socket.data.user = user;
-    socket.data.unitId = user.unitId;
-    socket.data.roles = user.roles;
-    
-    logger.info('Authenticated client connected', {
-        socketId: socket.id,
-        userId: user.id,
-        unitId: user.unitId
+io.on("connection", async (socket) => {
+  const user = await authenticateSocket(socket);
+
+  if (!user) {
+    socket.emit("error", {
+      code: "UNAUTHORIZED",
+      message: "Authentication required",
     });
-    
-    // Join user-specific and unit-specific rooms
-    socket.join(`user:${user.id}`);
-    socket.join(`unit:${user.unitId}`);
-    
-    // Join role-based rooms
-    user.roles.forEach(role => {
-        socket.join(`role:${role}`);
-    });
-    
-    // ... rest of connection logic
+    socket.disconnect(true);
+    return;
+  }
+
+  // Attach user context
+  socket.data.user = user;
+  socket.data.unitId = user.unitId;
+  socket.data.roles = user.roles;
+
+  logger.info("Authenticated client connected", {
+    socketId: socket.id,
+    userId: user.id,
+    unitId: user.unitId,
+  });
+
+  // Join user-specific and unit-specific rooms
+  socket.join(`user:${user.id}`);
+  socket.join(`unit:${user.unitId}`);
+
+  // Join role-based rooms
+  user.roles.forEach((role) => {
+    socket.join(`role:${role}`);
+  });
+
+  // ... rest of connection logic
 });
 ```
 
@@ -151,27 +156,32 @@ io.on('connection', async (socket) => {
 ### Servers Status
 
 **Backend API** ✅
+
 - URL: http://localhost:3001/api
 - Health: http://localhost:3001/health
 - Status: Running successfully
 - WebSocket: ws://localhost:3001
 
 **Frontend** ⏳
+
 - URL: http://localhost:3002 (port 3000 in use)
 - Status: Starting (Next.js compilation in progress)
 
 **Redis** ✅
+
 - Port: 6379
 - Status: Running in Docker
 
 ### Analytics API Verification
 
 **Test Command:**
+
 ```bash
 curl -s "http://localhost:3001/api/murojaah/analytics/quality-distribution?startDate=2024-01-01&endDate=2024-12-31"
 ```
 
 **Response:**
+
 ```json
 {
   "success": false,
@@ -203,6 +213,7 @@ Once frontend is fully compiled:
 ## 📝 Next Steps
 
 ### Immediate (This Session)
+
 1. **Complete WebSocket Authentication** (1.5h remaining)
    - Implement authentication middleware
    - Add user context to socket.data
@@ -210,6 +221,7 @@ Once frontend is fully compiled:
    - Test authentication flow
 
 ### Following Session
+
 2. **E2E Testing** (1h)
    - Test analytics dashboard with real data
    - Verify all 4 tabs
@@ -227,20 +239,25 @@ Once frontend is fully compiled:
 ## 🐛 Issues & Resolutions
 
 ### Issue 1: Port 3000 Already in Use
+
 **Symptom:** Frontend failed to start on port 3000
 **Resolution:** Cleaned up processes, frontend starting on port 3002
 **Command:** `lsof -ti:3000 | xargs kill -9`
 
 ### Issue 2: Prisma Enum Validation Error
+
 **Symptom:** Dashboard metrics job failing every minute
+
 ```
 Invalid value for argument activityType. Expected TahfidzActivityType.
 ```
+
 **Root Cause:** Used `SETORAN` (Indonesian) instead of enum value `TASMI`
 **Resolution:** Changed `activityType: 'SETORAN'` to `activityType: 'TASMI'`
 **File:** `/home/clouduser/cipansor/apps/api/src/lib/realtime.ts` line 372
 
 ### Issue 3: Next.js Build Lock
+
 **Symptom:** "Unable to acquire lock at .next/dev/lock"
 **Resolution:** Removed lock file manually
 **Command:** `rm -rf /home/clouduser/cipansor/apps/web/.next/dev/lock`
@@ -252,6 +269,7 @@ Invalid value for argument activityType. Expected TahfidzActivityType.
 ### Sprint 1 Week 1 Status
 
 **Completed Features:**
+
 1. ✅ Real-time Dashboard WebSocket Hook (2h) - Session 1
 2. ✅ Murojaah Analytics Dashboard (12h) - Session 1
 3. ✅ Executive Dashboard (4h) - Session 1
@@ -263,10 +281,10 @@ Invalid value for argument activityType. Expected TahfidzActivityType.
 9. ✅ Analytics Dashboard JSX Fixes (0.5h) - Session 4
 10. ✅ Dashboard Metrics Enum Fix (0.5h) - Session 5
 
-**In Progress:**
-11. ⏳ WebSocket Authentication Middleware (0.5h / 2h) - Session 5
+**In Progress:** 11. ⏳ WebSocket Authentication Middleware (0.5h / 2h) - Session 5
 
 **Time Breakdown:**
+
 - Session 1: 12 hours
 - Session 2: 4 hours
 - Session 3: 2.5 hours
@@ -285,17 +303,20 @@ Invalid value for argument activityType. Expected TahfidzActivityType.
 ## 🎯 Priority Task Queue
 
 ### P1 - Critical (Complete This Week)
+
 1. **WebSocket Authentication** (1.5h remaining) ← CURRENT
 2. **E2E Testing** (1h)
 3. **Unit-Specific Metrics** (3h)
 4. **Dashboard API Endpoint** (3.5h)
 
 ### P2 - High Priority (Next Week)
+
 5. **Error Handling & Retry Logic** (2h)
 6. **Dashboard Metrics Caching** (2h)
 7. **Unit Tests for Analytics** (3h)
 
 ### P3 - Medium Priority
+
 8. **Integration Tests** (2h)
 9. **Performance Testing** (2h)
 10. **Documentation Updates** (1h)

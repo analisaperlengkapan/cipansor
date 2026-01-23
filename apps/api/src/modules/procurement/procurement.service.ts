@@ -4,7 +4,7 @@ import {
   UpdatePurchaseRequestStatusInput,
   PurchaseRequestStatus,
   PurchaseRequest,
-  FulfillPurchaseRequestInput
+  FulfillPurchaseRequestInput,
 } from '@cipansor/shared';
 import { UserRole, AssetCondition, Prisma } from '@prisma/client';
 import { Errors } from '@/middleware/error';
@@ -13,24 +13,21 @@ import { createNotification } from '../notifications/service';
 
 export const procurementService = {
   // Create a new purchase request
-  create: async (
-    input: CreatePurchaseRequestInput,
-    userId: string
-  ): Promise<PurchaseRequest> => {
+  create: async (input: CreatePurchaseRequestInput, userId: string): Promise<PurchaseRequest> => {
     // 1. Budget Availability Check
     const budgetRequests = new Map<string, number>();
 
     for (const item of input.items) {
       if (item.budgetId) {
         const currentAmount = budgetRequests.get(item.budgetId) || 0;
-        budgetRequests.set(item.budgetId, currentAmount + (item.quantity * item.estimatedPrice));
+        budgetRequests.set(item.budgetId, currentAmount + item.quantity * item.estimatedPrice);
       }
     }
 
     if (budgetRequests.size > 0) {
       const budgetIds = Array.from(budgetRequests.keys());
       const budgets = await prisma.budget.findMany({
-        where: { id: { in: budgetIds } }
+        where: { id: { in: budgetIds } },
       });
 
       for (const budget of budgets) {
@@ -38,10 +35,12 @@ export const procurementService = {
         const availableAmount = Number(budget.amount) - Number(budget.usedAmount);
 
         if (requestedAmount > availableAmount) {
-          throw Errors.validationError([{
-            field: 'items',
-            message: `Budget exceeded for budget ID ${budget.id}. Available: ${availableAmount}, Requested: ${requestedAmount}`
-          }]);
+          throw Errors.validationError([
+            {
+              field: 'items',
+              message: `Budget exceeded for budget ID ${budget.id}. Available: ${availableAmount}, Requested: ${requestedAmount}`,
+            },
+          ]);
         }
       }
     }
@@ -50,7 +49,7 @@ export const procurementService = {
     const code = await generateUniqueCode('PR', 'purchase_requests');
 
     const totalEstimated = input.items.reduce(
-      (sum, item) => sum + (item.quantity * item.estimatedPrice),
+      (sum, item) => sum + item.quantity * item.estimatedPrice,
       0
     );
 
@@ -64,16 +63,16 @@ export const procurementService = {
         totalEstimated,
         status: PurchaseRequestStatus.PENDING,
         items: {
-          create: input.items.map(item => ({
+          create: input.items.map((item) => ({
             itemName: item.itemName,
             quantity: item.quantity,
             unit: item.unit,
             estimatedPrice: item.estimatedPrice,
             totalPrice: item.quantity * item.estimatedPrice,
             assetCategoryId: item.assetCategoryId,
-            budgetId: item.budgetId
-          }))
-        }
+            budgetId: item.budgetId,
+          })),
+        },
       },
       include: {
         unit: true,
@@ -83,12 +82,12 @@ export const procurementService = {
             assetCategory: true,
             budget: {
               include: {
-                account: true
-              }
-            }
-          }
-        }
-      }
+                account: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     // Audit Log: Create
@@ -98,8 +97,8 @@ export const procurementService = {
         action: 'PROCUREMENT_CREATE',
         entity: 'PURCHASE_REQUEST',
         entityId: request.id,
-        newValues: request as any
-      }
+        newValues: request as any,
+      },
     });
 
     return request as unknown as PurchaseRequest;
@@ -129,9 +128,9 @@ export const procurementService = {
         unit: true,
         requester: true,
         items: true,
-        approvedBy: true
+        approvedBy: true,
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
 
     return requests as unknown as PurchaseRequest[];
@@ -150,12 +149,12 @@ export const procurementService = {
             assetCategory: true,
             budget: {
               include: {
-                account: true
-              }
-            }
-          }
-        }
-      }
+                account: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!request) throw Errors.notFound('Purchase Request');
@@ -167,12 +166,12 @@ export const procurementService = {
     return prisma.auditLog.findMany({
       where: {
         entity: 'PURCHASE_REQUEST',
-        entityId: id
+        entityId: id,
       },
       include: {
-        user: { select: { id: true, name: true, role: true } }
+        user: { select: { id: true, name: true, role: true } },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   },
 
@@ -186,7 +185,10 @@ export const procurementService = {
     const request = await prisma.purchaseRequest.findUnique({ where: { id } });
     if (!request) throw Errors.notFound('Purchase Request');
 
-    if (request.status !== PurchaseRequestStatus.PENDING && request.status !== PurchaseRequestStatus.APPROVED) {
+    if (
+      request.status !== PurchaseRequestStatus.PENDING &&
+      request.status !== PurchaseRequestStatus.APPROVED
+    ) {
       throw Errors.badRequest('Cannot update status of processed request');
     }
 
@@ -197,7 +199,9 @@ export const procurementService = {
       const isSuperAdmin = approverRole === UserRole.SUPER_ADMIN;
 
       if (isHighValue && !isSuperAdmin) {
-        throw Errors.forbidden(`Requests above ${HIGH_VALUE_THRESHOLD} require Foundation/Yayasan approval.`);
+        throw Errors.forbidden(
+          `Requests above ${HIGH_VALUE_THRESHOLD} require Foundation/Yayasan approval.`
+        );
       }
     }
 
@@ -213,19 +217,22 @@ export const procurementService = {
     const updated = await prisma.purchaseRequest.update({
       where: { id },
       data,
-      include: { items: true }
+      include: { items: true },
     });
 
     // Audit Log: Status Change
     await prisma.auditLog.create({
       data: {
         userId: approverId,
-        action: input.status === PurchaseRequestStatus.APPROVED ? 'PROCUREMENT_APPROVE' : 'PROCUREMENT_REJECT',
+        action:
+          input.status === PurchaseRequestStatus.APPROVED
+            ? 'PROCUREMENT_APPROVE'
+            : 'PROCUREMENT_REJECT',
         entity: 'PURCHASE_REQUEST',
         entityId: id,
         oldValues: { status: request.status } as any,
-        newValues: { status: input.status, rejectionReason: input.rejectionReason } as any
-      }
+        newValues: { status: input.status, rejectionReason: input.rejectionReason } as any,
+      },
     });
 
     return updated as unknown as PurchaseRequest;
@@ -235,16 +242,21 @@ export const procurementService = {
   fulfill: async (id: string, input: FulfillPurchaseRequestInput, userId: string) => {
     const request = await prisma.purchaseRequest.findUnique({
       where: { id },
-      include: { items: { include: { assetCategory: true, budget: { include: { account: true } } } } }
+      include: {
+        items: { include: { assetCategory: true, budget: { include: { account: true } } } },
+      },
     });
 
     if (!request) throw Errors.notFound('Purchase Request');
-    if (request.status !== PurchaseRequestStatus.APPROVED && request.status !== PurchaseRequestStatus.ORDERED) {
+    if (
+      request.status !== PurchaseRequestStatus.APPROVED &&
+      request.status !== PurchaseRequestStatus.ORDERED
+    ) {
       throw Errors.badRequest('Request must be Approved or Ordered to be Fulfilled');
     }
 
     const paymentAccount = await prisma.accountCode.findUnique({
-      where: { id: input.paymentAccountId }
+      where: { id: input.paymentAccountId },
     });
     if (!paymentAccount) {
       throw Errors.badRequest('Invalid payment account');
@@ -255,12 +267,12 @@ export const procurementService = {
         where: { id },
         data: {
           status: PurchaseRequestStatus.RECEIVED,
-          receivedAt: new Date(input.receiptDate)
-        }
+          receivedAt: new Date(input.receiptDate),
+        },
       });
 
       for (const fulfillmentItem of input.items) {
-        const prItem = request.items.find(i => i.id === fulfillmentItem.itemId);
+        const prItem = request.items.find((i) => i.id === fulfillmentItem.itemId);
         if (!prItem) continue;
 
         const totalItemPrice = fulfillmentItem.quantityReceived * fulfillmentItem.actualPrice;
@@ -294,49 +306,49 @@ export const procurementService = {
                 purchaseOrderNo: input.purchaseOrderNo,
                 supplier: input.supplier,
                 supplierId: input.supplierId,
-                roomId: fulfillmentItem.roomId
-              }
+                roomId: fulfillmentItem.roomId,
+              },
             });
           }
         }
 
         if (prItem.budgetId && prItem.budget?.accountId) {
-             const debitAccount = prItem.budget.accountId;
+          const debitAccount = prItem.budget.accountId;
 
-             await tx.budget.update({
-               where: { id: prItem.budgetId },
-               data: {
-                 usedAmount: { increment: totalItemPrice }
-               }
-             });
+          await tx.budget.update({
+            where: { id: prItem.budgetId },
+            data: {
+              usedAmount: { increment: totalItemPrice },
+            },
+          });
 
-             await tx.journalEntry.create({
-                data: {
-                    unitId: request.unitId,
-                    accountId: debitAccount,
-                    date: new Date(input.receiptDate),
-                    description: `Purchase: ${prItem.itemName} (PR: ${request.code}) - Qty: ${fulfillmentItem.quantityReceived}`,
-                    debit: totalItemPrice,
-                    credit: 0,
-                    reference: request.code,
-                    referenceType: 'PURCHASE_REQUEST',
-                    createdById: userId
-                }
-             });
+          await tx.journalEntry.create({
+            data: {
+              unitId: request.unitId,
+              accountId: debitAccount,
+              date: new Date(input.receiptDate),
+              description: `Purchase: ${prItem.itemName} (PR: ${request.code}) - Qty: ${fulfillmentItem.quantityReceived}`,
+              debit: totalItemPrice,
+              credit: 0,
+              reference: request.code,
+              referenceType: 'PURCHASE_REQUEST',
+              createdById: userId,
+            },
+          });
 
-             await tx.journalEntry.create({
-                data: {
-                    unitId: request.unitId,
-                    accountId: paymentAccount.id,
-                    date: new Date(input.receiptDate),
-                    description: `Payment: ${prItem.itemName} (PR: ${request.code})`,
-                    debit: 0,
-                    credit: totalItemPrice,
-                    reference: request.code,
-                    referenceType: 'PURCHASE_REQUEST',
-                    createdById: userId
-                }
-             });
+          await tx.journalEntry.create({
+            data: {
+              unitId: request.unitId,
+              accountId: paymentAccount.id,
+              date: new Date(input.receiptDate),
+              description: `Payment: ${prItem.itemName} (PR: ${request.code})`,
+              debit: 0,
+              credit: totalItemPrice,
+              reference: request.code,
+              referenceType: 'PURCHASE_REQUEST',
+              createdById: userId,
+            },
+          });
         }
       }
 
@@ -347,8 +359,8 @@ export const procurementService = {
           action: 'PROCUREMENT_FULFILL',
           entity: 'PURCHASE_REQUEST',
           entityId: id,
-          newValues: { status: 'RECEIVED', receivedAt: input.receiptDate } as any
-        }
+          newValues: { status: 'RECEIVED', receivedAt: input.receiptDate } as any,
+        },
       });
 
       return updatedRequest;
@@ -360,12 +372,12 @@ export const procurementService = {
         title: 'Barang Telah Diterima',
         message: `Pengajuan pembelian ${request.code} telah diproses dan barang telah diterima.`,
         type: 'INFO',
-        link: `/procurement/${request.id}`
+        link: `/procurement/${request.id}`,
       } as any);
     } catch (error) {
       console.error('Failed to send notification', error);
     }
 
     return result;
-  }
+  },
 };

@@ -3,11 +3,11 @@
  * Reusable stats card for dashboards
  */
 
-import { LucideIcon } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { LucideIcon } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface StatsCardProps {
   title: string;
@@ -50,7 +50,7 @@ export function StatsCard({
           </>
         ) : (
           <>
-            <div className={cn('text-2xl font-bold', valueClassName)}>
+            <div className={cn("text-2xl font-bold", valueClassName)}>
               {value}
             </div>
             {(description || trend !== undefined) && (
@@ -58,16 +58,16 @@ export function StatsCard({
                 {trend !== undefined && (
                   <span
                     className={cn(
-                      'flex items-center gap-0.5',
+                      "flex items-center gap-0.5",
                       trend > 0
                         ? negative
-                          ? 'text-red-500'
-                          : 'text-green-500'
+                          ? "text-red-500"
+                          : "text-green-500"
                         : trend < 0
                           ? negative
-                            ? 'text-green-500'
-                            : 'text-red-500'
-                          : ''
+                            ? "text-green-500"
+                            : "text-red-500"
+                          : "",
                     )}
                   >
                     {trend > 0 ? (
@@ -75,7 +75,7 @@ export function StatsCard({
                     ) : trend < 0 ? (
                       <TrendingDown className="h-3 w-3" />
                     ) : null}
-                    {trend > 0 ? '+' : ''}
+                    {trend > 0 ? "+" : ""}
                     {trend}%
                   </span>
                 )}

@@ -1,7 +1,15 @@
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from "@/stores/auth";
 
 export const useAuth = () => {
-  const { user, isAuthenticated, isLoading, login, logout, fetchUser, switchRole } = useAuthStore();
+  const {
+    user,
+    isAuthenticated,
+    isLoading,
+    login,
+    logout,
+    fetchUser,
+    switchRole,
+  } = useAuthStore();
 
   return {
     user,
@@ -10,6 +18,6 @@ export const useAuth = () => {
     login,
     logout,
     fetchUser,
-    switchRole
+    switchRole,
   };
 };

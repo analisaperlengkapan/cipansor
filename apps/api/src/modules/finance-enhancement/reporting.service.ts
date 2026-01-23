@@ -1,5 +1,5 @@
-import { prisma } from "../../lib/prisma";
-import { Prisma } from "@prisma/client";
+import { prisma } from '../../lib/prisma';
+import { Prisma } from '@prisma/client';
 import {
   AccountType,
   BalanceSheetReport,
@@ -8,8 +8,8 @@ import {
   GeneralLedgerReport,
   CashFlowReport,
   CashFlowCategory,
-  GeneralLedgerEntry
-} from "@cipansor/shared";
+  GeneralLedgerEntry,
+} from '@cipansor/shared';
 
 // Helper to format Date for SQL
 const formatDate = (date: Date) => date.toISOString().split('T')[0];
@@ -18,7 +18,7 @@ export async function getBalanceSheet(unitId: string, date: Date): Promise<Balan
   // Get all accounts
   const accounts = await prisma.accountCode.findMany({
     where: { isActive: true },
-    orderBy: { code: 'asc' }
+    orderBy: { code: 'asc' },
   });
 
   // Calculate balances up to date
@@ -26,16 +26,16 @@ export async function getBalanceSheet(unitId: string, date: Date): Promise<Balan
     by: ['accountId'],
     where: {
       unitId,
-      date: { lte: date }
+      date: { lte: date },
     },
     _sum: {
       debit: true,
-      credit: true
-    }
+      credit: true,
+    },
   });
 
   const balanceMap = new Map<string, number>();
-  balances.forEach(b => {
+  balances.forEach((b) => {
     const debit = b._sum.debit?.toNumber() || 0;
     const credit = b._sum.credit?.toNumber() || 0;
     // Store simple net debit for now
@@ -43,15 +43,19 @@ export async function getBalanceSheet(unitId: string, date: Date): Promise<Balan
   });
 
   const buildTree = (type: AccountType) => {
-    const typeAccounts = accounts.filter(a => a.type === type);
-    const roots = typeAccounts.filter(a => !a.parentId);
+    const typeAccounts = accounts.filter((a) => a.type === type);
+    const roots = typeAccounts.filter((a) => !a.parentId);
 
-    const buildNode = (account: typeof accounts[0]) => {
-      const children = typeAccounts.filter(a => a.parentId === account.id).map(buildNode);
+    const buildNode = (account: (typeof accounts)[0]) => {
+      const children = typeAccounts.filter((a) => a.parentId === account.id).map(buildNode);
       let directBalance = balanceMap.get(account.id) || 0;
 
       // Flip sign for Credit normal accounts (Liability, Equity, Revenue)
-      if (type === AccountType.LIABILITY || type === AccountType.EQUITY || type === AccountType.REVENUE) {
+      if (
+        type === AccountType.LIABILITY ||
+        type === AccountType.EQUITY ||
+        type === AccountType.REVENUE
+      ) {
         directBalance = -directBalance;
       }
 
@@ -63,7 +67,7 @@ export async function getBalanceSheet(unitId: string, date: Date): Promise<Balan
         name: account.name,
         amount: directBalance + childrenTotal,
         level: account.code.split('-').length,
-        children: children.length > 0 ? children : undefined
+        children: children.length > 0 ? children : undefined,
       };
     };
 
@@ -75,36 +79,44 @@ export async function getBalanceSheet(unitId: string, date: Date): Promise<Balan
   const equity = buildTree(AccountType.EQUITY);
 
   return {
-    assets: { title: "Aset", total: assets.reduce((s, i) => s + i.amount, 0), items: assets },
-    liabilities: { title: "Liabilitas", total: liabilities.reduce((s, i) => s + i.amount, 0), items: liabilities },
-    equity: { title: "Ekuitas", total: equity.reduce((s, i) => s + i.amount, 0), items: equity },
-    periodDate: formatDate(date)
+    assets: { title: 'Aset', total: assets.reduce((s, i) => s + i.amount, 0), items: assets },
+    liabilities: {
+      title: 'Liabilitas',
+      total: liabilities.reduce((s, i) => s + i.amount, 0),
+      items: liabilities,
+    },
+    equity: { title: 'Ekuitas', total: equity.reduce((s, i) => s + i.amount, 0), items: equity },
+    periodDate: formatDate(date),
   };
 }
 
-export async function getIncomeStatement(unitId: string, startDate: Date, endDate: Date): Promise<IncomeExpenseReport> {
+export async function getIncomeStatement(
+  unitId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<IncomeExpenseReport> {
   const accounts = await prisma.accountCode.findMany({
     where: {
       type: { in: [AccountType.REVENUE, AccountType.EXPENSE] },
-      isActive: true
+      isActive: true,
     },
-    orderBy: { code: 'asc' }
+    orderBy: { code: 'asc' },
   });
 
   const balances = await prisma.journalEntry.groupBy({
     by: ['accountId'],
     where: {
       unitId,
-      date: { gte: startDate, lte: endDate }
+      date: { gte: startDate, lte: endDate },
     },
     _sum: {
       debit: true,
-      credit: true
-    }
+      credit: true,
+    },
   });
 
   const balanceMap = new Map<string, number>();
-  balances.forEach(b => {
+  balances.forEach((b) => {
     const debit = b._sum.debit?.toNumber() || 0;
     const credit = b._sum.credit?.toNumber() || 0;
     balanceMap.set(b.accountId, debit - credit);
@@ -114,41 +126,47 @@ export async function getIncomeStatement(unitId: string, startDate: Date, endDat
   let totalIncome = 0;
   let totalExpense = 0;
 
-  const breakdown = accounts.map(acc => {
-    let amount = balanceMap.get(acc.id) || 0;
+  const breakdown = accounts
+    .map((acc) => {
+      let amount = balanceMap.get(acc.id) || 0;
 
-    if (acc.type === AccountType.REVENUE) {
-      amount = -amount; // Revenue is Credit normal, so flip Debit-Credit
-      totalIncome += amount;
-    } else {
-      totalExpense += amount;
-    }
+      if (acc.type === AccountType.REVENUE) {
+        amount = -amount; // Revenue is Credit normal, so flip Debit-Credit
+        totalIncome += amount;
+      } else {
+        totalExpense += amount;
+      }
 
-    return {
-      period: 'Current',
-      income: acc.type === AccountType.REVENUE ? amount : 0,
-      expense: acc.type === AccountType.EXPENSE ? amount : 0,
-      net: 0,
-      accountName: acc.name,
-      accountCode: acc.code
-    };
-  }).filter(item => item.income !== 0 || item.expense !== 0);
+      return {
+        period: 'Current',
+        income: acc.type === AccountType.REVENUE ? amount : 0,
+        expense: acc.type === AccountType.EXPENSE ? amount : 0,
+        net: 0,
+        accountName: acc.name,
+        accountCode: acc.code,
+      };
+    })
+    .filter((item) => item.income !== 0 || item.expense !== 0);
 
   return {
     period: { startDate: formatDate(startDate), endDate: formatDate(endDate) },
     summary: {
       totalIncome,
       totalExpense,
-      netIncome: totalIncome - totalExpense
+      netIncome: totalIncome - totalExpense,
     },
-    breakdown: breakdown
+    breakdown: breakdown,
   };
 }
 
-export async function getTrialBalance(unitId: string, startDate: Date, endDate: Date): Promise<TrialBalanceReport> {
+export async function getTrialBalance(
+  unitId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<TrialBalanceReport> {
   const accounts = await prisma.accountCode.findMany({
     where: { isActive: true },
-    orderBy: { code: 'asc' }
+    orderBy: { code: 'asc' },
   });
 
   // 1. Get Opening Balances (before startDate)
@@ -156,16 +174,16 @@ export async function getTrialBalance(unitId: string, startDate: Date, endDate: 
     by: ['accountId'],
     where: {
       unitId,
-      date: { lt: startDate }
+      date: { lt: startDate },
     },
     _sum: {
       debit: true,
-      credit: true
-    }
+      credit: true,
+    },
   });
 
   const openingMap = new Map<string, number>();
-  openingBalances.forEach(b => {
+  openingBalances.forEach((b) => {
     const net = (b._sum.debit?.toNumber() || 0) - (b._sum.credit?.toNumber() || 0);
     openingMap.set(b.accountId, net);
   });
@@ -175,84 +193,93 @@ export async function getTrialBalance(unitId: string, startDate: Date, endDate: 
     by: ['accountId'],
     where: {
       unitId,
-      date: { gte: startDate, lte: endDate }
+      date: { gte: startDate, lte: endDate },
     },
     _sum: {
       debit: true,
-      credit: true
-    }
+      credit: true,
+    },
   });
 
-  const movementMap = new Map<string, { debit: number, credit: number }>();
-  movements.forEach(b => {
+  const movementMap = new Map<string, { debit: number; credit: number }>();
+  movements.forEach((b) => {
     movementMap.set(b.accountId, {
       debit: b._sum.debit?.toNumber() || 0,
-      credit: b._sum.credit?.toNumber() || 0
+      credit: b._sum.credit?.toNumber() || 0,
     });
   });
 
-  const reportItems = accounts.map(acc => {
-    const startNet = openingMap.get(acc.id) || 0;
-    const move = movementMap.get(acc.id) || { debit: 0, credit: 0 };
-    const endNet = startNet + move.debit - move.credit;
+  const reportItems = accounts
+    .map((acc) => {
+      const startNet = openingMap.get(acc.id) || 0;
+      const move = movementMap.get(acc.id) || { debit: 0, credit: 0 };
+      const endNet = startNet + move.debit - move.credit;
 
-    // Adjust sign for display based on Normal Balance if needed, but Trial Balance usually shows raw Debit/Credit columns
-    // However, usually Trial Balance shows: Opening (D/C), Movement (D/C), Closing (D/C)
-    // Our interface is simple: startBalance, debit, credit, endBalance
-    // We will keep sign convention: Positive = Debit, Negative = Credit
+      // Adjust sign for display based on Normal Balance if needed, but Trial Balance usually shows raw Debit/Credit columns
+      // However, usually Trial Balance shows: Opening (D/C), Movement (D/C), Closing (D/C)
+      // Our interface is simple: startBalance, debit, credit, endBalance
+      // We will keep sign convention: Positive = Debit, Negative = Credit
 
-    return {
-      accountId: acc.id,
-      code: acc.code,
-      name: acc.name,
-      type: acc.type,
-      startBalance: startNet,
-      debit: move.debit,
-      credit: move.credit,
-      endBalance: endNet
-    };
-  }).filter(item =>
-    Math.abs(item.startBalance) > 0.01 ||
-    item.debit > 0.01 ||
-    item.credit > 0.01
+      return {
+        accountId: acc.id,
+        code: acc.code,
+        name: acc.name,
+        type: acc.type,
+        startBalance: startNet,
+        debit: move.debit,
+        credit: move.credit,
+        endBalance: endNet,
+      };
+    })
+    .filter(
+      (item) => Math.abs(item.startBalance) > 0.01 || item.debit > 0.01 || item.credit > 0.01
+    );
+
+  const totals = reportItems.reduce(
+    (acc, item) => ({
+      startBalance: acc.startBalance + item.startBalance,
+      debit: acc.debit + item.debit,
+      credit: acc.credit + item.credit,
+      endBalance: acc.endBalance + item.endBalance,
+    }),
+    { startBalance: 0, debit: 0, credit: 0, endBalance: 0 }
   );
-
-  const totals = reportItems.reduce((acc, item) => ({
-    startBalance: acc.startBalance + item.startBalance,
-    debit: acc.debit + item.debit,
-    credit: acc.credit + item.credit,
-    endBalance: acc.endBalance + item.endBalance
-  }), { startBalance: 0, debit: 0, credit: 0, endBalance: 0 });
 
   return {
     period: { startDate: formatDate(startDate), endDate: formatDate(endDate) },
     accounts: reportItems,
     totals,
-    isBalanced: Math.abs(totals.endBalance) < 0.1 // Allow small float error
+    isBalanced: Math.abs(totals.endBalance) < 0.1, // Allow small float error
   };
 }
 
-export async function getGeneralLedger(unitId: string, accountId: string, startDate: Date, endDate: Date): Promise<GeneralLedgerReport> {
+export async function getGeneralLedger(
+  unitId: string,
+  accountId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<GeneralLedgerReport> {
   const account = await prisma.accountCode.findUnique({
-    where: { id: accountId }
+    where: { id: accountId },
   });
 
-  if (!account) throw new Error("Account not found");
+  if (!account) throw new Error('Account not found');
 
   // Get Opening Balance
   const openingAgg = await prisma.journalEntry.aggregate({
     where: {
       unitId,
       accountId,
-      date: { lt: startDate }
+      date: { lt: startDate },
     },
     _sum: {
       debit: true,
-      credit: true
-    }
+      credit: true,
+    },
   });
 
-  let runningBalance = (openingAgg._sum.debit?.toNumber() || 0) - (openingAgg._sum.credit?.toNumber() || 0);
+  let runningBalance =
+    (openingAgg._sum.debit?.toNumber() || 0) - (openingAgg._sum.credit?.toNumber() || 0);
   const startBalance = runningBalance;
 
   // Get Entries
@@ -260,15 +287,15 @@ export async function getGeneralLedger(unitId: string, accountId: string, startD
     where: {
       unitId,
       accountId,
-      date: { gte: startDate, lte: endDate }
+      date: { gte: startDate, lte: endDate },
     },
-    orderBy: { date: 'asc' }
+    orderBy: { date: 'asc' },
   });
 
-  const formattedEntries: GeneralLedgerEntry[] = entries.map(e => {
+  const formattedEntries: GeneralLedgerEntry[] = entries.map((e) => {
     const debit = e.debit.toNumber();
     const credit = e.credit.toNumber();
-    runningBalance += (debit - credit);
+    runningBalance += debit - credit;
 
     return {
       id: e.id,
@@ -277,24 +304,30 @@ export async function getGeneralLedger(unitId: string, accountId: string, startD
       reference: e.reference || null,
       debit,
       credit,
-      balance: runningBalance
+      balance: runningBalance,
     };
   });
 
   return {
     period: { startDate: formatDate(startDate), endDate: formatDate(endDate) },
-    accounts: [{
-      accountId: account.id,
-      code: account.code,
-      name: account.name,
-      startBalance,
-      entries: formattedEntries,
-      endBalance: runningBalance
-    }]
+    accounts: [
+      {
+        accountId: account.id,
+        code: account.code,
+        name: account.name,
+        startBalance,
+        entries: formattedEntries,
+        endBalance: runningBalance,
+      },
+    ],
   };
 }
 
-export async function getCashFlowStatement(unitId: string, startDate: Date, endDate: Date): Promise<CashFlowReport> {
+export async function getCashFlowStatement(
+  unitId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<CashFlowReport> {
   // Using Indirect Method approximation or Direct Method based on tags?
   // Since we added `cashFlowCategory`, we can use Direct Method logic where applicable.
   // However, most entries might not have `cashFlowCategory` on the *offsetting* account easily accessible without complex queries.
@@ -335,20 +368,20 @@ export async function getCashFlowStatement(unitId: string, startDate: Date, endD
   // Financing: Net change in Long Term Liabilities + Equity
 
   const accounts = await prisma.accountCode.findMany({
-    where: { isActive: true }
+    where: { isActive: true },
   });
 
   const balances = await prisma.journalEntry.groupBy({
     by: ['accountId'],
     where: {
       unitId,
-      date: { gte: startDate, lte: endDate }
+      date: { gte: startDate, lte: endDate },
     },
-    _sum: { debit: true, credit: true }
+    _sum: { debit: true, credit: true },
   });
 
   const movements = new Map<string, number>();
-  balances.forEach(b => {
+  balances.forEach((b) => {
     movements.set(b.accountId, (b._sum.debit?.toNumber() || 0) - (b._sum.credit?.toNumber() || 0));
   });
 
@@ -380,7 +413,7 @@ export async function getCashFlowStatement(unitId: string, startDate: Date, endD
     }
   }
 
-  operatingItems.push({ name: "Laba Bersih (Net Income)", amount: netIncome });
+  operatingItems.push({ name: 'Laba Bersih (Net Income)', amount: netIncome });
   operatingTotal += netIncome;
 
   // Now Adjustments (Simplified)
@@ -394,8 +427,7 @@ export async function getCashFlowStatement(unitId: string, startDate: Date, endD
       // So +Movement = -Cash.
       investingItems.push({ name: acc.name, amount: -movement });
       investingTotal -= movement;
-    }
-    else if (acc.cashFlowCategory === CashFlowCategory.FINANCING) {
+    } else if (acc.cashFlowCategory === CashFlowCategory.FINANCING) {
       // Loan (Credit) is Cash Inflow.
       // So -Movement = +Cash.
       financingItems.push({ name: acc.name, amount: -movement });
@@ -404,43 +436,60 @@ export async function getCashFlowStatement(unitId: string, startDate: Date, endD
     // Note: Depreciation should be added back to Operating if we tracked it separately
     // We assume Net Income includes Depreciation expense, so we need to add it back if we can identify it.
     // Ideally look for account name "Penyusutan" or "Depreciation"
-    if (acc.name.toLowerCase().includes('penyusutan') || acc.name.toLowerCase().includes('depreciation')) {
-       // Expense (Debit). We subtracted it in Net Income. Now add it back (Cash Inflow equivalent relative to NI)
-       operatingItems.push({ name: `Penyesuaian: ${acc.name}`, amount: movement });
-       operatingTotal += movement;
+    if (
+      acc.name.toLowerCase().includes('penyusutan') ||
+      acc.name.toLowerCase().includes('depreciation')
+    ) {
+      // Expense (Debit). We subtracted it in Net Income. Now add it back (Cash Inflow equivalent relative to NI)
+      operatingItems.push({ name: `Penyesuaian: ${acc.name}`, amount: movement });
+      operatingTotal += movement;
     }
   }
 
   // Calculate Cash Balances
   // Find all accounts with type ASSET and name containing "Kas" or "Bank" (heuristic) or specific code range
-  const cashAccounts = accounts.filter(a =>
-    a.type === AccountType.ASSET &&
-    (a.name.toLowerCase().includes('kas') || a.name.toLowerCase().includes('bank'))
+  const cashAccounts = accounts.filter(
+    (a) =>
+      a.type === AccountType.ASSET &&
+      (a.name.toLowerCase().includes('kas') || a.name.toLowerCase().includes('bank'))
   );
 
-  const cashIds = cashAccounts.map(a => a.id);
+  const cashIds = cashAccounts.map((a) => a.id);
 
   // Beginning Cash
   const beginningAgg = await prisma.journalEntry.aggregate({
     where: {
       unitId,
       accountId: { in: cashIds },
-      date: { lt: startDate }
+      date: { lt: startDate },
     },
-    _sum: { debit: true, credit: true }
+    _sum: { debit: true, credit: true },
   });
-  const beginningCash = (beginningAgg._sum.debit?.toNumber() || 0) - (beginningAgg._sum.credit?.toNumber() || 0);
+  const beginningCash =
+    (beginningAgg._sum.debit?.toNumber() || 0) - (beginningAgg._sum.credit?.toNumber() || 0);
 
   const netChange = operatingTotal + investingTotal + financingTotal;
   const endingCash = beginningCash + netChange;
 
   return {
     period: { startDate: formatDate(startDate), endDate: formatDate(endDate) },
-    operatingActivities: { title: "Aktivitas Operasional", total: operatingTotal, items: operatingItems },
-    investingActivities: { title: "Aktivitas Investasi", total: investingTotal, items: investingItems },
-    financingActivities: { title: "Aktivitas Pendanaan", total: financingTotal, items: financingItems },
+    operatingActivities: {
+      title: 'Aktivitas Operasional',
+      total: operatingTotal,
+      items: operatingItems,
+    },
+    investingActivities: {
+      title: 'Aktivitas Investasi',
+      total: investingTotal,
+      items: investingItems,
+    },
+    financingActivities: {
+      title: 'Aktivitas Pendanaan',
+      total: financingTotal,
+      items: financingItems,
+    },
     netChangeInCash: netChange,
     beginningCashBalance: beginningCash,
-    endingCashBalance: endingCash
+    endingCashBalance: endingCash,
   };
 }

@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
 /**
  * PKG (Penilaian Kinerja Guru) Page
- * 
+ *
  * Halaman manajemen PKG berdasarkan Permendiknas No. 35 Tahun 2010
  * 4 Kompetensi: Pedagogik, Kepribadian, Sosial, Profesional
  */
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   usePKGPeriods,
   usePKGStatistics,
@@ -16,28 +16,28 @@ import {
   useUpdatePKGPeriod,
   useDeletePKGPeriod,
   type PKGPeriod,
-} from '@/hooks/use-pkg';
-import { useUnits } from '@/hooks/use-units';
-import { useAcademicYears } from '@/hooks/use-academic-years';
-import { useAuthStore } from '@/stores/auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/hooks/use-pkg";
+import { useUnits } from "@/hooks/use-units";
+import { useAcademicYears } from "@/hooks/use-academic-years";
+import { useAuthStore } from "@/stores/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -45,7 +45,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -53,9 +53,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ClipboardCheck,
   Plus,
@@ -67,23 +67,23 @@ import {
   TrendingUp,
   Calendar,
   Building2,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
+import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
-  DRAFT: 'bg-gray-100 text-gray-700',
-  ACTIVE: 'bg-green-100 text-green-700',
-  COMPLETED: 'bg-blue-100 text-blue-700',
-  ARCHIVED: 'bg-yellow-100 text-yellow-700',
+  DRAFT: "bg-gray-100 text-gray-700",
+  ACTIVE: "bg-green-100 text-green-700",
+  COMPLETED: "bg-blue-100 text-blue-700",
+  ARCHIVED: "bg-yellow-100 text-yellow-700",
 };
 
 const statusLabels: Record<string, string> = {
-  DRAFT: 'Draft',
-  ACTIVE: 'Aktif',
-  COMPLETED: 'Selesai',
-  ARCHIVED: 'Arsip',
+  DRAFT: "Draft",
+  ACTIVE: "Aktif",
+  COMPLETED: "Selesai",
+  ARCHIVED: "Arsip",
 };
 
 export default function PKGPage() {
@@ -91,8 +91,8 @@ export default function PKGPage() {
   const { user } = useAuthStore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPeriod, setEditingPeriod] = useState<PKGPeriod | null>(null);
-  const [selectedUnit, setSelectedUnit] = useState<string>(user?.unitId || '');
-  const [selectedYear, setSelectedYear] = useState<string>('');
+  const [selectedUnit, setSelectedUnit] = useState<string>(user?.unitId || "");
+  const [selectedYear, setSelectedYear] = useState<string>("");
 
   // Queries
   const { data: unitsData } = useUnits();
@@ -112,12 +112,12 @@ export default function PKGPage() {
 
   // Form state
   const [formData, setFormData] = useState({
-    name: '',
-    unitId: '',
-    academicYearId: '',
-    startDate: '',
-    endDate: '',
-    description: '',
+    name: "",
+    unitId: "",
+    academicYearId: "",
+    startDate: "",
+    endDate: "",
+    description: "",
   });
 
   const handleOpenDialog = (period?: PKGPeriod) => {
@@ -127,19 +127,19 @@ export default function PKGPage() {
         name: period.name,
         unitId: period.unitId,
         academicYearId: period.academicYearId,
-        startDate: period.startDate.split('T')[0],
-        endDate: period.endDate.split('T')[0],
-        description: period.description || '',
+        startDate: period.startDate.split("T")[0],
+        endDate: period.endDate.split("T")[0],
+        description: period.description || "",
       });
     } else {
       setEditingPeriod(null);
       setFormData({
-        name: '',
-        unitId: selectedUnit || '',
-        academicYearId: selectedYear || '',
-        startDate: '',
-        endDate: '',
-        description: '',
+        name: "",
+        unitId: selectedUnit || "",
+        academicYearId: selectedYear || "",
+        startDate: "",
+        endDate: "",
+        description: "",
       });
     }
     setIsDialogOpen(true);
@@ -156,33 +156,33 @@ export default function PKGPage() {
           endDate: formData.endDate,
           description: formData.description,
         });
-        toast.success('Periode PKG berhasil diperbarui');
+        toast.success("Periode PKG berhasil diperbarui");
       } else {
         await createPeriod.mutateAsync(formData);
-        toast.success('Periode PKG berhasil dibuat');
+        toast.success("Periode PKG berhasil dibuat");
       }
       setIsDialogOpen(false);
     } catch (error) {
-      toast.error('Gagal menyimpan periode PKG');
+      toast.error("Gagal menyimpan periode PKG");
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus periode PKG ini?')) return;
+    if (!confirm("Apakah Anda yakin ingin menghapus periode PKG ini?")) return;
     try {
       await deletePeriod.mutateAsync(id);
-      toast.success('Periode PKG berhasil dihapus');
+      toast.success("Periode PKG berhasil dihapus");
     } catch (error) {
-      toast.error('Gagal menghapus periode PKG');
+      toast.error("Gagal menghapus periode PKG");
     }
   };
 
   const handleActivate = async (id: string) => {
     try {
-      await updatePeriod.mutateAsync({ id, status: 'ACTIVE' });
-      toast.success('Periode PKG diaktifkan');
+      await updatePeriod.mutateAsync({ id, status: "ACTIVE" });
+      toast.success("Periode PKG diaktifkan");
     } catch (error) {
-      toast.error('Gagal mengaktifkan periode PKG');
+      toast.error("Gagal mengaktifkan periode PKG");
     }
   };
 
@@ -209,7 +209,9 @@ export default function PKGPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Evaluasi</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Evaluasi
+            </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -223,30 +225,36 @@ export default function PKGPage() {
             <Award className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats?.completed || 0}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {stats?.completed || 0}
+            </div>
             <p className="text-xs text-muted-foreground">evaluasi selesai</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rata-rata Nilai</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Rata-rata Nilai
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {stats?.averageScore?.toFixed(1) || '0'}
+              {stats?.averageScore?.toFixed(1) || "0"}
             </div>
             <p className="text-xs text-muted-foreground">dari 100</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Distribusi Grade</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Distribusi Grade
+            </CardTitle>
             <Award className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
             <div className="flex gap-2">
-              {['A', 'B', 'C', 'D', 'E'].map((grade) => (
+              {["A", "B", "C", "D", "E"].map((grade) => (
                 <Badge key={grade} variant="outline" className="text-xs">
                   {grade}: {stats?.byGrade?.[grade] || 0}
                 </Badge>
@@ -340,7 +348,9 @@ export default function PKGPage() {
                 ) : (
                   periodsData?.data?.map((period: PKGPeriod) => (
                     <TableRow key={period.id}>
-                      <TableCell className="font-medium">{period.name}</TableCell>
+                      <TableCell className="font-medium">
+                        {period.name}
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Building2 className="h-3 w-3" />
@@ -349,8 +359,13 @@ export default function PKGPage() {
                       </TableCell>
                       <TableCell>{period.academicYear?.name}</TableCell>
                       <TableCell className="text-sm">
-                        {format(new Date(period.startDate), 'd MMM', { locale: localeId })} -{' '}
-                        {format(new Date(period.endDate), 'd MMM yyyy', { locale: localeId })}
+                        {format(new Date(period.startDate), "d MMM", {
+                          locale: localeId,
+                        })}{" "}
+                        -{" "}
+                        {format(new Date(period.endDate), "d MMM yyyy", {
+                          locale: localeId,
+                        })}
                       </TableCell>
                       <TableCell>
                         <Badge className={statusColors[period.status]}>
@@ -358,7 +373,9 @@ export default function PKGPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{period._count?.evaluations || 0} guru</Badge>
+                        <Badge variant="secondary">
+                          {period._count?.evaluations || 0} guru
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-end gap-1">
@@ -369,7 +386,7 @@ export default function PKGPage() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          {period.status === 'DRAFT' && (
+                          {period.status === "DRAFT" && (
                             <Button
                               size="sm"
                               variant="ghost"
@@ -409,7 +426,7 @@ export default function PKGPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingPeriod ? 'Edit Periode PKG' : 'Buat Periode PKG Baru'}
+              {editingPeriod ? "Edit Periode PKG" : "Buat Periode PKG Baru"}
             </DialogTitle>
             <DialogDescription>
               Isi data periode penilaian kinerja guru
@@ -421,7 +438,9 @@ export default function PKGPage() {
                 <Label>Nama Periode</Label>
                 <Input
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   placeholder="PKG Semester 1 2024/2025"
                   required
                 />
@@ -432,7 +451,9 @@ export default function PKGPage() {
                     <Label>Unit</Label>
                     <Select
                       value={formData.unitId}
-                      onValueChange={(v) => setFormData({ ...formData, unitId: v })}
+                      onValueChange={(v) =>
+                        setFormData({ ...formData, unitId: v })
+                      }
                       required
                     >
                       <SelectTrigger>
@@ -451,7 +472,9 @@ export default function PKGPage() {
                     <Label>Tahun Ajaran</Label>
                     <Select
                       value={formData.academicYearId}
-                      onValueChange={(v) => setFormData({ ...formData, academicYearId: v })}
+                      onValueChange={(v) =>
+                        setFormData({ ...formData, academicYearId: v })
+                      }
                       required
                     >
                       <SelectTrigger>
@@ -474,7 +497,9 @@ export default function PKGPage() {
                   <Input
                     type="date"
                     value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, startDate: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -483,7 +508,9 @@ export default function PKGPage() {
                   <Input
                     type="date"
                     value={formData.endDate}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, endDate: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -492,7 +519,9 @@ export default function PKGPage() {
                 <Label>Deskripsi</Label>
                 <Textarea
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   placeholder="Deskripsi periode PKG..."
                 />
               </div>
@@ -509,7 +538,7 @@ export default function PKGPage() {
                 type="submit"
                 disabled={createPeriod.isPending || updatePeriod.isPending}
               >
-                {editingPeriod ? 'Simpan' : 'Buat'}
+                {editingPeriod ? "Simpan" : "Buat"}
               </Button>
             </DialogFooter>
           </form>

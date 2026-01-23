@@ -1,8 +1,8 @@
-import { Router } from "express";
-import * as controller from "./controller";
-import * as forecastController from "./forecast.controller";
-import * as exportController from "./export.controller";
-import { authenticate } from "@/middleware/auth";
+import { Router } from 'express';
+import * as controller from './controller';
+import * as forecastController from './forecast.controller';
+import * as exportController from './export.controller';
+import { authenticate } from '@/middleware/auth';
 
 const router = Router();
 
@@ -22,7 +22,7 @@ router.use(authenticate);
  *         description: Dashboard statistics including student count, revenue, attendance, etc.
  */
 // Dashboard overview
-router.get("/dashboard", controller.getDashboardStats);
+router.get('/dashboard', controller.getDashboardStats);
 
 /**
  * @swagger
@@ -46,7 +46,7 @@ router.get("/dashboard", controller.getDashboardStats);
  *         description: Student statistics (enrollment, demographics, etc.)
  */
 // Domain-specific statistics
-router.get("/students", controller.getStudentStats);
+router.get('/students', controller.getStudentStats);
 
 /**
  * @swagger
@@ -65,7 +65,7 @@ router.get("/students", controller.getStudentStats);
  *       200:
  *         description: Tahfidz statistics (total juz, progress, achievements)
  */
-router.get("/tahfidz", controller.getTahfidzStats);
+router.get('/tahfidz', controller.getTahfidzStats);
 
 /**
  * @swagger
@@ -94,7 +94,7 @@ router.get("/tahfidz", controller.getTahfidzStats);
  *       200:
  *         description: Finance statistics (revenue, payments, outstanding)
  */
-router.get("/finance", controller.getFinanceStats);
+router.get('/finance', controller.getFinanceStats);
 
 /**
  * @swagger
@@ -123,7 +123,7 @@ router.get("/finance", controller.getFinanceStats);
  *       200:
  *         description: Attendance statistics (rates, trends)
  */
-router.get("/attendance", controller.getAttendanceStats);
+router.get('/attendance', controller.getAttendanceStats);
 
 /**
  * @swagger
@@ -146,7 +146,7 @@ router.get("/attendance", controller.getAttendanceStats);
  *       200:
  *         description: Academic statistics (grades, performance)
  */
-router.get("/academic", controller.getAcademicStats);
+router.get('/academic', controller.getAcademicStats);
 
 /**
  * @swagger
@@ -165,7 +165,7 @@ router.get("/academic", controller.getAcademicStats);
  *       200:
  *         description: Library statistics (borrowings, popular books)
  */
-router.get("/library", controller.getLibraryStats);
+router.get('/library', controller.getLibraryStats);
 
 /**
  * @swagger
@@ -184,7 +184,7 @@ router.get("/library", controller.getLibraryStats);
  *       200:
  *         description: PSB statistics (applications, admissions rate)
  */
-router.get("/psb", controller.getPSBStats);
+router.get('/psb', controller.getPSBStats);
 
 // ============================================
 // FORECAST ENDPOINTS (Predictive Analytics)
@@ -207,7 +207,7 @@ router.get("/psb", controller.getPSBStats);
  *       200:
  *         description: Combined forecasts for enrollment, payment, outstanding, and tahfidz
  */
-router.get("/forecast", forecastController.getAllForecasts);
+router.get('/forecast', forecastController.getAllForecasts);
 
 /**
  * @swagger
@@ -221,7 +221,7 @@ router.get("/forecast", forecastController.getAllForecasts);
  *       200:
  *         description: Enrollment prediction for next 6 months
  */
-router.get("/forecast/enrollment", forecastController.getEnrollmentForecast);
+router.get('/forecast/enrollment', forecastController.getEnrollmentForecast);
 
 /**
  * @swagger
@@ -235,7 +235,7 @@ router.get("/forecast/enrollment", forecastController.getEnrollmentForecast);
  *       200:
  *         description: Payment prediction for next 6 months
  */
-router.get("/forecast/payment", forecastController.getPaymentForecast);
+router.get('/forecast/payment', forecastController.getPaymentForecast);
 
 /**
  * @swagger
@@ -249,7 +249,7 @@ router.get("/forecast/payment", forecastController.getPaymentForecast);
  *       200:
  *         description: Outstanding payment risk analysis
  */
-router.get("/forecast/outstanding", forecastController.getOutstandingPrediction);
+router.get('/forecast/outstanding', forecastController.getOutstandingPrediction);
 
 /**
  * @swagger
@@ -263,7 +263,7 @@ router.get("/forecast/outstanding", forecastController.getOutstandingPrediction)
  *       200:
  *         description: Tahfidz completion projection
  */
-router.get("/forecast/tahfidz", forecastController.getTahfidzForecast);
+router.get('/forecast/tahfidz', forecastController.getTahfidzForecast);
 
 // ============================================
 // EXPORT ENDPOINTS
@@ -296,7 +296,7 @@ router.get("/forecast/tahfidz", forecastController.getTahfidzForecast);
  *       200:
  *         description: Complete export of students, attendance, finance, tahfidz
  */
-router.get("/export/all", exportController.exportAll);
+router.get('/export/all', exportController.exportAll);
 
 /**
  * @swagger
@@ -316,7 +316,7 @@ router.get("/export/all", exportController.exportAll);
  *       200:
  *         description: Students data export
  */
-router.get("/export/students", exportController.exportStudents);
+router.get('/export/students', exportController.exportStudents);
 
 /**
  * @swagger
@@ -336,7 +336,7 @@ router.get("/export/students", exportController.exportStudents);
  *       200:
  *         description: Attendance data export
  */
-router.get("/export/attendance", exportController.exportAttendance);
+router.get('/export/attendance', exportController.exportAttendance);
 
 /**
  * @swagger
@@ -356,7 +356,7 @@ router.get("/export/attendance", exportController.exportAttendance);
  *       200:
  *         description: Finance data export
  */
-router.get("/export/finance", exportController.exportFinance);
+router.get('/export/finance', exportController.exportFinance);
 
 /**
  * @swagger
@@ -376,13 +376,13 @@ router.get("/export/finance", exportController.exportFinance);
  *       200:
  *         description: Tahfidz data export
  */
-router.get("/export/tahfidz", exportController.exportTahfidz);
+router.get('/export/tahfidz', exportController.exportTahfidz);
 
 // ============================================
 // BENCHMARK ENDPOINTS (Comparative Analytics)
 // ============================================
 
-import * as benchmarkController from "./benchmark.controller";
+import * as benchmarkController from './benchmark.controller';
 
 /**
  * @swagger
@@ -396,7 +396,7 @@ import * as benchmarkController from "./benchmark.controller";
  *       200:
  *         description: Top performers and overall averages
  */
-router.get("/benchmark", benchmarkController.getBenchmarkSummary);
+router.get('/benchmark', benchmarkController.getBenchmarkSummary);
 
 /**
  * @swagger
@@ -410,7 +410,7 @@ router.get("/benchmark", benchmarkController.getBenchmarkSummary);
  *       200:
  *         description: Unit comparison data
  */
-router.get("/benchmark/compare", benchmarkController.compareUnits);
+router.get('/benchmark/compare', benchmarkController.compareUnits);
 
 /**
  * @swagger
@@ -424,7 +424,7 @@ router.get("/benchmark/compare", benchmarkController.compareUnits);
  *       200:
  *         description: Rankings by metric
  */
-router.get("/benchmark/rankings", benchmarkController.getUnitRankings);
+router.get('/benchmark/rankings', benchmarkController.getUnitRankings);
 
 /**
  * @swagger
@@ -438,7 +438,6 @@ router.get("/benchmark/rankings", benchmarkController.getUnitRankings);
  *       200:
  *         description: YoY comparison for unit
  */
-router.get("/benchmark/yoy/:unitId", benchmarkController.getYearOverYear);
+router.get('/benchmark/yoy/:unitId', benchmarkController.getYearOverYear);
 
 export default router;
-

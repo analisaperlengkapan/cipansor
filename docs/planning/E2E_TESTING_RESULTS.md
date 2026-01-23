@@ -11,6 +11,7 @@
 ### 1. Authentication & Authorization ✅
 
 **Test:** Login with superadmin credentials
+
 ```bash
 curl -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
@@ -18,6 +19,7 @@ curl -X POST http://localhost:3001/api/auth/login \
 ```
 
 **Result:** ✅ Success
+
 ```json
 {
   "success": true,
@@ -34,12 +36,14 @@ curl -X POST http://localhost:3001/api/auth/login \
 ### 2. Dashboard Quick Stats API ✅
 
 **Test:** GET /api/dashboard/quick-stats with auth token
+
 ```bash
 curl -X GET "http://localhost:3001/api/dashboard/quick-stats" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 **Result:** ✅ Success
+
 ```json
 {
   "success": true,
@@ -60,12 +64,14 @@ curl -X GET "http://localhost:3001/api/dashboard/quick-stats" \
 ### 3. Dashboard Metrics API ✅
 
 **Test:** GET /api/dashboard/metrics with auth token
+
 ```bash
 curl -X GET "http://localhost:3001/api/dashboard/metrics" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 **Result:** ✅ Success
+
 ```json
 {
   "success": true,
@@ -77,7 +83,11 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics" \
       "tahfidz": { "totalHafidz": 0, "avgQuality": 0 },
       "timestamp": "2025-12-11T01:48:56.138Z"
     },
-    "recent": [{ /* same as current */ }],
+    "recent": [
+      {
+        /* same as current */
+      }
+    ],
     "alerts": [
       {
         "id": "invoices-overdue-1765417736232",
@@ -93,6 +103,7 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics" \
 
 **Performance:** ~100ms response time  
 **Features Validated:**
+
 - ✅ Current metrics calculation
 - ✅ Recent history (stub - returns current)
 - ✅ Active alerts detection (1 alert found)
@@ -102,12 +113,14 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics" \
 ### 4. Unit-Specific Dashboard Metrics ✅
 
 **Test:** GET /api/dashboard/metrics?unitId=<id> with auth token
+
 ```bash
 curl -X GET "http://localhost:3001/api/dashboard/metrics?unitId=881da1dd-0b46-4f7c-a3ef-7c08275d5b8a" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 **Result:** ✅ Success
+
 ```json
 {
   "success": true,
@@ -121,6 +134,7 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics?unitId=881da1dd-0b46-4f
 ```
 
 **Validation:**
+
 - ✅ Global metrics: 5 students total
 - ✅ Unit-specific metrics: 1 student total
 - ✅ Filtering works correctly
@@ -130,12 +144,14 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics?unitId=881da1dd-0b46-4f
 ### 5. Murojaah Analytics API ✅
 
 **Test:** GET /api/murojaah/analytics/quality-distribution
+
 ```bash
 curl -X GET "http://localhost:3001/api/murojaah/analytics/quality-distribution?startDate=2024-01-01&endDate=2024-12-31" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 **Result:** ✅ Success
+
 ```json
 {
   "success": true,
@@ -161,14 +177,16 @@ curl -X GET "http://localhost:3001/api/murojaah/analytics/quality-distribution?s
 **Test:** Connect to WebSocket with JWT token
 
 **Test Script:** `test-websocket.js`
+
 ```javascript
-const socket = io('http://localhost:3001', {
+const socket = io("http://localhost:3001", {
   auth: { token },
-  transports: ['websocket']
+  transports: ["websocket"],
 });
 ```
 
 **Result:** ✅ Success
+
 ```
 1️⃣ Logging in...
 ✅ Login successful
@@ -183,6 +201,7 @@ const socket = io('http://localhost:3001', {
 ```
 
 **Features Validated:**
+
 - ✅ WebSocket accepts JWT token
 - ✅ Connection established successfully
 - ✅ Authentication middleware working
@@ -193,11 +212,13 @@ const socket = io('http://localhost:3001', {
 ### 7. Authorization (UNAUTHORIZED) ✅
 
 **Test:** Access protected endpoints without token
+
 ```bash
 curl -X GET "http://localhost:3001/api/dashboard/metrics"
 ```
 
 **Result:** ✅ Success (401 error expected)
+
 ```json
 {
   "success": false,
@@ -212,15 +233,15 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 
 ## 📊 Test Summary
 
-| Test Case | Status | Response Time | Notes |
-|-----------|--------|---------------|-------|
-| Authentication | ✅ Pass | ~80ms | Superadmin login successful |
-| Dashboard Quick Stats | ✅ Pass | ~50ms | Returns 5 metrics |
-| Dashboard Metrics | ✅ Pass | ~100ms | Returns current + recent + alerts |
-| Unit-Specific Metrics | ✅ Pass | ~110ms | Filtering works correctly |
-| Murojaah Analytics | ✅ Pass | ~60ms | All 4 endpoints work |
-| WebSocket Auth | ✅ Pass | ~50ms | Connection established |
-| Authorization Check | ✅ Pass | ~10ms | Returns 401 without token |
+| Test Case             | Status  | Response Time | Notes                             |
+| --------------------- | ------- | ------------- | --------------------------------- |
+| Authentication        | ✅ Pass | ~80ms         | Superadmin login successful       |
+| Dashboard Quick Stats | ✅ Pass | ~50ms         | Returns 5 metrics                 |
+| Dashboard Metrics     | ✅ Pass | ~100ms        | Returns current + recent + alerts |
+| Unit-Specific Metrics | ✅ Pass | ~110ms        | Filtering works correctly         |
+| Murojaah Analytics    | ✅ Pass | ~60ms         | All 4 endpoints work              |
+| WebSocket Auth        | ✅ Pass | ~50ms         | Connection established            |
+| Authorization Check   | ✅ Pass | ~10ms         | Returns 401 without token         |
 
 **Total Tests:** 7  
 **Passed:** 7  
@@ -232,6 +253,7 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 ## 🔍 Observations
 
 ### Data Quality
+
 - ✅ Seed data includes 5 students, 2 teachers
 - ✅ No attendance records (rate: 0%)
 - ✅ No tahfidz records (hafidz: 0)
@@ -239,11 +261,13 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 - ⚠️ No murojaah records (expected - not in seed)
 
 ### Performance
+
 - ✅ All endpoints respond < 150ms
 - ✅ Quick stats faster than full metrics (optimized)
 - ✅ Unit-specific queries add minimal overhead (~10ms)
 
 ### Security
+
 - ✅ JWT authentication required for all protected endpoints
 - ✅ WebSocket connections require valid token
 - ✅ Unit-specific access control enforced
@@ -254,6 +278,7 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 ## 🎯 Features Validated
 
 ### Backend APIs
+
 - ✅ POST /api/auth/login - Authentication
 - ✅ GET /api/dashboard/quick-stats - Simplified metrics
 - ✅ GET /api/dashboard/metrics - Full metrics with alerts
@@ -264,12 +289,14 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 - ✅ GET /api/murojaah/analytics/top-performers
 
 ### Real-Time Features
+
 - ✅ WebSocket connection with JWT auth
 - ✅ Authentication middleware disconnect invalid clients
 - ✅ Dashboard metrics subscription
 - ✅ Unit-specific metrics subscription (tested via API)
 
 ### Multi-Tenant
+
 - ✅ Global metrics calculation
 - ✅ Unit-specific metrics filtering
 - ✅ Access control for unit data
@@ -279,6 +306,7 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 ## 🐛 Issues Found
 
 ### Issue 1: Dashboard Metrics Not Emitted via WebSocket
+
 **Status:** ⚠️ Partial  
 **Description:** WebSocket connects successfully but doesn't receive metrics on subscription  
 **Cause:** Dashboard metrics job runs every minute, client may connect between broadcasts  
@@ -286,6 +314,7 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 **Fix:** Client should call REST API for initial load, then subscribe for updates
 
 ### Issue 2: Frontend Not Tested
+
 **Status:** ⏸️ Deferred  
 **Description:** Frontend UI not tested (port interrupted during testing)  
 **Cause:** Terminal was interrupted during frontend startup  
@@ -297,6 +326,7 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 ## ✅ Test Completion Criteria
 
 ### Passed ✅
+
 - [x] Authentication flow works
 - [x] Dashboard API returns correct data structure
 - [x] Unit-specific filtering works
@@ -307,6 +337,7 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 - [x] Performance < 150ms for all endpoints
 
 ### Deferred ⏸️
+
 - [ ] Frontend UI testing (requires frontend restart)
 - [ ] WebSocket real-time metrics emission (requires waiting for job cycle)
 - [ ] Load testing with multiple concurrent connections
@@ -317,11 +348,13 @@ curl -X GET "http://localhost:3001/api/dashboard/metrics"
 ## 📝 Recommendations
 
 ### Immediate Actions
+
 1. ✅ **Dashboard API Complete** - REST endpoints production-ready
 2. ⏸️ **Frontend Testing** - Restart frontend and test UI (15 min)
 3. ⏸️ **WebSocket Metrics** - Wait for job cycle or manually trigger (5 min)
 
 ### Next Session Priorities
+
 1. **Error Handling & Retry Logic** (2h)
    - Implement WebSocket reconnection with exponential backoff
    - Add React Query retry logic for API calls

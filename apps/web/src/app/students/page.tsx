@@ -1,41 +1,46 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ColumnDef } from '@tanstack/react-table';
-import { MainLayout } from '@/components/layout';
-import { PageHeader, DataTable, SearchInput, ConfirmDialog } from '@/components/shared';
-import { useStudents, useDeleteStudent, Student } from '@/hooks/use-students';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ColumnDef } from "@tanstack/react-table";
+import { MainLayout } from "@/components/layout";
+import {
+  PageHeader,
+  DataTable,
+  SearchInput,
+  ConfirmDialog,
+} from "@/components/shared";
+import { useStudents, useDeleteStudent, Student } from "@/hooks/use-students";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { toast } from 'sonner';
-import { useAuthStore } from '@/stores/auth';
+} from "@/components/ui/select";
+import { MoreHorizontal, Eye, Pencil, Trash2 } from "lucide-react";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import { useAuthStore } from "@/stores/auth";
 
 const statusColors: Record<string, string> = {
-  ACTIVE: 'bg-green-100 text-green-800',
-  INACTIVE: 'bg-gray-100 text-gray-800',
-  GRADUATED: 'bg-blue-100 text-blue-800',
-  DROPPED_OUT: 'bg-red-100 text-red-800',
+  ACTIVE: "bg-green-100 text-green-800",
+  INACTIVE: "bg-gray-100 text-gray-800",
+  GRADUATED: "bg-blue-100 text-blue-800",
+  DROPPED_OUT: "bg-red-100 text-red-800",
 };
 
 const genderLabels: Record<string, string> = {
-  MALE: 'Laki-laki',
-  FEMALE: 'Perempuan',
+  MALE: "Laki-laki",
+  FEMALE: "Perempuan",
 };
 
 export default function StudentsPage() {
@@ -43,16 +48,16 @@ export default function StudentsPage() {
   const { user } = useAuthStore();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data, isLoading } = useStudents({
     page,
     limit: pageSize,
     search: search || undefined,
-    status: statusFilter === 'ALL' ? undefined : statusFilter,
-    unitId: user?.role !== 'SUPER_ADMIN' ? user?.unitId : undefined,
+    status: statusFilter === "ALL" ? undefined : statusFilter,
+    unitId: user?.role !== "SUPER_ADMIN" ? user?.unitId : undefined,
   });
 
   const deleteMutation = useDeleteStudent();
@@ -61,24 +66,24 @@ export default function StudentsPage() {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      toast.success('Student deleted successfully');
+      toast.success("Student deleted successfully");
       setDeleteId(null);
     } catch {
-      toast.error('Failed to delete student');
+      toast.error("Failed to delete student");
     }
   };
 
   const columns: ColumnDef<Student>[] = [
     {
-      accessorKey: 'nis',
-      header: 'NIS',
+      accessorKey: "nis",
+      header: "NIS",
       cell: ({ row }) => (
         <span className="font-mono text-sm">{row.original.nis}</span>
       ),
     },
     {
-      accessorKey: 'name',
-      header: 'Name',
+      accessorKey: "name",
+      header: "Name",
       cell: ({ row }) => (
         <div>
           <p className="font-medium">{row.original.name}</p>
@@ -89,36 +94,37 @@ export default function StudentsPage() {
       ),
     },
     {
-      accessorKey: 'currentClass',
-      header: 'Class',
-      cell: ({ row }) => (
+      accessorKey: "currentClass",
+      header: "Class",
+      cell: ({ row }) =>
         row.original.currentClass ? (
           <Badge variant="outline">{row.original.currentClass.name}</Badge>
         ) : (
           <span className="text-muted-foreground">-</span>
-        )
-      ),
+        ),
     },
     {
-      accessorKey: 'unit',
-      header: 'Unit',
+      accessorKey: "unit",
+      header: "Unit",
       cell: ({ row }) => (
-        <span className="text-sm">{row.original.unit?.name || '-'}</span>
+        <span className="text-sm">{row.original.unit?.name || "-"}</span>
       ),
     },
     {
-      accessorKey: 'parentName',
-      header: 'Parent',
+      accessorKey: "parentName",
+      header: "Parent",
       cell: ({ row }) => (
         <div className="text-sm">
           <p>{row.original.parentName}</p>
-          <p className="text-xs text-muted-foreground">{row.original.parentPhone}</p>
+          <p className="text-xs text-muted-foreground">
+            {row.original.parentPhone}
+          </p>
         </div>
       ),
     },
     {
-      accessorKey: 'status',
-      header: 'Status',
+      accessorKey: "status",
+      header: "Status",
       cell: ({ row }) => (
         <Badge className={statusColors[row.original.status]}>
           {row.original.status}
@@ -126,16 +132,16 @@ export default function StudentsPage() {
       ),
     },
     {
-      accessorKey: 'enrollmentDate',
-      header: 'Enrolled',
+      accessorKey: "enrollmentDate",
+      header: "Enrolled",
       cell: ({ row }) => (
         <span className="text-sm">
-          {format(new Date(row.original.enrollmentDate), 'dd MMM yyyy')}
+          {format(new Date(row.original.enrollmentDate), "dd MMM yyyy")}
         </span>
       ),
     },
     {
-      id: 'actions',
+      id: "actions",
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -144,11 +150,15 @@ export default function StudentsPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => router.push(`/students/${row.original.id}`)}>
+            <DropdownMenuItem
+              onClick={() => router.push(`/students/${row.original.id}`)}
+            >
               <Eye className="mr-2 h-4 w-4" />
               View
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push(`/students/${row.original.id}/edit`)}>
+            <DropdownMenuItem
+              onClick={() => router.push(`/students/${row.original.id}/edit`)}
+            >
               <Pencil className="mr-2 h-4 w-4" />
               Edit
             </DropdownMenuItem>
@@ -166,14 +176,14 @@ export default function StudentsPage() {
   ];
 
   return (
-    <MainLayout allowedRoles={['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']}>
+    <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN", "TEACHER"]}>
       <div className="space-y-6">
         <PageHeader
           title="Students"
           description="Manage student records"
           action={{
-            label: 'Add Student',
-            href: '/students/new',
+            label: "Add Student",
+            href: "/students/new",
           }}
         />
 

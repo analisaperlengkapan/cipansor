@@ -69,31 +69,31 @@ describe('Finance Service Integration', () => {
 
       // Assert
       expect(prisma.invoice.create).toHaveBeenCalled();
-      expect(notificationService.createNotification).toHaveBeenCalledWith(expect.objectContaining({
-        userId: 'user-1',
-        title: 'Tagihan Baru',
-        type: NotificationType.PAYMENT,
-      }));
+      expect(notificationService.createNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'user-1',
+          title: 'Tagihan Baru',
+          type: NotificationType.PAYMENT,
+        })
+      );
       expect(result).toEqual(mockInvoice);
     });
 
     it('should retry generating invoice number on collision', async () => {
-       (prisma.invoice.findFirst as any).mockResolvedValue(null);
-       const p2002Error = new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
-         code: 'P2002',
-         clientVersion: '5.x'
-       });
+      (prisma.invoice.findFirst as any).mockResolvedValue(null);
+      const p2002Error = new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: '5.x',
+      });
 
-       (prisma.invoice.create as any)
-         .mockRejectedValueOnce(p2002Error)
-         .mockResolvedValueOnce({
-            id: 'inv-123',
-            invoiceNumber: 'INV-202401-00001',
-            amount: { toNumber: () => 500000 },
-            dueDate: new Date(),
-            student: { user: { id: 'u1' } },
-            paymentType: { name: 'SPP' }
-         });
+      (prisma.invoice.create as any).mockRejectedValueOnce(p2002Error).mockResolvedValueOnce({
+        id: 'inv-123',
+        invoiceNumber: 'INV-202401-00001',
+        amount: { toNumber: () => 500000 },
+        dueDate: new Date(),
+        student: { user: { id: 'u1' } },
+        paymentType: { name: 'SPP' },
+      });
 
       await financeService.createInvoice({
         studentId: 's1',
@@ -136,11 +136,13 @@ describe('Finance Service Integration', () => {
       });
 
       // Assert
-      expect(notificationService.createNotification).toHaveBeenCalledWith(expect.objectContaining({
-        userId: 'user-1',
-        title: 'Pembayaran Berhasil',
-        type: NotificationType.PAYMENT,
-      }));
+      expect(notificationService.createNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'user-1',
+          title: 'Pembayaran Berhasil',
+          type: NotificationType.PAYMENT,
+        })
+      );
     });
   });
 });

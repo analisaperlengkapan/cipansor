@@ -1,33 +1,38 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ColumnDef } from '@tanstack/react-table';
-import { MainLayout } from '@/components/layout';
-import { PageHeader, DataTable, SearchInput, ConfirmDialog } from '@/components/shared';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ColumnDef } from "@tanstack/react-table";
+import { MainLayout } from "@/components/layout";
+import {
+  PageHeader,
+  DataTable,
+  SearchInput,
+  ConfirmDialog,
+} from "@/components/shared";
 import {
   useDailyReports,
   useDeleteDailyReport,
   DailyReport,
-} from '@/hooks/use-daily-report';
-import { useClasses } from '@/hooks/use-classes';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+} from "@/hooks/use-daily-report";
+import { useClasses } from "@/hooks/use-classes";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { DatePickerWithRange } from '@/components/ui/date-range-picker';
+} from "@/components/ui/select";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import {
   MoreHorizontal,
   Eye,
@@ -37,51 +42,51 @@ import {
   Calendar,
   Users,
   Clock,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { useAuthStore } from '@/stores/auth';
-import { cn } from '@/lib/utils';
-import { DateRange } from 'react-day-picker';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { toast } from "sonner";
+import { useAuthStore } from "@/stores/auth";
+import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
 
 const ATTENDANCE_LABELS: Record<string, string> = {
-  PRESENT: 'Hadir',
-  ABSENT: 'Alpha',
-  LATE: 'Terlambat',
-  SICK: 'Sakit',
-  EXCUSED: 'Izin',
+  PRESENT: "Hadir",
+  ABSENT: "Alpha",
+  LATE: "Terlambat",
+  SICK: "Sakit",
+  EXCUSED: "Izin",
 };
 
 const ATTENDANCE_COLORS: Record<string, string> = {
-  PRESENT: 'bg-green-100 text-green-800',
-  ABSENT: 'bg-red-100 text-red-800',
-  LATE: 'bg-yellow-100 text-yellow-800',
-  SICK: 'bg-orange-100 text-orange-800',
-  EXCUSED: 'bg-blue-100 text-blue-800',
+  PRESENT: "bg-green-100 text-green-800",
+  ABSENT: "bg-red-100 text-red-800",
+  LATE: "bg-yellow-100 text-yellow-800",
+  SICK: "bg-orange-100 text-orange-800",
+  EXCUSED: "bg-blue-100 text-blue-800",
 };
 
 const MOOD_LABELS: Record<string, string> = {
-  HAPPY: '😊 Senang',
-  NEUTRAL: '😐 Biasa',
-  SAD: '😢 Sedih',
-  EXCITED: '🤩 Antusias',
-  TIRED: '😴 Lelah',
-  SICK: '🤒 Sakit',
+  HAPPY: "😊 Senang",
+  NEUTRAL: "😐 Biasa",
+  SAD: "😢 Sedih",
+  EXCITED: "🤩 Antusias",
+  TIRED: "😴 Lelah",
+  SICK: "🤒 Sakit",
 };
 
 const HEALTH_LABELS: Record<string, string> = {
-  HEALTHY: 'Sehat',
-  SICK: 'Sakit',
-  RECOVERING: 'Pemulihan',
-  NEED_ATTENTION: 'Perlu Perhatian',
+  HEALTHY: "Sehat",
+  SICK: "Sakit",
+  RECOVERING: "Pemulihan",
+  NEED_ATTENTION: "Perlu Perhatian",
 };
 
 const HEALTH_COLORS: Record<string, string> = {
-  HEALTHY: 'bg-green-100 text-green-800',
-  SICK: 'bg-red-100 text-red-800',
-  RECOVERING: 'bg-yellow-100 text-yellow-800',
-  NEED_ATTENTION: 'bg-orange-100 text-orange-800',
+  HEALTHY: "bg-green-100 text-green-800",
+  SICK: "bg-red-100 text-red-800",
+  RECOVERING: "bg-yellow-100 text-yellow-800",
+  NEED_ATTENTION: "bg-orange-100 text-orange-800",
 };
 
 export default function DailyReportListPage() {
@@ -89,9 +94,9 @@ export default function DailyReportListPage() {
   const { user } = useAuthStore();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [search, setSearch] = useState('');
-  const [classFilter, setClassFilter] = useState<string>('ALL');
-  const [attendanceFilter, setAttendanceFilter] = useState<string>('ALL');
+  const [search, setSearch] = useState("");
+  const [classFilter, setClassFilter] = useState<string>("ALL");
+  const [attendanceFilter, setAttendanceFilter] = useState<string>("ALL");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -101,11 +106,13 @@ export default function DailyReportListPage() {
     page,
     limit: pageSize,
     search: search || undefined,
-    classId: classFilter !== 'ALL' ? classFilter : undefined,
-    attendanceStatus: attendanceFilter !== 'ALL' ? attendanceFilter : undefined,
-    dateFrom: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
-    dateTo: dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined,
-    unitId: user?.role !== 'SUPER_ADMIN' ? user?.unitId : undefined,
+    classId: classFilter !== "ALL" ? classFilter : undefined,
+    attendanceStatus: attendanceFilter !== "ALL" ? attendanceFilter : undefined,
+    dateFrom: dateRange?.from
+      ? format(dateRange.from, "yyyy-MM-dd")
+      : undefined,
+    dateTo: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
+    unitId: user?.role !== "SUPER_ADMIN" ? user?.unitId : undefined,
   });
 
   const deleteMutation = useDeleteDailyReport();
@@ -114,17 +121,17 @@ export default function DailyReportListPage() {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      toast.success('Laporan harian berhasil dihapus');
+      toast.success("Laporan harian berhasil dihapus");
       setDeleteId(null);
     } catch {
-      toast.error('Gagal menghapus laporan harian');
+      toast.error("Gagal menghapus laporan harian");
     }
   };
 
   const columns: ColumnDef<DailyReport>[] = [
     {
-      accessorKey: 'student',
-      header: 'Siswa',
+      accessorKey: "student",
+      header: "Siswa",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           {row.original.student?.photoUrl ? (
@@ -136,43 +143,51 @@ export default function DailyReportListPage() {
           ) : (
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
               <span className="text-xs font-medium">
-                {row.original.student?.user?.name?.[0] || '?'}
+                {row.original.student?.user?.name?.[0] || "?"}
               </span>
             </div>
           )}
           <div>
-            <p className="font-medium">{row.original.student?.user?.name || '-'}</p>
-            <p className="text-xs text-muted-foreground">{row.original.student?.nis || '-'}</p>
+            <p className="font-medium">
+              {row.original.student?.user?.name || "-"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {row.original.student?.nis || "-"}
+            </p>
           </div>
         </div>
       ),
     },
     {
-      accessorKey: 'reportDate',
-      header: 'Tanggal',
+      accessorKey: "reportDate",
+      header: "Tanggal",
       cell: ({ row }) => (
         <div>
           <p className="font-medium">
-            {format(new Date(row.original.reportDate), 'EEEE', { locale: idLocale })}
+            {format(new Date(row.original.reportDate), "EEEE", {
+              locale: idLocale,
+            })}
           </p>
           <p className="text-xs text-muted-foreground">
-            {format(new Date(row.original.reportDate), 'dd MMM yyyy', { locale: idLocale })}
+            {format(new Date(row.original.reportDate), "dd MMM yyyy", {
+              locale: idLocale,
+            })}
           </p>
         </div>
       ),
     },
     {
-      accessorKey: 'unitType',
-      header: 'Unit',
+      accessorKey: "unitType",
+      header: "Unit",
       cell: ({ row }) => (
         <Badge variant="outline" className="font-normal">
-          {row.original.unitType.replace('_', ' ')}
+          {row.original.unitType.replace("_", " ")}
         </Badge>
       ),
     },
     {
-      accessorKey: 'mood',
-      header: 'Kondisi',
+      accessorKey: "mood",
+      header: "Kondisi",
       cell: ({ row }) => (
         <div className="space-y-1">
           {row.original.mood && (
@@ -187,16 +202,16 @@ export default function DailyReportListPage() {
       ),
     },
     {
-      accessorKey: 'activitiesSummary',
-      header: 'Ringkasan Kegiatan',
+      accessorKey: "activitiesSummary",
+      header: "Ringkasan Kegiatan",
       cell: ({ row }) => (
         <p className="text-sm text-muted-foreground line-clamp-2 max-w-xs">
-          {row.original.activitiesSummary || '-'}
+          {row.original.activitiesSummary || "-"}
         </p>
       ),
     },
     {
-      id: 'actions',
+      id: "actions",
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -206,13 +221,17 @@ export default function DailyReportListPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem
-              onClick={() => router.push(`/paud/daily-reports/${row.original.id}`)}
+              onClick={() =>
+                router.push(`/paud/daily-reports/${row.original.id}`)
+              }
             >
               <Eye className="mr-2 h-4 w-4" />
               Lihat Detail
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => router.push(`/paud/daily-reports/${row.original.id}/edit`)}
+              onClick={() =>
+                router.push(`/paud/daily-reports/${row.original.id}/edit`)
+              }
             >
               <Pencil className="mr-2 h-4 w-4" />
               Edit
@@ -239,11 +258,14 @@ export default function DailyReportListPage() {
           description="Kelola laporan harian aktivitas siswa TK Qur'an"
           actions={
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => router.push('/paud/daily-reports/check-in')}>
+              <Button
+                variant="outline"
+                onClick={() => router.push("/paud/daily-reports/check-in")}
+              >
                 <Users className="mr-2 h-4 w-4" />
                 Check-in Kelas
               </Button>
-              <Button onClick={() => router.push('/paud/daily-reports/new')}>
+              <Button onClick={() => router.push("/paud/daily-reports/new")}>
                 <Plus className="mr-2 h-4 w-4" />
                 Buat Laporan
               </Button>
@@ -332,7 +354,11 @@ export default function DailyReportListPage() {
             30 Hari Terakhir
           </Button>
           {dateRange && (
-            <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDateRange(undefined)}
+            >
               Reset
             </Button>
           )}

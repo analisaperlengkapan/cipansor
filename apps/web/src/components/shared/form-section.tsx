@@ -3,7 +3,7 @@
  * Organizes form fields in sections
  */
 
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 interface FormSectionProps {
   title: string;
@@ -19,7 +19,7 @@ export function FormSection({
   className,
 }: FormSectionProps) {
   return (
-    <div className={cn('space-y-4', className)}>
+    <div className={cn("space-y-4", className)}>
       <div>
         <h3 className="text-lg font-medium">{title}</h3>
         {description && (
@@ -38,8 +38,6 @@ interface FormRowProps {
 
 export function FormRow({ children, className }: FormRowProps) {
   return (
-    <div className={cn('grid gap-4 sm:grid-cols-2', className)}>
-      {children}
-    </div>
+    <div className={cn("grid gap-4 sm:grid-cols-2", className)}>{children}</div>
   );
 }

@@ -47,25 +47,19 @@ describe('TahfidzService', () => {
       // Mock progress by juz - ONE completed (passed assessment)
       const mockProgressByJuz = [
         { juz: 1, student_count: BigInt(10), completed_count: BigInt(5) }, // 5 completed
-        { juz: 2, student_count: BigInt(8), completed_count: BigInt(0) },  // 0 completed
+        { juz: 2, student_count: BigInt(8), completed_count: BigInt(0) }, // 0 completed
         { juz: 30, student_count: BigInt(20), completed_count: BigInt(15) }, // 15 completed
       ];
 
-      const mockRecordsByGrade = [
-        { grade: 'MUMTAZ', count: BigInt(10) },
-      ];
+      const mockRecordsByGrade = [{ grade: 'MUMTAZ', count: BigInt(10) }];
 
-      const mockTopStudentsData = [
-        { studentId: 's1', _sum: { totalAyah: 100 } }
-      ];
+      const mockTopStudentsData = [{ studentId: 's1', _sum: { totalAyah: 100 } }];
 
-      const mockTopStudentDetails = [
-        { id: 's1', user: { name: 'Student 1' }, nis: '123' }
-      ];
+      const mockTopStudentDetails = [{ id: 's1', user: { name: 'Student 1' }, nis: '123' }];
 
       const mockAllJuzCounts = [
         { studentId: 's1', juz: 1, _count: { juz: 1 } },
-        { studentId: 's1', juz: 2, _count: { juz: 1 } }
+        { studentId: 's1', juz: 2, _count: { juz: 1 } },
       ];
 
       const mockRecentRecords = [];
@@ -76,7 +70,7 @@ describe('TahfidzService', () => {
       (prisma.tahfidzRecord.groupBy as any).mockResolvedValueOnce(mockRecordsByType as any); // First call for type
       (prisma.$queryRaw as any)
         .mockResolvedValueOnce(mockMonthlyActivity) // Monthly
-        .mockResolvedValueOnce(mockProgressByJuz)   // Progress
+        .mockResolvedValueOnce(mockProgressByJuz) // Progress
         .mockResolvedValueOnce(mockRecordsByGrade); // Grades
 
       (prisma.tahfidzRecord.groupBy as any).mockResolvedValueOnce(mockTopStudentsData as any); // Top students
@@ -93,9 +87,9 @@ describe('TahfidzService', () => {
       const result = await tahfidzService.getDashboardStats({});
 
       // Verify progressByJuz logic
-      const juz1 = result.progressByJuz.find(j => j.juz === 1);
-      const juz2 = result.progressByJuz.find(j => j.juz === 2);
-      const juz30 = result.progressByJuz.find(j => j.juz === 30);
+      const juz1 = result.progressByJuz.find((j) => j.juz === 1);
+      const juz2 = result.progressByJuz.find((j) => j.juz === 2);
+      const juz30 = result.progressByJuz.find((j) => j.juz === 30);
 
       expect(juz1?.completedCount).toBe(5);
       expect(juz2?.completedCount).toBe(0);
@@ -113,12 +107,12 @@ describe('TahfidzService', () => {
       const mockStudent = {
         id: studentId,
         user: { id: 'u1', name: 'Test Student' },
-        unit: { id: 'un1', name: 'Test Unit' }
+        unit: { id: 'un1', name: 'Test Unit' },
       };
 
       const mockActivityCounts = [
         { activityType: 'ZIYADAH', _count: { _all: 10 }, _sum: { totalAyah: 100 } },
-        { activityType: 'MUROJAAH', _count: { _all: 5 }, _sum: { totalAyah: 50 } }
+        { activityType: 'MUROJAAH', _count: { _all: 5 }, _sum: { totalAyah: 50 } },
       ];
 
       const mockTotalRecords = 15;
@@ -135,12 +129,12 @@ describe('TahfidzService', () => {
       (prisma.tahfidzRecord.count as any).mockResolvedValue(mockTotalRecords);
       (prisma.tahfidzRecord.aggregate as any)
         .mockResolvedValueOnce(mockTotalAyahZiyadah as any) // Ziyadah sum
-        .mockResolvedValueOnce(mockAvgScore as any);        // Avg score
+        .mockResolvedValueOnce(mockAvgScore as any); // Avg score
 
       (prisma.tahfidzRecord.findMany as any)
-        .mockResolvedValueOnce(mockJuzCovered as any)       // Juz covered
-        .mockResolvedValueOnce(mockSurahCovered as any)     // Surah covered
-        .mockResolvedValueOnce(mockRecentRecords as any);   // Recent records
+        .mockResolvedValueOnce(mockJuzCovered as any) // Juz covered
+        .mockResolvedValueOnce(mockSurahCovered as any) // Surah covered
+        .mockResolvedValueOnce(mockRecentRecords as any); // Recent records
 
       const result = await tahfidzService.getStudentSummary(studentId);
 

@@ -1,105 +1,113 @@
-import { test, expect } from './fixtures/auth.fixture';
-import { LoginPage } from './page-objects';
+import { test, expect } from "./fixtures/auth.fixture";
+import { LoginPage } from "./page-objects";
 
 /**
  * Library Module E2E Tests
  * Tests library book catalog and lending system
  */
 
-test.describe('Library - Navigation', () => {
-  test('should navigate to library page', async ({ page }) => {
+test.describe("Library - Navigation", () => {
+  test("should navigate to library page", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/library');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/library");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     expect(page.url()).toMatch(/library/);
   });
 
-  test('should display library catalog', async ({ page }) => {
+  test("should display library catalog", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/library');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/library");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     const content = await page.content();
     expect(content.length).toBeGreaterThan(1000);
     expect(page.url()).toMatch(/library/);
   });
 });
 
-test.describe('Library - Features', () => {
-  test('should display books or catalog items', async ({ page }) => {
+test.describe("Library - Features", () => {
+  test("should display books or catalog items", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/library');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/library");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     // Check for book list or catalog
-    const hasCatalog = await page.locator('table, [class*="card"], [class*="book"]')
+    const hasCatalog = await page
+      .locator('table, [class*="card"], [class*="book"]')
       .first()
-      .isVisible({ timeout: 5000 }).catch(() => false);
-    
-    expect(hasCatalog || page.url().includes('library')).toBeTruthy();
+      .isVisible({ timeout: 5000 })
+      .catch(() => false);
+
+    expect(hasCatalog || page.url().includes("library")).toBeTruthy();
   });
 
-  test('should have search functionality', async ({ page }) => {
+  test("should have search functionality", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/library');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/library");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     // Look for search input
-    const hasSearch = await page.locator('input[type="search"], input[placeholder*="cari"], input[placeholder*="search"]')
+    const hasSearch = await page
+      .locator(
+        'input[type="search"], input[placeholder*="cari"], input[placeholder*="search"]',
+      )
       .first()
-      .isVisible({ timeout: 5000 }).catch(() => false);
-    
-    expect(hasSearch || page.url().includes('library')).toBeTruthy();
+      .isVisible({ timeout: 5000 })
+      .catch(() => false);
+
+    expect(hasSearch || page.url().includes("library")).toBeTruthy();
   });
 
-  test('should allow adding new books', async ({ page }) => {
+  test("should allow adding new books", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    await page.goto('/library');
-    await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-    
+    await page.goto("/library");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+
     // Look for add/create button
-    const hasAddButton = await page.getByRole('button', { name: /tambah|add|create/i })
+    const hasAddButton = await page
+      .getByRole("button", { name: /tambah|add|create/i })
       .first()
-      .isVisible({ timeout: 5000 }).catch(() => false);
-    
-    expect(hasAddButton || page.url().includes('library')).toBeTruthy();
+      .isVisible({ timeout: 5000 })
+      .catch(() => false);
+
+    expect(hasAddButton || page.url().includes("library")).toBeTruthy();
   });
 });
 
-test.describe('Library - Performance', () => {
-  test('should load library page quickly', async ({ page }) => {
+test.describe("Library - Performance", () => {
+  test("should load library page quickly", async ({ page }) => {
     const login = new LoginPage(page);
-    await page.goto('/login');
-    await login.login('superadmin@cipansor.id', 'SuperAdmin123!');
-    
+    await page.goto("/login");
+    await login.login("superadmin@cipansor.id", "SuperAdmin123!");
+
     await page.waitForTimeout(2000);
-    
+
     const startTime = Date.now();
-    await page.goto('/library');
-    await page.waitForLoadState('domcontentloaded', { timeout: 15000 });
+    await page.goto("/library");
+    await page.waitForLoadState("domcontentloaded", { timeout: 15000 });
     const loadTime = Date.now() - startTime;
-    
+
     expect(loadTime).toBeLessThan(15000);
     expect(page.url()).toMatch(/library/);
   });

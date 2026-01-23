@@ -1,11 +1,17 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { useState } from "react";
+import { MainLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -13,16 +19,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useReportCards, usePublishReportCards } from '@/hooks';
-import { useClasses, useAcademicYears } from '@/hooks';
+} from "@/components/ui/select";
+import { useReportCards, usePublishReportCards } from "@/hooks";
+import { useClasses, useAcademicYears } from "@/hooks";
 import {
   FileText,
   Search,
@@ -34,18 +40,18 @@ import {
   CheckCircle,
   Clock,
   ArrowLeft,
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function ReportCardsPage() {
   const router = useRouter();
-  const [search, setSearch] = useState('');
-  const [classFilter, setClassFilter] = useState<string>('');
-  const [semesterFilter, setSemesterFilter] = useState<string>('1');
+  const [search, setSearch] = useState("");
+  const [classFilter, setClassFilter] = useState<string>("");
+  const [semesterFilter, setSemesterFilter] = useState<string>("1");
   const [selectedReportCards, setSelectedReportCards] = useState<string[]>([]);
 
   const { data: reportCards, isLoading } = useReportCards({
@@ -82,16 +88,16 @@ export default function ReportCardsPage() {
 
   const handleSelect = (id: string) => {
     setSelectedReportCards((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   };
 
   const handleBulkPublish = async () => {
     const unpublishedIds = selectedReportCards.filter(
-      (id) => !reportCards?.find((r) => r.id === id)?.isPublished
+      (id) => !reportCards?.find((r) => r.id === id)?.isPublished,
     );
     if (unpublishedIds.length === 0) {
-      toast.info('Semua rapor yang dipilih sudah dipublikasikan');
+      toast.info("Semua rapor yang dipilih sudah dipublikasikan");
       return;
     }
     try {
@@ -99,7 +105,7 @@ export default function ReportCardsPage() {
       toast.success(`${unpublishedIds.length} rapor berhasil dipublikasikan`);
       setSelectedReportCards([]);
     } catch (error) {
-      toast.error('Gagal mempublikasikan rapor');
+      toast.error("Gagal mempublikasikan rapor");
     }
   };
 
@@ -113,7 +119,9 @@ export default function ReportCardsPage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Rapor Santri</h1>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Rapor Santri
+              </h1>
               <p className="text-muted-foreground">
                 Kelola dan publikasikan rapor semester
               </p>
@@ -151,7 +159,9 @@ export default function ReportCardsPage() {
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{reportCards?.length ?? 0}</div>
+              <div className="text-2xl font-bold">
+                {reportCards?.length ?? 0}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Semester {semesterFilter} {activeAcademicYear?.name}
               </p>
@@ -159,12 +169,18 @@ export default function ReportCardsPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Dipublikasikan</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Dipublikasikan
+              </CardTitle>
               <CheckCircle className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{publishedCount}</div>
-              <p className="text-xs text-muted-foreground">Sudah dirilis ke santri</p>
+              <div className="text-2xl font-bold text-green-600">
+                {publishedCount}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Sudah dirilis ke santri
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -173,22 +189,31 @@ export default function ReportCardsPage() {
               <Clock className="h-4 w-4 text-yellow-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{draftCount}</div>
-              <p className="text-xs text-muted-foreground">Menunggu publikasi</p>
+              <div className="text-2xl font-bold text-yellow-600">
+                {draftCount}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Menunggu publikasi
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Rata-rata Kelas</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Rata-rata Kelas
+              </CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {reportCards?.length
                   ? (
-                      reportCards.reduce((sum, r) => sum + (r.averageScore ?? 0), 0) / reportCards.length
+                      reportCards.reduce(
+                        (sum, r) => sum + (r.averageScore ?? 0),
+                        0,
+                      ) / reportCards.length
                     ).toFixed(1)
-                  : '-'}
+                  : "-"}
               </div>
               <p className="text-xs text-muted-foreground">Nilai keseluruhan</p>
             </CardContent>
@@ -281,20 +306,22 @@ export default function ReportCardsPage() {
                     <TableCell className="font-mono text-sm">
                       {report.student?.nis}
                     </TableCell>
-                    <TableCell className="font-medium">{report.student?.user?.name || '-'}</TableCell>
+                    <TableCell className="font-medium">
+                      {report.student?.user?.name || "-"}
+                    </TableCell>
                     <TableCell>{report.class?.name}</TableCell>
                     <TableCell>Semester {report.semester}</TableCell>
                     <TableCell className="text-center">
                       <span
                         className={`font-semibold ${
                           (report.averageScore ?? 0) >= 80
-                            ? 'text-green-600'
+                            ? "text-green-600"
                             : (report.averageScore ?? 0) >= 70
-                            ? 'text-blue-600'
-                            : 'text-red-600'
+                              ? "text-blue-600"
+                              : "text-red-600"
                         }`}
                       >
-                        {report.averageScore?.toFixed(1) ?? '-'}
+                        {report.averageScore?.toFixed(1) ?? "-"}
                       </span>
                     </TableCell>
                     <TableCell className="text-center">
@@ -303,12 +330,14 @@ export default function ReportCardsPage() {
                           #{report.rank}/{report.totalStudents}
                         </Badge>
                       ) : (
-                        '-'
+                        "-"
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={report.isPublished ? 'default' : 'secondary'}>
-                        {report.isPublished ? 'Dipublikasikan' : 'Draft'}
+                      <Badge
+                        variant={report.isPublished ? "default" : "secondary"}
+                      >
+                        {report.isPublished ? "Dipublikasikan" : "Draft"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -319,7 +348,9 @@ export default function ReportCardsPage() {
                           </Link>
                         </Button>
                         <Button variant="ghost" size="icon" asChild>
-                          <Link href={`/assessment/report-cards/${report.id}/print`}>
+                          <Link
+                            href={`/assessment/report-cards/${report.id}/print`}
+                          >
                             <Download className="h-4 w-4" />
                           </Link>
                         </Button>
@@ -329,7 +360,10 @@ export default function ReportCardsPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell
+                    colSpan={9}
+                    className="text-center py-8 text-muted-foreground"
+                  >
                     Belum ada data rapor
                   </TableCell>
                 </TableRow>

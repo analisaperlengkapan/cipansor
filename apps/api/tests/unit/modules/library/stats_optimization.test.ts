@@ -48,9 +48,9 @@ describe('Library Service - Stats Optimization', () => {
     // Mock borrowing responses
     // We expect the implementation to call findMany
     const mockBorrowings = [
-        { dueDate: new Date(Date.now() + 86400000) }, // Future (Not Overdue)
-        { dueDate: new Date(Date.now() - 86400000) }, // Past (Overdue)
-        { dueDate: new Date(Date.now() - 100000) },   // Past (Overdue)
+      { dueDate: new Date(Date.now() + 86400000) }, // Future (Not Overdue)
+      { dueDate: new Date(Date.now() - 86400000) }, // Past (Overdue)
+      { dueDate: new Date(Date.now() - 100000) }, // Past (Overdue)
     ];
     (prisma.borrowing.findMany as any).mockResolvedValue(mockBorrowings);
 
@@ -61,13 +61,15 @@ describe('Library Service - Stats Optimization', () => {
 
     // Verify findMany was called
     expect(prisma.borrowing.findMany).toHaveBeenCalledTimes(1);
-    expect(prisma.borrowing.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: expect.objectContaining({
-        status: 'ACTIVE',
-        book: { unitId },
-      }),
-      select: { dueDate: true },
-    }));
+    expect(prisma.borrowing.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          status: 'ACTIVE',
+          book: { unitId },
+        }),
+        select: { dueDate: true },
+      })
+    );
 
     // Verify count was NOT called for borrowing
     expect(prisma.borrowing.count).not.toHaveBeenCalled();

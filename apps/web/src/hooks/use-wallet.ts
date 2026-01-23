@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
-import { toast } from 'sonner';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { ApiResponse, PaginatedResponse } from "@/lib/api";
+import { toast } from "sonner";
 
 // =============== Types ===============
 
@@ -29,30 +29,38 @@ export interface Wallet {
   };
 }
 
-export type TransactionType = 'TOPUP' | 'PURCHASE' | 'REFUND' | 'TRANSFER';
+export type TransactionType = "TOPUP" | "PURCHASE" | "REFUND" | "TRANSFER";
 
-export const TRANSACTION_TYPES: { value: TransactionType; label: string; color: string }[] = [
-  { value: 'TOPUP', label: 'Top Up', color: 'bg-green-100 text-green-800' },
-  { value: 'PURCHASE', label: 'Pembelian', color: 'bg-red-100 text-red-800' },
-  { value: 'REFUND', label: 'Refund', color: 'bg-blue-100 text-blue-800' },
-  { value: 'TRANSFER', label: 'Transfer', color: 'bg-purple-100 text-purple-800' },
+export const TRANSACTION_TYPES: {
+  value: TransactionType;
+  label: string;
+  color: string;
+}[] = [
+  { value: "TOPUP", label: "Top Up", color: "bg-green-100 text-green-800" },
+  { value: "PURCHASE", label: "Pembelian", color: "bg-red-100 text-red-800" },
+  { value: "REFUND", label: "Refund", color: "bg-blue-100 text-blue-800" },
+  {
+    value: "TRANSFER",
+    label: "Transfer",
+    color: "bg-purple-100 text-purple-800",
+  },
 ];
 
-export type ReferenceType = 'CANTEEN' | 'LAUNDRY' | 'TRANSFER' | 'OTHER';
+export type ReferenceType = "CANTEEN" | "LAUNDRY" | "TRANSFER" | "OTHER";
 
 export const REFERENCE_TYPES: { value: ReferenceType; label: string }[] = [
-  { value: 'CANTEEN', label: 'Kantin' },
-  { value: 'LAUNDRY', label: 'Laundry' },
-  { value: 'TRANSFER', label: 'Transfer' },
-  { value: 'OTHER', label: 'Lainnya' },
+  { value: "CANTEEN", label: "Kantin" },
+  { value: "LAUNDRY", label: "Laundry" },
+  { value: "TRANSFER", label: "Transfer" },
+  { value: "OTHER", label: "Lainnya" },
 ];
 
-export type PaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'QRIS';
+export type PaymentMethod = "CASH" | "BANK_TRANSFER" | "QRIS";
 
 export const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
-  { value: 'CASH', label: 'Tunai' },
-  { value: 'BANK_TRANSFER', label: 'Transfer Bank' },
-  { value: 'QRIS', label: 'QRIS' },
+  { value: "CASH", label: "Tunai" },
+  { value: "BANK_TRANSFER", label: "Transfer Bank" },
+  { value: "QRIS", label: "QRIS" },
 ];
 
 export interface WalletTransaction {
@@ -83,15 +91,17 @@ export interface WalletSummary {
 // =============== Query Keys ===============
 
 export const walletKeys = {
-  all: ['wallets'] as const,
-  lists: () => [...walletKeys.all, 'list'] as const,
+  all: ["wallets"] as const,
+  lists: () => [...walletKeys.all, "list"] as const,
   list: (params: WalletParams) => [...walletKeys.lists(), params] as const,
-  details: () => [...walletKeys.all, 'detail'] as const,
+  details: () => [...walletKeys.all, "detail"] as const,
   detail: (studentId: string) => [...walletKeys.details(), studentId] as const,
-  transactions: () => [...walletKeys.all, 'transactions'] as const,
-  transactionList: (params: TransactionParams) => [...walletKeys.transactions(), params] as const,
-  studentTransactions: (studentId: string) => [...walletKeys.transactions(), 'student', studentId] as const,
-  summary: (unitId?: string) => [...walletKeys.all, 'summary', unitId] as const,
+  transactions: () => [...walletKeys.all, "transactions"] as const,
+  transactionList: (params: TransactionParams) =>
+    [...walletKeys.transactions(), params] as const,
+  studentTransactions: (studentId: string) =>
+    [...walletKeys.transactions(), "student", studentId] as const,
+  summary: (unitId?: string) => [...walletKeys.all, "summary", unitId] as const,
 };
 
 // =============== List Wallets ===============
@@ -110,7 +120,9 @@ export function useWallets(params: WalletParams = {}) {
   return useQuery({
     queryKey: walletKeys.list(params),
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Wallet>>('/wallet', { params });
+      const response = await api.get<PaginatedResponse<Wallet>>("/wallet", {
+        params,
+      });
       return response.data;
     },
   });
@@ -122,7 +134,9 @@ export function useWallet(studentId: string) {
   return useQuery({
     queryKey: walletKeys.detail(studentId),
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Wallet>>(`/wallet/${studentId}`);
+      const response = await api.get<ApiResponse<Wallet>>(
+        `/wallet/${studentId}`,
+      );
       return response.data.data;
     },
     enabled: !!studentId,
@@ -135,9 +149,12 @@ export function useWalletSummary(unitId?: string) {
   return useQuery({
     queryKey: walletKeys.summary(unitId),
     queryFn: async () => {
-      const response = await api.get<ApiResponse<WalletSummary>>('/wallet/summary', {
-        params: unitId ? { unitId } : undefined,
-      });
+      const response = await api.get<ApiResponse<WalletSummary>>(
+        "/wallet/summary",
+        {
+          params: unitId ? { unitId } : undefined,
+        },
+      );
       return response.data.data;
     },
   });
@@ -160,19 +177,25 @@ export function useWalletTransactions(params: TransactionParams = {}) {
   return useQuery({
     queryKey: walletKeys.transactionList(params),
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<WalletTransaction>>('/wallet/transactions', { params });
+      const response = await api.get<PaginatedResponse<WalletTransaction>>(
+        "/wallet/transactions",
+        { params },
+      );
       return response.data;
     },
   });
 }
 
-export function useStudentWalletTransactions(studentId: string, params: Omit<TransactionParams, 'studentId'> = {}) {
+export function useStudentWalletTransactions(
+  studentId: string,
+  params: Omit<TransactionParams, "studentId"> = {},
+) {
   return useQuery({
     queryKey: walletKeys.studentTransactions(studentId),
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<WalletTransaction>>(
         `/wallet/${studentId}/transactions`,
-        { params }
+        { params },
       );
       return response.data;
     },
@@ -194,16 +217,21 @@ export function useTopUpWallet() {
 
   return useMutation({
     mutationFn: async (data: TopUpData) => {
-      const response = await api.post<ApiResponse<Wallet>>('/wallet/topup', data);
+      const response = await api.post<ApiResponse<Wallet>>(
+        "/wallet/topup",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: walletKeys.all });
-      queryClient.invalidateQueries({ queryKey: walletKeys.detail(variables.studentId) });
-      toast.success('Top up berhasil');
+      queryClient.invalidateQueries({
+        queryKey: walletKeys.detail(variables.studentId),
+      });
+      toast.success("Top up berhasil");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Gagal melakukan top up');
+      toast.error(error.message || "Gagal melakukan top up");
     },
   });
 }
@@ -227,15 +255,20 @@ export function useBulkTopUp() {
 
   return useMutation({
     mutationFn: async (data: BulkTopUpData) => {
-      const response = await api.post<ApiResponse<BulkTopUpResult>>('/wallet/bulk-topup', data);
+      const response = await api.post<ApiResponse<BulkTopUpResult>>(
+        "/wallet/bulk-topup",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: walletKeys.all });
-      toast.success(`Bulk top up selesai: ${result.success} berhasil, ${result.failed} gagal`);
+      toast.success(
+        `Bulk top up selesai: ${result.success} berhasil, ${result.failed} gagal`,
+      );
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Gagal melakukan bulk top up');
+      toast.error(error.message || "Gagal melakukan bulk top up");
     },
   });
 }
@@ -255,16 +288,21 @@ export function useDeductWallet() {
 
   return useMutation({
     mutationFn: async (data: DeductData) => {
-      const response = await api.post<ApiResponse<Wallet>>('/wallet/deduct', data);
+      const response = await api.post<ApiResponse<Wallet>>(
+        "/wallet/deduct",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: walletKeys.all });
-      queryClient.invalidateQueries({ queryKey: walletKeys.detail(variables.studentId) });
-      toast.success('Pengurangan saldo berhasil');
+      queryClient.invalidateQueries({
+        queryKey: walletKeys.detail(variables.studentId),
+      });
+      toast.success("Pengurangan saldo berhasil");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Gagal mengurangi saldo');
+      toast.error(error.message || "Gagal mengurangi saldo");
     },
   });
 }
@@ -288,17 +326,24 @@ export function useTransferWallet() {
 
   return useMutation({
     mutationFn: async (data: TransferData) => {
-      const response = await api.post<ApiResponse<TransferResult>>('/wallet/transfer', data);
+      const response = await api.post<ApiResponse<TransferResult>>(
+        "/wallet/transfer",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: walletKeys.all });
-      queryClient.invalidateQueries({ queryKey: walletKeys.detail(variables.fromStudentId) });
-      queryClient.invalidateQueries({ queryKey: walletKeys.detail(variables.toStudentId) });
-      toast.success('Transfer berhasil');
+      queryClient.invalidateQueries({
+        queryKey: walletKeys.detail(variables.fromStudentId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: walletKeys.detail(variables.toStudentId),
+      });
+      toast.success("Transfer berhasil");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Gagal melakukan transfer');
+      toast.error(error.message || "Gagal melakukan transfer");
     },
   });
 }
@@ -318,16 +363,21 @@ export function useRefundWallet() {
 
   return useMutation({
     mutationFn: async (data: RefundData) => {
-      const response = await api.post<ApiResponse<Wallet>>('/wallet/refund', data);
+      const response = await api.post<ApiResponse<Wallet>>(
+        "/wallet/refund",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: walletKeys.all });
-      queryClient.invalidateQueries({ queryKey: walletKeys.detail(variables.studentId) });
-      toast.success('Refund berhasil');
+      queryClient.invalidateQueries({
+        queryKey: walletKeys.detail(variables.studentId),
+      });
+      toast.success("Refund berhasil");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Gagal melakukan refund');
+      toast.error(error.message || "Gagal melakukan refund");
     },
   });
 }
@@ -344,16 +394,21 @@ export function useUpdateWalletLimit() {
 
   return useMutation({
     mutationFn: async (data: UpdateLimitData) => {
-      const response = await api.put<ApiResponse<Wallet>>(`/wallet/limit`, data);
+      const response = await api.put<ApiResponse<Wallet>>(
+        `/wallet/limit`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: walletKeys.all });
-      queryClient.invalidateQueries({ queryKey: walletKeys.detail(variables.studentId) });
-      toast.success('Limit belanja berhasil diperbarui');
+      queryClient.invalidateQueries({
+        queryKey: walletKeys.detail(variables.studentId),
+      });
+      toast.success("Limit belanja berhasil diperbarui");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Gagal memperbarui limit');
+      toast.error(error.message || "Gagal memperbarui limit");
     },
   });
 }
@@ -361,9 +416,9 @@ export function useUpdateWalletLimit() {
 // =============== Utility Functions ===============
 
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
@@ -371,7 +426,7 @@ export function formatCurrency(amount: number): string {
 
 export function getTransactionTypeColor(type: TransactionType): string {
   const typeConfig = TRANSACTION_TYPES.find((t) => t.value === type);
-  return typeConfig?.color || 'bg-gray-100 text-gray-800';
+  return typeConfig?.color || "bg-gray-100 text-gray-800";
 }
 
 export function getTransactionTypeLabel(type: TransactionType): string {

@@ -1,5 +1,5 @@
-import { prisma } from "../../lib/prisma";
-import { CreateViolationDto, UpdateViolationDto, QueryViolationDto } from "./schema";
+import { prisma } from '../../lib/prisma';
+import { CreateViolationDto, UpdateViolationDto, QueryViolationDto } from './schema';
 
 export async function createViolation(data: CreateViolationDto, reportedById: string) {
   return prisma.violation.create({
@@ -26,7 +26,7 @@ export async function getViolations(query: QueryViolationDto) {
   const where = {
     ...(studentId && { studentId }),
     ...(type && { type }),
-    ...(category && { category: { contains: category, mode: "insensitive" as const } }),
+    ...(category && { category: { contains: category, mode: 'insensitive' as const } }),
     ...(startDate || endDate
       ? {
           occurredAt: {
@@ -49,7 +49,7 @@ export async function getViolations(query: QueryViolationDto) {
         },
         reportedBy: { select: { id: true, name: true } },
       },
-      orderBy: { occurredAt: "desc" },
+      orderBy: { occurredAt: 'desc' },
       skip,
       take: limit,
     }),
@@ -115,23 +115,23 @@ export async function getStudentViolationPoints(studentId: string) {
 export async function getStudentViolationSummary(studentId: string) {
   const violations = await prisma.violation.findMany({
     where: { studentId },
-    orderBy: { occurredAt: "desc" },
+    orderBy: { occurredAt: 'desc' },
     take: 10,
   });
 
   const totalPoints = await getStudentViolationPoints(studentId);
 
   const byType = await prisma.violation.groupBy({
-    by: ["type"],
+    by: ['type'],
     where: { studentId },
     _count: true,
   });
 
   const byCategory = await prisma.violation.groupBy({
-    by: ["category"],
+    by: ['category'],
     where: { studentId },
     _count: true,
-    orderBy: { _count: { category: "desc" } },
+    orderBy: { _count: { category: 'desc' } },
     take: 5,
   });
 
@@ -145,9 +145,9 @@ export async function getStudentViolationSummary(studentId: string) {
 
 export async function getViolationCategories() {
   const categories = await prisma.violation.groupBy({
-    by: ["category"],
+    by: ['category'],
     _count: true,
-    orderBy: { _count: { category: "desc" } },
+    orderBy: { _count: { category: 'desc' } },
   });
   return categories.map((c) => c.category);
 }

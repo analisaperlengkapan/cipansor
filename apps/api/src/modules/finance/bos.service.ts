@@ -12,17 +12,57 @@ interface AuthenticatedUser {
 
 // BOS Component Categories (8 Komponen sesuai Permendikbud)
 export const BOS_COMPONENTS = [
-  { code: 'BOS-01', name: 'Pengembangan Perpustakaan', description: 'Pembelian buku, e-book, akses jurnal', maxPercentage: 15 },
-  { code: 'BOS-02', name: 'Penerimaan Peserta Didik Baru', description: 'Biaya PPDB, formulir, seleksi', maxPercentage: 10 },
-  { code: 'BOS-03', name: 'Kegiatan Pembelajaran dan Ekstrakurikuler', description: 'Alat pembelajaran, ekskul', maxPercentage: 15 },
-  { code: 'BOS-04', name: 'Kegiatan Evaluasi Pembelajaran', description: 'Ujian, ulangan, penilaian', maxPercentage: 10 },
-  { code: 'BOS-05', name: 'Pengelolaan Sekolah', description: 'ATK, administrasi, manajemen', maxPercentage: 15 },
-  { code: 'BOS-06', name: 'Pengembangan Profesi Guru', description: 'Pelatihan, workshop, sertifikasi', maxPercentage: 10 },
-  { code: 'BOS-07', name: 'Langganan Daya dan Jasa', description: 'Listrik, air, internet, telepon', maxPercentage: 15 },
-  { code: 'BOS-08', name: 'Pemeliharaan dan Perawatan', description: 'Perbaikan gedung, peralatan', maxPercentage: 10 },
+  {
+    code: 'BOS-01',
+    name: 'Pengembangan Perpustakaan',
+    description: 'Pembelian buku, e-book, akses jurnal',
+    maxPercentage: 15,
+  },
+  {
+    code: 'BOS-02',
+    name: 'Penerimaan Peserta Didik Baru',
+    description: 'Biaya PPDB, formulir, seleksi',
+    maxPercentage: 10,
+  },
+  {
+    code: 'BOS-03',
+    name: 'Kegiatan Pembelajaran dan Ekstrakurikuler',
+    description: 'Alat pembelajaran, ekskul',
+    maxPercentage: 15,
+  },
+  {
+    code: 'BOS-04',
+    name: 'Kegiatan Evaluasi Pembelajaran',
+    description: 'Ujian, ulangan, penilaian',
+    maxPercentage: 10,
+  },
+  {
+    code: 'BOS-05',
+    name: 'Pengelolaan Sekolah',
+    description: 'ATK, administrasi, manajemen',
+    maxPercentage: 15,
+  },
+  {
+    code: 'BOS-06',
+    name: 'Pengembangan Profesi Guru',
+    description: 'Pelatihan, workshop, sertifikasi',
+    maxPercentage: 10,
+  },
+  {
+    code: 'BOS-07',
+    name: 'Langganan Daya dan Jasa',
+    description: 'Listrik, air, internet, telepon',
+    maxPercentage: 15,
+  },
+  {
+    code: 'BOS-08',
+    name: 'Pemeliharaan dan Perawatan',
+    description: 'Perbaikan gedung, peralatan',
+    maxPercentage: 10,
+  },
 ] as const;
 
-export type BosComponentCode = typeof BOS_COMPONENTS[number]['code'];
+export type BosComponentCode = (typeof BOS_COMPONENTS)[number]['code'];
 
 interface BosAllocation {
   id?: string;
@@ -75,7 +115,7 @@ export class BosService {
 
     // Validate percentage limits
     for (const allocation of input.allocations) {
-      const component = BOS_COMPONENTS.find(c => c.code === allocation.componentCode);
+      const component = BOS_COMPONENTS.find((c) => c.code === allocation.componentCode);
       if (!component) {
         throw Errors.badRequest(`Invalid component code: ${allocation.componentCode}`);
       }
@@ -89,7 +129,7 @@ export class BosService {
 
     // Store as JSON in a generic data table or use existing model
     // For this implementation, we'll use Invoice model with special paymentType
-    
+
     // First, ensure BOS payment type exists
     let bosPaymentType = await prisma.paymentType.findFirst({
       where: { unitId: input.unitId, code: 'BOS' },
@@ -140,7 +180,7 @@ export class BosService {
     }
 
     // Validate component code
-    const component = BOS_COMPONENTS.find(c => c.code === input.componentCode);
+    const component = BOS_COMPONENTS.find((c) => c.code === input.componentCode);
     if (!component) {
       throw Errors.badRequest(`Invalid component code: ${input.componentCode}`);
     }
@@ -210,13 +250,13 @@ export class BosService {
 
     // Calculate expenses by component (from audit logs)
     const expensesByComponent: Record<string, number> = {};
-    BOS_COMPONENTS.forEach(c => {
+    BOS_COMPONENTS.forEach((c) => {
       expensesByComponent[c.code] = 0;
     });
 
     const expenses = auditLogs
-      .filter(log => log.entity === 'BOS_EXPENSE')
-      .map(log => log.newValues as any);
+      .filter((log) => log.entity === 'BOS_EXPENSE')
+      .map((log) => log.newValues as any);
 
     expenses.forEach((expense: any) => {
       if (expense.componentCode) {
@@ -230,7 +270,7 @@ export class BosService {
     const remainingBudget = estimatedBosAmount - totalExpenses;
 
     // Build component breakdown
-    const componentBreakdown = BOS_COMPONENTS.map(component => {
+    const componentBreakdown = BOS_COMPONENTS.map((component) => {
       const spent = expensesByComponent[component.code] || 0;
       const maxAllocation = (estimatedBosAmount * component.maxPercentage) / 100;
       const usagePercentage = maxAllocation > 0 ? (spent / maxAllocation) * 100 : 0;
@@ -266,9 +306,10 @@ export class BosService {
         estimatedBosAmount,
         totalExpenses,
         remainingBudget,
-        usagePercentage: estimatedBosAmount > 0
-          ? Math.round((totalExpenses / estimatedBosAmount) * 100 * 10) / 10
-          : 0,
+        usagePercentage:
+          estimatedBosAmount > 0
+            ? Math.round((totalExpenses / estimatedBosAmount) * 100 * 10) / 10
+            : 0,
       },
       componentBreakdown,
       recentExpenses: expenses.slice(0, 10),
@@ -286,15 +327,21 @@ export class BosService {
       ...summary,
       generatedAt: new Date(),
       reportTitle: `Laporan Penggunaan Dana BOS ${summary.unit.name} Tahun ${year}`,
-      disclaimer: 'Laporan ini dibuat untuk transparansi penggunaan Dana Bantuan Operasional Sekolah (BOS) sesuai dengan Permendikbud tentang Penggunaan Dana BOS.',
-      components: summary.componentBreakdown.map(c => ({
+      disclaimer:
+        'Laporan ini dibuat untuk transparansi penggunaan Dana Bantuan Operasional Sekolah (BOS) sesuai dengan Permendikbud tentang Penggunaan Dana BOS.',
+      components: summary.componentBreakdown.map((c) => ({
         ...c,
         transactions: [], // Would include actual transactions
       })),
     };
   }
 
-  async getQuarterlyReport(unitId: string, year: number, quarter: number, currentUser: AuthenticatedUser) {
+  async getQuarterlyReport(
+    unitId: string,
+    year: number,
+    quarter: number,
+    currentUser: AuthenticatedUser
+  ) {
     // Access control
     if (currentUser.role !== UserRole.SUPER_ADMIN && currentUser.unitId !== unitId) {
       throw Errors.forbidden('Access denied');
@@ -326,7 +373,7 @@ export class BosService {
     const issues: Array<{ code: string; severity: 'error' | 'warning'; message: string }> = [];
 
     // Check each component against limits
-    summary.componentBreakdown.forEach(component => {
+    summary.componentBreakdown.forEach((component) => {
       if (component.status === 'OVER_BUDGET') {
         issues.push({
           code: component.code,
@@ -353,8 +400,8 @@ export class BosService {
 
     // Check for unused categories
     summary.componentBreakdown
-      .filter(c => c.usagePercentage === 0)
-      .forEach(c => {
+      .filter((c) => c.usagePercentage === 0)
+      .forEach((c) => {
         issues.push({
           code: c.code,
           severity: 'warning',
@@ -363,10 +410,10 @@ export class BosService {
       });
 
     return {
-      isCompliant: issues.filter(i => i.severity === 'error').length === 0,
+      isCompliant: issues.filter((i) => i.severity === 'error').length === 0,
       totalIssues: issues.length,
-      errorCount: issues.filter(i => i.severity === 'error').length,
-      warningCount: issues.filter(i => i.severity === 'warning').length,
+      errorCount: issues.filter((i) => i.severity === 'error').length,
+      warningCount: issues.filter((i) => i.severity === 'warning').length,
       issues,
     };
   }

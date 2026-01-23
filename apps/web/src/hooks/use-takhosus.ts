@@ -1,12 +1,19 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { ApiResponse, PaginatedResponse } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api, { ApiResponse, PaginatedResponse } from "@/lib/api";
 
 // =====================================
 // Types
 // =====================================
 
-export type TakhosusStatus = 'ACTIVE' | 'COMPLETED' | 'DROPPED' | 'SUSPENDED';
-export type HalaqohDay = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
+export type TakhosusStatus = "ACTIVE" | "COMPLETED" | "DROPPED" | "SUSPENDED";
+export type HalaqohDay =
+  | "MONDAY"
+  | "TUESDAY"
+  | "WEDNESDAY"
+  | "THURSDAY"
+  | "FRIDAY"
+  | "SATURDAY"
+  | "SUNDAY";
 
 export interface Halaqoh {
   id: string;
@@ -144,28 +151,52 @@ export interface HalaqohProgress {
 // Constants
 // =====================================
 
-export const TAKHOSUS_STATUSES: { value: TakhosusStatus; label: string; color: string }[] = [
-  { value: 'ACTIVE', label: 'Aktif', color: 'bg-green-100 text-green-800' },
-  { value: 'COMPLETED', label: 'Selesai', color: 'bg-blue-100 text-blue-800' },
-  { value: 'DROPPED', label: 'Mundur', color: 'bg-red-100 text-red-800' },
-  { value: 'SUSPENDED', label: 'Ditangguhkan', color: 'bg-yellow-100 text-yellow-800' },
+export const TAKHOSUS_STATUSES: {
+  value: TakhosusStatus;
+  label: string;
+  color: string;
+}[] = [
+  { value: "ACTIVE", label: "Aktif", color: "bg-green-100 text-green-800" },
+  { value: "COMPLETED", label: "Selesai", color: "bg-blue-100 text-blue-800" },
+  { value: "DROPPED", label: "Mundur", color: "bg-red-100 text-red-800" },
+  {
+    value: "SUSPENDED",
+    label: "Ditangguhkan",
+    color: "bg-yellow-100 text-yellow-800",
+  },
 ];
 
 export const HALAQOH_DAYS: { value: HalaqohDay; label: string }[] = [
-  { value: 'MONDAY', label: 'Senin' },
-  { value: 'TUESDAY', label: 'Selasa' },
-  { value: 'WEDNESDAY', label: 'Rabu' },
-  { value: 'THURSDAY', label: 'Kamis' },
-  { value: 'FRIDAY', label: 'Jumat' },
-  { value: 'SATURDAY', label: 'Sabtu' },
-  { value: 'SUNDAY', label: 'Ahad' },
+  { value: "MONDAY", label: "Senin" },
+  { value: "TUESDAY", label: "Selasa" },
+  { value: "WEDNESDAY", label: "Rabu" },
+  { value: "THURSDAY", label: "Kamis" },
+  { value: "FRIDAY", label: "Jumat" },
+  { value: "SATURDAY", label: "Sabtu" },
+  { value: "SUNDAY", label: "Ahad" },
 ];
 
 export const SANAD_GRADES: { value: string; label: string; color: string }[] = [
-  { value: 'MUMTAZ', label: 'Mumtaz (Sangat Baik)', color: 'bg-green-100 text-green-800' },
-  { value: 'JAYYID_JIDDAN', label: 'Jayyid Jiddan (Baik Sekali)', color: 'bg-blue-100 text-blue-800' },
-  { value: 'JAYYID', label: 'Jayyid (Baik)', color: 'bg-cyan-100 text-cyan-800' },
-  { value: 'MAQBUL', label: 'Maqbul (Cukup)', color: 'bg-yellow-100 text-yellow-800' },
+  {
+    value: "MUMTAZ",
+    label: "Mumtaz (Sangat Baik)",
+    color: "bg-green-100 text-green-800",
+  },
+  {
+    value: "JAYYID_JIDDAN",
+    label: "Jayyid Jiddan (Baik Sekali)",
+    color: "bg-blue-100 text-blue-800",
+  },
+  {
+    value: "JAYYID",
+    label: "Jayyid (Baik)",
+    color: "bg-cyan-100 text-cyan-800",
+  },
+  {
+    value: "MAQBUL",
+    label: "Maqbul (Cukup)",
+    color: "bg-yellow-100 text-yellow-800",
+  },
 ];
 
 // =====================================
@@ -183,9 +214,12 @@ export interface HalaqohParams {
 
 export function useHalaqohs(params: HalaqohParams = {}) {
   return useQuery({
-    queryKey: ['takhosus', 'halaqoh', params],
+    queryKey: ["takhosus", "halaqoh", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Halaqoh>>('/takhosus/halaqoh', { params });
+      const response = await api.get<PaginatedResponse<Halaqoh>>(
+        "/takhosus/halaqoh",
+        { params },
+      );
       return response.data;
     },
     staleTime: 5 * 60 * 1000,
@@ -194,9 +228,12 @@ export function useHalaqohs(params: HalaqohParams = {}) {
 
 export function useTakhosusDashboard(unitId?: string) {
   return useQuery({
-    queryKey: ['takhosus', 'dashboard', unitId],
+    queryKey: ["takhosus", "dashboard", unitId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<any>>('/takhosus/dashboard-stats', { params: { unitId } });
+      const response = await api.get<ApiResponse<any>>(
+        "/takhosus/dashboard-stats",
+        { params: { unitId } },
+      );
       return response.data.data;
     },
     staleTime: 5 * 60 * 1000,
@@ -205,9 +242,11 @@ export function useTakhosusDashboard(unitId?: string) {
 
 export function useHalaqoh(id: string) {
   return useQuery({
-    queryKey: ['takhosus', 'halaqoh', id],
+    queryKey: ["takhosus", "halaqoh", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Halaqoh>>(`/takhosus/halaqoh/${id}`);
+      const response = await api.get<ApiResponse<Halaqoh>>(
+        `/takhosus/halaqoh/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -217,9 +256,11 @@ export function useHalaqoh(id: string) {
 
 export function useHalaqohProgress(halaqohId: string) {
   return useQuery({
-    queryKey: ['takhosus', 'halaqoh', halaqohId, 'progress'],
+    queryKey: ["takhosus", "halaqoh", halaqohId, "progress"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<HalaqohProgress>>(`/takhosus/halaqoh/${halaqohId}/progress`);
+      const response = await api.get<ApiResponse<HalaqohProgress>>(
+        `/takhosus/halaqoh/${halaqohId}/progress`,
+      );
       return response.data.data;
     },
     enabled: !!halaqohId,
@@ -246,11 +287,14 @@ export function useCreateHalaqoh() {
 
   return useMutation({
     mutationFn: async (data: CreateHalaqohData) => {
-      const response = await api.post<ApiResponse<Halaqoh>>('/takhosus/halaqoh', data);
+      const response = await api.post<ApiResponse<Halaqoh>>(
+        "/takhosus/halaqoh",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'halaqoh'] });
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "halaqoh"] });
     },
   });
 }
@@ -259,13 +303,24 @@ export function useUpdateHalaqoh() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateHalaqohData> }) => {
-      const response = await api.put<ApiResponse<Halaqoh>>(`/takhosus/halaqoh/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateHalaqohData>;
+    }) => {
+      const response = await api.put<ApiResponse<Halaqoh>>(
+        `/takhosus/halaqoh/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'halaqoh'] });
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'halaqoh', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "halaqoh"] });
+      queryClient.invalidateQueries({
+        queryKey: ["takhosus", "halaqoh", variables.id],
+      });
     },
   });
 }
@@ -278,7 +333,7 @@ export function useDeleteHalaqoh() {
       await api.delete(`/takhosus/halaqoh/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'halaqoh'] });
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "halaqoh"] });
     },
   });
 }
@@ -297,9 +352,12 @@ export interface EnrollmentParams {
 
 export function useEnrollments(params: EnrollmentParams = {}) {
   return useQuery({
-    queryKey: ['takhosus', 'enrollment', params],
+    queryKey: ["takhosus", "enrollment", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<TakhosusEnrollment>>('/takhosus/enrollment', { params });
+      const response = await api.get<PaginatedResponse<TakhosusEnrollment>>(
+        "/takhosus/enrollment",
+        { params },
+      );
       return response.data;
     },
     staleTime: 5 * 60 * 1000,
@@ -308,9 +366,11 @@ export function useEnrollments(params: EnrollmentParams = {}) {
 
 export function useEnrollment(id: string) {
   return useQuery({
-    queryKey: ['takhosus', 'enrollment', id],
+    queryKey: ["takhosus", "enrollment", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<TakhosusEnrollment>>(`/takhosus/enrollment/${id}`);
+      const response = await api.get<ApiResponse<TakhosusEnrollment>>(
+        `/takhosus/enrollment/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -320,9 +380,11 @@ export function useEnrollment(id: string) {
 
 export function useEnrollmentByStudent(studentId: string) {
   return useQuery({
-    queryKey: ['takhosus', 'enrollment', 'student', studentId],
+    queryKey: ["takhosus", "enrollment", "student", studentId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<TakhosusEnrollment>>(`/takhosus/enrollment/student/${studentId}`);
+      const response = await api.get<ApiResponse<TakhosusEnrollment>>(
+        `/takhosus/enrollment/student/${studentId}`,
+      );
       return response.data.data;
     },
     enabled: !!studentId,
@@ -332,15 +394,17 @@ export function useEnrollmentByStudent(studentId: string) {
 
 export function useEnrollmentStats(unitId?: string) {
   return useQuery({
-    queryKey: ['takhosus', 'enrollment', 'stats', unitId],
+    queryKey: ["takhosus", "enrollment", "stats", unitId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<{
-        total: number;
-        active: number;
-        completed: number;
-        dropped: number;
-        averageProgress: number;
-      }>>('/takhosus/enrollment/stats', { params: { unitId } });
+      const response = await api.get<
+        ApiResponse<{
+          total: number;
+          active: number;
+          completed: number;
+          dropped: number;
+          averageProgress: number;
+        }>
+      >("/takhosus/enrollment/stats", { params: { unitId } });
       return response.data.data;
     },
     staleTime: 5 * 60 * 1000,
@@ -361,11 +425,14 @@ export function useCreateEnrollment() {
 
   return useMutation({
     mutationFn: async (data: CreateEnrollmentData) => {
-      const response = await api.post<ApiResponse<TakhosusEnrollment>>('/takhosus/enrollment', data);
+      const response = await api.post<ApiResponse<TakhosusEnrollment>>(
+        "/takhosus/enrollment",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'enrollment'] });
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "enrollment"] });
     },
   });
 }
@@ -374,13 +441,24 @@ export function useUpdateEnrollment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateEnrollmentData & { status: TakhosusStatus }> }) => {
-      const response = await api.put<ApiResponse<TakhosusEnrollment>>(`/takhosus/enrollment/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateEnrollmentData & { status: TakhosusStatus }>;
+    }) => {
+      const response = await api.put<ApiResponse<TakhosusEnrollment>>(
+        `/takhosus/enrollment/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'enrollment'] });
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'enrollment', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "enrollment"] });
+      queryClient.invalidateQueries({
+        queryKey: ["takhosus", "enrollment", variables.id],
+      });
     },
   });
 }
@@ -393,7 +471,7 @@ export function useDeleteEnrollment() {
       await api.delete(`/takhosus/enrollment/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'enrollment'] });
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "enrollment"] });
     },
   });
 }
@@ -412,9 +490,12 @@ export interface SanadParams {
 
 export function useSanadRecords(params: SanadParams = {}) {
   return useQuery({
-    queryKey: ['takhosus', 'sanad', params],
+    queryKey: ["takhosus", "sanad", params],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<SanadRecord>>('/takhosus/sanad', { params });
+      const response = await api.get<PaginatedResponse<SanadRecord>>(
+        "/takhosus/sanad",
+        { params },
+      );
       return response.data;
     },
     staleTime: 5 * 60 * 1000,
@@ -423,9 +504,11 @@ export function useSanadRecords(params: SanadParams = {}) {
 
 export function useSanadRecord(id: string) {
   return useQuery({
-    queryKey: ['takhosus', 'sanad', id],
+    queryKey: ["takhosus", "sanad", id],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<SanadRecord>>(`/takhosus/sanad/${id}`);
+      const response = await api.get<ApiResponse<SanadRecord>>(
+        `/takhosus/sanad/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -449,13 +532,16 @@ export function useCreateSanad() {
 
   return useMutation({
     mutationFn: async (data: CreateSanadData) => {
-      const response = await api.post<ApiResponse<SanadRecord>>('/takhosus/sanad', data);
+      const response = await api.post<ApiResponse<SanadRecord>>(
+        "/takhosus/sanad",
+        data,
+      );
       return response.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'sanad'] });
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'enrollment'] });
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'progress'] });
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "sanad"] });
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "enrollment"] });
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "progress"] });
     },
   });
 }
@@ -464,15 +550,26 @@ export function useUpdateSanad() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateSanadData> }) => {
-      const response = await api.put<ApiResponse<SanadRecord>>(`/takhosus/sanad/${id}`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreateSanadData>;
+    }) => {
+      const response = await api.put<ApiResponse<SanadRecord>>(
+        `/takhosus/sanad/${id}`,
+        data,
+      );
       return response.data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'sanad'] });
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'sanad', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'enrollment'] });
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'progress'] });
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "sanad"] });
+      queryClient.invalidateQueries({
+        queryKey: ["takhosus", "sanad", variables.id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "enrollment"] });
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "progress"] });
     },
   });
 }
@@ -485,9 +582,9 @@ export function useDeleteSanad() {
       await api.delete(`/takhosus/sanad/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'sanad'] });
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'enrollment'] });
-      queryClient.invalidateQueries({ queryKey: ['takhosus', 'progress'] });
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "sanad"] });
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "enrollment"] });
+      queryClient.invalidateQueries({ queryKey: ["takhosus", "progress"] });
     },
   });
 }
@@ -498,9 +595,11 @@ export function useDeleteSanad() {
 
 export function useStudentProgress(studentId: string) {
   return useQuery({
-    queryKey: ['takhosus', 'progress', 'student', studentId],
+    queryKey: ["takhosus", "progress", "student", studentId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<StudentProgress>>(`/takhosus/progress/student/${studentId}`);
+      const response = await api.get<ApiResponse<StudentProgress>>(
+        `/takhosus/progress/student/${studentId}`,
+      );
       return response.data.data;
     },
     enabled: !!studentId,
@@ -510,9 +609,11 @@ export function useStudentProgress(studentId: string) {
 
 export function useMyProgress() {
   return useQuery({
-    queryKey: ['takhosus', 'progress', 'me'],
+    queryKey: ["takhosus", "progress", "me"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<StudentProgress>>('/takhosus/progress/me');
+      const response = await api.get<ApiResponse<StudentProgress>>(
+        "/takhosus/progress/me",
+      );
       return response.data.data;
     },
     staleTime: 5 * 60 * 1000,

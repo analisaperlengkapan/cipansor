@@ -10,6 +10,7 @@
 ## Executive Summary
 
 ### Current State Analysis
+
 - **Backend:** 62 modules - **98% Complete** ✅
 - **Frontend:** 60+ pages - **70% Complete** 🟡
 - **Database:** 5,700+ lines Prisma schema - **Complete** ✅
@@ -18,6 +19,7 @@
 ### Key Findings from Codebase Analysis
 
 #### ✅ Fully Implemented Backend Modules
+
 1. **PAUD System** - Complete with 6 aspects (NAM, FM, KOG, BHS, SE, SNI)
 2. **Daily Report** - Student reports with mood, meals, activities
 3. **Tahfidz Core** - Ziyadah, Tasmi, Assessment
@@ -32,30 +34,35 @@
 #### 🎯 Enhancement Focus Areas
 
 **Priority 1 - PAUD Features (Critical)**
+
 - Frontend pages for assessment input & management
 - Progress tracking dashboards with charts
 - Raport narasi generation & PDF export
 - Evidence gallery & photo management
 
 **Priority 2 - Tahfidz Tracking Enhancement**
+
 - Murojaah analytics dashboard
 - Simaan exam management UI
 - Sanad certificate generation
 - Integration workflow visualization
 
 **Priority 3 - Multi-Unit Dashboard**
+
 - Yayasan executive consolidated view
 - Unit comparison analytics
 - Real-time KPI monitoring
 - Export & scheduled reports
 
 **Priority 4 - Daily Report Enhancement**
+
 - Jenjang-specific input forms (PAUD/SD/SMP/SMA)
 - Parent notification system (push, WhatsApp, email)
 - Mobile-responsive parent portal
 - Bulk operations for teachers
 
 **Priority 5 - Integration & Polish**
+
 - End-to-end workflow testing
 - API response caching
 - Performance optimization
@@ -69,6 +76,7 @@
 ### 1. PAUD Assessment APIs (✅ Implemented - Enhancement Needed)
 
 #### Existing Endpoints
+
 ```
 GET    /api/paud-assessment/indicators
 GET    /api/paud-assessment/indicators/:id
@@ -95,6 +103,7 @@ GET    /api/paud-report/reports/:id/pdf
 ```
 
 #### Enhancement Needed
+
 ```typescript
 // Add batch evidence upload
 POST   /api/paud-assessment/assessments/:id/evidence/batch
@@ -110,6 +119,7 @@ GET    /api/paud-assessment/assessments/missing-assessments
 ```
 
 **Response Caching Strategy:**
+
 - Student summary: Cache 5 minutes
 - Class summary: Cache 10 minutes
 - Reports list: Cache 2 minutes
@@ -120,6 +130,7 @@ GET    /api/paud-assessment/assessments/missing-assessments
 ### 2. Daily Report APIs (✅ Implemented - Enhancement Needed)
 
 #### Existing Endpoints
+
 ```
 GET    /api/daily-report/reports
 GET    /api/daily-report/reports/:id
@@ -133,6 +144,7 @@ GET    /api/daily-report/class/:classId/summary
 ```
 
 #### Enhancement Needed
+
 ```typescript
 // Add parent confirmation
 POST   /api/daily-report/reports/:id/confirm-by-parent
@@ -152,6 +164,7 @@ GET    /api/daily-report/config/:unitType
 ```
 
 **Notification Integration:**
+
 - Push notification via Firebase Cloud Messaging
 - WhatsApp via official Business API
 - Email via SMTP with templates
@@ -161,6 +174,7 @@ GET    /api/daily-report/config/:unitType
 ### 3. Murojaah APIs (✅ Implemented - Enhancement Needed)
 
 #### Existing Endpoints
+
 ```
 GET    /api/murojaah/records
 GET    /api/murojaah/records/:id
@@ -174,6 +188,7 @@ GET    /api/murojaah/student/:studentId/quality-trend
 ```
 
 #### Enhancement Needed
+
 ```typescript
 // Add advanced analytics
 GET    /api/murojaah/analytics/quality-distribution
@@ -190,6 +205,7 @@ GET    /api/murojaah/halaqoh/:halaqohId/top-performers
 ```
 
 **Analytics Features:**
+
 - Quality score distribution histogram
 - Mistake type frequency analysis
 - Consistency tracking (streak days)
@@ -200,6 +216,7 @@ GET    /api/murojaah/halaqoh/:halaqohId/top-performers
 ### 4. Simaan Exam APIs (✅ Implemented - Enhancement Needed)
 
 #### Existing Endpoints
+
 ```
 GET    /api/simaan/exams
 GET    /api/simaan/exams/:id
@@ -216,6 +233,7 @@ GET    /api/simaan/student/:studentId/history
 ```
 
 #### Enhancement Needed
+
 ```typescript
 // Add scheduling features
 GET    /api/simaan/schedule/upcoming
@@ -238,6 +256,7 @@ POST   /api/simaan/examiners/assign-batch
 ```
 
 **Exam Types Enhancement:**
+
 - BI_NAZHR: With mushaf reference
 - BIL_GHAIB: Pure memorization
 - TAHDIR: Prepared section
@@ -249,6 +268,7 @@ POST   /api/simaan/examiners/assign-batch
 ### 5. Sanad & Ijazah APIs (⚠️ Partial - Completion Needed)
 
 #### New Endpoints Required
+
 ```typescript
 // Sanad chain management
 GET    /api/sanad/records
@@ -272,6 +292,7 @@ PUT    /api/sanad/templates/:id
 ```
 
 **Certificate Types:**
+
 1. **Khatam 30 Juz** - After completing hafalan
 2. **Ijazah Sanad** - After sanad validation
 3. **Ijazah Qira'at** - For specific qira'at mastery
@@ -281,6 +302,7 @@ PUT    /api/sanad/templates/:id
 ### 6. Dashboard Enhancement APIs (✅ Implemented - Enhancement Needed)
 
 #### Existing Endpoints
+
 ```
 GET    /api/dashboard-enhancement/overview
 GET    /api/dashboard-enhancement/metrics
@@ -289,6 +311,7 @@ GET    /api/dashboard-enhancement/unit-comparison
 ```
 
 #### Enhancement Needed
+
 ```typescript
 // Add real-time metrics
 GET    /api/dashboard-enhancement/realtime/:unitId
@@ -310,6 +333,7 @@ PUT    /api/dashboard-enhancement/alerts/:id
 ```
 
 **Real-time Features:**
+
 - WebSocket connection for live metrics
 - Server-Sent Events (SSE) for updates
 - Metric snapshots every 15 minutes
@@ -322,6 +346,7 @@ PUT    /api/dashboard-enhancement/alerts/:id
 ### New Tables Required
 
 #### 1. DailyReportTemplate
+
 ```prisma
 model DailyReportTemplate {
   id          String   @id @default(cuid())
@@ -331,17 +356,18 @@ model DailyReportTemplate {
   description String?
   isDefault   Boolean  @default(false) @map("is_default")
   templateData Json   @map("template_data") // Flexible structure
-  
+
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  
+
   unit        Unit     @relation(fields: [unitId], references: [id])
-  
+
   @@map("daily_report_templates")
 }
 ```
 
 #### 2. SimaanSchedule
+
 ```prisma
 model SimaanSchedule {
   id              String      @id @default(cuid())
@@ -354,18 +380,18 @@ model SimaanSchedule {
   location        String?
   notes           String?
   status          ScheduleStatus @default(SCHEDULED)
-  
+
   // Links to actual exam when conducted
   simaanExamId    String?     @unique @map("simaan_exam_id")
-  
+
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @updatedAt @map("updated_at")
-  
+
   student         Student     @relation(fields: [studentId], references: [id])
   enrollment      TahfidzEnrollment @relation(fields: [enrollmentId], references: [id])
   halaqoh         Halaqoh?    @relation(fields: [halaqohId], references: [id])
   simaanExam      SimaanExam? @relation(fields: [simaanExamId], references: [id])
-  
+
   @@index([studentId, scheduledDate])
   @@index([halaqohId, scheduledDate])
   @@map("simaan_schedules")
@@ -381,6 +407,7 @@ enum ScheduleStatus {
 ```
 
 #### 3. SanadCertificate
+
 ```prisma
 model SanadCertificate {
   id                String        @id @default(cuid())
@@ -389,29 +416,29 @@ model SanadCertificate {
   studentId         String        @map("student_id")
   sanadRecordId     String?       @map("sanad_record_id")
   simaanExamId      String?       @map("simaan_exam_id")
-  
+
   // Certificate details
   issuedDate        DateTime      @map("issued_date")
   issuerName        String        @map("issuer_name")
   issuerTitle       String        @map("issuer_title")
   riwayat           String?       // HAFS, WARSH, etc
-  
+
   // Document
   certificatePdfUrl String?       @map("certificate_pdf_url")
   qrCodeData        String?       @map("qr_code_data")
-  
+
   // Verification
   isVerified        Boolean       @default(false) @map("is_verified")
   verifiedAt        DateTime?     @map("verified_at")
   verifiedBy        String?       @map("verified_by")
-  
+
   createdAt         DateTime      @default(now()) @map("created_at")
   updatedAt         DateTime      @updatedAt @map("updated_at")
-  
+
   student           Student       @relation(fields: [studentId], references: [id])
   sanadRecord       SanadRecord?  @relation(fields: [sanadRecordId], references: [id])
   simaanExam        SimaanExam?   @relation(fields: [simaanExamId], references: [id])
-  
+
   @@index([studentId, certificateType])
   @@index([certificateNumber])
   @@map("sanad_certificates")
@@ -425,6 +452,7 @@ enum CertificateType {
 ```
 
 #### 4. DashboardAlert
+
 ```prisma
 model DashboardAlert {
   id          String      @id @default(cuid())
@@ -435,15 +463,15 @@ model DashboardAlert {
   message     String
   severity    AlertSeverity
   isActive    Boolean     @default(true) @map("is_active")
-  
+
   // Recipients
   recipients  String[]    // User IDs
-  
+
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
-  
+
   unit        Unit?       @relation(fields: [unitId], references: [id])
-  
+
   @@map("dashboard_alerts")
 }
 
@@ -468,6 +496,7 @@ enum AlertSeverity {
 ### Caching Strategy
 
 #### Redis Cache Layers
+
 ```typescript
 // Layer 1: Hot data (TTL: 5 minutes)
 - Student lists per class
@@ -486,6 +515,7 @@ enum AlertSeverity {
 ```
 
 #### Database Query Optimization
+
 1. **Eager Loading Strategy**
    - Use `include` judiciously
    - Implement cursor-based pagination for large datasets
@@ -506,6 +536,7 @@ enum AlertSeverity {
 ## Integration Points
 
 ### 1. Parent Portal Integration
+
 ```
 Frontend (Next.js) ←→ API ←→ Database
                  ↓
@@ -517,6 +548,7 @@ Frontend (Next.js) ←→ API ←→ Database
 ```
 
 ### 2. Real-time Dashboard
+
 ```
 Frontend ←→ WebSocket/SSE ←→ API
                            ↓
@@ -526,6 +558,7 @@ Frontend ←→ WebSocket/SSE ←→ API
 ```
 
 ### 3. Report Generation
+
 ```
 API Request → Queue Job → Generate PDF
                 ↓
@@ -539,18 +572,21 @@ API Request → Queue Job → Generate PDF
 ## Security Enhancements
 
 ### 1. API Security
+
 - Rate limiting: 100 req/min per user
 - JWT refresh token rotation
 - API key authentication for external services
 - CORS configuration per environment
 
 ### 2. Data Privacy
+
 - PII encryption at rest
 - Audit logs for sensitive operations
 - GDPR compliance for data export/deletion
 - Role-based data masking
 
 ### 3. File Upload Security
+
 - File type validation (whitelist)
 - Virus scanning (ClamAV integration)
 - Max file size: 5MB per file
@@ -570,6 +606,6 @@ API Request → Queue Job → Generate PDF
 
 ---
 
-*Document prepared with comprehensive codebase analysis*
-*All backend modules verified as implemented*
-*Focus: Frontend completion + Integration + Polish*
+_Document prepared with comprehensive codebase analysis_
+_All backend modules verified as implemented_
+_Focus: Frontend completion + Integration + Polish_

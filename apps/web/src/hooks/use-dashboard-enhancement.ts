@@ -8,20 +8,25 @@ import {
   QuickStats,
   MetricSnapshot,
   TrendData,
-  UnitComparison
+  UnitComparison,
 } from "@cipansor/shared";
 
 // Queries
 
-export function useDashboardOverview(params: { unitId?: string; academicYearId?: string } = {}) {
+export function useDashboardOverview(
+  params: { unitId?: string; academicYearId?: string } = {},
+) {
   return useQuery({
     queryKey: ["dashboard-enhancement", "overview", params],
     queryFn: async () => {
       const queryParams = new URLSearchParams();
       if (params.unitId) queryParams.append("unitId", params.unitId);
-      if (params.academicYearId) queryParams.append("academicYearId", params.academicYearId);
+      if (params.academicYearId)
+        queryParams.append("academicYearId", params.academicYearId);
 
-      const response = await api.get<{ data: DashboardOverview }>(`/dashboard-enhancement/overview?${queryParams}`);
+      const response = await api.get<{ data: DashboardOverview }>(
+        `/dashboard-enhancement/overview?${queryParams}`,
+      );
       return response.data.data;
     },
     // Keep data fresh but don't over-fetch
@@ -36,7 +41,9 @@ export function useQuickStats(params: { unitId?: string } = {}) {
       const queryParams = new URLSearchParams();
       if (params.unitId) queryParams.append("unitId", params.unitId);
 
-      const response = await api.get<{ data: QuickStats }>(`/dashboard-enhancement/quick-stats?${queryParams}`);
+      const response = await api.get<{ data: QuickStats }>(
+        `/dashboard-enhancement/quick-stats?${queryParams}`,
+      );
       return response.data.data;
     },
     refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
@@ -48,7 +55,7 @@ export function useMetricSnapshots(params: {
   limit?: number;
   unitId?: string;
   metricType?: string;
-  periodType?: string
+  periodType?: string;
 }) {
   return useQuery({
     queryKey: ["dashboard-enhancement", "metrics", params],
@@ -57,14 +64,18 @@ export function useMetricSnapshots(params: {
       if (params.page) queryParams.append("page", String(params.page));
       if (params.limit) queryParams.append("limit", String(params.limit));
       if (params.unitId) queryParams.append("unitId", params.unitId);
-      if (params.metricType) queryParams.append("metricType", params.metricType);
-      if (params.periodType) queryParams.append("periodType", params.periodType);
+      if (params.metricType)
+        queryParams.append("metricType", params.metricType);
+      if (params.periodType)
+        queryParams.append("periodType", params.periodType);
 
-      const response = await api.get<SharedPaginatedResponse<MetricSnapshot>>(`/dashboard-enhancement/metrics?${queryParams}`);
+      const response = await api.get<SharedPaginatedResponse<MetricSnapshot>>(
+        `/dashboard-enhancement/metrics?${queryParams}`,
+      );
       const result = response.data;
       return {
         data: result.data,
-        pagination: result.meta.pagination
+        pagination: result.meta.pagination,
       };
     },
   });
@@ -89,7 +100,9 @@ export function useMetricTrend(params: {
       if (params.endDate) queryParams.append("endDate", params.endDate);
       if (params.limit) queryParams.append("limit", String(params.limit));
 
-      const response = await api.get<{ data: TrendData }>(`/dashboard-enhancement/trends?${queryParams}`);
+      const response = await api.get<{ data: TrendData }>(
+        `/dashboard-enhancement/trends?${queryParams}`,
+      );
       return response.data.data;
     },
     enabled: !!params.metricType && !!params.periodType,
@@ -107,11 +120,15 @@ export function useUnitComparison(params: {
     queryFn: async () => {
       const queryParams = new URLSearchParams();
       queryParams.append("metricType", params.metricType);
-      if (params.academicYearId) queryParams.append("academicYearId", params.academicYearId);
-      if (params.periodStart) queryParams.append("periodStart", params.periodStart);
+      if (params.academicYearId)
+        queryParams.append("academicYearId", params.academicYearId);
+      if (params.periodStart)
+        queryParams.append("periodStart", params.periodStart);
       if (params.periodEnd) queryParams.append("periodEnd", params.periodEnd);
 
-      const response = await api.get<{ data: UnitComparison }>(`/dashboard-enhancement/comparison?${queryParams}`);
+      const response = await api.get<{ data: UnitComparison }>(
+        `/dashboard-enhancement/comparison?${queryParams}`,
+      );
       return response.data.data;
     },
     enabled: !!params.metricType,
@@ -136,8 +153,12 @@ export function useCreateMetricSnapshot() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dashboard-enhancement", "metrics"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-enhancement", "trend"] });
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard-enhancement", "metrics"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard-enhancement", "trend"],
+      });
     },
   });
 }
@@ -160,8 +181,13 @@ export function useGenerateDashboardReport() {
 
 export function useTriggerDashboardJob() {
   return useMutation({
-    mutationFn: async (data: { jobType: "daily-snapshot" | "weekly-summary" | "cleanup" }) => {
-      const response = await api.post("/dashboard-enhancement/jobs/trigger", data);
+    mutationFn: async (data: {
+      jobType: "daily-snapshot" | "weekly-summary" | "cleanup";
+    }) => {
+      const response = await api.post(
+        "/dashboard-enhancement/jobs/trigger",
+        data,
+      );
       return response.data;
     },
   });

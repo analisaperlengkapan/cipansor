@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from "react";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -15,14 +21,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -31,9 +37,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   useAlumni,
   useAlumniEvents,
@@ -43,49 +49,53 @@ import {
   ALUMNI_STATUSES,
   ALUMNI_STATUS_LABELS,
   type AlumniStatus,
-} from '@/hooks';
-import { AlumniDashboard } from '@/components/alumni/alumni-dashboard';
+} from "@/hooks";
+import { AlumniDashboard } from "@/components/alumni/alumni-dashboard";
 
 const statusColors: Record<AlumniStatus, string> = {
-  REGISTERED: 'bg-blue-100 text-blue-800',
-  VERIFIED: 'bg-green-100 text-green-800',
-  ACTIVE: 'bg-emerald-100 text-emerald-800',
-  INACTIVE: 'bg-gray-100 text-gray-800',
+  REGISTERED: "bg-blue-100 text-blue-800",
+  VERIFIED: "bg-green-100 text-green-800",
+  ACTIVE: "bg-emerald-100 text-emerald-800",
+  INACTIVE: "bg-gray-100 text-gray-800",
 };
 
 export default function AlumniPage() {
-  const [activeTab, setActiveTab] = useState('alumni');
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [graduationYearFilter, setGraduationYearFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState("alumni");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [graduationYearFilter, setGraduationYearFilter] =
+    useState<string>("all");
   const [isAddAlumniOpen, setIsAddAlumniOpen] = useState(false);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
 
   // Alumni form state
   const [alumniForm, setAlumniForm] = useState({
-    studentId: '',
+    studentId: "",
     graduationYear: new Date().getFullYear(),
-    currentOccupation: '',
-    currentCompany: '',
-    currentCity: '',
-    phone: '',
-    email: '',
-    bio: '',
+    currentOccupation: "",
+    currentCompany: "",
+    currentCity: "",
+    phone: "",
+    email: "",
+    bio: "",
   });
 
   // Event form state
   const [eventForm, setEventForm] = useState({
-    title: '',
-    description: '',
-    eventDate: '',
-    location: '',
+    title: "",
+    description: "",
+    eventDate: "",
+    location: "",
     maxParticipants: 0,
   });
 
   const { data: alumni, isLoading: alumniLoading } = useAlumni({
     search: search || undefined,
-    status: statusFilter !== 'all' ? (statusFilter as AlumniStatus) : undefined,
-    graduationYear: graduationYearFilter !== 'all' ? parseInt(graduationYearFilter) : undefined,
+    status: statusFilter !== "all" ? (statusFilter as AlumniStatus) : undefined,
+    graduationYear:
+      graduationYearFilter !== "all"
+        ? parseInt(graduationYearFilter)
+        : undefined,
   });
 
   const { data: events, isLoading: eventsLoading } = useAlumniEvents();
@@ -99,14 +109,14 @@ export default function AlumniPage() {
       onSuccess: () => {
         setIsAddAlumniOpen(false);
         setAlumniForm({
-          studentId: '',
+          studentId: "",
           graduationYear: new Date().getFullYear(),
-          currentOccupation: '',
-          currentCompany: '',
-          currentCity: '',
-          phone: '',
-          email: '',
-          bio: '',
+          currentOccupation: "",
+          currentCompany: "",
+          currentCity: "",
+          phone: "",
+          email: "",
+          bio: "",
         });
       },
     });
@@ -117,10 +127,10 @@ export default function AlumniPage() {
       onSuccess: () => {
         setIsAddEventOpen(false);
         setEventForm({
-          title: '',
-          description: '',
-          eventDate: '',
-          location: '',
+          title: "",
+          description: "",
+          eventDate: "",
+          location: "",
           maxParticipants: 0,
         });
       },
@@ -136,13 +146,14 @@ export default function AlumniPage() {
   const graduationYears = Array.from({ length: 20 }, (_, i) => currentYear - i);
 
   // Count by status
-  const statusCounts = alumni?.data?.reduce(
-    (acc, a) => {
-      acc[a.status] = (acc[a.status] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>
-  ) || {};
+  const statusCounts =
+    alumni?.data?.reduce(
+      (acc, a) => {
+        acc[a.status] = (acc[a.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    ) || {};
 
   return (
     <div className="space-y-6">
@@ -161,7 +172,9 @@ export default function AlumniPage() {
           <Card key={status}>
             <CardHeader className="pb-2">
               <CardDescription>{ALUMNI_STATUS_LABELS[status]}</CardDescription>
-              <CardTitle className="text-2xl">{statusCounts[status] || 0}</CardTitle>
+              <CardTitle className="text-2xl">
+                {statusCounts[status] || 0}
+              </CardTitle>
             </CardHeader>
           </Card>
         ))}
@@ -186,7 +199,10 @@ export default function AlumniPage() {
                   <CardTitle>Daftar Alumni</CardTitle>
                   <CardDescription>Data alumni pesantren</CardDescription>
                 </div>
-                <Dialog open={isAddAlumniOpen} onOpenChange={setIsAddAlumniOpen}>
+                <Dialog
+                  open={isAddAlumniOpen}
+                  onOpenChange={setIsAddAlumniOpen}
+                >
                   <DialogTrigger asChild>
                     <Button>Tambah Alumni</Button>
                   </DialogTrigger>
@@ -204,7 +220,10 @@ export default function AlumniPage() {
                           id="studentId"
                           value={alumniForm.studentId}
                           onChange={(e) =>
-                            setAlumniForm({ ...alumniForm, studentId: e.target.value })
+                            setAlumniForm({
+                              ...alumniForm,
+                              studentId: e.target.value,
+                            })
                           }
                           placeholder="ID santri saat masih aktif"
                         />
@@ -214,7 +233,10 @@ export default function AlumniPage() {
                         <Select
                           value={alumniForm.graduationYear.toString()}
                           onValueChange={(v) =>
-                            setAlumniForm({ ...alumniForm, graduationYear: parseInt(v) })
+                            setAlumniForm({
+                              ...alumniForm,
+                              graduationYear: parseInt(v),
+                            })
                           }
                         >
                           <SelectTrigger>
@@ -236,7 +258,10 @@ export default function AlumniPage() {
                           type="email"
                           value={alumniForm.email}
                           onChange={(e) =>
-                            setAlumniForm({ ...alumniForm, email: e.target.value })
+                            setAlumniForm({
+                              ...alumniForm,
+                              email: e.target.value,
+                            })
                           }
                           placeholder="email@example.com"
                         />
@@ -247,29 +272,42 @@ export default function AlumniPage() {
                           id="phone"
                           value={alumniForm.phone}
                           onChange={(e) =>
-                            setAlumniForm({ ...alumniForm, phone: e.target.value })
+                            setAlumniForm({
+                              ...alumniForm,
+                              phone: e.target.value,
+                            })
                           }
                           placeholder="08123456789"
                         />
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="currentOccupation">Pekerjaan Saat Ini</Label>
+                        <Label htmlFor="currentOccupation">
+                          Pekerjaan Saat Ini
+                        </Label>
                         <Input
                           id="currentOccupation"
                           value={alumniForm.currentOccupation}
                           onChange={(e) =>
-                            setAlumniForm({ ...alumniForm, currentOccupation: e.target.value })
+                            setAlumniForm({
+                              ...alumniForm,
+                              currentOccupation: e.target.value,
+                            })
                           }
                           placeholder="Software Engineer"
                         />
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="currentCompany">Perusahaan/Instansi</Label>
+                        <Label htmlFor="currentCompany">
+                          Perusahaan/Instansi
+                        </Label>
                         <Input
                           id="currentCompany"
                           value={alumniForm.currentCompany}
                           onChange={(e) =>
-                            setAlumniForm({ ...alumniForm, currentCompany: e.target.value })
+                            setAlumniForm({
+                              ...alumniForm,
+                              currentCompany: e.target.value,
+                            })
                           }
                           placeholder="PT. Example"
                         />
@@ -280,7 +318,10 @@ export default function AlumniPage() {
                           id="currentCity"
                           value={alumniForm.currentCity}
                           onChange={(e) =>
-                            setAlumniForm({ ...alumniForm, currentCity: e.target.value })
+                            setAlumniForm({
+                              ...alumniForm,
+                              currentCity: e.target.value,
+                            })
                           }
                           placeholder="Jakarta"
                         />
@@ -291,7 +332,10 @@ export default function AlumniPage() {
                           id="bio"
                           value={alumniForm.bio}
                           onChange={(e) =>
-                            setAlumniForm({ ...alumniForm, bio: e.target.value })
+                            setAlumniForm({
+                              ...alumniForm,
+                              bio: e.target.value,
+                            })
                           }
                           placeholder="Ceritakan tentang diri Anda..."
                           rows={3}
@@ -299,11 +343,17 @@ export default function AlumniPage() {
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setIsAddAlumniOpen(false)}>
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsAddAlumniOpen(false)}
+                      >
                         Batal
                       </Button>
-                      <Button onClick={handleCreateAlumni} disabled={createAlumni.isPending}>
-                        {createAlumni.isPending ? 'Menyimpan...' : 'Simpan'}
+                      <Button
+                        onClick={handleCreateAlumni}
+                        disabled={createAlumni.isPending}
+                      >
+                        {createAlumni.isPending ? "Menyimpan..." : "Simpan"}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -332,7 +382,10 @@ export default function AlumniPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={graduationYearFilter} onValueChange={setGraduationYearFilter}>
+                <Select
+                  value={graduationYearFilter}
+                  onValueChange={setGraduationYearFilter}
+                >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Tahun Lulus" />
                   </SelectTrigger>
@@ -375,20 +428,24 @@ export default function AlumniPage() {
                         <TableRow key={member.id}>
                           <TableCell>
                             <div>
-                              <p className="font-medium">{member.studentName || '-'}</p>
-                              <p className="text-sm text-muted-foreground">{member.email}</p>
+                              <p className="font-medium">
+                                {member.studentName || "-"}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {member.email}
+                              </p>
                             </div>
                           </TableCell>
                           <TableCell>{member.graduationYear}</TableCell>
                           <TableCell>
                             <div>
-                              <p>{member.currentOccupation || '-'}</p>
+                              <p>{member.currentOccupation || "-"}</p>
                               <p className="text-sm text-muted-foreground">
                                 {member.currentCompany}
                               </p>
                             </div>
                           </TableCell>
-                          <TableCell>{member.currentCity || '-'}</TableCell>
+                          <TableCell>{member.currentCity || "-"}</TableCell>
                           <TableCell>
                             <Badge className={statusColors[member.status]}>
                               {ALUMNI_STATUS_LABELS[member.status]}
@@ -396,7 +453,7 @@ export default function AlumniPage() {
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-2">
-                              {member.status === 'REGISTERED' && (
+                              {member.status === "REGISTERED" && (
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -427,7 +484,9 @@ export default function AlumniPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Acara Alumni</CardTitle>
-                  <CardDescription>Kelola acara reuni dan kegiatan alumni</CardDescription>
+                  <CardDescription>
+                    Kelola acara reuni dan kegiatan alumni
+                  </CardDescription>
                 </div>
                 <Dialog open={isAddEventOpen} onOpenChange={setIsAddEventOpen}>
                   <DialogTrigger asChild>
@@ -447,7 +506,10 @@ export default function AlumniPage() {
                           id="eventTitle"
                           value={eventForm.title}
                           onChange={(e) =>
-                            setEventForm({ ...eventForm, title: e.target.value })
+                            setEventForm({
+                              ...eventForm,
+                              title: e.target.value,
+                            })
                           }
                           placeholder="Reuni Akbar 2024"
                         />
@@ -458,7 +520,10 @@ export default function AlumniPage() {
                           id="eventDescription"
                           value={eventForm.description}
                           onChange={(e) =>
-                            setEventForm({ ...eventForm, description: e.target.value })
+                            setEventForm({
+                              ...eventForm,
+                              description: e.target.value,
+                            })
                           }
                           placeholder="Deskripsi acara..."
                           rows={3}
@@ -471,7 +536,10 @@ export default function AlumniPage() {
                           type="datetime-local"
                           value={eventForm.eventDate}
                           onChange={(e) =>
-                            setEventForm({ ...eventForm, eventDate: e.target.value })
+                            setEventForm({
+                              ...eventForm,
+                              eventDate: e.target.value,
+                            })
                           }
                         />
                       </div>
@@ -481,7 +549,10 @@ export default function AlumniPage() {
                           id="eventLocation"
                           value={eventForm.location}
                           onChange={(e) =>
-                            setEventForm({ ...eventForm, location: e.target.value })
+                            setEventForm({
+                              ...eventForm,
+                              location: e.target.value,
+                            })
                           }
                           placeholder="Aula Pesantren"
                         />
@@ -491,7 +562,7 @@ export default function AlumniPage() {
                         <Input
                           id="maxParticipants"
                           type="number"
-                          value={eventForm.maxParticipants || ''}
+                          value={eventForm.maxParticipants || ""}
                           onChange={(e) =>
                             setEventForm({
                               ...eventForm,
@@ -503,11 +574,17 @@ export default function AlumniPage() {
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setIsAddEventOpen(false)}>
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsAddEventOpen(false)}
+                      >
                         Batal
                       </Button>
-                      <Button onClick={handleCreateEvent} disabled={createEvent.isPending}>
-                        {createEvent.isPending ? 'Menyimpan...' : 'Simpan'}
+                      <Button
+                        onClick={handleCreateEvent}
+                        disabled={createEvent.isPending}
+                      >
+                        {createEvent.isPending ? "Menyimpan..." : "Simpan"}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -531,27 +608,33 @@ export default function AlumniPage() {
                         <CardHeader>
                           <div className="flex items-start justify-between">
                             <div>
-                              <CardTitle className="text-lg">{event.title}</CardTitle>
+                              <CardTitle className="text-lg">
+                                {event.title}
+                              </CardTitle>
                               <CardDescription>
-                                {format(new Date(event.date || event.eventDate || ''), 'PPP', { locale: id })}
+                                {format(
+                                  new Date(event.date || event.eventDate || ""),
+                                  "PPP",
+                                  { locale: id },
+                                )}
                               </CardDescription>
                             </div>
                             <Badge
                               variant={
-                                event.status === 'UPCOMING'
-                                  ? 'default'
-                                  : event.status === 'ONGOING'
-                                  ? 'secondary'
-                                  : 'outline'
+                                event.status === "UPCOMING"
+                                  ? "default"
+                                  : event.status === "ONGOING"
+                                    ? "secondary"
+                                    : "outline"
                               }
                             >
-                              {event.status === 'UPCOMING'
-                                ? 'Akan Datang'
-                                : event.status === 'ONGOING'
-                                ? 'Berlangsung'
-                                : event.status === 'COMPLETED'
-                                ? 'Selesai'
-                                : 'Dibatalkan'}
+                              {event.status === "UPCOMING"
+                                ? "Akan Datang"
+                                : event.status === "ONGOING"
+                                  ? "Berlangsung"
+                                  : event.status === "COMPLETED"
+                                    ? "Selesai"
+                                    : "Dibatalkan"}
                             </Badge>
                           </div>
                         </CardHeader>
@@ -561,13 +644,18 @@ export default function AlumniPage() {
                           </p>
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
-                              <span className="text-muted-foreground">Lokasi:</span>
+                              <span className="text-muted-foreground">
+                                Lokasi:
+                              </span>
                               <span>{event.location}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-muted-foreground">Peserta:</span>
+                              <span className="text-muted-foreground">
+                                Peserta:
+                              </span>
                               <span>
-                                {event.registeredCount || 0} / {event.maxParticipants || '∞'}
+                                {event.registeredCount || 0} /{" "}
+                                {event.maxParticipants || "∞"}
                               </span>
                             </div>
                           </div>

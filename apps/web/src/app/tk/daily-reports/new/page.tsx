@@ -1,29 +1,39 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
-import { useCreateDailyReport, DailyMood } from '@/hooks/use-daily-report';
-import { useClasses } from '@/hooks/use-classes';
-import { useStudents } from '@/hooks/use-students';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
+import { useCreateDailyReport, DailyMood } from "@/hooks/use-daily-report";
+import { useClasses } from "@/hooks/use-classes";
+import { useStudents } from "@/hooks/use-students";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Form,
   FormControl,
@@ -32,22 +42,25 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { ArrowLeft, CalendarIcon, Save, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { useAuthStore } from '@/stores/auth';
-import { cn } from '@/lib/utils';
-import { useState } from 'react';
-import { MOOD_OPTIONS, CONSUMPTION_OPTIONS } from '../constants';
-import { PhotoUploader, PhotoItem } from '@/components/daily-report/PhotoUploader';
-import { useAddDailyReportPhoto } from '@/hooks/use-daily-report';
+} from "@/components/ui/form";
+import { ArrowLeft, CalendarIcon, Save, Loader2 } from "lucide-react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { toast } from "sonner";
+import { useAuthStore } from "@/stores/auth";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { MOOD_OPTIONS, CONSUMPTION_OPTIONS } from "../constants";
+import {
+  PhotoUploader,
+  PhotoItem,
+} from "@/components/daily-report/PhotoUploader";
+import { useAddDailyReportPhoto } from "@/hooks/use-daily-report";
 
 const dailyReportSchema = z.object({
-  studentId: z.string().min(1, 'Siswa wajib dipilih'),
-  classId: z.string().min(1, 'Kelas wajib dipilih'),
-  reportDate: z.date({ required_error: 'Tanggal wajib diisi' }),
+  studentId: z.string().min(1, "Siswa wajib dipilih"),
+  classId: z.string().min(1, "Kelas wajib dipilih"),
+  reportDate: z.date({ required_error: "Tanggal wajib diisi" }),
   morningMood: z.string().optional(),
   healthNotes: z.string().optional(),
   temperature: z.number().optional(),
@@ -69,7 +82,7 @@ type DailyReportFormData = z.infer<typeof dailyReportSchema>;
 export default function CreateDailyReportPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
 
   const { data: classes } = useClasses({ unitId: user?.unitId });
@@ -85,23 +98,23 @@ export default function CreateDailyReportPage() {
   const form = useForm<DailyReportFormData>({
     resolver: zodResolver(dailyReportSchema),
     defaultValues: {
-      studentId: '',
-      classId: '',
+      studentId: "",
+      classId: "",
       reportDate: new Date(),
-      morningMood: 'HAPPY',
-      healthNotes: '',
+      morningMood: "HAPPY",
+      healthNotes: "",
       temperature: 36.5,
-      breakfastConsumption: 'HABIS',
-      lunchConsumption: 'HABIS',
-      snackConsumption: 'HABIS',
+      breakfastConsumption: "HABIS",
+      lunchConsumption: "HABIS",
+      snackConsumption: "HABIS",
       napDurationMinutes: 0,
-      toiletingNotes: '',
-      activitiesSummary: '',
-      learningAchievements: '',
-      surahPractice: '',
-      behaviorNotes: '',
-      parentNotes: '',
-      homeworkSuggestion: '',
+      toiletingNotes: "",
+      activitiesSummary: "",
+      learningAchievements: "",
+      surahPractice: "",
+      behaviorNotes: "",
+      parentNotes: "",
+      homeworkSuggestion: "",
     },
   });
 
@@ -110,43 +123,45 @@ export default function CreateDailyReportPage() {
       // 1. Create Daily Report
       const report = await createMutation.mutateAsync({
         ...data,
-        reportDate: format(data.reportDate, 'yyyy-MM-dd'),
+        reportDate: format(data.reportDate, "yyyy-MM-dd"),
         morningMood: data.morningMood as DailyMood | undefined,
-        unitId: user?.unitId || '',
-        academicYearId: user?.academicYearId || '',
+        unitId: user?.unitId || "",
+        academicYearId: user?.academicYearId || "",
       });
 
       // 2. Upload Photos (Mock implementation since we lack a real file upload endpoint)
       if (photos.length > 0 && report.id) {
-        await Promise.all(photos.map(async (photo) => {
-          // In a real app, we would upload photo.file to S3/Cloudinary here
-          // const url = await uploadService.upload(photo.file);
-          
-          // Using a placeholder URL for now to satisfy the requirement
-          const mockUrl = `https://storage.cipansor.id/daily-reports/${report.id}/${photo.id}.jpg`;
-          
-          return addPhotoMutation.mutateAsync({
-            reportId: report.id,
-            data: {
-              photoUrl: mockUrl,
-              caption: photo.caption,
-              activityType: 'ACTIVITY'
-            }
-          });
-        }));
+        await Promise.all(
+          photos.map(async (photo) => {
+            // In a real app, we would upload photo.file to S3/Cloudinary here
+            // const url = await uploadService.upload(photo.file);
+
+            // Using a placeholder URL for now to satisfy the requirement
+            const mockUrl = `https://storage.cipansor.id/daily-reports/${report.id}/${photo.id}.jpg`;
+
+            return addPhotoMutation.mutateAsync({
+              reportId: report.id,
+              data: {
+                photoUrl: mockUrl,
+                caption: photo.caption,
+                activityType: "ACTIVITY",
+              },
+            });
+          }),
+        );
       }
 
-      toast.success('Laporan harian berhasil dibuat');
-      router.push('/tk/daily-reports');
+      toast.success("Laporan harian berhasil dibuat");
+      router.push("/tk/daily-reports");
     } catch {
-      toast.error('Gagal membuat laporan harian');
+      toast.error("Gagal membuat laporan harian");
     }
   };
 
   const handleClassChange = (classId: string) => {
     setSelectedClassId(classId);
-    form.setValue('classId', classId);
-    form.setValue('studentId', '');
+    form.setValue("classId", classId);
+    form.setValue("studentId", "");
   };
 
   return (
@@ -169,7 +184,9 @@ export default function CreateDailyReportPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Informasi Dasar</CardTitle>
-                <CardDescription>Data siswa dan tanggal laporan</CardDescription>
+                <CardDescription>
+                  Data siswa dan tanggal laporan
+                </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-6 md:grid-cols-3">
                 <FormField
@@ -178,7 +195,10 @@ export default function CreateDailyReportPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Kelas *</FormLabel>
-                      <Select value={field.value} onValueChange={handleClassChange}>
+                      <Select
+                        value={field.value}
+                        onValueChange={handleClassChange}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih kelas" />
@@ -238,14 +258,16 @@ export default function CreateDailyReportPage() {
                             <Button
                               variant="outline"
                               className={cn(
-                                'w-full justify-start text-left font-normal',
-                                !field.value && 'text-muted-foreground'
+                                "w-full justify-start text-left font-normal",
+                                !field.value && "text-muted-foreground",
                               )}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
                               {field.value
-                                ? format(field.value, 'dd MMMM yyyy', { locale: idLocale })
-                                : 'Pilih tanggal'}
+                                ? format(field.value, "dd MMMM yyyy", {
+                                    locale: idLocale,
+                                  })
+                                : "Pilih tanggal"}
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
@@ -269,7 +291,9 @@ export default function CreateDailyReportPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Kondisi & Kesehatan</CardTitle>
-                <CardDescription>Mood, kesehatan, dan suhu tubuh</CardDescription>
+                <CardDescription>
+                  Mood, kesehatan, dan suhu tubuh
+                </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-6 md:grid-cols-3">
                 <FormField
@@ -278,7 +302,10 @@ export default function CreateDailyReportPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Mood Pagi</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih mood" />
@@ -308,7 +335,9 @@ export default function CreateDailyReportPage() {
                           type="number"
                           step="0.1"
                           {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -323,7 +352,10 @@ export default function CreateDailyReportPage() {
                     <FormItem>
                       <FormLabel>Catatan Kesehatan</FormLabel>
                       <FormControl>
-                        <Input placeholder="Cth: Sehat, Batuk, dll" {...field} />
+                        <Input
+                          placeholder="Cth: Sehat, Batuk, dll"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -336,7 +368,9 @@ export default function CreateDailyReportPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Nutrisi & Istirahat</CardTitle>
-                <CardDescription>Konsumsi makanan dan waktu tidur siang</CardDescription>
+                <CardDescription>
+                  Konsumsi makanan dan waktu tidur siang
+                </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-4">
@@ -346,7 +380,10 @@ export default function CreateDailyReportPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Sarapan</FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih konsumsi" />
@@ -371,7 +408,10 @@ export default function CreateDailyReportPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Makan Siang</FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih konsumsi" />
@@ -396,7 +436,10 @@ export default function CreateDailyReportPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Snack/Cemilan</FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih konsumsi" />
@@ -427,7 +470,9 @@ export default function CreateDailyReportPage() {
                           <Input
                             type="number"
                             {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            onChange={(e) =>
+                              field.onChange(parseInt(e.target.value))
+                            }
                           />
                         </FormControl>
                         <FormMessage />
@@ -460,7 +505,9 @@ export default function CreateDailyReportPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Kegiatan & Catatan</CardTitle>
-                <CardDescription>Detail kegiatan dan catatan harian</CardDescription>
+                <CardDescription>
+                  Detail kegiatan dan catatan harian
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <FormField
@@ -577,24 +624,30 @@ export default function CreateDailyReportPage() {
               </CardContent>
             </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Foto Kegiatan</CardTitle>
-                  <CardDescription>Dokumentasi kegiatan siswa hari ini</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <PhotoUploader
-                    photos={photos}
-                    onChange={setPhotos}
-                    maxPhotos={5}
-                    showCaption={true}
-                  />
-                </CardContent>
-              </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Foto Kegiatan</CardTitle>
+                <CardDescription>
+                  Dokumentasi kegiatan siswa hari ini
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PhotoUploader
+                  photos={photos}
+                  onChange={setPhotos}
+                  maxPhotos={5}
+                  showCaption={true}
+                />
+              </CardContent>
+            </Card>
 
-              {/* Submit */}
-              <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => router.back()}>
+            {/* Submit */}
+            <div className="flex justify-end gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+              >
                 Batal
               </Button>
               <Button type="submit" disabled={createMutation.isPending}>

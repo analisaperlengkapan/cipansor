@@ -6,12 +6,7 @@ export const waveService = {
   /**
    * Get all waves with pagination
    */
-  async findAll(params: {
-    page: number;
-    limit: number;
-    periodId?: string;
-    status?: string;
-  }) {
+  async findAll(params: { page: number; limit: number; periodId?: string; status?: string }) {
     const { page, limit, periodId, status } = params;
     const skip = (page - 1) * limit;
 
@@ -27,19 +22,19 @@ export const waveService = {
         take: limit,
         orderBy: [{ waveNumber: 'asc' }],
         include: {
-          period: { 
-            select: { 
-              id: true, 
-              name: true, 
-              academicYear: { select: { id: true, name: true } } 
-            } 
+          period: {
+            select: {
+              id: true,
+              name: true,
+              academicYear: { select: { id: true, name: true } },
+            },
           },
         },
       }),
       prisma.admissionWave.count({ where }),
     ]);
 
-    const wavesWithStats = data.map(wave => ({
+    const wavesWithStats = data.map((wave) => ({
       ...wave,
       remainingQuota: wave.quota - wave.registeredCount,
       isFull: wave.registeredCount >= wave.quota,
@@ -72,7 +67,7 @@ export const waveService = {
       orderBy: { waveNumber: 'asc' },
     });
 
-    return waves.map(wave => ({
+    return waves.map((wave) => ({
       id: wave.id,
       name: wave.name,
       waveNumber: wave.waveNumber,
@@ -95,11 +90,11 @@ export const waveService = {
     const wave = await prisma.admissionWave.findUnique({
       where: { id },
       include: {
-        period: { 
-          include: { 
+        period: {
+          include: {
             academicYear: true,
             unit: { select: { id: true, name: true } },
-          } 
+          },
         },
         registrants: {
           orderBy: { createdAt: 'desc' },
@@ -155,7 +150,7 @@ export const waveService = {
    */
   async update(id: string, input: UpdateWaveInput) {
     const data: any = {};
-    
+
     if (input.name !== undefined) data.name = input.name;
     if (input.waveNumber !== undefined) data.waveNumber = input.waveNumber;
     if (input.quota !== undefined) data.quota = input.quota;
@@ -184,7 +179,9 @@ export const waveService = {
     });
 
     if (wave && wave.registeredCount > 0) {
-      throw new Error(`Cannot delete wave with ${wave.registeredCount} registrants. Remove registrants first.`);
+      throw new Error(
+        `Cannot delete wave with ${wave.registeredCount} registrants. Remove registrants first.`
+      );
     }
 
     return prisma.admissionWave.delete({
@@ -201,7 +198,7 @@ export const waveService = {
       orderBy: { waveNumber: 'asc' },
     });
 
-    const waveStats = waves.map(wave => ({
+    const waveStats = waves.map((wave) => ({
       id: wave.id,
       name: wave.name,
       waveNumber: wave.waveNumber,
@@ -211,9 +208,10 @@ export const waveService = {
       remainingQuota: wave.quota - wave.registeredCount,
       isFull: wave.registeredCount >= wave.quota,
       fillRate: Math.round((wave.registeredCount / wave.quota) * 100),
-      acceptanceRate: wave.registeredCount > 0 
-        ? Math.round((wave.acceptedCount / wave.registeredCount) * 100) 
-        : 0,
+      acceptanceRate:
+        wave.registeredCount > 0
+          ? Math.round((wave.acceptedCount / wave.registeredCount) * 100)
+          : 0,
       status: wave.status,
       startDate: wave.startDate,
       endDate: wave.endDate,
@@ -230,7 +228,8 @@ export const waveService = {
       totalAccepted,
       totalQuota,
       overallFillRate: totalQuota > 0 ? Math.round((totalRegistrants / totalQuota) * 100) : 0,
-      overallAcceptanceRate: totalRegistrants > 0 ? Math.round((totalAccepted / totalRegistrants) * 100) : 0,
+      overallAcceptanceRate:
+        totalRegistrants > 0 ? Math.round((totalAccepted / totalRegistrants) * 100) : 0,
       waves: waveStats,
     };
   },
@@ -273,11 +272,14 @@ export const waveService = {
   /**
    * Get registrants by wave
    */
-  async getRegistrantsByWave(waveId: string, params: {
-    page: number;
-    limit: number;
-    status?: string;
-  }) {
+  async getRegistrantsByWave(
+    waveId: string,
+    params: {
+      page: number;
+      limit: number;
+      status?: string;
+    }
+  ) {
     const { page, limit, status } = params;
     const skip = (page - 1) * limit;
 

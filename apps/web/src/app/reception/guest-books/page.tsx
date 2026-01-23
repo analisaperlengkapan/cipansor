@@ -1,8 +1,13 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useGuestBooks, useCreateGuestBook, useUpdateGuestBook, GuestBook } from '@/hooks/use-reception';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import {
+  useGuestBooks,
+  useCreateGuestBook,
+  useUpdateGuestBook,
+  GuestBook,
+} from "@/hooks/use-reception";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -10,27 +15,29 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { useForm } from 'react-hook-form';
-import { format } from 'date-fns';
-import { toast } from 'sonner';
-import { CreateGuestBookInput } from '@cipansor/shared';
-import { Loader2, Plus, LogOut } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useForm } from "react-hook-form";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import { CreateGuestBookInput } from "@cipansor/shared";
+import { Loader2, Plus, LogOut } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export default function GuestBookPage() {
   const [date, setDate] = useState<Date>(new Date());
-  const { data: guests, isLoading } = useGuestBooks({ date: date.toISOString() });
+  const { data: guests, isLoading } = useGuestBooks({
+    date: date.toISOString(),
+  });
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -38,9 +45,9 @@ export default function GuestBookPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Buku Tamu</h1>
         <div className="flex items-center gap-2">
-           <Input
+          <Input
             type="date"
-            value={format(date, 'yyyy-MM-dd')}
+            value={format(date, "yyyy-MM-dd")}
             onChange={(e) => setDate(new Date(e.target.value))}
             className="w-auto"
           />
@@ -82,14 +89,15 @@ export default function GuestBookPage() {
               </TableRow>
             ) : guests?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
+                <TableCell
+                  colSpan={7}
+                  className="text-center h-24 text-muted-foreground"
+                >
                   Belum ada tamu hari ini
                 </TableCell>
               </TableRow>
             ) : (
-              guests?.map((guest) => (
-                <GuestRow key={guest.id} guest={guest} />
-              ))
+              guests?.map((guest) => <GuestRow key={guest.id} guest={guest} />)
             )}
           </TableBody>
         </Table>
@@ -99,16 +107,20 @@ export default function GuestBookPage() {
 }
 
 function GuestForm({ onSuccess }: { onSuccess: () => void }) {
-  const { register, handleSubmit, formState: { errors } } = useForm<CreateGuestBookInput>();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<CreateGuestBookInput>();
   const createGuest = useCreateGuestBook();
 
   const onSubmit = async (data: CreateGuestBookInput) => {
     try {
       await createGuest.mutateAsync({
         ...data,
-        visitorCount: Number(data.visitorCount)
+        visitorCount: Number(data.visitorCount),
       });
-      toast.success('Data tamu berhasil disimpan');
+      toast.success("Data tamu berhasil disimpan");
       onSuccess();
     } catch (_error) {
       // Error handled by query mutation or global handler
@@ -119,16 +131,18 @@ function GuestForm({ onSuccess }: { onSuccess: () => void }) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid gap-2">
         <Label htmlFor="name">Nama Tamu</Label>
-        <Input id="name" {...register('name', { required: true })} />
-        {errors.name && <span className="text-xs text-red-500">Wajib diisi</span>}
+        <Input id="name" {...register("name", { required: true })} />
+        {errors.name && (
+          <span className="text-xs text-red-500">Wajib diisi</span>
+        )}
       </div>
       <div className="grid gap-2">
         <Label htmlFor="institution">Instansi (Opsional)</Label>
-        <Input id="institution" {...register('institution')} />
+        <Input id="institution" {...register("institution")} />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="phone">No. HP (Opsional)</Label>
-        <Input id="phone" {...register('phone')} />
+        <Input id="phone" {...register("phone")} />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="grid gap-2">
@@ -138,21 +152,25 @@ function GuestForm({ onSuccess }: { onSuccess: () => void }) {
             type="number"
             min={1}
             defaultValue={1}
-            {...register('visitorCount', { required: true })}
+            {...register("visitorCount", { required: true })}
           />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="vehicleNumber">Plat Nomor (Opsional)</Label>
-          <Input id="vehicleNumber" {...register('vehicleNumber')} />
+          <Input id="vehicleNumber" {...register("vehicleNumber")} />
         </div>
       </div>
       <div className="grid gap-2">
         <Label htmlFor="purpose">Keperluan</Label>
-        <Textarea id="purpose" {...register('purpose', { required: true })} />
-        {errors.purpose && <span className="text-xs text-red-500">Wajib diisi</span>}
+        <Textarea id="purpose" {...register("purpose", { required: true })} />
+        {errors.purpose && (
+          <span className="text-xs text-red-500">Wajib diisi</span>
+        )}
       </div>
       <Button type="submit" className="w-full" disabled={createGuest.isPending}>
-        {createGuest.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {createGuest.isPending && (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        )}
         Simpan
       </Button>
     </form>
@@ -166,29 +184,33 @@ function GuestRow({ guest }: { guest: GuestBook }) {
     try {
       await updateGuest.mutateAsync({
         id: guest.id,
-        data: { checkOut: new Date() }
+        data: { checkOut: new Date() },
       });
-      toast.success('Tamu berhasil check-out');
+      toast.success("Tamu berhasil check-out");
     } catch (_error) {
-       // Error handled by query mutation or global handler
+      // Error handled by query mutation or global handler
     }
   };
 
   return (
     <TableRow>
-      <TableCell>{format(new Date(guest.checkIn), 'HH:mm')}</TableCell>
+      <TableCell>{format(new Date(guest.checkIn), "HH:mm")}</TableCell>
       <TableCell>
         <div className="font-medium">{guest.name}</div>
-        {guest.phone && <div className="text-xs text-muted-foreground">{guest.phone}</div>}
+        {guest.phone && (
+          <div className="text-xs text-muted-foreground">{guest.phone}</div>
+        )}
       </TableCell>
-      <TableCell>{guest.institution || '-'}</TableCell>
+      <TableCell>{guest.institution || "-"}</TableCell>
       <TableCell>{guest.purpose}</TableCell>
       <TableCell>{guest.visitorCount} orang</TableCell>
       <TableCell>
         {guest.checkOut ? (
           <Badge variant="outline">Selesai</Badge>
         ) : (
-          <Badge variant="default" className="bg-green-600">Berkunjung</Badge>
+          <Badge variant="default" className="bg-green-600">
+            Berkunjung
+          </Badge>
         )}
       </TableCell>
       <TableCell>

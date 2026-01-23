@@ -7,6 +7,7 @@ vi.mock('../../../../src/lib/prisma', () => ({
   prisma: {
     musyrif: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
     roomAssignment: {
       findMany: vi.fn(),
@@ -19,12 +20,12 @@ describe('DormitoryService', () => {
     const mockUserId = 'user-123';
 
     it('should return empty list if musyrif not found', async () => {
-      vi.mocked(prisma.musyrif.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.musyrif.findFirst).mockResolvedValue(null);
 
       const result = await getStudentsByMusyrif(mockUserId);
 
       expect(result).toEqual([]);
-      expect(prisma.musyrif.findUnique).toHaveBeenCalledWith({
+      expect(prisma.musyrif.findFirst).toHaveBeenCalledWith({
         where: { userId: mockUserId },
         include: { assignments: { where: { isActive: true } } },
       });
@@ -62,7 +63,7 @@ describe('DormitoryService', () => {
         },
       ];
 
-      vi.mocked(prisma.musyrif.findUnique).mockResolvedValue(mockMusyrif as any);
+      vi.mocked(prisma.musyrif.findFirst).mockResolvedValue(mockMusyrif as any);
       vi.mocked(prisma.roomAssignment.findMany).mockResolvedValue(mockRoomAssignments as any);
 
       const result = await getStudentsByMusyrif(mockUserId);
@@ -71,10 +72,7 @@ describe('DormitoryService', () => {
         where: {
           isActive: true,
           room: {
-            OR: [
-              { id: { in: ['room-2'] } },
-              { dormitoryId: { in: ['dorm-1'] } },
-            ],
+            OR: [{ id: { in: ['room-2'] } }, { dormitoryId: { in: ['dorm-1'] } }],
           },
         },
         include: expect.any(Object),

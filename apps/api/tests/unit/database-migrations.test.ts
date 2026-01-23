@@ -15,7 +15,7 @@ describeDb('Database Schema - PAUD Models', () => {
   describe('PAUDDevelopmentIndicator Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'paud_development_indicators';
-      
+
       // Query information_schema to check table exists
       const result = await prisma.$queryRaw<any[]>`
         SELECT column_name, data_type, is_nullable
@@ -25,8 +25,8 @@ describeDb('Database Schema - PAUD Models', () => {
       `;
 
       expect(result.length).toBeGreaterThan(0);
-      
-      const columnNames = result.map(col => col.column_name);
+
+      const columnNames = result.map((col) => col.column_name);
       expect(columnNames).toContain('id');
       expect(columnNames).toContain('code');
       expect(columnNames).toContain('aspect');
@@ -44,9 +44,7 @@ describeDb('Database Schema - PAUD Models', () => {
         AND constraint_type = 'UNIQUE';
       `;
 
-      const hasUniqueCode = constraints.some(c => 
-        c.constraint_name.includes('code')
-      );
+      const hasUniqueCode = constraints.some((c) => c.constraint_name.includes('code'));
       expect(hasUniqueCode).toBe(true);
     });
   });
@@ -54,7 +52,7 @@ describeDb('Database Schema - PAUD Models', () => {
   describe('PAUDDevelopmentAssessment Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'paud_development_assessments';
-      
+
       const result = await prisma.$queryRaw<any[]>`
         SELECT column_name, data_type, is_nullable
         FROM information_schema.columns
@@ -63,8 +61,8 @@ describeDb('Database Schema - PAUD Models', () => {
       `;
 
       expect(result.length).toBeGreaterThan(0);
-      
-      const columnNames = result.map(col => col.column_name);
+
+      const columnNames = result.map((col) => col.column_name);
       expect(columnNames).toContain('id');
       expect(columnNames).toContain('student_id');
       expect(columnNames).toContain('indicator_id');
@@ -101,7 +99,7 @@ describeDb('Database Schema - PAUD Models', () => {
   describe('PAUDAssessmentEvidence Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'paud_assessment_evidence';
-      
+
       const result = await prisma.$queryRaw<any[]>`
         SELECT column_name, data_type
         FROM information_schema.columns
@@ -110,8 +108,8 @@ describeDb('Database Schema - PAUD Models', () => {
       `;
 
       expect(result.length).toBeGreaterThan(0);
-      
-      const columnNames = result.map(col => col.column_name);
+
+      const columnNames = result.map((col) => col.column_name);
       expect(columnNames).toContain('id');
       expect(columnNames).toContain('assessment_id');
       expect(columnNames).toContain('media_type');
@@ -123,7 +121,7 @@ describeDb('Database Schema - PAUD Models', () => {
   describe('PAUDNarrativeReport Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'paud_narrative_reports';
-      
+
       const result = await prisma.$queryRaw<any[]>`
         SELECT column_name, data_type
         FROM information_schema.columns
@@ -132,8 +130,8 @@ describeDb('Database Schema - PAUD Models', () => {
       `;
 
       expect(result.length).toBeGreaterThan(0);
-      
-      const columnNames = result.map(col => col.column_name);
+
+      const columnNames = result.map((col) => col.column_name);
       expect(columnNames).toContain('id');
       expect(columnNames).toContain('student_id');
       expect(columnNames).toContain('period_type');
@@ -150,7 +148,7 @@ describeDb('Database Schema - Daily Report Models', () => {
   describe('DailyStudentReport Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'daily_student_reports';
-      
+
       const result = await prisma.$queryRaw<any[]>`
         SELECT column_name, data_type
         FROM information_schema.columns
@@ -159,8 +157,8 @@ describeDb('Database Schema - Daily Report Models', () => {
       `;
 
       expect(result.length).toBeGreaterThan(0);
-      
-      const columnNames = result.map(col => col.column_name);
+
+      const columnNames = result.map((col) => col.column_name);
       expect(columnNames).toContain('id');
       expect(columnNames).toContain('student_id');
       expect(columnNames).toContain('report_date');
@@ -178,8 +176,8 @@ describeDb('Database Schema - Daily Report Models', () => {
         AND constraint_type = 'UNIQUE';
       `;
 
-      const hasUniqueStudentDate = constraints.some(c => 
-        c.constraint_name.includes('student') || c.constraint_name.includes('report_date')
+      const hasUniqueStudentDate = constraints.some(
+        (c) => c.constraint_name.includes('student') || c.constraint_name.includes('report_date')
       );
       expect(hasUniqueStudentDate).toBe(true);
     });
@@ -199,7 +197,7 @@ describeDb('Database Schema - Daily Report Models', () => {
   describe('DailyReportPhoto Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'daily_report_photos';
-      
+
       const result = await prisma.$queryRaw<any[]>`
         SELECT column_name, data_type
         FROM information_schema.columns
@@ -208,8 +206,8 @@ describeDb('Database Schema - Daily Report Models', () => {
       `;
 
       expect(result.length).toBeGreaterThan(0);
-      
-      const columnNames = result.map(col => col.column_name);
+
+      const columnNames = result.map((col) => col.column_name);
       expect(columnNames).toContain('id');
       expect(columnNames).toContain('report_id');
       expect(columnNames).toContain('photo_url');
@@ -220,7 +218,7 @@ describeDb('Database Schema - Daily Report Models', () => {
   describe('DailyHomework Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'daily_homework';
-      
+
       const result = await prisma.$queryRaw<any[]>`
         SELECT column_name, data_type
         FROM information_schema.columns
@@ -229,8 +227,8 @@ describeDb('Database Schema - Daily Report Models', () => {
       `;
 
       expect(result.length).toBeGreaterThan(0);
-      
-      const columnNames = result.map(col => col.column_name);
+
+      const columnNames = result.map((col) => col.column_name);
       expect(columnNames).toContain('id');
       expect(columnNames).toContain('report_id');
       expect(columnNames).toContain('subject');
@@ -243,7 +241,7 @@ describeDb('Database Schema - Tahfidz Models', () => {
   describe('MurojaahRecord Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'murojaah_records';
-      
+
       const result = await prisma.$queryRaw<any[]>`
         SELECT column_name, data_type
         FROM information_schema.columns
@@ -252,8 +250,8 @@ describeDb('Database Schema - Tahfidz Models', () => {
       `;
 
       expect(result.length).toBeGreaterThan(0);
-      
-      const columnNames = result.map(col => col.column_name);
+
+      const columnNames = result.map((col) => col.column_name);
       expect(columnNames).toContain('id');
       expect(columnNames).toContain('enrollment_id');
       expect(columnNames).toContain('murojaah_date');
@@ -281,7 +279,7 @@ describeDb('Database Schema - Tahfidz Models', () => {
   describe('MurojaahMistake Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'murojaah_mistakes';
-      
+
       const result = await prisma.$queryRaw<any[]>`
         SELECT column_name, data_type
         FROM information_schema.columns
@@ -290,8 +288,8 @@ describeDb('Database Schema - Tahfidz Models', () => {
       `;
 
       expect(result.length).toBeGreaterThan(0);
-      
-      const columnNames = result.map(col => col.column_name);
+
+      const columnNames = result.map((col) => col.column_name);
       expect(columnNames).toContain('id');
       expect(columnNames).toContain('murojaah_id');
       expect(columnNames).toContain('mistake_type');
@@ -304,7 +302,7 @@ describeDb('Database Schema - Tahfidz Models', () => {
   describe('SimaanExam Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'simaan_exams';
-      
+
       const result = await prisma.$queryRaw<any[]>`
         SELECT column_name, data_type
         FROM information_schema.columns
@@ -313,8 +311,8 @@ describeDb('Database Schema - Tahfidz Models', () => {
       `;
 
       expect(result.length).toBeGreaterThan(0);
-      
-      const columnNames = result.map(col => col.column_name);
+
+      const columnNames = result.map((col) => col.column_name);
       expect(columnNames).toContain('id');
       expect(columnNames).toContain('enrollment_id');
       expect(columnNames).toContain('exam_date');
@@ -329,7 +327,7 @@ describeDb('Database Schema - Dashboard Models', () => {
   describe('DashboardMetricSnapshot Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'dashboard_metric_snapshots';
-      
+
       const result = await prisma.$queryRaw<any[]>`
         SELECT column_name, data_type
         FROM information_schema.columns
@@ -338,8 +336,8 @@ describeDb('Database Schema - Dashboard Models', () => {
       `;
 
       expect(result.length).toBeGreaterThan(0);
-      
-      const columnNames = result.map(col => col.column_name);
+
+      const columnNames = result.map((col) => col.column_name);
       expect(columnNames).toContain('id');
       expect(columnNames).toContain('unit_id');
       expect(columnNames).toContain('snapshot_date');
@@ -362,7 +360,7 @@ describeDb('Database Schema - Dashboard Models', () => {
   describe('UnitComparisonReport Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'unit_comparison_reports';
-      
+
       const result = await prisma.$queryRaw<any[]>`
         SELECT column_name, data_type
         FROM information_schema.columns
@@ -371,8 +369,8 @@ describeDb('Database Schema - Dashboard Models', () => {
       `;
 
       expect(result.length).toBeGreaterThan(0);
-      
-      const columnNames = result.map(col => col.column_name);
+
+      const columnNames = result.map((col) => col.column_name);
       expect(columnNames).toContain('id');
       expect(columnNames).toContain('report_date');
       expect(columnNames).toContain('metric_type');
@@ -385,7 +383,7 @@ describeDb('Database Schema - Health Models', () => {
   describe('GrowthRecord Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'growth_records';
-      
+
       const result = await prisma.$queryRaw<any[]>`
         SELECT column_name, data_type
         FROM information_schema.columns
@@ -394,8 +392,8 @@ describeDb('Database Schema - Health Models', () => {
       `;
 
       expect(result.length).toBeGreaterThan(0);
-      
-      const columnNames = result.map(col => col.column_name);
+
+      const columnNames = result.map((col) => col.column_name);
       expect(columnNames).toContain('id');
       expect(columnNames).toContain('student_id');
       expect(columnNames).toContain('recorded_date');
@@ -408,7 +406,7 @@ describeDb('Database Schema - Health Models', () => {
   describe('ImmunizationRecord Model', () => {
     it('should have required fields defined', async () => {
       const tableName = 'immunization_records';
-      
+
       const result = await prisma.$queryRaw<any[]>`
         SELECT column_name, data_type
         FROM information_schema.columns
@@ -417,8 +415,8 @@ describeDb('Database Schema - Health Models', () => {
       `;
 
       expect(result.length).toBeGreaterThan(0);
-      
-      const columnNames = result.map(col => col.column_name);
+
+      const columnNames = result.map((col) => col.column_name);
       expect(columnNames).toContain('id');
       expect(columnNames).toContain('student_id');
       expect(columnNames).toContain('vaccine_name');
@@ -450,7 +448,7 @@ describeDb('Database Indexes', () => {
     `;
 
     expect(indexes.length).toBeGreaterThan(0);
-    
+
     // Log indexes for verification (optional)
     console.log(`Found ${indexes.length} indexes on enhancement tables`);
   });

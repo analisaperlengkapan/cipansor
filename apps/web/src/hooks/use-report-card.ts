@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useQuery, useMutation } from '@tanstack/react-query';
-import api, { ApiResponse } from '@/lib/api';
+import { useQuery, useMutation } from "@tanstack/react-query";
+import api, { ApiResponse } from "@/lib/api";
 
 // Types for parent report card view
 export interface ParentReportCard {
@@ -35,7 +35,7 @@ export interface ParentReportCard {
   rank?: number;
   totalStudents?: number;
   gpa: number;
-  status: 'DRAFT' | 'FINALIZED' | 'PUBLISHED';
+  status: "DRAFT" | "FINALIZED" | "PUBLISHED";
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -79,7 +79,7 @@ export interface ParentBehaviorSummary {
   violations?: string[];
 }
 
-export type ParentGradeLevel = 'A' | 'B' | 'C' | 'D' | 'E';
+export type ParentGradeLevel = "A" | "B" | "C" | "D" | "E";
 
 export interface ParentExtracurricularActivity {
   id: string;
@@ -110,53 +110,55 @@ export interface ReportCardListItem {
   semester: number;
   gpa: number;
   rank?: number;
-  status: 'DRAFT' | 'FINALIZED' | 'PUBLISHED';
+  status: "DRAFT" | "FINALIZED" | "PUBLISHED";
   publishedAt?: string;
 }
 
 // Grade points mapping
 export const GRADE_POINTS: Record<string, number> = {
-  'A': 4.0,
-  'A-': 3.7,
-  'B+': 3.5,
-  'B': 3.0,
-  'B-': 2.7,
-  'C+': 2.5,
-  'C': 2.0,
-  'C-': 1.7,
-  'D': 1.0,
-  'E': 0,
+  A: 4.0,
+  "A-": 3.7,
+  "B+": 3.5,
+  B: 3.0,
+  "B-": 2.7,
+  "C+": 2.5,
+  C: 2.0,
+  "C-": 1.7,
+  D: 1.0,
+  E: 0,
 };
 
 // Get letter grade from score
 export function getLetterGrade(score: number): string {
-  if (score >= 90) return 'A';
-  if (score >= 85) return 'A-';
-  if (score >= 80) return 'B+';
-  if (score >= 75) return 'B';
-  if (score >= 70) return 'B-';
-  if (score >= 65) return 'C+';
-  if (score >= 60) return 'C';
-  if (score >= 55) return 'C-';
-  if (score >= 50) return 'D';
-  return 'E';
+  if (score >= 90) return "A";
+  if (score >= 85) return "A-";
+  if (score >= 80) return "B+";
+  if (score >= 75) return "B";
+  if (score >= 70) return "B-";
+  if (score >= 65) return "C+";
+  if (score >= 60) return "C";
+  if (score >= 55) return "C-";
+  if (score >= 50) return "D";
+  return "E";
 }
 
 // Get grade color
 export function getGradeColor(grade: string): string {
-  if (grade.startsWith('A')) return 'text-green-600';
-  if (grade.startsWith('B')) return 'text-blue-600';
-  if (grade.startsWith('C')) return 'text-yellow-600';
-  if (grade.startsWith('D')) return 'text-orange-600';
-  return 'text-red-600';
+  if (grade.startsWith("A")) return "text-green-600";
+  if (grade.startsWith("B")) return "text-blue-600";
+  if (grade.startsWith("C")) return "text-yellow-600";
+  if (grade.startsWith("D")) return "text-orange-600";
+  return "text-red-600";
 }
 
 // Get student report cards list
 export function useStudentReportCards(studentId?: string) {
   return useQuery<ReportCardListItem[]>({
-    queryKey: ['report-cards', 'student', studentId],
+    queryKey: ["report-cards", "student", studentId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<ReportCardListItem[]>>(`/report-cards/students/${studentId}`);
+      const response = await api.get<ApiResponse<ReportCardListItem[]>>(
+        `/report-cards/students/${studentId}`,
+      );
       return response.data.data;
     },
     enabled: !!studentId,
@@ -166,9 +168,11 @@ export function useStudentReportCards(studentId?: string) {
 // Get report card detail (for parent)
 export function useParentReportCard(reportCardId?: string) {
   return useQuery<ParentReportCard>({
-    queryKey: ['parent-report-cards', reportCardId],
+    queryKey: ["parent-report-cards", reportCardId],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<ParentReportCard>>(`/report-cards/${reportCardId}`);
+      const response = await api.get<ApiResponse<ParentReportCard>>(
+        `/report-cards/${reportCardId}`,
+      );
       return response.data.data;
     },
     enabled: !!reportCardId,
@@ -177,34 +181,40 @@ export function useParentReportCard(reportCardId?: string) {
 
 // Get my children report cards (for parent)
 export function useMyChildrenReportCards() {
-  return useQuery<{
-    child: {
-      id: string;
-      nis: string;
-      name: string;
-      class?: {
+  return useQuery<
+    {
+      child: {
         id: string;
+        nis: string;
         name: string;
-      };
-      photo?: string;
-    };
-    reportCards: ReportCardListItem[];
-  }[]>({
-    queryKey: ['report-cards', 'my-children'],
-    queryFn: async () => {
-      const response = await api.get<ApiResponse<{
-        child: {
+        class?: {
           id: string;
-          nis: string;
           name: string;
-          class?: {
-            id: string;
-            name: string;
-          };
-          photo?: string;
         };
-        reportCards: ReportCardListItem[];
-      }[]>>('/report-cards/my-children');
+        photo?: string;
+      };
+      reportCards: ReportCardListItem[];
+    }[]
+  >({
+    queryKey: ["report-cards", "my-children"],
+    queryFn: async () => {
+      const response = await api.get<
+        ApiResponse<
+          {
+            child: {
+              id: string;
+              nis: string;
+              name: string;
+              class?: {
+                id: string;
+                name: string;
+              };
+              photo?: string;
+            };
+            reportCards: ReportCardListItem[];
+          }[]
+        >
+      >("/report-cards/my-children");
       return response.data.data;
     },
   });
@@ -215,7 +225,7 @@ export function useDownloadReportCard() {
   return useMutation({
     mutationFn: async (reportCardId: string) => {
       const response = await api.get(`/report-cards/${reportCardId}/download`, {
-        responseType: 'blob',
+        responseType: "blob",
       });
       return response.data;
     },
@@ -224,27 +234,33 @@ export function useDownloadReportCard() {
 
 // Get class report cards (for teacher/admin)
 export function useClassReportCards(classId?: string, semester?: number) {
-  return useQuery<{
-    student: {
-      id: string;
-      nis: string;
-      name: string;
-    };
-    reportCard?: ReportCardListItem;
-  }[]>({
-    queryKey: ['report-cards', 'class', classId, semester],
+  return useQuery<
+    {
+      student: {
+        id: string;
+        nis: string;
+        name: string;
+      };
+      reportCard?: ReportCardListItem;
+    }[]
+  >({
+    queryKey: ["report-cards", "class", classId, semester],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (semester) params.append('semester', semester.toString());
-      
-      const response = await api.get<ApiResponse<{
-        student: {
-          id: string;
-          nis: string;
-          name: string;
-        };
-        reportCard?: ReportCardListItem;
-      }[]>>(`/report-cards/classes/${classId}?${params.toString()}`);
+      if (semester) params.append("semester", semester.toString());
+
+      const response = await api.get<
+        ApiResponse<
+          {
+            student: {
+              id: string;
+              nis: string;
+              name: string;
+            };
+            reportCard?: ReportCardListItem;
+          }[]
+        >
+      >(`/report-cards/classes/${classId}?${params.toString()}`);
       return response.data.data;
     },
     enabled: !!classId,
@@ -255,7 +271,9 @@ export function useClassReportCards(classId?: string, semester?: number) {
 export function useParentPublishReportCard() {
   return useMutation({
     mutationFn: async (reportCardId: string) => {
-      const response = await api.post<ApiResponse<ParentReportCard>>(`/report-cards/${reportCardId}/publish`);
+      const response = await api.post<ApiResponse<ParentReportCard>>(
+        `/report-cards/${reportCardId}/publish`,
+      );
       return response.data.data;
     },
   });
@@ -265,9 +283,12 @@ export function useParentPublishReportCard() {
 export function useBulkPublishReportCards() {
   return useMutation({
     mutationFn: async (reportCardIds: string[]) => {
-      const response = await api.post<ApiResponse<{ published: number }>>('/report-cards/bulk-publish', {
-        reportCardIds,
-      });
+      const response = await api.post<ApiResponse<{ published: number }>>(
+        "/report-cards/bulk-publish",
+        {
+          reportCardIds,
+        },
+      );
       return response.data.data;
     },
   });

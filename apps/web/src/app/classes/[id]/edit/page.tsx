@@ -1,45 +1,45 @@
-'use client';
+"use client";
 
-import { useRouter, useParams } from 'next/navigation';
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { useRouter, useParams } from "next/navigation";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import Link from "next/link";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { useUnits } from '@/hooks/use-units';
-import { useTeachers } from '@/hooks/use-teachers';
-import { useAcademicYears } from '@/hooks/use-academic-years';
-import { useClass, useUpdateClass } from '@/hooks/use-classes';
+} from "@/components/ui/card";
+import { useUnits } from "@/hooks/use-units";
+import { useTeachers } from "@/hooks/use-teachers";
+import { useAcademicYears } from "@/hooks/use-academic-years";
+import { useClass, useUpdateClass } from "@/hooks/use-classes";
 
 const classSchema = z.object({
-  name: z.string().min(1, 'Nama kelas wajib diisi'),
-  level: z.string().min(1, 'Level wajib diisi'), // Maps to grade/level
-  unitId: z.string().min(1, 'Unit wajib dipilih'),
-  academicYearId: z.string().min(1, 'Tahun ajaran wajib dipilih'),
+  name: z.string().min(1, "Nama kelas wajib diisi"),
+  level: z.string().min(1, "Level wajib diisi"), // Maps to grade/level
+  unitId: z.string().min(1, "Unit wajib dipilih"),
+  academicYearId: z.string().min(1, "Tahun ajaran wajib dipilih"),
   homeroomTeacherId: z.string().optional(),
-  capacity: z.coerce.number().min(1, 'Kapasitas minimal 1').optional(),
+  capacity: z.coerce.number().min(1, "Kapasitas minimal 1").optional(),
 });
 
 type ClassFormData = z.infer<typeof classSchema>;
@@ -65,20 +65,21 @@ export default function EditClassPage() {
     resolver: zodResolver(classSchema),
   });
 
-  const selectedUnitId = watch('unitId');
+  const selectedUnitId = watch("unitId");
 
   // Fetch teachers filtered by unit from the backend directly
   const { data: teachers, isLoading: teachersLoading } = useTeachers({
     unitId: selectedUnitId,
-    status: 'ACTIVE',
+    status: "ACTIVE",
     limit: 100,
   });
 
   // Fetch academic years filtered by unit from the backend directly
-  const { data: academicYearsData, isLoading: academicYearsLoading } = useAcademicYears({
-    unitId: selectedUnitId,
-    limit: 100,
-  });
+  const { data: academicYearsData, isLoading: academicYearsLoading } =
+    useAcademicYears({
+      unitId: selectedUnitId,
+      limit: 100,
+    });
 
   const academicYears = academicYearsData?.data || [];
   const teachersList = teachers?.data || [];
@@ -91,7 +92,7 @@ export default function EditClassPage() {
         level: classData.level || String(classData.grade),
         unitId: classData.unitId,
         academicYearId: classData.academicYearId,
-        homeroomTeacherId: classData.homeroomTeacherId || '',
+        homeroomTeacherId: classData.homeroomTeacherId || "",
         capacity: classData.capacity || undefined,
       });
     }
@@ -107,10 +108,11 @@ export default function EditClassPage() {
           capacity: data.capacity || 30, // Default fallback
         },
       });
-      toast.success('Kelas berhasil diperbarui');
+      toast.success("Kelas berhasil diperbarui");
       router.push(`/classes/${classId}`);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Gagal memperbarui kelas';
+      const errorMessage =
+        error instanceof Error ? error.message : "Gagal memperbarui kelas";
       toast.error(errorMessage);
     }
   };
@@ -149,7 +151,9 @@ export default function EditClassPage() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Edit Kelas</h1>
-            <p className="text-muted-foreground">Perbarui data kelas {classData.name}</p>
+            <p className="text-muted-foreground">
+              Perbarui data kelas {classData.name}
+            </p>
           </div>
         </div>
 
@@ -166,23 +170,23 @@ export default function EditClassPage() {
                   <Input
                     id="name"
                     placeholder="Contoh: Kelas 7A, X IPA 1"
-                    {...register('name')}
+                    {...register("name")}
                   />
                   {errors.name && (
-                    <p className="text-sm text-destructive">{errors.name.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.name.message}
+                    </p>
                   )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="level">Tingkat *</Label>
-                    <Input
-                      id="level"
-                      placeholder="7"
-                      {...register('level')}
-                    />
+                    <Input id="level" placeholder="7" {...register("level")} />
                     {errors.level && (
-                      <p className="text-sm text-destructive">{errors.level.message}</p>
+                      <p className="text-sm text-destructive">
+                        {errors.level.message}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -194,10 +198,12 @@ export default function EditClassPage() {
                     type="number"
                     min={1}
                     placeholder="30"
-                    {...register('capacity')}
+                    {...register("capacity")}
                   />
                   {errors.capacity && (
-                    <p className="text-sm text-destructive">{errors.capacity.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.capacity.message}
+                    </p>
                   )}
                 </div>
               </CardContent>
@@ -214,9 +220,9 @@ export default function EditClassPage() {
                   <Select
                     value={selectedUnitId}
                     onValueChange={(value) => {
-                      setValue('unitId', value);
-                      setValue('academicYearId', '');
-                      setValue('homeroomTeacherId', '');
+                      setValue("unitId", value);
+                      setValue("academicYearId", "");
+                      setValue("homeroomTeacherId", "");
                     }}
                     disabled={unitsLoading}
                   >
@@ -232,53 +238,75 @@ export default function EditClassPage() {
                     </SelectContent>
                   </Select>
                   {errors.unitId && (
-                    <p className="text-sm text-destructive">{errors.unitId.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.unitId.message}
+                    </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="academicYearId">Tahun Ajaran *</Label>
                   <Select
-                    value={watch('academicYearId')}
-                    onValueChange={(value) => setValue('academicYearId', value)}
+                    value={watch("academicYearId")}
+                    onValueChange={(value) => setValue("academicYearId", value)}
                     disabled={academicYearsLoading || !selectedUnitId}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={!selectedUnitId ? 'Pilih unit terlebih dahulu' : 'Pilih tahun ajaran'} />
+                      <SelectValue
+                        placeholder={
+                          !selectedUnitId
+                            ? "Pilih unit terlebih dahulu"
+                            : "Pilih tahun ajaran"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {academicYears?.map((ay) => (
                         <SelectItem key={ay.id} value={ay.id}>
-                          {ay.name} {ay.isActive && '(Aktif)'}
+                          {ay.name} {ay.isActive && "(Aktif)"}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   {errors.academicYearId && (
-                    <p className="text-sm text-destructive">{errors.academicYearId.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.academicYearId.message}
+                    </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="homeroomTeacherId">Wali Kelas</Label>
                   <Select
-                    value={watch('homeroomTeacherId') || ''}
-                    onValueChange={(value) => setValue('homeroomTeacherId', value)}
+                    value={watch("homeroomTeacherId") || ""}
+                    onValueChange={(value) =>
+                      setValue("homeroomTeacherId", value)
+                    }
                     disabled={teachersLoading || !selectedUnitId}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={!selectedUnitId ? 'Pilih unit terlebih dahulu' : 'Pilih wali kelas'} />
+                      <SelectValue
+                        placeholder={
+                          !selectedUnitId
+                            ? "Pilih unit terlebih dahulu"
+                            : "Pilih wali kelas"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {teachersList?.map((teacher) => (
                         <SelectItem key={teacher.id} value={teacher.id}>
-                          {teacher.user?.name || teacher.nip || 'Unknown Teacher'}
+                          {teacher.user?.name ||
+                            teacher.nip ||
+                            "Unknown Teacher"}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   {errors.homeroomTeacherId && (
-                    <p className="text-sm text-destructive">{errors.homeroomTeacherId.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.homeroomTeacherId.message}
+                    </p>
                   )}
                 </div>
               </CardContent>
@@ -289,8 +317,13 @@ export default function EditClassPage() {
             <Button type="button" variant="outline" asChild>
               <Link href={`/classes/${classId}`}>Batal</Link>
             </Button>
-            <Button type="submit" disabled={isSubmitting || updateClass.isPending}>
-              {isSubmitting || updateClass.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
+            <Button
+              type="submit"
+              disabled={isSubmitting || updateClass.isPending}
+            >
+              {isSubmitting || updateClass.isPending
+                ? "Menyimpan..."
+                : "Simpan Perubahan"}
             </Button>
           </div>
         </form>

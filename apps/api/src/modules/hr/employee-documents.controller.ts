@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from "express";
-import { employeeDocumentService } from "./employee-documents.service";
-import { z } from "zod";
-import { EmployeeDocumentType } from "@prisma/client";
+import { Request, Response, NextFunction } from 'express';
+import { employeeDocumentService } from './employee-documents.service';
+import { z } from 'zod';
+import { EmployeeDocumentType } from '@prisma/client';
 
 const createDocumentSchema = z.object({
   userId: z.string().uuid(),
@@ -36,9 +36,9 @@ export const employeeDocumentController = {
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
       await employeeDocumentService.delete(req.params.id);
-      res.json({ success: true, message: "Document deleted" });
+      res.json({ success: true, message: 'Document deleted' });
     } catch (error) {
       next(error);
     }
-  }
+  },
 };

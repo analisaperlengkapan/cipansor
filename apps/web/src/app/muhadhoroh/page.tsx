@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
+import { useState } from "react";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   Mic2,
   Calendar,
@@ -20,17 +20,17 @@ import {
   BarChart3,
   TrendingUp,
   Star,
-} from 'lucide-react';
-import { useAuthStore } from '@/stores/auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+} from "lucide-react";
+import { useAuthStore } from "@/stores/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -38,17 +38,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import {
   useMuhadhorohList,
   useUpcomingMuhadhoroh,
@@ -60,24 +60,112 @@ import {
   getLanguageLabel,
   formatDuration,
   MuhadhorohStatus,
-} from '@/hooks/use-muhadhoroh';
+} from "@/hooks/use-muhadhoroh";
+
+// Demo data for illustration
+const DEMO_RECORDS = [
+  {
+    id: "1",
+    topic: "Pentingnya Menuntut Ilmu",
+    student: {
+      id: "s1",
+      nis: "2024001",
+      name: "Ahmad Fauzi",
+      class: { name: "IX A" },
+    },
+    scheduledAt: "2024-03-15T08:00:00.000Z",
+    language: "Indonesian",
+    status: "SCHEDULED" as MuhadhorohStatus,
+    totalScore: null,
+    grade: null,
+    duration: null,
+  },
+  {
+    id: "2",
+    topic: "أهمية الصبر في الإسلام",
+    student: {
+      id: "s2",
+      nis: "2024002",
+      name: "Muhammad Rizki",
+      class: { name: "IX B" },
+    },
+    scheduledAt: "2024-03-10T08:00:00.000Z",
+    language: "Arabic",
+    status: "COMPLETED" as MuhadhorohStatus,
+    totalScore: 85,
+    grade: "B",
+    duration: 7,
+  },
+  {
+    id: "3",
+    topic: "The Importance of Honesty",
+    student: {
+      id: "s3",
+      nis: "2024003",
+      name: "Fatimah Zahra",
+      class: { name: "VIII A" },
+    },
+    scheduledAt: "2024-03-09T08:00:00.000Z",
+    language: "English",
+    status: "COMPLETED" as MuhadhorohStatus,
+    totalScore: 92,
+    grade: "A",
+    duration: 5,
+  },
+  {
+    id: "4",
+    topic: "Menjaga Kebersihan Lingkungan",
+    student: {
+      id: "s4",
+      nis: "2024004",
+      name: "Ibrahim Malik",
+      class: { name: "VII A" },
+    },
+    scheduledAt: "2024-03-08T08:00:00.000Z",
+    language: "Indonesian",
+    status: "CANCELLED" as MuhadhorohStatus,
+    totalScore: null,
+    grade: null,
+    duration: null,
+  },
+];
+
+// Demo upcoming
+const DEMO_UPCOMING_RECORDS = [
+  {
+    id: "u1",
+    student: { name: "Ahmad Fauzi" },
+    topic: "Pentingnya Menuntut Ilmu",
+    scheduledAt: "2024-03-15T08:00:00.000Z",
+    language: "Indonesian",
+  },
+  {
+    id: "u2",
+    student: { name: "Siti Aisyah" },
+    topic: "فضل الصدقة",
+    scheduledAt: "2024-03-16T08:00:00.000Z",
+    language: "Arabic",
+  },
+];
 
 export default function MuhadhorohPage() {
   // Get user from auth context
   const { user } = useAuthStore();
   const unitId = user?.unitId || user?.unit?.id;
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<MuhadhorohStatus | 'ALL'>('ALL');
-  const [languageFilter, setLanguageFilter] = useState<string>('ALL');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<MuhadhorohStatus | "ALL">(
+    "ALL",
+  );
+  const [languageFilter, setLanguageFilter] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch data with unitId from auth context
   const { data: listData, isLoading: isLoadingList } = useMuhadhorohList({
     page: currentPage,
     limit: 10,
-    status: statusFilter === 'ALL' ? undefined : statusFilter,
-    language: languageFilter === 'ALL' ? undefined : languageFilter,
+    status: statusFilter === "ALL" ? undefined : statusFilter,
+    language: languageFilter === "ALL" ? undefined : languageFilter,
     unitId,
   });
 
@@ -85,59 +173,16 @@ export default function MuhadhorohPage() {
   const { data: statsData } = useMuhadhorohStatistics(unitId);
   const { data: topPerformersData } = useTopPerformers(unitId, 5);
 
-  // Demo data for illustration
-  const demoRecords = [
-    {
-      id: '1',
-      topic: 'Pentingnya Menuntut Ilmu',
-      student: { id: 's1', nis: '2024001', name: 'Ahmad Fauzi', class: { name: 'IX A' } },
-      scheduledAt: new Date().toISOString(),
-      language: 'Indonesian',
-      status: 'SCHEDULED' as MuhadhorohStatus,
-      totalScore: null,
-      grade: null,
-      duration: null,
-    },
-    {
-      id: '2',
-      topic: 'أهمية الصبر في الإسلام',
-      student: { id: 's2', nis: '2024002', name: 'Muhammad Rizki', class: { name: 'IX B' } },
-      scheduledAt: new Date(Date.now() - 86400000).toISOString(),
-      language: 'Arabic',
-      status: 'COMPLETED' as MuhadhorohStatus,
-      totalScore: 85,
-      grade: 'B',
-      duration: 7,
-    },
-    {
-      id: '3',
-      topic: 'The Importance of Honesty',
-      student: { id: 's3', nis: '2024003', name: 'Fatimah Zahra', class: { name: 'VIII A' } },
-      scheduledAt: new Date(Date.now() - 172800000).toISOString(),
-      language: 'English',
-      status: 'COMPLETED' as MuhadhorohStatus,
-      totalScore: 92,
-      grade: 'A',
-      duration: 5,
-    },
-    {
-      id: '4',
-      topic: 'Menjaga Kebersihan Lingkungan',
-      student: { id: 's4', nis: '2024004', name: 'Ibrahim Malik', class: { name: 'VII A' } },
-      scheduledAt: new Date(Date.now() - 259200000).toISOString(),
-      language: 'Indonesian',
-      status: 'CANCELLED' as MuhadhorohStatus,
-      totalScore: null,
-      grade: null,
-      duration: null,
-    },
-  ];
-
-  const records = listData?.data || demoRecords;
-  const meta = listData?.meta || { total: demoRecords.length, page: 1, limit: 10, totalPages: 1 };
+  const records = listData?.data || DEMO_RECORDS;
+  const meta = listData?.meta || {
+    total: DEMO_RECORDS.length,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+  };
 
   // Filter by search
-  const filteredRecords = records.filter(record => {
+  const filteredRecords = records.filter((record) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -151,14 +196,14 @@ export default function MuhadhorohPage() {
   const stats = statsData || {
     total: 156,
     byStatus: [
-      { status: 'COMPLETED', count: 120 },
-      { status: 'SCHEDULED', count: 28 },
-      { status: 'CANCELLED', count: 8 },
+      { status: "COMPLETED", count: 120 },
+      { status: "SCHEDULED", count: 28 },
+      { status: "CANCELLED", count: 8 },
     ],
     byLanguage: [
-      { language: 'Indonesian', count: 85 },
-      { language: 'Arabic', count: 42 },
-      { language: 'English', count: 29 },
+      { language: "Indonesian", count: 85 },
+      { language: "Arabic", count: 42 },
+      { language: "English", count: 29 },
     ],
     averages: {
       content: 78.5,
@@ -170,18 +215,49 @@ export default function MuhadhorohPage() {
 
   // Demo top performers
   const topPerformers = topPerformersData || [
-    { studentId: 's1', name: 'Fatimah Zahra', nis: '2024003', class: 'VIII A', averageScore: 92, totalSessions: 12 },
-    { studentId: 's2', name: 'Ahmad Fauzi', nis: '2024001', class: 'IX A', averageScore: 88, totalSessions: 15 },
-    { studentId: 's3', name: 'Muhammad Rizki', nis: '2024002', class: 'IX B', averageScore: 85, totalSessions: 10 },
-    { studentId: 's4', name: 'Khadijah Nur', nis: '2024005', class: 'VII B', averageScore: 83, totalSessions: 8 },
-    { studentId: 's5', name: 'Ibrahim Malik', nis: '2024004', class: 'VII A', averageScore: 80, totalSessions: 11 },
+    {
+      studentId: "s1",
+      name: "Fatimah Zahra",
+      nis: "2024003",
+      class: "VIII A",
+      averageScore: 92,
+      totalSessions: 12,
+    },
+    {
+      studentId: "s2",
+      name: "Ahmad Fauzi",
+      nis: "2024001",
+      class: "IX A",
+      averageScore: 88,
+      totalSessions: 15,
+    },
+    {
+      studentId: "s3",
+      name: "Muhammad Rizki",
+      nis: "2024002",
+      class: "IX B",
+      averageScore: 85,
+      totalSessions: 10,
+    },
+    {
+      studentId: "s4",
+      name: "Khadijah Nur",
+      nis: "2024005",
+      class: "VII B",
+      averageScore: 83,
+      totalSessions: 8,
+    },
+    {
+      studentId: "s5",
+      name: "Ibrahim Malik",
+      nis: "2024004",
+      class: "VII A",
+      averageScore: 80,
+      totalSessions: 11,
+    },
   ];
 
-  // Demo upcoming
-  const upcomingRecords = upcomingData || [
-    { id: 'u1', student: { name: 'Ahmad Fauzi' }, topic: 'Pentingnya Menuntut Ilmu', scheduledAt: new Date().toISOString(), language: 'Indonesian' },
-    { id: 'u2', student: { name: 'Siti Aisyah' }, topic: 'فضل الصدقة', scheduledAt: new Date(Date.now() + 86400000).toISOString(), language: 'Arabic' },
-  ];
+  const upcomingRecords = upcomingData || DEMO_UPCOMING_RECORDS;
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -211,9 +287,7 @@ export default function MuhadhorohPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">
-              Semester ini
-            </p>
+            <p className="text-xs text-muted-foreground">Semester ini</p>
           </CardContent>
         </Card>
 
@@ -224,10 +298,16 @@ export default function MuhadhorohPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats.byStatus.find(s => s.status === 'COMPLETED')?.count || 0}
+              {stats.byStatus.find((s) => s.status === "COMPLETED")?.count || 0}
             </div>
             <p className="text-xs text-muted-foreground">
-              {Math.round(((stats.byStatus.find(s => s.status === 'COMPLETED')?.count || 0) / stats.total) * 100)}% completion rate
+              {Math.round(
+                ((stats.byStatus.find((s) => s.status === "COMPLETED")?.count ||
+                  0) /
+                  stats.total) *
+                  100,
+              )}
+              % completion rate
             </p>
           </CardContent>
         </Card>
@@ -239,7 +319,7 @@ export default function MuhadhorohPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats.byStatus.find(s => s.status === 'SCHEDULED')?.count || 0}
+              {stats.byStatus.find((s) => s.status === "SCHEDULED")?.count || 0}
             </div>
             <p className="text-xs text-muted-foreground">
               Menunggu pelaksanaan
@@ -249,14 +329,16 @@ export default function MuhadhorohPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rata-rata Nilai</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Rata-rata Nilai
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.averages.total.toFixed(1)}</div>
-            <p className="text-xs text-muted-foreground">
-              Dari 100 poin
-            </p>
+            <div className="text-2xl font-bold">
+              {stats.averages.total.toFixed(1)}
+            </div>
+            <p className="text-xs text-muted-foreground">Dari 100 poin</p>
           </CardContent>
         </Card>
       </div>
@@ -287,7 +369,12 @@ export default function MuhadhorohPage() {
                     />
                   </div>
                 </div>
-                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as MuhadhorohStatus | 'ALL')}>
+                <Select
+                  value={statusFilter}
+                  onValueChange={(v) =>
+                    setStatusFilter(v as MuhadhorohStatus | "ALL")
+                  }
+                >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
@@ -298,7 +385,10 @@ export default function MuhadhorohPage() {
                     <SelectItem value="CANCELLED">Dibatalkan</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select value={languageFilter} onValueChange={setLanguageFilter}>
+                <Select
+                  value={languageFilter}
+                  onValueChange={setLanguageFilter}
+                >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Bahasa" />
                   </SelectTrigger>
@@ -333,9 +423,12 @@ export default function MuhadhorohPage() {
                     <TableRow key={record.id}>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{record.student?.name}</div>
+                          <div className="font-medium">
+                            {record.student?.name}
+                          </div>
                           <div className="text-sm text-muted-foreground">
-                            {record.student?.nis} • {record.student?.class?.name}
+                            {record.student?.nis} •{" "}
+                            {record.student?.class?.name}
                           </div>
                         </div>
                       </TableCell>
@@ -348,7 +441,11 @@ export default function MuhadhorohPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {format(new Date(record.scheduledAt), 'dd MMM yyyy, HH:mm', { locale: localeId })}
+                        {format(
+                          new Date(record.scheduledAt),
+                          "dd MMM yyyy, HH:mm",
+                          { locale: localeId },
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(record.status)}>
@@ -372,12 +469,16 @@ export default function MuhadhorohPage() {
                           <Button variant="ghost" size="icon">
                             <Eye className="h-4 w-4" />
                           </Button>
-                          {record.status === 'SCHEDULED' && (
+                          {record.status === "SCHEDULED" && (
                             <>
                               <Button variant="ghost" size="icon">
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="text-red-500">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-500"
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </>
@@ -399,7 +500,7 @@ export default function MuhadhorohPage() {
                     variant="outline"
                     size="sm"
                     disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(p => p - 1)}
+                    onClick={() => setCurrentPage((p) => p - 1)}
                   >
                     Sebelumnya
                   </Button>
@@ -407,7 +508,7 @@ export default function MuhadhorohPage() {
                     variant="outline"
                     size="sm"
                     disabled={currentPage >= meta.totalPages}
-                    onClick={() => setCurrentPage(p => p + 1)}
+                    onClick={() => setCurrentPage((p) => p + 1)}
                   >
                     Selanjutnya
                   </Button>
@@ -438,18 +539,28 @@ export default function MuhadhorohPage() {
                         {index + 1}
                       </div>
                       <div>
-                        <div className="font-medium">{record.student?.name}</div>
-                        <div className="text-sm text-muted-foreground">{record.topic}</div>
+                        <div className="font-medium">
+                          {record.student?.name}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {record.topic}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <Badge variant="outline">{getLanguageLabel(record.language)}</Badge>
+                      <Badge variant="outline">
+                        {getLanguageLabel(record.language)}
+                      </Badge>
                       <div className="text-sm text-right">
                         <div className="font-medium">
-                          {format(new Date(record.scheduledAt), 'dd MMM yyyy', { locale: localeId })}
+                          {format(new Date(record.scheduledAt), "dd MMM yyyy", {
+                            locale: localeId,
+                          })}
                         </div>
                         <div className="text-muted-foreground">
-                          {format(new Date(record.scheduledAt), 'HH:mm', { locale: localeId })}
+                          {format(new Date(record.scheduledAt), "HH:mm", {
+                            locale: localeId,
+                          })}
                         </div>
                       </div>
                     </div>
@@ -475,21 +586,27 @@ export default function MuhadhorohPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Konten/Isi</span>
-                    <span className="font-medium">{stats.averages.content.toFixed(1)}</span>
+                    <span className="font-medium">
+                      {stats.averages.content.toFixed(1)}
+                    </span>
                   </div>
                   <Progress value={stats.averages.content} className="h-2" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Penyampaian</span>
-                    <span className="font-medium">{stats.averages.delivery.toFixed(1)}</span>
+                    <span className="font-medium">
+                      {stats.averages.delivery.toFixed(1)}
+                    </span>
                   </div>
                   <Progress value={stats.averages.delivery} className="h-2" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Bahasa</span>
-                    <span className="font-medium">{stats.averages.language.toFixed(1)}</span>
+                    <span className="font-medium">
+                      {stats.averages.language.toFixed(1)}
+                    </span>
                   </div>
                   <Progress value={stats.averages.language} className="h-2" />
                 </div>
@@ -504,12 +621,20 @@ export default function MuhadhorohPage() {
               <CardContent>
                 <div className="space-y-4">
                   {stats.byLanguage.map((item) => (
-                    <div key={item.language} className="flex items-center justify-between">
+                    <div
+                      key={item.language}
+                      className="flex items-center justify-between"
+                    >
                       <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${
-                          item.language === 'Indonesian' ? 'bg-red-500' :
-                          item.language === 'Arabic' ? 'bg-green-500' : 'bg-blue-500'
-                        }`} />
+                        <div
+                          className={`w-3 h-3 rounded-full ${
+                            item.language === "Indonesian"
+                              ? "bg-red-500"
+                              : item.language === "Arabic"
+                                ? "bg-green-500"
+                                : "bg-blue-500"
+                          }`}
+                        />
                         <span>{getLanguageLabel(item.language)}</span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -544,19 +669,27 @@ export default function MuhadhorohPage() {
                   <div
                     key={performer.studentId}
                     className={`flex items-center justify-between p-4 rounded-lg ${
-                      index === 0 ? 'bg-yellow-50 border border-yellow-200' :
-                      index === 1 ? 'bg-gray-50 border border-gray-200' :
-                      index === 2 ? 'bg-orange-50 border border-orange-200' :
-                      'border'
+                      index === 0
+                        ? "bg-yellow-50 border border-yellow-200"
+                        : index === 1
+                          ? "bg-gray-50 border border-gray-200"
+                          : index === 2
+                            ? "bg-orange-50 border border-orange-200"
+                            : "border"
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-full font-bold ${
-                        index === 0 ? 'bg-yellow-500 text-white' :
-                        index === 1 ? 'bg-gray-400 text-white' :
-                        index === 2 ? 'bg-orange-500 text-white' :
-                        'bg-muted text-muted-foreground'
-                      }`}>
+                      <div
+                        className={`flex h-10 w-10 items-center justify-center rounded-full font-bold ${
+                          index === 0
+                            ? "bg-yellow-500 text-white"
+                            : index === 1
+                              ? "bg-gray-400 text-white"
+                              : index === 2
+                                ? "bg-orange-500 text-white"
+                                : "bg-muted text-muted-foreground"
+                        }`}
+                      >
                         {index + 1}
                       </div>
                       <div>
@@ -569,7 +702,9 @@ export default function MuhadhorohPage() {
                     <div className="text-right">
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 text-yellow-500" />
-                        <span className="font-bold text-lg">{performer.averageScore.toFixed(1)}</span>
+                        <span className="font-bold text-lg">
+                          {performer.averageScore.toFixed(1)}
+                        </span>
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {performer.totalSessions} sesi

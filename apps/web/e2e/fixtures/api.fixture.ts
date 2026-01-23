@@ -1,5 +1,5 @@
-import { test as base } from '@playwright/test';
-import type { Page, Route } from '@playwright/test';
+import { test as base } from "@playwright/test";
+import type { Page, Route } from "@playwright/test";
 
 /**
  * API Mocking Fixtures
@@ -32,10 +32,10 @@ export class APIMocker {
         data,
         ...(meta && { meta }),
       };
-      await route.fulfill({ 
+      await route.fulfill({
         status: 200,
-        contentType: 'application/json',
-        json: response 
+        contentType: "application/json",
+        json: response,
       });
     });
   }
@@ -43,16 +43,21 @@ export class APIMocker {
   /**
    * Mock API error response
    */
-  async mockError(url: string | RegExp, code: string, message: string, status = 400) {
+  async mockError(
+    url: string | RegExp,
+    code: string,
+    message: string,
+    status = 400,
+  ) {
     await this.page.route(url, async (route: Route) => {
       const response: MockAPIResponse = {
         success: false,
         error: { code, message },
       };
-      await route.fulfill({ 
+      await route.fulfill({
         status,
-        contentType: 'application/json',
-        json: response 
+        contentType: "application/json",
+        json: response,
       });
     });
   }
@@ -60,44 +65,50 @@ export class APIMocker {
   /**
    * Mock authentication endpoints
    */
-  async mockAuth(user = {
-    id: 'test-user-id',
-    email: 'test@cipansor.id',
-    name: 'Test User',
-    role: 'SUPER_ADMIN',
-  }) {
+  async mockAuth(
+    user = {
+      id: "test-user-id",
+      email: "test@cipansor.id",
+      name: "Test User",
+      role: "SUPER_ADMIN",
+    },
+  ) {
     // Mock login
-    await this.mockSuccess('**/api/auth/login', {
-      accessToken: 'mock-access-token',
-      refreshToken: 'mock-refresh-token',
+    await this.mockSuccess("**/api/auth/login", {
+      accessToken: "mock-access-token",
+      refreshToken: "mock-refresh-token",
       user,
     });
 
     // Mock /me endpoint
-    await this.mockSuccess('**/api/auth/me', user);
+    await this.mockSuccess("**/api/auth/me", user);
   }
 
   /**
    * Mock dashboard stats
    */
-  async mockDashboardStats(stats = {
-    totalStudents: 100,
-    activeStudents: 95,
-    totalTeachers: 20,
-    todayAttendance: 85,
-  }) {
-    await this.mockSuccess('**/api/dashboard/quick-stats', stats);
-    await this.mockSuccess('**/api/dashboard-enhancement/overview*', stats);
+  async mockDashboardStats(
+    stats = {
+      totalStudents: 100,
+      activeStudents: 95,
+      totalTeachers: 20,
+      todayAttendance: 85,
+    },
+  ) {
+    await this.mockSuccess("**/api/dashboard/quick-stats", stats);
+    await this.mockSuccess("**/api/dashboard-enhancement/overview*", stats);
   }
 
   /**
    * Mock units data
    */
-  async mockUnits(units = [
-    { id: 'unit-1', name: 'SD IT Cipansor', realm: 'SD_IT' },
-    { id: 'unit-2', name: 'SMP IT Cipansor', realm: 'SMP_IT' },
-  ]) {
-    await this.mockSuccess('**/api/units*', units);
+  async mockUnits(
+    units = [
+      { id: "unit-1", name: "SD IT Cipansor", realm: "SD_IT" },
+      { id: "unit-2", name: "SMP IT Cipansor", realm: "SMP_IT" },
+    ],
+  ) {
+    await this.mockSuccess("**/api/units*", units);
   }
 
   /**
@@ -121,4 +132,4 @@ export const test = base.extend<{
   },
 });
 
-export { expect } from '@playwright/test';
+export { expect } from "@playwright/test";

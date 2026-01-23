@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
-import type { ClassEnrollment } from '@cipansor/shared';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import type { ClassEnrollment } from "@cipansor/shared";
 
 // Response types
 interface EnrollmentsResponse {
@@ -13,11 +13,12 @@ interface EnrollmentResponse {
 
 // Keys
 const classKeys = {
-  all: ['classes'] as const,
-  lists: () => [...classKeys.all, 'list'] as const,
-  details: () => [...classKeys.all, 'detail'] as const,
+  all: ["classes"] as const,
+  lists: () => [...classKeys.all, "list"] as const,
+  details: () => [...classKeys.all, "detail"] as const,
   detail: (id: string) => [...classKeys.details(), id] as const,
-  enrollments: (classId: string) => [...classKeys.detail(classId), 'enrollments'] as const,
+  enrollments: (classId: string) =>
+    [...classKeys.detail(classId), "enrollments"] as const,
 };
 
 // Hooks
@@ -27,10 +28,12 @@ export function useClassEnrollments(classId: string) {
     queryKey: classKeys.enrollments(classId),
     queryFn: async () => {
       if (!classId) return [];
-      const { data } = await api.get<EnrollmentsResponse>(`/classes/${classId}/enrollments`);
+      const { data } = await api.get<EnrollmentsResponse>(
+        `/classes/${classId}/enrollments`,
+      );
       return data.data;
     },
-    enabled: !!classId && classId !== 'ALL',
+    enabled: !!classId && classId !== "ALL",
   });
 }
 
@@ -39,12 +42,23 @@ export function useEnrollStudent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ classId, studentId }: { classId: string; studentId: string }) => {
-      const { data } = await api.post<EnrollmentResponse>(`/classes/${classId}/enrollments`, { studentId });
+    mutationFn: async ({
+      classId,
+      studentId,
+    }: {
+      classId: string;
+      studentId: string;
+    }) => {
+      const { data } = await api.post<EnrollmentResponse>(
+        `/classes/${classId}/enrollments`,
+        { studentId },
+      );
       return data.data;
     },
     onSuccess: (_, { classId }) => {
-      queryClient.invalidateQueries({ queryKey: classKeys.enrollments(classId) });
+      queryClient.invalidateQueries({
+        queryKey: classKeys.enrollments(classId),
+      });
     },
   });
 }

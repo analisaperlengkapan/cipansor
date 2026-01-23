@@ -1,28 +1,34 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import Link from 'next/link';
-import { MainLayout } from '@/components/layout';
-import { PageHeader } from '@/components/shared';
+import { useState, useMemo } from "react";
+import Link from "next/link";
+import { MainLayout } from "@/components/layout";
+import { PageHeader } from "@/components/shared";
 import {
   useSimaanExams,
   useUpcomingSimaan,
   SimaanExam,
-} from '@/hooks/use-simaan';
-import { useClasses } from '@/hooks/use-classes';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+} from "@/hooks/use-simaan";
+import { useClasses } from "@/hooks/use-classes";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import { useAuthStore } from '@/stores/auth';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { useAuthStore } from "@/stores/auth";
+import { cn } from "@/lib/utils";
 import {
   CalendarDays,
   Clock,
@@ -32,54 +38,60 @@ import {
   ChevronRight,
   Users,
   Award,
-} from 'lucide-react';
-import { format, startOfMonth, endOfMonth, isSameDay, parseISO } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+} from "lucide-react";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  isSameDay,
+  parseISO,
+} from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 // Exam type labels
 const EXAM_TYPE_LABELS: Record<string, string> = {
-  JUZ_30: 'Juz 30',
-  JUZ_1_15: 'Juz 1-15',
-  JUZ_16_30: 'Juz 16-30',
-  FULL_30_JUZ: '30 Juz',
-  CUSTOM: 'Kustom',
+  JUZ_30: "Juz 30",
+  JUZ_1_15: "Juz 1-15",
+  JUZ_16_30: "Juz 16-30",
+  FULL_30_JUZ: "30 Juz",
+  CUSTOM: "Kustom",
 };
 
 // Status colors
 const STATUS_COLORS: Record<string, string> = {
-  SCHEDULED: 'bg-blue-100 text-blue-800',
-  IN_PROGRESS: 'bg-yellow-100 text-yellow-800',
-  COMPLETED: 'bg-green-100 text-green-800',
-  CANCELLED: 'bg-red-100 text-red-800',
-  FAILED: 'bg-red-100 text-red-800',
-  PASSED: 'bg-green-100 text-green-800',
+  SCHEDULED: "bg-blue-100 text-blue-800",
+  IN_PROGRESS: "bg-yellow-100 text-yellow-800",
+  COMPLETED: "bg-green-100 text-green-800",
+  CANCELLED: "bg-red-100 text-red-800",
+  FAILED: "bg-red-100 text-red-800",
+  PASSED: "bg-green-100 text-green-800",
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  SCHEDULED: 'Terjadwal',
-  IN_PROGRESS: 'Berlangsung',
-  COMPLETED: 'Selesai',
-  CANCELLED: 'Dibatalkan',
-  FAILED: 'Tidak Lulus',
-  PASSED: 'Lulus',
+  SCHEDULED: "Terjadwal",
+  IN_PROGRESS: "Berlangsung",
+  COMPLETED: "Selesai",
+  CANCELLED: "Dibatalkan",
+  FAILED: "Tidak Lulus",
+  PASSED: "Lulus",
 };
 
 export default function SimaanSchedulePage() {
   const { user } = useAuthStore();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedClass, setSelectedClass] = useState<string>('');
+  const [selectedClass, setSelectedClass] = useState<string>("");
   const [viewMonth, setViewMonth] = useState<Date>(new Date());
 
   const { data: classes } = useClasses({ unitId: user?.unitId });
   const { data: upcomingData } = useUpcomingSimaan();
 
   // Fetch exams for the current month view
-  const dateFrom = format(startOfMonth(viewMonth), 'yyyy-MM-dd');
-  const dateTo = format(endOfMonth(viewMonth), 'yyyy-MM-dd');
+  const dateFrom = format(startOfMonth(viewMonth), "yyyy-MM-dd");
+  const dateTo = format(endOfMonth(viewMonth), "yyyy-MM-dd");
 
   const { data: monthExams, isLoading } = useSimaanExams({
     classId: selectedClass || undefined,
-    unitId: user?.role !== 'SUPER_ADMIN' ? user?.unitId : undefined,
+    unitId: user?.role !== "SUPER_ADMIN" ? user?.unitId : undefined,
     dateFrom,
     dateTo,
     limit: 100,
@@ -91,7 +103,7 @@ export default function SimaanSchedulePage() {
   // Get exams for selected date
   const selectedDateExams = useMemo(() => {
     return exams.filter((exam) =>
-      isSameDay(parseISO(exam.examDate), selectedDate)
+      isSameDay(parseISO(exam.examDate), selectedDate),
     );
   }, [exams, selectedDate]);
 
@@ -101,14 +113,14 @@ export default function SimaanSchedulePage() {
   }, [exams]);
 
   return (
-    <MainLayout allowedRoles={['SUPER_ADMIN', 'UNIT_ADMIN', 'TEACHER']}>
+    <MainLayout allowedRoles={["SUPER_ADMIN", "UNIT_ADMIN", "TEACHER"]}>
       <div className="space-y-6">
         <PageHeader
           title="Jadwal Simaan"
           description="Kelola jadwal ujian simaan/tasmi santri"
           action={{
-            label: 'Jadwalkan Simaan',
-            href: '/tahfidz/simaan/new',
+            label: "Jadwalkan Simaan",
+            href: "/tahfidz/simaan/new",
           }}
         />
 
@@ -151,9 +163,9 @@ export default function SimaanSchedulePage() {
                 }}
                 modifiersStyles={{
                   hasExam: {
-                    backgroundColor: 'var(--primary)',
-                    color: 'white',
-                    fontWeight: 'bold',
+                    backgroundColor: "var(--primary)",
+                    color: "white",
+                    fontWeight: "bold",
                   },
                 }}
               />
@@ -170,7 +182,10 @@ export default function SimaanSchedulePage() {
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>
-                Jadwal {format(selectedDate, 'EEEE, dd MMMM yyyy', { locale: idLocale })}
+                Jadwal{" "}
+                {format(selectedDate, "EEEE, dd MMMM yyyy", {
+                  locale: idLocale,
+                })}
               </CardTitle>
               <CardDescription>
                 {selectedDateExams.length} ujian terjadwal
@@ -194,14 +209,17 @@ export default function SimaanSchedulePage() {
                               </div>
                               <div>
                                 <h3 className="font-semibold">
-                                  {exam.student?.user?.name || exam.student?.name || 'Santri'}
+                                  {exam.student?.user?.name ||
+                                    exam.student?.name ||
+                                    "Santri"}
                                 </h3>
                                 <p className="text-sm text-muted-foreground">
                                   {exam.student?.nis}
                                 </p>
                                 <div className="flex items-center gap-2 mt-2">
                                   <Badge variant="outline">
-                                    {EXAM_TYPE_LABELS[exam.examType] || exam.examType}
+                                    {EXAM_TYPE_LABELS[exam.examType] ||
+                                      exam.examType}
                                   </Badge>
                                   {exam.startJuz && exam.endJuz && (
                                     <span className="text-sm text-muted-foreground">
@@ -276,15 +294,19 @@ export default function SimaanSchedulePage() {
                     <div className="flex items-center gap-4">
                       <div className="text-center min-w-[60px]">
                         <p className="text-2xl font-bold">
-                          {format(parseISO(exam.examDate), 'dd')}
+                          {format(parseISO(exam.examDate), "dd")}
                         </p>
                         <p className="text-xs text-muted-foreground uppercase">
-                          {format(parseISO(exam.examDate), 'MMM', { locale: idLocale })}
+                          {format(parseISO(exam.examDate), "MMM", {
+                            locale: idLocale,
+                          })}
                         </p>
                       </div>
                       <div>
                         <h4 className="font-medium">
-                          {exam.student?.user?.name || exam.student?.name || 'Santri'}
+                          {exam.student?.user?.name ||
+                            exam.student?.name ||
+                            "Santri"}
                         </h4>
                         <p className="text-sm text-muted-foreground">
                           {EXAM_TYPE_LABELS[exam.examType] || exam.examType}

@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   ArrowLeft,
   Edit,
@@ -20,33 +20,33 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { MainLayout } from '@/components/layout/main-layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { MainLayout } from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,7 +56,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -64,7 +64,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -72,15 +72,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 import {
   useKitabDetail,
@@ -98,7 +98,7 @@ import {
   formatScore,
   type KitabProgress,
   type ProgressStatus,
-} from '@/hooks/use-kitab-progress';
+} from "@/hooks/use-kitab-progress";
 
 export default function KitabDetailPage() {
   const params = useParams();
@@ -107,15 +107,24 @@ export default function KitabDetailPage() {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
-  const [selectedProgress, setSelectedProgress] = useState<KitabProgress | null>(null);
-  const [statusFilter, setStatusFilter] = useState<ProgressStatus | 'ALL'>('ALL');
-  const [search, setSearch] = useState('');
+  const [selectedProgress, setSelectedProgress] =
+    useState<KitabProgress | null>(null);
+  const [statusFilter, setStatusFilter] = useState<ProgressStatus | "ALL">(
+    "ALL",
+  );
+  const [search, setSearch] = useState("");
 
-  const { data: kitab, isLoading: kitabLoading, error: kitabError } = useKitabDetail(kitabId);
-  const { data: progressData, isLoading: progressLoading } = useKitabProgresses({
-    kitabId,
-    status: statusFilter !== 'ALL' ? statusFilter : undefined,
-  });
+  const {
+    data: kitab,
+    isLoading: kitabLoading,
+    error: kitabError,
+  } = useKitabDetail(kitabId);
+  const { data: progressData, isLoading: progressLoading } = useKitabProgresses(
+    {
+      kitabId,
+      status: statusFilter !== "ALL" ? statusFilter : undefined,
+    },
+  );
 
   const deleteMutation = useDeleteKitab();
   const updateProgressMutation = useUpdateProgress();
@@ -126,10 +135,10 @@ export default function KitabDetailPage() {
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(kitabId);
-      toast.success('Kitab berhasil dihapus');
-      router.push('/kitab-progress');
+      toast.success("Kitab berhasil dihapus");
+      router.push("/kitab-progress");
     } catch {
-      toast.error('Gagal menghapus kitab');
+      toast.error("Gagal menghapus kitab");
     }
   };
 
@@ -146,15 +155,19 @@ export default function KitabDetailPage() {
         kitabId,
         ...data,
       });
-      toast.success('Progress berhasil diperbarui');
+      toast.success("Progress berhasil diperbarui");
       setProgressDialogOpen(false);
       setSelectedProgress(null);
     } catch {
-      toast.error('Gagal memperbarui progress');
+      toast.error("Gagal memperbarui progress");
     }
   };
 
-  const handleMarkCompleted = async (studentId: string, score?: number, notes?: string) => {
+  const handleMarkCompleted = async (
+    studentId: string,
+    score?: number,
+    notes?: string,
+  ) => {
     try {
       await markCompletedMutation.mutateAsync({
         kitabId,
@@ -162,18 +175,18 @@ export default function KitabDetailPage() {
         score,
         notes,
       });
-      toast.success('Santri berhasil ditandai khatam');
+      toast.success("Santri berhasil ditandai khatam");
     } catch {
-      toast.error('Gagal menandai khatam');
+      toast.error("Gagal menandai khatam");
     }
   };
 
   // Calculate stats
   const stats = {
     total: progresses.length,
-    notStarted: progresses.filter((p) => p.status === 'NOT_STARTED').length,
-    inProgress: progresses.filter((p) => p.status === 'IN_PROGRESS').length,
-    completed: progresses.filter((p) => p.status === 'COMPLETED').length,
+    notStarted: progresses.filter((p) => p.status === "NOT_STARTED").length,
+    inProgress: progresses.filter((p) => p.status === "IN_PROGRESS").length,
+    completed: progresses.filter((p) => p.status === "COMPLETED").length,
     averageScore: progresses
       .filter((p) => p.score)
       .reduce((acc, p, _, arr) => acc + (p.score || 0) / arr.length, 0),
@@ -281,7 +294,9 @@ export default function KitabDetailPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Kategori</p>
-                <p className="font-medium">{KITAB_CATEGORY_LABELS[kitab.category]}</p>
+                <p className="font-medium">
+                  {KITAB_CATEGORY_LABELS[kitab.category]}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -325,7 +340,11 @@ export default function KitabDetailPage() {
                 <p className="text-2xl font-bold">
                   {stats.completed}
                   <span className="text-sm font-normal text-muted-foreground ml-1">
-                    ({stats.total > 0 ? ((stats.completed / stats.total) * 100).toFixed(0) : 0}%)
+                    (
+                    {stats.total > 0
+                      ? ((stats.completed / stats.total) * 100).toFixed(0)
+                      : 0}
+                    %)
                   </span>
                 </p>
               </div>
@@ -340,15 +359,19 @@ export default function KitabDetailPage() {
           <div className="grid gap-4 md:grid-cols-3">
             <div>
               <p className="text-sm text-muted-foreground">Halaman</p>
-              <p className="font-medium">{kitab.totalPages ? `${kitab.totalPages} halaman` : '-'}</p>
+              <p className="font-medium">
+                {kitab.totalPages ? `${kitab.totalPages} halaman` : "-"}
+              </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Bab</p>
-              <p className="font-medium">{kitab.totalChapters ? `${kitab.totalChapters} bab` : '-'}</p>
+              <p className="font-medium">
+                {kitab.totalChapters ? `${kitab.totalChapters} bab` : "-"}
+              </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Unit</p>
-              <p className="font-medium">{kitab.unit?.name || '-'}</p>
+              <p className="font-medium">{kitab.unit?.name || "-"}</p>
             </div>
           </div>
           {kitab.description && (
@@ -387,9 +410,11 @@ export default function KitabDetailPage() {
                     className="pl-10"
                   />
                 </div>
-                <Select 
-                  value={statusFilter} 
-                  onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
+                <Select
+                  value={statusFilter}
+                  onValueChange={(v) =>
+                    setStatusFilter(v as typeof statusFilter)
+                  }
                 >
                   <SelectTrigger className="w-full md:w-48">
                     <SelectValue placeholder="Status" />
@@ -397,7 +422,9 @@ export default function KitabDetailPage() {
                   <SelectContent>
                     <SelectItem value="ALL">Semua Status</SelectItem>
                     <SelectItem value="NOT_STARTED">Belum Dimulai</SelectItem>
-                    <SelectItem value="IN_PROGRESS">Sedang Dipelajari</SelectItem>
+                    <SelectItem value="IN_PROGRESS">
+                      Sedang Dipelajari
+                    </SelectItem>
                     <SelectItem value="COMPLETED">Khatam</SelectItem>
                   </SelectContent>
                 </Select>
@@ -449,23 +476,26 @@ export default function KitabDetailPage() {
                 <TableBody>
                   {progresses.map((progress) => {
                     const percentage = getProgressPercentage(progress, kitab);
-                    const studentClass = progress.student?.classEnrollment?.[0]?.class;
+                    const studentClass =
+                      progress.student?.classEnrollment?.[0]?.class;
 
                     return (
                       <TableRow key={progress.id}>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{progress.student?.name}</p>
+                            <p className="font-medium">
+                              {progress.student?.name}
+                            </p>
                             <p className="text-sm text-muted-foreground">
                               {progress.student?.nis}
                             </p>
                           </div>
                         </TableCell>
+                        <TableCell>{studentClass?.name || "-"}</TableCell>
                         <TableCell>
-                          {studentClass?.name || '-'}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={PROGRESS_STATUS_COLORS[progress.status]}>
+                          <Badge
+                            className={PROGRESS_STATUS_COLORS[progress.status]}
+                          >
                             {PROGRESS_STATUS_LABELS[progress.status]}
                           </Badge>
                         </TableCell>
@@ -475,9 +505,10 @@ export default function KitabDetailPage() {
                               <span>
                                 {progress.currentPage && kitab.totalPages
                                   ? `${progress.currentPage}/${kitab.totalPages}`
-                                  : progress.currentChapter && kitab.totalChapters
-                                  ? `Bab ${progress.currentChapter}/${kitab.totalChapters}`
-                                  : '-'}
+                                  : progress.currentChapter &&
+                                      kitab.totalChapters
+                                    ? `Bab ${progress.currentChapter}/${kitab.totalChapters}`
+                                    : "-"}
                               </span>
                               <span>{percentage}%</span>
                             </div>
@@ -489,10 +520,14 @@ export default function KitabDetailPage() {
                         </TableCell>
                         <TableCell>
                           {progress.startedAt
-                            ? format(new Date(progress.startedAt), 'dd MMM yyyy', {
-                                locale: idLocale,
-                              })
-                            : '-'}
+                            ? format(
+                                new Date(progress.startedAt),
+                                "dd MMM yyyy",
+                                {
+                                  locale: idLocale,
+                                },
+                              )
+                            : "-"}
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
@@ -511,7 +546,7 @@ export default function KitabDetailPage() {
                                 <Edit className="h-4 w-4 mr-2" />
                                 Update Progress
                               </DropdownMenuItem>
-                              {progress.status !== 'COMPLETED' && (
+                              {progress.status !== "COMPLETED" && (
                                 <DropdownMenuItem
                                   onClick={() =>
                                     handleMarkCompleted(progress.studentId)
@@ -545,29 +580,37 @@ export default function KitabDetailPage() {
         <TabsContent value="completed" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Santri yang Sudah Khatam</CardTitle>
+              <CardTitle className="text-lg">
+                Santri yang Sudah Khatam
+              </CardTitle>
               <CardDescription>
                 Daftar santri yang telah menyelesaikan kitab {kitab.title}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {progresses.filter((p) => p.status === 'COMPLETED').length === 0 ? (
+              {progresses.filter((p) => p.status === "COMPLETED").length ===
+              0 ? (
                 <p className="text-center text-muted-foreground py-8">
                   Belum ada santri yang khatam kitab ini
                 </p>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {progresses
-                    .filter((p) => p.status === 'COMPLETED')
+                    .filter((p) => p.status === "COMPLETED")
                     .map((progress) => (
-                      <Card key={progress.id} className="bg-green-50 border-green-200">
+                      <Card
+                        key={progress.id}
+                        className="bg-green-50 border-green-200"
+                      >
                         <CardContent className="p-4">
                           <div className="flex items-center gap-3">
                             <div className="p-2 bg-green-100 rounded-full">
                               <Award className="h-5 w-5 text-green-600" />
                             </div>
                             <div className="flex-1">
-                              <p className="font-medium">{progress.student?.name}</p>
+                              <p className="font-medium">
+                                {progress.student?.name}
+                              </p>
                               <p className="text-sm text-muted-foreground">
                                 {progress.student?.nis}
                               </p>
@@ -577,15 +620,22 @@ export default function KitabDetailPage() {
                                 <p className="text-2xl font-bold text-green-600">
                                   {progress.score}
                                 </p>
-                                <p className="text-xs text-muted-foreground">Nilai</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Nilai
+                                </p>
                               </div>
                             )}
                           </div>
                           {progress.completedAt && (
                             <p className="text-xs text-muted-foreground mt-3">
-                              Khatam: {format(new Date(progress.completedAt), 'dd MMMM yyyy', {
-                                locale: idLocale,
-                              })}
+                              Khatam:{" "}
+                              {format(
+                                new Date(progress.completedAt),
+                                "dd MMMM yyyy",
+                                {
+                                  locale: idLocale,
+                                },
+                              )}
                             </p>
                           )}
                           {progress.notes && (
@@ -609,7 +659,7 @@ export default function KitabDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus Kitab?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Semua data progress santri 
+              Tindakan ini tidak dapat dibatalkan. Semua data progress santri
               terkait kitab &quot;{kitab.title}&quot; akan ikut terhapus.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -619,7 +669,7 @@ export default function KitabDetailPage() {
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground"
             >
-              {deleteMutation.isPending ? 'Menghapus...' : 'Hapus'}
+              {deleteMutation.isPending ? "Menghapus..." : "Hapus"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -654,20 +704,20 @@ function UpdateProgressDialog({
   onSubmit: (data: any) => void;
   isLoading: boolean;
 }) {
-  const [currentPage, setCurrentPage] = useState('');
-  const [currentChapter, setCurrentChapter] = useState('');
-  const [status, setStatus] = useState<ProgressStatus>('IN_PROGRESS');
-  const [score, setScore] = useState('');
-  const [notes, setNotes] = useState('');
+  const [currentPage, setCurrentPage] = useState("");
+  const [currentChapter, setCurrentChapter] = useState("");
+  const [status, setStatus] = useState<ProgressStatus>("IN_PROGRESS");
+  const [score, setScore] = useState("");
+  const [notes, setNotes] = useState("");
 
   // Reset form when progress changes
   useState(() => {
     if (progress) {
-      setCurrentPage(progress.currentPage?.toString() || '');
-      setCurrentChapter(progress.currentChapter?.toString() || '');
+      setCurrentPage(progress.currentPage?.toString() || "");
+      setCurrentChapter(progress.currentChapter?.toString() || "");
       setStatus(progress.status);
-      setScore(progress.score?.toString() || '');
-      setNotes(progress.notes || '');
+      setScore(progress.score?.toString() || "");
+      setNotes(progress.notes || "");
     }
   });
 
@@ -732,7 +782,10 @@ function UpdateProgressDialog({
 
             <div>
               <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={(v) => setStatus(v as ProgressStatus)}>
+              <Select
+                value={status}
+                onValueChange={(v) => setStatus(v as ProgressStatus)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -785,11 +838,15 @@ function UpdateProgressDialog({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Batal
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Menyimpan...' : 'Simpan'}
+              {isLoading ? "Menyimpan..." : "Simpan"}
             </Button>
           </DialogFooter>
         </form>

@@ -1,17 +1,42 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useEmploymentHistory, useCreateEmploymentHistory, EmploymentAction } from '@/hooks/use-employment-history';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, Briefcase } from 'lucide-react';
-import { format } from 'date-fns';
+import { useState } from "react";
+import {
+  useEmploymentHistory,
+  useCreateEmploymentHistory,
+  EmploymentAction,
+} from "@/hooks/use-employment-history";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { PlusCircle, Briefcase } from "lucide-react";
+import { format } from "date-fns";
 
-const ACTIONS: EmploymentAction[] = ['HIRED', 'PROMOTED', 'DEMOTED', 'TRANSFERRED', 'TERMINATED', 'RESIGNED', 'RETIRED', 'SALARY_ADJUSTMENT'];
+const ACTIONS: EmploymentAction[] = [
+  "HIRED",
+  "PROMOTED",
+  "DEMOTED",
+  "TRANSFERRED",
+  "TERMINATED",
+  "RESIGNED",
+  "RETIRED",
+  "SALARY_ADJUSTMENT",
+];
 
 export function HistoryTab({ userId }: { userId: string }) {
   const { data: history, isLoading } = useEmploymentHistory(userId);
@@ -19,12 +44,12 @@ export function HistoryTab({ userId }: { userId: string }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const [formData, setFormData] = useState({
-    action: 'PROMOTED' as EmploymentAction,
-    newPosition: '',
-    newDepartment: '',
-    previousPosition: '',
-    effectiveDate: '',
-    notes: '',
+    action: "PROMOTED" as EmploymentAction,
+    newPosition: "",
+    newDepartment: "",
+    previousPosition: "",
+    effectiveDate: "",
+    notes: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,7 +65,14 @@ export function HistoryTab({ userId }: { userId: string }) {
         notes: formData.notes,
       });
       setIsOpen(false);
-      setFormData({ action: 'PROMOTED', newPosition: '', newDepartment: '', previousPosition: '', effectiveDate: '', notes: '' });
+      setFormData({
+        action: "PROMOTED",
+        newPosition: "",
+        newDepartment: "",
+        previousPosition: "",
+        effectiveDate: "",
+        notes: "",
+      });
     } catch (error) {
       console.error(error);
     }
@@ -54,7 +86,9 @@ export function HistoryTab({ userId }: { userId: string }) {
         <h3 className="text-lg font-medium">Riwayat Karir</h3>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button><PlusCircle className="w-4 h-4 mr-2" /> Catat Mutasi/Promosi</Button>
+            <Button>
+              <PlusCircle className="w-4 h-4 mr-2" /> Catat Mutasi/Promosi
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -65,14 +99,21 @@ export function HistoryTab({ userId }: { userId: string }) {
                 <Label>Jenis Tindakan</Label>
                 <Select
                   value={formData.action}
-                  onValueChange={(val) => setFormData({...formData, action: val as EmploymentAction})}
+                  onValueChange={(val) =>
+                    setFormData({
+                      ...formData,
+                      action: val as EmploymentAction,
+                    })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ACTIONS.map(action => (
-                      <SelectItem key={action} value={action}>{action}</SelectItem>
+                    {ACTIONS.map((action) => (
+                      <SelectItem key={action} value={action}>
+                        {action}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -82,7 +123,9 @@ export function HistoryTab({ userId }: { userId: string }) {
                   <Label>Posisi Baru</Label>
                   <Input
                     value={formData.newPosition}
-                    onChange={(e) => setFormData({...formData, newPosition: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, newPosition: e.target.value })
+                    }
                     placeholder="Contoh: Kepala Sekolah"
                     required
                   />
@@ -91,7 +134,12 @@ export function HistoryTab({ userId }: { userId: string }) {
                   <Label>Departemen Baru</Label>
                   <Input
                     value={formData.newDepartment}
-                    onChange={(e) => setFormData({...formData, newDepartment: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        newDepartment: e.target.value,
+                      })
+                    }
                     placeholder="Contoh: Akademik"
                   />
                 </div>
@@ -100,7 +148,12 @@ export function HistoryTab({ userId }: { userId: string }) {
                 <Label>Posisi Sebelumnya (Opsional)</Label>
                 <Input
                   value={formData.previousPosition}
-                  onChange={(e) => setFormData({...formData, previousPosition: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      previousPosition: e.target.value,
+                    })
+                  }
                   placeholder="Contoh: Guru Kelas"
                 />
               </div>
@@ -109,7 +162,9 @@ export function HistoryTab({ userId }: { userId: string }) {
                 <Input
                   type="date"
                   value={formData.effectiveDate}
-                  onChange={(e) => setFormData({...formData, effectiveDate: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, effectiveDate: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -117,10 +172,16 @@ export function HistoryTab({ userId }: { userId: string }) {
                 <Label>Catatan</Label>
                 <Textarea
                   value={formData.notes}
-                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notes: e.target.value })
+                  }
                 />
               </div>
-              <Button type="submit" disabled={createHistory.isPending} className="w-full">
+              <Button
+                type="submit"
+                disabled={createHistory.isPending}
+                className="w-full"
+              >
                 Simpan
               </Button>
             </form>
@@ -136,11 +197,19 @@ export function HistoryTab({ userId }: { userId: string }) {
             </span>
             <div className="items-center justify-between p-4 bg-white border border-gray-200 rounded-lg shadow-sm sm:flex dark:bg-gray-700 dark:border-gray-600">
               <div className="time mb-1 text-xs font-normal text-gray-400 sm:order-last sm:mb-0">
-                {format(new Date(item.effectiveDate), 'dd MMMM yyyy')}
+                {format(new Date(item.effectiveDate), "dd MMMM yyyy")}
               </div>
               <div className="text-sm font-normal text-gray-500 dark:text-gray-300">
-                <span className="font-bold text-gray-900 dark:text-white">{item.action}</span> - Position: <span className="font-semibold">{item.newPosition}</span>
-                {item.notes && <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded text-xs">{item.notes}</div>}
+                <span className="font-bold text-gray-900 dark:text-white">
+                  {item.action}
+                </span>{" "}
+                - Position:{" "}
+                <span className="font-semibold">{item.newPosition}</span>
+                {item.notes && (
+                  <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded text-xs">
+                    {item.notes}
+                  </div>
+                )}
               </div>
             </div>
           </div>

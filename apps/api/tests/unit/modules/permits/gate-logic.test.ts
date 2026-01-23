@@ -33,7 +33,24 @@ vi.mock('../../../../src/lib/prisma', () => ({
 }));
 
 vi.mock('../../../../src/modules/notifications/service', () => ({
-  createNotification: vi.fn(),
+  createNotification: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock Prisma Client Enums
+vi.mock('@prisma/client', () => ({
+  PermitType: {
+    SAKIT: 'SAKIT',
+    IZIN: 'IZIN',
+  },
+  PermitStatus: {
+    APPROVED: 'APPROVED',
+    REJECTED: 'REJECTED',
+    PENDING: 'PENDING',
+    COMPLETED: 'COMPLETED',
+  },
+  NotificationType: {
+    INFO: 'INFO',
+  },
 }));
 
 import { markDeparted, markReturned, createPermit } from '../../../../src/modules/permits/service';

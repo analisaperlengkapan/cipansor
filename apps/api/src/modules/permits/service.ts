@@ -207,34 +207,30 @@ export async function updatePermitStatus(
       }
 
       // Notify Parents
-      for (const sp of updatedPermit.student.parents) {
-        try {
-          await createNotification({
+      await Promise.allSettled(
+        updatedPermit.student.parents.map((sp) =>
+          createNotification({
             userId: sp.parentId,
             type: NotificationType.INFO,
             title: 'Izin Disetujui',
             message: `Pengajuan izin ${updatedPermit.type} untuk ${updatedPermit.student.user.name} telah disetujui.`,
             data: { permitId: updatedPermit.id },
-          });
-        } catch (e) {
-          console.error('Failed to notify parent', e);
-        }
-      }
+          }).catch((e) => console.error('Failed to notify parent', e))
+        )
+      );
     } else if (data.status === PermitStatus.REJECTED) {
       // Notify Parents of Rejection
-      for (const sp of updatedPermit.student.parents) {
-        try {
-          await createNotification({
+      await Promise.allSettled(
+        updatedPermit.student.parents.map((sp) =>
+          createNotification({
             userId: sp.parentId,
             type: NotificationType.INFO,
             title: 'Izin Ditolak',
             message: `Pengajuan izin untuk ${updatedPermit.student.user.name} ditolak. Alasan: ${updatedPermit.rejectionNote}`,
             data: { permitId: updatedPermit.id },
-          });
-        } catch (e) {
-          console.error('Failed to notify parent', e);
-        }
-      }
+          }).catch((e) => console.error('Failed to notify parent', e))
+        )
+      );
     }
 
     return updatedPermit;
@@ -264,19 +260,17 @@ export async function markReturned(id: string, returnedAt?: string) {
   });
 
   // Notify Parents
-  for (const sp of permit.student.parents) {
-    try {
-      await createNotification({
+  await Promise.allSettled(
+    permit.student.parents.map((sp) =>
+      createNotification({
         userId: sp.parentId,
         type: NotificationType.INFO,
         title: 'Santri Kembali',
         message: `${permit.student.user.name} telah kembali ke asrama.`,
         data: { permitId: permit.id },
-      });
-    } catch (e) {
-      console.error('Failed to notify parent', e);
-    }
-  }
+      }).catch((e) => console.error('Failed to notify parent', e))
+    )
+  );
 
   return result;
 }
@@ -307,19 +301,17 @@ export async function markDeparted(id: string) {
   });
 
   // Notify Parents
-  for (const sp of permit.student.parents) {
-    try {
-      await createNotification({
+  await Promise.allSettled(
+    permit.student.parents.map((sp) =>
+      createNotification({
         userId: sp.parentId,
         type: NotificationType.INFO,
         title: 'Santri Keluar',
         message: `${permit.student.user.name} telah meninggalkan area pesantren sesuai izin.`,
         data: { permitId: permit.id },
-      });
-    } catch (e) {
-      console.error('Failed to notify parent', e);
-    }
-  }
+      }).catch((e) => console.error('Failed to notify parent', e))
+    )
+  );
 
   return result;
 }

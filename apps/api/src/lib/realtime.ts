@@ -674,9 +674,11 @@ export async function warmDashboardCache(): Promise<void> {
       select: { id: true, name: true },
     });
 
-    for (const unit of activeUnits) {
-      await getCurrentDashboardMetrics(unit.id);
-    }
+    // Run in parallel for faster warming
+    // Note: If activeUnits count grows very large, consider using a concurrency limit (e.g., p-limit)
+    await Promise.all(
+      activeUnits.map((unit) => getCurrentDashboardMetrics(unit.id))
+    );
 
     logger.info(
       `Dashboard cache warmed for ${activeUnits.length + 1} metrics sets (global + ${activeUnits.length} units)`

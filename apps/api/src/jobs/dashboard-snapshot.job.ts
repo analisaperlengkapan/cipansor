@@ -19,11 +19,14 @@ type MetricType =
   | 'CLASS_COUNT'
   | 'CUSTOM';
 
+const CHUNK_SIZE = 5;
+
 /**
  * Create daily metric snapshots for all units
  */
 export async function createDailySnapshots(): Promise<void> {
   const jobName = 'createDailySnapshots';
+  const startTime = Date.now();
   logger.info(`[${jobName}] Starting daily metric snapshot job`);
 
   try {
@@ -51,7 +54,6 @@ export async function createDailySnapshots(): Promise<void> {
     let errorCount = 0;
 
     // Process units in chunks to manage database load
-    const CHUNK_SIZE = 5;
     for (let i = 0; i < units.length; i += CHUNK_SIZE) {
       const chunk = units.slice(i, i + CHUNK_SIZE);
 
@@ -158,8 +160,9 @@ export async function createDailySnapshots(): Promise<void> {
       );
     }
 
+    const duration = Date.now() - startTime;
     logger.info(
-      `[${jobName}] Daily snapshot job completed: ${successCount} success, ${errorCount} errors`
+      `[${jobName}] Daily snapshot job completed in ${duration}ms: ${successCount} success, ${errorCount} errors`
     );
   } catch (error) {
     logger.error(`[${jobName}] Fatal error in daily snapshot job:`, error);

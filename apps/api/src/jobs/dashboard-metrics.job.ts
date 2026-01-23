@@ -44,30 +44,32 @@ export async function aggregateDashboardMetrics(): Promise<void> {
     });
 
     // Calculate and publish metrics for each unit
-    for (const unit of units) {
-      try {
-        const unitMetrics = await getCurrentDashboardMetrics(unit.id);
-        await publishDashboardMetrics(unitMetrics, unit.id);
+    await Promise.allSettled(
+      units.map(async (unit) => {
+        try {
+          const unitMetrics = await getCurrentDashboardMetrics(unit.id);
+          await publishDashboardMetrics(unitMetrics, unit.id);
 
-        // Save unit history
-        await prisma.dashboardHistory.create({
-          data: {
-            metrics: unitMetrics as unknown as Prisma.InputJsonValue,
+          // Save unit history
+          await prisma.dashboardHistory.create({
+            data: {
+              metrics: unitMetrics as unknown as Prisma.InputJsonValue,
+              unitId: unit.id,
+            },
+          });
+
+          logger.debug('Unit metrics published', {
             unitId: unit.id,
-          },
-        });
-
-        logger.debug('Unit metrics published', {
-          unitId: unit.id,
-          unitName: unit.name,
-        });
-      } catch (error) {
-        logger.error('Error calculating unit metrics', {
-          unitId: unit.id,
-          error,
-        });
-      }
-    }
+            unitName: unit.name,
+          });
+        } catch (error) {
+          logger.error('Error calculating unit metrics', {
+            unitId: unit.id,
+            error,
+          });
+        }
+      })
+    );
 
     // Check for alerts
     await checkAndPublishAlerts();

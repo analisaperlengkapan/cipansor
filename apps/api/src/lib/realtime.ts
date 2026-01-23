@@ -676,9 +676,22 @@ export async function warmDashboardCache(): Promise<void> {
 
     // Run in parallel for faster warming
     // Note: If activeUnits count grows very large, consider using a concurrency limit (e.g., p-limit)
-    await Promise.all(
+    const results = await Promise.allSettled(
       activeUnits.map((unit) => getCurrentDashboardMetrics(unit.id))
     );
+
+    // Check for failures
+    const failures = results.filter((r) => r.status === 'rejected');
+    if (failures.length > 0) {
+      logger.warn(
+        `Dashboard cache warming completed with ${failures.length} errors`,
+        {
+          errors: failures.map((f) =>
+            f.status === 'rejected' ? f.reason : null
+          ),
+        }
+      );
+    }
 
     logger.info(
       `Dashboard cache warmed for ${activeUnits.length + 1} metrics sets (global + ${activeUnits.length} units)`

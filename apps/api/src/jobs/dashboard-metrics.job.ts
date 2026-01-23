@@ -120,23 +120,48 @@ async function checkAndPublishAlerts(): Promise<void> {
       where: { deletedAt: null },
     });
 
-    for (const unit of units) {
-      const unitActiveStudents = await prisma.student.count({
-        where: {
-          unitId: unit.id,
-          status: 'ACTIVE',
-        },
-      });
+    // 1. Get active students count per unit
+    const studentsByUnit = await prisma.student.groupBy({
+      by: ['unitId'],
+      where: {
+        status: 'ACTIVE',
+      },
+      _count: true,
+    });
 
-      const unitPresent = await prisma.attendance.count({
-        where: {
-          date: { gte: today },
-          status: 'PRESENT',
-          student: {
-            unitId: unit.id,
+    const activeStudentsMap = new Map<string, number>();
+    studentsByUnit.forEach((group) => {
+      if (group.unitId) {
+        activeStudentsMap.set(group.unitId, group._count);
+      }
+    });
+
+    // 2. Get present attendance per unit for today
+    const presentAttendance = await prisma.attendance.findMany({
+      where: {
+        date: { gte: today },
+        status: 'PRESENT',
+      },
+      select: {
+        student: {
+          select: {
+            unitId: true,
           },
         },
-      });
+      },
+    });
+
+    const presentAttendanceMap = new Map<string, number>();
+    presentAttendance.forEach((record) => {
+      const unitId = record.student?.unitId;
+      if (unitId) {
+        presentAttendanceMap.set(unitId, (presentAttendanceMap.get(unitId) || 0) + 1);
+      }
+    });
+
+    for (const unit of units) {
+      const unitActiveStudents = activeStudentsMap.get(unit.id) || 0;
+      const unitPresent = presentAttendanceMap.get(unit.id) || 0;
 
       const unitAttendanceRate =
         unitActiveStudents > 0 ? (unitPresent / unitActiveStudents) * 100 : 0;

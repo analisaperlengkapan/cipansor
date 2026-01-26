@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, isAdmin } from '@/middleware/auth';
+import { authenticate, authenticate2FA, isAdmin } from '@/middleware/auth';
 import { validate } from '@/middleware/error';
 import * as controller from './auth.controller';
 import {
@@ -8,8 +8,18 @@ import {
   refreshTokenSchema,
   changePasswordSchema,
 } from './auth.schema';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
+
+// Rate limiter for 2FA actions
+const twoFactorLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per windowMs
+  message: 'Too many 2FA attempts, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 /**
  * @swagger
@@ -68,7 +78,75 @@ router.post('/login', validate(loginSchema), controller.login);
  */
 router.post('/refresh', validate(refreshTokenSchema), controller.refreshToken);
 
-// Protected routes
+// ==========================================
+// 2FA Routes (Accepts Temp Tokens for Setup/Login)
+// ==========================================
+
+/**
+ * @swagger
+ * /api/auth/2fa/generate:
+ *   post:
+ *     summary: Generate 2FA Secret
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 2FA secret generated
+ */
+router.post('/2fa/generate', authenticate2FA, controller.generateTwoFactorSecret);
+
+/**
+ * @swagger
+ * /api/auth/2fa/enable:
+ *   post:
+ *     summary: Enable 2FA
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token, secret]
+ *             properties:
+ *               token:
+ *                 type: string
+ *               secret:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: 2FA enabled successfully
+ */
+router.post('/2fa/enable', authenticate2FA, twoFactorLimiter, controller.enableTwoFactor);
+
+/**
+ * @swagger
+ * /api/auth/2fa/login:
+ *   post:
+ *     summary: Verify 2FA Login
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token]
+ *             properties:
+ *               token:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: 2FA verified, returns tokens
+ */
+router.post('/2fa/login', authenticate2FA, twoFactorLimiter, controller.verifyTwoFactorLogin);
+
+// Protected routes (Requires Full Access Token)
 router.use(authenticate);
 
 /**
@@ -192,5 +270,50 @@ router.put('/password', validate(changePasswordSchema), controller.changePasswor
  *         $ref: '#/components/responses/ValidationError'
  */
 router.post('/register', isAdmin, validate(registerSchema), controller.register);
+
+// ==========================================
+// 2FA Routes (Management - Full Access)
+// ==========================================
+
+/**
+ * @swagger
+ * /api/auth/2fa/disable:
+ *   post:
+ *     summary: Disable 2FA
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token]
+ *             properties:
+ *               token:
+ *                 type: string
+ *               userId:
+ *                 type: string
+ *                 description: Optional user ID if admin is disabling for another user
+ *     responses:
+ *       200:
+ *         description: 2FA disabled successfully
+ */
+router.post('/2fa/disable', twoFactorLimiter, controller.disableTwoFactor);
+
+/**
+ * @swagger
+ * /api/auth/2fa/status:
+ *   get:
+ *     summary: Get 2FA Status
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 2FA status
+ */
+router.get('/2fa/status', controller.getTwoFactorStatus);
 
 export default router;

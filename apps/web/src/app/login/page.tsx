@@ -27,6 +27,9 @@ import {
   UserCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TwoFactorVerify } from "@/components/auth/TwoFactorVerify";
+import { TwoFactorSetup } from "@/components/auth/TwoFactorSetup";
+import { toast } from "sonner";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -115,20 +118,9 @@ const demoCredentials = [
   },
 ];
 
-// Group credentials by realm for display
-const realmLabels: Record<string, string> = {
-  GLOBAL: "Global",
-  YAYASAN: "Yayasan",
-  SMP_IT: "SMP IT",
-  SD_IT: "SD IT",
-  TK_QURAN: "TK Qur'an",
-  SMA_QURAN: "SMA Qur'an",
-  PESANTREN: "Pesantren",
-};
-
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isLoading, error, clearError } = useAuthStore();
+  const { login, isLoading, error, clearError, requiresTwoFactor, requiresTwoFactorSetup, verifyTwoFactor, resetAuth } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [selectedDemo, setSelectedDemo] = useState<string | null>(null);
 
@@ -145,7 +137,16 @@ export default function LoginPage() {
     try {
       clearError();
       await login(data);
-      router.push("/dashboard");
+      // Logic handled in store, store updates state which triggers re-render if 2FA needed
+      // If success immediately (no 2FA), we push to dashboard
+      // We can't easily check the result of login action if it returns void
+      // But we can check store state.
+      // Actually `login` in store throws on error.
+      // If requiresTwoFactor is set, we just let the component re-render.
+      const state = useAuthStore.getState();
+      if (!state.requiresTwoFactor && !state.requiresTwoFactorSetup && state.isAuthenticated) {
+          router.push("/dashboard");
+      }
     } catch {
       // Error is handled in store
     }
@@ -163,11 +164,66 @@ export default function LoginPage() {
       clearError();
       setSelectedDemo(credential.role);
       await login({ email: credential.email, password: credential.password });
-      router.push("/dashboard");
+
+      const state = useAuthStore.getState();
+      if (!state.requiresTwoFactor && !state.requiresTwoFactorSetup && state.isAuthenticated) {
+          router.push("/dashboard");
+      }
     } catch {
       // Error is handled in store
     }
   };
+
+  if (requiresTwoFactorSetup) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle>Mandatory 2FA Setup</CardTitle>
+                    <CardDescription>
+                        Your account requires Two-Factor Authentication. Please set it up to continue.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <TwoFactorSetup onComplete={() => {
+                        resetAuth();
+                        toast.success("Setup complete. Please sign in again.");
+                    }} />
+                </CardContent>
+            </Card>
+        </div>
+      );
+  }
+
+  if (requiresTwoFactor) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle>Two-Factor Authentication</CardTitle>
+                    <CardDescription>
+                        Please enter the verification code from your authenticator app.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <TwoFactorVerify
+                        onVerify={async (token) => {
+                            try {
+                                await verifyTwoFactor(token);
+                                router.push("/dashboard");
+                            } catch {}
+                        }}
+                        isLoading={isLoading}
+                        error={error}
+                    />
+                    <Button variant="link" className="mt-4 w-full" onClick={resetAuth}>
+                        Back to Login
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+      );
+  }
 
   return (
     <div className="flex min-h-screen bg-linear-to-br from-green-50 to-green-100 dark:from-gray-900 dark:to-gray-800">

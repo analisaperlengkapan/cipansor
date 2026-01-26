@@ -14,6 +14,7 @@ const {
   mockVerifyToken,
   mockGetExpirationDate,
   mockUserRole,
+  mockRoleCode,
 } = vi.hoisted(() => {
   return {
     mockPrisma: {
@@ -48,6 +49,15 @@ const {
       STUDENT: 'STUDENT',
       PARENT: 'PARENT',
     },
+    mockRoleCode: {
+      SUPER_ADMIN: 'SUPER_ADMIN',
+      YAYASAN_ADMIN: 'YAYASAN_ADMIN',
+      TKQ_ADMIN: 'TKQ_ADMIN',
+      SDIT_ADMIN: 'SDIT_ADMIN',
+      SMPIT_ADMIN: 'SMPIT_ADMIN',
+      SMAQ_ADMIN: 'SMAQ_ADMIN',
+      UNIT_ADMIN: 'UNIT_ADMIN',
+    },
   };
 });
 
@@ -58,6 +68,7 @@ vi.mock('@/lib/prisma', () => ({
 
 vi.mock('@prisma/client', () => ({
   UserRole: mockUserRole,
+  RoleCode: mockRoleCode,
 }));
 
 vi.mock('@/lib/password', () => ({
@@ -118,7 +129,7 @@ describe('AuthService', () => {
       email: 'test@example.com',
       name: 'Test User',
       passwordHash: 'hashed-password',
-      role: UserRole.SUPER_ADMIN,
+      role: UserRole.STUDENT,
       unitId: 'unit-1',
       isActive: true,
       unit: { id: 'unit-1', name: 'Test Unit' },
@@ -128,7 +139,7 @@ describe('AuthService', () => {
           roleId: 'role-id-1',
           isPrimary: true,
           isActive: true,
-          role: { id: 'role-id-1', name: 'Admin' },
+          role: { id: 'role-id-1', name: 'Student', code: 'STUDENT' },
           unit: { id: 'unit-1', name: 'Test Unit' },
         },
       ],

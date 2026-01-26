@@ -46,6 +46,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth";
 import { useUpdateUser } from "@/hooks/use-users";
 import { useChangePassword } from "@/hooks/use-dashboard";
+import { TwoFactorSettings } from "@/components/profile/TwoFactorSettings";
 
 // Validation schemas
 const profileSchema = z.object({
@@ -315,6 +316,8 @@ export default function ProfilePage() {
 
         {/* Security Tab */}
         <TabsContent value="security" className="space-y-6">
+          <TwoFactorSettings />
+
           <Card>
             <CardHeader>
               <CardTitle>Ubah Password</CardTitle>

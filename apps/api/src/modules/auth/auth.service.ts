@@ -1,10 +1,13 @@
 import { prisma } from '@/lib/prisma';
 import { hashPassword, comparePassword } from '@/lib/password';
-import { generateTokenPair, verifyToken, getExpirationDate } from '@/lib/jwt';
+import { generateTokenPair, verifyToken, getExpirationDate, generateAccessToken } from '@/lib/jwt';
 import { Errors } from '@/middleware/error';
 import { config } from '@/config';
 import type { LoginInput, RegisterInput, ChangePasswordInput } from './auth.schema';
-import { UserRole } from '@prisma/client';
+import { UserRole, RoleCode } from '@prisma/client';
+import { authenticator } from 'otplib';
+import * as qrcode from 'qrcode';
+import crypto from 'crypto';
 
 export class AuthService {
   /**
@@ -46,6 +49,43 @@ export class AuthService {
     // Determine active role (primary or first role)
     const primaryRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
 
+    const isUserAdmin = this.isAdminAccount(user, primaryRole?.role.code as RoleCode);
+
+    // Check for 2FA
+    if (user.isTwoFactorEnabled) {
+      // Return temporary token for 2FA verification with SHORT expiry
+      const tempToken = generateAccessToken({
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        unitId: user.unitId,
+        roleId: primaryRole?.roleId,
+        isTemp: true, // Marker for temp token
+      }, '5m'); // 5 minutes expiry
+
+      return {
+        requiresTwoFactor: true,
+        tempToken,
+      };
+    }
+
+    // Force 2FA setup for Admin/Super Admin
+    if (isUserAdmin && !user.isTwoFactorEnabled) {
+        const tempToken = generateAccessToken({
+            sub: user.id,
+            email: user.email,
+            role: user.role,
+            unitId: user.unitId,
+            roleId: primaryRole?.roleId,
+            isTemp: true,
+        }, '10m'); // 10 mins for setup
+
+        return {
+            requiresTwoFactorSetup: true,
+            tempToken,
+        };
+    }
+
     // Generate tokens with roleId
     const tokens = generateTokenPair({
       sub: user.id,
@@ -82,7 +122,7 @@ export class AuthService {
     });
 
     // Return user without password
-    const { passwordHash, ...userWithoutPassword } = user;
+    const { passwordHash, twoFactorSecret, twoFactorSecretPending, twoFactorRecoveryCodes, ...userWithoutPassword } = user;
 
     return {
       user: {
@@ -270,7 +310,7 @@ export class AuthService {
       where: { isActive: true },
     });
 
-    const { passwordHash, ...userWithoutPassword } = user;
+    const { passwordHash, twoFactorSecret, twoFactorSecretPending, twoFactorRecoveryCodes, ...userWithoutPassword } = user;
 
     return {
       ...userWithoutPassword,
@@ -320,6 +360,288 @@ export class AuthService {
     });
 
     return { message: 'Password changed successfully' };
+  }
+
+  // ==========================================
+  // 2FA Methods
+  // ==========================================
+
+  /**
+   * Generate 2FA Secret
+   */
+  async generateTwoFactorSecret(userId: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw Errors.notFound('User');
+
+    if (user.isTwoFactorEnabled) {
+      throw Errors.badRequest('2FA is already enabled');
+    }
+
+    const secret = authenticator.generateSecret();
+    const otpauth = authenticator.keyuri(user.email, 'Cipansor App', secret);
+    const qrCodeUrl = await qrcode.toDataURL(otpauth);
+
+    // BUG FIX: Store pending secret server-side
+    await prisma.user.update({
+        where: { id: userId },
+        data: { twoFactorSecretPending: secret },
+    });
+
+    return {
+      secret, // Still return for manual entry if needed, but verification uses DB
+      qrCodeUrl,
+    };
+  }
+
+  /**
+   * Enable 2FA
+   */
+  async enableTwoFactor(userId: string, token: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw Errors.notFound('User');
+
+    if (user.isTwoFactorEnabled) {
+      throw Errors.badRequest('2FA is already enabled');
+    }
+
+    // BUG FIX: Verify against pending secret
+    if (!user.twoFactorSecretPending) {
+        throw Errors.badRequest('No pending 2FA setup found. Please generate a new code.');
+    }
+
+    const isValid = authenticator.verify({ token, secret: user.twoFactorSecretPending });
+
+    if (!isValid) {
+      throw Errors.badRequest('Invalid OTP code');
+    }
+
+    const recoveryCodes = this.generateRecoveryCodes();
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        isTwoFactorEnabled: true,
+        twoFactorSecret: user.twoFactorSecretPending,
+        twoFactorSecretPending: null, // Clear pending
+        twoFactorRecoveryCodes: recoveryCodes,
+      },
+    });
+
+    return { recoveryCodes };
+  }
+
+  /**
+   * Verify 2FA Login
+   */
+  async verifyTwoFactorLogin(userId: string, token: string, isTemp?: boolean) {
+    // Enforce 2FA flow: Must use a temporary token
+    if (!isTemp) {
+      throw Errors.unauthorized('Invalid authentication flow');
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      include: {
+        unit: true,
+        userRoles: {
+          where: { isActive: true },
+          include: {
+            role: true,
+            unit: true,
+          },
+          orderBy: { isPrimary: 'desc' },
+        },
+      },
+    });
+
+    if (!user || !user.isActive) {
+      throw Errors.unauthorized('Account is deactivated or not found');
+    }
+
+    if (!user.isTwoFactorEnabled || !user.twoFactorSecret) {
+      throw Errors.unauthorized('2FA is not enabled for this user');
+    }
+
+    let isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
+
+    // Check recovery codes if OTP failed (with atomic update to prevent race conditions)
+    if (!isValid) {
+      // Use raw query for atomic array removal
+      // Returns number of affected rows
+      const result = await prisma.$executeRaw`
+        UPDATE "users"
+        SET "two_factor_recovery_codes" = array_remove("two_factor_recovery_codes", ${token})
+        WHERE "id" = ${userId}
+        AND ${token} = ANY("two_factor_recovery_codes")
+      `;
+
+      if (Number(result) > 0) {
+        isValid = true;
+      }
+    }
+
+    if (!isValid) {
+      throw Errors.unauthorized('Invalid OTP code');
+    }
+
+    // Generate tokens
+    const primaryRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
+    const tokens = generateTokenPair({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      unitId: user.unitId,
+      roleId: primaryRole?.roleId,
+    });
+
+    await prisma.refreshToken.create({
+      data: {
+        token: tokens.refreshToken,
+        userId: user.id,
+        expiresAt: getExpirationDate(config.jwt.refreshExpiresIn),
+      },
+    });
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
+    const activeAcademicYearId = await this.getActiveAcademicYearId();
+    const { passwordHash, twoFactorSecret, twoFactorRecoveryCodes, twoFactorSecretPending, ...userWithoutPassword } = user;
+
+    return {
+      user: {
+        ...userWithoutPassword,
+        academicYearId: activeAcademicYearId,
+      },
+      ...tokens,
+    };
+  }
+
+  /**
+   * Disable 2FA
+   */
+  async disableTwoFactor(userId: string, token: string, adminId?: string) {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+            userRoles: {
+                where: { isActive: true },
+                include: { role: true }
+            }
+        }
+    });
+    if (!user) throw Errors.notFound('User');
+
+    // Consistently check if target is Admin using role code logic
+    const primaryTargetRole = user.userRoles.find((r) => r.isPrimary) || user.userRoles[0];
+    const isTargetAdmin = this.isAdminAccount(user, primaryTargetRole?.role.code as RoleCode);
+
+    if (adminId) {
+        // Admin disabling for another user (Reset flow)
+        const admin = await prisma.user.findUnique({ where: { id: adminId } });
+        if (!admin || !admin.isTwoFactorEnabled || !admin.twoFactorSecret) {
+            throw Errors.unauthorized('Admin must have 2FA enabled to perform this action');
+        }
+
+        // Check Admin privileges
+        if (admin.role !== UserRole.SUPER_ADMIN && admin.role !== UserRole.UNIT_ADMIN) {
+            throw Errors.forbidden('Only Admins can disable 2FA for other users');
+        }
+
+        // Fix Privilege Escalation: Prevent UNIT_ADMIN from disabling 2FA for SUPER_ADMIN
+        if (admin.role === UserRole.UNIT_ADMIN) {
+            if (user.role === UserRole.SUPER_ADMIN) {
+                throw Errors.forbidden('UNIT_ADMIN cannot disable 2FA for SUPER_ADMIN');
+            }
+            // Enforce Unit Boundary: UNIT_ADMIN can only manage users in same unit
+            if (admin.unitId !== user.unitId) {
+                throw Errors.forbidden('UNIT_ADMIN can only disable 2FA for users in their own unit');
+            }
+            // Enforce Hierarchy: UNIT_ADMIN cannot disable other UNIT_ADMINs (Peer protection)
+            if (user.role === UserRole.UNIT_ADMIN) {
+                throw Errors.forbidden('UNIT_ADMIN cannot disable 2FA for other UNIT_ADMINs');
+            }
+        }
+
+        // Check if target user actually has 2FA enabled
+        if (!user.isTwoFactorEnabled) {
+            throw Errors.badRequest('2FA is not enabled for this user');
+        }
+
+        // Verify ADMIN's OTP
+        const isValid = authenticator.verify({ token, secret: admin.twoFactorSecret });
+        if (!isValid) throw Errors.unauthorized('Invalid Admin OTP');
+
+    } else {
+        // User disabling their own
+        if (isTargetAdmin) {
+           throw Errors.forbidden('2FA cannot be disabled for Admin/Super Admin accounts');
+        }
+
+        if (!user.isTwoFactorEnabled || !user.twoFactorSecret) {
+            throw Errors.badRequest('2FA is not enabled');
+        }
+        // Verify USER's OTP
+        const isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
+        if (!isValid) throw Errors.unauthorized('Invalid OTP');
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        isTwoFactorEnabled: false,
+        twoFactorSecret: null,
+        twoFactorSecretPending: null,
+        twoFactorRecoveryCodes: [],
+      },
+    });
+
+    return { message: '2FA disabled successfully' };
+  }
+
+  /**
+   * Get 2FA Status
+   */
+  async getTwoFactorStatus(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isTwoFactorEnabled: true },
+    });
+
+    if (!user) throw Errors.notFound('User');
+
+    return { isEnabled: user.isTwoFactorEnabled };
+  }
+
+  private generateRecoveryCodes(): string[] {
+    return Array.from({ length: 10 }, () =>
+      crypto.randomBytes(5).toString('hex').toUpperCase()
+    );
+  }
+
+  /**
+   * Helper to check if a user is an Admin
+   * Checks both legacy role and RoleCode
+   */
+  private isAdminAccount(user: { role: UserRole }, roleCode?: RoleCode): boolean {
+      const ADMIN_ROLES = [
+          RoleCode.SUPER_ADMIN,
+          RoleCode.YAYASAN_ADMIN,
+          RoleCode.TKQ_ADMIN,
+          RoleCode.SDIT_ADMIN,
+          RoleCode.SMPIT_ADMIN,
+          RoleCode.SMAQ_ADMIN,
+          RoleCode.UNIT_ADMIN,
+      ];
+
+      return (
+          user.role === UserRole.SUPER_ADMIN ||
+          user.role === UserRole.UNIT_ADMIN ||
+          (roleCode && ADMIN_ROLES.includes(roleCode)) ||
+          false
+      );
   }
 }
 

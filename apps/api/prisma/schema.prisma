@@ -277,6 +277,10 @@ model User {
   role         UserRole // Legacy role - kept for backward compatibility
   unitId       String?   @map("unit_id")
   isActive     Boolean   @default(true) @map("is_active")
+  isTwoFactorEnabled Boolean   @default(false) @map("is_two_factor_enabled")
+  twoFactorSecret    String?   @map("two_factor_secret")
+  twoFactorSecretPending String? @map("two_factor_secret_pending")
+  twoFactorRecoveryCodes String[] @default([]) @map("two_factor_recovery_codes")
   lastLoginAt  DateTime? @map("last_login_at")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")

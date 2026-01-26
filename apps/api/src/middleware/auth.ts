@@ -17,8 +17,44 @@ declare global {
 
 /**
  * Authentication middleware - verifies JWT token
+ * Rejects temporary 2FA tokens
  */
 export function authenticate(req: Request, res: Response, next: NextFunction) {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+      throw Errors.unauthorized('No authorization header');
+    }
+
+    const [type, token] = authHeader.split(' ');
+
+    if (type !== 'Bearer' || !token) {
+      throw Errors.unauthorized('Invalid authorization format');
+    }
+
+    const payload = verifyToken(token);
+
+    if (payload.type !== 'access') {
+      throw Errors.unauthorized('Invalid token type');
+    }
+
+    if (payload.isTemp) {
+      throw Errors.unauthorized('2FA Verification Required');
+    }
+
+    req.user = payload;
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Authentication middleware for 2FA routes
+ * Accepts both regular and temporary 2FA tokens
+ */
+export function authenticate2FA(req: Request, res: Response, next: NextFunction) {
   try {
     const authHeader = req.headers.authorization;
 
@@ -60,7 +96,7 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
 
     if (type === 'Bearer' && token) {
       const payload = verifyToken(token);
-      if (payload.type === 'access') {
+      if (payload.type === 'access' && !payload.isTemp) {
         req.user = payload;
       }
     }

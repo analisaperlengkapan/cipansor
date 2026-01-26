@@ -92,3 +92,66 @@ export const changePassword = asyncHandler(async (req: Request, res: Response) =
     data: result,
   });
 });
+
+/**
+ * Generate 2FA Secret
+ * POST /api/auth/2fa/generate
+ */
+export const generateTwoFactorSecret = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.sub;
+  const result = await authService.generateTwoFactorSecret(userId);
+  res.json({ success: true, data: result });
+});
+
+/**
+ * Enable 2FA
+ * POST /api/auth/2fa/enable
+ */
+export const enableTwoFactor = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.sub;
+  const { token } = req.body; // Secret is no longer taken from body
+  const result = await authService.enableTwoFactor(userId, token);
+  res.json({ success: true, data: result });
+});
+
+/**
+ * Verify 2FA Login
+ * POST /api/auth/2fa/login
+ */
+export const verifyTwoFactorLogin = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.sub;
+  const { token } = req.body;
+  const isTemp = req.user?.isTemp;
+  const result = await authService.verifyTwoFactorLogin(userId, token, isTemp);
+  res.json({ success: true, data: result });
+});
+
+/**
+ * Disable 2FA
+ * POST /api/auth/2fa/disable
+ */
+export const disableTwoFactor = asyncHandler(async (req: Request, res: Response) => {
+  const { token, userId: targetUserId } = req.body;
+  const userId = req.user!.sub; // Current user
+
+  let result;
+  if (targetUserId && targetUserId !== userId) {
+      // Admin disabling for another user
+      result = await authService.disableTwoFactor(targetUserId, token, userId);
+  } else {
+      // User disabling their own
+      result = await authService.disableTwoFactor(userId, token);
+  }
+
+  res.json({ success: true, data: result });
+});
+
+/**
+ * Get 2FA Status
+ * GET /api/auth/2fa/status
+ */
+export const getTwoFactorStatus = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.sub;
+    const result = await authService.getTwoFactorStatus(userId);
+    res.json({ success: true, data: result });
+});

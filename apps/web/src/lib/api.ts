@@ -18,6 +18,20 @@ import {
   UpdateTahfidzInput,
 } from "@cipansor/shared";
 
+// 2FA Types
+export interface TwoFactorGenerateResponse {
+  secret: string;
+  qrCodeUrl: string;
+}
+
+export interface TwoFactorEnableResponse {
+  recoveryCodes: string[];
+}
+
+export interface TwoFactorStatusResponse {
+  isEnabled: boolean;
+}
+
 // Explicitly export SharedPaginatedResponse for new modules
 export type { SharedPaginatedResponse };
 // Re-export shared types
@@ -150,6 +164,18 @@ export const authApi = {
 
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     api.put("/auth/password", data),
+
+  // 2FA methods
+  generate2FA: () =>
+    api.post<ApiResponse<TwoFactorGenerateResponse>>("/auth/2fa/generate"),
+  enable2FA: (data: { token: string }) =>
+    api.post<ApiResponse<TwoFactorEnableResponse>>("/auth/2fa/enable", data),
+  verify2FA: (data: { token: string }) =>
+    api.post<ApiResponse<LoginResponse>>("/auth/2fa/login", data),
+  disable2FA: (data: { token: string; userId?: string }) =>
+    api.post<ApiResponse<void>>("/auth/2fa/disable", data),
+  get2FAStatus: () =>
+    api.get<ApiResponse<TwoFactorStatusResponse>>("/auth/2fa/status"),
 };
 
 export const rolesApi = {

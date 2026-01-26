@@ -3,6 +3,7 @@ import { UserRole } from '@prisma/client';
 import { verifyToken, JwtPayload } from '@/lib/jwt';
 import { Errors } from './error';
 import { prisma } from '@/lib/prisma';
+import { redis } from '@/lib/redis';
 
 // Extend Express Request type
 declare global {
@@ -108,20 +109,31 @@ export function hasPermission(permission: string) {
     }
 
     try {
-      // Fetch role permissions
-      // Optimization: In a real app, cache this.
-      const role = await prisma.role.findUnique({
-        where: { id: req.user.roleId },
-        select: { permissions: true },
-      });
+      // Check cache first
+      const cacheKey = `role:permissions:${req.user.roleId}`;
+      let permissions: string[] = [];
+      const cached = await redis.get(cacheKey);
 
-      if (!role) {
-        return next(Errors.forbidden('Active role not found'));
+      if (cached) {
+        permissions = JSON.parse(cached);
+      } else {
+        // Fetch from DB
+        const role = await prisma.role.findUnique({
+          where: { id: req.user.roleId },
+          select: { permissions: true },
+        });
+
+        if (!role) {
+          return next(Errors.forbidden('Active role not found'));
+        }
+
+        permissions = (role.permissions as string[]) || [];
+
+        // Cache for 1 hour
+        await redis.setex(cacheKey, 3600, JSON.stringify(permissions));
       }
 
-      const permissions = role.permissions as string[];
-
-      if (!permissions || !Array.isArray(permissions) || !permissions.includes(permission)) {
+      if (!permissions.includes(permission)) {
         return next(Errors.forbidden(`Missing permission: ${permission}`));
       }
 

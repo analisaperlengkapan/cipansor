@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { redis } from '@/lib/redis';
 import { Errors } from '@/middleware/error';
 import { Realm } from '@prisma/client';
 import type { CreateRoleInput, UpdateRoleInput } from './roles.schema';
@@ -101,7 +102,7 @@ export class RolesService {
       throw Errors.notFound('Role');
     }
 
-    return prisma.role.update({
+    const updated = await prisma.role.update({
       where: { id },
       data: {
         name: input.name,
@@ -109,6 +110,11 @@ export class RolesService {
         permissions: input.permissions ?? undefined, // Only update if provided
       },
     });
+
+    // Invalidate permission cache
+    await redis.del(`role:permissions:${id}`);
+
+    return updated;
   }
 
   /**

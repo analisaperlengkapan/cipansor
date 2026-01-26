@@ -121,7 +121,8 @@ export const enableTwoFactor = asyncHandler(async (req: Request, res: Response) 
 export const verifyTwoFactorLogin = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.sub;
   const { token } = req.body;
-  const result = await authService.verifyTwoFactorLogin(userId, token);
+  const isTemp = req.user?.isTemp;
+  const result = await authService.verifyTwoFactorLogin(userId, token, isTemp);
   res.json({ success: true, data: result });
 });
 

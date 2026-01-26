@@ -425,9 +425,14 @@ export class AuthService {
   /**
    * Verify 2FA Login
    */
-  async verifyTwoFactorLogin(userId: string, token: string) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
+  async verifyTwoFactorLogin(userId: string, token: string, isTemp?: boolean) {
+    // Enforce 2FA flow: Must use a temporary token
+    if (!isTemp) {
+      throw Errors.unauthorized('Invalid authentication flow');
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
       include: {
         unit: true,
         userRoles: {
@@ -441,24 +446,29 @@ export class AuthService {
       },
     });
 
-    if (!user || !user.isTwoFactorEnabled || !user.twoFactorSecret) {
+    if (!user || !user.isActive) {
+      throw Errors.unauthorized('Account is deactivated or not found');
+    }
+
+    if (!user.isTwoFactorEnabled || !user.twoFactorSecret) {
       throw Errors.unauthorized('2FA is not enabled for this user');
     }
 
     let isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
 
-    // Check recovery codes if OTP failed
+    // Check recovery codes if OTP failed (with atomic update to prevent race conditions)
     if (!isValid) {
-      const recoveryCodeIndex = user.twoFactorRecoveryCodes.indexOf(token);
-      if (recoveryCodeIndex !== -1) {
+      // Use raw query for atomic array removal
+      // Returns number of affected rows
+      const result = await prisma.$executeRaw`
+        UPDATE "users"
+        SET "two_factor_recovery_codes" = array_remove("two_factor_recovery_codes", ${token})
+        WHERE "id" = ${userId}
+        AND ${token} = ANY("two_factor_recovery_codes")
+      `;
+
+      if (Number(result) > 0) {
         isValid = true;
-        // Remove used recovery code
-        const updatedRecoveryCodes = [...user.twoFactorRecoveryCodes];
-        updatedRecoveryCodes.splice(recoveryCodeIndex, 1);
-        await prisma.user.update({
-          where: { id: userId },
-          data: { twoFactorRecoveryCodes: updatedRecoveryCodes },
-        });
       }
     }
 

@@ -165,7 +165,16 @@ export class AuthService {
         userId: payload.sub,
         expiresAt: { gt: new Date() },
       },
-      include: { user: true },
+      include: {
+        user: {
+          include: {
+            userRoles: {
+              where: { isActive: true },
+              orderBy: { isPrimary: 'desc' },
+            },
+          },
+        },
+      },
     });
 
     if (!storedToken) {
@@ -181,12 +190,17 @@ export class AuthService {
       where: { id: storedToken.id },
     });
 
+    // Get primary role
+    const primaryRole =
+      storedToken.user.userRoles.find((r) => r.isPrimary) || storedToken.user.userRoles[0];
+
     // Generate new tokens
     const tokens = generateTokenPair({
       sub: storedToken.user.id,
       email: storedToken.user.email,
       role: storedToken.user.role,
       unitId: storedToken.user.unitId,
+      roleId: primaryRole?.roleId,
     });
 
     // Store new refresh token

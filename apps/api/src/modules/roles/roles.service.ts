@@ -63,25 +63,25 @@ export class RolesService {
       throw Errors.conflict('Role with this code already exists');
     }
 
-    // Guess realm from code if not provided (not really possible as input doesn't have realm)
-    // For now, default to GLOBAL or require input to match schema better if we wanted full create support.
-    // Since schema is locked to RoleCode, I'll assume the user knows what they are doing or this is for internal use.
-    // Actually, `CreateRoleInput` in my schema only has `code` (optional), `name`, `description`, `permissions`.
-    // It's missing `realm`.
-    // I'll default Realm to GLOBAL for now, or infer from code prefix if possible.
+    // Determine realm: Use provided realm or infer from code prefix
+    let realm: Realm;
 
-    let realm: Realm = Realm.GLOBAL;
-    const codeStr = input.code.toString();
-    if (codeStr.startsWith('YAYASAN')) realm = Realm.YAYASAN;
-    else if (codeStr.startsWith('TKQ')) realm = Realm.TK_QURAN;
-    else if (codeStr.startsWith('SDIT')) realm = Realm.SD_IT;
-    else if (codeStr.startsWith('SMPIT')) realm = Realm.SMP_IT;
-    else if (codeStr.startsWith('SMAQ')) realm = Realm.SMA_QURAN;
-    else if (
-      codeStr.startsWith('PESANTREN') ||
-      ['MUSYRIF', 'MUHAFIDZ', 'MURABBI', 'WALI_KAMAR'].some((p) => codeStr.startsWith(p))
-    )
-      realm = Realm.PESANTREN;
+    if (input.realm) {
+      realm = input.realm as Realm;
+    } else {
+      realm = Realm.GLOBAL; // Default
+      const codeStr = input.code.toString();
+      if (codeStr.startsWith('YAYASAN')) realm = Realm.YAYASAN;
+      else if (codeStr.startsWith('TKQ')) realm = Realm.TK_QURAN;
+      else if (codeStr.startsWith('SDIT')) realm = Realm.SD_IT;
+      else if (codeStr.startsWith('SMPIT')) realm = Realm.SMP_IT;
+      else if (codeStr.startsWith('SMAQ')) realm = Realm.SMA_QURAN;
+      else if (
+        codeStr.startsWith('PESANTREN') ||
+        ['MUSYRIF', 'MUHAFIDZ', 'MURABBI', 'WALI_KAMAR'].some((p) => codeStr.startsWith(p))
+      )
+        realm = Realm.PESANTREN;
+    }
 
     return prisma.role.create({
       data: {

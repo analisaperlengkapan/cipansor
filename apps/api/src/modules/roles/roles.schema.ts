@@ -30,6 +30,7 @@ export const createRoleSchema = z.object({
     .regex(/^[A-Z0-9_]+$/, 'Code must be uppercase alphanumeric with underscores'),
   name: z.string().min(3),
   description: z.string().optional(),
+  realm: z.nativeEnum(Realm).optional(), // Allow explicit realm setting
   permissions: z
     .array(z.enum(Object.values(PERMISSIONS) as [string, ...string[]]))
     .optional(),

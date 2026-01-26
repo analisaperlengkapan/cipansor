@@ -522,6 +522,7 @@ model Unit {
   qualityEvidences       QualityEvidence[]
   qualityAudits          QualityAudit[]
   assignments            Assignment[]
+  questionBanks          QuestionBank[]
 
   @@index([type])
   @@index([foundationId])
@@ -920,6 +921,7 @@ model Student {
   visits                      StudentVisit[]
   packages                    StudentPackage[]
   assignmentSubmissions       AssignmentSubmission[]
+  examAttempts                ExamAttempt[]
 
   @@index([nis])
   @@index([unitId])
@@ -1679,7 +1681,7 @@ model EmploymentHistory {
 /// Role - Role definitions in the system (multi-realm)
 model Role {
   id          String   @id @default(uuid())
-  code        RoleCode @unique
+  code        String   @unique
   name        String // Display name
   description String?  @db.Text
   realm       Realm // Which realm this role belongs to

@@ -9,6 +9,8 @@ import type {
   AssignRoleInput,
   SwitchRoleInput,
   SetPrimaryRoleInput,
+  CreateRoleInput,
+  UpdateRoleInput,
 } from './roles.schema';
 
 export class RolesController {
@@ -31,6 +33,32 @@ export class RolesController {
   async getRoleById(req: Request, res: Response, next: NextFunction) {
     try {
       const role = await rolesService.getRoleById(req.params.id);
+      res.json(role);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Create a new role
+   */
+  async createRole(req: Request, res: Response, next: NextFunction) {
+    try {
+      const input = req.body as CreateRoleInput;
+      const role = await rolesService.createRole(input);
+      res.status(201).json(role);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Update role
+   */
+  async updateRole(req: Request, res: Response, next: NextFunction) {
+    try {
+      const input = req.body as UpdateRoleInput;
+      const role = await rolesService.updateRole(req.params.id, input);
       res.json(role);
     } catch (error) {
       next(error);

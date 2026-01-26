@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { UserRole } from '@prisma/client';
 import { verifyToken, JwtPayload } from '@/lib/jwt';
 import { Errors } from './error';
+import { prisma } from '@/lib/prisma';
 
 // Extend Express Request type
 declare global {
@@ -71,7 +72,7 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
 }
 
 /**
- * Role-based access control middleware
+ * Role-based access control middleware (Legacy Enum Check)
  */
 export function authorize(...allowedRoles: UserRole[]) {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -84,6 +85,50 @@ export function authorize(...allowedRoles: UserRole[]) {
     }
 
     next();
+  };
+}
+
+/**
+ * Permission-based access control middleware (New Granular Check)
+ */
+export function hasPermission(permission: string) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return next(Errors.unauthorized());
+    }
+
+    // Super Admin has all permissions implicitly
+    if (req.user.role === UserRole.SUPER_ADMIN) {
+      return next();
+    }
+
+    // Check if user has an active role assignment
+    if (!req.user.roleId) {
+      return next(Errors.forbidden('No active role assignment'));
+    }
+
+    try {
+      // Fetch role permissions
+      // Optimization: In a real app, cache this.
+      const role = await prisma.role.findUnique({
+        where: { id: req.user.roleId },
+        select: { permissions: true },
+      });
+
+      if (!role) {
+        return next(Errors.forbidden('Active role not found'));
+      }
+
+      const permissions = role.permissions as string[];
+
+      if (!permissions || !Array.isArray(permissions) || !permissions.includes(permission)) {
+        return next(Errors.forbidden(`Missing permission: ${permission}`));
+      }
+
+      next();
+    } catch (error) {
+      next(error);
+    }
   };
 }
 

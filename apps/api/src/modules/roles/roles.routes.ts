@@ -7,6 +7,8 @@ import {
   assignRoleSchema,
   switchRoleSchema,
   setPrimaryRoleSchema,
+  createRoleSchema,
+  updateRoleSchema,
 } from './roles.schema';
 import { UserRole } from '@prisma/client';
 
@@ -35,6 +37,32 @@ router.get(
   authenticate,
   validateQuery(getRolesQuerySchema),
   rolesController.getAllRoles.bind(rolesController)
+);
+
+/**
+ * @openapi
+ * /api/roles:
+ *   post:
+ *     tags: [Roles]
+ *     summary: Create a new role (Super Admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateRoleInput'
+ *     responses:
+ *       201:
+ *         description: Role created
+ */
+router.post(
+  '/',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN),
+  validate(createRoleSchema),
+  rolesController.createRole.bind(rolesController)
 );
 
 /**
@@ -101,6 +129,38 @@ router.post(
  *         description: Role details
  */
 router.get('/:id', authenticate, rolesController.getRoleById.bind(rolesController));
+
+/**
+ * @openapi
+ * /api/roles/{id}:
+ *   patch:
+ *     tags: [Roles]
+ *     summary: Update role (Super Admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateRoleInput'
+ *     responses:
+ *       200:
+ *         description: Role updated
+ */
+router.patch(
+  '/:id',
+  authenticate,
+  authorize(UserRole.SUPER_ADMIN),
+  validate(updateRoleSchema),
+  rolesController.updateRole.bind(rolesController)
+);
 
 /**
  * @openapi

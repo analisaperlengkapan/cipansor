@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { Errors } from '@/middleware/error';
-import { Realm, RoleCode } from '@prisma/client';
+import { Realm } from '@prisma/client';
+import type { CreateRoleInput, UpdateRoleInput } from './roles.schema';
 
 export class RolesService {
   /**
@@ -33,7 +34,7 @@ export class RolesService {
   /**
    * Get role by code
    */
-  async getRoleByCode(code: RoleCode) {
+  async getRoleByCode(code: string) {
     const role = await prisma.role.findUnique({
       where: { code },
     });
@@ -43,6 +44,71 @@ export class RolesService {
     }
 
     return role;
+  }
+
+  /**
+   * Create a new role
+   */
+  async createRole(input: CreateRoleInput) {
+    if (!input.code) {
+        throw Errors.badRequest('Role code is required');
+    }
+
+    const existing = await prisma.role.findUnique({
+      where: { code: input.code },
+    });
+
+    if (existing) {
+      throw Errors.conflict('Role with this code already exists');
+    }
+
+    // Guess realm from code if not provided (not really possible as input doesn't have realm)
+    // For now, default to GLOBAL or require input to match schema better if we wanted full create support.
+    // Since schema is locked to RoleCode, I'll assume the user knows what they are doing or this is for internal use.
+    // Actually, `CreateRoleInput` in my schema only has `code` (optional), `name`, `description`, `permissions`.
+    // It's missing `realm`.
+    // I'll default Realm to GLOBAL for now, or infer from code prefix if possible.
+
+    let realm: Realm = Realm.GLOBAL;
+    const codeStr = input.code.toString();
+    if (codeStr.startsWith('YAYASAN')) realm = Realm.YAYASAN;
+    else if (codeStr.startsWith('TKQ')) realm = Realm.TK_QURAN;
+    else if (codeStr.startsWith('SDIT')) realm = Realm.SD_IT;
+    else if (codeStr.startsWith('SMPIT')) realm = Realm.SMP_IT;
+    else if (codeStr.startsWith('SMAQ')) realm = Realm.SMA_QURAN;
+
+    return prisma.role.create({
+      data: {
+        code: input.code,
+        name: input.name,
+        description: input.description,
+        permissions: input.permissions ?? [],
+        realm,
+        isActive: true,
+      },
+    });
+  }
+
+  /**
+   * Update role (name, description, permissions)
+   */
+  async updateRole(id: string, input: UpdateRoleInput) {
+    const role = await prisma.role.findUnique({
+      where: { id },
+    });
+
+    if (!role) {
+      throw Errors.notFound('Role');
+    }
+
+    return prisma.role.update({
+      where: { id },
+      data: {
+        name: input.name,
+        description: input.description,
+        permissions: input.permissions ?? undefined, // Only update if provided
+      },
+    });
   }
 
   /**

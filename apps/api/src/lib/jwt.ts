@@ -9,6 +9,7 @@ export interface JwtPayload {
   unitId: string | null;
   roleId?: string; // Current active role ID from UserRoleAssignment
   type: 'access' | 'refresh';
+  isTemp?: boolean; // For 2FA temporary tokens
 }
 
 export interface TokenPair {

@@ -77,6 +77,9 @@ importers:
       nodemailer:
         specifier: ^7.0.11
         version: 7.0.12
+      otplib:
+        specifier: ^13.2.0
+        version: 13.2.0
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
@@ -1231,6 +1234,10 @@ packages:
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
 
+  '@noble/hashes@2.0.1':
+    resolution: {integrity: sha512-XlOlEbQcE9fmuXxrVTXCTlG2nlRXa9Rj3rr5Ue/+tX+nmkgbX720YHh0VR3hBF9xDvwnb8D2shVGOwNx+ulArw==}
+    engines: {node: '>= 20.19.0'}
+
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
     engines: {node: '>= 8'}
@@ -1470,6 +1477,24 @@ packages:
     engines: {node: '>=14'}
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
+
+  '@otplib/core@13.2.0':
+    resolution: {integrity: sha512-A4silkhDfiD63L4uTuJHqeTSTj+ywgusWU8A4h3n/aR2fhq/NU/CtEoqC4QpUz25TO31UGEaPzZicKaGHotzxQ==}
+
+  '@otplib/hotp@13.2.0':
+    resolution: {integrity: sha512-LT6hAcS+iOWYANLw27BOyOvY/IOadHt8k3IE5GLhwsj7c0LggNVv3PCJaAcQISNostamxc8DceRqTHDsAGxoEQ==}
+
+  '@otplib/plugin-base32-scure@13.2.0':
+    resolution: {integrity: sha512-zkHDXs5McCcGwHxIlZ/2Yw7ndaXhwIg2wqOFFfD2pYIKIsRbmL6DKrEknMg9q71IxKPVAFoPMDSYbakxqoFAmw==}
+
+  '@otplib/plugin-crypto-noble@13.2.0':
+    resolution: {integrity: sha512-91rbIMCNzOrjhCXUZbFNqUgh9Bbf45Jbvn43lxkr/3CbwyoNqGo8bpv3iZtlTs4o/MNGIZHolT1//23nyQsb0A==}
+
+  '@otplib/totp@13.2.0':
+    resolution: {integrity: sha512-iNMM1r0azic6yoidXefop4gy0w1cHgm1du1QXkMKnYBG5teQLifmeVYm1AyyxjVh8SoGJoQ+dqmDP5zAnzB+Xw==}
+
+  '@otplib/uri@13.2.0':
+    resolution: {integrity: sha512-72ISyPHKYmDpiP5vu5uL9cvUOFlTW2BuRvFVligqWTEPqgluY+uljjq8rMkyUUv/QMIwiFiaxfyn0CntvV3rSg==}
 
   '@paralleldrive/cuid2@2.3.1':
     resolution: {integrity: sha512-XO7cAxhnTZl0Yggq6jOgjiOHhbgcO4NqFqwSmQpjK3b6TEE6Uj/jfSk6wzYyemh3+I0sHirKSetjQwn5cZktFw==}
@@ -2176,6 +2201,9 @@ packages:
 
   '@scarf/scarf@1.4.0':
     resolution: {integrity: sha512-xxeapPiUXdZAE3che6f3xogoJPeZgig6omHEy1rIY5WVsB3H2BHNnZH+gHG6x91SCWyQCzWGsuL2Hh3ClO5/qQ==}
+
+  '@scure/base@2.0.0':
+    resolution: {integrity: sha512-3E1kpuZginKkek01ovG8krQ0Z44E3DHPjc5S2rjJw9lZn3KSQOs8S7wqikF/AH7iRanHypj85uGyxk0XAyC37w==}
 
   '@sentry-internal/browser-utils@8.55.0':
     resolution: {integrity: sha512-ROgqtQfpH/82AQIpESPqPQe0UyWywKJsmVIqi3c5Fh+zkds5LUxnssTj3yNd1x+kxaPDVB023jAP+3ibNgeNDw==}
@@ -4907,6 +4935,9 @@ packages:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
     engines: {node: '>= 0.8.0'}
 
+  otplib@13.2.0:
+    resolution: {integrity: sha512-UMNtBWc2265hy7j5GtKJFN0jtesPJ1TUNF9YgjHzrxVvJgaKS9NBbTIwataxRzCmeY1d7TUz6fC7fhPJiqBlpg==}
+
   own-keys@1.0.1:
     resolution: {integrity: sha512-qFOyK5PjiWZd+QQIh+1jhdb9LpxTF0qs7Pm8o5QHYZ0M3vKqSqzsZaEB6oWlxZ+q2sJBMI/Ktgd2N5ZwQoRHfg==}
     engines: {node: '>= 0.4'}
@@ -7015,6 +7046,8 @@ snapshots:
 
   '@noble/hashes@1.8.0': {}
 
+  '@noble/hashes@2.0.1': {}
+
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
       '@nodelib/fs.stat': 2.0.5
@@ -7321,6 +7354,33 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.0)
+
+  '@otplib/core@13.2.0': {}
+
+  '@otplib/hotp@13.2.0':
+    dependencies:
+      '@otplib/core': 13.2.0
+      '@otplib/uri': 13.2.0
+
+  '@otplib/plugin-base32-scure@13.2.0':
+    dependencies:
+      '@otplib/core': 13.2.0
+      '@scure/base': 2.0.0
+
+  '@otplib/plugin-crypto-noble@13.2.0':
+    dependencies:
+      '@noble/hashes': 2.0.1
+      '@otplib/core': 13.2.0
+
+  '@otplib/totp@13.2.0':
+    dependencies:
+      '@otplib/core': 13.2.0
+      '@otplib/hotp': 13.2.0
+      '@otplib/uri': 13.2.0
+
+  '@otplib/uri@13.2.0':
+    dependencies:
+      '@otplib/core': 13.2.0
 
   '@paralleldrive/cuid2@2.3.1':
     dependencies:
@@ -8000,6 +8060,8 @@ snapshots:
   '@rtsao/scc@1.1.0': {}
 
   '@scarf/scarf@1.4.0': {}
+
+  '@scure/base@2.0.0': {}
 
   '@sentry-internal/browser-utils@8.55.0':
     dependencies:
@@ -11250,6 +11312,15 @@ snapshots:
       prelude-ls: 1.2.1
       type-check: 0.4.0
       word-wrap: 1.2.5
+
+  otplib@13.2.0:
+    dependencies:
+      '@otplib/core': 13.2.0
+      '@otplib/hotp': 13.2.0
+      '@otplib/plugin-base32-scure': 13.2.0
+      '@otplib/plugin-crypto-noble': 13.2.0
+      '@otplib/totp': 13.2.0
+      '@otplib/uri': 13.2.0
 
   own-keys@1.0.1:
     dependencies:

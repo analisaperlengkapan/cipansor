@@ -7,12 +7,17 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  requiresTwoFactor: boolean;
+  requiresTwoFactorSetup: boolean;
+  tempToken: string | null;
 
   login: (credentials: LoginRequest) => Promise<void>;
+  verifyTwoFactor: (token: string) => Promise<void>;
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
   switchRole: (roleAssignmentId: string) => Promise<void>;
   clearError: () => void;
+  resetAuth: () => void;
 }
 
 // Custom storage that syncs with cookies for middleware
@@ -42,27 +47,92 @@ const customStorage = {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      requiresTwoFactor: false,
+      requiresTwoFactorSetup: false,
+      tempToken: null,
 
       login: async (credentials: LoginRequest) => {
         set({ isLoading: true, error: null });
         try {
           const response = await authApi.login(credentials);
-          const { user, accessToken, refreshToken } = response.data.data;
+          const data = response.data.data as any;
+
+          if (data.requiresTwoFactor) {
+            set({
+              requiresTwoFactor: true,
+              tempToken: data.tempToken,
+              isLoading: false,
+            });
+            return;
+          }
+
+          if (data.requiresTwoFactorSetup) {
+            set({
+              requiresTwoFactorSetup: true,
+              tempToken: data.tempToken,
+              isLoading: false,
+            });
+            // We'll treat setup as a form of partial auth, but won't set isAuthenticated yet
+            // The UI should redirect to setup page if this flag is true
+            // We need to store tempToken to use it for enabling 2FA
+            localStorage.setItem("accessToken", data.tempToken); // Use temp token as access token for setup
+            document.cookie = `accessToken=${data.tempToken}; path=/; max-age=3600; samesite=lax`;
+            return;
+          }
+
+          const { user, accessToken, refreshToken } = data;
 
           localStorage.setItem("accessToken", accessToken);
           localStorage.setItem("refreshToken", refreshToken);
           // Also set token in cookie for middleware
           document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; samesite=lax`;
 
-          set({ user, isAuthenticated: true, isLoading: false });
+          set({ user, isAuthenticated: true, isLoading: false, requiresTwoFactor: false, requiresTwoFactorSetup: false, tempToken: null });
         } catch (error: unknown) {
           const message =
             error instanceof Error ? error.message : "Login failed";
+          const axiosError = error as {
+            response?: { data?: { message?: string } };
+          };
+          set({
+            error: axiosError.response?.data?.message || message,
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      verifyTwoFactor: async (token: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          // We need to send the token. Since tempToken might not be in headers if we didn't save it to localStorage yet?
+          // Actually, for verifyLogin, we might need to manually pass Authorization header if not in localStorage.
+          // But wait, my interceptor uses localStorage.
+
+          // If we have tempToken in state, we should probably set it in localStorage before calling verify2FA?
+          // Or verify2FA endpoint expects `token` in BODY (the OTP), but expects Bearer token (tempToken) in HEADER.
+
+          const tempToken = get().tempToken;
+          if (tempToken) {
+             localStorage.setItem("accessToken", tempToken);
+          }
+
+          const response = await authApi.verify2FA({ token });
+          const { user, accessToken, refreshToken } = response.data.data;
+
+          localStorage.setItem("accessToken", accessToken);
+          localStorage.setItem("refreshToken", refreshToken);
+          document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; samesite=lax`;
+
+          set({ user, isAuthenticated: true, isLoading: false, requiresTwoFactor: false, tempToken: null });
+        } catch (error: unknown) {
+           const message =
+            error instanceof Error ? error.message : "2FA Verification failed";
           const axiosError = error as {
             response?: { data?: { message?: string } };
           };
@@ -85,7 +155,7 @@ export const useAuthStore = create<AuthState>()(
           // Also remove from cookies
           document.cookie = "accessToken=; path=/; max-age=0";
           document.cookie = "auth-storage=; path=/; max-age=0";
-          set({ user: null, isAuthenticated: false });
+          set({ user: null, isAuthenticated: false, requiresTwoFactor: false, requiresTwoFactorSetup: false, tempToken: null });
         }
       },
 
@@ -145,6 +215,14 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      resetAuth: () => {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          document.cookie = "accessToken=; path=/; max-age=0";
+          document.cookie = "auth-storage=; path=/; max-age=0";
+          set({ user: null, isAuthenticated: false, requiresTwoFactor: false, requiresTwoFactorSetup: false, tempToken: null, error: null });
+      },
+
       clearError: () => set({ error: null }),
     }),
     {
@@ -153,12 +231,15 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        requiresTwoFactor: state.requiresTwoFactor,
+        requiresTwoFactorSetup: state.requiresTwoFactorSetup,
+        tempToken: state.tempToken,
       }),
       onRehydrateStorage: () => (state) => {
         // After hydration, trigger fetchUser if token exists
         if (state && typeof window !== "undefined") {
           const token = localStorage.getItem("accessToken");
-          if (token) {
+          if (token && !state.requiresTwoFactor && !state.requiresTwoFactorSetup) {
             // Delay fetchUser to next tick to ensure store is ready
             setTimeout(() => state.fetchUser(), 0);
           }

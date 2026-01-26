@@ -12,7 +12,7 @@ import {
 } from "@/components/shared";
 import { useUsers, useDeleteUser, useUnits } from "@/hooks";
 import { realmDisplayNames, realmColors } from "@/hooks/use-roles";
-import { User, UserRole } from "@/lib/api";
+import { User, UserRole, authApi } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +22,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -42,7 +49,9 @@ import {
   Trash2,
   Shield,
   Building2,
+  ShieldAlert,
 } from "lucide-react";
+import { TwoFactorVerify } from "@/components/auth/TwoFactorVerify";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth";
@@ -150,6 +159,9 @@ export default function UsersPage() {
   const [realmFilter, setRealmFilter] = useState<string>("");
   const [unitFilter, setUnitFilter] = useState<string>("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deactivate2FAUserId, setDeactivate2FAUserId] = useState<string | null>(
+    null,
+  );
 
   // Get active role from current user
   const activeUserRole = useMemo(() => {
@@ -275,6 +287,15 @@ export default function UsersPage() {
                 <Shield className="mr-2 h-4 w-4" />
                 Manage Roles
               </DropdownMenuItem>
+              {(row.original as any).isTwoFactorEnabled && (
+                <DropdownMenuItem
+                  onClick={() => setDeactivate2FAUserId(row.original.id)}
+                  className="text-amber-600"
+                >
+                  <ShieldAlert className="mr-2 h-4 w-4" />
+                  Deactivate 2FA
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               {!isSelf && (
                 <DropdownMenuItem
@@ -378,6 +399,37 @@ export default function UsersPage() {
           isLoading={deleteMutation.isPending}
           variant="destructive"
         />
+
+        {/* Deactivate 2FA Dialog */}
+        <Dialog
+          open={!!deactivate2FAUserId}
+          onOpenChange={(open) => !open && setDeactivate2FAUserId(null)}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Admin Verification</DialogTitle>
+              <DialogDescription>
+                Enter YOUR OTP code to confirm deactivating 2FA for this user.
+              </DialogDescription>
+            </DialogHeader>
+            <TwoFactorVerify
+              onVerify={async (token) => {
+                try {
+                  await authApi.disable2FA({
+                    token,
+                    userId: deactivate2FAUserId!,
+                  });
+                  toast.success("User 2FA Disabled");
+                  setDeactivate2FAUserId(null);
+                  // Refresh data
+                  window.location.reload();
+                } catch {
+                  // Error handled in store/interceptor or verify component props
+                }
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );
